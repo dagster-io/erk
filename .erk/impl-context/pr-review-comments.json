@@ -1,0 +1,186 @@
+{
+  "success": true,
+  "pr_number": 7987,
+  "threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5wQtQN",
+      "path": ".claude/commands/erk/plan-implement.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "schrockn",
+          "body": "i thought we were doing erk pr check instead of erk exec pr-check-complete\n\n",
+          "created_at": "2026-02-24T00:07:04Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed: replaced `erk exec pr-check-complete` with `erk pr check --stage=impl` in plan-implement.md. Migrated the functionality into `check_cmd.py` as a `--stage=impl` flag, removing the separate exec script.\n\n_Addressed via `/erk:pr-address` at 2026-02-23 16:22 PST_",
+          "created_at": "2026-02-24T00:22:12Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wOnoj",
+      "path": "src/erk/__init__.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: Debug print statement detected - Remove `print(\"hello\")` before submission. This appears to be debug code left in by accident.",
+          "created_at": "2026-02-23T20:42:27Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Removed debug print(\"hello\") statement in commit f452d92\n\n_Addressed via `/erk:pr-address` at 2026-02-23 21:52 UTC_",
+          "created_at": "2026-02-23T21:52:39Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wOnwQ",
+      "path": "src/erk/__init__.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python Review**: Use `click.echo()` instead of `print()` for CLI output (cli-patterns.md rule: Always click.echo())",
+          "created_at": "2026-02-23T20:42:36Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Removed the print() statement entirely (it was debug code, not CLI output) in commit f452d92\n\n_Addressed via `/erk:pr-address` at 2026-02-23 21:52 UTC_",
+          "created_at": "2026-02-23T21:52:41Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wOoCf",
+      "path": "src/erk/__init__.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Tripwires Review**: Debug print statement detected - This `print(\"hello\")` statement appears to be debug code and should be removed before merging.",
+          "created_at": "2026-02-23T20:43:01Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Removed debug print(\"hello\") statement in commit f452d92\n\n_Addressed via `/erk:pr-address` at 2026-02-23 21:52 UTC_",
+          "created_at": "2026-02-23T21:52:43Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wQrA9",
+      "path": "src/erk/cli/commands/exec/scripts/pr_check_complete.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: Use named tuple instead of bare `tuple[bool, str]` for check results. The plan mentions creating a `PrCheck` named tuple to replace this pattern throughout. This improves clarity and type safety.",
+          "created_at": "2026-02-24T00:02:22Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Applied: added `PrCheck(NamedTuple)` with `passed: bool` and `description: str` fields to `check_cmd.py`, replacing `list[tuple[bool, str]]` throughout.\n\n_Addressed via `/erk:pr-address` at 2026-02-23 16:22 PST_",
+          "created_at": "2026-02-24T00:22:14Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wQrD7",
+      "path": "src/erk/cli/commands/exec/scripts/pr_check_complete.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: Using try/except for control flow (EAFP) - prefer LBYL. Check if `impl_dir` exists or if `validate_plan_linkage` might return None instead of raising ValueError. See dignified-python-core.md: LBYL pattern.",
+          "created_at": "2026-02-24T00:02:28Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Applied: replaced try/except around `validate_plan_linkage` with LBYL \u2014 now calls `extract_leading_issue_number` and `read_plan_ref` directly, checks for mismatch before building the error message.\n\n_Addressed via `/erk:pr-address` at 2026-02-23 16:22 PST_",
+          "created_at": "2026-02-24T00:22:16Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wQrGQ",
+      "path": "src/erk/cli/commands/exec/scripts/pr_check_complete.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: Conditional expression on same line as assignment for `local_config.plans_repo`. Could improve clarity by extracting to separate variable or conditional block for readability.",
+          "created_at": "2026-02-24T00:02:33Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Applied: extracted `local_config.plans_repo` conditional to a separate if/else block with explicit `plans_repo: str | None` type annotation.\n\n_Addressed via `/erk:pr-address` at 2026-02-23 16:22 PST_",
+          "created_at": "2026-02-24T00:22:18Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wQ6zE",
+      "path": "tests/commands/pr/test_check.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python Review**: Inline import - Move `import json` to module-level imports at top of file. Only inline imports allowed for circular deps, TYPE_CHECKING, or conditional features (dignified-python-core.md)",
+          "created_at": "2026-02-24T00:31:34Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Removed inline `import json` from test_pr_check_stage_impl_all_checks_pass (commit a29660a72). The `json` module is already imported at module level (line 3).\n\n_Addressed via `/erk:pr-address` at 2026-02-23 16:33 PST_",
+          "created_at": "2026-02-24T00:33:50Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wQ6xj",
+      "path": "tests/commands/pr/test_check.py",
+      "line": 1002,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: Inline import of json detected - Import statements should be at module level only. Remove this inline import since json is already imported at line 3. See dignified-python-core.md: Import Organization.",
+          "created_at": "2026-02-24T00:31:30Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Removed inline `import json` from test_pr_check_stage_impl_passes_when_impl_context_absent. The `json` module is already imported at module level (line 3).\n\n_Addressed via `/erk:pr-address` at 2026-02-23 16:33 PST_",
+          "created_at": "2026-02-24T00:33:48Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wQ9fP",
+      "path": "tests/commands/pr/test_check.py",
+      "line": 1048,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python Review**: Inline import detected - `json` is already imported at module level (line 3). Remove this inline import and use the module-level import.",
+          "created_at": "2026-02-24T00:37:27Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Already fixed in commit a29660a72 \u2014 inline import json was removed, module-level import at line 3 is used.\n\n_Addressed via `/erk:pr-address` at 2026-02-23 16:42 PST_",
+          "created_at": "2026-02-24T00:42:41Z"
+        }
+      ]
+    }
+  ]
+}

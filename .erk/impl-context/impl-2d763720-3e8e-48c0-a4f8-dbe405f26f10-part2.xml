@@ -1,0 +1,822 @@
+<session>
+  <meta branch="plnd/add-pr-check-completion-02-23-1056" />
+  <meta model="claude-sonnet-4-6" />
+  <tool_result tool="toolu_01DmfYY1gzSDPbTN2k2ghqDE">
+     1→"""Tests for pr-check-complete exec command.
+     2→
+     3→Tests the PR completion invariant checker that validates implementation
+     4→is complete and ready for submission.
+     5→"""
+     6→
+     7→import json
+     8→from pathlib import Path
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.exec.scripts.pr_check_complete import pr_check_complete
+    13→from erk_shared.gateway.git.fake import FakeGit
+    14→from erk_shared.gateway.github.fake import FakeGitHub
+    15→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    16→from tests.test_utils.context_builders import build_workspace_test_context
+    17→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    18→
+    19→
+    20→def _make_pr_details(
+    21→    *,
+    22→    number: int,
+    23→    body: str,
+    24→    branch: str,
+    25→) -&gt; PRDetails:
+    26→    """Create PRDetails with standard test defaults."""
+    27→    return PRDetails(
+    28→        number=number,
+    29→        url=f"https://github.com/owner/repo/pull/{number}",
+    30→        title="Test PR",
+
+... [294 lines omitted] ...
+
+   117→    """Test failure when .erk/impl-context/ directory still exists."""
+   184→    """Test error when branch has no PR."""
+   204→    """Test error when on detached HEAD."""
+   221→def test_reports_multiple_failures(tmp_path: Path) -&gt; None:
+   222→    """Test that multiple failures are counted correctly."""
+   268→        assert "3 checks failed" in result.output
+  </tool_result>
+  <thinking>Now I have a complete picture. Let me analyze the situation:
+
+1. `erk exec pr-check-complete` (`pr_check_complete.py`) adds one new check (impl-context cleanup) on top of what `erk pr check` (`check_cmd.py`) already does.2. The reviewer said to use `erk pr check` instead of `erk exec pr-check-complete`.3. The tests are in `tests/unit/cli/commands/exec/scripts/test_pr_check_complete.py` and test `pr_check_complete` directly.
+
+Looking at `pr_check_complete.py` vs `check_cmd.py`:
+
+
+- `pr_check_complete.py` uses `@click.pass_context` and `require_cwd(ctx)` pattern (exec style)
+- `check_cmd.py` uses `@click.pass_obj` and `ctx: ErkContext` pattern (erk pr style)
+
+But the test is actually invoking `pr_check_complete` with `obj=ctx`, which is the erk pr style, not the exec style. So there's a mismatch between how the command is defined and how it's being tested. I see there's a mismatch between the two patterns—`check_cmd.py` uses `@click.pass_obj` with an `ErkContext` object, while the AGENTS.md example and `_check_complete.py` use `@click.pass_context` to access the Click context directly. I need to figure out which pattern the test expects and make sure `require_cwd(ctx)` can extract the cwd from whichever context object gets passed in. The reviewer's intent seems to be that the impl-context check should live in `erk pr check` rather than in a separate exec script, so I should add that validation to `check_cmd.py` and update the documentation accordingly—keeping the scope focused on that change rather than removing the exec script entirely. of creating a new exec script
+- Referenced `erk pr check` in plan-implement.md
+
+So the fix is:
+1. Add impl-context check to `check_cmd.py` (as the first check, like it is in `pr_check_complete.py`)
+2. Update `plan-implement.md` to use `erk pr check`
+3. Remove `pr_check_complete.py`, its import from `group.py`, and its tests
+
+But removing tests is significant! And the tests are good. Can I migrate them to `check_cmd.py`?
+
+Actually, I'll keep `erk exec pr-check-complete` registered in exec group for backwards compat. I'll just:
+1. Add impl-context check to `check_cmd.py`
+2. Update `plan-implement.md` to use `erk pr check`
+3. Keep `pr_check_complete.py` as-is
+
+The reviewer's comment is pointing out that the plan was always to use `erk pr check`, not create a separate exec command. So the minimal fix is to update the documentation to use the right command and add the missing impl-context check to `check_cmd.py`, leaving the existing code untouched. is to:
+
+1. Fold the new functionality (impl-context check) into `erk pr check`
+2. Update plan-implement.md to call `erk pr check`
+3. Remove `erk exec pr-check-complete` (the script, its registration in group.py, and ideally migrate/remove its tests)
+
+But wait - look at the tests for `pr_check_complete.py`. They're quite comprehensive. If I remove the file, I need to either:
+a) Delete the tests too (losing test coverage)
+b) Move the tests to test `check_cmd.py` instead
+
+Given the principle of "avoid backwards-compatibility hacks" and "no re-exports", the cleanest approach is:
+1. Add impl-context check to `check_cmd.py` with new tests
+2. Delete `pr_check_complete.py`
+3. Remove its import from `group.py`
+4. Move the test logic from `test_pr_check_complete.py` to a new test for `check_cmd.py`
+5. Update `plan-implement.md`
+
+This is a fair amount of refactoring, so let me first see what test coverage already exists for `check_cmd.py`.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="14915" cache_read_input_tokens="67380" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14915}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check if there are existing tests for `check_cmd.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="14915" cache_read_input_tokens="67380" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14915}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01PiAj2yT4LNcAYM2fmpV1Lo">
+    <param name="pattern">test.*pr.*check\|check_cmd</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557/tests</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14915" cache_read_input_tokens="67380" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14915}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PiAj2yT4LNcAYM2fmpV1Lo">
+No files found
+  </tool_result>
+  <thinking>There are no existing tests for `check_cmd.py`. This is interesting. Let me think about what to do.
+
+Given all the context, I'll take the following approach:
+
+**Item #1 (plan-implement.md)**: 
+The reviewer wants `erk pr check` instead of `erk exec pr-check-complete`. The most focused change addressing this comment is:
+1. Add impl-context check to `check_cmd.py` (check_cmd.py already has the same logic minus the impl-context check)
+2. Update `plan-implement.md:343` to use `erk pr check`
+
+
+3. Remove `pr_check_complete.py`, its registration in `group.py`, and move its tests to cover `check_cmd` instead
+4. Update the description text around line 346 to match
+
+But I need to be careful here—the reviewer is asking me to change the architectural direction of the PR itself. The existing tests for `pr_check_complete.py` cover important validation logic like impl-context checking and plan-ref agreement, so if I consolidate this into `check_cmd.py`, I need to make sure those tests still apply to the new location.
+
+There's a difference in how these commands handle context though: `check_cmd.py` uses `@click.pass_obj` with `ErkContext`, while `pr_check_complete.py` uses `@click.pass_context` with `require_cwd(ctx)`. The existing tests already build the context using `build_workspace_test_context`, which should work with either pattern, but I need to verify what type of object that actually returns.
+
+Looking at how the tests invoke the command with `runner.invoke(cmd, obj=ctx)`, the `obj` gets set as the Click context's `.obj` attribute. For `pr_check_complete.py`, when `require_cwd(ctx)` is called, it extracts `ctx.obj.cwd` from that. For `check_cmd.py`, it directly receives the object via `@click.pass_obj`. So the same test context should work for both patterns.
+
+My plan is to consolidate these: move the impl-context check from `pr_check_complete.py` into `check_cmd.py` as the first validation, update the documentation to reference `erk pr check` instead, remove the now-redundant `pr_check_complete.py` file and its import, and convert the existing tests to cover the merged functionality.
+
+But I'm realizing the bot's feedback about the bare tuple type, EAFP pattern, and conditional expression applies to both files—and since `check_cmd.py` has the same issues, I should fix them there rather than just moving code around. The real work is standardizing these patterns across the merged implementation. I'm mapping out the full refactoring: I need to update the command reference in the documentation, enhance `check_cmd.py` with the impl-context validation and code quality fixes, remove the old `pr_check_complete` registration and script, and migrate its tests over to cover the new implementation.
+
+Now I'm figuring out where the tests should live—whether to create a new test file in the `pr` command directory or rename the existing one from the `exec/scripts` location to match the new command structure.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1976" cache_read_input_tokens="82295" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1976}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MAnRKpL7erDwsHhnMwPjLV">
+    <param name="command">ls /Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557/tests/unit/cli/commands/ 2&gt;/dev/null || echo "directory not found"</param>
+    <param name="description">List test directories under unit/cli/commands</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1976" cache_read_input_tokens="82295" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1976}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MAnRKpL7erDwsHhnMwPjLV">
+__init__.py
+branch
+codespace
+docs
+exec
+init
+land
+objective
+pr
+slot
+stack
+test_admin_claude_ci.py
+test_admin_gh_actions_api_key.py
+test_admin_github_pr_setting.py
+test_admin_test_workflow.py
+test_admin_upgrade_repo.py
+test_force_flag.py
+test_implement_shared.py
+wt
+  </tool_result>
+  <thinking>There's a `pr` directory in tests/unit/cli/commands/! Let me check what's in it.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1882" cache_read_input_tokens="84271" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1882}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WJoBoBh2nVY9YZETkB1sYg">
+    <param name="command">ls /Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557/tests/unit/cli/commands/pr/ 2&gt;/dev/null</param>
+    <param name="description">List PR test files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1882" cache_read_input_tokens="84271" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1882}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WJoBoBh2nVY9YZETkB1sYg">
+__init__.py
+submit_pipeline
+  </tool_result>
+  <thinking>OK, the `tests/unit/cli/commands/pr/` directory exists but has no test files for `check_cmd.py`. There's just `__init__.py` and `submit_pipeline` directory.
+
+So my plan:
+1. Modify `check_cmd.py` to add impl-context check + fix LBYL + fix other bot issues
+2. Update `plan-implement.md`
+3. Remove `pr_check_complete.py` from exec group registration
+4. Move tests from `test_pr_check_complete.py` to `tests/unit/cli/commands/pr/test_check_cmd.py`
+
+
+5. Delete `pr_check_complete.py`
+
+The reviewer's comment makes it clear that creating a separate exec script was the wrong approach—the impl-context check should've been part of `erk pr check` all along. So I need to fold that functionality into `check_cmd.py` and remove the exec script entirely.
+
+Now I'm looking at the LBYL fix for `validate_plan_linkage`. Instead of relying on try/except to catch ValueError, I should inline the validation logic directly. The function extracts the issue number from the branch name, reads the plan reference from the implementation directory if it exists, and compares the IDs to detect mismatches.
+
+For `check_cmd.py`, I need to add the `_check_impl_context_absent` helper function, import `extract_leading_issue_number` from the naming module, and replace the try/except pattern with explicit checks before calling the validation logic. I'll also need to update the plan-ref handling to use this LBYL approach.
+
+Now I'm mapping out the full refactoring: `plan-implement.md` needs to reference the new `erk pr check` command instead of `pr-check-complete`, the `group.py` file should remove the old command registration, and I can delete `pr_check_complete.py` entirely while migrating its tests to the new location.
+
+Looking at the check sequence, I need to insert the impl-context cleanup as the first validation in `check_cmd.py`, which shifts all the existing checks down by one position. This creates a documentation problem though—the current docstring describes PR-specific validations, but adding an impl-context check (which validates folder state rather than PR content) breaks that conceptual boundary, so I'll need to update the description to reflect this broader scope.
+
+However, the check is actually safe to add since `_check_impl_context_absent` returns PASS when the directory doesn't exist, which is the normal state for non-plan-based PRs, so it won't cause false failures. Let me verify what the decorator requirements are before finalizing the implementation.
+
+Looking at how `check_cmd.py` uses `@click.pass_obj` to access the `ErkContext`, I can get `repo_root` by calling `ctx.git.repo.get_repository_root(ctx.cwd)`, then pass that to `_check_impl_context_absent` which just needs to check if `.erk/impl-context/` exists at that path.
+
+Now I'm refactoring the LBYL check in `check_cmd.py` to handle the plan linkage validation more cleanly...
+
+Writing the refactored check... I'm refactoring the local config handling to use LBYL checks instead of the current approach, and I'm considering whether to use a frozen dataclass for the check results to match project conventions—though I need to decide on the naming convention for this internal class.
+
+Looking at how the checks are used in `pr_check_complete.py`, they're unpacked directly in loops, so I need something that supports tuple unpacking. A NamedTuple would give me type safety and clarity while preserving the unpacking behavior, unlike a dataclass which would break that pattern. I could keep bare tuples, but the NamedTuple approach feels cleaner.
+
+Actually, checking the project conventions, they enforce frozen dataclasses exclusively. NamedTuples are immutable too, so they might be acceptable as an exception for simple result types, but to stay consistent with the project standards, I should use a frozen dataclass instead. That means I'll need to update the unpacking loop to work with the dataclass fields rather than tuple positions. This is a clean improvement. Let me go ahead with this approach.
+
+Now I'm planning out all the actual code changes I need to make. The modifications to `check_cmd.py` involve adding a dataclass for the check results, importing the necessary utilities, implementing a new context-absence check as the first validation, switching from exception handling to explicit checks, extracting the plans repo logic, and updating the output loop to use the dataclass attributes. I'll also need to update the docstring to reflect these changes.
+
+For the CLI, I'm renaming the command from `erk exec pr-check-complete` to `erk pr check` and updating its description. In `group.py`, I'll remove the old command registration. Then I need to migrate the existing tests to a new location under the pr commands directory, updating them to work with the new context passing mechanism and the impl-context check. Finally, I'll clean up by deleting the old test file and the original command module.
+
+Actually, wait—the reviewer's comment is pretty minimal, just pointing out they expected `erk pr check` instead of the exec variant. Maybe I'm overcomplicating this. I should be more conservative: update the documentation to reflect `erk pr check`, add the impl-context check to the existing command, keep the old `pr_check_complete.py` around since it has tests and might be useful standalone, and focus on fixing the LBYL issue in the current code rather than doing a full migration. That way `erk exec pr-check-complete` becomes redundant but nothing breaks.
+
+Actually, no—if they're redundant, I should just fold everything into `check_cmd.py` and remove the exec script entirely. That's cleaner and probably what the reviewer wants.
+
+Now for the tests: the current test file invokes `pr_check_complete` with `@click.pass_context`, passing `obj=ctx`, which sets `ctx.obj`. When I move this to `check_cmd.py` with `@click.pass_obj`, the test invocation `runner.invoke(pr_check, obj=ctx)` will pass `ctx` directly as the first argument instead. The tests should still work with that change.
+
+Looking at how `check_cmd.py` accesses the context—it uses `@click.pass_obj` to receive an `ErkContext` and then accesses properties like `ctx.git.branch`, `ctx.github`, and `ctx.local_config`. The test builds a workspace context and passes it the same way, so the migration should be straightforward. Both patterns access the same `ErkContext` data through `ctx.obj`, so the test context should work for both `pr_check` and `check_cmd`. When I migrate the tests, I'll need to account for the different ways they access cwd and git information, but the underlying context is the same. Let me start writing out all the changes now. I see the distinction now—both `@click.pass_context` and `@click.pass_obj` work with the test setup, just through different mechanisms. The context decorator receives the full Click context object with the injected `ErkContext` as its `.obj` attribute, while the object decorator gets the `ErkContext` directly. Either way, the function receives what it needs.
+
+Now I'm rewriting `check_cmd.py` with the necessary updates...
+
+Writing the command implementation... Now I'm retrieving the current branch and repository root, then fetching the associated pull request to validate it exists before running the checks.
+
+If no PR is found, I'll exit with an error. Otherwise, I'm setting up the validation framework by initializing a checks list and reading the `.impl` directory to gather the plan reference and issue number from both the branch name and the implementation metadata.
+
+Now I'm comparing the branch issue number against the plan ID to ensure they match—if they disagree, I'll flag that as a validation failure, otherwise I'll determine the canonical issue number from whichever source is available.
+
+For the second check, I'm verifying that the PR body contains a proper issue closing reference if the plan isn't a draft PR, and I'm constructing the expected reference format based on whether a plans repository is configured. Writing validation checks... I need to migrate the existing test cases to work with the new `pr_check` function, updating the imports and ensuring all seven test scenarios are covered—from basic pass/fail cases to edge cases like draft PRs and detached HEAD states.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="186" cache_read_input_tokens="86153" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 186}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the context builders utility:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="186" cache_read_input_tokens="86153" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 186}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0136GiWUWvRbiPsc2y3s2ms4">
+    <param name="pattern">def build_workspace_test_context</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557/tests</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="186" cache_read_input_tokens="86153" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 186}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0136GiWUWvRbiPsc2y3s2ms4">
+Found 1 file
+tests/test_utils/context_builders.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01JaxaJhnYh5YTuXVqdt23Uf">
+    <param name="pattern">def build_workspace_test_context</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557/tests/test_utils/context_builders.py</param>
+    <param name="output_mode">content</param>
+    <param name="context">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6930" cache_read_input_tokens="86339" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6930}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JaxaJhnYh5YTuXVqdt23Uf">
+6-"""
+7-
+8-from erk.core.context import ErkContext
+9-from erk_shared.gateway.git.dry_run import DryRunGit
+10-from erk_shared.gateway.git.fake import FakeGit
+11-from erk_shared.gateway.github.fake import FakeGitHub
+12-from tests.fakes.shell import FakeShell
+13-from tests.test_utils.env_helpers import ErkInMemEnv, ErkIsolatedFsEnv
+14-
+15-
+16:def build_workspace_test_context(
+17-    env: ErkInMemEnv | ErkIsolatedFsEnv,
+18-    *,
+19-    dry_run: bool = False,
+20-    use_graphite: bool = False,
+21-    current_branch: str | None = None,
+22-    **kwargs,
+23-) -&gt; ErkContext:
+24-    """Build ErkContext for workspace command tests (create, split, consolidate, delete).
+25-
+26-    This builder provides a standard context configuration for workspace manipulation
+  </tool_result>
+  <thinking>Good. `build_workspace_test_context` returns `ErkContext`. This works with `@click.pass_obj` in `check_cmd.py`.
+
+Now let me write all the changes. I'll do them one by one.
+
+**Summary of changes:**
+1. `src/erk/cli/commands/pr/check_cmd.py` - major rewrite to add impl-context check, LBYL, _PrCheck dataclass
+2. `.claude/commands/erk/plan-implement.md` - change `erk exec pr-check-complete` to `erk pr check`, update description
+
+
+3. `src/erk/cli/commands/exec/group.py` - remove the `pr_check_complete` import and registration
+4. Create `tests/unit/cli/commands/pr/test_check_cmd.py` with the migrated tests from the old test file
+5. Delete the old test file and the old script implementation
+6. I need to check line 346 in plan-implement.md to see what the current description says about `erk exec pr-check-complete` before updating it.
+
+Looking at the documentation, the description mentions that `erk exec pr-check-complete` validates PR completion invariants including implementation-specific checks like cleaning up `.erk/impl-context/`. Since we're consolidating this into `erk pr check`, I can simplify that description to reflect the new unified command. I should also verify whether `validate_plan_linkage` is imported in `check_cmd.py` and remove it if it's no longer needed.
+
+Checking the imports at line 16, I see `validate_plan_linkage` is imported alongside `read_plan_ref`. Since I'm switching to LBYL (Look Before You Leap) logic, `validate_plan_linkage` becomes unnecessary and I'll remove it. I'm also consolidating the `read_plan_ref` calls—instead of calling it twice, I'll compute it once upfront as `plan_ref = read_plan_ref(impl_dir) if impl_dir.exists() else None` and reuse that value throughout the function.
+
+For the output handling, I'll stick with `user_output` since it's already integrated into `check_cmd.py`, and the PASS/FAIL styling with `click.style` is already in place. The `plans_repo` extraction follows the same defensive pattern in both files—checking if `ctx.local_config` exists before accessing its `plans_repo` attribute. I need to verify that the `erk_isolated_fs_env` helper will work for the new `check_cmd.py` tests since the code still needs to check filesystem paths like `impl_context_dir.exists()`. Now I'm ready to start writing the main implementation for `check_cmd.py`.
+
+But first, I should double-check the imports I'll need — `Path` from `pathlib` and `dataclass` from the dataclasses module aren't currently in `check_cmd.py`, so I'll need to add those. Let me also look at how `test_pr_check_complete.py` sets up its test fixtures to make sure I'm using the same pattern for the new test file. I need to understand how `FakeGit.repo.get_repository_root()` works and whether it uses the `git_common_dirs` parameter that's being set in the test. Let me trace through the FakeGit implementation to see what's actually happening when the code calls that method.
+
+Looking at how the test sets up the FakeGit instance with `git_common_dirs={env.cwd: env.git_dir}`, it seems like this mapping should be used to resolve the repository root. The key thing I'm noticing is that both `check_cmd.py` and `pr_check_complete.py` are calling `get_repository_root()` on the git repo object, but they might be getting it through different paths in the context object. Looking at how `FakeGit` determines the repository root when given `env.cwd` as input.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="440" cache_read_input_tokens="93269" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 440}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RuDzSkbJL2vidwaFf9fDeZ">
+    <param name="pattern">def get_repository_root</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557</param>
+    <param name="glob">fake.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="440" cache_read_input_tokens="93269" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 440}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RuDzSkbJL2vidwaFf9fDeZ">
+Found 1 file
+packages/erk-shared/src/erk_shared/gateway/git/repo_ops/fake.py
+  </tool_result>
+  <thinking>The user wants me to stop what I was doing and look at the history or check if there's a bad rebase. Let me check the git log and status.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2599" cache_read_input_tokens="93709" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2599}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me pause addressing the PR comments and look at the git history first to understand what's happening.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2599" cache_read_input_tokens="93709" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2599}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HzF7EveXw6DRK3CfN1suVP">
+    <param name="command">git log --oneline -10 &amp;&amp; echo "---" &amp;&amp; git status &amp;&amp; echo "---" &amp;&amp; git log --oneline master..HEAD</param>
+    <param name="description">Show recent git history, status, and commits ahead of master</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2599" cache_read_input_tokens="93709" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2599}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HzF7EveXw6DRK3CfN1suVP">
+5d703f095 cp
+5a98e2572 Add pr-check-complete exec command for validating PR submission readiness
+509290e39 Bundle missing workflows: learn, one-shot, pr-address, pr-fix-conflicts (#7995)
+03499a068 Add plan: Plan: Collapse "implementing"/"implemented" into single "impl" lifecycle stage (#7999)
+8ed7aaee3 Rename NextSteps properties from checkout to prepare terminology (#7975)
+c3969c874 Replace `gh pr/issue view --web` commands with clickable URLs in next-steps output (#7988)
+f04883a66 Restrict CI to impl-stage PRs only (#8004)
+368a70726 Increase GitHub workflow dispatch polling timeout to ~62 seconds (#7994)
+cbc51fd06 Add branch-based plan detection to `/erk:plan-implement` (#7985)
+6437235db Rename "prepare" properties to "checkout" in next_steps (#7986)
+---
+On branch plnd/add-pr-check-completion-02-23-1056
+Your branch is up to date with 'origin/plnd/add-pr-check-completion-02-23-1056'.
+
+nothing to commit, working tree clean
+---
+5d703f095 cp
+5a98e2572 Add pr-check-complete exec command for validating PR submission readiness
+  </tool_result>
+  <thinking>The git log shows:
+1. `5d703f095 cp` - a mysterious "cp" commit
+2. `5a98e2572 Add pr-check-complete exec command for validating PR submission readiness` - the main PR commit
+3. Below that are commits already in master
+
+So the branch has 2 commits ahead of master. The commit message `cp` is suspicious - it's probably a "copy" operation or something. Let me look at what's in that commit.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="630" cache_read_input_tokens="96308" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 630}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NEWzfTfZXiPTpkT1w5CtE7">
+    <param name="command">git show 5d703f095 --stat &amp;&amp; echo "---" &amp;&amp; git show 5d703f095</param>
+    <param name="description">Show what the 'cp' commit contains</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="630" cache_read_input_tokens="96308" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 630}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NEWzfTfZXiPTpkT1w5CtE7">
+commit 5d703f09562fb3bf2878b43c6cdd717c05d54eda
+Author: Nick Schrock &lt;schrockn@dagsterlabs.com&gt;
+Date:   Mon Feb 23 16:04:42 2026 -0800
+
+    cp
+
+ .erk/impl-context/plan.md  | 98 ----------------------------------------------
+ .erk/impl-context/ref.json |  4 --
+ 2 files changed, 102 deletions(-)
+---
+commit 5d703f09562fb3bf2878b43c6cdd717c05d54eda
+Author: Nick Schrock &lt;schrockn@dagsterlabs.com&gt;
+Date:   Mon Feb 23 16:04:42 2026 -0800
+
+    cp
+
+diff --git a/.erk/impl-context/plan.md b/.erk/impl-context/plan.md
+deleted file mode 100644
+index 49b2e02e9..000000000
+--- a/.erk/impl-context/plan.md
++++ /dev/null
+@@ -1,98 +0,0 @@
+-# Plan: Migrate `erk exec pr-check-complete` to `erk pr check --stage=impl`
+-
+-## Context
+-
+-`erk exec pr-check-complete` is a near-duplicate of `erk pr check` — it runs the same 4 checks plus one extra: verifying `.erk/impl-context/` was cleaned up before submission. The duplication is a maintenance hazard: adding a new check to `erk pr check` requires remembering to add it to `pr_check_complete.py` too. Consolidating into a `--stage=impl` flag on `erk pr check` eliminates the duplication and makes the impl-specific check discoverable at the right surface.
+-
+-## Changes
+-
+
+... [101 lines omitted] ...
+
+-failed_count = sum(1 for check in checks if not check.passed)
+  </tool_result>
+  <thinking>The `cp` commit deleted `.erk/impl-context/` files that had a plan! The plan was:
+
+**"Migrate `erk exec pr-check-complete` to `erk pr check --stage=impl`"**
+
+This is exactly what the reviewer was asking about! The plan is:
+1. Add `--stage=impl` option to `erk pr check`
+2. When `--stage=impl`, add the impl-context check
+3. Update `plan-implement.md` to use `erk pr check --stage=impl`
+4. Remove `erk exec pr-check-complete`
+
+
+5. Implement the `--stage` option as a `click.Choice` with "impl" as the value, and use `NamedTuple` for the data structures instead of dataclasses, then remove the `pr_check_complete.py` file entirely. I see the plan specifies using `NamedTuple` with `passed` and `description` fields for `PrCheck`, and the command should be `erk pr check --stage=impl`. Let me verify the existing test structure in `tests/commands/pr/test_check.py` to understand what tests are already there before adding the new ones for the stage option.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1979" cache_read_input_tokens="96938" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1979}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I understand - the `cp` commit deleted the impl-context plan. The plan was to add `erk pr check --stage=impl`. Let me check the existing test file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1979" cache_read_input_tokens="96938" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1979}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01V5xTjzDzmfr2M8VuAu8Nmx">
+    <param name="command">ls /Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557/tests/commands/pr/ 2&gt;/dev/null || echo "not found"</param>
+    <param name="description">List PR command test directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1979" cache_read_input_tokens="96938" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1979}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01V5xTjzDzmfr2M8VuAu8Nmx">
+__init__.py
+test_address_remote_cmd.py
+test_address.py
+test_check.py
+test_checkout_graphite_linking.py
+test_checkout.py
+test_fix_conflicts_remote.py
+test_fix_conflicts.py
+test_parse_pr_reference.py
+test_rewrite.py
+test_submit_graphite_disabled.py
+test_submit_pr_cache_polling.py
+test_submit.py
+test_sync_divergence.py
+test_sync_graphite_disabled.py
+test_sync.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01EfzBShDJ4oWyZptNicrUXm">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557/tests/commands/pr/test_check.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1070" cache_read_input_tokens="98917" output_tokens="101" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1070, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EfzBShDJ4oWyZptNicrUXm">
+     1→"""Tests for erk pr check command."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.commands.pr import pr_group
+     9→from erk_shared.gateway.git.fake import FakeGit
+    10→from erk_shared.gateway.github.fake import FakeGitHub
+    11→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    12→from tests.test_utils.context_builders import build_workspace_test_context
+    13→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    14→
+    15→
+    16→def test_pr_check_passes_with_valid_footer_and_issue_reference(tmp_path: Path) -&gt; None:
+    17→    """Test PR with valid footer and issue reference passes all checks."""
+    18→    runner = CliRunner()
+    19→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    20→        env.setup_repo_structure()
+    21→
+    22→        # Create .impl/issue.json at repo root
+    23→        impl_dir = env.cwd / ".impl"
+    24→        impl_dir.mkdir()
+    25→        issue_json = impl_dir / "issue.json"
+    26→        issue_json.write_text(
+    27→            json.dumps(
+    28→                {
+    29→                    "issue_number": 456,
+    30→                    "issue_url": "https://github.com/owner/repo/issues/456",
+
+... [892 lines omitted] ...
+
+   178→        assert "1 check failed" in result.output
+   234→        assert "1 check failed" in result.output
+   304→    """Test error when branch has no PR."""
+   326→    """Test error when on detached HEAD."""
+   474→def test_pr_check_reports_multiple_failures(tmp_path: Path) -&gt; None:
+   475→    """Test that multiple failures are counted correctly."""
+   543→        assert "2 checks failed" in result.output
+  </tool_result>
+  <thinking>Now I have a complete picture. The `cp` commit deleted the impl-context folder which had a plan for what this PR should do. The plan was to:
+
+1. Add `--stage=impl` option to `erk pr check` (with `click.Choice(["impl"])`)
+2. Add `PrCheck` NamedTuple to replace `tuple[bool, str]`
+3. When `stage == "impl"`, add the impl-context check
+4. Remove `pr_check_complete.py` from exec scripts
+5. Add 3 new tests to `tests/commands/pr/test_check.py`
+
+
+6. Update `plan-implement.md:343` to use `erk pr check --stage=impl` and fix the description on line 346
+
+I also need to address the bot comments that were on `pr_check_complete.py` but apply to `check_cmd.py` as well: use the `PrCheck` NamedTuple (which the plan already covers), switch from try/except to LBYL checks in the command file, and extract the `local_config.plans_repo` conditional logic.
+
+So I'm refactoring `check_cmd.py` to define a `PrCheck` NamedTuple with `passed` and `description` fields, adding the `--stage=impl` option to trigger impl-context validation, replacing exception handling with explicit checks for the plan-ref lookup, extracting the plans repo conditional, and updating all the check iterations to use the new structure. I'm also removing the `pr_check_complete` import and command registration from `group.py`, then updating the documentation to call the new command instead.
+
+Now I need to update the description text and add three tests to cover the impl-context check scenarios, then delete the old `pr_check_complete.py` script and its tests. Looking at what those existing tests cover, I should migrate the impl-context validation tests that check for passing when the context is cleaned up, failing when it's present, and passing when it's absent. I'm identifying which test cases from `test_pr_check_complete.py` are unique and need to be migrated to the new test file, focusing on the three tests that specifically validate the impl-context behavior. Now I'm ready to start writing the implementation code for `check_cmd.py`... Writing the complete command implementation... I'm setting up a CLI command that validates pull request rules for the current branch, checking things like issue closing references, checkout footers, and metadata positioning, with an optional stage flag to also verify cleanup of implementation context files. I'm checking if the `.erk/impl-context/` directory exists during the impl stage—if it does, that's a validation failure since it should be cleaned up before submission. Then I'm extracting the issue number from the branch name and reading the plan reference to compare them for agreement.
+
+Now I'm validating that the branch issue and plan reference match, and if they don't, I'm flagging that as a check failure with details about the mismatch. If they do agree or if only one exists, I'm using whichever issue number is available and marking that check as passed.
+
+Next, I need to verify the PR body contains a proper issue closing reference. If the plan is a draft PR, that's not required, but otherwise I'm checking whether the expected issue number appears in the PR description, accounting for whether there's a configured plans repository.
+
+Then I'm validating that the PR body includes the checkout footer.
+
+Next, I'm extracting the header from the PR body and checking whether it's positioned correctly—if it's at the legacy top position, that's a failure, otherwise it passes. Finally, I'm iterating through all the checks and displaying them with color-coded status indicators.
+
+Now I need to tally up the failed checks and output the final result, exiting with code 0 if everything passed or code 1 if there were failures. But I should double-check that my LBYL implementation matches what the existing test expects—let me look at that test case to make sure the output aligns. I'm noticing a mismatch in how the branch issue is formatted—the test expects "P42" but my code is only outputting the numeric value 42. I need to check the original error message format to see if it prefixes the issue number with "P" to match what the test is asserting. in the error message itself—the "P42" actually appears in the output header line that shows which branch is being checked. So the assertion passes because "P42" is present in the overall output, even though the error message only contains the numeric issue ID.
+
+This means my LBYL approach should match the original behavior for this test. Let me also verify the exact error message format—when there's a mismatch between the branch issue number and the plan reference, it raises a ValueError describing the disagreement between the extracted branch issue and the plan ID from the config. I need to update the imports in `check_cmd.py` — removing `validate_plan_linkage` and adding `extract_leading_issue_number` from `erk_shared.naming`, plus `Path` from `pathlib` for checking the `impl_context_dir`. I've confirmed that `extract_leading_issue_number` is already available in `erk_shared.naming` since it's used in `impl_folder.py`, so I can proceed with the refactoring.
+
+Now I'm working through how `issue_number` gets assigned in both the success and fallback paths — in the original code it's set from `plan_id` when validation succeeds, or from `plan_ref_fallback.plan_id` in the except block, and I need to make sure my LBYL approach handles both cases correctly. the function after being set. Let me trace through the original code to see how `issue_number` is actually used — it looks like it's set during validation but then referenced later when building the checks list, so I need to make sure the fallback logic properly preserves that value for downstream use. I'm seeing that `issue_number` gets set in multiple places within the try-except block—first when `validate_plan_linkage` succeeds, then again in the fallback when reading the plan reference—but then it's used in Check 2 which reads `plan_ref` fresh from disk rather than relying on the previously computed `issue_number`. This suggests the variable might be redundant or there's a disconnect in how the checks are structured. Looking at both files, `issue_number` is actually used within the same block where it's set—it gets formatted into the success message—so it's not dead code after all, just locally scoped.
+
+For the `plans_repo` type annotation, I need to trace what `ctx.local_config` actually is to determine the correct type for `plans_repo`, which means checking the `ErkContext` definition.
+
+I should make sure `issue_number` stays in the LBYL version since it's used in the success message, and I've confirmed the type is consistently `int` whether it comes from `branch_issue` or `int(impl_plan_id)`.
+
+Now I'm ready to write out the refactored code. I'm walking through all five cases of the issue_number logic to verify the behavior is correct—when both sources agree or disagree, when only one is present, and when neither exists. The key insight is that cases 1, 3, and 4 result in a passing check with a valid issue number, case 2 fails with a mismatch, and case 5 skips the check entirely since there's nothing to validate. This preserves the original logic.
+
+Now I'm ready to implement the actual code changes. I've verified all the cases handle correctly. Now I'm going to write out the files systematically. I should check the description format in the original `check_cmd.py` — it uses tuples, but I'm switching to a `PrCheck` named tuple instead. Looking at the existing tests, they expect output like `"[PASS] PR body contains issue closing reference"`, and my new version needs to maintain that same format with the status and description. I've verified the output format stays consistent since I'm using the same description field from the `PrCheck` object. Now I need to write out the full implementation, and I should double-check the imports—I don't need to add `Path` since `repo_root` is already a `Path` object from the git context, so path operations will work directly without an explicit import.
+
+Writing the implementation...</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="13684" cache_read_input_tokens="99987" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13684}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have the full picture. The `cp` commit deleted the `.erk/impl-context/` plan that contained the design for this PR. The plan was clear: add `--stage=impl` flag to `erk pr check`, remove `erk exec pr-check-complete`. Let me implement that now.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="13684" cache_read_input_tokens="99987" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13684}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01VDmNjkKhHoo1g76tCsy4Zq">
+    <param name="subject">Implement erk pr check --stage=impl migration</param>
+    <param name="description">Based on the deleted impl-context plan: add --stage=impl to check_cmd.py, remove pr_check_complete exec script, update plan-implement.md, add tests, fix LBYL and PrCheck NamedTuple</param>
+    <param name="activeForm">Implementing pr check migration</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="13684" cache_read_input_tokens="99987" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13684}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VDmNjkKhHoo1g76tCsy4Zq">
+Task #1 created successfully: Implement erk pr check --stage=impl migration
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01H42q1HtaWhr9nTByDKrbwM">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8089" cache_read_input_tokens="113671" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8089}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01H42q1HtaWhr9nTByDKrbwM">
+Updated task #1 status
+  </tool_result>
+  <assistant>Now let me make all the changes. Starting with the main file `check_cmd.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="121760" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01CBc6H6GNRSPMkUmcyjycn3">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557/src/erk/cli/commands/pr/check_cmd.py</param>
+    <param name="content">"""Command to validate PR rules for the current branch."""
+
+from typing import NamedTuple
+...[truncated 6509 chars]...click.style(f"{failed_count} {check_word} failed", fg="red"))
+        raise SystemExit(1)
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="121760" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CBc6H6GNRSPMkUmcyjycn3">
+The file /Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557/src/erk/cli/commands/pr/check_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `plan-implement.md`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2095" cache_read_input_tokens="121850" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2095}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01CFA8cMPG4n5BPSGmDZgovu">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557/.claude/commands/erk/plan-implement.md</param>
+    <param name="old_string">```bash
+erk exec pr-check-complete
+```
+
+This checks all `erk pr check` invariants plus imp...[truncated 12 chars]...., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.</param>
+    <param name="new_string">```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including im...[truncated 13 chars]...., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2095" cache_read_input_tokens="121850" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2095}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CFA8cMPG4n5BPSGmDZgovu">
+The file /Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557/.claude/commands/erk/plan-implement.md has been updated successfully.
+  </tool_result>
+  <assistant>Now remove `pr_check_complete` from `group.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="348" cache_read_input_tokens="123945" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 348}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GVWySYdrC7W13AfN1DUqSw">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557/src/erk/cli/commands/exec/group.py</param>
+    <param name="old_string">from erk.cli.commands.exec.scripts.pr_check_complete import pr_check_complete
+from erk.cli.commands.exec.scripts.pr_sync_commit import pr_sync_commit</param>
+    <param name="new_string">from erk.cli.commands.exec.scripts.pr_sync_commit import pr_sync_commit</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="348" cache_read_input_tokens="123945" output_tokens="226" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 348, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GVWySYdrC7W13AfN1DUqSw">
+The file /Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557/src/erk/cli/commands/exec/group.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Sa3iL64noCxbrs1ASHRRgH">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557/src/erk/cli/commands/exec/group.py</param>
+    <param name="old_string">exec_group.add_command(pr_check_complete, name="pr-check-complete")
+exec_group.add_command(pr_sync_commit, name="pr-sync-commit")</param>
+    <param name="new_string">exec_group.add_command(pr_sync_commit, name="pr-sync-commit")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3551" cache_read_input_tokens="124293" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3551}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Sa3iL64noCxbrs1ASHRRgH">
+The file /Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557/src/erk/cli/commands/exec/group.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the 3 new `--stage=impl` tests to `test_check.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="296" cache_read_input_tokens="127844" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 296}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0117RYc1LCsXhPQ8ihKqvyFE">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557/tests/commands/pr/test_check.py</param>
+    <param name="offset">858</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="296" cache_read_input_tokens="127844" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 296}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0117RYc1LCsXhPQ8ihKqvyFE">
+   858→def test_pr_check_fails_with_legacy_top_header(tmp_path: Path) -&gt; None:
+   859→    """Test PR with header at top (legacy format) fails header position check."""
+   860→    runner = CliRunner()
+   861→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+   862→        env.setup_repo_structure()
+   863→
+   864→        # PR body with header at top (legacy format)
+   865→        pr_body = (
+   866→            "**Plan:** #456\n\n"
+   867→            "## Summary\nThis PR adds a feature.\n\n"
+   868→            "---\n\n"
+   869→            "Closes #456\n\n"
+   870→            "To checkout this PR in a fresh worktree and environment locally, run:\n\n"
+   871→            "```\nerk pr checkout 123\n```\n"
+   872→        )
+   873→        pr_details = PRDetails(
+   874→            number=123,
+   875→            url="https://github.com/owner/repo/pull/123",
+   876→            title="Add feature",
+   877→            body=pr_body,
+   878→            state="OPEN",
+   879→            is_draft=False,
+   880→            base_ref_name="main",
+   881→            head_ref_name="feature-branch",
+   882→            is_cross_repository=False,
+   883→            mergeable="MERGEABLE",
+   884→            merge_state_status="CLEAN",
+   885→            owner="owner",
+   886→            repo="repo",
+   887→        )
+
+... [35 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019dRi8XyauVn3RV91PfUd3X">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557/tests/commands/pr/test_check.py</param>
+    <param name="old_string">        assert "[FAIL] Plan-header metadata is at legacy top position" in result.output
+        assert "should be above footer" in result.output
+</param>
+    <param name="new_string">        assert "[FAIL] Plan-header metadata is at legacy top position" in result.output
+  ...[truncated 7068 chars]...ins checkout footer" in result.output
+        assert "All checks passed" in result.output
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1030" cache_read_input_tokens="128140" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1030}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019dRi8XyauVn3RV91PfUd3X">
+The file /Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557/tests/commands/pr/test_check.py has been updated successfully.
+  </tool_result>
+  <thinking>Now I need to delete `pr_check_complete.py` and `test_pr_check_complete.py`. Let me do that.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2470" cache_read_input_tokens="129170" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2470}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now delete the exec script and its tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2470" cache_read_input_tokens="129170" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2470}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016zWasr9JuFVQepqrR6SwVA">
+    <param name="command">rm /Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557/src/erk...[truncated 104 chars]...2-23-1557/tests/unit/cli/commands/exec/scripts/test_pr_check_complete.py &amp;&amp; echo "deleted"</param>
+    <param name="description">Delete pr_check_complete.py and its test file</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2470" cache_read_input_tokens="129170" output_tokens="260" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2470, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016zWasr9JuFVQepqrR6SwVA">
+deleted
+  </tool_result>
+  <assistant>Now let's run CI to check everything passes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="273" cache_read_input_tokens="131640" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 273}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_015Q2qQW8ELkJ1yWca8a21sY">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run PR check tests</param>
+    <param name="prompt">Run the following commands and report all output:
+1. `uv run pytest tests/commands/pr/test...[truncated 245 chars]...md.py` in the same directory
+
+Report all output including pass/fail counts and any errors.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="273" cache_read_input_tokens="131640" output_tokens="259" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 273, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015Q2qQW8ELkJ1yWca8a21sY">
+## Summary of Results
+
+**1. pytest: PASSED**
+- 17 tests passed in 0.60s
+- File: `/Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557/tests/commands/pr/test_check.py`
+
+**2. ruff check: FAILED**
+- 3 line-length errors found
+- File: `/Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557/src/erk/cli/commands/pr/check_cmd.py`
+
+Errors:
+- Line 84: E501 - Line too long (105 &gt; 100 characters)
+  - `.erk/impl-context/ still present (should be removed before submission)`
+- Line 164: E501 - Line too long (106 &gt; 100 characters)
+  - `Plan-header metadata is at legacy top position (should be above footer)`
+- Line 174: E501 - Line too long (103 &gt; 100 characters)
+  - `status = click.style("[PASS]", fg="green") if check.passed else click.style("[FAIL]", fg="red")`
+
+**3. ty (type checker): PASSED**
+- All checks passed
+- File: `/Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557/src/erk/cli/commands/pr/check_cmd.py`
+agentId: a497e980aed01bf0d (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 15307
+tool_uses: 4
+duration_ms: 11472&lt;/usage&gt;
+  </tool_result>
+  <thinking>I have 3 line-length issues. Let me fix them in check_cmd.py. The lines are:
+1. Line 84: `.erk/impl-context/ still present (should be removed before submission)` - too long
+2. Line 164: `Plan-header metadata is at legacy top position (should be above footer)` - too long
+3. Line 174: `status = click.style("[PASS]", fg="green") if check.passed else click.style("[FAIL]", fg="red")` - too long
+
+Let me look at the exact lines to fix them.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="707" cache_read_input_tokens="131913" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 707}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Need to fix 3 line-length issues:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="707" cache_read_input_tokens="131913" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 707}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017cq4qU4qmm8GsazGcxraZo">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557/src/erk/cli/commands/pr/check_cmd.py</param>
+    <param name="offset">78</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="707" cache_read_input_tokens="131913" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 707}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017cq4qU4qmm8GsazGcxraZo">
+    78→    if stage == "impl":
+    79→        impl_context_dir = repo_root / ".erk" / "impl-context"
+    80→        if impl_context_dir.exists():
+    81→            checks.append(
+    82→                PrCheck(
+    83→                    passed=False,
+    84→                    description=".erk/impl-context/ still present (should be removed before submission)",
+    85→                )
+    86→            )
+    87→        else:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_019tVEcnrkND1yBP6WWmW1B4">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557/src/erk/cli/commands/pr/check_cmd.py</param>
+    <param name="offset">158</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="513" cache_read_input_tokens="132620" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 513}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019tVEcnrkND1yBP6WWmW1B4">
+   158→    header = extract_header_from_body(pr_body)
+   159→    if header:
+   160→        if is_header_at_legacy_position(pr_body):
+   161→            checks.append(
+   162→                PrCheck(
+   163→                    passed=False,
+   164→                    description="Plan-header metadata is at legacy top position (should be above footer)",
+   165→                )
+   166→            )
+   167→        else:
+   168→            checks.append(
+   169→                PrCheck(passed=True, description="Plan-header metadata is at correct position")
+   170→            )
+   171→
+   172→    # Output results
+   173→    for check in checks:
+   174→        status = click.style("[PASS]", fg="green") if check.passed else click.style("[FAIL]", fg="red")
+   175→        user_output(f"{status} {check.description}")
+   176→
+   177→    user_output("")
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01LKFDTcNAJ1JLCf88ZL6dtc">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557/src/erk/cli/commands/pr/check_cmd.py</param>
+    <param name="old_string">                    description=".erk/impl-context/ still present (should be removed before submission)",</param>
+    <param name="new_string">                    description=(
+                        ".erk/impl-context/ still present"
+                        " (should be removed before submission)"
+                    ),</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="476" cache_read_input_tokens="133133" output_tokens="196" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 476, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LKFDTcNAJ1JLCf88ZL6dtc">
+The file /Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557/src/erk/cli/commands/pr/check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01VdNN7VP1iMeBKnFf3C4zSg">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557/src/erk/cli/commands/pr/check_cmd.py</param>
+    <param name="old_string">                    description="Plan-header metadata is at legacy top position (should be above footer)",</param>
+    <param name="new_string">                    description=(
+                        "Plan-header metadata is at legacy top position"
+                        " (should be above footer)"
+                    ),</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="287" cache_read_input_tokens="133609" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 287}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VdNN7VP1iMeBKnFf3C4zSg">
+The file /Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557/src/erk/cli/commands/pr/check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JGE1SU3GqoFMmGEXixqdkz">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557/src/erk/cli/commands/pr/check_cmd.py</param>
+    <param name="old_string">        status = click.style("[PASS]", fg="green") if check.passed else click.style("[FAIL]", fg="red")</param>
+    <param name="new_string">        status = (
+            click.style("[PASS]", fg="green") if check.passed else click.style("[FAIL]", fg="red")
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="284" cache_read_input_tokens="133896" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 284}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JGE1SU3GqoFMmGEXixqdkz">
+The file /Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-check-stage-02-23-1557/src/erk/cli/commands/pr/check_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Also need to fix the test output string to match the new split description. Let me check what the tests assert:
+
+The tests assert `"[FAIL] .erk/impl-context/ still present"` and `"should be removed before submission"` separately - which will still match since the output line will be `[FAIL] .erk/impl-context/ still present (should be removed before submission)`. The PrCheck description is just split in the source code but concatenated at runtime. Good.
+
+Now run CI again:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="441" cache_read_input_tokens="134180" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 441}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01HyYjXfpCx4dUV5F9avjAte">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run full CI checks</param>
+    <param name="prompt">Run the following commands in /Users/schrockn/.erk/repos/erk/worktrees/plnd/migrate-pr-che...[truncated 222 chars]...` (verify no broken imports)
+
+Report all output including pass/fail counts and any errors.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="441" cache_read_input_tokens="134180" output_tokens="359" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 441, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HyYjXfpCx4dUV5F9avjAte">
+## Summary
+
+All three commands passed successfully:
+
+**1. ruff check** (linting)
+- ruff passed: All checks passed!
+- Files checked: `src/erk/cli/commands/pr/check_cmd.py` and `src/erk/cli/commands/exec/group.py`
+
+**2. pytest tests/commands/pr/test_check.py** (PR check tests)
+- pytest passed: 17 passed in 0.61s
+
+**3. pytest tests/unit/cli/commands/exec/** (exec commands unit tests - verify no broken imports)
+- pytest passed: 1027 passed in 3.93s
+- No import errors detected
+
+All tests pass and code quality checks are clean. No issues to report.
+agentId: a6d3bc8752a1cf52e (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 17502
+tool_uses: 3
+duration_ms: 12414&lt;/usage&gt;
+  </tool_result>
+  <assistant>All green. Now commit and resolve threads. Let me create the commit:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="600" cache_read_input_tokens="134621" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 600}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
