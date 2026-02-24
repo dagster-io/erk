@@ -203,10 +203,9 @@ class PlanBackend(PlanStore):
             msg = f"Plan {plan_id} not found"
             raise RuntimeError(msg)
 
-        hf = plan.header_fields
-        planning_session_id = header_str(hf, CREATED_FROM_SESSION)
-        metadata_impl_session = header_str(hf, LAST_LOCAL_IMPL_SESSION)
-        metadata_learn_session = header_str(hf, LAST_LEARN_SESSION)
+        planning_session_id = header_str(plan.header_fields, CREATED_FROM_SESSION)
+        metadata_impl_session = header_str(plan.header_fields, LAST_LOCAL_IMPL_SESSION)
+        metadata_learn_session = header_str(plan.header_fields, LAST_LEARN_SESSION)
 
         comments = self.get_comments(repo_root, plan_id)
         comment_impl_sessions = extract_implementation_sessions(comments)
@@ -238,12 +237,12 @@ class PlanBackend(PlanStore):
             planning_session_id=planning_session_id,
             implementation_session_ids=implementation_session_ids,
             learn_session_ids=learn_session_ids,
-            last_remote_impl_at=header_str(hf, LAST_REMOTE_IMPL_AT),
-            last_remote_impl_run_id=header_str(hf, LAST_REMOTE_IMPL_RUN_ID),
-            last_remote_impl_session_id=header_str(hf, LAST_REMOTE_IMPL_SESSION_ID),
-            last_session_branch=header_str(hf, LAST_SESSION_BRANCH),
-            last_session_id=header_str(hf, LAST_SESSION_ID),
-            last_session_source=header_str(hf, LAST_SESSION_SOURCE),
+            last_remote_impl_at=header_str(plan.header_fields, LAST_REMOTE_IMPL_AT),
+            last_remote_impl_run_id=header_str(plan.header_fields, LAST_REMOTE_IMPL_RUN_ID),
+            last_remote_impl_session_id=header_str(plan.header_fields, LAST_REMOTE_IMPL_SESSION_ID),
+            last_session_branch=header_str(plan.header_fields, LAST_SESSION_BRANCH),
+            last_session_id=header_str(plan.header_fields, LAST_SESSION_ID),
+            last_session_source=header_str(plan.header_fields, LAST_SESSION_SOURCE),
         )
 
     # Branch → Plan resolution
