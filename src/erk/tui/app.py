@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import subprocess
 import time
 from collections.abc import Callable, Iterator
 from datetime import datetime
@@ -535,6 +536,38 @@ class ErkDashApp(App):
                 timeout=5,
             )
 
+    @work(thread=True)
+    def _address_remote_async(self, pr_number: int) -> None:
+        """Dispatch address-remote workflow in background thread with toast."""
+        try:
+            result = subprocess.run(
+                ["erk", "launch", "pr-address", "--pr", str(pr_number), "--no-wait"],
+                capture_output=True,
+                text=True,
+                check=False,
+                stdin=subprocess.DEVNULL,
+                cwd=str(self._provider.repo_root),
+            )
+            if result.returncode == 0:
+                self.call_from_thread(
+                    self.notify, f"Dispatched address for PR #{pr_number}", timeout=3
+                )
+            else:
+                error_msg = result.stderr.strip() or result.stdout.strip() or "Unknown error"
+                self.call_from_thread(
+                    self.notify,
+                    f"Failed to dispatch address for PR #{pr_number}: {error_msg}",
+                    severity="error",
+                    timeout=5,
+                )
+        except Exception as e:
+            self.call_from_thread(
+                self.notify,
+                f"Failed to dispatch address for PR #{pr_number}: {e}",
+                severity="error",
+                timeout=5,
+            )
+
     def _push_streaming_detail(
         self,
         *,
@@ -917,29 +950,8 @@ class ErkDashApp(App):
 
         elif command_id == "address_remote":
             if row.pr_number:
-                executor = RealCommandExecutor(
-                    browser_launch=self._provider.browser.launch,
-                    clipboard_copy=self._provider.clipboard.copy,
-                    close_plan_fn=self._provider.close_plan,
-                    notify_fn=self._notify_with_severity,
-                    refresh_fn=self.action_refresh,
-                    submit_to_queue_fn=self._provider.submit_to_queue,
-                )
-                detail_screen = PlanDetailScreen(
-                    row=row,
-                    clipboard=self._provider.clipboard,
-                    browser=self._provider.browser,
-                    executor=executor,
-                    repo_root=self._provider.repo_root,
-                )
-                self.push_screen(detail_screen)
-                detail_screen.call_after_refresh(
-                    lambda: detail_screen.run_streaming_command(
-                        ["erk", "launch", "pr-address", "--pr", str(row.pr_number), "--no-wait"],
-                        cwd=self._provider.repo_root,
-                        title=f"Address Remote PR #{row.pr_number}",
-                    )
-                )
+                self.notify(f"Dispatching address for PR #{row.pr_number}...")
+                self._address_remote_async(row.pr_number)
 
         elif command_id == "close_plan":
             if row.plan_url:
