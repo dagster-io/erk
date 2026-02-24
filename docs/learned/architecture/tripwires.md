@@ -28,6 +28,8 @@ Rules triggered by matching actions in code.
 
 **adding a Claude subprocess call with --print mode** → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Always include --no-session-persistence flag and use env=build_claude_subprocess_env() parameter. Both are required to prevent session persistence and CLAUDECODE context leakage. See the 'Claude Subprocess Environment' section.
 
+**adding a field to GlobalConfig without updating the test factory** → Read [GlobalConfig Field Addition Checklist](globalconfig-field-addition.md) first. Update GlobalConfig.test() factory method with the new parameter. Tests using GlobalConfig.test() will silently use Python's default value, which may not match production behavior.
+
 **adding a field to PullRequestInfo in types.py** → Read [GitHub Interface Patterns](github-interface-patterns.md) first. Must update all three parsers in real.py: \_parse_pr_from_timeline_event(), list_prs(), and \_parse_plan_prs_with_details(). See PullRequestInfo Field Addition Protocol in this doc.
 
 **adding a field to a GraphQL query that uses ISSUE_PR_LINKAGE_FRAGMENT** → Read [GitHub Interface Patterns](github-interface-patterns.md) first. Check GET_PLAN_PRS_WITH_DETAILS_QUERY for divergence. Both queries fetch PR fields but are defined separately in graphql_queries.py. A field in one but not the other causes None values in some code paths.
@@ -41,6 +43,8 @@ Rules triggered by matching actions in code.
 **adding a new method to GitHub ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py.
 
 **adding a new method to Graphite ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py.
+
+**adding a new setup path to a command with existing cleanup** → Read [Convergence Points Architecture](convergence-points.md) first. Ensure the new path calls the same convergence function. Multiple setup paths must converge at a single cleanup point to prevent resource leaks.
 
 **adding a parameter to an erk exec script without updating the calling slash command** → Read [Parameter Threading Pattern](parameter-threading-pattern.md) first. 3-layer parameter threading: When adding a parameter, update all three layers: skill SKILL.md argument-hint, slash command .md, and erk exec script. Verify all invocations thread the parameter through.
 
@@ -69,6 +73,8 @@ Rules triggered by matching actions in code.
 **assuming GitHub API failures are transient without repository-specific testing** → Read [GitHub API Diagnostics](github-api-diagnostics.md) first. Test with a control repository first. Some GitHub bugs affect specific repos but not others. Follow the 3-step diagnostic methodology.
 
 **assuming cursor position will persist across DataTable.clear() calls** → Read [Selection Preservation by Value](selection-preservation-by-value.md) first. Save cursor position by row key before clear(), restore after repopulating. See textual/quirks.md for pattern.
+
+**auto-enabling a flag without informing the user** → Read [Derived Flags Pattern](derived-flags.md) first. When deriving a flag from auto-detection, always print a dim-styled informational message explaining why the behavior was activated. Users should never be surprised by automatic actions.
 
 **calling GraphiteBranchManager.create_branch() without explicit checkout** → Read [Erk Architecture Patterns](erk-architecture.md) first. GraphiteBranchManager.create_branch() restores the original branch after tracking. Always call branch_manager.checkout_branch() afterward if you need to be on the new branch.
 

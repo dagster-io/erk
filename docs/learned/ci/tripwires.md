@@ -72,6 +72,8 @@ Rules triggered by matching actions in code.
 
 **placing test files outside both tests/ and packages/\*/tests/ directories** → Read [Test Coverage Detection](test-coverage-detection.md) first. The test-coverage-review bot only searches tests/**/ and packages/\*/tests/**/ for corresponding test files. Tests placed elsewhere will not be detected and will cause false 'no tests' flags.
 
+**pushing code without running formatters locally first** → Read [Formatting Workflow Decision Tree](formatting-workflow.md) first. Format-then-commit: run ruff format (Python) and prettier (Markdown) locally and commit the formatted output BEFORE pushing. CI format checks verify but do not auto-fix. Pushing unformatted code requires a second commit to fix.
+
 **reading statusCheckRollup results immediately after push** → Read [CI Iteration Pattern with devrun Agent](ci-iteration.md) first. After push, results show completed runs only, not in-progress. Wait for new check suite to appear before reading CI status.
 
 **resolving git rebase modify/delete conflicts using merge-style terminology** → Read [erk-impl Workflow Patterns](plan-implement-workflow-patterns.md) first. In rebase, 'them' = upstream (opposite to merge). For modify/delete conflicts where the file was deleted upstream, use `git rm <file>` on the conflicted staged files, then `git rebase --continue`. Do not use `git checkout --theirs` which has inverted semantics during rebase.

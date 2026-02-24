@@ -7,6 +7,9 @@ read_when:
 tripwires:
   - action: "writing plan storage tests that parametrize across both backends"
     warning: "After PR #7971 (objective #7911 node 1.1), only the 'planned_pr' backend is active. New plan-related tests should use create_plan_store(backend='planned_pr') directly rather than parametrizing across both backends. The 'github' path is dead code pending removal."
+  - action: "using isinstance() to detect plan backend type in application code"
+    warning: "Use plan_backend.get_provider_name() for backend-conditional logic (returns 'github-draft-pr' or 'github'). isinstance checks couple to implementation classes. The provider name string is the stable API."
+    score: 7
 ---
 
 # Plan Storage Testing

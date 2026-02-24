@@ -26,7 +26,9 @@
 - **[composable-remote-commands.md](composable-remote-commands.md)** — adding a new remote command to run on codespaces, implementing erk codespace run subcommands, working with streaming remote execution
 - **[context-efficiency.md](context-efficiency.md)** — orchestrating multi-agent workflows, parent agent reading large agent output via TaskOutput, designing agent output routing to minimize context usage
 - **[context-injection-tiers.md](context-injection-tiers.md)** — designing a new hook or reminder system, understanding how coding standard reminders work, deciding where to inject context for agent compliance, choosing between ambient, per-prompt, and just-in-time injection
+- **[convergence-points.md](convergence-points.md)** — refactoring a command with multiple setup paths that share cleanup, adding a new entry path to an existing multi-path command, debugging cleanup that runs for some paths but not others
 - **[defense-in-depth-enforcement.md](defense-in-depth-enforcement.md)** — designing multi-layer validation or enforcement systems, implementing critical rules across multiple components, understanding why erk uses redundant enforcement mechanisms
+- **[derived-flags.md](derived-flags.md)** — combining a user-provided flag with automatic detection, adding auto-behavior that should be transparent to the user, implementing --force auto-detection for plan implementations
 - **[discriminated-union-error-handling.md](discriminated-union-error-handling.md)** — designing return types for operations that may fail, implementing T | ErrorType patterns, handling errors without exceptions
 - **[erk-architecture.md](erk-architecture.md)** — understanding erk architecture, implementing dry-run patterns, regenerating context after os.chdir, detecting root worktree, detecting worktree location, adding composing template methods to ABC
 - **[erk-shared-package.md](erk-shared-package.md)** — deciding where to put new utilities, moving code between packages
@@ -60,6 +62,7 @@
 - **[github-issue-autoclose.md](github-issue-autoclose.md)** — implementing PR-to-issue linking, debugging why issues didn't auto-close after PR merge, understanding closing keyword behavior, working with plan issue closure detection
 - **[github-parsing.md](github-parsing.md)** — parsing GitHub URLs, extracting PR or issue numbers from URLs, understanding github parsing layers
 - **[github-pr-linkage-api.md](github-pr-linkage-api.md)** — querying PRs linked to an issue, understanding how GitHub tracks issue-PR relationships, debugging why a PR doesn't show as linked to an issue, working with CrossReferencedEvent or closingIssuesReferences
+- **[globalconfig-field-addition.md](globalconfig-field-addition.md)** — adding a new field to GlobalConfig, extending erk's global configuration, adding a user-configurable setting to ~/.erk/config.toml
 - **[graphite-cache-invalidation.md](graphite-cache-invalidation.md)** — implementing mtime-based cache invalidation, caching Graphite branch metadata, optimizing repeated calls to git or graphite operations
 - **[hook-marker-detection.md](hook-marker-detection.md)** — Adding a new hook managed by erk, Implementing version detection for artifacts, Understanding how hook updates work
 - **[impl-folder-lifecycle.md](impl-folder-lifecycle.md)** — working with .impl/ or .erk/impl-context/ folders, understanding remote implementation workflow, debugging plan visibility in PRs

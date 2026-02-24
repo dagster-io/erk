@@ -29,7 +29,9 @@ The prefix is applied in three places, each serving a different submission flow:
 
 ## Idempotency Pattern
 
-All three implementations check `title.startswith(PLANNED_PR_TITLE_PREFIX)` before applying, making the prefix application idempotent. This prevents double-prefixing when a PR title is rewritten or resubmitted.
+The two Python implementations (`_add_planned_prefix()` in `submit.py` and `submit_pipeline.py`) check `title.startswith(PLANNED_PR_TITLE_PREFIX)` before applying, making the prefix application idempotent. This prevents double-prefixing when a PR title is rewritten or resubmitted.
+
+**Exception:** The slash command `.claude/commands/erk/git-pr-push.md` blindly prepends `plnd/` without checking for an existing prefix. If the command is run twice on the same PR, it will produce `plnd/plnd/...`. This is acceptable because the slash command is only invoked once per PR lifecycle (during initial PR creation), not during resubmission flows.
 
 ## Intentional Duplication
 

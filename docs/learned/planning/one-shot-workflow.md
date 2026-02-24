@@ -43,9 +43,20 @@ Two CLI commands trigger the pipeline:
 
 Both converge on `dispatch_one_shot()` in `src/erk/cli/commands/one_shot_dispatch.py`.
 
+## Backend-Specific Behavior
+
+One-shot dispatch uses the configured plan backend via `ctx.plan_backend.get_provider_name()`. Since the backend is now hardcoded to `"planned_pr"` (PlannedPRBackend), all one-shot dispatches create draft PRs:
+
+| Backend          | Provider Name     | Creates               | Branch Format                       |
+| ---------------- | ----------------- | --------------------- | ----------------------------------- |
+| PlannedPRBackend | `github-draft-pr` | Skeleton draft PR     | `plnd/{slug}-{MM-DD-HHMM}`          |
+| GitHubPlanStore  | `github` (legacy) | Skeleton GitHub issue | `P{N}-{slug}-{MM-DD-HHMM}` (legacy) |
+
+The dispatch code detects the backend dynamically (`is_planned_pr = backend_name == "github-draft-pr"`) and conditionally branches for PR creation vs issue creation. Since the backend is always `planned_pr`, the issue-based path is effectively dead code.
+
 ## Skeleton Plan Issue Pattern
 
-The dispatch function creates a **skeleton plan issue** before generating the branch name. This ordering is critical because it enables `P<N>-` branch naming:
+The dispatch function creates a **skeleton plan** before generating the branch name. This ordering is critical because it enables the `P<N>-` or `plnd/` branch naming:
 
 1. `create_plan_issue()` creates a skeleton with placeholder content
 2. `generate_branch_name()` uses the issue number for the `P{N}-` prefix
