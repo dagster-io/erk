@@ -56,6 +56,7 @@ from erk.core.worktree_pool import (
     SlotAssignment,
     load_pool_state,
 )
+from erk.core.worktree_utils import is_root_worktree
 from erk_shared.gateway.console.real import InteractiveConsole
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.output.output import machine_output, user_output
@@ -121,6 +122,7 @@ class CleanupType(Enum):
     SLOT_ASSIGNED = auto()
     SLOT_UNASSIGNED = auto()
     NON_SLOT = auto()
+    ROOT_WORKTREE = auto()
 
 
 @dataclass(frozen=True)
@@ -142,6 +144,7 @@ def determine_cleanup_type(
     worktree_path: Path | None,
     pool_json_path: Path,
     branch: str,
+    repo_root: Path,
 ) -> ResolvedCleanup:
     """Classify the cleanup scenario for a landed branch.
 
@@ -179,6 +182,13 @@ def determine_cleanup_type(
             assignment=None,
         )
 
+    if is_root_worktree(worktree_path, repo_root):
+        return ResolvedCleanup(
+            cleanup_type=CleanupType.ROOT_WORKTREE,
+            pool_state=state,
+            assignment=None,
+        )
+
     return ResolvedCleanup(
         cleanup_type=CleanupType.NON_SLOT,
         pool_state=state,
@@ -205,11 +215,13 @@ def _gather_cleanup_confirmation(
     if force or ctx.dry_run:
         return CleanupConfirmation(proceed=True)
 
+    main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
     resolved = determine_cleanup_type(
         no_delete=False,  # no_delete handled separately in _handle_no_delete
         worktree_path=target.worktree_path,
         pool_json_path=repo.pool_json_path,
         branch=target.branch,
+        repo_root=main_repo_root,
     )
 
     match resolved.cleanup_type:
@@ -234,6 +246,11 @@ def _gather_cleanup_confirmation(
             proceed = ctx.console.confirm(
                 f"After landing, release slot '{target.worktree_path.name}' "
                 f"and delete branch '{target.branch}'?",
+                default=True,
+            )
+        case CleanupType.ROOT_WORKTREE:
+            proceed = ctx.console.confirm(
+                f"After landing, delete branch '{target.branch}'?",
                 default=True,
             )
         case CleanupType.NON_SLOT:
@@ -803,6 +820,24 @@ def _cleanup_slot_without_assignment(
     )
     cleanup.ctx.branch_manager.delete_branch(cleanup.main_repo_root, cleanup.branch, force=True)
     user_output(click.style("✓", fg="green") + " Released slot and deleted branch")
+
+
+def _cleanup_root_worktree(cleanup: CleanupContext) -> None:
+    """Handle cleanup for root worktree: delete branch, skip worktree removal."""
+    assert cleanup.worktree_path is not None
+
+    if not cleanup.cleanup_confirmed:
+        user_output("Branch preserved.")
+        return
+
+    trunk = cleanup.ctx.git.branch.detect_trunk_branch(cleanup.main_repo_root)
+    cleanup.ctx.branch_manager.checkout_branch(cleanup.worktree_path, trunk)
+
+    _ensure_branch_not_checked_out(
+        cleanup.ctx, repo_root=cleanup.main_repo_root, branch=cleanup.branch
+    )
+    cleanup.ctx.branch_manager.delete_branch(cleanup.main_repo_root, cleanup.branch, force=True)
+    user_output(click.style("✓", fg="green") + " Deleted branch (root worktree preserved)")
 
 
 def _cleanup_non_slot_worktree(cleanup: CleanupContext) -> None:
@@ -1565,6 +1600,7 @@ def _cleanup_and_navigate(
         worktree_path=cleanup.worktree_path,
         pool_json_path=repo.pool_json_path,
         branch=branch,
+        repo_root=main_repo_root,
     )
 
     match resolved.cleanup_type:
@@ -1582,6 +1618,8 @@ def _cleanup_and_navigate(
         case CleanupType.SLOT_UNASSIGNED:
             assert cleanup.worktree_path is not None
             _cleanup_slot_without_assignment(cleanup, slot_name=cleanup.worktree_path.name)
+        case CleanupType.ROOT_WORKTREE:
+            _cleanup_root_worktree(cleanup)
         case CleanupType.NON_SLOT:
             _cleanup_non_slot_worktree(cleanup)
         case _:

@@ -25,6 +25,7 @@ class TestDetermineCleanupType:
             worktree_path=tmp_path / "erk-slot-01",
             pool_json_path=tmp_path / "pool.json",
             branch="feature-branch",
+            repo_root=tmp_path,
         )
         assert result.cleanup_type == CleanupType.NO_DELETE
         assert result.pool_state is None
@@ -36,6 +37,7 @@ class TestDetermineCleanupType:
             worktree_path=None,
             pool_json_path=tmp_path / "pool.json",
             branch="feature-branch",
+            repo_root=tmp_path,
         )
         assert result.cleanup_type == CleanupType.NO_WORKTREE
         assert result.pool_state is None
@@ -60,6 +62,7 @@ class TestDetermineCleanupType:
             worktree_path=tmp_path / "erk-slot-01",
             pool_json_path=pool_json,
             branch="feature-branch",
+            repo_root=tmp_path,
         )
         assert result.cleanup_type == CleanupType.SLOT_ASSIGNED
         assert result.pool_state is not None
@@ -76,6 +79,7 @@ class TestDetermineCleanupType:
             worktree_path=tmp_path / "erk-slot-01",
             pool_json_path=pool_json,
             branch="feature-branch",
+            repo_root=tmp_path,
         )
         assert result.cleanup_type == CleanupType.SLOT_UNASSIGNED
         assert result.assignment is None
@@ -90,6 +94,21 @@ class TestDetermineCleanupType:
             worktree_path=tmp_path / "my-feature-worktree",
             pool_json_path=pool_json,
             branch="feature-branch",
+            repo_root=tmp_path,
         )
         assert result.cleanup_type == CleanupType.NON_SLOT
         assert result.assignment is None
+
+    def test_root_worktree_returns_root_worktree(self, tmp_path: Path) -> None:
+        pool_json = tmp_path / "pool.json"
+        state = PoolState.test()
+        save_pool_state(pool_json, state)
+
+        result = determine_cleanup_type(
+            no_delete=False,
+            worktree_path=tmp_path,  # same as repo_root
+            pool_json_path=pool_json,
+            branch="feature-branch",
+            repo_root=tmp_path,
+        )
+        assert result.cleanup_type == CleanupType.ROOT_WORKTREE

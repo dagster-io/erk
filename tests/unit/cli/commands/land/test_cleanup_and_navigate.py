@@ -1257,6 +1257,103 @@ def test_cleanup_non_slot_worktree_preserves_both_when_not_confirmed(
     assert len(fake_git.chdir_history) == 0
 
 
+def test_cleanup_and_navigate_root_worktree_deletes_branch_preserves_worktree(
+    tmp_path: Path,
+) -> None:
+    """Test that root worktree cleanup deletes the branch but does NOT remove the worktree.
+
+    Regression test for bug where `erk land` crashes when run from the root worktree.
+    The root worktree is classified as NON_SLOT, so _cleanup_non_slot_worktree() tries
+    to call `git worktree remove --force` on it, which fails with
+    `fatal: '/path' is a main working tree`.
+
+    The fix adds a ROOT_WORKTREE cleanup type that checks out trunk, deletes the
+    branch, and skips worktree removal entirely.
+    """
+    # Use main_repo_root as both repo root and worktree path (simulating root worktree)
+    main_repo_root = tmp_path / "repo"
+    main_repo_root.mkdir(parents=True)
+    (main_repo_root / ".git").mkdir()
+    pool_json_path = main_repo_root / "pool.json"
+
+    empty_state = PoolState.test(assignments=())
+    save_pool_state(pool_json_path, empty_state)
+
+    fake_git = FakeGit(
+        worktrees={main_repo_root: [WorktreeInfo(path=main_repo_root, branch="feature-branch")]},
+        git_common_dirs={main_repo_root: main_repo_root / ".git"},
+        default_branches={main_repo_root: "main"},
+        local_branches={main_repo_root: ["main", "feature-branch"]},
+        existing_paths={
+            main_repo_root,
+            main_repo_root / ".git",
+            pool_json_path,
+        },
+    )
+
+    fake_graphite = FakeGraphite(
+        branches={
+            "feature-branch": BranchMetadata(
+                name="feature-branch",
+                parent="main",
+                children=[],
+                is_trunk=False,
+                commit_sha=None,
+            ),
+        },
+    )
+
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        cwd=main_repo_root,
+    )
+
+    repo = RepoContext(
+        root=main_repo_root,
+        repo_name="test-repo",
+        repo_dir=main_repo_root,
+        worktrees_dir=tmp_path / "worktrees",
+        pool_json_path=pool_json_path,
+        github=GitHubRepoId(owner="owner", repo="repo"),
+    )
+
+    try:
+        _cleanup_and_navigate(
+            ctx=ctx,
+            repo=repo,
+            branch="feature-branch",
+            worktree_path=main_repo_root,  # Same as repo root = root worktree
+            script=False,
+            pull_flag=False,
+            force=True,
+            is_current_branch=True,
+            target_child_branch=None,
+            no_delete=False,
+            skip_activation_output=True,
+            cleanup_confirmed=True,
+        )
+    except SystemExit:
+        pass  # Expected - function raises SystemExit(0) at end
+
+    # Verify branch was deleted
+    deleted_branches = [branch for _path, branch in fake_graphite.delete_branch_calls]
+    assert "feature-branch" in deleted_branches
+
+    # Verify trunk was checked out (root worktree can't be removed, so we checkout trunk)
+    checkout_calls = [
+        (path, branch) for path, branch in fake_git.checked_out_branches if branch == "main"
+    ]
+    assert len(checkout_calls) == 1, "Should have checked out trunk branch"
+    assert checkout_calls[0][0] == main_repo_root
+
+    # Verify worktree was NOT removed (root worktree can't be removed)
+    assert main_repo_root not in fake_git.removed_worktrees
+
+    # Verify safe_chdir was NOT called (no worktree removal means no need to escape)
+    assert len(fake_git.chdir_history) == 0
+
+
 def test_cleanup_non_slot_worktree_calls_safe_chdir_before_removal(
     tmp_path: Path,
 ) -> None:
