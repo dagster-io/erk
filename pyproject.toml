@@ -21,7 +21,7 @@ dependencies = [
     "erk-statusline",
     "packaging>=21.0",
     "pathspec>=0.12.0",
-    "pydantic>=2.0",
+    "pydantic>=2.10",
     "pyyaml>=6.0",
     "python-frontmatter>=1.0.0",
     "rich>=13.0",

@@ -1,0 +1,32 @@
+[project]
+name = "erk-slack-bot"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Colton Padden", email = "colton@dagsterlabs.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "erk>=0.7.4",
+    "pydantic>=2.10",
+    "pydantic-settings>=2.4.0",
+    "python-dotenv>=1.0.1",
+    "slack-bolt>=1.21.2",
+]
+
+[project.scripts]
+erk-slack-bot = "erk_slack_bot.cli:main"
+
+[tool.uv.sources]
+erk = { workspace = true }
+
+[build-system]
+requires = ["uv_build>=0.9.27,<0.10.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.0",
+    "ty>=0.0.1a19",
+]

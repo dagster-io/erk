@@ -10,12 +10,12 @@ These schemas serve as the single source of truth for:
 from __future__ import annotations
 
 from collections.abc import Iterator
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
 
-class ConfigLevel(str, Enum):
+class ConfigLevel(StrEnum):
     """Defines where a configuration key can be set.
 
     GLOBAL_ONLY: Can only be set in ~/.erk/config.toml
