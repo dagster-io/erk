@@ -1,10 +1,7 @@
-"""Backend-aware plan save: dispatches to issue or planned-PR based on constant.
+"""Plan save: creates a draft PR with the plan content.
 
 Usage:
     erk exec plan-save [OPTIONS]
-
-When ERK_PLAN_BACKEND is "planned_pr", creates a planned PR with the plan.
-Otherwise delegates to the existing plan-save-to-issue logic (default).
 
 Options:
     --format json|display: Output format (default: json)
@@ -26,9 +23,6 @@ from pathlib import Path
 
 import click
 
-from erk.cli.commands.exec.scripts.plan_save_to_issue import (
-    plan_save_to_issue,
-)
 from erk.cli.commands.exec.scripts.validate_plan_content import _validate_plan_content
 from erk_shared.context.helpers import (
     get_repo_identifier,
@@ -455,26 +449,7 @@ def plan_save(
     created_from_workflow_run_url: str | None,
     branch_slug: str | None,
 ) -> None:
-    """Backend-aware plan save: dispatches to issue or planned-PR based on constant.
-
-    When ERK_PLAN_BACKEND is "planned_pr", creates a planned PR.
-    Otherwise delegates to plan-save-to-issue.
-    """
-    # PLAN_BACKEND_SPLIT: dispatches to issue-based save or planned-PR save based on config/env
-    # Default backend: delegate to issue-based save
-    if "planned_pr" != "planned_pr":
-        ctx.invoke(
-            plan_save_to_issue,
-            output_format=output_format,
-            plan_file=plan_file,
-            session_id=session_id,
-            objective_issue=objective_issue,
-            plan_type=plan_type,
-            learned_from_issue=learned_from_issue,
-            created_from_workflow_run_url=created_from_workflow_run_url,
-        )
-        return
-
+    """Save plan as a draft PR."""
     _save_plan_via_planned_pr(
         ctx,
         output_format=output_format,

@@ -139,7 +139,6 @@ class HookInput:
     pr_number: int | None  # PR number if exists for current branch
     plan_issue_number: int | None  # Issue number from .impl/issue.json
     editor: str | None  # Value of EDITOR env var for TUI detection
-    plan_backend: str  # "github" or "planned_pr"
 
     @classmethod
     def for_test(
@@ -159,7 +158,6 @@ class HookInput:
         pr_number: int | None = None,
         plan_issue_number: int | None = None,
         editor: str | None = None,
-        plan_backend: str = "github",
     ) -> Self:
         """Create a HookInput with test defaults.
 
@@ -175,7 +173,6 @@ class HookInput:
         - pr_number: None
         - plan_issue_number: None
         - editor: None
-        - plan_backend: "github"
         """
         return cls(
             session_id=session_id,
@@ -192,7 +189,6 @@ class HookInput:
             pr_number=pr_number,
             plan_issue_number=plan_issue_number,
             editor=editor,
-            plan_backend=plan_backend,
         )
 
 
@@ -258,7 +254,6 @@ def build_blocking_message(
     pr_number: int | None,
     plan_issue_number: int | None,
     editor: str | None,
-    plan_backend: str,
 ) -> str:
     """Build the blocking message with AskUserQuestion instructions.
 
@@ -274,10 +269,7 @@ def build_blocking_message(
         pr_number: PR number if exists for current branch.
         plan_issue_number: Issue number from .impl/issue.json.
         editor: Value of EDITOR env var for TUI detection.
-        plan_backend: Plan backend type ("github" or "planned_pr").
     """
-    # PLAN_BACKEND_SPLIT: affects which save action is offered and which messages are shown
-    is_planned_pr = plan_backend == "planned_pr"
     # Build context lines for the question
     context_lines: list[str] = []
 
@@ -337,30 +329,15 @@ def build_blocking_message(
         ]
     )
 
-    if is_planned_pr:
-        lines.extend(
-            [
-                '  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan '
-                "and stop. Does NOT proceed to implementation.",
-                '  2. "Skip PR and implement here" - Skip creating a PR, implement directly '
-                "in current worktree (for small PR iterations that don't need PR tracking).",
-                '  3. "View/Edit the plan" - Open plan in editor to review or modify '
-                "before deciding.",
-            ]
-        )
-    else:
-        lines.extend(
-            [
-                '  1. "Save the plan" (Recommended) - Save plan as a GitHub issue and stop. '
-                "Does NOT proceed to implementation.",
-                '  2. "Do not save issue and implement here" - Skip saving, implement directly '
-                "in current worktree (for small PR iterations that don't need issue tracking).",
-                '  3. "Save plan and implement here" - Save to GitHub, then immediately '
-                "implement (full workflow).",
-                '  4. "View/Edit the plan" - Open plan in editor to review or modify '
-                "before deciding.",
-            ]
-        )
+    lines.extend(
+        [
+            '  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan '
+            "and stop. Does NOT proceed to implementation.",
+            '  2. "Skip PR and implement here" - Skip creating a PR, implement directly '
+            "in current worktree (for small PR iterations that don't need PR tracking).",
+            '  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.',
+        ]
+    )
 
     if current_branch in ("master", "main"):
         lines.extend(
@@ -378,50 +355,23 @@ def build_blocking_message(
     else:
         save_cmd = "/erk:plan-save"
 
-    if is_planned_pr:
-        lines.extend(
-            [
-                "",
-                "If user chooses 'Create a plan PR':",
-                f"  1. Run {save_cmd}",
-                "  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.",
-                "     Stay in plan mode and let the user exit manually if desired.",
-                "",
-                "If user chooses 'Skip PR and implement here':",
-                "  1. Create implement-now marker (skip PR creation):",
-                f"     erk exec marker create --session-id {session_id} \\",
-                "       exit-plan-mode-hook.implement-now",
-                "  2. Call ExitPlanMode",
-                "  3. After exiting plan mode, implement the changes directly",
-                "     (no PR tracking - this is for small PR iterations)",
-            ]
-        )
-    else:
-        lines.extend(
-            [
-                "",
-                "If user chooses 'Save the plan':",
-                f"  1. Run {save_cmd}",
-                "  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.",
-                "     Stay in plan mode and let the user exit manually if desired.",
-                "",
-                "If user chooses 'Do not save issue and implement here':",
-                "  1. Create implement-now marker (skip saving):",
-                f"     erk exec marker create --session-id {session_id} \\",
-                "       exit-plan-mode-hook.implement-now",
-                "  2. Call ExitPlanMode",
-                "  3. After exiting plan mode, implement the changes directly",
-                "     (no issue tracking - this is for small PR iterations)",
-                "",
-                "If user chooses 'Save plan and implement here':",
-                f"  1. Run {save_cmd}",
-                "  2. After save completes, create implement-now marker:",
-                f"     erk exec marker create --session-id {session_id} \\",
-                "       exit-plan-mode-hook.implement-now",
-                "  3. Call ExitPlanMode",
-                "  4. After exiting plan mode, run /erk:plan-implement to execute implementation",
-            ]
-        )
+    lines.extend(
+        [
+            "",
+            "If user chooses 'Create a plan PR':",
+            f"  1. Run {save_cmd}",
+            "  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.",
+            "     Stay in plan mode and let the user exit manually if desired.",
+            "",
+            "If user chooses 'Skip PR and implement here':",
+            "  1. Create implement-now marker (skip PR creation):",
+            f"     erk exec marker create --session-id {session_id} \\",
+            "       exit-plan-mode-hook.implement-now",
+            "  2. Call ExitPlanMode",
+            "  3. After exiting plan mode, implement the changes directly",
+            "     (no PR tracking - this is for small PR iterations)",
+        ]
+    )
 
     if plan_file_path is not None:
         if is_terminal_editor(editor):
@@ -487,13 +437,7 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
     # IMPORTANT: Do NOT delete the marker - keep it so subsequent ExitPlanMode calls
     # continue to block with "session complete" instead of prompting again
     if hook_input.plan_saved_marker_exists:
-        # PLAN_BACKEND_SPLIT: message differs between planned-PR and issue backends
-        if hook_input.plan_backend == "planned_pr":
-            saved_msg = "✅ Plan PR already created. Session complete - no further action needed."
-        else:
-            saved_msg = (
-                "✅ Plan already saved to GitHub. Session complete - no further action needed."
-            )
+        saved_msg = "✅ Plan PR already created. Session complete - no further action needed."
         return HookOutput(
             ExitAction.BLOCK,
             saved_msg,
@@ -521,7 +465,6 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
             pr_number=hook_input.pr_number,
             plan_issue_number=hook_input.plan_issue_number,
             editor=hook_input.editor,
-            plan_backend=hook_input.plan_backend,
         ),
     )
 
@@ -763,7 +706,6 @@ def _gather_inputs(
         pr_number=pr_number,
         plan_issue_number=plan_issue_number,
         editor=editor,
-        plan_backend="planned_pr",
     )
 
 

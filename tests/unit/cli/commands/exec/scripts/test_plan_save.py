@@ -1,4 +1,4 @@
-"""Unit tests for plan-save command (backend-aware dispatcher)."""
+"""Unit tests for plan-save command (draft PR creation)."""
 
 import json
 from pathlib import Path

@@ -137,22 +137,20 @@ class TestDetermineExitAction:
             )
         )
         assert result.action == ExitAction.BLOCK
-        assert "Plan already saved to GitHub" in result.message
+        assert "Plan PR already created" in result.message
         assert result.delete_plan_saved_marker is False
         assert result.delete_implement_now_marker is False
 
-    def test_plan_saved_marker_message_for_planned_pr_backend(self) -> None:
-        """Plan-saved marker uses draft PR language when plan_backend is draft_pr."""
+    def test_plan_saved_marker_message_uses_draft_pr_language(self) -> None:
+        """Plan-saved marker uses draft PR language."""
         result = determine_exit_action(
             HookInput.for_test(
                 plan_saved_marker_exists=True,
                 plan_file_path=Path("/some/plan.md"),
-                plan_backend="planned_pr",
             )
         )
         assert result.action == ExitAction.BLOCK
         assert "Plan PR already created" in result.message
-        assert "GitHub" not in result.message
 
     def test_no_plan_file_allows_exit(self) -> None:
         """No plan file allows exit."""
@@ -372,7 +370,7 @@ class TestBuildBlockingMessage:
     """Tests for the pure build_blocking_message() function."""
 
     def test_contains_required_elements(self) -> None:
-        """Message contains all required elements."""
+        """Message contains all required elements for draft-PR backend."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
             session_id="session-123",
@@ -384,25 +382,20 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
-            plan_backend="github",
         )
         assert "PLAN SAVE PROMPT" in message
         assert "AskUserQuestion" in message
-        assert "Save the plan" in message
+        assert "Create a plan PR" in message
         assert "(Recommended)" in message
-        # "Do not save issue and implement here" option (skip saving)
-        assert "Do not save issue and implement here" in message
+        # "Skip PR and implement here" option
+        assert "Skip PR and implement here" in message
         assert "small PR iterations" in message
-        # "Save plan and implement here" option (save + implement)
-        assert '"Save plan and implement here"' in message
-        assert "Save to GitHub, then immediately implement" in message
         assert "/erk:plan-save" in message
         assert "Do NOT call ExitPlanMode" in message
         assert "erk exec marker create --session-id session-123" in message
         assert "exit-plan-mode-hook.implement-now" in message
-        # Verify the "Save plan and implement here" option runs plan-save first, then creates marker
-        assert "If user chooses 'Save plan and implement here':" in message
-        assert "/erk:plan-implement" in message
+        assert "If user chooses 'Create a plan PR':" in message
+        assert "If user chooses 'Skip PR and implement here':" in message
 
     def test_includes_header_instruction(self) -> None:
         """Message includes header instruction for AskUserQuestion."""
@@ -417,7 +410,6 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
-            plan_backend="github",
         )
         # Should have both question: and header: instructions
         assert 'question: "' in message
@@ -437,7 +429,6 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
-            plan_backend="github",
         )
         assert 'header: "Plan Action"' in message
 
@@ -454,7 +445,6 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
-            plan_backend="github",
         )
         assert "WARNING" in message
         assert "main" in message
@@ -474,7 +464,6 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
-            plan_backend="github",
         )
         assert "WARNING" in message
         assert "master" in message
@@ -493,7 +482,6 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
-            plan_backend="github",
         )
         assert "WARNING" not in message
         assert "trunk branch" not in message
@@ -511,7 +499,6 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
-            plan_backend="github",
         )
         assert "WARNING" not in message
         assert "trunk branch" not in message
@@ -529,7 +516,6 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
-            plan_backend="github",
         )
         assert "View/Edit the plan" in message
         assert "Open plan in editor" in message
@@ -547,7 +533,6 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
-            plan_backend="github",
         )
         assert "If user chooses 'View/Edit the plan':" in message
         assert f"${{EDITOR:-code}} {plan_path}" in message
@@ -566,7 +551,6 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
-            plan_backend="github",
         )
         # The option is still listed (as it's hardcoded), but no instructions
         assert "View/Edit the plan" in message
@@ -585,7 +569,6 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
-            plan_backend="github",
         )
         assert "/erk:plan-save --objective-issue=3679" in message
 
@@ -602,7 +585,6 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
-            plan_backend="github",
         )
         # Should have /erk:plan-save but not --objective-issue
         assert "/erk:plan-save" in message
@@ -621,7 +603,6 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
-            plan_backend="github",
         )
         assert "📋 Add Feature X" in message
         assert "What would you like to do with this plan?" in message
@@ -639,7 +620,6 @@ class TestBuildBlockingMessage:
             pr_number=4230,
             plan_issue_number=4224,
             editor=None,
-            plan_backend="github",
         )
         # Title should be present
         assert "📋 Add Feature X" in message
@@ -664,7 +644,6 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=4224,
             editor=None,
-            plan_backend="github",
         )
         # No title emoji
         assert "📋" not in message
@@ -686,7 +665,6 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
-            plan_backend="github",
         )
         # Should still have the basic question
         assert "What would you like to do with this plan?" in message
@@ -708,7 +686,6 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor="vim",
-            plan_backend="github",
         )
         assert "If user chooses 'View/Edit the plan':" in message
         assert "vim is a terminal-based editor that cannot" in message
@@ -732,7 +709,6 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor="/opt/homebrew/bin/nvim",
-            plan_backend="github",
         )
         assert "nvim is a terminal-based editor" in message
         assert f"/opt/homebrew/bin/nvim {plan_path}" in message
@@ -750,7 +726,6 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor="code",
-            plan_backend="github",
         )
         assert "If user chooses 'View/Edit the plan':" in message
         assert f"${{EDITOR:-code}} {plan_path}" in message
@@ -771,7 +746,6 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
-            plan_backend="github",
         )
         assert "If user chooses 'View/Edit the plan':" in message
         assert f"${{EDITOR:-code}} {plan_path}" in message
@@ -791,7 +765,6 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
-            plan_backend="github",
         )
         assert "DISPLAY PLAN" in message
         assert str(plan_path) in message
@@ -812,14 +785,13 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
-            plan_backend="github",
         )
         assert "DISPLAY PLAN" not in message
         # Should still have the save prompt
         assert "PLAN SAVE PROMPT" in message
 
-    def test_planned_pr_backend_shows_pr_language(self) -> None:
-        """Planned PR backend uses 'Create a plan PR' instead of 'Save the plan'."""
+    def test_draft_pr_backend_shows_pr_language(self) -> None:
+        """Draft PR backend uses 'Create a plan PR' instead of 'Save the plan'."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
             session_id="session-123",
@@ -831,7 +803,6 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
-            plan_backend="planned_pr",
         )
         assert "Create a plan PR" in message
         assert "(Recommended)" in message
@@ -841,8 +812,8 @@ class TestBuildBlockingMessage:
         assert "Save plan as a GitHub issue" not in message
         assert "Do not save issue" not in message
 
-    def test_planned_pr_backend_omits_save_and_implement(self) -> None:
-        """Planned PR backend does not include 'Save plan and implement here' option."""
+    def test_draft_pr_backend_omits_save_and_implement(self) -> None:
+        """Draft PR backend does not include 'Save plan and implement here' option."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
             session_id="session-123",
@@ -854,13 +825,12 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
-            plan_backend="planned_pr",
         )
         assert "Save plan and implement here" not in message
         assert "Save to GitHub, then immediately implement" not in message
 
-    def test_planned_pr_backend_omits_save_and_review(self) -> None:
-        """Planned PR backend does not include 'Save and submit for review' option."""
+    def test_draft_pr_backend_omits_save_and_review(self) -> None:
+        """Draft PR backend does not include 'Save and submit for review' option."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
             session_id="session-123",
@@ -872,13 +842,12 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
-            plan_backend="planned_pr",
         )
         assert "Save and submit for review" not in message
         assert "review PR for inline feedback" not in message
 
-    def test_planned_pr_backend_instruction_blocks(self) -> None:
-        """Planned PR backend uses correct instruction block labels."""
+    def test_draft_pr_backend_instruction_blocks(self) -> None:
+        """Draft PR backend uses correct instruction block labels."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
             session_id="session-123",
@@ -890,7 +859,6 @@ class TestBuildBlockingMessage:
             pr_number=None,
             plan_issue_number=None,
             editor=None,
-            plan_backend="planned_pr",
         )
         assert "If user chooses 'Create a plan PR':" in message
         assert "If user chooses 'Skip PR and implement here':" in message
@@ -963,10 +931,7 @@ class TestHookIntegration:
         result = runner.invoke(exit_plan_mode_hook, input=stdin_data, obj=ctx)
 
         assert result.exit_code == 2  # Block
-        if "planned_pr" == "planned_pr":
-            assert "Plan PR already created" in result.output
-        else:
-            assert "Plan already saved to GitHub" in result.output
+        assert "Plan PR already created" in result.output
         assert plan_saved_marker.exists()  # Marker preserved for subsequent calls
 
     def test_incremental_plan_marker_flow(self, tmp_path: Path) -> None:
@@ -1069,10 +1034,7 @@ class TestHookIntegration:
         result = runner.invoke(exit_plan_mode_hook, input=stdin_data, obj=ctx)
 
         assert result.exit_code == 2  # Block
-        if "planned_pr" == "planned_pr":
-            assert "Plan PR already created" in result.output
-        else:
-            assert "Plan already saved to GitHub" in result.output
+        assert "Plan PR already created" in result.output
         assert plan_saved_marker.exists()  # Marker preserved
         assert not objective_context_marker.exists()  # But objective marker deleted
 

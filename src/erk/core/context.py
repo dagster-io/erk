@@ -605,15 +605,8 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     issues: GitHubIssues = RealGitHubIssues(target_repo=local_config.plans_repo, time=time)
     github: GitHub = RealGitHub(time, repo_info, issues=issues)
 
-    # PLAN_BACKEND_SPLIT: selects PlannedPRBackend or GitHubPlanStore based on ERK_PLAN_BACKEND
-    plan_store: PlanStore
-    plan_list_service: PlanListService
-    if "planned_pr" == "planned_pr":
-        plan_store = PlannedPRBackend(github, issues, time=RealTime())
-        plan_list_service = PlannedPRPlanListService(github)
-    else:
-        plan_store = GitHubPlanStore(issues)
-        plan_list_service = RealPlanListService(github, issues)
+    plan_store: PlanStore = PlannedPRBackend(github, issues, time=RealTime())
+    plan_list_service: PlanListService = PlannedPRPlanListService(github)
 
     # Objectives are always issue-based regardless of plan backend
     objective_list_service: ObjectiveListService = RealObjectiveListService(github, issues)
