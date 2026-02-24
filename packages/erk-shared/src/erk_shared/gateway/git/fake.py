@@ -129,6 +129,7 @@ class FakeGit(Git):
         behind_commit_authors: dict[tuple[Path, str], list[str]] | None = None,
         branch_sync_info: dict[Path, dict[str, BranchSyncInfo]] | None = None,
         recent_commits: dict[Path, list[dict[str, str]]] | None = None,
+        recent_commits_by_branch: dict[tuple[Path, str], list[dict[str, str]]] | None = None,
         existing_paths: set[Path] | None = None,
         file_contents: dict[Path, str] | None = None,
         delete_branch_raises: dict[str, Exception] | None = None,
@@ -184,6 +185,8 @@ class FakeGit(Git):
                 for commits on remote but not locally
             branch_sync_info: Mapping of repo_root -> dict of branch name -> BranchSyncInfo
             recent_commits: Mapping of cwd -> list of commit info dicts
+            recent_commits_by_branch: Mapping of (cwd, branch) -> list of commit info
+                dicts for branch-specific recent commits queries
             existing_paths: Set of paths that should be treated as existing (for pure mode)
             file_contents: Mapping of path -> file content (for commands that read files)
             delete_branch_raises: Mapping of branch name -> exception to raise on delete
@@ -241,6 +244,7 @@ class FakeGit(Git):
         self._behind_commit_authors = behind_commit_authors or {}
         self._branch_sync_info = branch_sync_info or {}
         self._recent_commits = recent_commits or {}
+        self._recent_commits_by_branch = recent_commits_by_branch or {}
         self._existing_paths = existing_paths or set()
         self._file_contents = file_contents or {}
         self._delete_branch_raises = delete_branch_raises or {}
@@ -384,6 +388,7 @@ class FakeGit(Git):
         self._commit_gateway = FakeGitCommitOps(
             commit_messages=self._commit_messages,
             recent_commits=self._recent_commits,
+            recent_commits_by_branch=self._recent_commits_by_branch,
             commit_messages_since=self._commit_messages_since,
             head_commit_messages_full=self._head_commit_messages_full,
             commits_ahead=self._commits_ahead,

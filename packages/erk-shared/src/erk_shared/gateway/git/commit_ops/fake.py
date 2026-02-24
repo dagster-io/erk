@@ -60,6 +60,7 @@ class FakeGitCommitOps(GitCommitOps):
         *,
         commit_messages: dict[str, str] | None = None,
         recent_commits: dict[Path, list[dict[str, str]]] | None = None,
+        recent_commits_by_branch: dict[tuple[Path, str], list[dict[str, str]]] | None = None,
         commit_messages_since: dict[tuple[Path, str], list[str]] | None = None,
         head_commit_messages_full: dict[Path, str] | None = None,
         commits_ahead: dict[tuple[Path, str], int] | None = None,
@@ -71,6 +72,8 @@ class FakeGitCommitOps(GitCommitOps):
         Args:
             commit_messages: Mapping of commit SHA -> commit message
             recent_commits: Mapping of cwd -> list of commit info dicts
+            recent_commits_by_branch: Mapping of (cwd, branch) -> list of commit
+                info dicts. Used when get_recent_commits is called with a branch.
             commit_messages_since: Mapping of (cwd, base_branch) -> list of messages
             head_commit_messages_full: Mapping of cwd -> full HEAD commit message
             commits_ahead: Mapping of (cwd, base_branch) -> commit count
@@ -79,6 +82,9 @@ class FakeGitCommitOps(GitCommitOps):
         """
         self._commit_messages = commit_messages if commit_messages is not None else {}
         self._recent_commits = recent_commits if recent_commits is not None else {}
+        self._recent_commits_by_branch: dict[tuple[Path, str], list[dict[str, str]]] = (
+            recent_commits_by_branch if recent_commits_by_branch is not None else {}
+        )
         self._commit_messages_since = (
             commit_messages_since if commit_messages_since is not None else {}
         )
@@ -184,9 +190,14 @@ class FakeGitCommitOps(GitCommitOps):
 
         return ""
 
-    def get_recent_commits(self, cwd: Path, *, limit: int = 5) -> list[dict[str, str]]:
+    def get_recent_commits(
+        self, cwd: Path, *, limit: int = 5, branch: str | None = None
+    ) -> list[dict[str, str]]:
         """Get recent commit information."""
-        commits = self._recent_commits.get(cwd, [])
+        if branch is not None:
+            commits = self._recent_commits_by_branch.get((cwd, branch), [])
+        else:
+            commits = self._recent_commits.get(cwd, [])
         return commits[:limit]
 
     # ============================================================================

@@ -179,15 +179,21 @@ class RealGitCommitOps(GitCommitOps):
         )
         return result.stdout.strip()
 
-    def get_recent_commits(self, cwd: Path, *, limit: int = 5) -> list[dict[str, str]]:
+    def get_recent_commits(
+        self, cwd: Path, *, limit: int = 5, branch: str | None = None
+    ) -> list[dict[str, str]]:
         """Get recent commit information."""
+        cmd = [
+            "git",
+            "log",
+            f"-{limit}",
+            "--format=%H%x00%s%x00%an%x00%ar",
+        ]
+        if branch is not None:
+            cmd.append(branch)
+
         result = run_subprocess_with_context(
-            cmd=[
-                "git",
-                "log",
-                f"-{limit}",
-                "--format=%H%x00%s%x00%an%x00%ar",
-            ],
+            cmd=cmd,
             operation_context=f"get recent {limit} commits",
             cwd=cwd,
         )

@@ -83,6 +83,8 @@ class PrintingGitCommitOps(PrintingBase, GitCommitOps):
         """Get full commit message (read-only, no printing)."""
         return self._wrapped.get_head_commit_message_full(cwd)
 
-    def get_recent_commits(self, cwd: Path, *, limit: int = 5) -> list[dict[str, str]]:
+    def get_recent_commits(
+        self, cwd: Path, *, limit: int = 5, branch: str | None = None
+    ) -> list[dict[str, str]]:
         """Get recent commits (read-only, no printing)."""
-        return self._wrapped.get_recent_commits(cwd, limit=limit)
+        return self._wrapped.get_recent_commits(cwd, limit=limit, branch=branch)

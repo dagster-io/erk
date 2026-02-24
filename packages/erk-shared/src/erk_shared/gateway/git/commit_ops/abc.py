@@ -148,12 +148,15 @@ class GitCommitOps(ABC):
         ...
 
     @abstractmethod
-    def get_recent_commits(self, cwd: Path, *, limit: int = 5) -> list[dict[str, str]]:
+    def get_recent_commits(
+        self, cwd: Path, *, limit: int = 5, branch: str | None = None
+    ) -> list[dict[str, str]]:
         """Get recent commit information.
 
         Args:
             cwd: Working directory
             limit: Maximum number of commits to retrieve
+            branch: Optional branch name to get commits from. If None, uses HEAD.
 
         Returns:
             List of commit info dicts with keys: sha, message, author, date
