@@ -1146,6 +1146,7 @@ def submit_cmd(
         - Working directory must be clean (no uncommitted changes)
     """
     # Validate GitHub CLI prerequisites upfront (LBYL)
+    user_output("Checking GitHub authentication...")
     Ensure.gh_authenticated(ctx)
 
     # Get repository context
@@ -1155,6 +1156,7 @@ def submit_cmd(
         repo = discover_repo_context(ctx, ctx.cwd)
 
     # Ensure trunk is synced before any operations
+    user_output("Syncing trunk with remote...")
     ensure_trunk_synced(ctx, repo)
 
     # Save current state (needed for both default base and restoration)
@@ -1186,6 +1188,8 @@ def submit_cmd(
 
     # For single-issue learn plan submissions, auto-detect parent branch
     issue_number = issue_numbers[0] if len(issue_numbers) == 1 else None
+    if issue_number is not None and base is None:
+        user_output(f"Checking issue #{issue_number}...")
     if (
         issue_number is not None
         and base is None
@@ -1210,6 +1214,7 @@ def submit_cmd(
                 )
 
     # Get GitHub username (authentication already validated)
+    user_output("Resolving GitHub username...")
     _, username, _ = ctx.github.check_auth_status()
     submitted_by = username or "unknown"
 

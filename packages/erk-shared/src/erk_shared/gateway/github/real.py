@@ -59,7 +59,7 @@ from erk_shared.gateway.github.types import (
 )
 from erk_shared.gateway.time.abc import Time
 from erk_shared.output.output import user_output
-from erk_shared.subprocess_utils import run_subprocess_with_context
+from erk_shared.subprocess_utils import _GH_COMMAND_TIMEOUT, run_subprocess_with_context
 
 # Feature flag to control whether PR mutations use REST API or gh CLI commands.
 # When True: Use REST API (gh api) - uses REST quota, preserves GraphQL quota
@@ -1026,6 +1026,7 @@ query {{
             operation_context="check GitHub authentication status",
             capture_output=True,
             check=False,
+            timeout=_GH_COMMAND_TIMEOUT,
         )
 
         # gh auth status returns non-zero if not authenticated

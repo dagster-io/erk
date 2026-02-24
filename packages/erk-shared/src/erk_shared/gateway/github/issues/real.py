@@ -1,7 +1,6 @@
 """Production implementation of GitHub issues using gh CLI."""
 
 import json
-import subprocess
 from datetime import datetime
 from pathlib import Path
 
@@ -16,7 +15,11 @@ from erk_shared.gateway.github.issues.types import (
 )
 from erk_shared.gateway.github.types import BodyContent, BodyFile, BodyText
 from erk_shared.gateway.time.abc import Time
-from erk_shared.subprocess_utils import execute_gh_command_with_retry
+from erk_shared.subprocess_utils import (
+    _GH_COMMAND_TIMEOUT,
+    execute_gh_command_with_retry,
+    run_subprocess_with_context,
+)
 
 
 class RealGitHubIssues(GitHubIssues):
@@ -123,12 +126,13 @@ class RealGitHubIssues(GitHubIssues):
             "--silent",
         ]
         cmd = self._build_gh_command(base_cmd)
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
+        result = run_subprocess_with_context(
+            cmd=cmd,
+            operation_context=f"check if issue #{number} exists",
             cwd=repo_root,
+            capture_output=True,
             check=False,
+            timeout=_GH_COMMAND_TIMEOUT,
         )
         return result.returncode == 0
 
@@ -536,11 +540,12 @@ class RealGitHubIssues(GitHubIssues):
             GitHub username if authenticated, None otherwise
         """
         # GH-API-AUDIT: REST - GET user
-        result = subprocess.run(
-            ["gh", "api", "user", "--jq", ".login"],
+        result = run_subprocess_with_context(
+            cmd=["gh", "api", "user", "--jq", ".login"],
+            operation_context="get current GitHub username",
             capture_output=True,
-            text=True,
             check=False,
+            timeout=_GH_COMMAND_TIMEOUT,
         )
         if result.returncode != 0:
             return None
