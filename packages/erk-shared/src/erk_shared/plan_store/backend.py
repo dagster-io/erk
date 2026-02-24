@@ -23,21 +23,22 @@ from abc import abstractmethod
 from collections.abc import Mapping
 from pathlib import Path
 
-from erk_shared.gateway.github.metadata.plan_header import (
-    extract_plan_header_created_from_session,
-    extract_plan_header_last_learn_session,
-    extract_plan_header_last_session_id,
-    extract_plan_header_last_session_source,
-    extract_plan_header_local_impl_session,
-    extract_plan_header_remote_impl_at,
-    extract_plan_header_remote_impl_run_id,
-    extract_plan_header_remote_impl_session_id,
-    extract_plan_header_session_branch,
+from erk_shared.gateway.github.metadata.schemas import (
+    CREATED_FROM_SESSION,
+    LAST_LEARN_SESSION,
+    LAST_LOCAL_IMPL_SESSION,
+    LAST_REMOTE_IMPL_AT,
+    LAST_REMOTE_IMPL_RUN_ID,
+    LAST_REMOTE_IMPL_SESSION_ID,
+    LAST_SESSION_BRANCH,
+    LAST_SESSION_ID,
+    LAST_SESSION_SOURCE,
 )
 from erk_shared.learn.impl_events import (
     extract_implementation_sessions,
     extract_learn_sessions,
 )
+from erk_shared.plan_store.conversion import header_str
 from erk_shared.plan_store.store import PlanStore
 from erk_shared.plan_store.types import CreatePlanResult, Plan, PlanNotFound, PlanQuery
 from erk_shared.sessions.discovery import SessionsForPlan
@@ -202,10 +203,9 @@ class PlanBackend(PlanStore):
             msg = f"Plan {plan_id} not found"
             raise RuntimeError(msg)
 
-        body = plan.body
-        planning_session_id = extract_plan_header_created_from_session(body)
-        metadata_impl_session = extract_plan_header_local_impl_session(body)
-        metadata_learn_session = extract_plan_header_last_learn_session(body)
+        planning_session_id = header_str(plan.header_fields, CREATED_FROM_SESSION)
+        metadata_impl_session = header_str(plan.header_fields, LAST_LOCAL_IMPL_SESSION)
+        metadata_learn_session = header_str(plan.header_fields, LAST_LEARN_SESSION)
 
         comments = self.get_comments(repo_root, plan_id)
         comment_impl_sessions = extract_implementation_sessions(comments)
@@ -237,12 +237,12 @@ class PlanBackend(PlanStore):
             planning_session_id=planning_session_id,
             implementation_session_ids=implementation_session_ids,
             learn_session_ids=learn_session_ids,
-            last_remote_impl_at=extract_plan_header_remote_impl_at(body),
-            last_remote_impl_run_id=extract_plan_header_remote_impl_run_id(body),
-            last_remote_impl_session_id=extract_plan_header_remote_impl_session_id(body),
-            last_session_branch=extract_plan_header_session_branch(body),
-            last_session_id=extract_plan_header_last_session_id(body),
-            last_session_source=extract_plan_header_last_session_source(body),
+            last_remote_impl_at=header_str(plan.header_fields, LAST_REMOTE_IMPL_AT),
+            last_remote_impl_run_id=header_str(plan.header_fields, LAST_REMOTE_IMPL_RUN_ID),
+            last_remote_impl_session_id=header_str(plan.header_fields, LAST_REMOTE_IMPL_SESSION_ID),
+            last_session_branch=header_str(plan.header_fields, LAST_SESSION_BRANCH),
+            last_session_id=header_str(plan.header_fields, LAST_SESSION_ID),
+            last_session_source=header_str(plan.header_fields, LAST_SESSION_SOURCE),
         )
 
     # Branch → Plan resolution
