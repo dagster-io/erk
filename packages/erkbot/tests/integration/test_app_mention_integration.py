@@ -2,7 +2,7 @@
 # tests third-party Slack SDK wiring and does not use erk's gateway layer.
 
 from collections.abc import Awaitable, Callable
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from erkbot.config import Settings
@@ -44,6 +44,54 @@ async def test_plan_list_success(
     assert any("Running" in t and "plan list" in t for t in texts)
     assert any("Result from" in t and "plan list" in t for t in texts)
     assert any("Plan #1" in t for t in texts)
+
+
+@pytest.mark.asyncio
+async def test_plan_list_ansi_codes_stripped(
+    app: AsyncApp,
+    build_app_mention_request,
+    received: ReceivedRequests,
+) -> None:
+    """plan list: ANSI escape codes from Rich Console are stripped before posting to Slack.
+
+    Mocks CliRunner.invoke (not run_erk_plan_list) so the runner's strip_ansi
+    logic is exercised end-to-end through the Slack handler.
+    """
+    # Simulate what CliRunner captures from Console(force_terminal=True):
+    # user_output() goes to stderr (via click.echo(err=True))
+    # Console(stderr=True, force_terminal=True).print(table) goes to stderr with ANSI
+    ansi_stderr = (
+        "\nFound 2 plan(s):\n\n"
+        "\x1b[1mpr    \x1b[0m \x1b[1mstage\x1b[0m\n"
+        "\x1b]8;;https://github.com/test/repo/issues/1\x1b\\#1\x1b]8;;\x1b\\"
+        "     \x1b[36mimpl\x1b[0m\n"
+        "\x1b]8;;https://github.com/test/repo/issues/2\x1b\\#2\x1b]8;;\x1b\\"
+        "     \x1b[36mqueued\x1b[0m"
+    )
+    fake_result = MagicMock()
+    fake_result.output = ""
+    fake_result.stderr = ansi_stderr
+    fake_result.exit_code = 0
+
+    with patch("erkbot.runner.CliRunner") as mock_runner_cls:
+        mock_runner_cls.return_value.invoke.return_value = fake_result
+        request: AsyncBoltRequest = build_app_mention_request(f"{BOT_MENTION} plan list")
+        response = await dispatch_and_settle(app, request, timeout_seconds=5.0)
+
+    assert response.status == 200
+
+    received.drain()
+
+    post_bodies = received.get_bodies("/chat.postMessage")
+    texts = [b.get("text", "") for b in post_bodies]
+
+    # ANSI codes should not appear in any Slack message
+    for text in texts:
+        assert "\x1b" not in text, f"ANSI escape code found in Slack message: {text!r}"
+
+    # Content should still be present (ANSI stripped, text preserved)
+    assert any("#1" in t for t in texts)
+    assert any("#2" in t for t in texts)
 
 
 @pytest.mark.asyncio

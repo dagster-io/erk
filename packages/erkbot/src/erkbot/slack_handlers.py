@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections import deque
 from typing import TYPE_CHECKING, Any
 
@@ -27,6 +28,8 @@ from erkbot.utils import (
     tail_output_lines,
 )
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from erkbot.agent.bot import ErkBot
 
@@ -47,9 +50,11 @@ def register_handlers(app, *, settings: Settings, bot: ErkBot | None, time: Time
     async def post_message(
         client: Any, *, channel: str, thread_ts: str | None, text: str
     ) -> object | None:
+        logger.info("slack_send: channel=%s text=%s", channel, text[:200])
         try:
             return await client.chat_postMessage(channel=channel, text=text, thread_ts=thread_ts)
         except SlackApiError:
+            logger.warning("slack_send failed: channel=%s text=%s", channel, text[:200])
             return None
 
     async def post_chunked_code(
@@ -61,6 +66,7 @@ def register_handlers(app, *, settings: Settings, bot: ErkBot | None, time: Time
     async def run_one_shot_background(
         *, client: Any, channel: str, reply_thread_ts: str | None, message: str
     ) -> None:
+        logger.info("one-shot started: channel=%s message=%s", channel, message[:100])
         status = await post_message(
             client,
             channel=channel,
@@ -92,6 +98,12 @@ def register_handlers(app, *, settings: Settings, bot: ErkBot | None, time: Time
                     lines=list(all_lines), running=running, settings=settings
                 )
                 try:
+                    logger.debug(
+                        "slack_update: channel=%s ts=%s text=%s",
+                        channel,
+                        status_ts,
+                        progress_text[:200],
+                    )
                     await client.chat_update(channel=channel, ts=status_ts, text=progress_text)
                     last_update = now
                     return
@@ -144,6 +156,12 @@ def register_handlers(app, *, settings: Settings, bot: ErkBot | None, time: Time
             on_line=on_line,
         )
         await push_progress_update(force=True, running=False)
+        logger.info(
+            "one-shot completed: channel=%s exit_code=%d output_len=%d",
+            channel,
+            result.exit_code,
+            len(result.output),
+        )
 
         pr_url, run_url = extract_one_shot_links(result.output)
         if result.exit_code == 0:
@@ -161,6 +179,12 @@ def register_handlers(app, *, settings: Settings, bot: ErkBot | None, time: Time
                 )
             return
 
+        logger.warning(
+            "one-shot failed: channel=%s exit_code=%d timed_out=%s",
+            channel,
+            result.exit_code,
+            result.timed_out,
+        )
         timeout_suffix = " (timed out)." if result.timed_out else "."
         await post_message(
             client,
@@ -183,11 +207,13 @@ def register_handlers(app, *, settings: Settings, bot: ErkBot | None, time: Time
         user = event.get("user", "there")
         channel = event.get("channel")
         source_ts = event.get("ts")
+        text = event.get("text", "")
+        logger.info("app_mention: user=%s channel=%s text=%s", user, channel, text[:100])
         if channel and source_ts:
             await add_read_ack(client, channel, source_ts)
 
         reply_thread_ts = event.get("thread_ts") or source_ts
-        command = parse_erk_command(event.get("text", ""))
+        command = parse_erk_command(text)
 
         if isinstance(command, PlanListCommand):
             await say("Running `erk plan list`...", thread_ts=reply_thread_ts)
@@ -196,6 +222,9 @@ def register_handlers(app, *, settings: Settings, bot: ErkBot | None, time: Time
                 "Result from `erk plan list`:"
                 if result.exit_code == 0
                 else f"`erk plan list` failed (exit {result.exit_code}):"
+            )
+            logger.info(
+                "reply: channel=%s command=plan-list exit_code=%d", channel, result.exit_code
             )
             await say(status_line, thread_ts=reply_thread_ts)
             for chunk in chunk_for_slack(
@@ -206,11 +235,13 @@ def register_handlers(app, *, settings: Settings, bot: ErkBot | None, time: Time
 
         if isinstance(command, QuoteCommand):
             quote = load_quote_text()
+            logger.info("reply: channel=%s command=quote len=%d", channel, len(quote))
             for chunk in chunk_for_slack(quote, max_chars=settings.max_slack_code_block_chars):
                 await say(chunk, thread_ts=reply_thread_ts)
             return
 
         if isinstance(command, OneShotMissingMessageCommand):
+            logger.info("reply: channel=%s command=one-shot-missing-message", channel)
             await say("Usage: `@erk one-shot <message>`", thread_ts=reply_thread_ts)
             return
 
@@ -240,6 +271,11 @@ def register_handlers(app, *, settings: Settings, bot: ErkBot | None, time: Time
 
         if isinstance(command, OneShotCommand):
             if len(command.message) > settings.max_one_shot_message_chars:
+                logger.warning(
+                    "reply: channel=%s command=one-shot rejected=too_long len=%d",
+                    channel,
+                    len(command.message),
+                )
                 await say(
                     (
                         "One-shot message is too long "
@@ -250,6 +286,7 @@ def register_handlers(app, *, settings: Settings, bot: ErkBot | None, time: Time
                 )
                 return
             if not channel:
+                logger.warning("reply: command=one-shot rejected=no_channel")
                 await say(
                     "Could not determine channel for this mention.", thread_ts=reply_thread_ts
                 )
@@ -264,14 +301,17 @@ def register_handlers(app, *, settings: Settings, bot: ErkBot | None, time: Time
             )
             return
 
+        logger.info("reply: channel=%s command=unknown", channel)
         await say(f"Hi <@{user}>. {SUPPORTED_COMMANDS_TEXT}", thread_ts=reply_thread_ts)
 
     @app.message("ping")
     async def handle_ping(message, say, client) -> None:  # type: ignore[no-untyped-def]
+        logger.info("ping: channel=%s", message.get("channel"))
         channel = message.get("channel")
         source_ts = message.get("ts")
         if channel and source_ts:
             await add_read_ack(client, channel, source_ts)
 
         reply_thread_ts = message.get("thread_ts") or source_ts
+        logger.info("reply: channel=%s command=ping", channel)
         await say("Pong!", thread_ts=reply_thread_ts)

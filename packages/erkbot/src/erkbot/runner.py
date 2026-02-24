@@ -6,11 +6,15 @@ from click.testing import CliRunner
 
 from erk import cli
 from erkbot.models import RunResult
+from erkbot.utils import strip_ansi
 
 
 async def run_erk_plan_list() -> RunResult:
-    result = await asyncio.to_thread(CliRunner().invoke, cli, ["plan", "list"])
-    output = (result.output or "").strip() or "(no output)"
+    result = await asyncio.to_thread(
+        CliRunner(mix_stderr=False).invoke, cli, ["plan", "list", "--all-users"]
+    )
+    raw_output = (result.output or "") + (result.stderr or "")
+    output = strip_ansi(raw_output).strip() or "(no output)"
     return RunResult(exit_code=result.exit_code, output=output)
 
 
