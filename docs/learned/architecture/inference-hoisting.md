@@ -66,28 +66,13 @@ The `generate_slug_or_fallback` function accepted a `PromptExecutor` and invoked
 
 ### After (fixed): Pre-computed value via --flag
 
-```python
-# FIXED: Use pre-generated slug or deterministic fallback (no LLM call)
-# branch_slug is None when invoked directly outside a skill context.
-slug = branch_slug if branch_slug else sanitize_worktree_name(title)
-branch_name = generate_draft_pr_branch_name(slug, now)
-```
+Each script accepts an optional `--branch-slug` Click option. When provided, it uses the pre-generated slug directly; when `None`, it falls back to `sanitize_worktree_name(title)` — a pure, deterministic function with no LLM call.
 
-The `--branch-slug` Click option is defined identically on all three updated scripts — see `src/erk/cli/commands/exec/scripts/plan_save.py` for the canonical decorator.
+See `src/erk/cli/commands/exec/scripts/plan_save.py` for the canonical implementation of this pattern.
 
 ### The skill step that generates BRANCH_SLUG
 
-From `.claude/commands/erk/plan-save.md`, Step 1.5:
-
-```
-Generate a branch slug from the title:
-- 2-4 hyphenated lowercase words, max 30 characters
-- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
-- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
-- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
-
-Store the result as BRANCH_SLUG.
-```
+The calling skill (`.claude/commands/erk/plan-save.md`, Step 1.5) instructs Claude to generate a short hyphenated slug from the plan title — 2-4 lowercase words, max 30 characters, using action verbs. The result is stored as `BRANCH_SLUG`.
 
 Then Step 2 passes it:
 
