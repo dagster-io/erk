@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: Remote session discovery broken for draft-PR plans"
+}
