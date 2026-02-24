@@ -30,8 +30,6 @@ def run_erk_one_shot(message: str, *, timeout_seconds: float) -> RunResult:
             check=False,
             timeout=timeout_seconds,
         )
-    except FileNotFoundError as exc:
-        return RunResult(exit_code=127, output=f"Failed to start process: {exc}")
     except subprocess.TimeoutExpired as exc:
         output = "\n".join(part for part in [exc.stdout or "", exc.stderr or ""] if part).strip()
         return RunResult(exit_code=124, output=output or "(no output)", timed_out=True)
