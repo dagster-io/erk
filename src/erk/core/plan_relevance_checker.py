@@ -92,9 +92,7 @@ class PlanRelevanceChecker:
             RelevanceCheckResult with relevant commits or graceful degradation on error.
         """
         if not recent_commits:
-            return RelevanceCheckResult(
-                already_implemented=False, relevant_commits=[], error=None
-            )
+            return RelevanceCheckResult(already_implemented=False, relevant_commits=[], error=None)
 
         prompt = _build_prompt(plan_content, recent_commits)
 

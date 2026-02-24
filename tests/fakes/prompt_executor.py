@@ -370,9 +370,8 @@ class FakePromptExecutor(PromptExecutor):
             )
 
         # Try sequential outputs first, then fall back to single output
-        if (
-            self._simulated_prompt_outputs is not None
-            and self._simulated_prompt_output_index < len(self._simulated_prompt_outputs)
+        if self._simulated_prompt_outputs is not None and self._simulated_prompt_output_index < len(
+            self._simulated_prompt_outputs
         ):
             output = self._simulated_prompt_outputs[self._simulated_prompt_output_index]
             self._simulated_prompt_output_index += 1

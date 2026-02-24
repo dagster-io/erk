@@ -75,9 +75,13 @@ def test_no_duplicates_found() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={100: existing})
-        git = _make_git_with_commits(env.cwd, env.git_dir, trunk_commits=[
-            {"sha": "abc1234", "message": "Some commit", "author": "dev", "date": "1 day ago"},
-        ])
+        git = _make_git_with_commits(
+            env.cwd,
+            env.git_dir,
+            trunk_commits=[
+                {"sha": "abc1234", "message": "Some commit", "author": "dev", "date": "1 day ago"},
+            ],
+        )
         ctx = build_workspace_test_context(
             env,
             git=git,
@@ -111,9 +115,18 @@ def test_duplicate_detected() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={100: existing})
-        git = _make_git_with_commits(env.cwd, env.git_dir, trunk_commits=[
-            {"sha": "abc1234", "message": "Unrelated commit", "author": "dev", "date": "1 day ago"},
-        ])
+        git = _make_git_with_commits(
+            env.cwd,
+            env.git_dir,
+            trunk_commits=[
+                {
+                    "sha": "abc1234",
+                    "message": "Unrelated commit",
+                    "author": "dev",
+                    "date": "1 day ago",
+                },
+            ],
+        )
         ctx = build_workspace_test_context(
             env,
             git=git,
@@ -146,9 +159,13 @@ def test_no_existing_plans() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={})
-        git = _make_git_with_commits(env.cwd, env.git_dir, trunk_commits=[
-            {"sha": "abc1234", "message": "Some commit", "author": "dev", "date": "1 day ago"},
-        ])
+        git = _make_git_with_commits(
+            env.cwd,
+            env.git_dir,
+            trunk_commits=[
+                {"sha": "abc1234", "message": "Some commit", "author": "dev", "date": "1 day ago"},
+            ],
+        )
         ctx = build_workspace_test_context(
             env,
             git=git,
@@ -230,12 +247,14 @@ def test_already_implemented_detected() -> None:
         git = _make_git_with_commits(
             env.cwd,
             env.git_dir,
-            trunk_commits=[{
-                "sha": "abc1234",
-                "message": "Add dark mode toggle",
-                "author": "dev",
-                "date": "1 day ago",
-            }],
+            trunk_commits=[
+                {
+                    "sha": "abc1234",
+                    "message": "Add dark mode toggle",
+                    "author": "dev",
+                    "date": "1 day ago",
+                }
+            ],
         )
         ctx = build_workspace_test_context(
             env,
@@ -271,9 +290,18 @@ def test_no_duplicates_no_relevance_issues() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={100: existing})
-        git = _make_git_with_commits(env.cwd, env.git_dir, trunk_commits=[
-            {"sha": "abc1234", "message": "Unrelated commit", "author": "dev", "date": "1 day ago"},
-        ])
+        git = _make_git_with_commits(
+            env.cwd,
+            env.git_dir,
+            trunk_commits=[
+                {
+                    "sha": "abc1234",
+                    "message": "Unrelated commit",
+                    "author": "dev",
+                    "date": "1 day ago",
+                },
+            ],
+        )
         ctx = build_workspace_test_context(
             env,
             git=git,
@@ -309,9 +337,13 @@ def test_relevance_error_does_not_block_duplicate_check() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={100: existing})
-        git = _make_git_with_commits(env.cwd, env.git_dir, trunk_commits=[
-            {"sha": "abc1234", "message": "Some commit", "author": "dev", "date": "1 day ago"},
-        ])
+        git = _make_git_with_commits(
+            env.cwd,
+            env.git_dir,
+            trunk_commits=[
+                {"sha": "abc1234", "message": "Some commit", "author": "dev", "date": "1 day ago"},
+            ],
+        )
         ctx = build_workspace_test_context(
             env,
             git=git,

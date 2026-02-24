@@ -90,8 +90,7 @@ def duplicate_check_plan(
 
         if dup_result.error is not None:
             user_output(
-                click.style("Error: ", fg="red")
-                + f"Duplicate check failed: {dup_result.error}"
+                click.style("Error: ", fg="red") + f"Duplicate check failed: {dup_result.error}"
             )
             has_problems = True
 
@@ -107,9 +106,7 @@ def duplicate_check_plan(
 
     # --- Relevance check against recent trunk commits ---
     trunk_branch = ctx.git.branch.detect_trunk_branch(repo_root)
-    recent_commits = ctx.git.commit.get_recent_commits(
-        repo_root, limit=20, branch=trunk_branch
-    )
+    recent_commits = ctx.git.commit.get_recent_commits(repo_root, limit=20, branch=trunk_branch)
 
     if recent_commits:
         user_output(f"Checking against {len(recent_commits)} recent {trunk_branch} commit(s)...")
