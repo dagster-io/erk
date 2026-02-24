@@ -118,15 +118,9 @@ assert "Running" in bodies[0]["text"]
 
 ### Background Task Testing
 
-Use `dispatch_and_settle` instead of `asyncio.sleep()` to await all background tasks spawned during dispatch. It tracks tasks via `asyncio.all_tasks()` diffing and handles both Bolt's `ensure_future()` handlers and app-level `create_task()` calls:
+Use `dispatch_and_settle` instead of `asyncio.sleep()` to await all background tasks spawned during dispatch. It tracks tasks via `asyncio.all_tasks()` diffing and handles both Bolt's `ensure_future()` handlers and app-level `create_task()` calls.
 
-```python
-from tests.integration.conftest import dispatch_and_settle
-
-response = await dispatch_and_settle(app, request, timeout_seconds=5.0)
-# All background tasks have completed — assert on mock server state
-received.drain()
-```
+> **Source**: See `packages/erkbot/tests/integration/conftest.py` for the `dispatch_and_settle()` function signature and usage pattern.
 
 ## Event Body Formats
 
