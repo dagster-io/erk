@@ -774,8 +774,6 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
     plan_id_for_lifecycle: str | None = None
     if state.plan_context is not None:
         plan_id_for_lifecycle = state.plan_context.plan_id
-    elif state.issue_number is not None:
-        plan_id_for_lifecycle = str(state.issue_number)
     elif state.pr_number is not None:
         plan_id_for_lifecycle = str(state.pr_number)
 

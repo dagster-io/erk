@@ -532,8 +532,8 @@ def test_updates_lifecycle_stage_for_linked_plan(tmp_path: Path) -> None:
     assert "lifecycle_stage: impl" in updated_body
 
 
-def test_updates_lifecycle_stage_without_plan_context(tmp_path: Path) -> None:
-    """finalize_pr updates lifecycle even when plan_context is None but issue_number is set."""
+def test_no_lifecycle_update_with_only_issue_number(tmp_path: Path) -> None:
+    """finalize_pr does NOT update lifecycle when only issue_number is set (no plan_context)."""
     plan_body = format_plan_header_body_for_test(lifecycle_stage="planned")
     plan_issue = IssueInfo(
         number=321,
@@ -566,10 +566,8 @@ def test_updates_lifecycle_stage_without_plan_context(tmp_path: Path) -> None:
     result = finalize_pr(ctx, state)
 
     assert isinstance(result, SubmitState)
-    # Verify lifecycle_stage was updated via the issue_number fallback
-    assert len(fake_issues.updated_bodies) == 1
-    updated_body = fake_issues.updated_bodies[0][1]
-    assert "lifecycle_stage: impl" in updated_body
+    # issue_number alone should NOT trigger lifecycle update
+    assert len(fake_issues.updated_bodies) == 0
 
 
 def test_updates_lifecycle_stage_for_draft_pr_backend(tmp_path: Path) -> None:
