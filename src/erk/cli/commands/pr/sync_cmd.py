@@ -245,7 +245,7 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
 
         # Strip .erk/impl-context/ before restack to avoid conflicts
         if _strip_impl_context_if_present(ctx, repo.root):
-            user_output("Stripping .erk/impl-context/ before restack...")
+            user_output("Stripped .erk/impl-context/ before restack")
             ctx.git.commit.commit(repo.root, "Remove impl-context before sync")
             _squash_commits(ctx, repo.root)
 
@@ -317,7 +317,7 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
 
     # Strip .erk/impl-context/ before restack to avoid conflicts
     if _strip_impl_context_if_present(ctx, repo.root):
-        user_output("Stripping .erk/impl-context/ before restack...")
+        user_output("Stripped .erk/impl-context/ before restack")
         ctx.git.commit.commit(repo.root, "Remove impl-context before sync")
         _squash_commits(ctx, repo.root)
 
