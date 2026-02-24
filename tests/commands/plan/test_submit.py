@@ -256,5 +256,3 @@ def test_submit_planned_pr_plan_cleans_up_stale_impl_context_folder() -> None:
         assert "Dispatch metadata written" in result.output
 
         assert "Traceback" not in result.output
-
-

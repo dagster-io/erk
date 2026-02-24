@@ -423,9 +423,7 @@ def _submit_planned_pr_plan(
     help="Base branch for PR (defaults to current branch).",
 )
 @click.pass_obj
-def submit_cmd(
-    ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | None
-) -> None:
+def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | None) -> None:
     """Submit issues for remote AI implementation via GitHub Actions.
 
     Creates branch and draft PR locally (for correct commit attribution),

@@ -318,8 +318,6 @@ def test_planned_pr_plan_sync_failure_reports_error(tmp_path: Path) -> None:
     assert "Rebase conflict" in error_data["message"]
 
 
-
-
 # =============================================================================
 # Planned-PR plan: .erk/impl-context/ local file reading
 # =============================================================================

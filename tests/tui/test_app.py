@@ -2066,10 +2066,7 @@ class TestActionLaunch:
 
             app._on_launch_result("copy_implement_local")
 
-            expected = (
-                'source "$(erk pr checkout 123 --script)"'
-                " && erk implement --dangerous"
-            )
+            expected = 'source "$(erk pr checkout 123 --script)" && erk implement --dangerous'
             assert clipboard.last_copied == expected
 
 
