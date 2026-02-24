@@ -729,6 +729,85 @@ class TestPlannedPRBackend:
         assert "No plan found for branch" in data["error"]
 
 
+class TestDirectPlanLookup:
+    def test_plan_flag_skips_branch_discovery(self, tmp_path: Path) -> None:
+        """--plan flag does direct plan lookup, skipping branch-based discovery."""
+        objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY)
+        plan = _make_issue(number=6513, title="My Plan", body="plan body")
+        pr = _make_pr_details(number=6517, title="PR Title", body="pr body")
+
+        fake_issues = FakeGitHubIssues(issues={6423: objective, 6513: plan})
+        fake_github = FakeGitHub(pr_details={6517: pr})
+
+        runner = CliRunner()
+        result = runner.invoke(
+            objective_fetch_context,
+            ["--pr", "6517", "--objective", "6423", "--plan", "6513"],
+            obj=context_for_test(
+                github_issues=fake_issues,
+                github=fake_github,
+                repo_root=tmp_path,
+                cwd=tmp_path,
+            ),
+        )
+
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert data["success"] is True
+        assert data["plan"]["number"] == "6513"
+        assert data["objective"]["number"] == 6423
+
+    def test_plan_flag_not_found(self, tmp_path: Path) -> None:
+        """Returns error when --plan references a non-existent plan."""
+        fake_issues = FakeGitHubIssues()
+        fake_github = FakeGitHub()
+
+        runner = CliRunner()
+        result = runner.invoke(
+            objective_fetch_context,
+            ["--pr", "6517", "--objective", "6423", "--plan", "9999"],
+            obj=context_for_test(
+                github_issues=fake_issues,
+                github=fake_github,
+                repo_root=tmp_path,
+                cwd=tmp_path,
+            ),
+        )
+
+        assert result.exit_code == 1
+        data = json.loads(result.output)
+        assert data["success"] is False
+        assert "9999" in data["error"]
+
+    def test_plan_flag_without_pr_and_branch_errors(self, tmp_path: Path) -> None:
+        """Returns error when --plan used without --pr and --branch (can't auto-discover PR)."""
+        plan = _make_issue(number=6513, title="My Plan", body=PLAN_BODY_WITH_OBJECTIVE)
+        objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY)
+
+        fake_issues = FakeGitHubIssues(issues={6423: objective, 6513: plan})
+        fake_github = FakeGitHub()
+        # No branch set, no PR provided - should error
+        fake_git = FakeGit(current_branches={tmp_path: "master"})
+
+        runner = CliRunner()
+        result = runner.invoke(
+            objective_fetch_context,
+            ["--objective", "6423", "--plan", "6513"],
+            obj=context_for_test(
+                github_issues=fake_issues,
+                github=fake_github,
+                git=fake_git,
+                repo_root=tmp_path,
+                cwd=tmp_path,
+            ),
+        )
+
+        assert result.exit_code == 1
+        data = json.loads(result.output)
+        assert data["success"] is False
+        assert "Cannot auto-discover PR" in data["error"]
+
+
 class TestObjectiveContent:
     def test_objective_content_from_comment(self, tmp_path: Path) -> None:
         """objective_content is populated from the first comment's objective-body block."""

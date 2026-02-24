@@ -71,6 +71,7 @@ Quick reference for all `erk exec` subcommands.
 | `marker read`                     | Read content from a marker file.                                              |
 | `migrate-objective-schema`        | Migrate an objective's roadmap YAML to the latest schema (v4).                |
 | `normalize-tripwire-candidates`   | Normalize agent-produced tripwire candidate JSON in-place.                    |
+| `objective-apply-landed-update`   | Apply mechanical updates to an objective after landing a PR.                  |
 | `objective-fetch-context`         | Fetch all context for objective update in a single call.                      |
 | `objective-post-action-comment`   | Post a formatted action comment to an objective issue.                        |
 | `objective-render-roadmap`        | Render a complete roadmap section from JSON input on stdin.                   |
@@ -825,11 +826,11 @@ Normalize agent-produced tripwire candidate JSON in-place.
 | ------------------- | ---- | -------- | -------------- | -------------------------------- |
 | `--candidates-file` | TEXT | Yes      | Sentinel.UNSET | Path to tripwire-candidates.json |
 
-### objective-fetch-context
+### objective-apply-landed-update
 
-Fetch all context for objective update in a single call.
+Apply mechanical updates to an objective after landing a PR.
 
-**Usage:** `erk exec objective-fetch-context`
+**Usage:** `erk exec objective-apply-landed-update`
 
 **Options:**
 
@@ -838,6 +839,21 @@ Fetch all context for objective update in a single call.
 | `--pr`        | INTEGER | No       | -       | PR number (auto-discovered if omitted)       |
 | `--objective` | INTEGER | No       | -       | Objective issue (auto-discovered if omitted) |
 | `--branch`    | TEXT    | No       | -       | Branch name (auto-discovered if omitted)     |
+
+### objective-fetch-context
+
+Fetch all context for objective update in a single call.
+
+**Usage:** `erk exec objective-fetch-context`
+
+**Options:**
+
+| Flag          | Type    | Required | Default | Description                                               |
+| ------------- | ------- | -------- | ------- | --------------------------------------------------------- |
+| `--pr`        | INTEGER | No       | -       | PR number (auto-discovered if omitted)                    |
+| `--objective` | INTEGER | No       | -       | Objective issue (auto-discovered if omitted)              |
+| `--branch`    | TEXT    | No       | -       | Branch name (auto-discovered if omitted)                  |
+| `--plan`      | INTEGER | No       | -       | Plan number (direct lookup, skips branch-based discovery) |
 
 ### objective-post-action-comment
 

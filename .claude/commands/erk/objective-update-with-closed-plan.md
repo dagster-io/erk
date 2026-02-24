@@ -91,27 +91,10 @@ If nothing is stale, skip this step entirely.
 
 ### Step 5: Post Action Comment
 
-Post a structured action comment directly to the objective issue:
+Post the action comment via the exec script. Provide structured JSON on stdin:
 
 ```bash
-gh issue comment <objective-number> --body "$(cat <<'EOF'
-## Action: Plan #<plan> Closed
-
-**Date:** YYYY-MM-DD
-**Plan:** #<plan>
-**Phase/Step:** X.Y, X.Z
-
-### What Was Done
-- Plan #<plan> was closed
-- Reset nodes to pending for re-planning
-
-### Roadmap Updates
-- Node X.Y: in_progress -> pending (plan cleared)
-
-### Body Reconciliation
-- **Section**: What changed (or "No stale references found")
-EOF
-)"
+echo '{"issue_number": <N>, "date": "YYYY-MM-DD", "pr_number": 0, "phase_step": "X.Y, X.Z", "title": "Plan #<plan> Closed", "what_was_done": ["Plan #<plan> was closed", "Reset nodes to pending for re-planning"], "lessons_learned": [], "roadmap_updates": ["Node X.Y: in_progress -> pending (plan cleared)"], "body_reconciliation": []}' | erk exec objective-post-action-comment
 ```
 
 ### Step 6: Validate Objective
