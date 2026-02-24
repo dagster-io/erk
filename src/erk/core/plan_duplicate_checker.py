@@ -14,7 +14,7 @@ from dataclasses import dataclass
 
 from erk.core.llm_json import extract_json_dict
 from erk_shared.core.prompt_executor import PromptExecutor
-from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.plan_store.types import Plan
 
 DUPLICATE_CHECK_SYSTEM_PROMPT = """\
 You are a duplicate plan detector. Given a NEW plan and a list of EXISTING \
@@ -26,7 +26,7 @@ Plans touching the same files for different purposes are NOT duplicates. \
 Focus on intent and outcome, not surface-level word overlap.
 
 Respond with ONLY valid JSON in this exact format:
-{"duplicates": [{"issue_number": N, "explanation": "one sentence why"}]}
+{"duplicates": [{"plan_id": "ID", "explanation": "one sentence why"}]}
 
 If no duplicates, respond: {"duplicates": []}
 
@@ -45,7 +45,7 @@ _MAX_EXISTING_PLAN_BODY_CHARS = 500
 class DuplicateMatch:
     """A single duplicate match between new and existing plan."""
 
-    issue_number: int
+    plan_id: str
     title: str
     url: str
     explanation: str
@@ -79,7 +79,7 @@ class PlanDuplicateChecker:
     def check(
         self,
         new_plan_content: str,
-        existing_plans: list[IssueInfo],
+        existing_plans: list[Plan],
     ) -> DuplicateCheckResult:
         """Check if a new plan duplicates any existing open plans.
 
@@ -117,7 +117,7 @@ class PlanDuplicateChecker:
 
 def _build_prompt(
     new_plan_content: str,
-    existing_plans: list[IssueInfo],
+    existing_plans: list[Plan],
 ) -> str:
     """Build the prompt sent to the LLM for duplicate detection."""
     truncated_new = new_plan_content[:_MAX_NEW_PLAN_CHARS]
@@ -133,7 +133,7 @@ def _build_prompt(
 
     for plan in existing_plans[:_MAX_EXISTING_PLANS]:
         body_preview = (plan.body or "")[:_MAX_EXISTING_PLAN_BODY_CHARS]
-        lines.append(f"### #{plan.number}: {plan.title}")
+        lines.append(f"### #{plan.plan_identifier}: {plan.title}")
         lines.append(body_preview)
         lines.append("")
 
@@ -142,10 +142,10 @@ def _build_prompt(
 
 def _parse_response(
     output: str,
-    existing_plans: list[IssueInfo],
+    existing_plans: list[Plan],
 ) -> DuplicateCheckResult:
     """Parse the LLM JSON response into a DuplicateCheckResult."""
-    plan_map = {plan.number: plan for plan in existing_plans}
+    plan_map = {plan.plan_identifier: plan for plan in existing_plans}
 
     parsed = extract_json_dict(output)
     if parsed is None:
@@ -167,18 +167,18 @@ def _parse_response(
     for entry in raw_duplicates:
         if not isinstance(entry, dict):
             continue
-        issue_number = entry.get("issue_number")
-        if not isinstance(issue_number, int):
+        plan_id = entry.get("plan_id")
+        if not isinstance(plan_id, str):
             continue
         explanation = entry.get("explanation", "")
         if not isinstance(explanation, str):
             explanation = str(explanation)
         # Only include matches that reference actual existing plans
-        if issue_number in plan_map:
-            plan = plan_map[issue_number]
+        if plan_id in plan_map:
+            plan = plan_map[plan_id]
             matches.append(
                 DuplicateMatch(
-                    issue_number=issue_number,
+                    plan_id=plan_id,
                     title=plan.title,
                     url=plan.url,
                     explanation=explanation,
