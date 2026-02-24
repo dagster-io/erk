@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Set lifecycle_stage to \"impl\" in PR submit and rewrite pipelines"
+}
