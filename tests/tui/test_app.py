@@ -2238,7 +2238,7 @@ class TestAddressRemoteAsync:
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
         """_address_remote_async should NOT pass --no-wait to subprocess."""
-        import subprocess as subprocess_mod
+        import subprocess
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456)],
@@ -2249,11 +2249,11 @@ class TestAddressRemoteAsync:
 
         captured_args: list[str] = []
 
-        def fake_run(args: list[str], **kwargs: object) -> subprocess_mod.CompletedProcess[str]:
+        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
             captured_args.extend(args)
-            return subprocess_mod.CompletedProcess(args, 0, stdout="", stderr="")
+            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
 
-        monkeypatch.setattr(subprocess_mod, "run", fake_run)
+        monkeypatch.setattr(subprocess, "run", fake_run)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -2270,7 +2270,7 @@ class TestAddressRemoteAsync:
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
         """_address_remote_async should trigger action_refresh after success."""
-        import subprocess as subprocess_mod
+        import subprocess
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456)],
@@ -2279,10 +2279,10 @@ class TestAddressRemoteAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
-        def fake_run(args: list[str], **kwargs: object) -> subprocess_mod.CompletedProcess[str]:
-            return subprocess_mod.CompletedProcess(args, 0, stdout="", stderr="")
+        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
 
-        monkeypatch.setattr(subprocess_mod, "run", fake_run)
+        monkeypatch.setattr(subprocess, "run", fake_run)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -2300,7 +2300,7 @@ class TestAddressRemoteAsync:
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
         """_address_remote_async should NOT refresh on subprocess failure."""
-        import subprocess as subprocess_mod
+        import subprocess
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456)],
@@ -2309,10 +2309,10 @@ class TestAddressRemoteAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
-        def fake_run(args: list[str], **kwargs: object) -> subprocess_mod.CompletedProcess[str]:
-            raise subprocess_mod.CalledProcessError(1, args, stderr="dispatch failed")
+        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            raise subprocess.CalledProcessError(1, args, stderr="dispatch failed")
 
-        monkeypatch.setattr(subprocess_mod, "run", fake_run)
+        monkeypatch.setattr(subprocess, "run", fake_run)
 
         async with app.run_test() as pilot:
             await pilot.pause()
