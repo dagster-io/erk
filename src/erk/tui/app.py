@@ -540,30 +540,20 @@ class ErkDashApp(App):
     def _address_remote_async(self, pr_number: int) -> None:
         """Dispatch address-remote workflow in background thread with toast."""
         try:
-            result = subprocess.run(
+            subprocess.run(
                 ["erk", "launch", "pr-address", "--pr", str(pr_number), "--no-wait"],
                 capture_output=True,
                 text=True,
-                check=False,
+                check=True,
                 stdin=subprocess.DEVNULL,
                 cwd=str(self._provider.repo_root),
             )
-            if result.returncode == 0:
-                self.call_from_thread(
-                    self.notify, f"Dispatched address for PR #{pr_number}", timeout=3
-                )
-            else:
-                error_msg = result.stderr.strip() or result.stdout.strip() or "Unknown error"
-                self.call_from_thread(
-                    self.notify,
-                    f"Failed to dispatch address for PR #{pr_number}: {error_msg}",
-                    severity="error",
-                    timeout=5,
-                )
-        except Exception as e:
+            self.call_from_thread(self.notify, f"Dispatched address for PR #{pr_number}", timeout=3)
+        except subprocess.CalledProcessError as e:
+            error_msg = (e.stderr or "").strip() or (e.stdout or "").strip() or "Unknown error"
             self.call_from_thread(
                 self.notify,
-                f"Failed to dispatch address for PR #{pr_number}: {e}",
+                f"Failed to dispatch address for PR #{pr_number}: {error_msg}",
                 severity="error",
                 timeout=5,
             )
