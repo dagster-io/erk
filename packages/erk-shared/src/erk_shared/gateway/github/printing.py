@@ -105,13 +105,19 @@ class PrintingGitHub(PrintingBase, GitHub):
             repo_root, pr_number, squash=squash, verbose=verbose, subject=subject, body=body
         )
 
+    def _format_workflow_run_command(
+        self, *, workflow: str, inputs: dict[str, str], ref: str | None
+    ) -> str:
+        ref_arg = f"--ref {ref} " if ref else ""
+        input_args = " ".join(f"-f {key}={value}" for key, value in inputs.items())
+        return f"gh workflow run {workflow} {ref_arg}{input_args}"
+
     def dispatch_workflow(
         self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None = None
     ) -> None:
         """Dispatch workflow with printed output (fire-and-forget)."""
-        ref_arg = f"--ref {ref} " if ref else ""
-        input_args = " ".join(f"-f {key}={value}" for key, value in inputs.items())
-        self._emit(self._format_command(f"gh workflow run {workflow} {ref_arg}{input_args}"))
+        cmd = self._format_workflow_run_command(workflow=workflow, inputs=inputs, ref=ref)
+        self._emit(self._format_command(cmd))
         self._wrapped.dispatch_workflow(
             repo_root=repo_root, workflow=workflow, inputs=inputs, ref=ref
         )
@@ -124,9 +130,8 @@ class PrintingGitHub(PrintingBase, GitHub):
         Returns:
             The GitHub Actions run ID as a string
         """
-        ref_arg = f"--ref {ref} " if ref else ""
-        input_args = " ".join(f"-f {key}={value}" for key, value in inputs.items())
-        self._emit(self._format_command(f"gh workflow run {workflow} {ref_arg}{input_args}"))
+        cmd = self._format_workflow_run_command(workflow=workflow, inputs=inputs, ref=ref)
+        self._emit(self._format_command(cmd))
         self._emit(f"   Polling for run (max {15} attempts)...")
         run_id = self._wrapped.trigger_workflow(
             repo_root=repo_root, workflow=workflow, inputs=inputs, ref=ref
