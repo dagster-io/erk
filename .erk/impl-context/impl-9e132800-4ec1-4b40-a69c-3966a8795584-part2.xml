@@ -1,0 +1,696 @@
+<session>
+  <meta branch="plnd/fix-impl-signal-lifecycle-02-23-1128" />
+  <meta model="claude-sonnet-4-6" />
+  <tool_use name="Grep" id="toolu_01CFzjtyNYZC1SKy4vgSzMmf">
+    <param name="pattern">lifecycle_stage.*impl|impl.*lifecycle_stage</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk</param>
+    <param name="output_mode">content</param>
+    <param name="context">2</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3197" cache_read_input_tokens="58669" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3197}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CFzjtyNYZC1SKy4vgSzMmf">
+src/erk/cli/commands/exec/scripts/impl_signal.py-4-- "started": Combines post-start-comment and mark-impl-started
+src/erk/cli/commands/exec/scripts/impl_signal.py-5-- "ended": Runs mark-impl-ended
+src/erk/cli/commands/exec/scripts/impl_signal.py:6:- "submitted": Sets lifecycle_stage to "impl" after PR submission
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/impl_signal.py-7-
+src/erk/cli/commands/exec/scripts/impl_signal.py-8-Provides a single entry point for /erk:plan-implement to signal events
+--
+src/erk/cli/commands/exec/scripts/impl_signal.py-250-        "worktree_name": worktree_name,
+src/erk/cli/commands/exec/scripts/impl_signal.py-251-        "branch_name": branch_name,
+src/erk/cli/commands/exec/scripts/impl_signal.py:252:        "lifecycle_stage": "impl",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/impl_signal.py-253-    }
+src/erk/cli/commands/exec/scripts/impl_signal.py-254-    if in_github_actions():
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/impl_signal.py-361-
+src/erk/cli/commands/exec/scripts/impl_signal.py-362-def _signal_submitted(ctx: click.Context, session_id: str | None) -&gt; None:
+src/erk/cli/commands/exec/scripts/impl_signal.py:363:    """Handle 'submitted' event - set lifecycle_stage to impl."""
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/impl_signal.py-364-    event = "submitted"
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/impl_signal.py-365-
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/impl_signal.py-398-    # Build metadata dict with lifecycle_stage transition
+src/erk/cli/commands/exec/scripts/impl_signal.py-399-    metadata: dict[str, object] = {
+src/erk/cli/commands/exec/scripts/impl_signal.py:400:        "lifecycle_stage": "impl",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/impl_signal.py-401-    }
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/impl_signal.py-402-
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/impl_signal.py-438-    'started' posts a start comment and updates issue metadata.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/impl_signal.py-439-    'ended' updates issue metadata with ended event.
+src/erk/cli/commands/exec/scripts/impl_signal.py:440:    'submitted' sets lifecycle_stage to "impl" after PR submission.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/impl_signal.py-441-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/impl_signal.py-442-    When --session-id is provided on 'started', also deletes the Claude plan file
+--
+
+... [17 lines omitted] ...
+
+src/erk/cli/commands/exec/scripts/handle_no_changes.py-250-    except RuntimeError as e:
+  </tool_result>
+  <tool_use name="Grep" id="toolu_013MK1SMjxXQ3SAxZAgdVH5e">
+    <param name="pattern">lifecycle_stage</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/integrations</param>
+    <param name="output_mode">content</param>
+    <param name="context">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3197" cache_read_input_tokens="58669" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3197}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013MK1SMjxXQ3SAxZAgdVH5e">
+&lt;tool_use_error&gt;Path does not exist: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/integrations. Note: your current working directory is /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40.&lt;/tool_use_error&gt;
+  </tool_result>
+  <thinking>The metadata key `"lifecycle_stage"` with value `"impl"` is being stored in the body. I need to find how the body stores this. Let me check how the body format looks. Let me search for the plan backend or how the metadata is serialized into the body.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2605" cache_read_input_tokens="61866" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2605}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check how the metadata block is serialized into the issue body:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2605" cache_read_input_tokens="61866" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2605}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01CdeApQwffHqgu7YLi17HPE">
+    <param name="pattern">lifecycle_stage.*yaml|yaml.*lifecycle|metadata.*block|render.*metadata</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2605" cache_read_input_tokens="61866" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2605}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CdeApQwffHqgu7YLi17HPE">
+Found 30 files
+src/erk/cli/commands/exec/scripts/create_plan_from_context.py
+src/erk/cli/commands/exec/scripts/mark_impl_started.py
+src/erk/cli/commands/exec/scripts/plan_save_to_issue.py
+src/erk/core/services/plan_list_service.py
+src/erk/cli/commands/submit.py
+src/erk/cli/commands/pr/metadata_helpers.py
+src/erk/cli/commands/pr/shared.py
+src/erk/cli/commands/plan/learn/complete_cmd.py
+src/erk/cli/commands/plan/log_cmd.py
+src/erk/cli/commands/one_shot_dispatch.py
+src/erk/cli/commands/plan/check_cmd.py
+src/erk/cli/commands/objective/check_cmd.py
+src/erk/cli/commands/land_cmd.py
+src/erk/cli/commands/exec/scripts/update_objective_node.py
+src/erk/cli/commands/exec/scripts/update_plan_header.py
+src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py
+src/erk/cli/commands/exec/scripts/track_learn_result.py
+src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py
+src/erk/cli/commands/exec/scripts/objective_fetch_context.py
+src/erk/cli/commands/exec/scripts/objective_render_roadmap.py
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py
+src/erk/cli/commands/exec/scripts/mark_impl_ended.py
+src/erk/cli/commands/exec/scripts/migrate_objective_schema.py
+src/erk/cli/commands/exec/scripts/get_pr_for_plan.py
+src/erk/cli/commands/exec/scripts/get_plan_metadata.py
+src/erk/cli/commands/exec/scripts/get_plans_for_objective.py
+src/erk/cli/commands/exec/scripts/ci_update_pr_body.py
+src/erk/cli/commands/exec/group.py
+
+... [1 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Hh6Fm1XMvz3srpnCjFwAxh">
+    <param name="pattern">update_body|update_issue_body|set_metadata|write_metadata</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2605" cache_read_input_tokens="61866" output_tokens="351" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2605, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Hh6Fm1XMvz3srpnCjFwAxh">
+Found 6 files
+src/erk/cli/commands/exec/scripts/create_plan_from_context.py
+src/erk/cli/commands/objective/plan_cmd.py
+src/erk/cli/commands/exec/scripts/update_issue_body.py
+src/erk/cli/commands/exec/scripts/update_objective_node.py
+src/erk/cli/commands/exec/scripts/migrate_objective_schema.py
+src/erk/cli/commands/exec/group.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01SyuUGbVVoWwjptZN7hzH1z">
+    <param name="pattern">lifecycle_stage</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1139" cache_read_input_tokens="64471" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1139}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SyuUGbVVoWwjptZN7hzH1z">
+No files found
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01KDXsYT6VERGZRTp9gaoVQi">
+    <param name="pattern">src/erk/core/**/*.py</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1139" cache_read_input_tokens="64471" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1139}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KDXsYT6VERGZRTp9gaoVQi">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core/__init__.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core/capabilities/__init__.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core/capabilities/detection.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core/completion.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core/health_checks_dogfooder/__init__.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core/health_checks_dogfooder/deprecated_dot_agent_config.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core/health_checks_dogfooder/legacy_claude_docs.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core/health_checks_dogfooder/legacy_config_locations.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core/health_checks_dogfooder/legacy_erk_docs_agent.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core/health_checks_dogfooder/legacy_erk_kits_folder.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core/health_checks_dogfooder/legacy_hook_settings.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core/health_checks_dogfooder/legacy_kit_yaml.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core/health_checks_dogfooder/legacy_kits_toml.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core/health_checks_dogfooder/outdated_erk_skill.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core/implementation_queue/__init__.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core/init_utils.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core/output_filter.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core/plan_store/__init__.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core/release_notes.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core/script_writer.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core/services/__init__.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core/shell.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core/branch_slug_generator.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core/capabilities/base.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core/capabilities/codex_portable.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core/capabilities/reminder_capability.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core/capabilities/review_capability.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core/capabilities/skill_capability.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core/claude_settings.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/core/codespace_run.py
+
+... [22 lines omitted] ...
+  </tool_result>
+  <thinking>Let me look at how the plan backend updates the body and how the metadata is formatted. I need to find `PlanBackend.post_event` or `update_metadata` to understand how the body looks after metadata is updated.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2495" cache_read_input_tokens="65610" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2495}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at how the plan backend serializes metadata into the body:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2495" cache_read_input_tokens="65610" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2495}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01SWNuikJ8Svfhx6dguvBQwt">
+    <param name="pattern">class PlanBackend|def post_event|def update_metadata</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk</param>
+    <param name="output_mode">content</param>
+    <param name="context">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2495" cache_read_input_tokens="65610" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2495}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SWNuikJ8Svfhx6dguvBQwt">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01L3PFsgKJjvj1fNwa722Hek">
+    <param name="pattern">post_event|plan_backend|PlanBackend</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="244" cache_read_input_tokens="68105" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 244}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01L3PFsgKJjvj1fNwa722Hek">
+Found 51 files
+src/erk/cli/commands/exec/scripts/impl_signal.py
+src/erk/cli/commands/exec/scripts/handle_no_changes.py
+src/erk/cli/commands/exec/scripts/mark_impl_started.py
+src/erk/cli/commands/exec/scripts/plan_save_to_issue.py
+src/erk/cli/commands/exec/scripts/plan_save.py
+src/erk/tui/widgets/plan_table.py
+src/erk/tui/commands/types.py
+src/erk/tui/commands/registry.py
+src/erk/tui/commands/provider.py
+src/erk/tui/app.py
+src/erk/core/plan_context_provider.py
+src/erk/core/context.py
+src/erk/cli/commands/wt/create_cmd.py
+src/erk/cli/commands/submit.py
+src/erk/cli/commands/pr/submit_pipeline.py
+src/erk/cli/commands/pr/metadata_helpers.py
+src/erk/cli/commands/pr/rewrite_cmd.py
+src/erk/cli/commands/plan/list_cmd.py
+src/erk/cli/commands/plan/view.py
+src/erk/cli/commands/one_shot_dispatch.py
+src/erk/cli/commands/objective_helpers.py
+src/erk/cli/commands/land_pipeline.py
+src/erk/cli/commands/learn/learn_cmd.py
+src/erk/cli/commands/implement_shared.py
+src/erk/cli/commands/land_cmd.py
+src/erk/cli/commands/exec/scripts/update_plan_header.py
+src/erk/cli/commands/exec/scripts/update_pr_description.py
+src/erk/cli/commands/exec/scripts/upload_session.py
+src/erk/cli/commands/exec/scripts/set_pr_description.py
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01En1va1VDWTyV17KDMWDuqG">
+    <param name="pattern">plan_backend|PlanBackend</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk/cli/commands/exec/scripts/impl_signal.py</param>
+    <param name="output_mode">content</param>
+    <param name="context">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1226" cache_read_input_tokens="68349" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1226}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01En1va1VDWTyV17KDMWDuqG">
+44-    require_claude_installation,
+45-    require_cwd,
+46:    require_plan_backend,
+47-    require_repo_root,
+48-)
+--
+229-        return
+230-
+231:    # Get PlanBackend from context
+232-    try:
+233:        backend = require_plan_backend(ctx)
+234-    except SystemExit:
+235-        _output_error(event, "context-not-initialized", "Context not initialized")
+--
+260-        metadata["last_local_impl_user"] = user
+261-
+262:    # Post event (comment + metadata update) via PlanBackend
+263-    try:
+264-        backend.post_event(
+--
+327-        return
+328-
+329:    # Get PlanBackend from context
+330-    try:
+331:        backend = require_plan_backend(ctx)
+332-    except SystemExit:
+333-        _output_error(event, "context-not-initialized", "Context not initialized")
+--
+344-        metadata["last_local_impl_user"] = user
+345-
+
+... [17 lines omitted] ...
+
+395-        _output_error(event, "context-not-initialized", "Context not initialized")
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Ann2ZNFa5HZpGJBKM8qnFD">
+    <param name="pattern">def update_metadata|def post_event</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/src/erk</param>
+    <param name="output_mode">content</param>
+    <param name="context">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="617" cache_read_input_tokens="69575" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 617}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ann2ZNFa5HZpGJBKM8qnFD">
+No matches found
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01AC4ZsvGasGYBw1ySPjC6DB">
+    <param name="pattern">src/erk/**/*plan*backend*.py</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="158" cache_read_input_tokens="70192" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 158}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AC4ZsvGasGYBw1ySPjC6DB">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01S3CedEmSkF395SFKk1Neuo">
+    <param name="pattern">class.*Backend|def update_metadata|def post_event</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40</param>
+    <param name="glob">**/*.py</param>
+    <param name="output_mode">content</param>
+    <param name="context">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="158" cache_read_input_tokens="70192" output_tokens="248" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 158, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01S3CedEmSkF395SFKk1Neuo">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/plan_store/github.py-71-    raise ValueError(f"objective_issue must be str or int, got {type(value).__name__}")
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/plan_store/github.py-72-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/plan_store/github.py-73-
+packages/erk-shared/src/erk_shared/plan_store/github.py:74:class GitHubPlanStore(PlanBackend):
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/plan_store/github.py-75-    """GitHub implementation using gh CLI.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/plan_store/github.py-76-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/plan_store/github.py-77-    Wraps GitHub issue operations and converts to provider-agnostic Plan format.
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/plan_store/github.py-454-            url=result.issue_url or "",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/plan_store/github.py-455-        )
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/plan_store/github.py-456-
+packages/erk-shared/src/erk_shared/plan_store/github.py:457:    def update_metadata(
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/plan_store/github.py-458-        self,
+packages/erk-shared/src/erk_shared/plan_store/github.py-459-        repo_root: Path,
+packages/erk-shared/src/erk_shared/plan_store/github.py-460-        plan_id: str,
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/plan_store/github.py-621-        comment_id = self._github_issues.add_comment(repo_root, issue_number, body)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/plan_store/github.py-622-        return str(comment_id)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/plan_store/github.py-623-
+packages/erk-shared/src/erk_shared/plan_store/github.py:624:    def post_event(
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/plan_store/github.py-625-        self,
+packages/erk-shared/src/erk_shared/plan_store/github.py-626-        repo_root: Path,
+packages/erk-shared/src/erk_shared/plan_store/github.py-627-        plan_id: str,
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/plan_store/draft_pr.py-72-    raise ValueError(f"objective_issue must be str or int, got {type(value).__name__}")
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/plan_store/draft_pr.py-73-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/plan_store/draft_pr.py-74-
+packages/erk-shared/src/erk_shared/plan_store/draft_pr.py:75:class DraftPRPlanBackend(PlanBackend):
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/plan_store/draft_pr.py-76-    """Draft PR implementation of plan storage.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/plan_store/draft_pr.py-77-
+
+... [57 lines omitted] ...
+
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py-618-        assert "No PR found" in data["error"]
+  </tool_result>
+  <thinking>Let me look at the fake plan backend to understand how `updated_bodies` is populated. The test uses `FakeGitHubIssues` and `fake_issues.updated_bodies`. Let me find how this fake works and what format the updated body takes.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4216" cache_read_input_tokens="70350" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4216}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at how the FakeGitHubIssues fake stores updated bodies:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4216" cache_read_input_tokens="70350" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4216}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01WvcJ35frKhgfjjqQZr43F2">
+    <param name="pattern">class FakeGitHubIssues|updated_bodies</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40</param>
+    <param name="glob">**/*.py</param>
+    <param name="output_mode">content</param>
+    <param name="context">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4216" cache_read_input_tokens="70350" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4216}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WvcJ35frKhgfjjqQZr43F2">
+&lt;persisted-output&gt;
+Output too large (55.4KB). Full output saved to: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-40/9e132800-4ec1-4b40-a69c-3966a8795584/tool-results/toolu_01WvcJ35frKhgfjjqQZr43F2.txt
+
+Preview (first 2KB):
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/commands/objective/test_plan_one_shot.py-168-        )
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/commands/objective/test_plan_one_shot.py-169-
+tests/commands/objective/test_plan_one_shot.py-170-        # Verify objective body was updated: node 1.1 marked as "planning" with draft PR
+tests/commands/objective/test_plan_one_shot.py:171:        # Note: updated_bodies has 2 entries — one from skeleton plan issue creation
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/commands/objective/test_plan_one_shot.py-172-        # (create_plan_issue updates body with comment_id) and one from objective update
+tests/commands/objective/test_plan_one_shot.py:173:        objective_updates = [(num, body) for num, body in issues.updated_bodies if num == 42]
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/commands/objective/test_plan_one_shot.py-174-        assert len(objective_updates) == 1
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/commands/objective/test_plan_one_shot.py-175-        _, updated_body = objective_updates[0]
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/commands/objective/test_plan_one_shot.py-176-        assert "planning" in updated_body.lower() or "planning" in updated_body
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/commands/objective/test_plan_one_shot.py-387-        assert len(github.triggered_workflows) == 0
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/commands/objective/test_plan_one_shot.py-388-        assert len(github.created_prs) == 0
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/commands/objective/test_plan_one_shot.py-389-        # No objective body update in dry-run mode
+tests/commands/objective/test_plan_one_shot.py:390:        assert len(issues.updated_bodies) == 0
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/commands/objective/test_plan_one_shot.py-391-
+...
+&lt;/persisted-output&gt;
+  </tool_result>
+  <tool_use name="Grep" id="toolu_013br5AA4LmnRoKiQ1hXugiZ">
+    <param name="pattern">class FakeGitHubIssues</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40</param>
+    <param name="glob">**/*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1115" cache_read_input_tokens="74566" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1115}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013br5AA4LmnRoKiQ1hXugiZ">
+Found 1 file
+packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01DQkDt14zLNFSAC9LgjsGT9">
+    <param name="pattern">updated_bodies|def update_body</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="context">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="186" cache_read_input_tokens="75681" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 186}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DQkDt14zLNFSAC9LgjsGT9">
+68-        self._created_issues: list[tuple[str, str, list[str]]] = []
+69-        self._added_comments: list[tuple[int, str, int]] = []  # (issue_number, body, comment_id)
+70-        self._created_labels: list[tuple[str, str, str]] = []
+71-        self._closed_issues: list[int] = []
+72-        self._added_reactions: list[tuple[int, str]] = []
+73:        self._updated_bodies: list[tuple[int, str]] = []
+74-        self._updated_titles: list[tuple[int, str]] = []  # (issue_number, title)
+75-        self._updated_comments: list[tuple[int, str]] = []  # (comment_id, body)
+76-        self._next_comment_id = 1000  # Start at 1000 to distinguish from issue numbers
+77-
+78-    @property
+--
+122-        Returns list of (comment_id, reaction) tuples.
+123-        """
+124-        return self._added_reactions
+125-
+126-    @property
+127:    def updated_bodies(self) -&gt; list[tuple[int, str]]:
+128-        """Read-only access to updated issue bodies for test assertions.
+129-
+130-        Returns list of (issue_number, body) tuples.
+131-        """
+132:        return self._updated_bodies
+133-
+134-    @property
+135-    def updated_titles(self) -&gt; list[tuple[int, str]]:
+136-        """Read-only access to updated issue titles for test assertions.
+137-
+--
+227-        else:
+
+... [10 lines omitted] ...
+  </tool_result>
+  <thinking>Now let me look at how the body is formatted when metadata is updated. The `updated_bodies` stores the raw `body_content`. I need to understand what format `body_content` takes when updated via `update_metadata`.
+
+Let me look at the `github.py` implementation of `update_metadata` to see how the body is formatted.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="704" cache_read_input_tokens="75867" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 704}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Bs1mQHdRmYgQth1AsqyUuZ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/plan_store/github.py</param>
+    <param name="offset">457</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="704" cache_read_input_tokens="75867" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 704}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Bs1mQHdRmYgQth1AsqyUuZ">
+   457→    def update_metadata(
+   458→        self,
+   459→        repo_root: Path,
+   460→        plan_id: str,
+   461→        metadata: Mapping[str, object],
+   462→    ) -&gt; None:
+   463→        """Update plan metadata in the issue body.
+   464→
+   465→        Fetches the current issue body, updates the plan-header metadata block,
+   466→        and updates the issue body. Accepts any field recognized by PlanHeaderSchema
+   467→        except immutable fields (schema_version, created_at, created_by).
+   468→
+   469→        Args:
+   470→            repo_root: Repository root directory
+   471→            plan_id: Provider-specific identifier (issue number)
+   472→            metadata: New metadata to set (validated by PlanHeaderSchema)
+   473→
+   474→        Raises:
+   475→            RuntimeError: If provider fails or plan not found
+   476→        """
+   477→        issue_number = int(plan_id)
+   478→        issue = self._github_issues.get_issue(repo_root, issue_number)
+   479→        if isinstance(issue, IssueNotFound):
+   480→            msg = f"Issue #{issue_number} not found"
+   481→            raise RuntimeError(msg)
+   482→
+   483→        # Parse current metadata from issue body
+   484→        block = find_metadata_block(issue.body, "plan-header")
+   485→        if block is None:
+   486→            raise PlanHeaderNotFoundError("plan-header block not found in issue body")
+
+... [35 lines omitted] ...
+  </tool_result>
+  <thinking>Now I need to understand the `render_metadata_block` function to see what format the metadata block takes in the body.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1085" cache_read_input_tokens="76571" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1085}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_016UnjaEXV6tADxgi5Fni1V4">
+    <param name="pattern">def render_metadata_block</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40</param>
+    <param name="glob">**/*.py</param>
+    <param name="output_mode">content</param>
+    <param name="context">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1085" cache_read_input_tokens="76571" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1085}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016UnjaEXV6tADxgi5Fni1V4">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-33-    """
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-34-    Create a metadata block with optional schema validation.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-35-
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-36-    Args:
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-37-        key: The metadata block key (appears in summary)
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-38-        data: The structured data (will be rendered as YAML)
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-39-        schema: Optional schema to validate data against
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-40-
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-41-    Returns:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-42-        MetadataBlock instance
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-43-
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-44-    Raises:
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-45-        ValueError: If schema validation fails
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-46-    """
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-47-    if schema is not None:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-48-        schema.validate(data)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-49-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-50-    return MetadataBlock(key=key, data=data)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-51-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-52-
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py:53:def render_metadata_block(block: MetadataBlock) -&gt; str:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-54-    """
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-55-    Render a metadata block as markdown with HTML comment wrappers.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-56-
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-57-    Returns markdown like:
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-58-    &lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-59-    &lt;!-- erk:metadata-block:{key} --&gt;
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-60-    &lt;details&gt;
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-61-    &lt;summary&gt;{key}&lt;/summary&gt;
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-62-    ```yaml
+
+... [53 lines omitted] ...
+
+packages/erk-shared/src/erk_shared/gateway/github/metadata_blocks.py-210-        ValueError: If schema validation fails
+packages/erk-shared/src/erk_shared/gateway/github/metadata_blocks.py-223-    &lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+  </tool_result>
+  <thinking>Now I understand the format! The metadata is stored as YAML inside a `&lt;details&gt;` block. The format would look like:
+```yaml
+lifecycle_stage: impl
+```
+
+So in YAML, `lifecycle_stage: impl` is a string value. I need to check for `lifecycle_stage: impl` in the updated body.
+
+The original assertion was `assert "implementing" in updated_body` — checking for the YAML value `implementing`. 
+
+For the new value "impl", I should check for `lifecycle_stage: impl` in the YAML output. Since YAML renders it as `lifecycle_stage: impl\n`, I can use `"lifecycle_stage: impl" in updated_body`.
+
+
+But I'm realizing there's a substring collision here — "impl" is a prefix of "implementing", so checking for `"lifecycle_stage: impl"` would incorrectly match `lifecycle_stage: implementing` as well. I need to be more precise with the assertion, maybe checking for the exact line with a newline boundary or using a regex pattern to avoid false positives.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4545" cache_read_input_tokens="77656" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4545}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>The metadata is serialized as YAML, so the body will contain `lifecycle_stage: impl\n`. Let me fix the test assertion:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4545" cache_read_input_tokens="77656" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4545}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01CM6vz5mfD1stoSJWHDfdGb">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/exec/scripts/test_impl_signal.py</param>
+    <param name="old_string">    assert '"lifecycle_stage": "impl"' in updated_body</param>
+    <param name="new_string">    assert "lifecycle_stage: impl\n" in updated_body</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4545" cache_read_input_tokens="77656" output_tokens="637" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4545, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CM6vz5mfD1stoSJWHDfdGb">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40/tests/unit/cli/commands/exec/scripts/test_impl_signal.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Task" id="toolu_01T2WC7hGc7CmTU4j4ecEkKH">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run impl_signal tests again</param>
+    <param name="prompt">Run the following command and report results:
+uv run pytest tests/unit/cli/commands/exec/scripts/test_impl_signal.py -v
+
+Working directory: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="711" cache_read_input_tokens="82201" output_tokens="158" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 711, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01T2WC7hGc7CmTU4j4ecEkKH">
+pytest passed: 17 passed in 0.71s
+
+All tests in the impl_signal test module passed successfully.
+agentId: a7d7a7682ce856006 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13709
+tool_uses: 1
+duration_ms: 4677&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 17 tests pass. Now commit and resolve the thread:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="252" cache_read_input_tokens="82912" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 252}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PpZvNDwZqexKTX6o3eijU9">
+    <param name="command">git add src/erk/cli/commands/exec/scripts/impl_signal.py tests/unit/cli/commands/exec/scri...[truncated 297 chars]...test assertion to match.
+
+Co-Authored-By: Claude Sonnet 4.6 &lt;noreply@anthropic.com&gt;
+EOF
+)"</param>
+    <param name="description">Commit the lifecycle_stage fix</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="252" cache_read_input_tokens="82912" output_tokens="273" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 252, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PpZvNDwZqexKTX6o3eijU9">
+[plnd/fix-impl-signal-lifecycle-02-23-1128 e659012e7] Fix: use 'impl' (not 'implementing') in started signal lifecycle_stage
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+  </tool_result>
+  <assistant>Now resolve the review thread:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="320" cache_read_input_tokens="83164" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 320}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013YggseZ2xTsB36geUvqxDs">
+    <param name="command">echo '[{"thread_id": "PRRT_kwDOPxC3hc5wQgIb", "comment": "Good catch \u2014 changed `\"imp...[truncated 134 chars]...impl\\n` (YAML format) rather than just a substring."}]' | erk exec resolve-review-threads</param>
+    <param name="description">Resolve the review thread</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="320" cache_read_input_tokens="83164" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 320}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013YggseZ2xTsB36geUvqxDs">
+{
+  "success": true,
+  "results": [
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5wQgIb",
+      "comment_added": true
+    }
+  ]
+}
+  </tool_result>
+  <assistant>Thread resolved. Now update the PR description:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="263" cache_read_input_tokens="83484" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 263}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017rAtPvXM1Dp8mvE7BGQ1yJ">
+    <param name="command">erk exec update-pr-description --session-id "9e132800-4ec1-4b40-a69c-3966a8795584"</param>
+    <param name="description">Update PR title and body from full diff</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="263" cache_read_input_tokens="83484" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 263}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017rAtPvXM1Dp8mvE7BGQ1yJ">
+
+  </tool_result>
+  <assistant>All done. Here's a summary:
+
+## Batch Complete
+
+**Change made:** In `impl_signal.py:252`, changed `"lifecycle_stage": "implementing"` → `"lifecycle_stage": "impl"` to match the collapsed lifecycle stage model from plan #7999. The legacy `mark_impl_started.py` it replaced already used `"impl"` directly.
+
+**Test updated:** Renamed `test_started_sets_lifecycle_stage_implementing` → `test_started_sets_lifecycle_stage_impl` and tightened assertion to check for `"lifecycle_stage: impl\n"` (YAML format).
+
+**Committed:** `e659012e7` — all 17 tests pass.
+
+**Thread resolved:** `PRRT_kwDOPxC3hc5wQgIb` ✓
+
+## Next Steps
+
+1. Push changes — `gt submit` or `git push`
+2. Wait for CI
+3. Request re-review if needed</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="148" cache_read_input_tokens="83747" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 148}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;local:quick-submit&lt;/command-message&gt;
+&lt;command-name&gt;/local:quick-submit&lt;/command-name&gt;</user>
+  <user># Quick Submit
+
+Quickly commit all changes with a generic "update" message and submit to Graphite.
+
+## Usage
+
+```bash
+/quick-submit
+```
+
+## Implementation
+
+Run the CLI command:
+
+```bash
+erk exec quick-submit
+```
+
+## Notes
+
+- This is a shortcut for rapid iteration
+- Uses generic "update" commit message
+- For proper commit messages, use `/erk:pr-submit` instead
+</user>
+  <tool_use name="Bash" id="toolu_014JhFtKxiTpxUovMYnM7h4h">
+    <param name="command">erk exec quick-submit</param>
+    <param name="description">Quick commit and submit to Graphite</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="392" cache_read_input_tokens="84122" output_tokens="81" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 392, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014JhFtKxiTpxUovMYnM7h4h">
+  Staging all changes...
+  Checking for staged changes...
+  Submitting to Graphite...
+  Getting PR URL...
+{
+  "success": true,
+  "staged_changes": false,
+  "committed": false,
+  "message": "No new changes, submitted existing commits",
+  "pr_url": "https://github.com/dagster-io/erk/pull/7992"
+}
+  </tool_result>
+  <assistant>No new changes to commit — the existing commit was pushed. PR: https://github.com/dagster-io/erk/pull/7992</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="192" cache_read_input_tokens="84514" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 192}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="335" cache_read_input_tokens="84739" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 335}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Goodbye!&lt;/local-command-stdout&gt;</user>
+</session>
