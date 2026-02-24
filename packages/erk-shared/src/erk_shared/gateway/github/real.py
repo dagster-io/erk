@@ -290,6 +290,20 @@ class RealGitHub(GitHub):
         # Generate 6 random characters (~2.2 billion possibilities)
         return "".join(secrets.choice(base36_chars) for _ in range(6))
 
+    def _get_default_branch(self, repo_root: Path) -> str:
+        """Resolve the default branch for the repository via REST API.
+
+        Args:
+            repo_root: Repository root path
+
+        Returns:
+            Default branch name (e.g., 'main' or 'master')
+        """
+        # GH-API-AUDIT: REST - GET repos/{owner}/{repo}
+        cmd = ["gh", "api", "repos/{owner}/{repo}", "--jq", ".default_branch"]
+        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+        return stdout.strip()
+
     def _dispatch_workflow_impl(
         self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None
     ) -> str:
@@ -313,22 +327,26 @@ class RealGitHub(GitHub):
             f"_dispatch_workflow_impl: workflow={workflow}, distinct_id={distinct_id}, ref={ref}"
         )
 
+        ref_value = ref if ref is not None else self._get_default_branch(repo_root)
+        payload = json.dumps({"ref": ref_value, "inputs": {"distinct_id": distinct_id, **inputs}})
+
         # GH-API-AUDIT: REST - POST workflows/{id}/dispatches
-        cmd = ["gh", "workflow", "run", workflow]
-
-        if ref:
-            cmd.extend(["--ref", ref])
-
-        cmd.extend(["-f", f"distinct_id={distinct_id}"])
-
-        for key, value in inputs.items():
-            cmd.extend(["-f", f"{key}={value}"])
+        cmd = [
+            "gh",
+            "api",
+            "--method",
+            "POST",
+            f"repos/{{owner}}/{{repo}}/actions/workflows/{workflow}/dispatches",
+            "--input",
+            "-",
+        ]
 
         debug_log(f"_dispatch_workflow_impl: executing command: {' '.join(cmd)}")
         run_subprocess_with_context(
             cmd=cmd,
             operation_context=f"trigger workflow '{workflow}'",
             cwd=repo_root,
+            input=payload,
         )
         debug_log("_dispatch_workflow_impl: workflow dispatched successfully")
         return distinct_id
@@ -379,17 +397,13 @@ class RealGitHub(GitHub):
             user_output(f"  Waiting for workflow run... (attempt {attempt + 1}/{max_attempts})")
             debug_log(f"trigger_workflow: polling attempt {attempt + 1}/{max_attempts}")
 
-            # GH-API-AUDIT: REST - GET actions/runs
+            # GH-API-AUDIT: REST - GET actions/workflows/{id}/runs
             runs_cmd = [
                 "gh",
-                "run",
-                "list",
-                "--workflow",
-                workflow,
-                "--json",
-                "databaseId,status,conclusion,displayTitle",
-                "--limit",
-                "10",
+                "api",
+                f"repos/{{owner}}/{{repo}}/actions/workflows/{workflow}/runs?per_page=10",
+                "--jq",
+                ".workflow_runs",
             ]
 
             runs_result = run_subprocess_with_context(
@@ -415,9 +429,9 @@ class RealGitHub(GitHub):
                 # Continue to retry logic below
                 pass
 
-            # Find run by matching distinct_id in displayTitle
+            # Find run by matching distinct_id in display_title
             for run in runs_data:
-                display_title = run.get("displayTitle", "")
+                display_title = run.get("display_title", "")
                 # Check for match pattern: :<distinct_id> (new format: issue_number:distinct_id)
                 if f":{distinct_id}" not in display_title:
                     continue
@@ -427,12 +441,12 @@ class RealGitHub(GitHub):
                     # Matched run was skipped/cancelled — no point polling further
                     raise RuntimeError(
                         f"Workflow '{workflow}' run was {conclusion}.\n"
-                        f"Run ID: {run['databaseId']}, title: '{display_title}'\n"
+                        f"Run ID: {run['id']}, title: '{display_title}'\n"
                         f"This usually means a job-level condition was not met "
                         f"(e.g., vars.CLAUDE_ENABLED is 'false')."
                     )
 
-                run_id = run["databaseId"]
+                run_id = run["id"]
                 debug_log(f"trigger_workflow: found run {run_id}, title='{display_title}'")
                 return str(run_id)
 
@@ -455,7 +469,7 @@ class RealGitHub(GitHub):
             msg_parts.append(f"Found {len(runs_data)} recent runs, but none matched.")
             msg_parts.append("Recent run titles:")
             for run in runs_data[:5]:
-                title = run.get("displayTitle", "N/A")
+                title = run.get("display_title", "N/A")
                 status = run.get("status", "N/A")
                 msg_parts.append(f"  • {title} ({status})")
             msg_parts.append("")
@@ -471,8 +485,7 @@ class RealGitHub(GitHub):
                 "  • All recent runs were cancelled/skipped",
                 "",
                 "Debug commands:",
-                f"  gh run list --workflow {workflow} --limit 10",
-                f"  gh workflow view {workflow}",
+                f"  gh api repos/{{owner}}/{{repo}}/actions/workflows/{workflow}/runs?per_page=10",
             ]
         )
 
@@ -559,46 +572,40 @@ class RealGitHub(GitHub):
         self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
     ) -> list[WorkflowRun]:
         """List workflow runs for a specific workflow."""
-        # GH-API-AUDIT: REST - GET actions/runs
+        # GH-API-AUDIT: REST - GET actions/workflows/{id}/runs
+        query_params = f"per_page={limit}"
+        if user is not None:
+            query_params += f"&actor={user}"
+
         cmd = [
             "gh",
-            "run",
-            "list",
-            "--workflow",
-            workflow,
-            "--json",
-            "databaseId,status,conclusion,headBranch,headSha,displayTitle,createdAt",
-            "--limit",
-            str(limit),
+            "api",
+            f"repos/{{owner}}/{{repo}}/actions/workflows/{workflow}/runs?{query_params}",
+            "--jq",
+            ".workflow_runs",
         ]
-        if user is not None:
-            cmd.extend(["--user", user])
 
-        result = run_subprocess_with_context(
-            cmd=cmd,
-            operation_context=f"list workflow runs for '{workflow}'",
-            cwd=repo_root,
-        )
+        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
 
         # Parse JSON response
-        data = json.loads(result.stdout)
+        data = json.loads(stdout)
 
         # Map to WorkflowRun dataclasses
         runs = []
         for run in data:
             # Parse created_at timestamp if present
             created_at = None
-            created_at_str = run.get("createdAt")
+            created_at_str = run.get("created_at")
             if created_at_str:
                 created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
 
             workflow_run = WorkflowRun(
-                run_id=str(run["databaseId"]),
+                run_id=str(run["id"]),
                 status=run["status"],
                 conclusion=run.get("conclusion"),
-                branch=run["headBranch"],
-                head_sha=run["headSha"],
-                display_title=run.get("displayTitle"),
+                branch=run["head_branch"],
+                head_sha=run["head_sha"],
+                display_title=run.get("display_title"),
                 created_at=created_at,
             )
             runs.append(workflow_run)
@@ -939,17 +946,13 @@ query {{
 
         def _fetch_and_find_run() -> str | RetryRequested:
             """Fetch runs and find matching run, or return RetryRequested if not found."""
-            # GH-API-AUDIT: REST - GET actions/runs
+            # GH-API-AUDIT: REST - GET actions/workflows/{id}/runs
             runs_cmd = [
                 "gh",
-                "run",
-                "list",
-                "--workflow",
-                workflow,
-                "--json",
-                "databaseId,status,conclusion,createdAt,event,headBranch",
-                "--limit",
-                "20",
+                "api",
+                f"repos/{{owner}}/{{repo}}/actions/workflows/{workflow}/runs?per_page=20",
+                "--jq",
+                ".workflow_runs",
             ]
 
             try:
@@ -979,17 +982,17 @@ query {{
                     continue
 
                 # Match by branch name
-                head_branch = run.get("headBranch")
+                head_branch = run.get("head_branch")
                 if head_branch != branch_name:
                     continue
 
                 # Verify run was created after we started polling (within tolerance)
-                created_at_str = run.get("createdAt")
+                created_at_str = run.get("created_at")
                 if created_at_str:
                     created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
                     # Allow 5-second tolerance for runs created just before polling started
                     if created_at >= start_time - timedelta(seconds=5):
-                        run_id = run["databaseId"]
+                        run_id = run["id"]
                         return str(run_id)
 
             # Run not found in results yet - keep polling

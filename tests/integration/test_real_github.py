@@ -300,51 +300,43 @@ def test_create_pr_failure() -> None:
 
 
 def test_list_workflow_runs_success() -> None:
-    """Test list_workflow_runs parses gh run list output correctly."""
+    """Test list_workflow_runs parses REST API output correctly."""
     repo_root = Path("/repo")
 
     sample_response = json.dumps(
         [
             {
-                "databaseId": 1234567890,
+                "id": 1234567890,
                 "status": "completed",
                 "conclusion": "success",
-                "headBranch": "feat-1",
-                "headSha": "abc123def456",
-                "createdAt": "2025-01-15T10:30:00Z",
+                "head_branch": "feat-1",
+                "head_sha": "abc123def456",
+                "created_at": "2025-01-15T10:30:00Z",
             },
             {
-                "databaseId": 1234567891,
+                "id": 1234567891,
                 "status": "completed",
                 "conclusion": "failure",
-                "headBranch": "feat-2",
-                "headSha": "def456ghi789",
-                "createdAt": "2025-01-15T11:00:00Z",
+                "head_branch": "feat-2",
+                "head_sha": "def456ghi789",
+                "created_at": "2025-01-15T11:00:00Z",
             },
             {
-                "databaseId": 1234567892,
+                "id": 1234567892,
                 "status": "in_progress",
                 "conclusion": None,
-                "headBranch": "feat-3",
-                "headSha": "ghi789jkl012",
-                "createdAt": "2025-01-15T11:30:00Z",
+                "head_branch": "feat-3",
+                "head_sha": "ghi789jkl012",
+                "created_at": "2025-01-15T11:30:00Z",
             },
         ]
     )
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
-        # Verify command structure
-        assert cmd == [
-            "gh",
-            "run",
-            "list",
-            "--workflow",
-            "implement-plan.yml",
-            "--json",
-            "databaseId,status,conclusion,headBranch,headSha,displayTitle,createdAt",
-            "--limit",
-            "50",
-        ]
+        # Verify command uses REST API
+        assert "gh" in cmd
+        assert "api" in cmd
+        assert any("actions/workflows/implement-plan.yml/runs" in arg for arg in cmd)
 
         return subprocess.CompletedProcess(
             args=cmd,
@@ -382,9 +374,8 @@ def test_list_workflow_runs_custom_limit() -> None:
     repo_root = Path("/repo")
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
-        # Verify custom limit is passed
-        assert "--limit" in cmd
-        assert "10" in cmd
+        # Verify custom limit is passed in the REST API URL
+        assert any("per_page=10" in arg for arg in cmd)
 
         return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="[]", stderr="")
 
@@ -446,15 +437,15 @@ def test_list_workflow_runs_missing_fields() -> None:
     """Test list_workflow_runs propagates KeyError when JSON has missing fields."""
     repo_root = Path("/repo")
 
-    # Missing 'headBranch' field
+    # Missing 'head_branch' field
     sample_response = json.dumps(
         [
             {
-                "databaseId": 123,
+                "id": 123,
                 "status": "completed",
                 "conclusion": "success",
-                # headBranch missing
-                "headSha": "abc123",
+                # head_branch missing
+                "head_sha": "abc123",
             }
         ]
     )
@@ -471,7 +462,7 @@ def test_list_workflow_runs_missing_fields() -> None:
         ops = RealGitHub.for_test()
 
         # Should raise KeyError instead of silently failing
-        with pytest.raises(KeyError, match="headBranch"):
+        with pytest.raises(KeyError, match="head_branch"):
             ops.list_workflow_runs(repo_root, "test.yml")
     finally:
         subprocess.run = original_run
@@ -492,13 +483,23 @@ def test_trigger_workflow_handles_empty_list_during_polling(monkeypatch: MonkeyP
         nonlocal call_count, captured_distinct_id
         call_count += 1
 
-        # First call: gh workflow run (trigger) - capture distinct_id from inputs
-        if "workflow" in cmd and "run" in cmd:
-            # Extract distinct_id from the -f distinct_id=xxx argument
-            for i, arg in enumerate(cmd):
-                if arg == "-f" and i + 1 < len(cmd) and cmd[i + 1].startswith("distinct_id="):
-                    captured_distinct_id = cmd[i + 1].split("=", 1)[1]
-                    break
+        cmd_str = " ".join(cmd)
+
+        # First call: gh api repos/{owner}/{repo} (get default branch)
+        if "repos/{owner}/{repo}" in cmd_str and "actions" not in cmd_str:
+            return subprocess.CompletedProcess(
+                args=cmd,
+                returncode=0,
+                stdout="main\n",
+                stderr="",
+            )
+
+        # Second call: gh api dispatch (trigger) - capture distinct_id from JSON input
+        if "dispatches" in cmd_str:
+            input_data = kwargs.get("input", "")
+            if input_data:
+                payload = json.loads(input_data)
+                captured_distinct_id = payload["inputs"]["distinct_id"]
             return subprocess.CompletedProcess(
                 args=cmd,
                 returncode=0,
@@ -506,8 +507,8 @@ def test_trigger_workflow_handles_empty_list_during_polling(monkeypatch: MonkeyP
                 stderr="",
             )
 
-        # Second call: gh run list (returns empty list - workflow not appeared yet)
-        if call_count == 2:
+        # Third call: gh api runs (returns empty list - workflow not appeared yet)
+        if call_count == 3:
             return subprocess.CompletedProcess(
                 args=cmd,
                 returncode=0,
@@ -515,12 +516,12 @@ def test_trigger_workflow_handles_empty_list_during_polling(monkeypatch: MonkeyP
                 stderr="",
             )
 
-        # Third call: gh run list (workflow appears now with captured distinct_id)
+        # Fourth call: gh api runs (workflow appears now with captured distinct_id)
         run_data = json.dumps(
             [
                 {
-                    "databaseId": 123456,
-                    "displayTitle": f"Test workflow: issue-1:{captured_distinct_id}",
+                    "id": 123456,
+                    "display_title": f"Test workflow: issue-1:{captured_distinct_id}",
                     "conclusion": None,
                 }
             ]
@@ -543,7 +544,7 @@ def test_trigger_workflow_handles_empty_list_during_polling(monkeypatch: MonkeyP
 
         # Should successfully find run ID after empty list
         assert run_id == "123456"
-        assert call_count >= 3  # trigger + at least 2 polls
+        assert call_count >= 4  # default branch + dispatch + at least 2 polls
 
 
 def test_trigger_workflow_errors_on_invalid_json_structure(monkeypatch: MonkeyPatch) -> None:
@@ -551,8 +552,19 @@ def test_trigger_workflow_errors_on_invalid_json_structure(monkeypatch: MonkeyPa
     repo_root = Path("/repo")
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
-        # First call: gh workflow run (trigger)
-        if "workflow" in cmd and "run" in cmd:
+        cmd_str = " ".join(cmd)
+
+        # First call: gh api repos/{owner}/{repo} (get default branch)
+        if "repos/{owner}/{repo}" in cmd_str and "actions" not in cmd_str:
+            return subprocess.CompletedProcess(
+                args=cmd,
+                returncode=0,
+                stdout="main\n",
+                stderr="",
+            )
+
+        # Second call: gh api dispatch (trigger)
+        if "dispatches" in cmd_str:
             return subprocess.CompletedProcess(
                 args=cmd,
                 returncode=0,
@@ -560,7 +572,7 @@ def test_trigger_workflow_errors_on_invalid_json_structure(monkeypatch: MonkeyPa
                 stderr="",
             )
 
-        # Second call: gh run list (returns invalid JSON structure - dict instead of list)
+        # Third call: gh api runs (returns invalid JSON structure - dict instead of list)
         return subprocess.CompletedProcess(
             args=cmd,
             returncode=0,
@@ -590,8 +602,19 @@ def test_trigger_workflow_timeout_after_max_attempts(monkeypatch: MonkeyPatch) -
     repo_root = Path("/repo")
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
-        # First call: gh workflow run (trigger)
-        if "workflow" in cmd and "run" in cmd:
+        cmd_str = " ".join(cmd)
+
+        # gh api repos/{owner}/{repo} (get default branch)
+        if "repos/{owner}/{repo}" in cmd_str and "actions" not in cmd_str:
+            return subprocess.CompletedProcess(
+                args=cmd,
+                returncode=0,
+                stdout="main\n",
+                stderr="",
+            )
+
+        # gh api dispatch (trigger)
+        if "dispatches" in cmd_str:
             return subprocess.CompletedProcess(
                 args=cmd,
                 returncode=0,
@@ -625,7 +648,7 @@ def test_trigger_workflow_timeout_after_max_attempts(monkeypatch: MonkeyPatch) -
         assert "could not find run" in error_msg
         assert "after 11 attempts" in error_msg
         assert "Debug commands:" in error_msg
-        assert "gh run list --workflow test-workflow.yml" in error_msg
+        assert "gh api" in error_msg
 
 
 def test_trigger_workflow_raises_on_skipped_cancelled_runs(monkeypatch: MonkeyPatch) -> None:
@@ -635,13 +658,23 @@ def test_trigger_workflow_raises_on_skipped_cancelled_runs(monkeypatch: MonkeyPa
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
         nonlocal captured_distinct_id
+        cmd_str = " ".join(cmd)
 
-        # First call: gh workflow run (trigger) - capture distinct_id from inputs
-        if "workflow" in cmd and "run" in cmd:
-            for i, arg in enumerate(cmd):
-                if arg == "-f" and i + 1 < len(cmd) and cmd[i + 1].startswith("distinct_id="):
-                    captured_distinct_id = cmd[i + 1].split("=", 1)[1]
-                    break
+        # gh api repos/{owner}/{repo} (get default branch)
+        if "repos/{owner}/{repo}" in cmd_str and "actions" not in cmd_str:
+            return subprocess.CompletedProcess(
+                args=cmd,
+                returncode=0,
+                stdout="main\n",
+                stderr="",
+            )
+
+        # gh api dispatch (trigger) - capture distinct_id from JSON input
+        if "dispatches" in cmd_str:
+            input_data = kwargs.get("input", "")
+            if input_data:
+                payload = json.loads(input_data)
+                captured_distinct_id = payload["inputs"]["distinct_id"]
             return subprocess.CompletedProcess(
                 args=cmd,
                 returncode=0,
@@ -649,12 +682,12 @@ def test_trigger_workflow_raises_on_skipped_cancelled_runs(monkeypatch: MonkeyPa
                 stderr="",
             )
 
-        # Second call: returns a skipped run matching the distinct_id
+        # Polling call: returns a skipped run matching the distinct_id
         run_data = json.dumps(
             [
                 {
-                    "databaseId": 111,
-                    "displayTitle": f"Test: issue-1:{captured_distinct_id}",
+                    "id": 111,
+                    "display_title": f"Test: issue-1:{captured_distinct_id}",
                     "conclusion": "skipped",
                 },
             ]
