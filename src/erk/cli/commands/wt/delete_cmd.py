@@ -24,9 +24,10 @@ from erk.core.worktree_utils import (
     get_worktree_branch,
 )
 from erk_shared.gateway.git.abc import Git
-from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_worktree_name
+from erk_shared.gateway.github.metadata.schemas import WORKTREE_NAME
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.output.output import user_output
+from erk_shared.plan_store.conversion import header_str
 from erk_shared.plan_store.types import PlanQuery, PlanState
 
 
@@ -68,7 +69,7 @@ def _get_plan_info_for_worktree(
     plans = ctx.plan_store.list_plans(repo_root, query)
 
     for plan in plans:
-        plan_worktree_name = extract_plan_header_worktree_name(plan.body)
+        plan_worktree_name = header_str(plan.header_fields, WORKTREE_NAME)
         if plan_worktree_name == worktree_name:
             return (int(plan.plan_identifier), plan.state)
 

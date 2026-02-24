@@ -603,6 +603,56 @@ def test_find_sessions_for_plan_returns_sessions_for_plan(
     assert isinstance(result.learn_session_ids, list)
 
 
+def test_find_sessions_for_plan_reads_header_fields(
+    plan_backend: PlanBackend,
+) -> None:
+    """Session fields are read from header_fields, not body text.
+
+    Regression test: draft-PR plans strip the plan-header metadata block
+    from plan.body (via extract_plan_content), so body-based extraction
+    returns None for all session fields. Using header_fields (which are
+    parsed from the full PR body before stripping) works for both backends.
+    """
+    # Create plan via API so plan-header block exists for both backends
+    result = plan_backend.create_plan(
+        repo_root=Path("/repo"),
+        title="Session Discovery Test",
+        content="# Plan\n\nTest plan content.",
+        labels=("erk-plan",),
+        metadata=_create_metadata(plan_backend),
+    )
+    plan_id = result.plan_id
+
+    # Update metadata with session-related fields
+    plan_backend.update_metadata(
+        Path("/repo"),
+        plan_id,
+        {
+            "created_from_session": "planning-session-abc",
+            "last_local_impl_session": "impl-session-def",
+            "last_learn_session": "learn-session-ghi",
+            "last_remote_impl_at": "2024-06-01T12:00:00Z",
+            "last_remote_impl_run_id": "run-12345",
+            "last_remote_impl_session_id": "remote-session-jkl",
+            "last_session_branch": "sessions/plan-42",
+            "last_session_id": "uploaded-session-mno",
+            "last_session_source": "remote",
+        },
+    )
+
+    sessions = plan_backend.find_sessions_for_plan(Path("/repo"), plan_id)
+
+    assert sessions.planning_session_id == "planning-session-abc"
+    assert "impl-session-def" in sessions.implementation_session_ids
+    assert "learn-session-ghi" in sessions.learn_session_ids
+    assert sessions.last_remote_impl_at == "2024-06-01T12:00:00Z"
+    assert sessions.last_remote_impl_run_id == "run-12345"
+    assert sessions.last_remote_impl_session_id == "remote-session-jkl"
+    assert sessions.last_session_branch == "sessions/plan-42"
+    assert sessions.last_session_id == "uploaded-session-mno"
+    assert sessions.last_session_source == "remote"
+
+
 def test_find_sessions_for_plan_raises_for_nonexistent_plan(
     plan_backend: PlanBackend,
 ) -> None:
