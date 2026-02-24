@@ -21,6 +21,7 @@ from erk.core.worktree_pool import (
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
+from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
@@ -954,3 +955,99 @@ def test_checkout_stacks_in_place_for_plan_with_script() -> None:
         impl_folder = env.cwd / ".impl"
         assert impl_folder.exists()
         assert (impl_folder / "plan.md").exists()
+
+
+def test_checkout_for_plan_planned_pr_stacks_on_current_branch() -> None:
+    """--for-plan with planned_pr backend tracks with current branch as parent."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        plan = Plan(
+            plan_identifier="600",
+            title="Stack feature",
+            body="# Plan\nStacking test",
+            state=PlanState.OPEN,
+            url="https://github.com/owner/repo/issues/600",
+            labels=["erk-plan"],
+            assignees=[],
+            created_at=TEST_PLAN_TIMESTAMP,
+            updated_at=TEST_PLAN_TIMESTAMP,
+            metadata={},
+            objective_id=None,
+        )
+        plan_store, _ = create_plan_store({"600": plan}, backend="planned_pr")
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-parent", "plan-600"]},
+            current_branches={env.cwd: "feature-parent"},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
+
+        graphite = FakeGraphite()
+        ctx = build_workspace_test_context(
+            env, git=git, plan_store=plan_store, graphite=graphite, use_graphite=True
+        )
+
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(
+                branch_group, ["checkout", "--for-plan", "600", "--script"], obj=ctx
+            )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+
+        # Verify track_branch was called with current branch as parent, not trunk
+        assert len(graphite.track_branch_calls) == 1
+        _repo_root, tracked_branch, parent = graphite.track_branch_calls[0]
+        assert tracked_branch == "plan-600"
+        assert parent == "feature-parent"
+
+
+def test_checkout_for_plan_planned_pr_uses_trunk_when_on_trunk() -> None:
+    """When on trunk, --for-plan with planned_pr backend tracks with trunk as parent."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        plan = Plan(
+            plan_identifier="601",
+            title="Trunk feature",
+            body="# Plan\nTrunk parent test",
+            state=PlanState.OPEN,
+            url="https://github.com/owner/repo/issues/601",
+            labels=["erk-plan"],
+            assignees=[],
+            created_at=TEST_PLAN_TIMESTAMP,
+            updated_at=TEST_PLAN_TIMESTAMP,
+            metadata={},
+            objective_id=None,
+        )
+        plan_store, _ = create_plan_store({"601": plan}, backend="planned_pr")
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "plan-601"]},
+            current_branches={env.cwd: "main"},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
+
+        graphite = FakeGraphite()
+        ctx = build_workspace_test_context(
+            env, git=git, plan_store=plan_store, graphite=graphite, use_graphite=True
+        )
+
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(
+                branch_group, ["checkout", "--for-plan", "601", "--script"], obj=ctx
+            )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+
+        # Verify track_branch was called with trunk as parent
+        assert len(graphite.track_branch_calls) == 1
+        _repo_root, tracked_branch, parent = graphite.track_branch_calls[0]
+        assert tracked_branch == "plan-601"
+        assert parent == "main"
