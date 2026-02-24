@@ -81,6 +81,7 @@ class FakePromptExecutor(PromptExecutor):
         simulated_zero_turns: bool = False,
         simulated_process_error: str | None = None,
         simulated_prompt_output: str | None = None,
+        simulated_prompt_outputs: list[str] | None = None,
         simulated_prompt_error: str | None = None,
         simulated_no_work_events: bool = False,
         simulated_passthrough_exit_code: int = 0,
@@ -101,6 +102,10 @@ class FakePromptExecutor(PromptExecutor):
             simulated_process_error: Error message to simulate process startup failure
             simulated_prompt_output: Output to return from execute_prompt() on success.
                 If None, defaults to "Test Title\n\nTest body"
+            simulated_prompt_outputs: List of outputs to return from successive
+                execute_prompt() calls. When provided and not exhausted, returns
+                outputs from this list in order. When exhausted (or not provided),
+                falls back to simulated_prompt_output behavior.
             simulated_prompt_error: Error message to return from execute_prompt() on failure.
                 If set, execute_prompt() will return a failure result.
             simulated_no_work_events: Whether to simulate Claude completing successfully
@@ -121,12 +126,16 @@ class FakePromptExecutor(PromptExecutor):
         self._simulated_zero_turns = simulated_zero_turns
         self._simulated_process_error = simulated_process_error
         self._simulated_prompt_output = simulated_prompt_output
+        self._simulated_prompt_outputs = (
+            list(simulated_prompt_outputs) if simulated_prompt_outputs is not None else None
+        )
+        self._simulated_prompt_output_index = 0
         self._simulated_prompt_error = simulated_prompt_error
         self._simulated_no_work_events = simulated_no_work_events
         self._simulated_passthrough_exit_code = simulated_passthrough_exit_code
         self._executed_commands: list[tuple[str, Path, bool, bool, str | None]] = []
         self._interactive_calls: list[tuple[Path, bool, str, Path | None, str | None, str]] = []
-        self._prompt_calls: list[tuple[str, str | None]] = []
+        self._prompt_calls: list[tuple[str, str | None, bool]] = []
         self._passthrough_calls: list[tuple[str, str, list[str] | None, Path, bool]] = []
 
     def is_available(self) -> bool:
@@ -360,10 +369,17 @@ class FakePromptExecutor(PromptExecutor):
                 error=self._simulated_prompt_error,
             )
 
-        # Default output if none specified
-        output = self._simulated_prompt_output
-        if output is None:
-            output = "Test Title\n\nTest body"
+        # Try sequential outputs first, then fall back to single output
+        if (
+            self._simulated_prompt_outputs is not None
+            and self._simulated_prompt_output_index < len(self._simulated_prompt_outputs)
+        ):
+            output = self._simulated_prompt_outputs[self._simulated_prompt_output_index]
+            self._simulated_prompt_output_index += 1
+        else:
+            output = self._simulated_prompt_output
+            if output is None:
+                output = "Test Title\n\nTest body"
 
         return PromptResult(
             success=True,
