@@ -413,7 +413,7 @@ def test_migrate_branch_slug_provided(tmp_path: Path) -> None:
 
 
 def test_migrate_branch_slug_fallback(tmp_path: Path) -> None:
-    """When --branch-slug is not provided, branch name falls back to sanitize_worktree_name(title)."""
+    """When --branch-slug is not provided, falls back to sanitize_worktree_name(title)."""
     issue = _make_issue(title="Fix Authentication Bug")
     ctx = _make_context(tmp_path=tmp_path, issue=issue)
     runner = CliRunner()

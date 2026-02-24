@@ -1195,10 +1195,11 @@ Consolidated implementation setup.
 
 **Options:**
 
-| Flag      | Type    | Required | Default | Description                    |
-| --------- | ------- | -------- | ------- | ------------------------------ |
-| `--issue` | INTEGER | No       | -       | Issue/PR number to set up from |
-| `--file`  | PATH    | No       | -       | Markdown file to set up from   |
+| Flag            | Type    | Required | Default | Description                                              |
+| --------------- | ------- | -------- | ------- | -------------------------------------------------------- |
+| `--issue`       | INTEGER | No       | -       | Issue/PR number to set up from                           |
+| `--file`        | PATH    | No       | -       | Markdown file to set up from                             |
+| `--branch-slug` | TEXT    | No       | -       | Pre-generated branch slug (skips LLM call when provided) |
 
 ### setup-impl-from-issue
 

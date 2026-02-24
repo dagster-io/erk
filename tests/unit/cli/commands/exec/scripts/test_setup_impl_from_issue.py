@@ -764,7 +764,7 @@ def test_branch_slug_provided_used_in_branch_name(tmp_path: Path) -> None:
 
 
 def test_branch_slug_fallback_uses_sanitized_title(tmp_path: Path) -> None:
-    """When --branch-slug is not provided, branch name falls back to sanitize_worktree_name(title)."""
+    """When --branch-slug is not provided, falls back to sanitize_worktree_name(title)."""
     now = datetime.now(UTC)
     plan_issue = IssueInfo(
         number=42,

@@ -416,7 +416,7 @@ def test_draft_pr_branch_slug_provided(tmp_path: Path, monkeypatch: pytest.Monke
 
 
 def test_draft_pr_branch_slug_fallback(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """When --branch-slug is not provided, branch name falls back to sanitize_worktree_name(title)."""
+    """When --branch-slug is not provided, falls back to sanitize_worktree_name(title)."""
     ctx = _draft_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
     runner = CliRunner()
 
