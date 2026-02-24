@@ -29,7 +29,8 @@ You will analyze recently modified code and apply refinements that:
    - Consolidating related logic
    - Removing unnecessary comments that describe obvious code
    - IMPORTANT: Avoid **nested** ternary operators (ternaries inside ternaries) - prefer if/else chains for multiple conditions
-   - Simple single-level ternaries are idiomatic and acceptable: `slug = branch_slug if branch_slug else fallback()`, `x = a if condition else b`
+   - Simple single-level ternaries are idiomatic, acceptable, and often **preferable** to avoid unnecessary variable assignment or multi-line if/else blocks. Do NOT suggest replacing them. Examples: `slug = branch_slug if branch_slug else fallback()`, `x = a if condition else b`, `root = obj.primary if obj.primary else obj.fallback`
+   - NEVER suggest `.or_else()` or similar non-Python patterns as alternatives to ternaries
    - Choose clarity over brevity - explicit code is often better than overly compact code
 
 4. **Maintain Balance**: Avoid over-simplification that could:
