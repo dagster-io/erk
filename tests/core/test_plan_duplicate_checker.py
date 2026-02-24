@@ -3,28 +3,29 @@
 from datetime import datetime
 
 from erk.core.plan_duplicate_checker import PlanDuplicateChecker
-from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.plan_store.types import Plan, PlanState
 from tests.fakes.prompt_executor import FakePromptExecutor
 
 
-def _make_issue(
+def _make_plan(
     *,
-    number: int,
+    plan_identifier: str,
     title: str,
     body: str,
-) -> IssueInfo:
-    """Create a minimal IssueInfo for testing."""
-    return IssueInfo(
-        number=number,
+) -> Plan:
+    """Create a minimal Plan for testing."""
+    return Plan(
+        plan_identifier=plan_identifier,
         title=title,
         body=body,
-        state="OPEN",
-        url=f"https://github.com/owner/repo/issues/{number}",
+        state=PlanState.OPEN,
+        url=f"https://github.com/owner/repo/issues/{plan_identifier}",
         labels=["erk-plan"],
         assignees=[],
         created_at=datetime(2025, 1, 1),
         updated_at=datetime(2025, 1, 1),
-        author="test",
+        metadata={},
+        objective_id=None,
     )
 
 
@@ -36,7 +37,7 @@ def test_no_duplicates_found() -> None:
     checker = PlanDuplicateChecker(executor)
     result = checker.check(
         "# New Plan\n\nAdd dark mode toggle",
-        [_make_issue(number=100, title="Refactor auth", body="Restructure auth flow")],
+        [_make_plan(plan_identifier="100", title="Refactor auth", body="Restructure auth flow")],
     )
 
     assert result.has_duplicates is False
@@ -45,9 +46,9 @@ def test_no_duplicates_found() -> None:
 
 
 def test_duplicate_detected() -> None:
-    """Detected duplicate returns correct match with issue number and explanation."""
+    """Detected duplicate returns correct match with plan_id and explanation."""
     llm_output = (
-        '{"duplicates": [{"issue_number": 100, "explanation": "Both plans add dark mode support"}]}'
+        '{"duplicates": [{"plan_id": "100", "explanation": "Both plans add dark mode support"}]}'
     )
     executor = FakePromptExecutor(
         simulated_prompt_output=llm_output,
@@ -55,12 +56,12 @@ def test_duplicate_detected() -> None:
     checker = PlanDuplicateChecker(executor)
     result = checker.check(
         "# New Plan\n\nAdd dark mode",
-        [_make_issue(number=100, title="Dark mode support", body="Add dark mode to app")],
+        [_make_plan(plan_identifier="100", title="Dark mode support", body="Add dark mode to app")],
     )
 
     assert result.has_duplicates is True
     assert len(result.matches) == 1
-    assert result.matches[0].issue_number == 100
+    assert result.matches[0].plan_id == "100"
     assert result.matches[0].title == "Dark mode support"
     assert result.matches[0].url == "https://github.com/owner/repo/issues/100"
     assert result.matches[0].explanation == "Both plans add dark mode support"
@@ -75,7 +76,7 @@ def test_executor_failure_graceful_degradation() -> None:
     checker = PlanDuplicateChecker(executor)
     result = checker.check(
         "# New Plan\n\nSome plan",
-        [_make_issue(number=100, title="Existing plan", body="body")],
+        [_make_plan(plan_identifier="100", title="Existing plan", body="body")],
     )
 
     assert result.has_duplicates is False
@@ -107,7 +108,7 @@ def test_malformed_llm_response_graceful_degradation() -> None:
     checker = PlanDuplicateChecker(executor)
     result = checker.check(
         "# New Plan\n\nSome plan",
-        [_make_issue(number=100, title="Existing plan", body="body")],
+        [_make_plan(plan_identifier="100", title="Existing plan", body="body")],
     )
 
     assert result.has_duplicates is False
@@ -124,7 +125,7 @@ def test_malformed_json_structure_graceful_degradation() -> None:
     checker = PlanDuplicateChecker(executor)
     result = checker.check(
         "# New Plan\n\nSome plan",
-        [_make_issue(number=100, title="Existing plan", body="body")],
+        [_make_plan(plan_identifier="100", title="Existing plan", body="body")],
     )
 
     assert result.has_duplicates is False
@@ -133,15 +134,15 @@ def test_malformed_json_structure_graceful_degradation() -> None:
     assert "missing 'duplicates' list" in result.error
 
 
-def test_duplicate_referencing_unknown_issue_filtered_out() -> None:
-    """Duplicates referencing issue numbers not in existing plans are filtered."""
+def test_duplicate_referencing_unknown_plan_filtered_out() -> None:
+    """Duplicates referencing plan IDs not in existing plans are filtered."""
     executor = FakePromptExecutor(
-        simulated_prompt_output='{"duplicates": [{"issue_number": 999, "explanation": "phantom"}]}',
+        simulated_prompt_output='{"duplicates": [{"plan_id": "999", "explanation": "phantom"}]}',
     )
     checker = PlanDuplicateChecker(executor)
     result = checker.check(
         "# New Plan\n\nSome plan",
-        [_make_issue(number=100, title="Existing plan", body="body")],
+        [_make_plan(plan_identifier="100", title="Existing plan", body="body")],
     )
 
     assert result.has_duplicates is False
@@ -157,7 +158,7 @@ def test_uses_haiku_model() -> None:
     checker = PlanDuplicateChecker(executor)
     checker.check(
         "# New Plan\n\nSome plan",
-        [_make_issue(number=100, title="Existing plan", body="body")],
+        [_make_plan(plan_identifier="100", title="Existing plan", body="body")],
     )
 
     assert len(executor.prompt_calls) == 1
@@ -169,28 +170,30 @@ def test_uses_haiku_model() -> None:
 
 def test_json_wrapped_in_code_fence() -> None:
     """LLM response wrapped in markdown code fences is handled."""
-    llm_output = '```json\n{"duplicates": [{"issue_number": 100, "explanation": "same"}]}\n```'
+    llm_output = '```json\n{"duplicates": [{"plan_id": "100", "explanation": "same"}]}\n```'
     executor = FakePromptExecutor(
         simulated_prompt_output=llm_output,
     )
     checker = PlanDuplicateChecker(executor)
     result = checker.check(
         "# New Plan\n\nSome plan",
-        [_make_issue(number=100, title="Existing plan", body="body")],
+        [_make_plan(plan_identifier="100", title="Existing plan", body="body")],
     )
 
     assert result.has_duplicates is True
     assert len(result.matches) == 1
-    assert result.matches[0].issue_number == 100
+    assert result.matches[0].plan_id == "100"
 
 
-def test_json_wrapped_in_code_fence_with_trailing_text() -> None:
-    """LLM response with code fences AND trailing commentary is handled."""
+def test_code_fence_with_trailing_text() -> None:
+    """LLM response with explanation text after closing code fence is handled."""
     llm_output = (
         "```json\n"
-        '{"duplicates": [{"issue_number": 100, "explanation": "same"}]}\n'
+        '{"duplicates": []}\n'
         "```\n"
-        "\nThis JSON shows the duplicate found between the plans."
+        "\n"
+        "None of the existing open plans are semantic duplicates. "
+        "While #100 relates to auth, it addresses different concerns."
     )
     executor = FakePromptExecutor(
         simulated_prompt_output=llm_output,
@@ -198,20 +201,44 @@ def test_json_wrapped_in_code_fence_with_trailing_text() -> None:
     checker = PlanDuplicateChecker(executor)
     result = checker.check(
         "# New Plan\n\nSome plan",
-        [_make_issue(number=100, title="Existing plan", body="body")],
+        [_make_plan(plan_identifier="100", title="Existing plan", body="body")],
+    )
+
+    assert result.has_duplicates is False
+    assert result.matches == []
+    assert result.error is None
+
+
+def test_code_fence_with_trailing_text_and_duplicate() -> None:
+    """LLM response with duplicate match and trailing explanation is parsed."""
+    llm_output = (
+        "```json\n"
+        '{"duplicates": [{"plan_id": "100", "explanation": "Both add auth"}]}\n'
+        "```\n"
+        "\n"
+        "Plan #100 is a semantic duplicate because both aim to add authentication."
+    )
+    executor = FakePromptExecutor(
+        simulated_prompt_output=llm_output,
+    )
+    checker = PlanDuplicateChecker(executor)
+    result = checker.check(
+        "# New Plan\n\nAdd auth",
+        [_make_plan(plan_identifier="100", title="Add authentication", body="Add auth flow")],
     )
 
     assert result.has_duplicates is True
     assert len(result.matches) == 1
-    assert result.matches[0].issue_number == 100
+    assert result.matches[0].plan_id == "100"
+    assert result.error is None
 
 
 def test_multiple_duplicates() -> None:
     """Multiple duplicates are all returned."""
     llm_output = (
         '{"duplicates": ['
-        '{"issue_number": 100, "explanation": "same A"}, '
-        '{"issue_number": 200, "explanation": "same B"}'
+        '{"plan_id": "100", "explanation": "same A"}, '
+        '{"plan_id": "200", "explanation": "same B"}'
         "]}"
     )
     executor = FakePromptExecutor(
@@ -221,12 +248,12 @@ def test_multiple_duplicates() -> None:
     result = checker.check(
         "# New Plan\n\nSome plan",
         [
-            _make_issue(number=100, title="Plan A", body="body A"),
-            _make_issue(number=200, title="Plan B", body="body B"),
+            _make_plan(plan_identifier="100", title="Plan A", body="body A"),
+            _make_plan(plan_identifier="200", title="Plan B", body="body B"),
         ],
     )
 
     assert result.has_duplicates is True
     assert len(result.matches) == 2
-    assert result.matches[0].issue_number == 100
-    assert result.matches[1].issue_number == 200
+    assert result.matches[0].plan_id == "100"
+    assert result.matches[1].plan_id == "200"
