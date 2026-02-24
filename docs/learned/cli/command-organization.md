@@ -383,11 +383,9 @@ erk down                  # Move to child branch
 
 For pr subcommands:
 
-```python
-from erk.cli.commands.pr.create_cmd import pr_create
+<!-- Source: src/erk/cli/commands/pr/__init__.py, pr_group.add_command -->
 
-pr_group.add_command(pr_create, name="create")  # PR subcommand
-```
+See `pr_group.add_command` in `src/erk/cli/commands/pr/__init__.py` for the registration pattern.
 
 For grouped commands:
 
