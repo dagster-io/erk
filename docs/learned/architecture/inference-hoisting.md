@@ -41,8 +41,8 @@ Skill (.claude/commands/*.md)
   3. Passes it as: erk exec <script> --flag "${VARIABLE}"
 
 Exec script (src/erk/cli/commands/exec/scripts/*.py)
-  4. Accepts --flag as optional Click option
-  5. Uses the pre-computed value, or falls back deterministically
+  4. Accepts --flag as a Click option
+  5. Uses the pre-computed value; errors with remediation instructions if missing
 ```
 
 Three scripts were updated to follow this pattern:
@@ -66,7 +66,7 @@ The `generate_slug_or_fallback` function accepted a `PromptExecutor` and invoked
 
 ### After (fixed): Pre-computed value via --flag
 
-Each script accepts an optional `--branch-slug` Click option. When provided, it uses the pre-generated slug directly; when `None`, it falls back to `sanitize_worktree_name(title)` — a pure, deterministic function with no LLM call.
+Each script accepts a `--branch-slug` Click option. When provided, it uses the pre-generated slug directly. When missing, the script exits with a clear error message and remediation instructions directing the caller to generate a slug in the skill layer.
 
 See `src/erk/cli/commands/exec/scripts/plan_save.py` for the canonical implementation of this pattern.
 
@@ -82,13 +82,11 @@ erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-sl
 
 Claude generates the slug using its reasoning about the plan title. The exec script receives it as a plain string — no Claude invocation needed.
 
-## Deterministic Fallbacks
+## Error Handling
 
-When `--branch-slug` is not provided (e.g., direct CLI invocation outside a skill context), exec scripts fall back to `sanitize_worktree_name()` from `erk_shared.naming` — the same fallback pattern shown in the Before/After example above.
+When `--branch-slug` is not provided, exec scripts exit with a clear error message and remediation instructions. They do **not** silently fall back to a sanitized title. This follows the [agent backpressure gates](agent-backpressure-gates.md) philosophy: silent transformation masks mistakes and prevents the agent from learning.
 
-`sanitize_worktree_name()` is a pure function — no I/O, no LLM, always produces a valid result. It strips special characters and normalizes whitespace into a filesystem-safe slug.
-
-This is intentional: exec scripts remain safe to invoke directly from the terminal without an LLM present. The `--branch-slug` flag is optional by design.
+The error message directs callers to generate a slug in the skill layer (e.g., plan-save.md Step 1.5) and pass it via `--branch-slug`. For direct CLI invocation, pass `--branch-slug` explicitly.
 
 ## How to Refactor a Nested LLM Call
 
@@ -96,7 +94,7 @@ If you find an LLM call inside an exec script, follow these steps:
 
 1. **Identify the LLM call** — find the `PromptExecutor` invocation and what value it produces
 2. **Understand the value** — what information does it compute? (e.g., a descriptive string, a classification, a title)
-3. **Add a `--flag` to the exec script** — make it optional with `default=None` in Click; add a deterministic fallback for the `None` case
+3. **Add a `--flag` to the exec script** — add it as a Click option; if missing, emit a clear error message with remediation instructions explaining how to generate the value
 4. **Add a generation step to the calling skill** — add a step (e.g., "Step 1.5") that instructs Claude to reason about the input and produce the value, storing it as `VARIABLE`
 5. **Thread the flag through parameter layers** — update the skill's `erk exec` invocation to pass `--flag="${VARIABLE}"`; see [parameter-threading-pattern.md](parameter-threading-pattern.md) for the full checklist
 6. **Remove the LLM call and its imports** from the exec script — the script should now have zero `PromptExecutor` references

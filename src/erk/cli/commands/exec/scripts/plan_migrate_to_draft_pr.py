@@ -29,7 +29,7 @@ from erk_shared.context.helpers import (
     require_repo_root,
     require_time,
 )
-from erk_shared.naming import generate_draft_pr_branch_name, sanitize_worktree_name
+from erk_shared.naming import generate_draft_pr_branch_name
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 from erk_shared.plan_store.draft_pr_lifecycle import IMPL_CONTEXT_DIR
 from erk_shared.plan_store.github import GitHubPlanStore
@@ -146,9 +146,16 @@ def plan_migrate_to_draft_pr(
         )
         raise SystemExit(1)
 
-    # Use pre-generated slug or deterministic fallback (no LLM call)
+    if not branch_slug:
+        click.echo(
+            "Error: --branch-slug is required. "
+            "Generate a slug in the calling skill "
+            "and pass it via --branch-slug.",
+            err=True,
+        )
+        raise SystemExit(1)
     trunk = git.branch.detect_trunk_branch(cwd)
-    slug = branch_slug if branch_slug else sanitize_worktree_name(plan.title)
+    slug = branch_slug
     branch_name = generate_draft_pr_branch_name(
         slug,
         now,

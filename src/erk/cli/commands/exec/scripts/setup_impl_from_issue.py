@@ -299,8 +299,15 @@ def _setup_issue_plan(
         click.echo(f"Already on branch for issue #{plan_number}: {current_branch}", err=True)
         branch_name = current_branch
     else:
-        # Use pre-generated slug or deterministic fallback (no LLM call)
-        slug = branch_slug if branch_slug else sanitize_worktree_name(plan.title)
+        if not branch_slug:
+            click.echo(
+                "Error: --branch-slug is required. "
+                "Generate a slug in the calling skill "
+                "and pass it via --branch-slug.",
+                err=True,
+            )
+            raise SystemExit(1)
+        slug = branch_slug
         timestamp = time.now()
         branch_name = generate_issue_branch_name(
             plan_number, slug, timestamp, objective_id=plan.objective_id

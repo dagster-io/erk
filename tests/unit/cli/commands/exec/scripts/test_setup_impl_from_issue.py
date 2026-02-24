@@ -154,7 +154,7 @@ class TestSetupImplFromIssueBranchManager:
         runner = CliRunner()
         result = runner.invoke(
             setup_impl_from_issue,
-            ["42", "--no-impl"],
+            ["42", "--no-impl", "--branch-slug", "test-slug"],
             obj=ctx,
         )
 
@@ -230,7 +230,7 @@ class TestSetupImplFromIssueBranchManager:
         runner = CliRunner()
         result = runner.invoke(
             setup_impl_from_issue,
-            ["99", "--no-impl"],
+            ["99", "--no-impl", "--branch-slug", "test-slug"],
             obj=ctx,
         )
 
@@ -594,7 +594,7 @@ def test_issue_plan_without_branch_name_uses_p_prefix(tmp_path: Path) -> None:
     runner = CliRunner()
     result = runner.invoke(
         setup_impl_from_issue,
-        ["42", "--no-impl"],
+        ["42", "--no-impl", "--branch-slug", "test-slug"],
         obj=ctx,
     )
 
@@ -763,8 +763,8 @@ def test_branch_slug_provided_used_in_branch_name(tmp_path: Path) -> None:
     assert "my-custom-slug" in branch_name
 
 
-def test_branch_slug_fallback_uses_sanitized_title(tmp_path: Path) -> None:
-    """When --branch-slug is not provided, falls back to sanitize_worktree_name(title)."""
+def test_branch_slug_missing_errors(tmp_path: Path) -> None:
+    """When --branch-slug is not provided, exits with error and remediation message."""
     now = datetime.now(UTC)
     plan_issue = IssueInfo(
         number=42,
@@ -794,11 +794,8 @@ def test_branch_slug_fallback_uses_sanitized_title(tmp_path: Path) -> None:
         obj=ctx,
     )
 
-    assert result.exit_code == 0, f"Command failed: {result.output}"
-    # Title "Fix Authentication Bug" → sanitize → "fix-authentication-bug"
-    assert len(fake_git.created_branches) == 1
-    branch_name = fake_git.created_branches[0][1]
-    assert "fix-authentication-bug" in branch_name
+    assert result.exit_code == 1
+    assert "--branch-slug is required" in result.output
 
 
 def test_draft_pr_pr_not_found_reports_error(tmp_path: Path) -> None:

@@ -48,7 +48,6 @@ from erk_shared.gateway.time.real import RealTime
 from erk_shared.naming import (
     InvalidPlanTitle,
     generate_draft_pr_branch_name,
-    sanitize_worktree_name,
     validate_plan_title,
 )
 from erk_shared.output.next_steps import format_draft_pr_next_steps_plain
@@ -165,8 +164,15 @@ def _save_as_draft_pr(
             )
         raise SystemExit(2)
 
-    # Use pre-generated slug or deterministic fallback (no LLM call)
-    slug = branch_slug if branch_slug else sanitize_worktree_name(title)
+    if not branch_slug:
+        click.echo(
+            "Error: --branch-slug is required. "
+            "Generate a slug in the calling skill (e.g., plan-save.md Step 1.5) "
+            "and pass it via --branch-slug.",
+            err=True,
+        )
+        raise SystemExit(1)
+    slug = branch_slug
     now = require_time(ctx).now()
     branch_name = generate_draft_pr_branch_name(
         slug,
