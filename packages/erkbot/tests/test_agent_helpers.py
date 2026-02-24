@@ -1,7 +1,7 @@
 import unittest
 from collections.abc import AsyncIterator
 
-from erk_slack_bot.agent.events import (
+from erkbot.agent.events import (
     AgentEvent,
     AgentResult,
     TextDelta,
@@ -9,7 +9,7 @@ from erk_slack_bot.agent.events import (
     TurnEnd,
     TurnStart,
 )
-from erk_slack_bot.agent.helpers import accumulate_text, collect_events, extract_result
+from erkbot.agent.helpers import accumulate_text, collect_events, extract_result
 
 
 async def _async_iter(items: list[AgentEvent]) -> AsyncIterator[AgentEvent]:

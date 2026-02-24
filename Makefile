@@ -183,7 +183,7 @@ erkdesk-test-watch:
 # === Slackbot ===
 
 slackbot:
-	cd packages/erk-slack-bot && make dev
+	cd packages/erkbot && make dev
 
 pull_master:
 	git -C /Users/schrockn/code/erk pull origin master

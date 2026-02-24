@@ -9,7 +9,7 @@ from claude_agent_sdk.types import (
     SystemMessage,
     TextBlock,
 )
-from erk_slack_bot.agent.events import (
+from erkbot.agent.events import (
     AgentResult,
     TextDelta,
     ToolEnd,
@@ -17,7 +17,7 @@ from erk_slack_bot.agent.events import (
     TurnEnd,
     TurnStart,
 )
-from erk_slack_bot.agent.stream import stream_agent_events
+from erkbot.agent.stream import stream_agent_events
 
 
 async def _async_messages(items: list[Message]) -> AsyncIterator[Message]:

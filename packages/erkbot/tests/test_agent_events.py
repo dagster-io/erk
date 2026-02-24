@@ -1,7 +1,7 @@
 import unittest
 from dataclasses import FrozenInstanceError
 
-from erk_slack_bot.agent.events import (
+from erkbot.agent.events import (
     AgentEvent,
     AgentResult,
     TextDelta,
