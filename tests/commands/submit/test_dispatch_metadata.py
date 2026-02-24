@@ -11,7 +11,6 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.submit import submit_cmd
-from erk_shared.gateway.github.fake import FakeGitHub
 from tests.commands.submit.conftest import create_plan, setup_submit_context
 
 

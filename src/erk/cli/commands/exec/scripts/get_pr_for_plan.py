@@ -15,10 +15,10 @@ from typing import NoReturn
 
 import click
 
-from erk_shared.context.helpers import require_repo_root
 from erk_shared.context.helpers import (
     require_github as require_github_gateway,
 )
+from erk_shared.context.helpers import require_repo_root
 from erk_shared.gateway.github.types import PRNotFound
 
 
@@ -63,9 +63,7 @@ def get_pr_for_plan(
     # Draft-PR: plan_id IS the PR number — look up directly
     pr_result = github.get_pr(repo_root, issue_number)
     if isinstance(pr_result, PRNotFound):
-        return _exit_with_error(
-            error="no-pr-for-branch", message=f"PR #{issue_number} not found"
-        )
+        return _exit_with_error(error="no-pr-for-branch", message=f"PR #{issue_number} not found")
     pr_data = {
         "number": pr_result.number,
         "title": pr_result.title,

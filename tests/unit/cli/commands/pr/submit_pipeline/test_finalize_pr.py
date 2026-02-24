@@ -131,8 +131,6 @@ def test_updates_pr_title_and_body(tmp_path: Path) -> None:
     assert "New body" in updated_body
 
 
-
-
 def test_adds_learn_plan_label(tmp_path: Path) -> None:
     """.impl/ learn plan => adds ERK_SKIP_LEARN_LABEL."""
     # Create .impl/issue.json with erk-learn label
@@ -370,8 +368,6 @@ def test_does_not_mark_non_planned_pr_as_ready(tmp_path: Path) -> None:
 
     assert isinstance(result, SubmitState)
     assert fake_github.marked_ready_prs == []
-
-
 
 
 def test_publishes_planned_pr(tmp_path: Path) -> None:

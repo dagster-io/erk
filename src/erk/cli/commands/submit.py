@@ -21,10 +21,10 @@ from erk.cli.constants import (
 )
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure, UserFacingCliError
-from erk.core.branch_slug_generator import generate_slug_or_fallback
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
     create_submission_queued_block,
     render_erk_issue_event,
@@ -34,10 +34,8 @@ from erk_shared.gateway.github.parsing import (
     construct_workflow_run_url,
     extract_owner_repo_from_github_url,
 )
-from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.impl_context import (
-    build_impl_context_files,
     create_impl_context,
     impl_context_exists,
     remove_impl_context,
@@ -199,7 +197,6 @@ def load_workflow_config(repo_root: Path, workflow_name: str) -> dict[str, str]:
 
     # Convert all values to strings (workflow inputs are always strings)
     return {k: str(v) for k, v in workflow_config.items()}
-
 
 
 @dataclass(frozen=True)
@@ -549,9 +546,6 @@ def _submit_planned_pr_plan(
     )
 
 
-
-
-
 @click.command("submit")
 @click.argument("issue_numbers", type=int, nargs=-1, required=True)
 @click.option(
@@ -699,7 +693,6 @@ def submit_cmd(
         )
         results.append(result)
         user_output("")
-
 
     # Success output
     user_output("")

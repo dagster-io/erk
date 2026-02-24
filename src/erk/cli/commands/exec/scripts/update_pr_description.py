@@ -141,10 +141,6 @@ def _execute_update_description(ctx: ErkContext, *, debug: bool, session_id: str
     pr_title = msg_result.title or "Update"
     pr_body = msg_result.body or ""
 
-    # Discover issue number and assemble PR body (shared with rewrite command)
-    impl_dir = cwd / ".impl"
-    plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
-
     # Extract metadata prefix (draft PR IS the plan — no self-closing reference)
     metadata_prefix = extract_metadata_prefix(existing_body)
     issue_number: int | None = None

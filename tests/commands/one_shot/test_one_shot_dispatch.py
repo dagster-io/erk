@@ -196,8 +196,6 @@ def test_dispatch_stays_on_current_branch_on_error() -> None:
         assert git.branch.get_current_branch(env.cwd) == "main"
 
 
-
-
 def test_dispatch_long_prompt_truncates_workflow_input() -> None:
     """Test that long prompts are truncated in workflow input but committed in full."""
     runner = CliRunner()
@@ -237,5 +235,3 @@ def test_dispatch_long_prompt_truncates_workflow_input() -> None:
         # Verify full prompt was committed directly to branch via branch_commits
         assert len(git.branch_commits) == 1
         assert git.branch_commits[0].files == {".erk/impl-context/prompt.md": long_prompt + "\n"}
-
-

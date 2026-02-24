@@ -1,6 +1,5 @@
 """Tests for submit command validation."""
 
-from datetime import UTC, datetime
 from pathlib import Path
 
 from click.testing import CliRunner
@@ -10,8 +9,6 @@ from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-from erk_shared.gateway.github.issues.types import IssueInfo
 from tests.commands.submit.conftest import make_plan_body
 
 

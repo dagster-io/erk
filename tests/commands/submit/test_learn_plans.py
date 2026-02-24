@@ -13,7 +13,6 @@ from erk_shared.gateway.github.metadata.types import MetadataBlock
 from erk_shared.plan_store.types import Plan
 from tests.commands.submit.conftest import (
     create_plan,
-    make_learn_plan_body,
     make_plan_body,
     setup_submit_context,
 )

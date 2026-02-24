@@ -688,7 +688,6 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
 
     pr_body = state.body or ""
     pr_title = state.title or "Update"
-    plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
 
     # Extract metadata prefix from existing PR (draft PR IS the plan)
     metadata_prefix = ""

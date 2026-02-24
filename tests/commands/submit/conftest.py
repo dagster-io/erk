@@ -1,7 +1,10 @@
 """Shared fixtures and helpers for submit command tests."""
 
+from __future__ import annotations
+
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from erk.cli.commands.submit import ERK_PLAN_LABEL
 from erk.core.context import context_for_test
@@ -11,6 +14,10 @@ from erk_shared.gateway.github.metadata.types import MetadataBlock
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.plan_helpers import create_plan_store
+
+if TYPE_CHECKING:
+    from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    from erk_shared.gateway.github.types import PRDetails
 
 
 def make_plan_body(content: str = "Implementation details...") -> str:
@@ -69,7 +76,7 @@ def create_pr_details_for_plan(
     plan: Plan,
     branch_name: str,
     base_branch: str = "main",
-) -> "PRDetails":
+) -> PRDetails:
     """Create PRDetails for a planned-PR plan.
 
     Args:
@@ -112,8 +119,8 @@ def setup_submit_context(
     confirm_responses: list[bool] | None = None,
     remote_branch_refs: list[str] | None = None,
     backend: str = "planned_pr",
-    pr_details_map: dict[int, "PRDetails"] | None = None,
-    issues: "FakeGitHubIssues | None" = None,
+    pr_details_map: dict[int, PRDetails] | None = None,
+    issues: FakeGitHubIssues | None = None,
 ):
     """Setup common context for submit tests.
 
@@ -153,7 +160,11 @@ def setup_submit_context(
         git_kwargs["trunk_branches"] = {repo_root: "master"}
 
     # Auto-add remote branch refs for planned_pr branches
-    if backend == "planned_pr" and remote_branch_refs is None and "remote_branches" not in git_kwargs:
+    if (
+        backend == "planned_pr"
+        and remote_branch_refs is None
+        and "remote_branches" not in git_kwargs
+    ):
         refs = ["origin/main"]
         # Add remote refs for each plan's branch
         for plan_id, plan in plans.items():

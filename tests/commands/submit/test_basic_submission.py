@@ -91,9 +91,6 @@ def test_submit_planned_pr_does_not_track_existing_branch(tmp_path: Path) -> Non
 
     assert result.exit_code == 0, result.output
 
-    # Branch name is plnd/123-implement-feature-x (from PRDetails)
-    expected_branch = "plnd/123-implement-feature-x"
-
     # Verify branch was NOT tracked with Graphite (it already exists)
     # Planned-PR branches are created elsewhere and already tracked
     assert len(fake_graphite.track_branch_calls) == 0

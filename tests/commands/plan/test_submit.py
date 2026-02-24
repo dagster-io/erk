@@ -1,7 +1,6 @@
 """Tests for erk plan submit command."""
 
 import json
-from datetime import UTC, datetime
 
 from click.testing import CliRunner
 
@@ -9,7 +8,6 @@ from erk.cli.cli import cli
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import MetadataBlock, render_metadata_block
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.fake import FakeGraphite
@@ -18,7 +16,7 @@ from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
 from tests.test_utils.context_builders import build_workspace_test_context
-from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
+from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
 def test_submit_planned_pr_plan_triggers_workflow_with_planned_pr_backend() -> None:
@@ -258,5 +256,3 @@ def test_submit_planned_pr_plan_cleans_up_stale_impl_context_folder() -> None:
         assert "Dispatch metadata written" in result.output
 
         assert "Traceback" not in result.output
-
-

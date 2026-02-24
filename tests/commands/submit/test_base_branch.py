@@ -12,7 +12,6 @@ def test_submit_with_custom_base_branch(tmp_path: Path) -> None:
     """Test submit passes custom base branch in workflow when --base is specified."""
     plan = create_plan("123", "Implement feature X")
 
-    repo_root = tmp_path / "repo"
     # Custom feature branch exists on remote - add to remote_branch_refs
     ctx, fake_git, fake_github, _, _, _ = setup_submit_context(
         tmp_path,
@@ -104,7 +103,6 @@ def test_submit_custom_base_passes_in_workflow(tmp_path: Path) -> None:
     """Test submit with --base passes custom base_branch in workflow inputs."""
     plan = create_plan("789", "Implement child feature")
 
-    repo_root = tmp_path / "repo"
     # Custom parent branch exists on remote
     ctx, fake_git, fake_github, _, _, _ = setup_submit_context(
         tmp_path,

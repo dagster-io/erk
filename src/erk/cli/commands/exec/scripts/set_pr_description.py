@@ -78,10 +78,6 @@ def set_pr_description(
         branch_name=discovery.current_branch,
     )
 
-    # Detect planned-PR backend and extract metadata prefix
-    impl_dir = cwd / ".impl"
-    plans_repo = erk_ctx.local_config.plans_repo if erk_ctx.local_config else None
-
     # Extract metadata prefix (draft PR IS the plan — no self-closing reference)
     metadata_prefix = extract_metadata_prefix(existing_body)
     issue_number: int | None = None

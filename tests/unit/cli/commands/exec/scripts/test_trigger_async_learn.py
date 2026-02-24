@@ -29,8 +29,6 @@ from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo, RepoInfo
 from erk_shared.gateway.github_admin.fake import FakeGitHubAdmin
-from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
 
 
 def _parse_json_output(output: str) -> dict[str, object]:
@@ -621,8 +619,6 @@ def test_trigger_async_learn_pr_lookup_failure_continues(tmp_path: Path) -> None
     warning_lines = [line for line in stderr_lines if "failed, skipping" in line]
     assert len(warning_lines) == 1
     assert "Getting PR for plan" in warning_lines[0]
-
-
 
 
 def test_trigger_async_learn_logs_output_file_sizes(tmp_path: Path) -> None:

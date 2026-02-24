@@ -155,9 +155,8 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
         raise click.ClickException(f"Push failed: {submit_result.message}")
     click.echo(click.style("   Branch pushed", fg="green"))
 
-    # Discover issue number and assemble PR body (shared with submit pipeline)
+    # Discover impl dir for learn plan detection
     impl_dir = cwd / ".impl"
-    plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
 
     # Extract metadata prefix (draft PR IS the plan — no self-closing reference)
     metadata_prefix = extract_metadata_prefix(pr_info.body)

@@ -1940,20 +1940,15 @@ def test_display_name_planned_pr_plans_view() -> None:
     """planned_pr backend + PLANS view returns 'Planned PRs'."""
     provider = FakePlanDataProvider()
     filters = PlanFilters.default()
-    app = ErkDashApp(
-        provider=provider, filters=filters, refresh_interval=0
-    )
+    app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
     assert app._display_name_for_view(ViewMode.PLANS) == "Planned PRs"
-
 
 
 def test_display_name_planned_pr_non_plans_view() -> None:
     """planned_pr backend + non-PLANS mode returns default display name."""
     provider = FakePlanDataProvider()
     filters = PlanFilters.default()
-    app = ErkDashApp(
-        provider=provider, filters=filters, refresh_interval=0
-    )
+    app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
     expected_learn = get_view_config(ViewMode.LEARN).display_name
     assert app._display_name_for_view(ViewMode.LEARN) == expected_learn
     expected_obj = get_view_config(ViewMode.OBJECTIVES).display_name

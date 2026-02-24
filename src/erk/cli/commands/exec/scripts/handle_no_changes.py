@@ -133,8 +133,7 @@ def _build_issue_comment(*, pr_number: int) -> str:
         Comment markdown
     """
     return (
-        "Implementation produced no code changes. "
-        "If the work is already complete, close this PR."
+        "Implementation produced no code changes. If the work is already complete, close this PR."
     )
 
 

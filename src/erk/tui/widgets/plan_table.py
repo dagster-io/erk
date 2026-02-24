@@ -114,9 +114,7 @@ class PlanDataTable(DataTable):
         """Delegate right arrow to app's next_view action."""
         cast("ErkDashApp", self.app).action_next_view()
 
-    def reconfigure(
-        self, *, plan_filters: PlanFilters, view_mode: ViewMode
-    ) -> None:
+    def reconfigure(self, *, plan_filters: PlanFilters, view_mode: ViewMode) -> None:
         """Reconfigure the table for a new view mode.
 
         Clears existing columns and rows, then sets up new columns
