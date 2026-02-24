@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Fix: Rocket emoji should not appear on draft PRs"
-}
