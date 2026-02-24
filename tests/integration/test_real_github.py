@@ -538,6 +538,7 @@ def test_trigger_workflow_handles_empty_list_during_polling(monkeypatch: MonkeyP
             repo_root=repo_root,
             workflow="test-workflow.yml",
             inputs={"issue_number": "1"},
+            ref=None,
         )
 
         # Should successfully find run ID after empty list
@@ -576,6 +577,7 @@ def test_trigger_workflow_errors_on_invalid_json_structure(monkeypatch: MonkeyPa
                 repo_root=repo_root,
                 workflow="test-workflow.yml",
                 inputs={"issue_number": "1"},
+                ref=None,
             )
 
         error_msg = str(exc_info.value)
@@ -616,6 +618,7 @@ def test_trigger_workflow_timeout_after_max_attempts(monkeypatch: MonkeyPatch) -
                 repo_root=repo_root,
                 workflow="test-workflow.yml",
                 inputs={"issue_number": "1"},
+                ref=None,
             )
 
         error_msg = str(exc_info.value)
@@ -670,6 +673,7 @@ def test_trigger_workflow_raises_on_skipped_cancelled_runs(monkeypatch: MonkeyPa
                 repo_root=repo_root,
                 workflow="test-workflow.yml",
                 inputs={"issue_number": "1"},
+                ref=None,
             )
 
 

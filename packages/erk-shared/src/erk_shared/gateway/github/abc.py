@@ -92,7 +92,7 @@ class GitHub(ABC):
 
     @abstractmethod
     def trigger_workflow(
-        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None = None
+        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None
     ) -> str:
         """Trigger a GitHub Actions workflow via gh CLI.
 
@@ -109,7 +109,7 @@ class GitHub(ABC):
 
     @abstractmethod
     def dispatch_workflow(
-        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None = None
+        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None
     ) -> None:
         """Dispatch a GitHub Actions workflow without waiting for run ID.
 

@@ -113,7 +113,7 @@ class PrintingGitHub(PrintingBase, GitHub):
         return f"gh workflow run {workflow} {ref_arg}{input_args}"
 
     def dispatch_workflow(
-        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None = None
+        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None
     ) -> None:
         """Dispatch workflow with printed output (fire-and-forget)."""
         cmd = self._format_workflow_run_command(workflow=workflow, inputs=inputs, ref=ref)
@@ -123,7 +123,7 @@ class PrintingGitHub(PrintingBase, GitHub):
         )
 
     def trigger_workflow(
-        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None = None
+        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None
     ) -> str:
         """Trigger workflow with printed output.
 

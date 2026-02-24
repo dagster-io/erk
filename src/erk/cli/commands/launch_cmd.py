@@ -44,6 +44,7 @@ def _dispatch_or_trigger_workflow(
             repo_root=repo.root,
             workflow=workflow_file,
             inputs=inputs,
+            ref=None,
         )
         user_output(click.style("\u2713", fg="green") + " Workflow dispatched (fire-and-forget)")
         maybe_write_pending_dispatch_metadata(ctx, repo, branch_name)
@@ -52,6 +53,7 @@ def _dispatch_or_trigger_workflow(
             repo_root=repo.root,
             workflow=workflow_file,
             inputs=inputs,
+            ref=None,
         )
         user_output(click.style("\u2713", fg="green") + " Workflow triggered")
 
@@ -217,6 +219,7 @@ def _trigger_learn(
         repo_root=repo.root,
         workflow=_get_workflow_file("learn"),
         inputs=inputs,
+        ref=None,
     )
     user_output(click.style("\u2713", fg="green") + " Workflow triggered")
 

@@ -291,7 +291,7 @@ class RealGitHub(GitHub):
         return "".join(secrets.choice(base36_chars) for _ in range(6))
 
     def _dispatch_workflow_impl(
-        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None = None
+        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None
     ) -> str:
         """Dispatch a GitHub Actions workflow and return the distinct_id.
 
@@ -334,7 +334,7 @@ class RealGitHub(GitHub):
         return distinct_id
 
     def dispatch_workflow(
-        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None = None
+        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None
     ) -> None:
         """Dispatch a GitHub Actions workflow without waiting for run ID.
 
@@ -350,7 +350,7 @@ class RealGitHub(GitHub):
         self._dispatch_workflow_impl(repo_root=repo_root, workflow=workflow, inputs=inputs, ref=ref)
 
     def trigger_workflow(
-        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None = None
+        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None
     ) -> str:
         """Trigger GitHub Actions workflow via gh CLI.
 

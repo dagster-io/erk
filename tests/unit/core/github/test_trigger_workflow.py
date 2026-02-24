@@ -14,6 +14,7 @@ def test_trigger_workflow_tracks_call() -> None:
         repo_root=repo_root,
         workflow="implement-plan.yml",
         inputs={"branch-name": "feature"},
+        ref=None,
     )
 
     assert run_id == "1234567890"
@@ -29,10 +30,10 @@ def test_trigger_workflow_tracks_multiple_calls() -> None:
     repo_root = Path("/repo")
 
     run_id1 = github.trigger_workflow(
-        repo_root=repo_root, workflow="workflow1.yml", inputs={"key": "value1"}
+        repo_root=repo_root, workflow="workflow1.yml", inputs={"key": "value1"}, ref=None
     )
     run_id2 = github.trigger_workflow(
-        repo_root=repo_root, workflow="workflow2.yml", inputs={"key": "value2"}
+        repo_root=repo_root, workflow="workflow2.yml", inputs={"key": "value2"}, ref=None
     )
 
     assert run_id1 == "1234567890"
@@ -51,6 +52,7 @@ def test_dispatch_workflow_tracks_call_returns_none() -> None:
         repo_root=repo_root,
         workflow="implement-plan.yml",
         inputs={"branch-name": "feature"},
+        ref=None,
     )
 
     assert result is None
@@ -66,9 +68,11 @@ def test_dispatch_workflow_shares_tracking_with_trigger() -> None:
     repo_root = Path("/repo")
 
     github.dispatch_workflow(
-        repo_root=repo_root, workflow="dispatch.yml", inputs={"key": "dispatch"}
+        repo_root=repo_root, workflow="dispatch.yml", inputs={"key": "dispatch"}, ref=None
     )
-    github.trigger_workflow(repo_root=repo_root, workflow="trigger.yml", inputs={"key": "trigger"})
+    github.trigger_workflow(
+        repo_root=repo_root, workflow="trigger.yml", inputs={"key": "trigger"}, ref=None
+    )
 
     assert len(github.triggered_workflows) == 2
     assert github.triggered_workflows[0][0] == "dispatch.yml"
