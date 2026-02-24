@@ -27,6 +27,7 @@ Flow:
 5. Force push to origin
 """
 
+import shutil
 from pathlib import Path
 
 import click
@@ -41,6 +42,7 @@ from erk_shared.gateway.gt.events import CompletionEvent
 from erk_shared.gateway.gt.operations.squash import execute_squash
 from erk_shared.gateway.gt.types import RestackError, SquashError, SquashSuccess
 from erk_shared.output.output import user_output
+from erk_shared.plan_store.draft_pr_lifecycle import IMPL_CONTEXT_DIR
 
 
 def _squash_commits(ctx: ErkContext, repo_root: Path) -> None:
@@ -55,6 +57,16 @@ def _squash_commits(ctx: ErkContext, repo_root: Path) -> None:
         Ensure.invariant(False, squash_result.message)
     assert isinstance(squash_result, SquashSuccess)  # Type narrowing after error check
     user_output(click.style("✓", fg="green") + f" {squash_result.message}")
+
+
+def _strip_impl_context_if_present(ctx: ErkContext, repo_root: Path) -> bool:
+    """Remove .erk/impl-context/ from working tree and stage if present."""
+    impl_dir = repo_root / IMPL_CONTEXT_DIR
+    if not impl_dir.exists():
+        return False
+    shutil.rmtree(impl_dir)
+    ctx.git.commit.add_all(repo_root)
+    return True
 
 
 def _update_commit_message_from_pr(ctx: ErkContext, repo_root: Path, pr_number: int) -> None:
@@ -231,6 +243,12 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
         ctx.graphite.sync(repo.root, force=True, quiet=False)
         user_output(click.style("✓", fg="green") + " Synced with remote")
 
+        # Strip .erk/impl-context/ before restack to avoid conflicts
+        if _strip_impl_context_if_present(ctx, repo.root):
+            user_output("Stripped .erk/impl-context/ before restack")
+            ctx.git.commit.commit(repo.root, "Remove impl-context before sync")
+            _squash_commits(ctx, repo.root)
+
         # Restack to incorporate parent branch changes
         user_output("Restacking branch...")
         restack_result = ctx.graphite.restack_idempotent(repo.root, quiet=False)
@@ -296,6 +314,12 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
 
     # Step 6b: Update commit message with PR title/body
     _update_commit_message_from_pr(ctx, repo.root, pr_number)
+
+    # Strip .erk/impl-context/ before restack to avoid conflicts
+    if _strip_impl_context_if_present(ctx, repo.root):
+        user_output("Stripped .erk/impl-context/ before restack")
+        ctx.git.commit.commit(repo.root, "Remove impl-context before sync")
+        _squash_commits(ctx, repo.root)
 
     # Step 7: Restack with Graphite (manual conflict resolution if needed)
     user_output("Restacking branch...")

@@ -1007,6 +1007,117 @@ def test_pr_sync_auto_fixes_diverged_branch_after_restack(tmp_path: Path) -> Non
         assert any(branch == "feature-branch" for (_, branch) in graphite.retrack_branch_calls)
 
 
+def test_pr_sync_strips_impl_context_before_restack(tmp_path: Path) -> None:
+    """Test sync strips .erk/impl-context/ before restack to avoid conflicts."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        # Setup PR info
+        pr_info = _make_pr_info(123, "feature-branch", title="Feature PR")
+        pr_details = _make_pr_details(
+            number=123,
+            head_ref_name="feature-branch",
+            title="Feature PR",
+        )
+        github = FakeGitHub(
+            prs={"feature-branch": pr_info},
+            pr_details={123: pr_details},
+        )
+
+        # Branch ALREADY tracked (has parent)
+        graphite = FakeGraphite(
+            branches={
+                "feature-branch": BranchMetadata(
+                    name="feature-branch",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha="abc123",
+                )
+            }
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "feature-branch"},
+            commits_ahead={(env.cwd, "main"): 2},
+        )
+
+        # Create .erk/impl-context/ directory with a file on disk
+        impl_context_dir = env.cwd / ".erk" / "impl-context"
+        impl_context_dir.mkdir(parents=True)
+        (impl_context_dir / "plan.md").write_text("# Plan", encoding="utf-8")
+
+        ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
+
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Stripped .erk/impl-context/ before restack" in result.output
+        # Verify commit was created for impl-context removal
+        commit_messages = [c.message for c in git.commits]
+        assert "Remove impl-context before sync" in commit_messages
+        # Verify squash was called (to fold removal into main commit)
+        assert len(graphite.squash_branch_calls) >= 1
+        # Verify restack still happened
+        assert len(graphite.restack_calls) == 1
+        # Verify the directory was removed from disk
+        assert not impl_context_dir.exists()
+
+
+def test_pr_sync_skips_strip_when_no_impl_context(tmp_path: Path) -> None:
+    """Test sync skips impl-context strip when directory doesn't exist."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        # Setup PR info
+        pr_info = _make_pr_info(456, "feature-branch", title="Feature PR")
+        pr_details = _make_pr_details(
+            number=456,
+            head_ref_name="feature-branch",
+            title="Feature PR",
+        )
+        github = FakeGitHub(
+            prs={"feature-branch": pr_info},
+            pr_details={456: pr_details},
+        )
+
+        # Branch ALREADY tracked (has parent)
+        graphite = FakeGraphite(
+            branches={
+                "feature-branch": BranchMetadata(
+                    name="feature-branch",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha="abc123",
+                )
+            }
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "feature-branch"},
+        )
+
+        # NO .erk/impl-context/ directory
+
+        ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
+
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
+
+        assert result.exit_code == 0
+        # Should NOT show strip message
+        assert "Stripped .erk/impl-context/ before restack" not in result.output
+        # No extra commit for impl-context removal
+        commit_messages = [c.message for c in git.commits]
+        assert "Remove impl-context before sync" not in commit_messages
+        # Restack should still be called normally
+        assert len(graphite.restack_calls) == 1
+
+
 def test_pr_sync_skips_retrack_when_not_diverged(tmp_path: Path) -> None:
     """Test that sync skips retrack when branch is not diverged."""
     runner = CliRunner()
