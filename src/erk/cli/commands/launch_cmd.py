@@ -10,7 +10,10 @@ Usage examples:
 
 import click
 
-from erk.cli.commands.pr.metadata_helpers import maybe_update_plan_dispatch_metadata
+from erk.cli.commands.pr.metadata_helpers import (
+    maybe_update_plan_dispatch_metadata,
+    maybe_write_pending_dispatch_metadata,
+)
 from erk.cli.constants import WORKFLOW_COMMAND_MAP
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
@@ -43,6 +46,7 @@ def _dispatch_or_trigger_workflow(
             inputs=inputs,
         )
         user_output(click.style("\u2713", fg="green") + " Workflow dispatched (fire-and-forget)")
+        maybe_write_pending_dispatch_metadata(ctx, repo, branch_name)
     else:
         run_id = ctx.github.trigger_workflow(
             repo_root=repo.root,
@@ -122,11 +126,13 @@ def _trigger_pr_fix_conflicts(
     user_output("")
 
     # Build workflow inputs
+    plan_id = ctx.plan_backend.resolve_plan_id_for_branch(repo.root, branch_name)
     inputs: dict[str, str] = {
         "branch_name": branch_name,
         "base_branch": pr.base_ref_name,
         "pr_number": str(pr_number),
         "squash": "false" if no_squash else "true",
+        "plan_number": plan_id if plan_id is not None else "",
     }
     if model is not None:
         inputs["model_name"] = model
@@ -172,8 +178,10 @@ def _trigger_pr_address(
     user_output("")
 
     # Build workflow inputs
+    plan_id = ctx.plan_backend.resolve_plan_id_for_branch(repo.root, branch_name)
     inputs: dict[str, str] = {
         "pr_number": str(pr_number),
+        "plan_number": plan_id if plan_id is not None else "",
     }
     if model is not None:
         inputs["model_name"] = model
