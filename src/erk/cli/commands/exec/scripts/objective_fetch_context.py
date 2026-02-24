@@ -183,10 +183,19 @@ def objective_fetch_context(
                 click.echo(_error_json("Could not determine current branch (detached HEAD?)"))
                 raise SystemExit(1)
 
-        # Resolve plan from branch via backend (works for both P<number>- and plan-... branches)
+        # Resolve plan: try branch-based lookup first (works for both GitHubPlanBackend and
+        # PlannedPRBackend when the branch exists). If that fails and --pr is provided, fall
+        # back to direct PR-based lookup. This helps PlannedPRBackend where plan_id IS the PR
+        # number — direct API call works even when the branch has been deleted after landing.
         plan_result = plan_backend.get_plan_for_branch(repo_root, branch_name)
+        if isinstance(plan_result, PlanNotFound) and pr_number is not None:
+            plan_result = plan_backend.get_plan(repo_root, str(pr_number))
         if isinstance(plan_result, PlanNotFound):
-            click.echo(_error_json(f"No plan found for branch '{branch_name}'"))
+            if pr_number is not None:
+                msg = f"No plan found for PR #{pr_number} or branch '{branch_name}'"
+            else:
+                msg = f"No plan found for branch '{branch_name}'"
+            click.echo(_error_json(msg))
             raise SystemExit(1)
         plan_id = plan_result.plan_identifier
 

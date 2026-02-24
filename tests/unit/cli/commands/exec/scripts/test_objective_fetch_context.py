@@ -394,7 +394,7 @@ class TestObjectiveFetchContext:
         assert result.exit_code == 1
         data = json.loads(result.output)
         assert data["success"] is False
-        assert "No plan found for branch" in data["error"]
+        assert "No plan found" in data["error"]
         assert "feature-branch" in data["error"]
 
     def test_plan_not_found(self, tmp_path: Path) -> None:
@@ -420,7 +420,7 @@ class TestObjectiveFetchContext:
         assert result.exit_code == 1
         data = json.loads(result.output)
         assert data["success"] is False
-        assert "No plan found for branch" in data["error"]
+        assert "No plan found" in data["error"]
 
 
 class TestDiscoveryMode:
@@ -704,6 +704,49 @@ class TestPlannedPRBackend:
         assert data["success"] is True
         assert data["objective"]["number"] == 7419
 
+    def test_pr_based_resolution_bypasses_branch_lookup(self, tmp_path: Path) -> None:
+        """When --pr is provided, get_plan(pr_number) is tried before get_plan_for_branch.
+
+        This is critical for PlannedPRBackend where plan_id IS the PR number.
+        When the branch has been deleted (e.g., after landing), branch-based lookup
+        would fail, but direct PR-based lookup succeeds.
+        """
+        objective = _make_issue(number=7419, title="My Objective", body=ROADMAP_BODY)
+        # For PlannedPRBackend, the plan IS the PR — same number for both
+        plan_pr = _make_pr_details(
+            number=8001,
+            title="Draft PR Plan",
+            body=DRAFT_PR_BODY_WITH_OBJECTIVE,
+            head_ref_name="plnd/some-feature-02-24-1341",
+        )
+
+        fake_issues = FakeGitHubIssues(issues={7419: objective})
+        # Key: pr_details has 8001 so get_plan("8001") works via direct lookup,
+        # but prs_by_branch does NOT have the branch so get_plan_for_branch would fail
+        fake_github = FakeGitHub(pr_details={8001: plan_pr})
+        planned_pr_backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+
+        runner = CliRunner()
+        result = runner.invoke(
+            objective_fetch_context,
+            ["--pr", "8001", "--objective", "7419", "--branch", "plnd/some-feature-02-24-1341"],
+            obj=context_for_test(
+                github_issues=fake_issues,
+                github=fake_github,
+                plan_store=planned_pr_backend,
+                repo_root=tmp_path,
+                cwd=tmp_path,
+            ),
+        )
+
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert data["success"] is True
+        assert data["plan"]["number"] == "8001"
+        assert data["plan"]["title"] == "Draft PR Plan"
+        assert data["objective"]["number"] == 7419
+        assert data["pr"]["number"] == 8001
+
     def test_planned_pr_plan_not_found(self, tmp_path: Path) -> None:
         """Returns error when no PR exists for a plan-... branch."""
         fake_issues = FakeGitHubIssues()
@@ -726,7 +769,8 @@ class TestPlannedPRBackend:
         assert result.exit_code == 1
         data = json.loads(result.output)
         assert data["success"] is False
-        assert "No plan found for branch" in data["error"]
+        assert "No plan found" in data["error"]
+        assert "plan-no-such-plan" in data["error"]
 
 
 class TestDirectPlanLookup:

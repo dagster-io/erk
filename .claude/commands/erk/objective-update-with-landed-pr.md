@@ -22,7 +22,15 @@ Run after landing a PR:
 > Step 2 (prose reconciliation) requires LLM judgment, and Step 3 (closing prompt)
 > requires direct user interaction.
 
-### Step 1: Apply Mechanical Updates
+### Do NOT Improvise
+
+**CRITICAL: Follow these steps exactly. Do NOT substitute raw `gh` commands for any `erk exec` command.** If an `erk exec` command fails, STOP and report the error to the user. Do not attempt to replicate its behavior manually with `gh api`, `gh issue view`, or any other command.
+
+- **`erk exec objective-fetch-context`** is the ONLY way to fetch context (Step 1)
+- **`erk exec update-objective-node`** is the ONLY way to update roadmap nodes (Step 2)
+- **`erk exec objective-post-action-comment`** is the ONLY way to post action comments (Step 4)
+
+### Step 1: Fetch All Context
 
 Check `$ARGUMENTS` for optional overrides:
 
@@ -33,9 +41,15 @@ Check `$ARGUMENTS` for optional overrides:
 
 Run a single command that fetches context, updates roadmap nodes to done, and posts an action comment:
 
+**EXACT command: `erk exec objective-fetch-context`** — do NOT use any other command name.
+
 ```bash
 erk exec objective-apply-landed-update [--pr <number>] [--objective <number>] [--branch <name>]
 ```
+
+**CRITICAL: If this command fails, STOP and report the error. Do NOT fall back to raw `gh` commands.**
+
+Note: `plnd/` branches work correctly with this command — for PlannedPRBackend, the plan IS the PR, and `--pr` enables direct lookup without branch-based search.
 
 This returns JSON with:
 
