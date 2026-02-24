@@ -10,6 +10,18 @@ _QUOTE_RESOURCE_NAME = "QUOTE.md"
 _PR_URL_RE = re.compile(r"^PR:\s+(https://\S+)")
 _RUN_URL_RE = re.compile(r"^Run:\s+(https://\S+)")
 
+# Matches ANSI SGR sequences (\x1b[...m) and OSC 8 hyperlinks (\x1b]8;;...\x1b\\)
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m|\x1b\]8;;[^\x1b]*\x1b\\")
+
+
+def strip_ansi(text: str) -> str:
+    """Remove ANSI escape codes from text.
+
+    Handles both SGR color/style sequences and OSC 8 hyperlink sequences
+    that Rich generates with force_terminal=True.
+    """
+    return _ANSI_RE.sub("", text)
+
 
 def extract_slack_message_ts(message_result: object) -> str | None:
     if message_result is None:

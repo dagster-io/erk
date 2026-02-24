@@ -7,6 +7,7 @@ from erkbot.utils import (
     chunk_for_slack,
     extract_one_shot_links,
     extract_slack_message_ts,
+    strip_ansi,
     tail_output_lines,
 )
 
@@ -45,6 +46,32 @@ class TestUtils(unittest.TestCase):
         obj = MagicMock()
         obj.get.return_value = "678.90"
         self.assertEqual(extract_slack_message_ts(obj), "678.90")
+
+    def test_strip_ansi_removes_sgr_codes(self) -> None:
+        text = "\x1b[1m\x1b[0m\x1b[1mpr\x1b[0m\x1b[1m \x1b[0m"
+        self.assertEqual(strip_ansi(text), "pr ")
+
+    def test_strip_ansi_removes_osc8_hyperlinks(self) -> None:
+        text = "\x1b]8;;https://example.com\x1b\\#42\x1b]8;;\x1b\\"
+        self.assertEqual(strip_ansi(text), "#42")
+
+    def test_strip_ansi_preserves_plain_text(self) -> None:
+        text = "No plans found matching the criteria."
+        self.assertEqual(strip_ansi(text), text)
+
+    def test_strip_ansi_handles_mixed_content(self) -> None:
+        text = (
+            "Found 2 plan(s):\n"
+            "\x1b[1mpr\x1b[0m  \x1b[1mstage\x1b[0m\n"
+            "\x1b]8;;https://github.com/test/repo/issues/1\x1b\\#1\x1b]8;;\x1b\\"
+            "  \x1b[36mimpl\x1b[0m"
+        )
+        result = strip_ansi(text)
+        self.assertIn("Found 2 plan(s):", result)
+        self.assertIn("pr", result)
+        self.assertIn("#1", result)
+        self.assertIn("impl", result)
+        self.assertNotIn("\x1b", result)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 from dotenv import load_dotenv
 from slack_bolt.adapter.socket_mode.async_handler import AsyncSocketModeHandler
@@ -9,6 +10,10 @@ from erkbot.config import Settings
 
 
 async def _run() -> None:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(name)s %(levelname)s %(message)s",
+    )
     load_dotenv()
     settings = Settings()
     time = RealTime()
