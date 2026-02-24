@@ -345,8 +345,8 @@ class PlannedPRBackend(PlanBackend):
 
         pr_body = build_plan_stage_body(metadata_body, content)
 
-        trunk_branch_raw = metadata.get("trunk_branch")
-        base = trunk_branch_raw if isinstance(trunk_branch_raw, str) else "master"
+        base_ref_raw = metadata.get("base_ref_name")
+        base = base_ref_raw if isinstance(base_ref_raw, str) else "master"
 
         pr_number = self._github.create_pr(
             repo_root,

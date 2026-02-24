@@ -214,8 +214,8 @@ def _save_as_planned_pr(
     )
     git.remote.push_to_remote(cwd, "origin", branch_name, set_upstream=True, force=False)
 
-    # Build metadata — trunk_branch sets the PR base ref
-    metadata: dict[str, object] = {"branch_name": branch_name, "trunk_branch": base_branch}
+    # Build metadata — base_ref_name sets the PR base ref
+    metadata: dict[str, object] = {"branch_name": branch_name, "base_ref_name": base_branch}
 
     if config.plans_repo is not None:
         metadata["source_repo"] = get_repo_identifier(ctx)
