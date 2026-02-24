@@ -176,7 +176,7 @@ class PlanDataTable(DataTable):
             self._stage_column_index = col_index
             self.add_column("stage", key="stage", width=8)
             col_index += 1
-            self.add_column("sts", key="sts", width=4)
+            self.add_column("sts", key="sts", width=7)
             col_index += 1
             self.add_column("created", key="created", width=7)
             col_index += 1
