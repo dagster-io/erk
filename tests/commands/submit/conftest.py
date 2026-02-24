@@ -71,7 +71,7 @@ def setup_submit_context(
                            These are passed to FakeGit's remote_branches keyed by repo_root.
 
     Returns (ctx, fake_git, fake_github, fake_backing, fake_graphite, repo_root)
-        where fake_backing is FakeGitHubIssues.
+        where fake_backing is FakeGitHub.
     """
     from erk_shared.context.types import GlobalConfig
     from erk_shared.gateway.console.fake import FakeConsole
@@ -130,7 +130,7 @@ def setup_submit_context(
         cwd=repo_root,
         git=fake_git,
         github=fake_github,
-        issues=fake_backing,
+        issues=fake_backing.issues,
         plan_store=fake_plan_store,
         graphite=fake_graphite,
         repo=repo,

@@ -4,7 +4,6 @@ Covers interactive mode, non-interactive mode, script mode, YOLO flag,
 and mutual exclusivity validation.
 """
 
-import pytest
 from click.testing import CliRunner
 
 from erk.cli.commands.implement import implement
@@ -13,19 +12,12 @@ from tests.commands.implement.conftest import create_sample_plan_issue
 from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
-from tests.test_utils.plan_helpers import create_plan_store
-
-
-@pytest.fixture(params=["github", "planned_pr"])
-def plan_backend_type(request: pytest.FixtureRequest) -> str:
-    """Parameterized fixture for dual-backend testing."""
-    return request.param
-
+from tests.test_utils.plan_helpers import create_plan_store_with_plans
 
 # Interactive Mode Tests
 
 
-def test_interactive_mode_calls_executor(plan_backend_type: str) -> None:
+def test_interactive_mode_calls_executor() -> None:
     """Verify interactive mode calls executor.execute_interactive."""
     plan_issue = create_sample_plan_issue()
 
@@ -36,7 +28,7 @@ def test_interactive_mode_calls_executor(plan_backend_type: str) -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=True)
         ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
@@ -58,7 +50,7 @@ def test_interactive_mode_calls_executor(plan_backend_type: str) -> None:
         assert model is None
 
 
-def test_interactive_mode_with_dangerous_flag(plan_backend_type: str) -> None:
+def test_interactive_mode_with_dangerous_flag() -> None:
     """Verify interactive mode passes dangerous flag to executor."""
     plan_issue = create_sample_plan_issue()
 
@@ -69,7 +61,7 @@ def test_interactive_mode_with_dangerous_flag(plan_backend_type: str) -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=True)
         ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
@@ -118,7 +110,7 @@ def test_interactive_mode_from_plan_file() -> None:
         assert plan_file.exists()
 
 
-def test_interactive_mode_fails_when_claude_not_available(plan_backend_type: str) -> None:
+def test_interactive_mode_fails_when_claude_not_available() -> None:
     """Verify interactive mode fails gracefully when Claude CLI not available."""
     plan_issue = create_sample_plan_issue()
 
@@ -129,7 +121,7 @@ def test_interactive_mode_fails_when_claude_not_available(plan_backend_type: str
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=False)
         ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
@@ -143,7 +135,7 @@ def test_interactive_mode_fails_when_claude_not_available(plan_backend_type: str
 # Non-Interactive Mode Tests
 
 
-def test_non_interactive_executes_single_command(plan_backend_type: str) -> None:
+def test_non_interactive_executes_single_command() -> None:
     """Verify --no-interactive runs executor for implementation."""
     plan_issue = create_sample_plan_issue()
 
@@ -154,7 +146,7 @@ def test_non_interactive_executes_single_command(plan_backend_type: str) -> None
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=True)
         ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
@@ -171,7 +163,7 @@ def test_non_interactive_executes_single_command(plan_backend_type: str) -> None
         assert model is None
 
 
-def test_non_interactive_with_submit_runs_all_commands(plan_backend_type: str) -> None:
+def test_non_interactive_with_submit_runs_all_commands() -> None:
     """Verify --no-interactive --submit runs all three commands."""
     plan_issue = create_sample_plan_issue()
 
@@ -182,7 +174,7 @@ def test_non_interactive_with_submit_runs_all_commands(plan_backend_type: str) -
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=True)
         ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
@@ -205,7 +197,7 @@ def test_non_interactive_with_submit_runs_all_commands(plan_backend_type: str) -
 # Script Mode Tests
 
 
-def test_script_with_submit_includes_all_commands(plan_backend_type: str) -> None:
+def test_script_with_submit_includes_all_commands() -> None:
     """Verify --script --submit succeeds and creates script file."""
     plan_issue = create_sample_plan_issue()
 
@@ -216,7 +208,7 @@ def test_script_with_submit_includes_all_commands(plan_backend_type: str) -> Non
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
         result = runner.invoke(implement, ["#42", "--script", "--submit"], obj=ctx)
@@ -231,7 +223,7 @@ def test_script_with_submit_includes_all_commands(plan_backend_type: str) -> Non
 # Dry-Run Tests
 
 
-def test_dry_run_shows_execution_mode(plan_backend_type: str) -> None:
+def test_dry_run_shows_execution_mode() -> None:
     """Verify --dry-run shows execution mode."""
     plan_issue = create_sample_plan_issue()
 
@@ -242,7 +234,7 @@ def test_dry_run_shows_execution_mode(plan_backend_type: str) -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
         # Test with interactive mode (default)
@@ -258,7 +250,7 @@ def test_dry_run_shows_execution_mode(plan_backend_type: str) -> None:
         assert "Execution mode: non-interactive" in result.output
 
 
-def test_dry_run_shows_command_sequence(plan_backend_type: str) -> None:
+def test_dry_run_shows_command_sequence() -> None:
     """Verify --dry-run shows correct command sequence."""
     plan_issue = create_sample_plan_issue()
 
@@ -269,7 +261,7 @@ def test_dry_run_shows_command_sequence(plan_backend_type: str) -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
         # Without --submit (single command)
@@ -295,7 +287,7 @@ def test_dry_run_shows_command_sequence(plan_backend_type: str) -> None:
 # YOLO Flag Tests
 
 
-def test_yolo_flag_sets_all_flags(plan_backend_type: str) -> None:
+def test_yolo_flag_sets_all_flags() -> None:
     """Verify --yolo flag is equivalent to --dangerous --submit --no-interactive."""
     plan_issue = create_sample_plan_issue()
 
@@ -306,7 +298,7 @@ def test_yolo_flag_sets_all_flags(plan_backend_type: str) -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=True)
         ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
@@ -326,7 +318,7 @@ def test_yolo_flag_sets_all_flags(plan_backend_type: str) -> None:
             assert dangerous is True
 
 
-def test_yolo_flag_in_dry_run(plan_backend_type: str) -> None:
+def test_yolo_flag_in_dry_run() -> None:
     """Verify --yolo flag works with --dry-run."""
     plan_issue = create_sample_plan_issue()
 
@@ -337,7 +329,7 @@ def test_yolo_flag_in_dry_run(plan_backend_type: str) -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
         result = runner.invoke(implement, ["#42", "--yolo", "--dry-run"], obj=ctx)
@@ -355,7 +347,7 @@ def test_yolo_flag_in_dry_run(plan_backend_type: str) -> None:
         assert "/gt:pr-submit" in result.output
 
 
-def test_yolo_flag_conflicts_with_script(plan_backend_type: str) -> None:
+def test_yolo_flag_conflicts_with_script() -> None:
     """Verify --yolo and --script are mutually exclusive."""
     plan_issue = create_sample_plan_issue()
 
@@ -366,7 +358,7 @@ def test_yolo_flag_conflicts_with_script(plan_backend_type: str) -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
         # --yolo sets --no-interactive, which conflicts with --script
@@ -379,7 +371,7 @@ def test_yolo_flag_conflicts_with_script(plan_backend_type: str) -> None:
 # Mutual Exclusivity Validation Tests
 
 
-def test_submit_without_non_interactive_errors(plan_backend_type: str) -> None:
+def test_submit_without_non_interactive_errors() -> None:
     """Verify --submit requires --no-interactive."""
     plan_issue = create_sample_plan_issue()
 
@@ -390,7 +382,7 @@ def test_submit_without_non_interactive_errors(plan_backend_type: str) -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
         result = runner.invoke(implement, ["#42", "--submit"], obj=ctx)
@@ -399,7 +391,7 @@ def test_submit_without_non_interactive_errors(plan_backend_type: str) -> None:
         assert "--submit requires --no-interactive" in result.output
 
 
-def test_script_and_non_interactive_errors(plan_backend_type: str) -> None:
+def test_script_and_non_interactive_errors() -> None:
     """Verify --script and --no-interactive are mutually exclusive."""
     plan_issue = create_sample_plan_issue()
 
@@ -410,7 +402,7 @@ def test_script_and_non_interactive_errors(plan_backend_type: str) -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
         result = runner.invoke(implement, ["#42", "--no-interactive", "--script"], obj=ctx)

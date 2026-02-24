@@ -25,7 +25,7 @@ from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
-from tests.test_utils.plan_helpers import create_plan_store
+from tests.test_utils.plan_helpers import create_plan_store_with_plans
 
 # Fixed timestamp for test Plan objects
 TEST_PLAN_TIMESTAMP = datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC)
@@ -708,17 +708,15 @@ def test_checkout_for_plan_creates_impl_folder() -> None:
             metadata={},
             objective_id=None,
         )
-        backend = "planned_pr"
-        plan_store, _ = create_plan_store({"500": plan}, backend=backend)
+        plan_store, _ = create_plan_store_with_plans({"500": plan})
 
         # Draft-PR backend needs the branch to exist already
-        if backend == "planned_pr":
-            git = FakeGit(
-                git_common_dirs={env.cwd: env.git_dir},
-                default_branches={env.cwd: "main"},
-                local_branches={env.cwd: ["main", "plan-500"]},
-                existing_paths={env.cwd, env.repo.worktrees_dir},
-            )
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "plan-500"]},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
 
         ctx = build_workspace_test_context(env, git=git, plan_store=plan_store)
 
@@ -908,12 +906,9 @@ def test_checkout_stacks_in_place_for_plan_with_script() -> None:
             metadata={},
             objective_id=None,
         )
-        backend = "planned_pr"
-        plan_store, _ = create_plan_store({"500": plan}, backend=backend)
+        plan_store, _ = create_plan_store_with_plans({"500": plan})
 
-        branch = "plnd/add-feature-01-15-1030"
-        if backend == "planned_pr":
-            branch = "plan-500"
+        branch = "plan-500"
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -976,7 +971,7 @@ def test_checkout_for_plan_planned_pr_stacks_on_current_branch() -> None:
             metadata={},
             objective_id=None,
         )
-        plan_store, _ = create_plan_store({"600": plan}, backend="planned_pr")
+        plan_store, _ = create_plan_store_with_plans({"600": plan})
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -1024,7 +1019,7 @@ def test_checkout_for_plan_planned_pr_uses_trunk_when_on_trunk() -> None:
             metadata={},
             objective_id=None,
         )
-        plan_store, _ = create_plan_store({"601": plan}, backend="planned_pr")
+        plan_store, _ = create_plan_store_with_plans({"601": plan})
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},

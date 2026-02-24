@@ -435,15 +435,13 @@ def test_delete_all_closes_pr_and_plan() -> None:
             metadata={},
             objective_id=None,
         )
-        fake_plan_store, fake_issues = create_plan_store_with_plans({"123": plan})
+        fake_plan_store, fake_github = create_plan_store_with_plans({"123": plan})
 
-        # Create PR for the branch - need both prs (branch -> PullRequestInfo) and pr_details
+        # Add PR for the branch to the same FakeGitHub backing the plan store
         pr_info = _make_pr_info(456, state="OPEN")
         pr_details = _make_pr_details(456, "feature-branch", state="OPEN")
-        fake_github = FakeGitHub(
-            prs={"feature-branch": pr_info},
-            pr_details={456: pr_details},
-        )
+        fake_github._prs["feature-branch"] = pr_info
+        fake_github._pr_details[456] = pr_details
 
         # Build fake git ops with worktree info
         fake_git = FakeGit(
@@ -455,7 +453,7 @@ def test_delete_all_closes_pr_and_plan() -> None:
             git=fake_git,
             github=fake_github,
             plan_store=fake_plan_store,
-            issues=fake_issues,
+            issues=fake_github.issues,
             shell=FakeShell(),
             existing_paths={wt},
         )
@@ -465,8 +463,8 @@ def test_delete_all_closes_pr_and_plan() -> None:
         assert_cli_success(result)
         # Verify PR was closed
         assert 456 in fake_github.closed_prs
-        # Verify plan was closed (GitHubPlanStore closes via FakeGitHubIssues)
-        assert 123 in fake_issues.closed_issues
+        # Verify plan was closed (PlannedPRBackend closes via FakeGitHub.close_pr)
+        assert 123 in fake_github.closed_prs
         # Verify branch was deleted (--all implies --branch)
         assert "feature-branch" in fake_git.deleted_branches
 
@@ -619,7 +617,7 @@ def test_delete_all_shows_closed_plan_status() -> None:
             metadata={},
             objective_id=None,
         )
-        fake_plan_store, fake_issues = create_plan_store_with_plans({"456": plan})
+        fake_plan_store, fake_github = create_plan_store_with_plans({"456": plan})
 
         # Build fake git ops with worktree info
         fake_git = FakeGit(
@@ -631,7 +629,7 @@ def test_delete_all_shows_closed_plan_status() -> None:
             git=fake_git,
             github=FakeGitHub(),
             plan_store=fake_plan_store,
-            issues=fake_issues,
+            issues=fake_github.issues,
             shell=FakeShell(),
             existing_paths={wt},
         )
@@ -641,8 +639,8 @@ def test_delete_all_shows_closed_plan_status() -> None:
         assert_cli_success(result)
         # Should show that plan was already closed
         assert "Plan #456 already closed" in result.output
-        # Plan should NOT be in closed_issues (it was already closed)
-        assert 456 not in fake_issues.closed_issues
+        # Plan should NOT have been closed again (it was already closed)
+        assert 456 not in fake_github.closed_prs
 
 
 def test_delete_all_shows_actual_pr_and_plan_numbers_in_confirmation() -> None:
@@ -667,7 +665,7 @@ def test_delete_all_shows_actual_pr_and_plan_numbers_in_confirmation() -> None:
             metadata={},
             objective_id=None,
         )
-        fake_plan_store, fake_issues = create_plan_store_with_plans({"789": plan})
+        fake_plan_store, fake_github = create_plan_store_with_plans({"789": plan})
 
         # Create OPEN PR for the branch
         pr_info = _make_pr_info(123, state="OPEN")
@@ -687,7 +685,7 @@ def test_delete_all_shows_actual_pr_and_plan_numbers_in_confirmation() -> None:
             git=fake_git,
             github=fake_github,
             plan_store=fake_plan_store,
-            issues=fake_issues,
+            issues=fake_github.issues,
             shell=FakeShell(),
             existing_paths={wt},
             confirm_responses=[False],  # Abort at confirmation

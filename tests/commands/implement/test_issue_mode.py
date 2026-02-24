@@ -1,29 +1,17 @@
 """Tests for GitHub issue mode in implement command."""
 
-from datetime import UTC, datetime
-
-import pytest
 from click.testing import CliRunner
 
 from erk.cli.commands.implement import implement
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.plan_store.types import Plan, PlanState
 from tests.commands.implement.conftest import create_sample_plan_issue
 from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
-from tests.test_utils.plan_helpers import (
-    create_plan_store,
-    create_plan_store_with_plans,
-)
+from tests.test_utils.plan_helpers import create_plan_store_with_plans
 
 
-@pytest.fixture(params=["github", "planned_pr"])
-def plan_backend_type(request: pytest.FixtureRequest) -> str:
-    return request.param
-
-
-def test_implement_from_plain_issue_number(plan_backend_type: str) -> None:
+def test_implement_from_plain_issue_number() -> None:
     """Test implementing from GitHub issue number without # prefix."""
     plan_issue = create_sample_plan_issue("123")
 
@@ -34,7 +22,7 @@ def test_implement_from_plain_issue_number(plan_backend_type: str) -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"123": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"123": plan_issue})
         executor = FakePromptExecutor(available=True)
         ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
@@ -50,7 +38,7 @@ def test_implement_from_plain_issue_number(plan_backend_type: str) -> None:
         assert '"plan_id": "123"' in plan_ref_content
 
 
-def test_implement_from_issue_number(plan_backend_type: str) -> None:
+def test_implement_from_issue_number() -> None:
     """Test implementing from GitHub issue number with # prefix."""
     plan_issue = create_sample_plan_issue()
 
@@ -61,7 +49,7 @@ def test_implement_from_issue_number(plan_backend_type: str) -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=True)
         ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
@@ -77,7 +65,7 @@ def test_implement_from_issue_number(plan_backend_type: str) -> None:
         assert (impl_path / "plan-ref.json").exists()
 
 
-def test_implement_from_issue_url(plan_backend_type: str) -> None:
+def test_implement_from_issue_url() -> None:
     """Test implementing from GitHub issue URL."""
     plan_issue = create_sample_plan_issue("123")
 
@@ -88,7 +76,7 @@ def test_implement_from_issue_url(plan_backend_type: str) -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"123": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"123": plan_issue})
         executor = FakePromptExecutor(available=True)
         ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
@@ -104,7 +92,7 @@ def test_implement_from_issue_url(plan_backend_type: str) -> None:
         assert '"plan_id": "123"' in plan_ref_content
 
 
-def test_implement_creates_impl_folder_in_cwd(plan_backend_type: str) -> None:
+def test_implement_creates_impl_folder_in_cwd() -> None:
     """Test that implement creates .impl/ folder in current directory."""
     plan_issue = create_sample_plan_issue()
 
@@ -115,7 +103,7 @@ def test_implement_creates_impl_folder_in_cwd(plan_backend_type: str) -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=True)
         ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
@@ -129,44 +117,7 @@ def test_implement_creates_impl_folder_in_cwd(plan_backend_type: str) -> None:
         assert impl_dir.exists()
 
 
-def test_implement_from_issue_fails_without_erk_plan_label() -> None:
-    """Test that command fails when issue doesn't have erk-plan label.
-
-    This test is GitHub-only because label validation behavior differs
-    between plan backends.
-    """
-    plan_issue = Plan(
-        plan_identifier="42",
-        title="Regular Issue",
-        body="Not a plan issue",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/42",
-        labels=["bug"],  # Missing "erk-plan" label
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={},
-        objective_id=None,
-    )
-
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
-            default_branches={env.cwd: "main"},
-        )
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
-
-        result = runner.invoke(implement, ["#42", "--dry-run"], obj=ctx)
-
-        assert result.exit_code == 1
-        assert "Error" in result.output
-        assert "erk-plan" in result.output
-
-
-def test_implement_from_issue_fails_when_not_found(plan_backend_type: str) -> None:
+def test_implement_from_issue_fails_when_not_found() -> None:
     """Test that command fails when issue doesn't exist."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -175,7 +126,7 @@ def test_implement_from_issue_fails_when_not_found(plan_backend_type: str) -> No
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
         result = runner.invoke(implement, ["#999", "--dry-run"], obj=ctx)
@@ -184,7 +135,7 @@ def test_implement_from_issue_fails_when_not_found(plan_backend_type: str) -> No
         assert "Error" in result.output
 
 
-def test_implement_from_issue_dry_run(plan_backend_type: str) -> None:
+def test_implement_from_issue_dry_run() -> None:
     """Test dry-run mode for issue implementation."""
     plan_issue = create_sample_plan_issue()
 
@@ -195,7 +146,7 @@ def test_implement_from_issue_dry_run(plan_backend_type: str) -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
         result = runner.invoke(implement, ["#42", "--dry-run"], obj=ctx)
@@ -225,7 +176,13 @@ def test_auto_detect_plan_from_branch_name() -> None:
             default_branches={env.cwd: "main"},
             current_branches={env.cwd: "P42-my-feature-01-16-1200"},
         )
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, fake_github = create_plan_store_with_plans({"42": plan_issue})
+        # Also register the PR under the real branch name so PlannedPRBackend
+        # can resolve it via get_pr_for_branch during auto-detection.
+        # (create_plan_store_with_plans registers under "plan-42")
+        real_branch = "P42-my-feature-01-16-1200"
+        fake_github._prs[real_branch] = fake_github._prs["plan-42"]
+        fake_github._prs_by_branch[real_branch] = fake_github._pr_details[42]
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
         # TARGET omitted, should auto-detect from branch name

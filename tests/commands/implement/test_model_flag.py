@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-import pytest
 from click.testing import CliRunner
 
 from erk.cli.commands.implement import implement
@@ -11,15 +10,10 @@ from tests.commands.implement.conftest import create_sample_plan_issue
 from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
-from tests.test_utils.plan_helpers import create_plan_store
+from tests.test_utils.plan_helpers import create_plan_store_with_plans
 
 
-@pytest.fixture(params=["github", "planned_pr"])
-def plan_backend_type(request: pytest.FixtureRequest) -> str:
-    return request.param
-
-
-def test_model_flag_in_interactive_mode(plan_backend_type: str) -> None:
+def test_model_flag_in_interactive_mode() -> None:
     """Verify --model flag is passed to executor in interactive mode."""
     plan_issue = create_sample_plan_issue()
 
@@ -30,7 +24,7 @@ def test_model_flag_in_interactive_mode(plan_backend_type: str) -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=True)
         ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
@@ -47,7 +41,7 @@ def test_model_flag_in_interactive_mode(plan_backend_type: str) -> None:
         assert model == "opus"
 
 
-def test_model_flag_short_form_in_interactive_mode(plan_backend_type: str) -> None:
+def test_model_flag_short_form_in_interactive_mode() -> None:
     """Verify -m short form flag is passed to executor in interactive mode."""
     plan_issue = create_sample_plan_issue()
 
@@ -58,7 +52,7 @@ def test_model_flag_short_form_in_interactive_mode(plan_backend_type: str) -> No
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=True)
         ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
@@ -75,7 +69,7 @@ def test_model_flag_short_form_in_interactive_mode(plan_backend_type: str) -> No
         assert model == "sonnet"
 
 
-def test_model_alias_in_interactive_mode(plan_backend_type: str) -> None:
+def test_model_alias_in_interactive_mode() -> None:
     """Verify model alias (h, s, o) is expanded in interactive mode."""
     plan_issue = create_sample_plan_issue()
 
@@ -86,7 +80,7 @@ def test_model_alias_in_interactive_mode(plan_backend_type: str) -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=True)
         ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
@@ -101,7 +95,7 @@ def test_model_alias_in_interactive_mode(plan_backend_type: str) -> None:
         assert model == "haiku"
 
 
-def test_model_flag_in_non_interactive_mode(plan_backend_type: str) -> None:
+def test_model_flag_in_non_interactive_mode() -> None:
     """Verify --model flag is passed to executor in non-interactive mode."""
     plan_issue = create_sample_plan_issue()
 
@@ -112,7 +106,7 @@ def test_model_flag_in_non_interactive_mode(plan_backend_type: str) -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=True)
         ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
@@ -126,7 +120,7 @@ def test_model_flag_in_non_interactive_mode(plan_backend_type: str) -> None:
         assert model == "opus"
 
 
-def test_model_flag_in_script_mode(plan_backend_type: str) -> None:
+def test_model_flag_in_script_mode() -> None:
     """Verify --model flag is included in generated script."""
     plan_issue = create_sample_plan_issue()
 
@@ -137,7 +131,7 @@ def test_model_flag_in_script_mode(plan_backend_type: str) -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
         result = runner.invoke(implement, ["#42", "--script", "--model", "sonnet"], obj=ctx)
@@ -156,7 +150,7 @@ def test_model_flag_in_script_mode(plan_backend_type: str) -> None:
         assert "--model sonnet" in script_content
 
 
-def test_model_flag_in_dry_run(plan_backend_type: str) -> None:
+def test_model_flag_in_dry_run() -> None:
     """Verify --model flag is shown in dry-run output."""
     plan_issue = create_sample_plan_issue()
 
@@ -167,7 +161,7 @@ def test_model_flag_in_dry_run(plan_backend_type: str) -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
         result = runner.invoke(
@@ -184,7 +178,7 @@ def test_model_flag_in_dry_run(plan_backend_type: str) -> None:
         assert len(git.added_worktrees) == 0
 
 
-def test_invalid_model_flag(plan_backend_type: str) -> None:
+def test_invalid_model_flag() -> None:
     """Verify invalid model names are rejected."""
     plan_issue = create_sample_plan_issue()
 
@@ -195,7 +189,7 @@ def test_invalid_model_flag(plan_backend_type: str) -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
         result = runner.invoke(implement, ["#42", "--model", "invalid-model"], obj=ctx)

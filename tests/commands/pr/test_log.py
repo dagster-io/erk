@@ -281,8 +281,8 @@ def test_log_with_invalid_plan_identifier() -> None:
     # Arrange
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, fake_issues = create_plan_store_with_plans({})
-        ctx = build_workspace_test_context(env, plan_store=store, issues=fake_issues)
+        store, _ = create_plan_store_with_plans({})
+        ctx = build_workspace_test_context(env, plan_store=store)
 
         # Act
         result = runner.invoke(cli, ["pr", "log", "999"], obj=ctx)
