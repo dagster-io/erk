@@ -914,3 +914,200 @@ def test_pr_check_fails_with_legacy_top_header(tmp_path: Path) -> None:
         assert result.exit_code == 1
         assert "[FAIL] Plan-header metadata is at legacy top position" in result.output
         assert "should be above footer" in result.output
+
+
+def test_pr_check_stage_impl_fails_when_impl_context_present(tmp_path: Path) -> None:
+    """Test --stage=impl fails when .erk/impl-context/ directory still exists."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        # Create .erk/impl-context/ (NOT cleaned up)
+        impl_context_dir = env.cwd / ".erk" / "impl-context"
+        impl_context_dir.mkdir(parents=True)
+
+        pr_body = (
+            "## Summary\nThis PR adds a feature.\n\n"
+            "---\n\n"
+            "To checkout this PR in a fresh worktree and environment locally, run:\n\n"
+            "```\nerk pr checkout 123\n```\n"
+        )
+        branch = "feature-branch"
+        pr_details = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Test PR",
+            body=pr_body,
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name=branch,
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+        )
+        github = FakeGitHub(
+            prs={
+                branch: PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Test PR",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                )
+            },
+            pr_details={123: pr_details},
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: branch},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+        result = runner.invoke(pr_group, ["check", "--stage=impl"], obj=ctx)
+
+        assert result.exit_code == 1
+        assert "[FAIL] .erk/impl-context/ still present" in result.output
+        assert "should be removed before submission" in result.output
+
+
+def test_pr_check_stage_impl_passes_when_impl_context_absent(tmp_path: Path) -> None:
+    """Test --stage=impl passes impl-context check when directory does not exist."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        # No .erk/impl-context/ (properly cleaned up)
+        pr_body = (
+            "## Summary\nThis PR adds a feature.\n\n"
+            "---\n\n"
+            "To checkout this PR in a fresh worktree and environment locally, run:\n\n"
+            "```\nerk pr checkout 123\n```\n"
+        )
+        branch = "feature-branch"
+        pr_details = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Test PR",
+            body=pr_body,
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name=branch,
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+        )
+        github = FakeGitHub(
+            prs={
+                branch: PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Test PR",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                )
+            },
+            pr_details={123: pr_details},
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: branch},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+        result = runner.invoke(pr_group, ["check", "--stage=impl"], obj=ctx)
+
+        assert "[PASS] .erk/impl-context/ not present (cleaned up)" in result.output
+
+
+def test_pr_check_stage_impl_all_checks_pass(tmp_path: Path) -> None:
+    """Test --stage=impl all checks pass when PR is properly configured and impl-context absent."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        # Create .impl/ with plan-ref.json (no .erk/impl-context/)
+        impl_dir = env.cwd / ".impl"
+        impl_dir.mkdir()
+        plan_ref_json = impl_dir / "plan-ref.json"
+        plan_ref_json.write_text(
+            json.dumps(
+                {
+                    "provider": "github",
+                    "plan_id": "456",
+                    "url": "https://github.com/owner/repo/issues/456",
+                    "created_at": "2025-01-01T00:00:00Z",
+                    "synced_at": "2025-01-01T00:00:00Z",
+                }
+            )
+        )
+
+        pr_body = (
+            "## Summary\nThis PR adds a feature.\n\n"
+            "---\n\nCloses #456\n\n"
+            "To checkout this PR in a fresh worktree and environment locally, run:\n\n"
+            "```\nerk pr checkout 123\n```\n"
+        )
+        branch = "P456-add-feature-01-04-1234"
+        pr_details = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Test PR",
+            body=pr_body,
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name=branch,
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+        )
+        github = FakeGitHub(
+            prs={
+                branch: PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Test PR",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                )
+            },
+            pr_details={123: pr_details},
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: branch},
+            existing_paths={env.cwd, impl_dir},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+        result = runner.invoke(pr_group, ["check", "--stage=impl"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "[PASS] .erk/impl-context/ not present (cleaned up)" in result.output
+        assert "[PASS] Branch name and plan reference agree (#456)" in result.output
+        assert "[PASS] PR body contains issue closing reference (Closes #456)" in result.output
+        assert "[PASS] PR body contains checkout footer" in result.output
+        assert "All checks passed" in result.output

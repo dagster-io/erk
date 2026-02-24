@@ -1,5 +1,7 @@
 """Command to validate PR rules for the current branch."""
 
+from typing import NamedTuple
+
 import click
 
 from erk.cli.ensure import Ensure
@@ -13,19 +15,34 @@ from erk_shared.gateway.pr.submit import (
     has_checkout_footer_for_pr,
     has_issue_closing_reference,
 )
-from erk_shared.impl_folder import read_plan_ref, validate_plan_linkage
+from erk_shared.impl_folder import read_plan_ref
+from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_output
 
 
+class PrCheck(NamedTuple):
+    passed: bool
+    description: str
+
+
 @click.command("check")
+@click.option(
+    "--stage",
+    type=click.Choice(["impl"]),
+    default=None,
+    help="Run stage-specific checks. Use 'impl' to also verify .erk/impl-context/ was cleaned up.",
+)
 @click.pass_obj
-def pr_check(ctx: ErkContext) -> None:
+def pr_check(ctx: ErkContext, stage: str | None) -> None:
     """Validate PR rules for the current branch.
 
     Checks that the PR:
     1. Has issue closing reference (Closes #N) when .impl/issue.json exists
     2. Has the standard checkout command footer
     3. Has plan-header metadata at correct position (not legacy top)
+
+    With --stage=impl, also checks:
+    4. .erk/impl-context/ has been cleaned up
     """
     # Get current branch
     branch = Ensure.not_none(
@@ -50,78 +67,123 @@ def pr_check(ctx: ErkContext) -> None:
     user_output("")
 
     # Track validation results
-    checks: list[tuple[bool, str]] = []
+    checks: list[PrCheck] = []
 
     pr_body = pr.body
 
     # .impl always lives at worktree/repo root
     impl_dir = repo_root / ".impl"
 
+    # Stage-specific check: .erk/impl-context/ must not be present
+    if stage == "impl":
+        impl_context_dir = repo_root / ".erk" / "impl-context"
+        if impl_context_dir.exists():
+            checks.append(
+                PrCheck(
+                    passed=False,
+                    description=(
+                        ".erk/impl-context/ still present (should be removed before submission)"
+                    ),
+                )
+            )
+        else:
+            checks.append(
+                PrCheck(passed=True, description=".erk/impl-context/ not present (cleaned up)")
+            )
+
     # Check 0: Branch/plan-ref agreement
-    # This catches cases where branch name says "P42-..." but plan-ref says #99
     issue_number: int | None = None
-    try:
-        plan_id = validate_plan_linkage(impl_dir, branch)
-        if plan_id is not None:
-            issue_number = int(plan_id)
-            checks.append((True, f"Branch name and plan reference agree (#{issue_number})"))
-    except ValueError as e:
-        checks.append((False, str(e)))
-        # Continue with other checks - use the plan ref as fallback
-        plan_ref_fallback = read_plan_ref(impl_dir)
-        if plan_ref_fallback is not None:
-            issue_number = int(plan_ref_fallback.plan_id)
+    branch_issue = extract_leading_issue_number(branch)
+    plan_ref = read_plan_ref(impl_dir) if impl_dir.exists() else None
+    impl_plan_id = plan_ref.plan_id if plan_ref is not None else None
+
+    if branch_issue is not None and impl_plan_id is not None and str(branch_issue) != impl_plan_id:
+        checks.append(
+            PrCheck(
+                passed=False,
+                description=(
+                    f"Branch issue ({branch_issue}) disagrees with "
+                    f"plan reference (#{impl_plan_id}). Fix the mismatch before proceeding."
+                ),
+            )
+        )
+        issue_number = int(impl_plan_id)
+    else:
+        if impl_plan_id is not None:
+            issue_number = int(impl_plan_id)
+        elif branch_issue is not None:
+            issue_number = branch_issue
+        if issue_number is not None:
+            checks.append(
+                PrCheck(
+                    passed=True,
+                    description=f"Branch name and plan reference agree (#{issue_number})",
+                )
+            )
 
     # Check 1: Issue closing reference (if issue number is discoverable)
-    plan_ref = read_plan_ref(impl_dir)
-
+    # plan_ref already computed above
     if plan_ref is not None:
         if plan_ref.provider == "github-draft-pr":
-            checks.append((True, "Draft PR plan — no closing reference needed"))
+            checks.append(
+                PrCheck(passed=True, description="Draft PR plan — no closing reference needed")
+            )
         else:
             expected_issue_number = int(plan_ref.plan_id)
-            plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
+            plans_repo: str | None
+            if ctx.local_config is not None:
+                plans_repo = ctx.local_config.plans_repo
+            else:
+                plans_repo = None
             if has_issue_closing_reference(pr_body, expected_issue_number, plans_repo):
-                # Format expected reference for display
                 if plans_repo is None:
                     ref_display = f"#{expected_issue_number}"
                 else:
                     ref_display = f"{plans_repo}#{expected_issue_number}"
                 msg = f"PR body contains issue closing reference (Closes {ref_display})"
-                checks.append((True, msg))
+                checks.append(PrCheck(passed=True, description=msg))
             else:
                 if plans_repo is None:
                     expected = f"Closes #{expected_issue_number}"
                 else:
                     expected = f"Closes {plans_repo}#{expected_issue_number}"
                 msg = f"PR body missing issue closing reference (expected: {expected})"
-                checks.append((False, msg))
+                checks.append(PrCheck(passed=False, description=msg))
 
     # Check 2: Checkout footer
     if has_checkout_footer_for_pr(pr_body, pr_number):
-        checks.append((True, "PR body contains checkout footer"))
+        checks.append(PrCheck(passed=True, description="PR body contains checkout footer"))
     else:
-        checks.append((False, "PR body missing checkout footer"))
+        checks.append(PrCheck(passed=False, description="PR body missing checkout footer"))
 
     # Check 3: Header position (not at legacy top position)
     header = extract_header_from_body(pr_body)
     if header:
         if is_header_at_legacy_position(pr_body):
             checks.append(
-                (False, "Plan-header metadata is at legacy top position (should be above footer)")
+                PrCheck(
+                    passed=False,
+                    description=(
+                        "Plan-header metadata is at legacy top position (should be above footer)"
+                    ),
+                )
             )
         else:
-            checks.append((True, "Plan-header metadata is at correct position"))
+            checks.append(
+                PrCheck(passed=True, description="Plan-header metadata is at correct position")
+            )
 
     # Output results
-    for passed, description in checks:
-        status = click.style("[PASS]", fg="green") if passed else click.style("[FAIL]", fg="red")
-        user_output(f"{status} {description}")
+    for check in checks:
+        status = (
+            click.style("[PASS]", fg="green") if check.passed else click.style("[FAIL]", fg="red")
+        )
+        user_output(f"{status} {check.description}")
 
     user_output("")
 
     # Determine overall result
-    failed_count = sum(1 for passed, _ in checks if not passed)
+    failed_count = sum(1 for c in checks if not c.passed)
     if failed_count == 0:
         user_output(click.style("All checks passed", fg="green"))
         raise SystemExit(0)

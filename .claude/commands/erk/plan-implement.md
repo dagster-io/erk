@@ -177,13 +177,14 @@ After successful submission, signal lifecycle transition:
 erk exec impl-signal submitted 2>/dev/null || true
 ```
 
-Then validate PR rules:
+Then validate PR completion invariants:
 
 ```bash
-erk pr check
+erk pr check --stage=impl
 ```
 
-If checks fail, display output and warn user.
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
 
 ### Step 14: Output Format
 
