@@ -1071,6 +1071,7 @@ class TestExecutePaletteCommandFixConflictsRemote:
                 "pr-fix-conflicts",
                 "--pr",
                 "456",
+                "--no-wait",
             ]
 
 
