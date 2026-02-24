@@ -17,6 +17,7 @@ from slack_bolt.response import BoltResponse
 from slack_sdk.signature import SignatureVerifier
 from slack_sdk.web.async_client import AsyncWebClient
 
+from erk_shared.gateway.time.fake import FakeTime
 from tests.mock_web_api_server.mock_server_thread import (
     MockServerThread,
     setup_mock_server,
@@ -104,7 +105,7 @@ async def app(
         client=web_client,
         signing_secret=signing_secret,
     )
-    register_handlers(bolt_app, settings=settings)
+    register_handlers(bolt_app, settings=settings, bot=None, time=FakeTime())
     return bolt_app
 
 

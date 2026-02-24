@@ -24,3 +24,11 @@ class RealTime(Time):
             Current datetime (timezone-naive)
         """
         return datetime.now()
+
+    def monotonic(self) -> float:
+        """Get monotonic clock value using time.monotonic().
+
+        Returns:
+            Monotonic clock seconds from time.monotonic().
+        """
+        return time.monotonic()

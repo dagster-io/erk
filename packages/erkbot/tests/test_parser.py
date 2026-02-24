@@ -1,6 +1,7 @@
 import unittest
 
 from erkbot.models import (
+    ChatCommand,
     OneShotCommand,
     OneShotMissingMessageCommand,
     PlanListCommand,
@@ -27,6 +28,15 @@ class TestParseErkCommand(unittest.TestCase):
     def test_parse_one_shot_missing_message(self) -> None:
         command = parse_erk_command("<@U123> one-shot")
         self.assertIsInstance(command, OneShotMissingMessageCommand)
+
+    def test_parse_chat_command(self) -> None:
+        command = parse_erk_command("<@U123> chat What is Python?")
+        self.assertIsInstance(command, ChatCommand)
+        self.assertEqual(command.message, "What is Python?")
+
+    def test_parse_chat_no_message(self) -> None:
+        command = parse_erk_command("<@U123> chat")
+        self.assertIsNone(command)
 
     def test_parse_unknown(self) -> None:
         self.assertIsNone(parse_erk_command("<@U123> unsupported"))
