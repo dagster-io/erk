@@ -46,7 +46,7 @@ def stream_erk_one_shot(
     message: str,
     *,
     timeout_seconds: float,
-    on_line: Callable[[str], None] | None = None,
+    on_line: Callable[[str], None] | None,
 ) -> RunResult:
     if which("uv") is None:
         return RunResult(exit_code=127, output="Failed to start process: uv was not found in PATH")

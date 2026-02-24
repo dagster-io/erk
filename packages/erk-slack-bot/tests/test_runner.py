@@ -48,7 +48,7 @@ class TestStreamErkOneShot(unittest.TestCase):
         process.wait.return_value = 0
         mock_popen.return_value = process
 
-        result = stream_erk_one_shot("hello", timeout_seconds=0.01)
+        result = stream_erk_one_shot("hello", timeout_seconds=0.01, on_line=None)
 
         self.assertEqual(result.exit_code, 124)
         self.assertTrue(result.timed_out)
