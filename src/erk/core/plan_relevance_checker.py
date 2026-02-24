@@ -11,9 +11,9 @@ injection, model="haiku", frozen result dataclass.
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 
+from erk.core.llm_json import extract_json_dict
 from erk_shared.core.prompt_executor import PromptExecutor
 
 RELEVANCE_CHECK_SYSTEM_PROMPT = """\
@@ -144,13 +144,7 @@ def _parse_response(
     """Parse the LLM JSON response into a RelevanceCheckResult."""
     commit_map = {commit["sha"]: commit for commit in recent_commits}
 
-    # Strip markdown code fences if present
-    stripped = output.strip()
-    if stripped.startswith("```"):
-        fence_lines = stripped.splitlines()
-        stripped = "\n".join(fence_lines[1:-1]).strip()
-
-    parsed = _safe_json_parse(stripped)
+    parsed = extract_json_dict(output)
     if parsed is None:
         return RelevanceCheckResult(
             already_implemented=False,
@@ -199,22 +193,3 @@ def _parse_response(
         relevant_commits=relevant,
         error=None,
     )
-
-
-def _safe_json_parse(text: str) -> dict | None:
-    """Parse JSON without raising exceptions.
-
-    This is an error boundary: json.loads can fail on malformed LLM output,
-    so catching ValueError here is appropriate (third-party API compatibility).
-    """
-    if not text:
-        return None
-    if not text.startswith("{"):
-        return None
-    try:
-        parsed = json.loads(text)
-    except (ValueError, TypeError):
-        return None
-    if not isinstance(parsed, dict):
-        return None
-    return parsed

@@ -184,6 +184,28 @@ def test_json_wrapped_in_code_fence() -> None:
     assert result.matches[0].issue_number == 100
 
 
+def test_json_wrapped_in_code_fence_with_trailing_text() -> None:
+    """LLM response with code fences AND trailing commentary is handled."""
+    llm_output = (
+        "```json\n"
+        '{"duplicates": [{"issue_number": 100, "explanation": "same"}]}\n'
+        "```\n"
+        "\nThis JSON shows the duplicate found between the plans."
+    )
+    executor = FakePromptExecutor(
+        simulated_prompt_output=llm_output,
+    )
+    checker = PlanDuplicateChecker(executor)
+    result = checker.check(
+        "# New Plan\n\nSome plan",
+        [_make_issue(number=100, title="Existing plan", body="body")],
+    )
+
+    assert result.has_duplicates is True
+    assert len(result.matches) == 1
+    assert result.matches[0].issue_number == 100
+
+
 def test_multiple_duplicates() -> None:
     """Multiple duplicates are all returned."""
     llm_output = (
