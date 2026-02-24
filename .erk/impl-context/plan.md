@@ -1,100 +1,279 @@
-# Plan: Merge `plan`/`pr` into single `planned_pr` field in objective roadmap
+# Documentation Plan: Fix impl-signal started to include lifecycle_stage transition
 
 ## Context
 
-In the draft-PR plan backend (now the only backend), a plan IS a draft PR — they share the same GitHub PR number. The current roadmap format has separate `plan` and `pr` fields on each node, plus separate "Plan" and "PR" columns in the markdown table. This is redundant: when both are set, they always contain the same value (e.g., `plan: "#7971", pr: "#7971"`). Merging into a single `planned_pr` field simplifies the data model, CLI interface, and display.
+This PR (#7992) fixed a silent metadata bug where `impl-signal started` was not setting the `lifecycle_stage` field in the plan-header metadata. The bug caused plans to appear stuck at "planned" status in the TUI dashboard instead of transitioning to "impl" when implementation began. The root cause was a command consolidation gap: when `impl-signal started` replaced the legacy `mark_impl_started` command, the `lifecycle_stage` field was accidentally omitted from the metadata dict.
 
-## Approach
+The fix was surgical (one line added to the metadata dict), but the debugging session revealed important patterns about metadata serialization format and test assertion precision. The agent initially assumed GitHub issue metadata was JSON-formatted (because the code builds Python dicts), but discovered it's actually YAML-serialized inside HTML `<details>` blocks. This led to test assertion failures that required understanding the serialization layer.
 
-Merge `plan: str | None` and `pr: str | None` into a single `planned_pr: str | None` across the data model, YAML schema, CLI, rendering, and tests. Bump schema version from "4" to "5". Support parsing v4 (auto-coalesce `pr` > `plan` > null) for existing objectives.
+Documentation is needed to prevent future signal handler modifications from missing required metadata fields, and to guide agents writing tests for metadata updates. The metadata format discovery is cross-cutting knowledge that affects any code touching plan-header updates.
 
-## Changes
+## Raw Materials
 
-### 1. Core data model (`packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`)
+PR #7992
 
-- **RoadmapNode**: Replace `plan: str | None` + `pr: str | None` with `planned_pr: str | None`
-- **validate_roadmap_frontmatter()**:
-  - Accept schema_version "5" (new) with `planned_pr` key
-  - Accept schema_version "2"/"3"/"4" (existing) with separate `plan`/`pr` keys — coalesce: `pr or plan or None`
-- **render_roadmap_block_inner()**: Emit `schema_version: "5"` with `planned_pr` key
-- **update_node_in_frontmatter()**: Replace separate `plan`/`pr` params with single `planned_pr` param. Simplify status inference: `planned_pr` set → `in_progress`
-- **render_roadmap_tables()**: Merge "Plan"/"PR" columns into single "Planned PR" column. Change `pr_count` to count done nodes instead of `step.pr is not None`
-- **serialize_phases()**: Replace `plan`/`pr` keys with `planned_pr`
+## Summary
 
-### 2. Dependency graph (`packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py`)
+| Metric | Count |
+|--------|-------|
+| Documentation items | 8 |
+| Contradictions to resolve | 1 |
+| Tripwire candidates (score>=4) | 2 |
+| Potential tripwires (score 2-3) | 2 |
 
-- **ObjectiveNode**: Replace `plan: str | None` + `pr: str | None` with `planned_pr: str | None`
-- Update `graph_from_phases()`, `graph_from_nodes()`, `nodes_from_graph()` to pass `planned_pr`
+## Stale Documentation Cleanup
 
-### 3. Render roadmap exec script (`src/erk/cli/commands/exec/scripts/objective_render_roadmap.py`)
+Existing docs with phantom references requiring action:
 
-- Update table header: `| Node | Description | Status | Planned PR |`
-- Update table rows to emit single `planned_pr` column (always `-` for new roadmaps)
+### 1. Outdated command reference in lifecycle.md
 
-### 4. Update objective node CLI (`src/erk/cli/commands/exec/scripts/update_objective_node.py`)
+**Location:** `docs/learned/planning/lifecycle.md` (lines 1043-1052)
+**Action:** UPDATE_REFERENCES
+**Phantom References:** `mark-impl-started` command (superseded by `impl-signal started`)
+**Cleanup Instructions:** Update the Write Points table to reference `impl-signal started` instead of `mark-impl-started`. The table currently shows that `implementing` stage is "Set By" `mark-impl-started`, but this command has been replaced by the unified `impl-signal started` command.
 
-- Replace `--plan`/`--pr` options with single `--planned-pr` option
-- Remove the validation that `--plan` is required when `--pr` is set (no longer needed)
-- Update `_replace_table_in_text()`: Match 4-column rows (was 5-column)
-- Update `_find_node_refs()`: Return single `planned_pr` value
-- Update `_replace_node_refs_in_body()`: Pass single `planned_pr`
-- Update `_build_output()`: Replace `previous_plan`/`new_plan`/`previous_pr`/`new_pr` with `previous_planned_pr`/`new_planned_pr`
+## Documentation Items
 
-### 5. View command (`src/erk/cli/commands/objective/view_cmd.py`)
+### HIGH Priority
 
-- **_format_node_status()**: Rename `plan` param → `planned_pr`
-- Merge `max_plan_width`/`max_pr_width` into `max_planned_pr_width`
-- Merge separate "plan"/"pr" table columns into single "planned_pr" column
-- Update JSON output: replace `plan`/`pr` keys with `planned_pr`
+#### 1. Update lifecycle.md Write Points table with correct command reference
 
-### 6. Check command (`src/erk/cli/commands/objective/check_cmd.py`)
+**Location:** `docs/learned/planning/lifecycle.md` (lines 1043-1052)
+**Action:** UPDATE
+**Source:** [PR #7992]
 
-- Merge plan/pr consistency checks: single check for `planned_pr` reference format
-- Update orphaned done check: `node.status == "done" and node.planned_pr is None`
-- Merge plan/pr `#` prefix validation into single `planned_pr` check
+**Draft Content:**
 
-### 7. Fetch context (`src/erk/cli/commands/exec/scripts/objective_fetch_context.py`)
+```markdown
+Update the Write Points table entry:
 
-- Update `step.plan == plan_ref` → `step.planned_pr == plan_ref` for step matching
+| Stage          | Set By                  | When                                    |
+| -------------- | ----------------------- | --------------------------------------- |
+| `implementing` | `impl-signal started`   | Implementation begins (local or remote) |
 
-### 8. Skill/command docs (update CLI examples)
+Note: The stage display name is "implementing" but the storage value is "impl" (post plan #7999 lifecycle collapse). See the Lifecycle Stage Values section above for the mapping.
+```
 
-- `.claude/commands/erk/objective-update-with-landed-pr.md` — `--planned-pr` instead of `--plan`/`--pr`
-- `.claude/commands/erk/objective-update-with-closed-plan.md` — `--planned-pr ""`
-- `.claude/commands/erk/plan-save.md` — `--planned-pr`
-- `.claude/commands/local/objective-reevaluate.md` — `--planned-pr`
-- `.claude/skills/erk-exec/reference.md` — update parameter docs
-- `.claude/skills/objective/references/format.md` — update format docs
+#### 2. Add lifecycle_stage metadata field requirement tripwire
 
-### 9. CI workflow (`.github/workflows/one-shot.yml`)
+**Location:** `docs/learned/planning/tripwires.md`
+**Action:** UPDATE
+**Source:** [PR #7992]
 
-- Change `--plan "$PLAN_NUMBER"` → `--planned-pr "$PLAN_NUMBER"`
+**Draft Content:**
 
-### 10. Tests
+```markdown
+**implementing event signaling in impl_signal.py** → Read [Plan Lifecycle](lifecycle.md) first. ALL signal handlers (started, ended, submitted) must set `lifecycle_stage` in metadata dict. Missing this field causes silent status tracking failures — plans appear stuck at 'planned' instead of transitioning to 'impl'. See `_signal_started()` and `_signal_submitted()` in impl_signal.py for the required pattern.
+```
 
-- `test_roadmap.py` — update `.pr`/`.plan` assertions → `.planned_pr`
-- `test_roadmap_frontmatter.py` — update all plan/pr assertions and YAML fixtures
-- `test_dependency_graph.py` — update ObjectiveNode assertions
-- `test_update_objective_node.py` — update --plan/--pr to --planned-pr, update output keys
-- `test_objective_render_roadmap.py` — update table format assertions
+#### 3. Add clarification section for lifecycle stage terminology
 
-### 11. Docs (update roadmap-related learned docs)
+**Location:** `docs/learned/planning/lifecycle.md` (after line 1039, in Lifecycle Stage Tracking section)
+**Action:** UPDATE
+**Source:** [PR #7992]
 
-- `docs/learned/architecture/roadmap-mutation-semantics.md` — if it references plan/pr separately
-- `docs/learned/objectives/roadmap-status-system.md` — update two-tier status docs
-- `docs/learned/reference/objective-summary-format.md` — update format reference
+**Draft Content:**
 
-## Migration strategy
+```markdown
+### Storage Values vs Display Names
 
-- **Parsing**: `validate_roadmap_frontmatter()` accepts v2/3/4 (coalesces `pr ?? plan` into `planned_pr`) and v5 (reads `planned_pr` directly)
-- **Writing**: Always emits v5 with `planned_pr`
-- **Existing objectives**: First read coalesces to v5 in memory; next write (via `update-objective-node` or any mutation) upgrades the on-disk YAML to v5
-- **No explicit migration script needed**: objectives upgrade lazily on next mutation
+The lifecycle stage system has two representations:
 
-## Verification
+| Display Name   | Storage Value | Notes |
+|----------------|---------------|-------|
+| `implementing` | `impl`        | Collapsed from "implementing"/"implemented" per plan #7999 |
+| `implemented`  | `impl`        | Same storage value as implementing |
 
-1. Run `make fast-ci` — all unit tests pass
-2. `erk objective view 7911` — renders correctly with single "planned_pr" column (existing v4 YAML auto-coalesced)
-3. `erk objective check 7911` — passes all validation checks
-4. `erk exec update-objective-node 7911 --node 1.2 --planned-pr "#9999" --status in_progress` — sets single field, then revert
-5. `erk exec objective-render-roadmap` with test JSON — produces 4-column table (Node | Description | Status | Planned PR)
+The TUI display shows the friendly names, but code and metadata use the compact storage values. When testing metadata updates, assert on storage values (e.g., `"lifecycle_stage: impl\n"`).
+
+**Historical context:** Plan #7999 collapsed the separate "implementing" and "implemented" stages into a single "impl" storage value. The display layer still shows distinct names based on context (PR state, etc.), but the underlying metadata uses "impl" for both states.
+```
+
+#### 4. Add PR feedback classifier validation tripwire
+
+**Location:** `docs/learned/planning/tripwires.md` or `docs/learned/pr-operations/tripwires.md`
+**Action:** UPDATE
+**Source:** [Impl]
+
+**Draft Content:**
+
+```markdown
+**after running pr-feedback-classifier skill** → Validate output completeness. If `informational_count > 0` but no items in `actionable_threads` array, the Haiku classifier may have excluded threads that belong in actionable_threads per SKILL.md spec. Manual inspection needed. Consider using Sonnet for classification tasks with strict schema requirements.
+```
+
+### MEDIUM Priority
+
+#### 5. Document YAML metadata serialization format
+
+**Location:** `docs/learned/architecture/metadata-blocks.md` (add new section)
+**Action:** UPDATE
+**Source:** [Impl]
+
+**Draft Content:**
+
+```markdown
+## Serialization Format
+
+Metadata blocks serialize field values as YAML, not JSON. When writing tests or assertions for metadata content, use YAML format:
+
+**Correct assertion pattern:**
+```python
+# YAML format with trailing newline
+assert "lifecycle_stage: impl\n" in updated_body
+```
+
+**Incorrect patterns:**
+```python
+# JSON format (wrong - metadata is not JSON)
+assert '"lifecycle_stage": "impl"' in updated_body
+
+# Missing newline (risky - may match partial values)
+assert "lifecycle_stage: impl" in updated_body  # Could match "impl" in "implementing"
+```
+
+The serialization is handled by `render_metadata_block()` in `erk_shared.gateway.github.metadata.core`. When in doubt, check this function to understand the exact output format.
+```
+
+#### 6. Add YAML assertion pattern tripwire
+
+**Location:** `docs/learned/testing/tripwires.md`
+**Action:** UPDATE
+**Source:** [Impl]
+
+**Draft Content:**
+
+```markdown
+**testing GitHub issue metadata updates** → Read [Metadata Blocks Reference](../architecture/metadata-blocks.md) first. Use YAML format assertions (`"key: value\n"`) not JSON format (`'"key": "value"'`). Include trailing newline to avoid substring collisions (e.g., "impl" matching "implementing").
+```
+
+#### 7. Document plan-mode hybrid command pattern
+
+**Location:** `docs/learned/commands/plan-mode-hybrid-commands.md` (new file if commands/ category exists, otherwise `docs/learned/planning/plan-mode-hybrid-commands.md`)
+**Action:** CREATE
+**Source:** [Impl]
+
+**Draft Content:**
+
+```markdown
+---
+title: Plan Mode with Execute-Oriented Commands
+read_when:
+  - "invoking commands like /erk:pr-address in plan mode"
+  - "creating commands that can run in both plan and execute mode"
+---
+
+# Plan Mode with Execute-Oriented Commands
+
+Some erk commands are designed for direct execution but can be invoked in plan mode. When this happens, the agent navigates a hybrid workflow.
+
+## Pattern
+
+1. **Create plan** - Agent enters plan mode and drafts implementation steps
+2. **Clarify via AskUserQuestion** - User makes decisions (Act vs Dismiss, etc.)
+3. **Gather context** - Task/Explore agents investigate needed changes
+4. **Exit with implement-now marker** - User chooses "Skip PR and implement here"
+5. **Execute changes** - Agent implements directly in current worktree
+
+## Example Commands
+
+- `/erk:pr-address` - Address PR review comments
+
+## When to Use
+
+This pattern is appropriate for small, iterative changes where creating a separate plan PR adds overhead without value. The user's "Skip PR and implement here" choice signals that the change is small enough for direct implementation.
+```
+
+### LOW Priority
+
+#### 8. Document discovery pattern for metadata format
+
+**Location:** `docs/learned/testing/tripwires.md` (add to existing section)
+**Action:** UPDATE
+**Source:** [Impl]
+
+**Draft Content:**
+
+```markdown
+**writing tests that assert on serialized output** → Before writing assertions, check the `render_*` or `serialize_*` function to understand actual format. Don't assume format based on in-memory representation (dicts serialize to YAML, not JSON in erk metadata).
+```
+
+## Contradiction Resolutions
+
+### 1. Lifecycle stage terminology: "implementing" vs "impl"
+
+**Existing doc:** `docs/learned/planning/lifecycle.md` (lines 1030-1039)
+**Conflict:** The Stage Values table shows `implementing` as a stage value, but code actually stores `impl`. The table mixes display names with storage values.
+**Resolution:** This is not a true contradiction but rather unclear terminology. Add a "Storage Values vs Display Names" section (item #3 above) to clarify that the table shows display names while code uses storage values. The plan #7999 lifecycle collapse combined "implementing" and "implemented" into the single "impl" storage value, but display logic still shows appropriate names based on context.
+
+## Prevention Insights
+
+Errors and failed approaches discovered during implementation:
+
+### 1. Missing metadata field in consolidated command
+
+**What happened:** `impl-signal started` was missing the `lifecycle_stage` field that the legacy `mark_impl_started` command had.
+**Root cause:** When consolidating multiple commands into `impl_signal.py`, one code path (`_signal_started`) missed a required metadata field.
+**Prevention:** When consolidating commands, audit ALL metadata fields from legacy commands. Compare old and new implementations field-by-field.
+**Recommendation:** TRIPWIRE (item #2 above)
+
+### 2. Test assertion format mismatch (JSON vs YAML)
+
+**What happened:** Test asserted `'"lifecycle_stage": "impl"'` (JSON format) but the actual body contained `lifecycle_stage: impl\n` (YAML format).
+**Root cause:** Agent assumed JSON format based on code that builds Python dicts, without checking the serialization layer.
+**Prevention:** Before writing tests for serialized output, check the `render_*` function to understand actual format.
+**Recommendation:** ADD_TO_DOC (items #5 and #8 above)
+
+### 3. Classifier output didn't match spec
+
+**What happened:** Haiku classifier excluded an informational thread from `actionable_threads` array despite SKILL.md spec requiring all threads there.
+**Root cause:** Haiku model's interpretation of SKILL.md instructions diverged from expected behavior.
+**Prevention:** Add validation check after classifier runs; consider using Sonnet for classification tasks with strict schema requirements.
+**Recommendation:** TRIPWIRE (item #4 above)
+
+## Tripwire Candidates
+
+Items meeting tripwire-worthiness threshold (score >= 4):
+
+### 1. Missing lifecycle_stage field in signal handlers
+
+**Score:** 8/10 (criteria: Non-obvious +2, Cross-cutting +2, Silent failure +2, Destructive potential +2)
+**Trigger:** When implementing event signaling in impl_signal.py or modifying signal handlers (started, ended, submitted)
+**Warning:** ALL signal handlers (started, ended, submitted) must set `lifecycle_stage` in metadata dict. Missing this field causes silent status tracking failures - plans appear stuck at 'planned' instead of transitioning to 'impl'. The field is required for TUI status indicators (`erk dash`).
+**Target doc:** `docs/learned/planning/tripwires.md`
+
+This tripwire prevents a particularly insidious bug class: the code runs without errors, but plan status tracking silently fails. Users see plans stuck at "planned" status indefinitely, with no indication of what went wrong. The fix is simple (add one field), but discovering the bug requires noticing the TUI mismatch.
+
+The pattern applies to all signal handlers in `impl_signal.py`. When `_signal_started()` missed the field, `_signal_submitted()` had it correctly - this inconsistency within the same file makes the tripwire even more valuable.
+
+### 2. PR feedback classifier output validation
+
+**Score:** 6/10 (criteria: Non-obvious +2, Cross-cutting +2, Silent failure +2)
+**Trigger:** After running pr-feedback-classifier skill
+**Warning:** Validate that `len(actionable_threads) + len(discussion_actions) > 0 OR informational_count == 0`. If `informational_count > 0` but no items in actionable arrays, the Haiku classifier may have excluded threads that belong in actionable_threads per spec. Manual inspection needed.
+**Target doc:** `docs/learned/planning/tripwires.md` or `docs/learned/pr-operations/tripwires.md`
+
+The classifier is used by multiple commands (pr-address, pr-review, etc.), making this a cross-cutting concern. When Haiku deviates from the SKILL.md spec, threads are silently dropped and the agent doesn't know to handle them.
+
+## Potential Tripwires
+
+Items with score 2-3 (may warrant promotion with additional context):
+
+### 1. Test assertion format assumption (JSON vs YAML)
+
+**Score:** 3/10 (criteria: Non-obvious +2, Repeated pattern +1)
+**Notes:** Agents assume JSON from in-memory dict representation, but serialization is YAML. Score: 3. May not reach full tripwire threshold because proper test reading prevents this. However, if this pattern recurs, consider promotion.
+
+### 2. Command consolidation metadata audit
+
+**Score:** 3/10 (criteria: Non-obvious +2, Repeated pattern +1)
+**Notes:** When replacing old commands with unified commands, audit all metadata fields. Score: 3. Pattern emerged from this PR's bug. If more consolidation work happens and similar bugs appear, promote to full tripwire.
+
+## Code Improvements (Out of Scope for Learn)
+
+The gap analysis identified two items that belong in code rather than documentation:
+
+1. **Lifecycle stage values catalog** - Consider a Literal type or Enum for `("planned", "impl", "prompted", etc.)`. Currently string literals scattered across code.
+
+2. **Docstring for render_metadata_block()** - Add comprehensive docstring documenting the YAML serialization format and output structure.
+
+These are code improvements, not documentation tasks, and should be tracked separately if desired.
