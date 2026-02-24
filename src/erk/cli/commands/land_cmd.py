@@ -752,7 +752,7 @@ def _cleanup_no_worktree(cleanup: CleanupContext) -> None:
         _ensure_branch_not_checked_out(
             cleanup.ctx, repo_root=cleanup.main_repo_root, branch=cleanup.branch
         )
-        cleanup.ctx.branch_manager.delete_branch(cleanup.main_repo_root, cleanup.branch)
+        cleanup.ctx.branch_manager.delete_branch(cleanup.main_repo_root, cleanup.branch, force=True)
         user_output(click.style("✓", fg="green") + f" Deleted branch '{cleanup.branch}'")
     # else: Branch doesn't exist locally - no cleanup needed (remote implementation or fork PR)
 
@@ -773,7 +773,7 @@ def _cleanup_slot_with_assignment(
     _ensure_branch_not_checked_out(
         cleanup.ctx, repo_root=cleanup.main_repo_root, branch=cleanup.branch
     )
-    cleanup.ctx.branch_manager.delete_branch(cleanup.main_repo_root, cleanup.branch)
+    cleanup.ctx.branch_manager.delete_branch(cleanup.main_repo_root, cleanup.branch, force=True)
     user_output(click.style("✓", fg="green") + " Unassigned slot and deleted branch")
 
 
@@ -798,7 +798,7 @@ def _cleanup_slot_without_assignment(
     _ensure_branch_not_checked_out(
         cleanup.ctx, repo_root=cleanup.main_repo_root, branch=cleanup.branch
     )
-    cleanup.ctx.branch_manager.delete_branch(cleanup.main_repo_root, cleanup.branch)
+    cleanup.ctx.branch_manager.delete_branch(cleanup.main_repo_root, cleanup.branch, force=True)
     user_output(click.style("✓", fg="green") + " Released slot and deleted branch")
 
 
@@ -829,7 +829,7 @@ def _cleanup_non_slot_worktree(cleanup: CleanupContext) -> None:
     _ensure_branch_not_checked_out(
         cleanup.ctx, repo_root=cleanup.main_repo_root, branch=cleanup.branch
     )
-    cleanup.ctx.branch_manager.delete_branch(cleanup.main_repo_root, cleanup.branch)
+    cleanup.ctx.branch_manager.delete_branch(cleanup.main_repo_root, cleanup.branch, force=True)
 
     # Try to checkout trunk branch after deletion to exit detached HEAD state.
     # Only possible if trunk is not already checked out in another worktree.
