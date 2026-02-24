@@ -35,7 +35,7 @@ from erk_shared.issue_workflow import (
     prepare_plan_for_worktree,
 )
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.types import PlanNotFound
+from erk_shared.plan_store.types import Plan, PlanNotFound
 
 
 def try_switch_root_worktree(ctx: ErkContext, repo: RepoContext, branch: str) -> Path | None:
@@ -400,6 +400,7 @@ def branch_checkout(
 
     # Plan setup - fetches plan and derives branch name if --for-plan is used
     setup: IssueBranchSetup | None = None
+    plan: Plan | None = None
 
     if for_plan is not None:
         issue_number = parse_issue_identifier(for_plan)
@@ -439,8 +440,10 @@ def branch_checkout(
             ctx.git.remote.fetch_branch(repo.root, "origin", branch)
             ctx.branch_manager.create_tracking_branch(repo.root, branch, f"origin/{branch}")
             user_output(f"Created tracking branch: {branch}")
-        current_branch = ctx.git.branch.get_current_branch(repo.root)
-        parent_branch = current_branch if (current_branch and current_branch != trunk) else trunk
+        # Use base_ref_name from plan metadata (set by plan-save via the draft PR)
+        # to determine the correct Graphite parent, instead of guessing from current branch
+        base_ref = plan.metadata.get("base_ref_name") if plan is not None else None
+        parent_branch = base_ref if isinstance(base_ref, str) else trunk
         ctx.branch_manager.track_branch(repo.root, branch, parent_branch)
 
     # Get all worktrees

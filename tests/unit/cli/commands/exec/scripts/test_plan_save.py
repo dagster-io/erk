@@ -246,8 +246,8 @@ def test_planned_pr_commits_plan_file(tmp_path: Path, monkeypatch: pytest.Monkey
 def test_planned_pr_trunk_branch_passes_through_to_pr_base(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """trunk_branch detected by detect_trunk_branch flows through metadata to PR base."""
-    fake_git = FakeGit(current_branches={tmp_path: "main"}, trunk_branches={tmp_path: "master"})
+    """When on trunk, trunk_branch flows through metadata to PR base."""
+    fake_git = FakeGit(current_branches={tmp_path: "master"}, trunk_branches={tmp_path: "master"})
     fake_github = FakeGitHub()
     ctx = _planned_pr_context(
         tmp_path=tmp_path,
@@ -264,11 +264,11 @@ def test_planned_pr_trunk_branch_passes_through_to_pr_base(
     assert fake_github.created_prs[0][3] == "master"
 
 
-def test_planned_pr_tracks_branch_with_graphite(
+def test_planned_pr_tracks_branch_with_graphite_on_trunk(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Plan branch is tracked with Graphite so it can be used as a stack parent."""
-    fake_git = FakeGit(current_branches={tmp_path: "main"}, trunk_branches={tmp_path: "master"})
+    """When on trunk, plan branch is tracked with trunk as Graphite parent."""
+    fake_git = FakeGit(current_branches={tmp_path: "master"}, trunk_branches={tmp_path: "master"})
     fake_graphite = FakeGraphite()
     monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
     ctx = context_for_test(
@@ -286,8 +286,7 @@ def test_planned_pr_tracks_branch_with_graphite(
     output = json.loads(result.output)
     branch_name = output["branch_name"]
 
-    # Verify track_branch was called with the plan branch and trunk as parent
-    # (branch is created from origin/trunk, so Graphite parent should be trunk)
+    # On trunk: branch is created from origin/trunk, so Graphite parent should be trunk
     assert len(fake_graphite.track_branch_calls) == 1
     tracked_call = fake_graphite.track_branch_calls[0]
     assert tracked_call[0] == tmp_path  # repo_root
@@ -295,10 +294,10 @@ def test_planned_pr_tracks_branch_with_graphite(
     assert tracked_call[2] == "master"  # parent_branch (trunk used as base)
 
 
-def test_planned_pr_branch_not_stacked_on_current_branch(
+def test_planned_pr_branch_stacked_on_current_feature_branch(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Plan branch is created from trunk, not current feature branch."""
+    """Plan branch is stacked on current feature branch, not trunk."""
     # Current branch is a feature branch, NOT trunk
     fake_git = FakeGit(
         current_branches={tmp_path: "feature/my-work"},
@@ -319,13 +318,40 @@ def test_planned_pr_branch_not_stacked_on_current_branch(
 
     assert result.exit_code == 0, f"Failed: {result.output}"
 
-    # Graphite parent should be trunk (master), NOT the current feature branch
+    # Graphite parent should be the current feature branch, NOT trunk
     assert len(fake_graphite.track_branch_calls) == 1
     tracked_call = fake_graphite.track_branch_calls[0]
-    assert tracked_call[2] == "master"  # parent_branch is trunk, not "feature/my-work"
+    assert tracked_call[2] == "feature/my-work"  # parent_branch is current feature branch
 
-    # Verify trunk was fetched before branch creation
-    assert ("origin", "master") in fake_git.fetched_branches
+    # Trunk should NOT be fetched (branch is based off local feature branch)
+    assert ("origin", "master") not in fake_git.fetched_branches
+
+
+def test_planned_pr_feature_branch_creates_correct_pr_base(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """When on a feature branch, the PR base is the feature branch (not trunk)."""
+    fake_git = FakeGit(
+        current_branches={tmp_path: "feature/my-work"},
+        trunk_branches={tmp_path: "master"},
+    )
+    fake_github = FakeGitHub()
+    monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
+    ctx = context_for_test(
+        git=fake_git,
+        github=fake_github,
+        claude_installation=FakeClaudeInstallation.for_test(plans={"plan": VALID_PLAN_CONTENT}),
+        cwd=tmp_path,
+        repo_root=tmp_path,
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(plan_save, ["--format", "json", "--branch-slug", "test-slug"], obj=ctx)
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    # PR base should be the feature branch, not trunk
+    assert len(fake_github.created_prs) == 1
+    assert fake_github.created_prs[0][3] == "feature/my-work"
 
 
 # --- Title validation rejection tests (planned-PR path) ---

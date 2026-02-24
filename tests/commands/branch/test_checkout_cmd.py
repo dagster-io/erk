@@ -952,8 +952,8 @@ def test_checkout_stacks_in_place_for_plan_with_script() -> None:
         assert (impl_folder / "plan.md").exists()
 
 
-def test_checkout_for_plan_planned_pr_stacks_on_current_branch() -> None:
-    """--for-plan with planned_pr backend tracks with current branch as parent."""
+def test_checkout_for_plan_planned_pr_stacks_on_base_ref() -> None:
+    """--for-plan with planned_pr backend tracks with base_ref_name from plan metadata."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
@@ -968,7 +968,7 @@ def test_checkout_for_plan_planned_pr_stacks_on_current_branch() -> None:
             assignees=[],
             created_at=TEST_PLAN_TIMESTAMP,
             updated_at=TEST_PLAN_TIMESTAMP,
-            metadata={},
+            metadata={"base_ref_name": "feature-parent"},
             objective_id=None,
         )
         plan_store, _ = create_plan_store_with_plans({"600": plan})
@@ -993,15 +993,15 @@ def test_checkout_for_plan_planned_pr_stacks_on_current_branch() -> None:
 
         assert result.exit_code == 0, f"Failed: {result.output}"
 
-        # Verify track_branch was called with current branch as parent, not trunk
+        # Verify track_branch was called with base_ref_name from plan metadata
         assert len(graphite.track_branch_calls) == 1
         _repo_root, tracked_branch, parent = graphite.track_branch_calls[0]
         assert tracked_branch == "plan-600"
         assert parent == "feature-parent"
 
 
-def test_checkout_for_plan_planned_pr_uses_trunk_when_on_trunk() -> None:
-    """When on trunk, --for-plan with planned_pr backend tracks with trunk as parent."""
+def test_checkout_for_plan_planned_pr_falls_back_to_trunk_without_base_ref() -> None:
+    """When plan metadata has no base_ref_name, falls back to trunk as parent."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()

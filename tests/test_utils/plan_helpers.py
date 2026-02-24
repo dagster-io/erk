@@ -57,6 +57,10 @@ def _plan_to_pr_details(plan: Plan) -> PRDetails:
     # Include erk-plan label plus any existing labels
     labels = tuple(plan.labels) if "erk-plan" in plan.labels else ("erk-plan", *plan.labels)
 
+    # Use base_ref_name from plan metadata if provided, otherwise default to "main"
+    raw_base_ref = plan.metadata.get("base_ref_name")
+    base_ref = raw_base_ref if isinstance(raw_base_ref, str) else "main"
+
     return PRDetails(
         number=int(plan.plan_identifier),
         url=plan.url,
@@ -64,7 +68,7 @@ def _plan_to_pr_details(plan: Plan) -> PRDetails:
         body=pr_body,
         state=state,
         is_draft=True,
-        base_ref_name="main",
+        base_ref_name=base_ref,
         head_ref_name=branch_name,
         is_cross_repository=False,
         mergeable="UNKNOWN",
