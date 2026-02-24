@@ -170,17 +170,14 @@ def _save_as_draft_pr(
         objective_id=objective_issue,
     )
 
-    # Create branch with Graphite tracking (handles both creation and stack metadata)
+    # Create branch from origin/trunk (not current branch) to avoid false stacking
     branch_manager = require_branch_manager(ctx)
-    current_branch = git.branch.get_current_branch(cwd)
-    start_point = current_branch if current_branch is not None else "HEAD"
-    create_result = branch_manager.create_branch(repo_root, branch_name, start_point)
+    trunk = git.branch.detect_trunk_branch(repo_root)
+    git.remote.fetch_branch(repo_root, "origin", trunk)
+    create_result = branch_manager.create_branch(repo_root, branch_name, f"origin/{trunk}")
     if isinstance(create_result, BranchAlreadyExists):
         click.echo(f"Error: {create_result.message}", err=True)
         raise SystemExit(1) from None
-
-    # Detect trunk for PR base metadata
-    trunk = git.branch.detect_trunk_branch(cwd)
 
     # Build ref.json data
     ref_data: dict[str, str | int | None] = {
