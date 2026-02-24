@@ -1,6 +1,10 @@
-"""Unit tests for RealGitHub parsing methods."""
+"""Unit tests for RealGitHub parsing and caching methods."""
 
 from datetime import UTC, datetime
+from pathlib import Path
+from unittest.mock import patch
+
+import pytest
 
 from erk_shared.gateway.github.real import RealGitHub
 from erk_shared.gateway.github.types import GitHubRepoId, RepoInfo
@@ -212,3 +216,99 @@ def test_parse_plan_prs_empty_response() -> None:
 
     assert pr_details == []
     assert pr_linkages == {}
+
+
+# --- Tests for _get_default_branch (caching + REST API call) ---
+#
+# These tests patch execute_gh_command_with_retry at the module level to avoid
+# subprocess invocations. This follows the same pattern as test_subprocess_utils.py
+# which patches run_subprocess_with_context for testing gh command infrastructure.
+
+
+@patch("erk_shared.gateway.github.real.execute_gh_command_with_retry")
+def test_get_default_branch_returns_branch(mock_execute) -> None:  # noqa: ANN001
+    """First call fetches the default branch via REST API and returns it."""
+    mock_execute.return_value = "main\n"
+    github = RealGitHub.for_test()
+    repo_root = Path("/test/repo")
+
+    result = github._get_default_branch(repo_root)
+
+    assert result == "main"
+    mock_execute.assert_called_once()
+
+
+@patch("erk_shared.gateway.github.real.execute_gh_command_with_retry")
+def test_get_default_branch_caches_result(mock_execute) -> None:  # noqa: ANN001
+    """Second call for the same repo_root returns cached result without API call."""
+    mock_execute.return_value = "main\n"
+    github = RealGitHub.for_test()
+    repo_root = Path("/test/repo")
+
+    first = github._get_default_branch(repo_root)
+    second = github._get_default_branch(repo_root)
+
+    assert first == "main"
+    assert second == "main"
+    # Only one API call — second was served from cache
+    mock_execute.assert_called_once()
+
+
+@patch("erk_shared.gateway.github.real.execute_gh_command_with_retry")
+def test_get_default_branch_separate_cache_per_repo(mock_execute) -> None:  # noqa: ANN001
+    """Different repo_root paths get independent cache entries."""
+    mock_execute.side_effect = ["main\n", "master\n"]
+    github = RealGitHub.for_test()
+    repo_a = Path("/test/repo-a")
+    repo_b = Path("/test/repo-b")
+
+    result_a = github._get_default_branch(repo_a)
+    result_b = github._get_default_branch(repo_b)
+
+    assert result_a == "main"
+    assert result_b == "master"
+    assert mock_execute.call_count == 2
+
+    # Subsequent calls use cache — no additional API calls
+    assert github._get_default_branch(repo_a) == "main"
+    assert github._get_default_branch(repo_b) == "master"
+    assert mock_execute.call_count == 2
+
+
+@patch("erk_shared.gateway.github.real.execute_gh_command_with_retry")
+def test_get_default_branch_strips_whitespace(mock_execute) -> None:  # noqa: ANN001
+    """Trailing whitespace/newlines from API stdout are stripped."""
+    mock_execute.return_value = "  main  \n"
+    github = RealGitHub.for_test()
+
+    result = github._get_default_branch(Path("/test/repo"))
+
+    assert result == "main"
+
+
+@patch("erk_shared.gateway.github.real.execute_gh_command_with_retry")
+def test_get_default_branch_uses_rest_api_endpoint(mock_execute) -> None:  # noqa: ANN001
+    """The command uses repos/{owner}/{repo} REST endpoint with --jq filter."""
+    mock_execute.return_value = "main\n"
+    github = RealGitHub.for_test()
+    repo_root = Path("/test/repo")
+
+    github._get_default_branch(repo_root)
+
+    cmd, cwd, time_impl = mock_execute.call_args.args
+    assert cmd == ["gh", "api", "repos/{owner}/{repo}", "--jq", ".default_branch"]
+    assert cwd == repo_root
+
+
+@patch("erk_shared.gateway.github.real.execute_gh_command_with_retry")
+def test_get_default_branch_propagates_runtime_error(mock_execute) -> None:  # noqa: ANN001
+    """RuntimeError from the API call propagates without caching."""
+    mock_execute.side_effect = RuntimeError("GitHub command failed: network error")
+    github = RealGitHub.for_test()
+    repo_root = Path("/test/repo")
+
+    with pytest.raises(RuntimeError, match="network error"):
+        github._get_default_branch(repo_root)
+
+    # Error should NOT be cached — next call should retry
+    assert repo_root not in github._default_branch_cache
