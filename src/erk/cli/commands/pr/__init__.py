@@ -16,6 +16,7 @@ from erk.cli.commands.pr.log_cmd import pr_log
 from erk.cli.commands.pr.reconcile_with_remote_cmd import pr_reconcile_with_remote
 from erk.cli.commands.pr.replan_cmd import pr_replan
 from erk.cli.commands.pr.rewrite_cmd import pr_rewrite
+from erk.cli.commands.pr.runs_cmd import plan_runs
 from erk.cli.commands.pr.submit_cmd import pr_submit
 from erk.cli.commands.pr.view_cmd import pr_view
 
@@ -38,6 +39,7 @@ pr_group.add_command(pr_list, name="list")
 pr_group.add_command(pr_log, name="log")
 pr_group.add_command(pr_replan, name="replan")
 pr_group.add_command(pr_rewrite, name="rewrite")
+pr_group.add_command(plan_runs, name="runs")
 pr_group.add_command(pr_submit, name="submit")
 pr_group.add_command(pr_reconcile_with_remote, name="reconcile-with-remote")
 pr_group.add_command(pr_view, name="view")

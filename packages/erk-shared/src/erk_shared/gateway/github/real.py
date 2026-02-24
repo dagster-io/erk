@@ -569,13 +569,21 @@ class RealGitHub(GitHub):
         execute_gh_command_with_retry(cmd, repo_root, self._time)
 
     def list_workflow_runs(
-        self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
+        self,
+        repo_root: Path,
+        workflow: str,
+        limit: int = 50,
+        *,
+        user: str | None = None,
+        branch: str | None = None,
     ) -> list[WorkflowRun]:
         """List workflow runs for a specific workflow."""
         # GH-API-AUDIT: REST - GET actions/workflows/{id}/runs
         query_params = f"per_page={limit}"
         if user is not None:
             query_params += f"&actor={user}"
+        if branch is not None:
+            query_params += f"&branch={branch}"
 
         cmd = [
             "gh",

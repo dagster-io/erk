@@ -104,10 +104,18 @@ class DryRunGitHub(GitHub):
         pass
 
     def list_workflow_runs(
-        self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
+        self,
+        repo_root: Path,
+        workflow: str,
+        limit: int = 50,
+        *,
+        user: str | None = None,
+        branch: str | None = None,
     ) -> list[WorkflowRun]:
         """Delegate read operation to wrapped implementation."""
-        return self._wrapped.list_workflow_runs(repo_root, workflow, limit, user=user)
+        return self._wrapped.list_workflow_runs(
+            repo_root, workflow, limit, user=user, branch=branch
+        )
 
     def get_workflow_run(self, repo_root: Path, run_id: str) -> WorkflowRun | None:
         """Delegate read operation to wrapped implementation."""

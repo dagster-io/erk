@@ -146,7 +146,13 @@ class GitHub(ABC):
 
     @abstractmethod
     def list_workflow_runs(
-        self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
+        self,
+        repo_root: Path,
+        workflow: str,
+        limit: int = 50,
+        *,
+        user: str | None = None,
+        branch: str | None = None,
     ) -> list[WorkflowRun]:
         """List workflow runs for a specific workflow.
 
@@ -155,6 +161,7 @@ class GitHub(ABC):
             workflow: Workflow filename (e.g., "implement-plan.yml")
             limit: Maximum number of runs to return (default: 50)
             user: Optional GitHub username to filter runs by (maps to --user flag)
+            branch: Optional branch name to filter runs by (maps to --branch flag)
 
         Returns:
             List of workflow runs, ordered by creation time (newest first)

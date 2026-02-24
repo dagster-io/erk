@@ -373,14 +373,23 @@ class FakeGitHub(GitHub):
         return self._triggered_workflows
 
     def list_workflow_runs(
-        self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
+        self,
+        repo_root: Path,
+        workflow: str,
+        limit: int = 50,
+        *,
+        user: str | None = None,
+        branch: str | None = None,
     ) -> list[WorkflowRun]:
         """List workflow runs for a specific workflow (returns pre-configured data).
 
-        Returns the pre-configured list of workflow runs. The workflow, limit and user
-        parameters are accepted but ignored - fake returns all pre-configured runs.
+        Returns the pre-configured list of workflow runs. The workflow and limit
+        parameters are accepted but ignored. Branch filtering is applied when specified.
         """
-        return self._workflow_runs
+        runs = self._workflow_runs
+        if branch is not None:
+            runs = [r for r in runs if r.branch == branch]
+        return runs
 
     def get_workflow_run(self, repo_root: Path, run_id: str) -> WorkflowRun | None:
         """Get details for a specific workflow run by ID (returns pre-configured data).

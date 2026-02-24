@@ -35,6 +35,17 @@ WORKFLOW_COMMAND_MAP: dict[str, str] = {
     "one-shot": ONE_SHOT_WORKFLOW_NAME,  # one-shot.yml
 }
 
+# Workflows associated with plan execution (display name → filename)
+# Separate from WORKFLOW_COMMAND_MAP because keys serve different purposes
+# (display names vs CLI command names)
+PLAN_ASSOCIATED_WORKFLOWS: dict[str, str] = {
+    "implement": DISPATCH_WORKFLOW_NAME,
+    "address": PR_ADDRESS_WORKFLOW_NAME,
+    "rebase": REBASE_WORKFLOW_NAME,
+    "one-shot": ONE_SHOT_WORKFLOW_NAME,
+    "learn": "learn.yml",
+}
+
 # Workflow names that trigger the autofix workflow
 # Must match the `name:` field in each .yml file (which should match filename without .yml)
 AUTOFIX_TRIGGER_WORKFLOWS = frozenset(
