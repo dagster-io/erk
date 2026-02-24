@@ -2206,10 +2206,10 @@ class TestFixConflictsRemoteAsync:
     """Tests for _fix_conflicts_remote_async subprocess behavior."""
 
     @pytest.mark.asyncio
-    async def test_fix_conflicts_remote_passes_no_wait(
+    async def test_fix_conflicts_remote_passes_correct_args(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        """_fix_conflicts_remote_async should pass --no-wait to subprocess."""
+        """_fix_conflicts_remote_async should pass correct args to subprocess."""
         import subprocess
 
         provider = FakePlanDataProvider(
@@ -2240,7 +2240,6 @@ class TestFixConflictsRemoteAsync:
                 "pr-fix-conflicts",
                 "--pr",
                 "456",
-                "--no-wait",
             ]
 
     @pytest.mark.asyncio

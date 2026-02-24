@@ -42,6 +42,15 @@ from erk_shared.gateway.command_executor.real import RealCommandExecutor
 from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
 
 
+def _extract_subprocess_error(e: subprocess.CalledProcessError) -> str:
+    """Extract a human-readable error message from a CalledProcessError."""
+    if e.stderr and e.stderr.strip():
+        return e.stderr.strip()
+    if e.stdout and e.stdout.strip():
+        return e.stdout.strip()
+    return "Unknown error"
+
+
 def _build_github_url(plan_url: str, resource_type: str, number: int) -> str:
     """Build a GitHub URL for a PR or issue from an existing plan URL.
 
@@ -552,7 +561,7 @@ class ErkDashApp(App):
             # Trigger data refresh to pick up updated run_id/run_status
             self.call_from_thread(self.action_refresh)
         except subprocess.CalledProcessError as e:
-            error_msg = (e.stderr or "").strip() or (e.stdout or "").strip() or "Unknown error"
+            error_msg = _extract_subprocess_error(e)
             self.call_from_thread(
                 self.notify,
                 f"Failed to dispatch address for PR #{pr_number}: {error_msg}",
@@ -565,7 +574,7 @@ class ErkDashApp(App):
         """Dispatch fix-conflicts workflow in background thread with toast."""
         try:
             subprocess.run(
-                ["erk", "launch", "pr-fix-conflicts", "--pr", str(pr_number), "--no-wait"],
+                ["erk", "launch", "pr-fix-conflicts", "--pr", str(pr_number)],
                 capture_output=True,
                 text=True,
                 check=True,
@@ -573,11 +582,11 @@ class ErkDashApp(App):
                 cwd=str(self._provider.repo_root),
             )
             self.call_from_thread(
-                self.notify, f"Dispatched fix-conflicts for PR #{pr_number}", timeout=3
+                self.notify, f"Dispatched: erk launch pr-fix-conflicts --pr {pr_number}", timeout=3
             )
             self.call_from_thread(self.action_refresh)
         except subprocess.CalledProcessError as e:
-            error_msg = (e.stderr or "").strip() or (e.stdout or "").strip() or "Unknown error"
+            error_msg = _extract_subprocess_error(e)
             self.call_from_thread(
                 self.notify,
                 f"Failed to dispatch fix-conflicts for PR #{pr_number}: {error_msg}",
@@ -607,7 +616,7 @@ class ErkDashApp(App):
             self.call_from_thread(self.notify, f"Landed PR #{pr_number}", timeout=3)
             self.call_from_thread(self.action_refresh)
         except subprocess.CalledProcessError as e:
-            error_msg = (e.stderr or "").strip() or (e.stdout or "").strip() or "Unknown error"
+            error_msg = _extract_subprocess_error(e)
             self.call_from_thread(
                 self.notify,
                 f"Failed to land PR #{pr_number}: {error_msg}",
@@ -640,7 +649,7 @@ class ErkDashApp(App):
                     self.notify, f"Updated objective #{objective_issue}", timeout=3
                 )
             except subprocess.CalledProcessError as e:
-                error_msg = (e.stderr or "").strip() or (e.stdout or "").strip() or "Unknown error"
+                error_msg = _extract_subprocess_error(e)
                 self.call_from_thread(
                     self.notify,
                     f"Failed to update objective #{objective_issue}: {error_msg}",
@@ -663,7 +672,7 @@ class ErkDashApp(App):
             self.call_from_thread(self.notify, f"Submitted plan #{plan_id} to queue", timeout=3)
             self.call_from_thread(self.action_refresh)
         except subprocess.CalledProcessError as e:
-            error_msg = (e.stderr or "").strip() or (e.stdout or "").strip() or "Unknown error"
+            error_msg = _extract_subprocess_error(e)
             self.call_from_thread(
                 self.notify,
                 f"Failed to submit plan #{plan_id}: {error_msg}",
@@ -686,7 +695,7 @@ class ErkDashApp(App):
             self.call_from_thread(self.notify, f"Closed objective #{plan_id}", timeout=3)
             self.call_from_thread(self.action_refresh)
         except subprocess.CalledProcessError as e:
-            error_msg = (e.stderr or "").strip() or (e.stdout or "").strip() or "Unknown error"
+            error_msg = _extract_subprocess_error(e)
             self.call_from_thread(
                 self.notify,
                 f"Failed to close objective #{plan_id}: {error_msg}",
@@ -708,7 +717,7 @@ class ErkDashApp(App):
             )
             self.call_from_thread(self.notify, f"Checked objective #{plan_id}", timeout=3)
         except subprocess.CalledProcessError as e:
-            error_msg = (e.stderr or "").strip() or (e.stdout or "").strip() or "Unknown error"
+            error_msg = _extract_subprocess_error(e)
             self.call_from_thread(
                 self.notify,
                 f"Failed to check objective #{plan_id}: {error_msg}",
@@ -733,7 +742,7 @@ class ErkDashApp(App):
             )
             self.call_from_thread(self.action_refresh)
         except subprocess.CalledProcessError as e:
-            error_msg = (e.stderr or "").strip() or (e.stdout or "").strip() or "Unknown error"
+            error_msg = _extract_subprocess_error(e)
             self.call_from_thread(
                 self.notify,
                 f"Failed to dispatch one-shot plan for objective #{plan_id}: {error_msg}",
@@ -1053,7 +1062,7 @@ class ErkDashApp(App):
 
         elif command_id == "fix_conflicts_remote":
             if row.pr_number:
-                self.notify(f"Dispatching fix-conflicts for PR #{row.pr_number}...")
+                self.notify(f"Dispatching: erk launch pr-fix-conflicts --pr {row.pr_number}")
                 self._fix_conflicts_remote_async(row.pr_number)
 
         elif command_id == "address_remote":
