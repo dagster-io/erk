@@ -18,6 +18,7 @@ from erk.core.commit_message_generator import (
 )
 from erk.core.context import ErkContext
 from erk.core.plan_context_provider import PlanContext
+from erk_shared.gateway.github.metadata.schemas import LIFECYCLE_STAGE
 from erk_shared.gateway.github.pr_footer import (
     build_pr_body_footer,
     extract_closing_reference,
@@ -27,10 +28,12 @@ from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.pr.diff_extraction import execute_diff_extraction
 from erk_shared.impl_folder import read_plan_ref
 from erk_shared.naming import extract_leading_issue_number
+from erk_shared.plan_store.conversion import header_str
 from erk_shared.plan_store.draft_pr_lifecycle import (
     PLAN_CONTENT_SEPARATOR,
     build_original_plan_section,
 )
+from erk_shared.plan_store.types import PlanNotFound
 
 # ---------------------------------------------------------------------------
 # Branch Discovery
@@ -129,6 +132,48 @@ def echo_plan_context_status(plan_context: PlanContext | None) -> None:
     else:
         click.echo(click.style("   No linked plan found", dim=True))
     click.echo("")
+
+
+# ---------------------------------------------------------------------------
+# Lifecycle Stage
+# ---------------------------------------------------------------------------
+
+_STAGES_BEFORE_IMPL = {None, "prompted", "planning", "planned"}
+
+
+def maybe_advance_lifecycle_to_impl(
+    ctx: ErkContext,
+    *,
+    repo_root: Path,
+    plan_id: str,
+    quiet: bool,
+) -> None:
+    """Advance a linked plan's lifecycle_stage to "impl" if not already there.
+
+    Intended for use after PR submission or rewrite so that plans are correctly
+    marked as being implemented even when the user bypasses the /erk:plan-implement
+    pipeline.
+
+    Silently returns on any failure — lifecycle updates must never block submission.
+    """
+    plan_result = ctx.plan_backend.get_plan(repo_root, plan_id)
+    if isinstance(plan_result, PlanNotFound):
+        return
+
+    current_stage = header_str(plan_result.header_fields, LIFECYCLE_STAGE)
+    if current_stage not in _STAGES_BEFORE_IMPL:
+        return
+
+    try:
+        ctx.plan_backend.update_metadata(repo_root, plan_id, {"lifecycle_stage": "impl"})
+    except RuntimeError as e:
+        if not quiet:
+            msg = f"   Warning: failed to update lifecycle stage: {e}"
+        click.echo(click.style(msg, fg="yellow"))
+        return
+
+    if not quiet:
+        click.echo(click.style("   Plan lifecycle stage updated to impl", dim=True))
 
 
 # ---------------------------------------------------------------------------
