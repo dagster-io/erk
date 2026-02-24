@@ -169,7 +169,7 @@ def maybe_advance_lifecycle_to_impl(
     except RuntimeError as e:
         if not quiet:
             msg = f"   Warning: failed to update lifecycle stage: {e}"
-        click.echo(click.style(msg, fg="yellow"))
+            click.echo(click.style(msg, fg="yellow"))
         return
 
     if not quiet:
