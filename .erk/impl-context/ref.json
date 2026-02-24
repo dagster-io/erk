@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix `erk plan check` for draft-PR plan format"
+}
