@@ -56,6 +56,10 @@ class ProgressingFakeTime(Time):
         """Track sleep call without actually sleeping."""
         self._sleep_calls.append(seconds)
 
+    def monotonic(self) -> float:
+        """Return 0.0 — monotonic is unused in polling tests."""
+        return 0.0
+
     @property
     def sleep_calls(self) -> list[float]:
         """Get the list of sleep() calls that were made."""

@@ -20,15 +20,25 @@ class FakeTime(Time):
     or captured during execution.
     """
 
-    def __init__(self, current_time: datetime | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        current_time: datetime | None = None,
+        monotonic_values: list[float] | None = None,
+    ) -> None:
         """Create FakeTime with empty call tracking and optional fixed time.
 
         Args:
             current_time: Fixed datetime to return from now(). Defaults to
                 2024-01-15 14:30:00 for deterministic tests.
+            monotonic_values: Sequence of values to return from monotonic().
+                Returns values in order, clamping to the last value when
+                exhausted. Defaults to [0.0].
         """
         self._sleep_calls: list[float] = []
         self._current_time = current_time if current_time is not None else DEFAULT_FAKE_TIME
+        self._monotonic_values = monotonic_values if monotonic_values is not None else [0.0]
+        self._monotonic_index = 0
 
     @property
     def sleep_calls(self) -> list[float]:
@@ -55,3 +65,16 @@ class FakeTime(Time):
             The fixed datetime configured at construction time.
         """
         return self._current_time
+
+    def monotonic(self) -> float:
+        """Return the next monotonic value from the configured sequence.
+
+        Returns values in order, clamping to the last value when exhausted.
+
+        Returns:
+            The next monotonic clock value from the configured sequence.
+        """
+        value = self._monotonic_values[self._monotonic_index]
+        if self._monotonic_index < len(self._monotonic_values) - 1:
+            self._monotonic_index += 1
+        return value

@@ -1,10 +1,10 @@
 import asyncio
-import time
 from collections import deque
 from typing import Any
 
 from slack_sdk.errors import SlackApiError
 
+from erk_shared.gateway.time.abc import Time
 from erkbot.config import Settings
 from erkbot.models import (
     OneShotCommand,
@@ -26,7 +26,7 @@ from erkbot.utils import (
 SUPPORTED_COMMANDS_TEXT = "Supported commands: `@erk plan list`, `@erk one-shot <message>`."
 
 
-def register_handlers(app, *, settings: Settings) -> None:  # type: ignore[no-untyped-def]
+def register_handlers(app, *, settings: Settings, time: Time) -> None:  # type: ignore[no-untyped-def]
     async def add_read_ack(client: Any, channel: str, timestamp: str) -> None:
         try:
             await client.reactions_add(channel=channel, timestamp=timestamp, name="eyes")

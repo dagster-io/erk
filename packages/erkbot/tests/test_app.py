@@ -6,6 +6,8 @@ from unittest.mock import MagicMock, patch
 from erkbot.app import create_app
 from erkbot.config import Settings
 
+from erk_shared.gateway.time.fake import FakeTime
+
 
 class TestCreateApp(unittest.TestCase):
     @patch("erkbot.app.register_handlers")
@@ -14,8 +16,11 @@ class TestCreateApp(unittest.TestCase):
         self, mock_app_cls: MagicMock, mock_register: MagicMock
     ) -> None:
         settings = Settings(SLACK_BOT_TOKEN="xoxb-token", SLACK_APP_TOKEN="xapp-token")
-        result = create_app(settings=settings)
+        fake_time = FakeTime()
+        result = create_app(settings=settings, time=fake_time)
 
         mock_app_cls.assert_called_once_with(token="xoxb-token")
-        mock_register.assert_called_once_with(mock_app_cls.return_value, settings=settings)
+        mock_register.assert_called_once_with(
+            mock_app_cls.return_value, settings=settings, time=fake_time
+        )
         self.assertIs(result, mock_app_cls.return_value)

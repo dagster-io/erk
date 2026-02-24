@@ -3,6 +3,7 @@ import asyncio
 from dotenv import load_dotenv
 from slack_bolt.adapter.socket_mode.async_handler import AsyncSocketModeHandler
 
+from erk_shared.gateway.time.real import RealTime
 from erkbot.app import create_app
 from erkbot.config import Settings
 
@@ -10,7 +11,7 @@ from erkbot.config import Settings
 async def _run() -> None:
     load_dotenv()
     settings = Settings()
-    app = create_app(settings=settings)
+    app = create_app(settings=settings, time=RealTime())
     handler = AsyncSocketModeHandler(app, settings.slack_app_token)
     await handler.start_async()
 

@@ -28,3 +28,12 @@ class Time(ABC):
             Current datetime (timezone-naive for simplicity)
         """
         ...
+
+    @abstractmethod
+    def monotonic(self) -> float:
+        """Get the current monotonic clock value.
+
+        Returns:
+            Monotonic clock value in fractional seconds
+        """
+        ...
