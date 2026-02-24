@@ -259,8 +259,8 @@ def test_land_force_skips_unresolved_comments_warning() -> None:
         # PR should have been merged
         assert 123 in github_ops.merged_prs
 
-        # Worktree should NOT be removed (worktrees are always preserved)
-        assert feature_1_path not in git_ops.removed_worktrees
+        # Worktree should be removed (non-slot worktrees are removed after branch deletion)
+        assert feature_1_path in git_ops.removed_worktrees
 
 
 def test_land_proceeds_when_user_confirms_unresolved_comments() -> None:
@@ -383,8 +383,8 @@ def test_land_proceeds_when_user_confirms_unresolved_comments() -> None:
         # PR should have been merged (user confirmed)
         assert 123 in github_ops.merged_prs
 
-        # Worktree should NOT be removed (worktrees are always preserved)
-        assert feature_1_path not in git_ops.removed_worktrees
+        # Worktree should be removed (non-slot worktrees are removed after branch deletion)
+        assert feature_1_path in git_ops.removed_worktrees
 
 
 def test_land_handles_rate_limit_gracefully() -> None:
@@ -498,8 +498,8 @@ def test_land_handles_rate_limit_gracefully() -> None:
         # PR should have been merged (rate limit on review threads shouldn't block)
         assert 123 in github_ops.merged_prs
 
-        # Worktree should NOT be removed (worktrees are always preserved)
-        assert feature_1_path not in git_ops.removed_worktrees
+        # Worktree should be removed (non-slot worktrees are removed after branch deletion)
+        assert feature_1_path in git_ops.removed_worktrees
 
 
 def test_land_fails_non_interactive_with_unresolved_comments() -> None:

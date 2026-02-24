@@ -315,16 +315,14 @@ def test_cleanup_and_navigate_detects_slot_by_path_pattern_without_assignment(
     assert "feature-branch" in deleted_branches
 
 
-def test_cleanup_and_navigate_non_slot_worktree_checkouts_trunk_before_deleting_branch(
+def test_cleanup_and_navigate_non_slot_worktree_removes_worktree_after_branch_deletion(
     tmp_path: Path,
 ) -> None:
-    """Test that non-slot worktree cleanup checks out trunk before deleting branch.
+    """Test that non-slot worktree cleanup removes the worktree after deleting the branch.
 
-    Regression test for bug where `erk land` failed from a non-slot worktree with:
-    "branch is currently checked out in another worktree and cannot be deleted"
-
-    The fix checks out the trunk branch before deleting the feature branch,
-    allowing git to delete a branch that was previously checked out.
+    Non-slot worktrees have no useful state after branch deletion (unlike slot
+    worktrees which have placeholder branches). The worktree should be removed
+    entirely to avoid leaving a dead detached-HEAD directory.
     """
     # Create a non-slot worktree (name doesn't match erk-slot-XX pattern)
     non_slot_worktree_path = tmp_path / "worktrees" / "my-feature-worktree"
@@ -410,8 +408,11 @@ def test_cleanup_and_navigate_non_slot_worktree_checkouts_trunk_before_deleting_
     assert len(detached_calls) == 1, "Should have checked out detached HEAD at trunk"
     assert detached_calls[0][0] == non_slot_worktree_path
 
-    # Verify worktree was NOT removed (preserved)
-    assert non_slot_worktree_path not in fake_git.removed_worktrees
+    # Verify worktree WAS removed (non-slot worktrees are removed after branch deletion)
+    assert non_slot_worktree_path in fake_git.removed_worktrees
+
+    # Verify safe_chdir was called to escape the worktree before removal
+    assert len(fake_git.chdir_history) > 0, "Should have called safe_chdir before removal"
 
     # Verify branch was deleted via Graphite (since FakeGraphite is used and branch is tracked)
     # GraphiteBranchManager.delete_branch calls graphite.delete_branch when branch is tracked
@@ -967,21 +968,13 @@ def test_cleanup_and_navigate_skip_activation_output_with_up_flag(
     )
 
 
-def test_cleanup_and_navigate_non_slot_worktree_checkouts_trunk_after_deleting_branch(
+def test_cleanup_and_navigate_non_slot_worktree_removes_worktree_not_current_branch(
     tmp_path: Path,
 ) -> None:
-    """Test that non-slot worktree cleanup checks out trunk after deleting branch.
+    """Test that non-slot worktree removal works when landing from a different branch.
 
-    Regression test for bug where `erk land` from root worktree left the worktree
-    in detached HEAD state after landing a PR.
-
-    The workflow is:
-    1. Checkout detached HEAD to release the feature branch for deletion
-    2. Delete the feature branch
-    3. NEW: Checkout trunk branch so worktree is not left in detached state
-
-    Without the fix: worktree is left in detached HEAD state
-    With the fix: worktree ends up on trunk branch (main/master)
+    Verifies the worktree is removed even when is_current_branch=False, ensuring
+    no dead detached-HEAD directories are left behind.
     """
     # Create a non-slot worktree (name doesn't match erk-slot-XX pattern)
     non_slot_worktree_path = tmp_path / "worktrees" / "my-feature-worktree"
@@ -1062,15 +1055,8 @@ def test_cleanup_and_navigate_non_slot_worktree_checkouts_trunk_after_deleting_b
     assert len(detached_calls) == 1, "Should have checked out detached HEAD at trunk"
     assert detached_calls[0][0] == non_slot_worktree_path
 
-    # Verify trunk branch was checked out AFTER branch deletion (key assertion!)
-    # This ensures worktree is no longer in detached HEAD state
-    trunk_checkout_calls = [
-        (path, branch) for path, branch in fake_git.checked_out_branches if branch == "main"
-    ]
-    assert len(trunk_checkout_calls) == 1, (
-        "Should have checked out trunk branch after deletion to exit detached HEAD state"
-    )
-    assert trunk_checkout_calls[0][0] == non_slot_worktree_path
+    # Verify worktree was removed (not left in detached HEAD state)
+    assert non_slot_worktree_path in fake_git.removed_worktrees
 
     # Verify branch was deleted
     deleted_branches = [branch for _path, branch in fake_graphite.delete_branch_calls]
@@ -1177,3 +1163,184 @@ def test_cleanup_no_worktree_ensures_branch_not_checked_out_before_delete(
     # Verify branch was deleted successfully
     deleted_branches = [branch for _path, branch in fake_graphite.delete_branch_calls]
     assert "feature-branch" in deleted_branches
+
+
+def test_cleanup_non_slot_worktree_preserves_both_when_not_confirmed(
+    tmp_path: Path,
+) -> None:
+    """Test that cleanup_confirmed=False preserves both branch and worktree.
+
+    When the user declines the confirmation prompt, no cleanup should occur:
+    the branch should remain and the worktree should not be removed.
+    """
+    non_slot_worktree_path = tmp_path / "worktrees" / "my-feature-worktree"
+    non_slot_worktree_path.mkdir(parents=True)
+    main_repo_root = tmp_path / "main-repo"
+    main_repo_root.mkdir(parents=True)
+    (main_repo_root / ".git").mkdir()
+    pool_json_path = main_repo_root / "pool.json"
+
+    empty_state = PoolState.test(assignments=())
+    save_pool_state(pool_json_path, empty_state)
+
+    fake_git = FakeGit(
+        worktrees={
+            main_repo_root: [WorktreeInfo(path=non_slot_worktree_path, branch="feature-branch")]
+        },
+        git_common_dirs={main_repo_root: main_repo_root / ".git"},
+        default_branches={main_repo_root: "main"},
+        local_branches={main_repo_root: ["main", "feature-branch"]},
+        existing_paths={
+            non_slot_worktree_path,
+            main_repo_root,
+            main_repo_root / ".git",
+            pool_json_path,
+        },
+    )
+
+    fake_graphite = FakeGraphite(
+        branches={
+            "feature-branch": BranchMetadata(
+                name="feature-branch",
+                parent="main",
+                children=[],
+                is_trunk=False,
+                commit_sha=None,
+            ),
+        },
+    )
+
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        cwd=non_slot_worktree_path,
+    )
+
+    repo = RepoContext(
+        root=main_repo_root,
+        repo_name="test-repo",
+        repo_dir=main_repo_root,
+        worktrees_dir=tmp_path / "worktrees",
+        pool_json_path=pool_json_path,
+        github=GitHubRepoId(owner="owner", repo="repo"),
+    )
+
+    try:
+        _cleanup_and_navigate(
+            ctx=ctx,
+            repo=repo,
+            branch="feature-branch",
+            worktree_path=non_slot_worktree_path,
+            script=False,
+            pull_flag=False,
+            force=True,
+            is_current_branch=False,
+            target_child_branch=None,
+            no_delete=False,
+            skip_activation_output=False,
+            cleanup_confirmed=False,
+        )
+    except SystemExit:
+        pass  # Expected
+
+    # Branch should NOT be deleted
+    deleted_branches = [branch for _path, branch in fake_graphite.delete_branch_calls]
+    assert "feature-branch" not in deleted_branches
+
+    # Worktree should NOT be removed
+    assert non_slot_worktree_path not in fake_git.removed_worktrees
+
+    # No detached checkouts should have occurred
+    assert len(fake_git.detached_checkouts) == 0
+
+    # No safe_chdir should have occurred
+    assert len(fake_git.chdir_history) == 0
+
+
+def test_cleanup_non_slot_worktree_calls_safe_chdir_before_removal(
+    tmp_path: Path,
+) -> None:
+    """Test that safe_chdir escapes the worktree cwd before git worktree remove.
+
+    git worktree remove fails if the process cwd is inside the worktree being
+    removed. safe_chdir must be called to move the cwd to the main repo root
+    before the removal call.
+    """
+    non_slot_worktree_path = tmp_path / "worktrees" / "my-feature-worktree"
+    non_slot_worktree_path.mkdir(parents=True)
+    main_repo_root = tmp_path / "main-repo"
+    main_repo_root.mkdir(parents=True)
+    (main_repo_root / ".git").mkdir()
+    pool_json_path = main_repo_root / "pool.json"
+
+    empty_state = PoolState.test(assignments=())
+    save_pool_state(pool_json_path, empty_state)
+
+    fake_git = FakeGit(
+        worktrees={
+            main_repo_root: [WorktreeInfo(path=non_slot_worktree_path, branch="feature-branch")]
+        },
+        git_common_dirs={main_repo_root: main_repo_root / ".git"},
+        default_branches={main_repo_root: "main"},
+        local_branches={main_repo_root: ["main", "feature-branch"]},
+        existing_paths={
+            non_slot_worktree_path,
+            main_repo_root,
+            main_repo_root / ".git",
+            pool_json_path,
+        },
+    )
+
+    fake_graphite = FakeGraphite(
+        branches={
+            "feature-branch": BranchMetadata(
+                name="feature-branch",
+                parent="main",
+                children=[],
+                is_trunk=False,
+                commit_sha=None,
+            ),
+        },
+    )
+
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        cwd=non_slot_worktree_path,
+    )
+
+    repo = RepoContext(
+        root=main_repo_root,
+        repo_name="test-repo",
+        repo_dir=main_repo_root,
+        worktrees_dir=tmp_path / "worktrees",
+        pool_json_path=pool_json_path,
+        github=GitHubRepoId(owner="owner", repo="repo"),
+    )
+
+    try:
+        _cleanup_and_navigate(
+            ctx=ctx,
+            repo=repo,
+            branch="feature-branch",
+            worktree_path=non_slot_worktree_path,
+            script=False,
+            pull_flag=False,
+            force=True,
+            is_current_branch=True,
+            target_child_branch=None,
+            no_delete=False,
+            skip_activation_output=False,
+            cleanup_confirmed=True,
+        )
+    except SystemExit:
+        pass  # Expected
+
+    # Verify safe_chdir was called to escape the worktree before removal
+    assert len(fake_git.chdir_history) > 0, "Should have called safe_chdir before worktree removal"
+    assert fake_git.chdir_history[0] == main_repo_root, (
+        "safe_chdir should navigate to main repo root"
+    )
+
+    # Verify worktree was removed after safe_chdir
+    assert non_slot_worktree_path in fake_git.removed_worktrees
