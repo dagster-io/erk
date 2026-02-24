@@ -3,7 +3,6 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Literal
 
 from erk.tui.data.types import PlanRowData
 from erk.tui.views.types import ViewMode
@@ -31,7 +30,6 @@ class CommandContext:
 
     row: PlanRowData
     view_mode: ViewMode
-    plan_backend: Literal["planned_pr"]
 
 
 @dataclass(frozen=True)

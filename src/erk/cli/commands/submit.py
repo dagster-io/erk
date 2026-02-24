@@ -15,19 +15,13 @@ from erk.cli.constants import (
     DISPATCH_WORKFLOW_METADATA_NAME,
     DISPATCH_WORKFLOW_NAME,
     ERK_PLAN_LABEL,
-    ERK_PLAN_TITLE_PREFIX,
-    PLAN_HEADING_PREFIX,
-    PLANNED_PR_TITLE_PREFIX,
 )
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure, UserFacingCliError
-from erk.core.branch_slug_generator import generate_slug_or_fallback
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
-from erk_shared.gateway.branch_manager.types import SubmitBranchError
-from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
-from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
     create_submission_queued_block,
     render_erk_issue_event,
@@ -37,36 +31,17 @@ from erk_shared.gateway.github.parsing import (
     construct_workflow_run_url,
     extract_owner_repo_from_github_url,
 )
-from erk_shared.gateway.github.pr_footer import build_pr_body_footer
 from erk_shared.gateway.github.types import PRNotFound
-from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_LEARN_LABEL
 from erk_shared.impl_context import (
-    build_impl_context_files,
     create_impl_context,
     impl_context_exists,
     remove_impl_context,
 )
-from erk_shared.naming import generate_issue_branch_name
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 from erk_shared.plan_store.types import PlanNotFound
 
 logger = logging.getLogger(__name__)
-
-
-def _format_issue_ref(issue_number: int, plans_repo: str | None) -> str:
-    """Format issue reference for PR body.
-
-    Args:
-        issue_number: The issue number
-        plans_repo: Target repo in "owner/repo" format, or None for same repo
-
-    Returns:
-        "#N" for same-repo, "owner/repo#N" for cross-repo
-    """
-    if plans_repo is None:
-        return f"#{issue_number}"
-    return f"{plans_repo}#{issue_number}"
 
 
 def is_issue_learn_plan(labels: list[str]) -> bool:
@@ -79,71 +54,6 @@ def is_issue_learn_plan(labels: list[str]) -> bool:
         True if the issue has the erk-learn label, False otherwise
     """
     return "erk-learn" in labels
-
-
-def _find_existing_branches_for_issue(
-    ctx: ErkContext,
-    repo_root: Path,
-    issue_number: int,
-) -> list[str]:
-    """Find local branches matching P{issue_number}-* pattern."""
-    local_branches = ctx.git.branch.list_local_branches(repo_root)
-    prefix = f"P{issue_number}-"
-    return sorted([b for b in local_branches if b.startswith(prefix)])
-
-
-def _prompt_existing_branch_action(
-    ctx: ErkContext,
-    repo_root: Path,
-    existing_branches: list[str],
-    new_branch_name: str,
-    *,
-    force: bool,
-) -> str | None:
-    """Prompt user to decide what to do with existing branch(es).
-
-    Args:
-        ctx: ErkContext with git operations
-        repo_root: Repository root path
-        existing_branches: List of existing branch names matching the issue pattern
-        new_branch_name: Name for new branch if creating fresh
-        force: If True, delete existing branches without prompting
-
-    Returns:
-        - Branch name to use (existing branch)
-        - None to signal "create new" (after deleting existing)
-    """
-    if force:
-        user_output(f"\nDeleting {len(existing_branches)} existing branch(es) (--force mode):")
-        for branch in existing_branches:
-            ctx.branch_manager.delete_branch(repo_root, branch, force=True)
-            user_output(f"  Deleted: {branch}")
-        return None  # Signal "create new branch"
-
-    user_output("\nFound existing local branch(es) for this issue:")
-    for branch in existing_branches:
-        user_output(f"  • {branch}")
-    user_output(f"\nNew branch would be: {click.style(new_branch_name, fg='cyan')}")
-    user_output("")
-
-    # Use newest branch (latest timestamp = last alphabetically)
-    branch_to_use = existing_branches[-1]
-
-    # Single binary prompt
-    reuse = ctx.console.confirm(
-        f"Reuse existing branch '{branch_to_use}'? "
-        "If not, a new branch and PR will be created (old draft PR will be closed)",
-        default=True,
-    )
-
-    if reuse:
-        return branch_to_use
-
-    # Delete existing branches and signal "create new"
-    for branch in existing_branches:
-        ctx.branch_manager.delete_branch(repo_root, branch, force=True)
-        user_output(f"Deleted branch: {branch}")
-    return None
 
 
 def get_learn_plan_parent_branch(ctx: ErkContext, repo_root: Path, plan_id: str) -> str | None:
@@ -207,18 +117,6 @@ def load_workflow_config(repo_root: Path, workflow_name: str) -> dict[str, str]:
 
 
 @dataclass(frozen=True)
-class ValidatedIssue:
-    """Issue that passed all validation checks."""
-
-    number: int
-    issue: IssueInfo
-    branch_name: str
-    branch_exists: bool
-    pr_number: int | None
-    is_learn_origin: bool
-
-
-@dataclass(frozen=True)
 class SubmitResult:
     """Result of submitting a single issue."""
 
@@ -248,32 +146,6 @@ def _build_workflow_run_url(issue_url: str, run_id: str) -> str:
     return f"https://github.com/actions/runs/{run_id}"
 
 
-def _strip_plan_markers(title: str) -> str:
-    """Strip '[erk-plan]' prefix and 'Plan:' prefix from issue title for use as PR title."""
-    result = title
-    # Strip "[erk-plan] " prefix if present
-    if result.startswith(ERK_PLAN_TITLE_PREFIX):
-        result = result[len(ERK_PLAN_TITLE_PREFIX) :]
-    # Strip "Plan: " prefix if present
-    if result.startswith(PLAN_HEADING_PREFIX):
-        result = result[len(PLAN_HEADING_PREFIX) :]
-    return result
-
-
-def _add_planned_prefix(title: str) -> str:
-    """Prepend 'plnd/' prefix to PR title (idempotent).
-
-    Args:
-        title: The PR title to prefix
-
-    Returns:
-        The title with 'plnd/' prefix, skipping if already prefixed
-    """
-    if title.startswith(PLANNED_PR_TITLE_PREFIX):
-        return title
-    return f"{PLANNED_PR_TITLE_PREFIX}{title}"
-
-
 def _build_pr_url(issue_url: str, pr_number: int) -> str:
     """Construct GitHub PR URL from issue URL and PR number.
 
@@ -289,29 +161,6 @@ def _build_pr_url(issue_url: str, pr_number: int) -> str:
         owner, repo = owner_repo
         return construct_pr_url(owner, repo, pr_number)
     return f"https://github.com/pull/{pr_number}"
-
-
-def _close_orphaned_draft_prs(
-    ctx: ErkContext,
-    repo_root: Path,
-    issue_number: int,
-    keep_pr_number: int,
-) -> list[int]:
-    """Close old draft PRs linked to an issue, keeping the specified one.
-
-    Returns list of PR numbers that were closed.
-    """
-    linked_prs = ctx.issues.get_prs_referencing_issue(repo_root, issue_number)
-
-    closed_prs: list[int] = []
-    for pr in linked_prs:
-        # Close orphaned drafts: draft PRs that are OPEN and not the one we just created
-        # Any draft PR linked to an erk-plan issue is fair game to close
-        if pr.is_draft and pr.state == "OPEN" and pr.number != keep_pr_number:
-            ctx.github.close_pr(repo_root, pr.number)
-            closed_prs.append(pr.number)
-
-    return closed_prs
 
 
 @dataclass(frozen=True)
@@ -565,550 +414,6 @@ def _submit_planned_pr_plan(
     )
 
 
-def _validate_issue_for_submit(
-    ctx: ErkContext,
-    repo: RepoContext,
-    issue_number: int,
-    base_branch: str,
-    *,
-    force: bool,
-) -> ValidatedIssue:
-    """Validate a single issue for submission.
-
-    Fetches the issue, validates constraints, derives branch name, and checks
-    if branch/PR already exist.
-
-    Args:
-        ctx: ErkContext with git operations
-        repo: Repository context
-        issue_number: GitHub issue number to validate
-        base_branch: Base branch for PR (trunk or custom feature branch)
-
-    Raises:
-        SystemExit: If issue doesn't exist, missing label, or closed.
-    """
-    # Fetch issue from GitHub
-    issue = ctx.issues.get_issue(repo.root, issue_number)
-    if isinstance(issue, IssueNotFound):
-        user_output(click.style("Error: ", fg="red") + f"Issue #{issue.issue_number} not found")
-        raise SystemExit(1)
-
-    # Validate: must have erk-plan label
-    if ERK_PLAN_LABEL not in issue.labels:
-        user_output(
-            click.style("Error: ", fg="red")
-            + f"Issue #{issue_number} does not have {ERK_PLAN_LABEL} label\n\n"
-            "Cannot submit non-plan issues for automated implementation.\n"
-            "To create a plan, use Plan Mode then /erk:plan-save"
-        )
-        raise SystemExit(1)
-
-    # Validate: must be OPEN
-    if issue.state != "OPEN":
-        user_output(
-            click.style("Error: ", fg="red") + f"Issue #{issue_number} is {issue.state}\n\n"
-            "Cannot submit closed issues for automated implementation."
-        )
-        raise SystemExit(1)
-
-    # Use provided base_branch instead of detecting trunk
-    logger.debug("base_branch=%s", base_branch)
-
-    # Check for existing local branches BEFORE computing new name
-    existing_branches = _find_existing_branches_for_issue(ctx, repo.root, issue_number)
-
-    # Compute branch name using canonical naming function
-    objective_id_raw = ctx.plan_backend.get_metadata_field(
-        repo.root, str(issue_number), "objective_issue"
-    )
-    objective_id: int | None = None
-    if isinstance(objective_id_raw, int):
-        objective_id = objective_id_raw
-    elif isinstance(objective_id_raw, str) and objective_id_raw.isdigit():
-        objective_id = int(objective_id_raw)
-    slug = generate_slug_or_fallback(ctx.prompt_executor, issue.title)
-    new_branch_name = generate_issue_branch_name(
-        issue_number, slug, ctx.time.now(), objective_id=objective_id
-    )
-
-    if existing_branches:
-        chosen = _prompt_existing_branch_action(
-            ctx, repo.root, existing_branches, new_branch_name, force=force
-        )
-        branch_name = chosen if chosen is not None else new_branch_name
-    else:
-        branch_name = new_branch_name
-
-    logger.debug("branch_name=%s", branch_name)
-    user_output(f"Computed branch: {click.style(branch_name, fg='cyan')}")
-
-    # Check if branch already exists on remote and has a PR
-    branch_exists = ctx.git.branch.branch_exists_on_remote(repo.root, "origin", branch_name)
-    logger.debug("branch_exists_on_remote(%s)=%s", branch_name, branch_exists)
-
-    pr_number: int | None = None
-    if branch_exists:
-        pr_details = ctx.github.get_pr_for_branch(repo.root, branch_name)
-        if not isinstance(pr_details, PRNotFound):
-            pr_number = pr_details.number
-
-    # Check if this issue is a learn plan
-    is_learn_origin = is_issue_learn_plan(issue.labels)
-
-    return ValidatedIssue(
-        number=issue_number,
-        issue=issue,
-        branch_name=branch_name,
-        branch_exists=branch_exists,
-        pr_number=pr_number,
-        is_learn_origin=is_learn_origin,
-    )
-
-
-def _create_branch_and_pr(
-    ctx: ErkContext,
-    *,
-    repo: RepoContext,
-    validated: ValidatedIssue,
-    branch_name: str,
-    base_branch: str,
-    submitted_by: str,
-    original_branch: str,
-) -> int:
-    """Create branch, commit, push, and create draft PR.
-
-    Uses git plumbing to commit plan files directly to the branch without
-    checking it out. The Graphite linking step performs a targeted checkout
-    only when Graphite is enabled.
-
-    Args:
-        ctx: ErkContext with git operations
-        repo: Repository context
-        validated: Validated issue information
-        branch_name: Name of branch to create
-        base_branch: Base branch for PR
-        submitted_by: GitHub username of submitter
-        original_branch: Original branch name (for Graphite checkout restore)
-
-    Returns:
-        PR number of the created draft PR.
-    """
-    issue = validated.issue
-    issue_number = validated.number
-
-    # Get plan content and build impl-context files in memory
-    user_output("Fetching plan content...")
-    result = ctx.plan_store.get_plan(repo.root, str(issue_number))
-    if isinstance(result, PlanNotFound):
-        user_output(click.style("Error: ", fg="red") + f"Issue #{issue_number} not found")
-        raise SystemExit(1)
-    plan = result
-
-    # Commit impl-context files directly to branch (no checkout required)
-    user_output("Committing plan to branch...")
-    files = build_impl_context_files(
-        plan_content=plan.body,
-        plan_id=str(issue_number),
-        url=issue.url,
-        provider="github",
-        objective_id=plan.objective_id,
-        now_iso=ctx.time.now().isoformat(),
-    )
-    ctx.git.commit.commit_files_to_branch(
-        repo.root,
-        branch=branch_name,
-        files=files,
-        message=f"Add plan for issue #{issue_number}",
-    )
-    push_result = ctx.git.remote.push_to_remote(
-        repo.root, "origin", branch_name, set_upstream=True, force=False
-    )
-    if isinstance(push_result, PushError):
-        raise UserFacingCliError(push_result.message)
-    user_output(click.style("✓", fg="green") + " Branch pushed to remote")
-
-    # Create draft PR
-    # IMPORTANT: "Closes owner/repo#N" (cross-repo) or "Closes #N" (same-repo)
-    # MUST be in the initial body passed to create_pr(), NOT added via update.
-    # GitHub's willCloseTarget API field is set at PR creation time and is NOT
-    # updated when the body is edited afterward.
-    user_output("Creating draft PR...")
-    plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
-    issue_ref = _format_issue_ref(issue_number, plans_repo)
-    pr_body = (
-        f"**Author:** @{submitted_by}\n"
-        f"**Status:** Queued for implementation\n\n"
-        f"This PR will be marked ready for review after implementation completes.\n\n"
-        f"## Implementation Plan\n\n"
-        f"<details>\n"
-        f"<summary><strong>Implementation Plan</strong> (Issue #{issue_number})</summary>\n\n"
-        f"{plan.body}\n\n"
-        f"</details>\n\n"
-        f"**Plan:** {issue_ref}\n\n"
-        f"---\n\n"
-        f"Closes {issue_ref}"
-    )
-    pr_title = _add_planned_prefix(_strip_plan_markers(issue.title))
-    pr_number = ctx.github.create_pr(
-        repo_root=repo.root,
-        branch=branch_name,
-        title=pr_title,
-        body=pr_body,
-        base=base_branch,
-        draft=True,
-    )
-    user_output(click.style("✓", fg="green") + f" Draft PR #{pr_number} created")
-
-    # Update PR body with checkout command footer
-    footer = build_pr_body_footer(
-        pr_number=pr_number, issue_number=issue_number, plans_repo=plans_repo
-    )
-    ctx.github.update_pr_body(repo.root, pr_number, pr_body + footer)
-
-    # Add extraction skip label if this is a learn plan
-    if validated.is_learn_origin:
-        ctx.github.add_label_to_pr(repo.root, pr_number, ERK_SKIP_LEARN_LABEL)
-        # FUTURE ENHANCEMENT: When a learn plan issue gets a PR, update the parent
-        # plan's learn_status from "completed_with_plan" to track the PR number.
-        # Currently, the parent only gets updated when the learn plan's PR lands
-        # (in land_cmd._update_parent_learn_status_if_learn_plan). Adding an
-        # intermediate state here would let the TUI show the PR number (e.g.,
-        # "🚧 #5514") instead of the learn plan issue number (e.g., "#5508")
-        # while the PR is still in review.
-        # See: LearnStatusValue in erk_shared/github/metadata/schemas.py
-
-    # Link PR with Graphite (if enabled) using a targeted checkout scope
-    if ctx.branch_manager.is_graphite_managed():
-        user_output("Linking PR with Graphite...")
-        ctx.branch_manager.checkout_branch(repo.root, branch_name)
-        submit_result = ctx.branch_manager.submit_branch(repo.root, branch_name)
-        ctx.branch_manager.checkout_branch(repo.root, original_branch)
-        if isinstance(submit_result, SubmitBranchError):
-            user_output(
-                click.style("✗", fg="red")
-                + f" Failed to link PR with Graphite: {submit_result.message}"
-            )
-        else:
-            user_output(click.style("✓", fg="green") + " PR linked with Graphite")
-
-    # Close any orphaned draft PRs for this issue
-    closed_prs = _close_orphaned_draft_prs(ctx, repo.root, issue_number, pr_number)
-    if closed_prs:
-        user_output(
-            click.style("✓", fg="green")
-            + f" Closed {len(closed_prs)} orphaned draft PR(s): "
-            + ", ".join(f"#{n}" for n in closed_prs)
-        )
-
-    return pr_number
-
-
-def _submit_single_issue(
-    ctx: ErkContext,
-    *,
-    repo: RepoContext,
-    validated: ValidatedIssue,
-    submitted_by: str,
-    original_branch: str,
-    base_branch: str,
-) -> SubmitResult:
-    """Submit a single validated issue for implementation.
-
-    Creates branch/PR if needed and triggers workflow.
-
-    Args:
-        ctx: ErkContext with git operations
-        repo: Repository context
-        validated: Validated issue information
-        submitted_by: GitHub username of submitter
-        original_branch: Original branch name (to restore after)
-        base_branch: Base branch for PR (trunk or custom feature branch)
-
-    Returns:
-        SubmitResult with URLs and identifiers.
-    """
-    issue = validated.issue
-    issue_number = validated.number
-    branch_name = validated.branch_name
-    branch_exists = validated.branch_exists
-    pr_number = validated.pr_number
-
-    if branch_exists:
-        if pr_number is not None:
-            user_output(
-                f"PR #{pr_number} already exists for branch '{branch_name}' (state: existing)"
-            )
-            user_output("Skipping branch/PR creation, triggering workflow...")
-        else:
-            # Branch exists but no PR - need to add a commit for PR creation
-            user_output(f"Branch '{branch_name}' exists but no PR. Adding placeholder commit...")
-
-            # Fetch the remote branch locally (no checkout needed)
-            ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
-
-            # Only create tracking branch if it doesn't exist locally (LBYL)
-            local_branches = ctx.git.branch.list_local_branches(repo.root)
-            if branch_name not in local_branches:
-                remote_ref = f"origin/{branch_name}"
-                ctx.branch_manager.create_tracking_branch(repo.root, branch_name, remote_ref)
-
-            # Create empty commit as placeholder for PR creation (no checkout required)
-            ctx.git.commit.commit_files_to_branch(
-                repo.root,
-                branch=branch_name,
-                files={},
-                message=f"[erk-plan] Initialize implementation for issue #{issue_number}",
-            )
-            push_result = ctx.git.remote.push_to_remote(
-                repo.root, "origin", branch_name, set_upstream=False, force=False
-            )
-            if isinstance(push_result, PushError):
-                raise UserFacingCliError(push_result.message)
-            user_output(click.style("✓", fg="green") + " Placeholder commit pushed")
-
-            # Now create the PR
-            # IMPORTANT: "Closes owner/repo#N" (cross-repo) or "Closes #N" (same-repo)
-            # MUST be in the initial body passed to create_pr(), NOT added via update.
-            # GitHub's willCloseTarget API field is set at PR creation time and is NOT
-            # updated when the body is edited afterward.
-            plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
-            issue_ref = _format_issue_ref(issue_number, plans_repo)
-            pr_body = (
-                f"**Author:** @{submitted_by}\n"
-                f"**Status:** Queued for implementation\n\n"
-                f"This PR will be marked ready for review after implementation completes.\n\n"
-                f"**Plan:** {issue_ref}\n\n"
-                f"---\n\n"
-                f"Closes {issue_ref}"
-            )
-            pr_title = _add_planned_prefix(_strip_plan_markers(issue.title))
-            pr_number = ctx.github.create_pr(
-                repo_root=repo.root,
-                branch=branch_name,
-                title=pr_title,
-                body=pr_body,
-                base=base_branch,
-                draft=True,
-            )
-            user_output(click.style("✓", fg="green") + f" Draft PR #{pr_number} created")
-
-            # Update PR body with checkout command footer
-            footer = build_pr_body_footer(
-                pr_number=pr_number, issue_number=issue_number, plans_repo=plans_repo
-            )
-            ctx.github.update_pr_body(repo.root, pr_number, pr_body + footer)
-
-            # Add extraction skip label if this is a learn plan
-            if validated.is_learn_origin:
-                ctx.github.add_label_to_pr(repo.root, pr_number, ERK_SKIP_LEARN_LABEL)
-                # FUTURE ENHANCEMENT: See comment in _create_branch_and_pr for
-                # updating parent plan's learn_status when learn plan gets a PR.
-
-            # Link PR with Graphite (if enabled) using a targeted checkout scope
-            if ctx.branch_manager.is_graphite_managed():
-                user_output("Linking PR with Graphite...")
-                ctx.branch_manager.checkout_branch(repo.root, branch_name)
-                submit_result = ctx.branch_manager.submit_branch(repo.root, branch_name)
-                ctx.branch_manager.checkout_branch(repo.root, original_branch)
-                if isinstance(submit_result, SubmitBranchError):
-                    user_output(
-                        click.style("✗", fg="red")
-                        + f" Failed to link PR with Graphite: {submit_result.message}"
-                    )
-                else:
-                    user_output(click.style("✓", fg="green") + " PR linked with Graphite")
-
-            # Close any orphaned draft PRs
-            closed_prs = _close_orphaned_draft_prs(ctx, repo.root, issue_number, pr_number)
-            if closed_prs:
-                user_output(
-                    click.style("✓", fg="green")
-                    + f" Closed {len(closed_prs)} orphaned draft PR(s): "
-                    + ", ".join(f"#{n}" for n in closed_prs)
-                )
-    else:
-        # Check if branch exists locally (user chose to reuse existing)
-        local_branches = ctx.git.branch.list_local_branches(repo.root)
-        branch_exists_locally = branch_name in local_branches
-
-        if branch_exists_locally:
-            # Reuse existing local branch
-            user_output(f"Using existing local branch: {click.style(branch_name, fg='cyan')}")
-
-            # Track in Graphite if not already tracked
-            if ctx.branch_manager.is_graphite_managed():
-                if not ctx.graphite.is_branch_tracked(repo.root, branch_name):
-                    ctx.branch_manager.track_branch(repo.root, branch_name, base_branch)
-                    user_output(click.style("✓", fg="green") + " Branch tracked in Graphite")
-
-            pr_number = _create_branch_and_pr(
-                ctx=ctx,
-                repo=repo,
-                validated=validated,
-                branch_name=branch_name,
-                base_branch=base_branch,
-                submitted_by=submitted_by,
-                original_branch=original_branch,
-            )
-        else:
-            # Create new branch
-            user_output(f"Creating branch from origin/{base_branch}...")
-            ctx.git.remote.fetch_branch(repo.root, "origin", base_branch)
-
-            # Verify parent is tracked by Graphite (if enabled)
-            if ctx.branch_manager.is_graphite_managed():
-                parent_branch = base_branch.removeprefix("origin/")
-                if not ctx.graphite.is_branch_tracked(repo.root, parent_branch):
-                    msg = (
-                        f"Cannot stack on branch '{parent_branch}' - "
-                        f"it's not tracked by Graphite.\n\n"
-                        f"To fix this:\n"
-                        f"  1. gt checkout {parent_branch}\n"
-                        f"  2. gt track --parent <parent-branch>\n\n"
-                        f"Then retry your command."
-                    )
-                    user_output(click.style("Error: ", fg="red") + msg)
-                    raise SystemExit(1)
-
-            create_result = ctx.branch_manager.create_branch(
-                repo.root, branch_name, f"origin/{base_branch}"
-            )
-            if isinstance(create_result, BranchAlreadyExists):
-                user_output(click.style("Error: ", fg="red") + create_result.message)
-                raise SystemExit(1) from None
-            user_output(f"Created branch: {click.style(branch_name, fg='cyan')}")
-
-            pr_number = _create_branch_and_pr(
-                ctx=ctx,
-                repo=repo,
-                validated=validated,
-                branch_name=branch_name,
-                base_branch=base_branch,
-                submitted_by=submitted_by,
-                original_branch=original_branch,
-            )
-
-    # Gather submission metadata
-    queued_at = datetime.now(UTC).isoformat()
-
-    # Validate pr_number is set before workflow dispatch
-    if pr_number is None:
-        user_output(
-            click.style("Error: ", fg="red")
-            + "Failed to create or find PR. Cannot trigger workflow."
-        )
-        raise SystemExit(1)
-
-    # Load workflow-specific config
-    workflow_config = load_workflow_config(repo.root, DISPATCH_WORKFLOW_NAME)
-
-    # Trigger workflow via direct dispatch
-    user_output("")
-    user_output(f"Triggering workflow: {click.style(DISPATCH_WORKFLOW_NAME, fg='cyan')}")
-    user_output(f"  Display name: {DISPATCH_WORKFLOW_METADATA_NAME}")
-
-    # Build inputs dict, merging workflow config
-    inputs = {
-        # Required inputs (always passed)
-        "plan_id": str(issue_number),
-        "submitted_by": submitted_by,
-        "plan_title": issue.title,
-        "branch_name": branch_name,
-        "pr_number": str(pr_number),
-        "base_branch": base_branch,
-        # Config-based inputs (from .erk/workflows/)
-        **workflow_config,
-    }
-
-    run_id = ctx.github.trigger_workflow(
-        repo_root=repo.root,
-        workflow=DISPATCH_WORKFLOW_NAME,
-        inputs=inputs,
-        ref=None,
-    )
-    user_output(click.style("✓", fg="green") + " Workflow triggered.")
-
-    # Compute workflow URL once (used for PR body update, queued comment, and result)
-    workflow_url = _build_workflow_run_url(issue.url, run_id)
-
-    # Update PR body with workflow run link (best-effort)
-    try:
-        pr_details = ctx.github.get_pr(repo.root, pr_number)
-        if not isinstance(pr_details, PRNotFound):
-            updated_body = pr_details.body + f"\n\n**Workflow run:** {workflow_url}"
-            ctx.github.update_pr_body(repo.root, pr_number, updated_body)
-    except Exception as e:
-        logger.warning("Failed to update PR body with workflow run link: %s", e)
-
-    # Write dispatch metadata synchronously to fix race condition with erk dash
-    # This ensures the issue body has the run info before we return to the user
-    try:
-        write_dispatch_metadata(
-            plan_backend=ctx.plan_backend,
-            github=ctx.github,
-            repo_root=repo.root,
-            issue_number=issue_number,
-            run_id=run_id,
-            dispatched_at=queued_at,
-        )
-        user_output(click.style("✓", fg="green") + " Dispatch metadata written to issue")
-    except Exception as e:
-        # Log warning but don't block - workflow is already triggered
-        user_output(
-            click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
-        )
-
-    validation_results = {
-        "issue_is_open": True,
-        "has_erk_plan_label": True,
-    }
-
-    # Create and post queued event comment
-    try:
-        metadata_block = create_submission_queued_block(
-            queued_at=queued_at,
-            submitted_by=submitted_by,
-            issue_number=issue_number,
-            validation_results=validation_results,
-            expected_workflow=DISPATCH_WORKFLOW_METADATA_NAME,
-        )
-
-        comment_body = render_erk_issue_event(
-            title="🔄 Issue Queued for Implementation",
-            metadata=metadata_block,
-            description=(
-                f"Issue submitted by **{submitted_by}** at {queued_at}.\n\n"
-                f"The `{DISPATCH_WORKFLOW_METADATA_NAME}` workflow has been "
-                f"triggered via direct dispatch.\n\n"
-                f"**Workflow run:** {workflow_url}\n\n"
-                f"Branch and draft PR were created locally for correct commit attribution."
-            ),
-        )
-
-        user_output("Posting queued event comment...")
-        ctx.issues.add_comment(repo.root, issue_number, comment_body)
-        user_output(click.style("✓", fg="green") + " Queued event comment posted")
-    except Exception as e:
-        # Log warning but don't block - workflow is already triggered
-        user_output(
-            click.style("Warning: ", fg="yellow")
-            + f"Failed to post queued comment: {e}\n"
-            + "Workflow is already running."
-        )
-
-    pr_url = _build_pr_url(issue.url, pr_number) if pr_number else None
-
-    return SubmitResult(
-        issue_number=issue_number,
-        issue_title=issue.title,
-        issue_url=issue.url,
-        pr_number=pr_number,
-        pr_url=pr_url,
-        workflow_run_id=run_id,
-        workflow_url=workflow_url,
-    )
-
-
 @click.command("submit")
 @click.argument("issue_numbers", type=int, nargs=-1, required=True)
 @click.option(
@@ -1117,16 +422,8 @@ def _submit_single_issue(
     default=None,
     help="Base branch for PR (defaults to current branch).",
 )
-@click.option(
-    "-f",
-    "--force",
-    is_flag=True,
-    help="Delete existing branches and create fresh without prompting.",
-)
 @click.pass_obj
-def submit_cmd(
-    ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | None, force: bool
-) -> None:
+def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | None) -> None:
     """Submit issues for remote AI implementation via GitHub Actions.
 
     Creates branch and draft PR locally (for correct commit attribution),
@@ -1218,93 +515,45 @@ def submit_cmd(
     _, username, _ = ctx.github.check_auth_status()
     submitted_by = username or "unknown"
 
-    # Detect planned-PR backend
-    is_planned_pr = ctx.plan_backend.get_provider_name() == "github-draft-pr"
+    # Validate all planned-PR plans upfront
+    user_output(f"Validating {len(issue_numbers)} planned-PR plan(s)...")
+    user_output("")
 
-    if is_planned_pr:
-        # Planned-PR path: branch and PR already exist, just validate and trigger workflow
-        user_output(f"Validating {len(issue_numbers)} planned-PR plan(s)...")
+    validated_planned_prs: list[ValidatedPlannedPR] = []
+    for issue_number in issue_numbers:
+        user_output(f"Validating PR #{issue_number}...")
+        validated_pr = _validate_planned_pr_for_submit(ctx, repo, issue_number)
+        validated_planned_prs.append(validated_pr)
+
+    user_output("")
+    user_output(
+        click.style("✓", fg="green") + f" All {len(validated_planned_prs)} plan(s) validated"
+    )
+    user_output("")
+
+    for v in validated_planned_prs:
+        user_output(f"  #{v.number}: {click.style(v.title, fg='yellow')}")
+    user_output("")
+
+    # Submit all validated plans
+    results: list[SubmitResult] = []
+    for i, v in enumerate(validated_planned_prs):
+        if len(validated_planned_prs) > 1:
+            count = len(validated_planned_prs)
+            user_output(f"--- Submitting PR {i + 1}/{count}: #{v.number} ---")
+        else:
+            user_output(f"Submitting PR #{v.number}...")
         user_output("")
-
-        validated_planned_prs: list[ValidatedPlannedPR] = []
-        for issue_number in issue_numbers:
-            user_output(f"Validating PR #{issue_number}...")
-            validated_pr = _validate_planned_pr_for_submit(ctx, repo, issue_number)
-            validated_planned_prs.append(validated_pr)
-
-        user_output("")
-        user_output(
-            click.style("✓", fg="green") + f" All {len(validated_planned_prs)} plan(s) validated"
+        result = _submit_planned_pr_plan(
+            ctx,
+            repo=repo,
+            validated=v,
+            submitted_by=submitted_by,
+            original_branch=original_branch,
+            base_branch=target_branch,
         )
+        results.append(result)
         user_output("")
-
-        for v in validated_planned_prs:
-            user_output(f"  #{v.number}: {click.style(v.title, fg='yellow')}")
-        user_output("")
-
-        results: list[SubmitResult] = []
-        for i, v in enumerate(validated_planned_prs):
-            if len(validated_planned_prs) > 1:
-                count = len(validated_planned_prs)
-                user_output(f"--- Submitting PR {i + 1}/{count}: #{v.number} ---")
-            else:
-                user_output(f"Submitting PR #{v.number}...")
-            user_output("")
-            result = _submit_planned_pr_plan(
-                ctx,
-                repo=repo,
-                validated=v,
-                submitted_by=submitted_by,
-                original_branch=original_branch,
-                base_branch=target_branch,
-            )
-            results.append(result)
-            user_output("")
-    else:
-        # Issue-based path: existing flow
-        # Phase 1: Validate ALL issues upfront (atomic - fail fast before any side effects)
-        user_output(f"Validating {len(issue_numbers)} issue(s)...")
-        user_output("")
-
-        validated_issues: list[ValidatedIssue] = []
-        for issue_number in issue_numbers:
-            user_output(f"Validating issue #{issue_number}...")
-            validated_issue = _validate_issue_for_submit(
-                ctx, repo, issue_number, target_branch, force=force
-            )
-            validated_issues.append(validated_issue)
-
-        user_output("")
-        user_output(
-            click.style("✓", fg="green") + f" All {len(validated_issues)} issue(s) validated"
-        )
-        user_output("")
-
-        # Display validated issues
-        for v in validated_issues:
-            user_output(f"  #{v.number}: {click.style(v.issue.title, fg='yellow')}")
-        user_output("")
-
-        # Phase 2: Submit all validated issues
-        results = []
-        for i, v in enumerate(validated_issues):
-            if len(validated_issues) > 1:
-                user_output(
-                    f"--- Submitting issue {i + 1}/{len(validated_issues)}: #{v.number} ---"
-                )
-            else:
-                user_output(f"Submitting issue #{v.number}...")
-            user_output("")
-            result = _submit_single_issue(
-                ctx,
-                repo=repo,
-                validated=v,
-                submitted_by=submitted_by,
-                original_branch=original_branch,
-                base_branch=target_branch,
-            )
-            results.append(result)
-            user_output("")
 
     # Success output
     user_output("")

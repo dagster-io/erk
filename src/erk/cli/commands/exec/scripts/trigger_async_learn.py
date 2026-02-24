@@ -57,7 +57,6 @@ from erk_shared.gateway.github.checks import GitHubChecks
 from erk_shared.gateway.github.parsing import construct_workflow_run_url
 from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, PRNotFound
 from erk_shared.non_ideal_state import GitHubAPIFailed
-from erk_shared.plan_store.types import PlanNotFound
 
 LEARN_WORKFLOW = "learn.yml"
 
@@ -294,41 +293,10 @@ def _get_pr_for_plan_direct(
     Returns:
         Dict with pr_number and pr details on success, None on failure
     """
-    # Draft-PR: plan_id IS the PR number — look up directly
-    if plan_backend.get_provider_name() == "github-draft-pr":
-        pr_result = github.get_pr(repo_root, int(plan_id))
-        if isinstance(pr_result, PRNotFound):
-            return None
-        return {
-            "success": True,
-            "pr_number": pr_result.number,
-            "pr": {
-                "number": pr_result.number,
-                "title": pr_result.title,
-                "state": pr_result.state,
-                "url": pr_result.url,
-                "head_ref_name": pr_result.head_ref_name,
-                "base_ref_name": pr_result.base_ref_name,
-            },
-        }
-
-    branch_name_field = plan_backend.get_metadata_field(repo_root, plan_id, "branch_name")
-    if isinstance(branch_name_field, PlanNotFound):
-        return None
-
-    branch_name = branch_name_field
-    if branch_name is None:
-        # Fallback: infer from current git branch
-        current_branch = git.branch.get_current_branch(repo_root)
-        if current_branch is not None and current_branch.startswith(f"P{plan_id}-"):
-            branch_name = current_branch
-    if branch_name is None:
-        return None
-
-    pr_result = github.get_pr_for_branch(repo_root, branch_name)
+    # Plan ID is the PR number — look up directly
+    pr_result = github.get_pr(repo_root, int(plan_id))
     if isinstance(pr_result, PRNotFound):
         return None
-
     return {
         "success": True,
         "pr_number": pr_result.number,
@@ -662,9 +630,7 @@ def trigger_async_learn(ctx: click.Context, plan_id: str, *, skip_workflow: bool
     workflow_inputs: dict[str, str] = {
         "plan_id": plan_id,
         "learn_branch": learn_branch,
-        "plan_backend": (
-            "planned_pr" if plan_backend.get_provider_name() == "github-draft-pr" else "github"
-        ),
+        "plan_backend": "planned_pr",
     }
 
     try:

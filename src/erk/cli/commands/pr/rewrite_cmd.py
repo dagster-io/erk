@@ -11,11 +11,9 @@ from pathlib import Path
 import click
 
 from erk.cli.commands.pr.shared import (
-    IssueLinkageMismatch,
     assemble_pr_body,
     cleanup_diff_file,
     discover_branch_context,
-    discover_issue_for_footer,
     echo_plan_context_status,
     maybe_advance_lifecycle_to_impl,
     render_progress,
@@ -28,7 +26,6 @@ from erk.core.commit_message_generator import CommitMessageGenerator
 from erk.core.context import ErkContext
 from erk.core.plan_context_provider import PlanContextProvider
 from erk_shared.gateway.branch_manager.types import SubmitBranchError
-from erk_shared.gateway.github.pr_footer import extract_header_from_body
 from erk_shared.gateway.github.types import BodyText, PRNotFound
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_LEARN_LABEL, is_learn_plan
@@ -158,40 +155,17 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
         raise click.ClickException(f"Push failed: {submit_result.message}")
     click.echo(click.style("   Branch pushed", fg="green"))
 
-    # Discover issue number and assemble PR body (shared with submit pipeline)
+    # Extract metadata prefix from draft PR body
     impl_dir = cwd / ".impl"
-    plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
-
-    # Detect planned-PR backend and extract metadata prefix
-    metadata_prefix = ""
-    if ctx.plan_backend.get_provider_name() == "github-draft-pr":
-        metadata_prefix = extract_metadata_prefix(pr_info.body)
-
-    if metadata_prefix:
-        # Draft PR IS the plan — no self-closing reference
-        issue_number: int | None = None
-        effective_plans_repo: str | None = None
-        header = ""
-    else:
-        issue_discovery = discover_issue_for_footer(
-            impl_dir=impl_dir,
-            branch_name=discovery.current_branch,
-            existing_pr_body=pr_info.body,
-            plans_repo=plans_repo,
-        )
-        if isinstance(issue_discovery, IssueLinkageMismatch):
-            raise click.ClickException(issue_discovery.message)
-        issue_number = issue_discovery.issue_number
-        effective_plans_repo = issue_discovery.plans_repo
-        header = extract_header_from_body(pr_info.body)
+    metadata_prefix = extract_metadata_prefix(pr_info.body)
 
     final_body = assemble_pr_body(
         body=body,
         plan_context=plan_context,
         pr_number=pr_number,
-        issue_number=issue_number,
-        plans_repo=effective_plans_repo,
-        header=header,
+        issue_number=None,
+        plans_repo=None,
+        header="",
         metadata_prefix=metadata_prefix,
     )
 

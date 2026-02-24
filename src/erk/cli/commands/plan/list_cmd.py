@@ -395,7 +395,6 @@ def _run_interactive_mode(
         filters=filters,
         refresh_interval=interval,
         initial_sort=initial_sort,
-        plan_backend="planned_pr",
     )
     app.run()
 

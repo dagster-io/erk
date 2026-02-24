@@ -94,7 +94,6 @@ def test_build_pr_body_includes_all_sections() -> None:
         base_branch="master",
         recent_commits="abc1234 Fix bug\ndef5678 Add feature",
         run_url="https://github.com/owner/repo/actions/runs/789",
-        is_planned_pr=False,
     )
 
     assert "## No Code Changes" in body
@@ -107,7 +106,7 @@ def test_build_pr_body_includes_all_sections() -> None:
     assert "abc1234 Fix bug" in body
     assert "def5678 Add feature" in body
     assert "### Next Steps" in body
-    assert "Closes #456" in body
+    assert "Close this PR" in body
     assert "https://github.com/owner/repo/actions/runs/789" in body
 
 
@@ -119,12 +118,11 @@ def test_build_pr_body_without_recent_commits() -> None:
         base_branch="main",
         recent_commits=None,
         run_url=None,
-        is_planned_pr=False,
     )
 
     assert "## No Code Changes" in body
     assert "### Diagnosis" in body
-    assert "Closes #456" in body
+    assert "Close this PR" in body
     # Should not include commits section when behind_count is 0
     assert "commits** behind" not in body
     # Should not include run URL
@@ -139,7 +137,6 @@ def test_build_pr_body_with_empty_recent_commits() -> None:
         base_branch="master",
         recent_commits="",
         run_url=None,
-        is_planned_pr=False,
     )
 
     assert "## No Code Changes" in body
@@ -148,40 +145,12 @@ def test_build_pr_body_with_empty_recent_commits() -> None:
     assert "Recent commits" not in body
 
 
-def test_build_pr_body_planned_pr_no_closes_reference() -> None:
-    """Test that _build_pr_body omits Closes #N for planned-PR plans."""
-    body = _build_pr_body(
-        plan_id=789,
-        behind_count=0,
-        base_branch="master",
-        recent_commits=None,
-        run_url=None,
-        is_planned_pr=True,
-    )
-
-    assert "## No Code Changes" in body
-    assert "Closes #789" not in body
-    assert "Close this PR" in body
-    assert "linked plan" not in body
-
-
 def test_build_issue_comment() -> None:
-    """Test that _build_issue_comment includes PR reference."""
-    comment = _build_issue_comment(pr_number=123, is_planned_pr=False)
+    """Test that _build_issue_comment returns no-changes message."""
+    comment = _build_issue_comment(pr_number=123)
 
     assert "no code changes" in comment.lower()
-    assert "PR #123" in comment
-    assert "diagnostic" in comment.lower()
-
-
-def test_build_issue_comment_planned_pr() -> None:
-    """Test that _build_issue_comment for planned-PR omits self-referential text."""
-    comment = _build_issue_comment(pr_number=789, is_planned_pr=True)
-
-    assert "no code changes" in comment.lower()
-    assert "close this PR" in comment
-    assert "PR #789" not in comment
-    assert "both this issue" not in comment
+    assert "close this pr" in comment.lower()
 
 
 def test_build_no_changes_title() -> None:
@@ -310,7 +279,7 @@ def test_cli_updates_pr_title_and_body(tmp_path: Path) -> None:
     pr_number, body = github.updated_pr_bodies[0]
     assert pr_number == 123
     assert "No Code Changes" in body
-    assert "Closes #456" in body
+    assert "Close this PR" in body
 
 
 def test_cli_adds_label_to_pr(tmp_path: Path) -> None:
@@ -377,7 +346,7 @@ def test_cli_adds_comment_to_issue(tmp_path: Path) -> None:
     assert len(fake_gh_issues.added_comments) == 1
     issue_number, body, _comment_id = fake_gh_issues.added_comments[0]
     assert issue_number == 456
-    assert "PR #123" in body
+    assert "no code changes" in body.lower()
 
 
 def test_cli_requires_pr_number() -> None:

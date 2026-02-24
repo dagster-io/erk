@@ -157,22 +157,22 @@ class TestPlanDataTableRowConversion:
             show_prs=False,
             show_runs=False,
         )
-        table = PlanDataTable(filters, plan_backend="github")
+        table = PlanDataTable(filters)
         row = make_plan_row(123, "Test Plan")
 
         values = table._row_to_values(row)
 
-        # plan, obj, loc, branch, run-id, run, created, author,
+        # plan, stage, sts, created, obj, loc, branch, run-id, run, author,
         # pr, chks, cmts, local-wt, local-impl, remote-impl
-        assert len(values) == 14
+        assert len(values) == 16
         assert _text_to_str(values[0]) == "#123"
-        assert _text_to_str(values[1]) == "-"  # objective (none)
-        assert values[2] == "-"  # location (no local, no run)
-        assert values[3] == "-"  # branch (none)
-        assert values[6] == "-"  # created_display
-        assert values[7] == "test-user"  # author
-        assert _text_to_str(values[11]) == "-"  # worktree (not exists)
-        assert _text_to_str(values[12]) == "-"  # local impl
+        assert _text_to_str(values[4]) == "-"  # objective (none)
+        assert values[5] == "-"  # location (no local, no run)
+        assert values[6] == "-"  # branch (none)
+        assert values[3] == "-"  # created_display
+        assert values[9] == "test-user"  # author
+        assert _text_to_str(values[13]) == "-"  # worktree (not exists)
+        assert _text_to_str(values[14]) == "-"  # local impl
 
     def test_row_to_values_with_prs(self) -> None:
         """Row conversion with PR columns enabled."""
@@ -184,22 +184,22 @@ class TestPlanDataTableRowConversion:
             show_prs=True,
             show_runs=False,
         )
-        table = PlanDataTable(filters, plan_backend="github")
+        table = PlanDataTable(filters)
         row = make_plan_row(123, "Test Plan", pr_number=456)
 
         values = table._row_to_values(row)
 
-        # plan, obj, loc, branch, run-id, run, created, author,
+        # plan, stage, sts, created, obj, loc, branch, run-id, run, author,
         # pr, chks, cmts, local-wt, local-impl, remote-impl
-        assert len(values) == 14
-        assert _text_to_str(values[1]) == "-"  # objective (none)
-        assert values[2] == "-"  # location (no local, no run)
-        assert values[3] == "-"  # branch (none)
-        assert values[6] == "-"  # created_display
-        assert values[7] == "test-user"  # author
-        assert _text_to_str(values[8]) == "#456"  # pr display
-        assert values[9] == "-"  # checks
-        assert values[10] == "0/0"  # comments (default for PR with no counts)
+        assert len(values) == 16
+        assert _text_to_str(values[4]) == "-"  # objective (none)
+        assert values[5] == "-"  # location (no local, no run)
+        assert values[6] == "-"  # branch (none)
+        assert values[3] == "-"  # created_display
+        assert values[9] == "test-user"  # author
+        assert _text_to_str(values[10]) == "#456"  # pr display
+        assert values[11] == "-"  # checks
+        assert values[12] == "0/0"  # comments (default for PR with no counts)
 
     def test_row_to_values_with_pr_link_indicator(self) -> None:
         """Row conversion shows 🔗 indicator for PRs that will close issues."""
@@ -211,14 +211,15 @@ class TestPlanDataTableRowConversion:
             show_prs=True,
             show_runs=False,
         )
-        table = PlanDataTable(filters, plan_backend="github")
+        table = PlanDataTable(filters)
         # Use custom pr_display with link indicator (simulates will_close_target=True)
         row = make_plan_row(123, "Test Plan", pr_number=456, pr_display="#456 ✅🔗")
 
         values = table._row_to_values(row)
 
-        # PR display at index 8 (plan, obj, loc, branch, run-id, run, created, author, pr, ...)
-        assert _text_to_str(values[8]) == "#456 ✅🔗"
+        # PR display at index 10
+        # (plan, stage, sts, created, obj, loc, branch, run-id, run, author, pr)
+        assert _text_to_str(values[10]) == "#456 ✅🔗"
 
     def test_row_to_values_with_runs(self) -> None:
         """Row conversion with run columns enabled."""
@@ -230,19 +231,19 @@ class TestPlanDataTableRowConversion:
             show_prs=False,
             show_runs=True,
         )
-        table = PlanDataTable(filters, plan_backend="github")
+        table = PlanDataTable(filters)
         row = make_plan_row(123, "Test Plan")
 
         values = table._row_to_values(row)
 
-        # plan, obj, loc, branch, run-id, run, created, author,
+        # plan, stage, sts, created, obj, loc, branch, run-id, run, author,
         # pr, chks, cmts, local-wt, local-impl, remote-impl
-        assert len(values) == 14
+        assert len(values) == 16
 
     def test_row_to_values_with_worktree(self) -> None:
         """Row shows worktree name when exists locally."""
         filters = PlanFilters.default()
-        table = PlanDataTable(filters, plan_backend="github")
+        table = PlanDataTable(filters)
         row = make_plan_row(
             123,
             "Test Plan",
@@ -252,53 +253,53 @@ class TestPlanDataTableRowConversion:
 
         values = table._row_to_values(row)
 
-        # Worktree is at index 11 (local-wt column)
-        assert values[11] == "feature-branch"
+        # Worktree is at index 13 (local-wt column)
+        assert values[13] == "feature-branch"
 
     def test_row_to_values_branch_from_pr_head(self) -> None:
         """Row shows pr_head_branch when available."""
         filters = PlanFilters.default()
-        table = PlanDataTable(filters, plan_backend="github")
+        table = PlanDataTable(filters)
         row = make_plan_row(123, "Test Plan", pr_head_branch="feat/my-branch")
 
         values = table._row_to_values(row)
 
-        # Branch is at index 3 (after plan, obj, sts)
-        assert values[3] == "feat/my-branch"
+        # Branch is at index 6 (after plan, stage, sts, created, obj, loc)
+        assert values[6] == "feat/my-branch"
 
     def test_row_to_values_branch_falls_back_to_worktree_branch(self) -> None:
         """Row falls back to worktree_branch when pr_head_branch is None."""
         filters = PlanFilters.default()
-        table = PlanDataTable(filters, plan_backend="github")
+        table = PlanDataTable(filters)
         row = make_plan_row(123, "Test Plan", worktree_branch="local-branch")
 
         values = table._row_to_values(row)
 
-        # Branch is at index 3 (after plan, obj, sts)
-        assert values[3] == "local-branch"
+        # Branch is at index 6 (after plan, stage, sts, created, obj, loc)
+        assert values[6] == "local-branch"
 
     def test_row_to_values_branch_prefers_pr_head_over_worktree(self) -> None:
         """Row prefers pr_head_branch over worktree_branch."""
         filters = PlanFilters.default()
-        table = PlanDataTable(filters, plan_backend="github")
+        table = PlanDataTable(filters)
         row = make_plan_row(
             123, "Test Plan", pr_head_branch="pr-branch", worktree_branch="wt-branch"
         )
 
         values = table._row_to_values(row)
 
-        assert values[3] == "pr-branch"
+        assert values[6] == "pr-branch"
 
     def test_row_to_values_includes_author(self) -> None:
-        """Row includes author at index 7."""
+        """Row includes author at index 9."""
         filters = PlanFilters.default()
-        table = PlanDataTable(filters, plan_backend="github")
+        table = PlanDataTable(filters)
         row = make_plan_row(123, "Test Plan", author="schrockn")
 
         values = table._row_to_values(row)
 
-        # Author is at index 7 (after plan, obj, loc, branch, run-id, run, created)
-        assert values[7] == "schrockn"
+        # Author is at index 9 (after plan, stage, sts, created, obj, loc, branch, run-id, run)
+        assert values[9] == "schrockn"
 
 
 class TestLocalWtColumnIndex:
@@ -307,32 +308,32 @@ class TestLocalWtColumnIndex:
     def test_column_index_none_before_setup(self) -> None:
         """Column index is None before columns are set up."""
         filters = PlanFilters.default()
-        table = PlanDataTable(filters, plan_backend="github")
+        table = PlanDataTable(filters)
         # Don't call _setup_columns
 
         assert table.local_wt_column_index is None
 
     def test_expected_column_index_without_pr_column(self) -> None:
-        """Expected column index is 10 when show_pr_column=False.
+        """Expected column index is 12 when show_pr_column=False.
 
         This test verifies the expected column calculation logic.
         The actual _setup_columns() requires a running Textual app context.
         """
-        # Without pr column: plan(0), obj(1), loc(2), branch(3),
-        # run-id(4), run(5), created(6), author(7), chks(8), cmts(9), local-wt(10)
-        expected_index = 10
-        assert expected_index == 10
+        # Without pr column: plan(0), stage(1), sts(2), created(3), obj(4), loc(5), branch(6),
+        # run-id(7), run(8), author(9), chks(10), cmts(11), local-wt(12)
+        expected_index = 12
+        assert expected_index == 12
 
     def test_expected_column_index_with_pr_column(self) -> None:
-        """Expected column index is 11 when show_pr_column=True.
+        """Expected column index is 13 when show_pr_column=True.
 
         This test verifies the expected column calculation logic.
         The actual _setup_columns() requires a running Textual app context.
         """
-        # With pr column: plan(0), obj(1), loc(2), branch(3),
-        # run-id(4), run(5), created(6), author(7), pr(8), chks(9), cmts(10), local-wt(11)
-        expected_index = 11
-        assert expected_index == 11
+        # With pr column: plan(0), stage(1), sts(2), created(3), obj(4), loc(5), branch(6),
+        # run-id(7), run(8), author(9), pr(10), chks(11), cmts(12), local-wt(13)
+        expected_index = 13
+        assert expected_index == 13
 
 
 class TestObjectivesViewRowConversion:
@@ -341,7 +342,7 @@ class TestObjectivesViewRowConversion:
     def test_objectives_view_has_enriched_columns(self) -> None:
         """Objectives view produces enriched columns including deps-state."""
         filters = PlanFilters.default()
-        table = PlanDataTable(filters, plan_backend="github")
+        table = PlanDataTable(filters)
         table._view_mode = ViewMode.OBJECTIVES
         row = make_plan_row(42, "Objective Plan")
 
@@ -362,7 +363,7 @@ class TestObjectivesViewRowConversion:
     def test_objectives_view_shows_slug_and_sparkline(self) -> None:
         """Objectives view shows slug and state sparkline from row data."""
         filters = PlanFilters.default()
-        table = PlanDataTable(filters, plan_backend="github")
+        table = PlanDataTable(filters)
         table._view_mode = ViewMode.OBJECTIVES
         row = make_plan_row(
             42,
@@ -392,7 +393,7 @@ class TestObjectivesViewDepsColumn:
     def test_deps_empty_shows_dash(self) -> None:
         """No blocking deps shows '-'."""
         filters = PlanFilters.default()
-        table = PlanDataTable(filters, plan_backend="github")
+        table = PlanDataTable(filters)
         table._view_mode = ViewMode.OBJECTIVES
         row = make_plan_row(42, "Obj Plan", objective_deps_plans=())
 
@@ -403,7 +404,7 @@ class TestObjectivesViewDepsColumn:
     def test_deps_single_plan(self) -> None:
         """Single blocking plan shows linkified plan number."""
         filters = PlanFilters.default()
-        table = PlanDataTable(filters, plan_backend="github")
+        table = PlanDataTable(filters)
         table._view_mode = ViewMode.OBJECTIVES
         row = make_plan_row(
             42,
@@ -418,7 +419,7 @@ class TestObjectivesViewDepsColumn:
     def test_deps_three_plans(self) -> None:
         """Three blocking plans shows all three linkified."""
         filters = PlanFilters.default()
-        table = PlanDataTable(filters, plan_backend="github")
+        table = PlanDataTable(filters)
         table._view_mode = ViewMode.OBJECTIVES
         row = make_plan_row(
             42,
@@ -441,7 +442,7 @@ class TestObjectivesViewDepsColumn:
     def test_deps_four_plans_truncates_with_ellipsis(self) -> None:
         """Four+ blocking plans shows first two plus ellipsis."""
         filters = PlanFilters.default()
-        table = PlanDataTable(filters, plan_backend="github")
+        table = PlanDataTable(filters)
         table._view_mode = ViewMode.OBJECTIVES
         row = make_plan_row(
             42,
@@ -469,7 +470,7 @@ class TestObjectivesViewNextColumn:
     def test_next_default_shows_dash(self) -> None:
         """Default next node display shows '-'."""
         filters = PlanFilters.default()
-        table = PlanDataTable(filters, plan_backend="github")
+        table = PlanDataTable(filters)
         table._view_mode = ViewMode.OBJECTIVES
         row = make_plan_row(42, "Obj Plan")
 
@@ -480,7 +481,7 @@ class TestObjectivesViewNextColumn:
     def test_next_shows_node_id(self) -> None:
         """Next column shows node ID when populated."""
         filters = PlanFilters.default()
-        table = PlanDataTable(filters, plan_backend="github")
+        table = PlanDataTable(filters)
         table._view_mode = ViewMode.OBJECTIVES
         row = make_plan_row(42, "Obj Plan", objective_next_node_display="1.1")
 
@@ -495,12 +496,12 @@ class TestShowPrColumnFalse:
     def test_row_to_values_with_show_pr_column_false_excludes_pr_value(self) -> None:
         """When show_pr_column=False, pr_display is omitted from row values.
 
-        With show_pr_column=True (14 values):
-          plan, obj, loc, branch, run-id, run, created, author,
+        With show_pr_column=True (16 values):
+          plan, stage, sts, created, obj, loc, branch, run-id, run, author,
           pr, chks, cmts, local-wt, local-impl, remote-impl
 
-        With show_pr_column=False (13 values):
-          plan, obj, loc, branch, run-id, run, created, author,
+        With show_pr_column=False (15 values):
+          plan, stage, sts, created, obj, loc, branch, run-id, run, author,
           chks, cmts, local-wt, local-impl, remote-impl
         """
         filters = PlanFilters(
@@ -512,13 +513,13 @@ class TestShowPrColumnFalse:
             show_runs=False,
             show_pr_column=False,
         )
-        table = PlanDataTable(filters, plan_backend="github")
+        table = PlanDataTable(filters)
         row = make_plan_row(123, "Test Plan", pr_number=456)
 
         values = table._row_to_values(row)
 
-        # One fewer value than with show_pr_column=True (which produces 14)
-        assert len(values) == 13
+        # One fewer value than with show_pr_column=True (which produces 16)
+        assert len(values) == 15
 
     def test_row_to_values_with_show_pr_column_false_pr_display_not_in_values(self) -> None:
         """When show_pr_column=False, the pr_display string is absent from values."""
@@ -531,7 +532,7 @@ class TestShowPrColumnFalse:
             show_runs=False,
             show_pr_column=False,
         )
-        table = PlanDataTable(filters, plan_backend="github")
+        table = PlanDataTable(filters)
         row = make_plan_row(123, "Test Plan", pr_number=456)
 
         values = table._row_to_values(row)
@@ -541,7 +542,7 @@ class TestShowPrColumnFalse:
         assert "#456" not in plain_values
 
     def test_row_to_values_with_show_pr_column_true_includes_pr_value(self) -> None:
-        """When show_pr_column=True (default), pr_display is included at index 8."""
+        """When show_pr_column=True (default), pr_display is included at index 10."""
         filters = PlanFilters(
             labels=("erk-plan",),
             state=None,
@@ -551,21 +552,21 @@ class TestShowPrColumnFalse:
             show_runs=False,
             show_pr_column=True,
         )
-        table = PlanDataTable(filters, plan_backend="github")
+        table = PlanDataTable(filters)
         row = make_plan_row(123, "Test Plan", pr_number=456)
 
         values = table._row_to_values(row)
 
-        assert len(values) == 14
-        # pr at index 8 (after plan, obj, loc, branch, run-id, run, created, author)
-        assert _text_to_str(values[8]) == "#456"
+        assert len(values) == 16
+        # pr at index 10 (after plan, stage, sts, created, obj, loc, branch, run-id, run, author)
+        assert _text_to_str(values[10]) == "#456"
 
 
-# --- Tests for stage column logic in planned_pr mode ---
+# --- Tests for stage column logic ---
 
 
 def test_row_to_values_planned_pr_includes_stage() -> None:
-    """planned_pr backend includes lifecycle_display stage value in output."""
+    """Stage column is included in output (stage/sts/created columns are always present)."""
     filters = PlanFilters(
         labels=("erk-plan",),
         state=None,
@@ -574,70 +575,16 @@ def test_row_to_values_planned_pr_includes_stage() -> None:
         show_prs=False,
         show_runs=False,
     )
-    table = PlanDataTable(filters, plan_backend="planned_pr")
+    table = PlanDataTable(filters)
     row = make_plan_row(123, "Test Plan", lifecycle_display="[cyan]review[/cyan]")
 
     values = table._row_to_values(row)
 
-    # planned_pr: plan, stage, sts, created, obj, loc, branch, run-id, run, author,
+    # plan, stage, sts, created, obj, loc, branch, run-id, run, author,
     # pr, chks, cmts, local-wt, local-impl, remote-impl
     assert len(values) == 16
-    # Stage at index 1 (right after plan in planned_pr mode) - markup stripped
+    # Stage at index 1 (right after plan) - markup stripped
     assert _text_to_str(values[1]) == "review"
-
-
-def test_row_to_values_github_does_not_include_stage() -> None:
-    """github backend does NOT include stage value in output."""
-    filters = PlanFilters(
-        labels=("erk-plan",),
-        state=None,
-        run_state=None,
-        limit=None,
-        show_prs=False,
-        show_runs=False,
-    )
-    table = PlanDataTable(filters, plan_backend="github")
-    row = make_plan_row(123, "Test Plan", lifecycle_display="[cyan]review[/cyan]")
-
-    values = table._row_to_values(row)
-
-    # github mode: plan, obj, loc, branch, run-id, run, created, author,
-    # pr, chks, cmts, local-wt, local-impl, remote-impl = 14
-    assert len(values) == 14
-
-
-def test_stage_column_index_set_for_planned_pr() -> None:
-    """_stage_column_index is set when plan_backend is draft_pr."""
-    filters = PlanFilters(
-        labels=("erk-plan",),
-        state=None,
-        run_state=None,
-        limit=None,
-        show_prs=False,
-        show_runs=False,
-    )
-    table = PlanDataTable(filters, plan_backend="planned_pr")
-
-    # _stage_column_index is set during __init__ but columns aren't set up
-    # until on_mount. Verify the initial value is None (pre-setup).
-    assert table._stage_column_index is None
-
-    # After __init__, _plan_backend should be set
-    assert table._plan_backend == "planned_pr"
-
-
-def test_stage_column_index_none_for_github() -> None:
-    """_stage_column_index remains None when plan_backend is github."""
-    filters = PlanFilters(
-        labels=("erk-plan",),
-        state=None,
-        run_state=None,
-        limit=None,
-        show_prs=False,
-        show_runs=False,
-    )
-    table = PlanDataTable(filters, plan_backend="github")
-    assert table._stage_column_index is None
 
 
 # --- Tests for compact status emoji column ---
@@ -646,43 +593,43 @@ def test_stage_column_index_none_for_github() -> None:
 def test_row_to_values_status_empty() -> None:
     """Status cell shows '-' when no local checkout and no run URL."""
     filters = PlanFilters.default()
-    table = PlanDataTable(filters, plan_backend="github")
+    table = PlanDataTable(filters)
     row = make_plan_row(123, "Test Plan", exists_locally=False, run_url=None)
 
     values = table._row_to_values(row)
 
-    # sts is at index 2 (after plan, obj)
-    assert values[2] == "-"
+    # loc is at index 5 (after plan, stage, sts, created, obj)
+    assert values[5] == "-"
 
 
 def test_row_to_values_status_local_only() -> None:
     """Status cell shows laptop emoji when only local checkout exists."""
     filters = PlanFilters.default()
-    table = PlanDataTable(filters, plan_backend="github")
+    table = PlanDataTable(filters)
     row = make_plan_row(123, "Test Plan", exists_locally=True)
 
     values = table._row_to_values(row)
 
-    assert values[2] == "\U0001f4bb"
+    assert values[5] == "\U0001f4bb"
 
 
 def test_row_to_values_status_remote_only() -> None:
     """Status cell shows globe emoji when only run URL exists."""
     filters = PlanFilters.default()
-    table = PlanDataTable(filters, plan_backend="github")
+    table = PlanDataTable(filters)
     row = make_plan_row(123, "Test Plan", run_url="https://github.com/runs/1")
 
     values = table._row_to_values(row)
 
-    assert values[2] == "\u2601"
+    assert values[5] == "\u2601"
 
 
 def test_row_to_values_status_both() -> None:
     """Status cell shows both emojis when local checkout and run URL exist."""
     filters = PlanFilters.default()
-    table = PlanDataTable(filters, plan_backend="github")
+    table = PlanDataTable(filters)
     row = make_plan_row(123, "Test Plan", exists_locally=True, run_url="https://github.com/runs/1")
 
     values = table._row_to_values(row)
 
-    assert values[2] == "\U0001f4bb\u2601"
+    assert values[5] == "\U0001f4bb\u2601"
