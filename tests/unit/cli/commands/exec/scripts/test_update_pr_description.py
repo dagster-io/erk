@@ -254,23 +254,11 @@ def test_success_updates_pr() -> None:
         assert "awesome new feature" in body
 
 
-def test_preserves_header_and_footer() -> None:
-    """Test that existing header and footer metadata are preserved."""
+def test_generates_footer_with_checkout_command() -> None:
+    """Test that updated body includes footer with checkout command."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        # Header at bottom (above footer), matching convention
-        existing_body = (
-            "Old content\n\n"
-            "**Plan:** #123\n\n"
-            "---\n\n"
-            "Closes #123\n\n"
-            "To checkout this PR in a fresh worktree and environment locally, run:\n\n"
-            "```\n"
-            'source "$(erk pr checkout 42 --script)" && erk pr sync --dangerous\n'
-            "```\n"
-        )
-
-        git, graphite, github, executor = _make_standard_fakes(env, pr_body=existing_body)
+        git, graphite, github, executor = _make_standard_fakes(env, pr_body="Old content")
 
         ctx = build_workspace_test_context(
             env, git=git, graphite=graphite, github=github, prompt_executor=executor
@@ -280,10 +268,11 @@ def test_preserves_header_and_footer() -> None:
 
         assert result.exit_code == 0
 
-        # Verify header and footer are preserved in updated body
+        # Verify footer with checkout command is generated
         _, updated_body = github.updated_pr_bodies[0]
-        assert "**Plan:** #123" in updated_body
         assert "erk pr checkout" in updated_body
+        # No issue closing reference (planned-PR only)
+        assert "Closes #" not in updated_body
 
 
 def test_uses_graphite_parent() -> None:

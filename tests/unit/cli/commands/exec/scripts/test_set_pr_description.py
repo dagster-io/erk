@@ -5,7 +5,6 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.set_pr_description import set_pr_description
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
-from erk_shared.gateway.github.pr_footer import build_pr_body_footer
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
@@ -118,19 +117,11 @@ def test_updates_pr_title_and_body() -> None:
         assert "Fixes the authentication issue." in body
 
 
-def test_preserves_header_and_footer() -> None:
-    """Existing header and footer metadata are preserved."""
+def test_generates_footer_with_checkout_command() -> None:
+    """Updated body includes footer with checkout command."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        header = "**Plan:** #123"
-        footer_content = build_pr_body_footer(
-            42,
-            issue_number=123,
-            plans_repo=None,
-        )
-        existing_body = f"{header}\n\nOld content\n\n---\n{footer_content.lstrip()}"
-
-        git, graphite, github = _make_standard_fakes(env, pr_body=existing_body)
+        git, graphite, github = _make_standard_fakes(env, pr_body="Old content")
 
         ctx = build_workspace_test_context(env, git=git, graphite=graphite, github=github)
 
@@ -143,8 +134,10 @@ def test_preserves_header_and_footer() -> None:
         assert result.exit_code == 0
 
         _, updated_body = github.updated_pr_bodies[0]
-        assert "**Plan:** #123" in updated_body
+        assert "New body" in updated_body
         assert "erk pr checkout" in updated_body
+        # No issue closing reference (planned-PR only)
+        assert "Closes #" not in updated_body
 
 
 def test_fails_when_no_pr() -> None:

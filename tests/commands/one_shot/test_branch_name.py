@@ -7,12 +7,10 @@ from erk_shared.gateway.time.fake import FakeTime
 
 
 def test_generate_branch_name_basic() -> None:
-    """Test basic branch name generation with no plan issue (oneshot- prefix)."""
+    """Test basic branch name generation (oneshot- prefix)."""
     name = generate_branch_name(
         "fix the import",
         time=FakeTime(),
-        plan_issue_number=None,
-        objective_id=None,
         prompt_executor=None,
     )
     assert name.startswith("oneshot-fix-the-import-")
@@ -25,8 +23,6 @@ def test_generate_branch_name_sanitizes_special_chars() -> None:
     name = generate_branch_name(
         "Fix: Bug #123!",
         time=FakeTime(),
-        plan_issue_number=None,
-        objective_id=None,
         prompt_executor=None,
     )
     assert name.startswith("oneshot-")
@@ -40,49 +36,7 @@ def test_generate_branch_name_truncates_long_prompt() -> None:
     name = generate_branch_name(
         long_prompt,
         time=FakeTime(),
-        plan_issue_number=None,
-        objective_id=None,
         prompt_executor=None,
     )
     # Should be bounded in length: oneshot- (8) + slug (max ~23) + timestamp (-MM-DD-HHMM, 10)
     assert len(name) <= 50
-
-
-def test_generate_branch_name_with_plan_issue_number() -> None:
-    """Test branch name uses P<N>- prefix when plan_issue_number is provided."""
-    name = generate_branch_name(
-        "fix the import",
-        time=FakeTime(),
-        plan_issue_number=42,
-        objective_id=None,
-        prompt_executor=None,
-    )
-    assert name.startswith("P42-fix-the-import-")
-    assert re.search(r"-\d{2}-\d{2}-\d{4}$", name) is not None
-
-
-def test_generate_branch_name_with_large_plan_issue_number() -> None:
-    """Test branch name with a large plan issue number truncates slug appropriately."""
-    name = generate_branch_name(
-        "a" * 100,
-        time=FakeTime(),
-        plan_issue_number=12345,
-        objective_id=None,
-        prompt_executor=None,
-    )
-    # P12345- is 7 chars, timestamp is 10 chars, total slug space is 31-7=24
-    assert name.startswith("P12345-")
-    assert len(name) <= 50
-
-
-def test_generate_branch_name_with_objective_id() -> None:
-    """Test branch name encodes O{N} when both plan_issue_number and objective_id are provided."""
-    name = generate_branch_name(
-        "fix the import",
-        time=FakeTime(),
-        plan_issue_number=42,
-        objective_id=100,
-        prompt_executor=None,
-    )
-    assert name.startswith("P42-O100-")
-    assert re.search(r"-\d{2}-\d{2}-\d{4}$", name) is not None

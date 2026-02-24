@@ -131,50 +131,6 @@ def test_updates_pr_title_and_body(tmp_path: Path) -> None:
     assert "New body" in updated_body
 
 
-def test_closing_ref_from_existing_pr_body(tmp_path: Path) -> None:
-    """Extracts 'Closes #55' from existing footer when no issue_number set."""
-    # PR body with existing footer containing closing reference
-    existing_body = "PR body\n\n---\n\nCloses owner/plans-repo#55\n\n```\nerk pr checkout 42\n```"
-    pr = _pr_details(number=42, body=existing_body)
-    fake_git = FakeGit(
-        repository_roots={tmp_path: tmp_path},
-        remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
-    )
-    fake_github = FakeGitHub(
-        prs_by_branch={"feature": pr},
-        pr_details={42: pr},
-    )
-    ctx = context_for_test(git=fake_git, github=fake_github, cwd=tmp_path)
-    state = _make_state(cwd=tmp_path, issue_number=None)
-
-    result = finalize_pr(ctx, state)
-
-    assert isinstance(result, SubmitState)
-    # The issue_number should be extracted from the existing PR body footer
-    assert result.issue_number == 55
-
-
-def test_issue_number_takes_precedence(tmp_path: Path) -> None:
-    """state.issue_number overrides PR body reference."""
-    existing_body = "PR body\n\n---\n\nCloses owner/plans-repo#55\n\n```\nerk pr checkout 42\n```"
-    pr = _pr_details(number=42, body=existing_body)
-    fake_git = FakeGit(
-        repository_roots={tmp_path: tmp_path},
-        remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
-    )
-    fake_github = FakeGitHub(
-        prs_by_branch={"feature": pr},
-        pr_details={42: pr},
-    )
-    ctx = context_for_test(git=fake_git, github=fake_github, cwd=tmp_path)
-    state = _make_state(cwd=tmp_path, issue_number=99)
-
-    result = finalize_pr(ctx, state)
-
-    assert isinstance(result, SubmitState)
-    assert result.issue_number == 99
-
-
 def test_adds_learn_plan_label(tmp_path: Path) -> None:
     """.impl/ learn plan => adds ERK_SKIP_LEARN_LABEL."""
     # Create .impl/issue.json with erk-learn label
@@ -412,29 +368,6 @@ def test_does_not_mark_non_planned_pr_as_ready(tmp_path: Path) -> None:
 
     assert isinstance(result, SubmitState)
     assert fake_github.marked_ready_prs == []
-
-
-def test_finalize_pr_non_planned_pr_backend_uses_issue_fallback(tmp_path: Path) -> None:
-    """Non-planned-PR backend: closing reference extracted from existing PR footer."""
-    existing_body = "PR body\n\n---\n\nCloses #77\n\n```\nerk pr checkout 42\n```"
-    pr = _pr_details(number=42, body=existing_body)
-    fake_git = FakeGit(
-        repository_roots={tmp_path: tmp_path},
-        remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
-    )
-    fake_github = FakeGitHub(
-        prs_by_branch={"feature": pr},
-        pr_details={42: pr},
-    )
-    # Default plan_store is GitHubPlanStore (non-planned-PR backend)
-    ctx = context_for_test(git=fake_git, github=fake_github, cwd=tmp_path)
-    state = _make_state(cwd=tmp_path, issue_number=None)
-
-    result = finalize_pr(ctx, state)
-
-    assert isinstance(result, SubmitState)
-    # Issue number should be extracted from existing PR body footer
-    assert result.issue_number == 77
 
 
 def test_publishes_planned_pr(tmp_path: Path) -> None:

@@ -8,7 +8,6 @@ import time
 from collections.abc import Iterator
 from datetime import datetime
 from pathlib import Path
-from typing import Literal
 
 from textual import on, work
 from textual.app import App, ComposeResult, SystemCommand
@@ -121,7 +120,6 @@ class ErkDashApp(App):
         filters: PlanFilters,
         refresh_interval: float = 15.0,
         initial_sort: SortState | None = None,
-        plan_backend: Literal["planned_pr"] = "planned_pr",
     ) -> None:
         """Initialize the dashboard app.
 
@@ -130,13 +128,11 @@ class ErkDashApp(App):
             filters: Filter options for the plan list
             refresh_interval: Seconds between auto-refresh (0 to disable)
             initial_sort: Initial sort state (defaults to by issue number)
-            plan_backend: Plan backend type ("github" or "planned_pr")
         """
         super().__init__()
         self._provider = provider
         self._plan_filters = filters
         self._refresh_interval = refresh_interval
-        self._plan_backend = plan_backend
         self._table: PlanDataTable | None = None
         self._status_bar: StatusBar | None = None
         self._filter_input: Input | None = None
@@ -155,16 +151,13 @@ class ErkDashApp(App):
     def _display_name_for_view(self, mode: ViewMode) -> str:
         """Get the display name for a view mode.
 
-        For Plans view in draft_pr mode, returns "Planned PRs".
-        Otherwise returns the default view config display name.
-
         Args:
             mode: The view mode to get a display name for
 
         Returns:
             Display name string
         """
-        if mode == ViewMode.PLANS and self._plan_backend == "planned_pr":
+        if mode == ViewMode.PLANS:
             return "Planned PRs"
         return get_view_config(mode).display_name
 
@@ -180,7 +173,7 @@ class ErkDashApp(App):
                 f"Loading {self._display_name_for_view(ViewMode.PLANS).lower()}...",
                 id="loading-message",
             )
-            yield PlanDataTable(self._plan_filters, plan_backend=self._plan_backend)
+            yield PlanDataTable(self._plan_filters)
         yield Input(id="filter-input", placeholder="Filter...", disabled=True)
         yield StatusBar()
 
@@ -404,7 +397,6 @@ class ErkDashApp(App):
         ctx = CommandContext(
             row=row,
             view_mode=self._view_mode,
-            plan_backend=self._plan_backend,
         )
         self.push_screen(LaunchScreen(ctx=ctx), self._on_launch_result)
 
@@ -440,7 +432,6 @@ class ErkDashApp(App):
             self._table.reconfigure(
                 plan_filters=self._plan_filters,
                 view_mode=mode,
-                plan_backend=self._plan_backend,
             )
 
         # Check cache for the new view's labels
@@ -1023,19 +1014,6 @@ class ErkDashApp(App):
 
         elif command_id == "copy_pr_checkout":
             cmd = f'source "$(erk pr checkout {row.pr_number} --script)" && erk pr sync --dangerous'
-            self._provider.clipboard.copy(cmd)
-            self.notify(f"Copied: {cmd}")
-
-        elif command_id == "copy_prepare":
-            cmd = f"erk br co --for-plan {row.plan_id}"
-            self._provider.clipboard.copy(cmd)
-            self.notify(f"Copied: {cmd}")
-
-        elif command_id == "copy_prepare_activate":
-            cmd = (
-                f'source "$(erk br co --for-plan {row.plan_id} --script)"'
-                " && erk implement --dangerous"
-            )
             self._provider.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 

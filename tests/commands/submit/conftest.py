@@ -9,8 +9,6 @@ from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.github.metadata.core import render_metadata_block
 from erk_shared.gateway.github.metadata.types import MetadataBlock
 from erk_shared.plan_store.types import Plan, PlanState
-from tests.fakes.prompt_executor import FakePromptExecutor
-from tests.test_utils.plan_helpers import create_plan_store
 
 
 def make_plan_body(content: str = "Implementation details...") -> str:
@@ -25,20 +23,6 @@ def make_plan_body(content: str = "Implementation details...") -> str:
     }
     header_block = render_metadata_block(MetadataBlock("plan-header", plan_header_data))
     return f"{header_block}\n\n# Plan\n\n{content}"
-
-
-def make_learn_plan_body(content: str = "Documentation learning...") -> str:
-    """Create a valid learn plan issue body with plan-header metadata block.
-
-    Note: Learn plans are identified by the erk-learn label, not by metadata fields.
-    """
-    plan_header_data = {
-        "schema_version": "2",
-        "created_at": "2024-01-01T00:00:00Z",
-        "created_by": "test-user",
-    }
-    header_block = render_metadata_block(MetadataBlock("plan-header", plan_header_data))
-    return f"{header_block}\n\n# Learn Plan\n\n{content}"
 
 
 def create_plan(
@@ -70,13 +54,11 @@ def setup_submit_context(
     plans: dict[str, Plan],
     git_kwargs: dict | None = None,
     github_kwargs: dict | None = None,
-    issues_kwargs: dict | None = None,
     graphite_kwargs: dict | None = None,
     *,
     use_graphite: bool = False,
     confirm_responses: list[bool] | None = None,
     remote_branch_refs: list[str] | None = None,
-    backend: str = "github",
 ):
     """Setup common context for submit tests.
 
@@ -87,22 +69,21 @@ def setup_submit_context(
                           If None, uses default FakeConsole with no responses configured.
         remote_branch_refs: List of remote branch refs (e.g., ["origin/branch", "origin/master"]).
                            These are passed to FakeGit's remote_branches keyed by repo_root.
-        backend: Plan store backend type - "github" or "draft_pr".
 
     Returns (ctx, fake_git, fake_github, fake_backing, fake_graphite, repo_root)
-        where fake_backing is FakeGitHubIssues (github) or FakeGitHub (draft_pr).
+        where fake_backing is FakeGitHubIssues.
     """
     from erk_shared.context.types import GlobalConfig
     from erk_shared.gateway.console.fake import FakeConsole
     from erk_shared.gateway.git.fake import FakeGit
     from erk_shared.gateway.github.fake import FakeGitHub
-    from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
     from erk_shared.gateway.graphite.fake import FakeGraphite
+    from tests.test_utils.plan_helpers import create_plan_store_with_plans
 
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
-    fake_plan_store, fake_backing = create_plan_store(plans, backend=backend)
+    fake_plan_store, fake_backing = create_plan_store_with_plans(plans)
 
     git_kwargs = git_kwargs or {}
     if "current_branches" not in git_kwargs:
@@ -125,11 +106,6 @@ def setup_submit_context(
 
         fake_graphite = GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED)
 
-    # Update issues kwargs if provided (only applicable to github backend)
-    if issues_kwargs and isinstance(fake_backing, FakeGitHubIssues):
-        for key, value in issues_kwargs.items():
-            setattr(fake_backing, f"_{key}", value)
-
     repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
     repo = RepoContext(
         root=repo_root,
@@ -150,29 +126,16 @@ def setup_submit_context(
         confirm_responses=confirm_responses,
     )
 
-    # Wire up issues gateway: for github backend, use the fake backing;
-    # for planned_pr backend, let context_for_test create a default FakeGitHubIssues
-    fake_issues = fake_backing if isinstance(fake_backing, FakeGitHubIssues) else None
-
-    # Configure FakePromptExecutor to simulate failure so that
-    # generate_slug_or_fallback falls back to the raw title.
-    # This keeps branch name assertions stable in tests.
-    fake_prompt_executor = FakePromptExecutor(
-        available=True,
-        simulated_prompt_error="LLM unavailable in test",
-    )
-
     ctx = context_for_test(
         cwd=repo_root,
         git=fake_git,
         github=fake_github,
-        issues=fake_issues,
+        issues=fake_backing,
         plan_store=fake_plan_store,
         graphite=fake_graphite,
         repo=repo,
         global_config=global_config,
         console=fake_console,
-        prompt_executor=fake_prompt_executor,
     )
 
     return ctx, fake_git, fake_github, fake_backing, fake_graphite, repo_root
