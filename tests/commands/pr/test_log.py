@@ -94,7 +94,7 @@ def test_log_displays_timeline_chronologically() -> None:
         ctx = build_workspace_test_context(env, plan_store=store, issues=fake_issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "log", "42"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "log", "42"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -150,7 +150,7 @@ def test_log_json_output() -> None:
         ctx = build_workspace_test_context(env, plan_store=store, issues=fake_issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "log", "42", "--json"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "log", "42", "--json"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -195,7 +195,7 @@ def test_log_with_no_events() -> None:
         ctx = build_workspace_test_context(env, plan_store=store, issues=fake_issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "log", "42"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "log", "42"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -264,7 +264,7 @@ def test_log_with_all_event_types() -> None:
         ctx = build_workspace_test_context(env, plan_store=store, issues=fake_issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "log", "42"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "log", "42"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -285,7 +285,7 @@ def test_log_with_invalid_plan_identifier() -> None:
         ctx = build_workspace_test_context(env, plan_store=store, issues=fake_issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "log", "999"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "log", "999"], obj=ctx)
 
         # Assert
         assert result.exit_code == 1
@@ -342,7 +342,7 @@ def test_log_multiple_status_updates() -> None:
         ctx = build_workspace_test_context(env, plan_store=store, issues=fake_issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "log", "42"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "log", "42"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -390,7 +390,7 @@ def test_log_json_structure() -> None:
         ctx = build_workspace_test_context(env, plan_store=store, issues=fake_issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "log", "42", "--json"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "log", "42", "--json"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0

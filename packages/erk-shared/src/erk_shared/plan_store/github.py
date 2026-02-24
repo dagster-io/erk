@@ -357,7 +357,7 @@ class GitHubPlanStore(PlanBackend):
         number = self._parse_identifier(plan_id)
 
         # Add comment before closing
-        comment_body = "Plan completed via erk plan close"
+        comment_body = "Plan completed via erk pr close"
         self._github_issues.add_comment(repo_root, number, comment_body)
 
         # Close the issue

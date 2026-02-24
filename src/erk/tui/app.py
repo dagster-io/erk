@@ -880,7 +880,7 @@ class ErkDashApp(App):
             self.notify(f"Copied: {cmd}")
 
         elif command_id == "copy_replan":
-            cmd = f"erk plan replan {row.plan_id}"
+            cmd = f"erk pr replan {row.plan_id}"
             self._provider.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
@@ -891,7 +891,7 @@ class ErkDashApp(App):
                 self.notify(f"Copied: {cmd}")
 
         elif command_id == "copy_close_plan":
-            cmd = f"erk plan close {row.plan_id}"
+            cmd = f"erk pr close {row.plan_id}"
             self._provider.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 

@@ -40,7 +40,7 @@ def test_view_plan_displays_issue(plan_backend_type: str) -> None:
         ctx = build_workspace_test_context(env, plan_store=store)
 
         # Act
-        result = runner.invoke(cli, ["plan", "view", "42"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -82,7 +82,7 @@ def test_view_plan_infers_from_branch() -> None:
         )
 
         # Act - no identifier provided
-        result = runner.invoke(cli, ["plan", "view"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "view"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -99,7 +99,7 @@ def test_view_plan_error_when_cannot_infer_from_branch() -> None:
         ctx = build_workspace_test_context(env, plan_store=store, current_branch="master")
 
         # Act - no identifier provided
-        result = runner.invoke(cli, ["plan", "view"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "view"], obj=ctx)
 
         # Assert
         assert result.exit_code == 1
@@ -131,7 +131,7 @@ def test_view_plan_with_full_flag(plan_backend_type: str) -> None:
         ctx = build_workspace_test_context(env, plan_store=store)
 
         # Act
-        result = runner.invoke(cli, ["plan", "view", "42", "--full"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "view", "42", "--full"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -164,7 +164,7 @@ def test_view_plan_with_short_full_flag(plan_backend_type: str) -> None:
         ctx = build_workspace_test_context(env, plan_store=store)
 
         # Act
-        result = runner.invoke(cli, ["plan", "view", "42", "-f"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "view", "42", "-f"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -181,7 +181,7 @@ def test_view_plan_not_found(plan_backend_type: str) -> None:
         ctx = build_workspace_test_context(env, plan_store=store)
 
         # Act
-        result = runner.invoke(cli, ["plan", "view", "999"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "view", "999"], obj=ctx)
 
         # Assert
         assert result.exit_code == 1
@@ -212,7 +212,7 @@ def test_view_plan_minimal_fields(plan_backend_type: str) -> None:
         ctx = build_workspace_test_context(env, plan_store=store)
 
         # Act
-        result = runner.invoke(cli, ["plan", "view", "1"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "view", "1"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -244,7 +244,7 @@ def test_view_plan_with_github_url(plan_backend_type: str) -> None:
 
         # Act - use GitHub URL instead of plain number
         result = runner.invoke(
-            cli, ["plan", "view", "https://github.com/owner/repo/issues/123"], obj=ctx
+            cli, ["pr", "view", "https://github.com/owner/repo/issues/123"], obj=ctx
         )
 
         # Assert
@@ -261,7 +261,7 @@ def test_view_plan_invalid_url(plan_backend_type: str) -> None:
         ctx = build_workspace_test_context(env, plan_store=store)
 
         # Act - use invalid identifier
-        result = runner.invoke(cli, ["plan", "view", "invalid-input"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "view", "invalid-input"], obj=ctx)
 
         # Assert
         assert result.exit_code == 1
@@ -318,7 +318,7 @@ Some other content here.
         ctx = build_workspace_test_context(env, plan_store=store)
 
         # Act
-        result = runner.invoke(cli, ["plan", "view", "42"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -373,7 +373,7 @@ last_local_impl_user: testuser
         ctx = build_workspace_test_context(env, plan_store=store)
 
         # Act
-        result = runner.invoke(cli, ["plan", "view", "42"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -407,7 +407,7 @@ def test_view_plan_without_header_info(plan_backend_type: str) -> None:
         ctx = build_workspace_test_context(env, plan_store=store)
 
         # Act
-        result = runner.invoke(cli, ["plan", "view", "42"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -460,7 +460,7 @@ created_from_session: abc123-session-id
         ctx = build_workspace_test_context(env, plan_store=store)
 
         # Act
-        result = runner.invoke(cli, ["plan", "view", "42"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -513,7 +513,7 @@ last_learn_session: def456-learn-session
         ctx = build_workspace_test_context(env, plan_store=store)
 
         # Act
-        result = runner.invoke(cli, ["plan", "view", "42"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -560,7 +560,7 @@ learn_status: pending
         store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
         ctx = build_workspace_test_context(env, plan_store=store)
 
-        result = runner.invoke(cli, ["plan", "view", "42"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Status:" in result.output
@@ -603,7 +603,7 @@ learn_plan_issue: 456
         store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
         ctx = build_workspace_test_context(env, plan_store=store)
 
-        result = runner.invoke(cli, ["plan", "view", "42"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Status:" in result.output
@@ -646,7 +646,7 @@ learn_plan_pr: 789
         store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
         ctx = build_workspace_test_context(env, plan_store=store)
 
-        result = runner.invoke(cli, ["plan", "view", "42"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Status:" in result.output
@@ -689,7 +689,7 @@ learn_run_id: "12345678"
         store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
         ctx = build_workspace_test_context(env, plan_store=store)
 
-        result = runner.invoke(cli, ["plan", "view", "42"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Status:" in result.output
@@ -733,7 +733,7 @@ learn_status: pending
         store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
         ctx = build_workspace_test_context(env, plan_store=store)
 
-        result = runner.invoke(cli, ["plan", "view", "42"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Status:" in result.output

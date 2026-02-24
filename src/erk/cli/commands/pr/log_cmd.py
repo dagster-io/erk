@@ -106,7 +106,7 @@ EventExtractor: TypeAlias = Callable[[dict], Event | None]
     help="Output events as JSON instead of human-readable timeline",
 )
 @click.pass_obj
-def plan_log(ctx: ErkContext, identifier: str, output_json: bool) -> None:
+def pr_log(ctx: ErkContext, identifier: str, output_json: bool) -> None:
     """Display chronological event log for a plan.
 
     Shows all events from plan creation through submission, workflow execution,
@@ -119,13 +119,13 @@ def plan_log(ctx: ErkContext, identifier: str, output_json: bool) -> None:
 
         \b
         # View timeline for plan 42
-        $ erk plan log 42
+        $ erk pr log 42
 
         # View events as JSON for scripting
-        $ erk plan log 42 --json
+        $ erk pr log 42 --json
 
         # View by worktree name
-        $ erk plan log erk-add-feature
+        $ erk pr log erk-add-feature
     """
     try:
         repo = discover_repo_context(ctx, ctx.cwd)

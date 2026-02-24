@@ -831,7 +831,7 @@ class TestCommandPaletteFromMainCopyVariants:
 
             app.execute_palette_command("copy_close_plan")
 
-            assert clipboard.last_copied == "erk plan close 123"
+            assert clipboard.last_copied == "erk pr close 123"
 
     @pytest.mark.asyncio
     async def test_execute_palette_command_copy_fix_conflicts_remote(self) -> None:

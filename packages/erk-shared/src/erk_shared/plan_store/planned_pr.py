@@ -242,7 +242,7 @@ class PlannedPRBackend(PlanBackend):
             msg = f"PR #{pr_number} not found"
             raise RuntimeError(msg)
 
-        self._github.create_pr_comment(repo_root, pr_number, "Plan completed via erk plan close")
+        self._github.create_pr_comment(repo_root, pr_number, "Plan completed via erk pr close")
         self._github.close_pr(repo_root, pr_number)
 
     def create_plan(

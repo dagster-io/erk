@@ -38,7 +38,7 @@ def _is_github_backend(ctx: CommandContext) -> bool:
 
 def _display_close_plan(ctx: CommandContext) -> str:
     """Display name for close_plan command."""
-    return f"erk plan close {ctx.row.plan_id}"
+    return f"erk pr close {ctx.row.plan_id}"
 
 
 def _display_submit_to_queue(ctx: CommandContext) -> str:
@@ -123,7 +123,7 @@ def _display_copy_submit(ctx: CommandContext) -> str:
 
 def _display_copy_replan(ctx: CommandContext) -> str:
     """Display name for copy_replan command."""
-    return f"erk plan replan {ctx.row.plan_id}"
+    return f"erk pr replan {ctx.row.plan_id}"
 
 
 def _display_copy_land(ctx: CommandContext) -> str:
@@ -133,7 +133,7 @@ def _display_copy_land(ctx: CommandContext) -> str:
 
 def _display_copy_close_plan(ctx: CommandContext) -> str:
     """Display name for copy_close_plan command."""
-    return f"erk plan close {ctx.row.plan_id}"
+    return f"erk pr close {ctx.row.plan_id}"
 
 
 def _display_copy_fix_conflicts_remote(ctx: CommandContext) -> str:
@@ -374,7 +374,7 @@ def get_all_commands() -> list[CommandDefinition]:
         ),
         CommandDefinition(
             id="copy_replan",
-            name="erk plan replan",
+            name="erk pr replan",
             description="replan",
             category=CommandCategory.COPY,
             shortcut="6",
@@ -392,7 +392,7 @@ def get_all_commands() -> list[CommandDefinition]:
         ),
         CommandDefinition(
             id="copy_close_plan",
-            name="erk plan close",
+            name="erk pr close",
             description="close",
             category=CommandCategory.COPY,
             shortcut=None,

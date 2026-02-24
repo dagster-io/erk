@@ -235,7 +235,7 @@ def test_display_name_close_plan_shows_cli_command() -> None:
     row = make_plan_row(5831, "Test Plan")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     cmd = next(c for c in get_all_commands() if c.id == "close_plan")
-    assert get_display_name(cmd, ctx) == "erk plan close 5831"
+    assert get_display_name(cmd, ctx) == "erk pr close 5831"
 
 
 def test_display_name_submit_to_queue_shows_cli_command() -> None:
@@ -353,7 +353,7 @@ def test_display_name_copy_replan_shows_issue() -> None:
     row = make_plan_row(5831, "Test Plan")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     cmd = next(c for c in get_all_commands() if c.id == "copy_replan")
-    assert get_display_name(cmd, ctx) == "erk plan replan 5831"
+    assert get_display_name(cmd, ctx) == "erk pr replan 5831"
 
 
 def test_display_name_copy_land_shows_pr_number() -> None:
@@ -428,11 +428,11 @@ def test_copy_address_remote_not_available_when_no_pr() -> None:
 
 
 def test_display_name_copy_close_plan_shows_cli_command() -> None:
-    """copy_close_plan should show the erk plan close command."""
+    """copy_close_plan should show the erk pr close command."""
     row = make_plan_row(5831, "Test Plan")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="github")
     cmd = next(c for c in get_all_commands() if c.id == "copy_close_plan")
-    assert get_display_name(cmd, ctx) == "erk plan close 5831"
+    assert get_display_name(cmd, ctx) == "erk pr close 5831"
 
 
 def test_display_name_copy_fix_conflicts_remote_shows_cli_command() -> None:
@@ -467,13 +467,13 @@ def test_format_palette_display_produces_styled_text() -> None:
 
     from erk.tui.commands.provider import _format_palette_display
 
-    result = _format_palette_display("⚡", "close", "erk plan close 123")
+    result = _format_palette_display("⚡", "close", "erk pr close 123")
 
     # Result should be a Text object
     assert isinstance(result, Text)
 
     # Plain text should match expected format
-    assert result.plain == "⚡ close: erk plan close 123"
+    assert result.plain == "⚡ close: erk pr close 123"
 
     # Command portion should be dimmed
     # Check that "dim" style is applied to the command text
@@ -493,14 +493,14 @@ def test_format_search_display_preserves_highlighting() -> None:
     from erk.tui.commands.provider import _format_search_display
 
     # Simulate highlighted text from fuzzy matcher
-    # e.g., "close: erk plan close 123" with "close" highlighted
-    highlighted = Text("close: erk plan close 123")
+    # e.g., "close: erk pr close 123" with "close" highlighted
+    highlighted = Text("close: erk pr close 123")
     highlighted.stylize("bold", 0, 5)  # First "close" highlighted
 
     result = _format_search_display("⚡", highlighted, len("close"))
 
     assert isinstance(result, Text)
-    assert result.plain == "⚡ close: erk plan close 123"
+    assert result.plain == "⚡ close: erk pr close 123"
 
 
 # === View Mode Filtering Tests ===

@@ -439,8 +439,8 @@ class TestExecuteCommandCopyClosePlan:
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("copy_close_plan")
-        assert executor.copied_texts == ["erk plan close 123"]
-        assert "Copied: erk plan close 123" in executor.notifications
+        assert executor.copied_texts == ["erk pr close 123"]
+        assert "Copied: erk pr close 123" in executor.notifications
 
 
 class TestExecuteCommandCopyFixConflictsRemote:

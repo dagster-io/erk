@@ -27,17 +27,21 @@ erk prepare       # Create a worktree from a plan issue
 
 # Most plan management operations are under `erk plan`:
 erk plan create   # Create a new plan issue
-erk plan view     # View a plan
-erk plan close    # Close a plan
 erk plan submit   # Submit a plan for remote execution
-erk plan log      # View plan execution logs
+
+# Plan view/close/log/replan operations are under `erk pr`:
+erk pr view       # View a plan
+erk pr close      # Close a plan
+erk pr log        # View plan execution logs
+erk pr replan     # Replan a plan issue
 ```
 
 **Why top-level?**
 
 - Highest-frequency entry points: `implement`, `prepare`, and `dash` are the most common workflow starters
 - Natural mental model: "I want to work on a plan" → `erk implement 42`
-- Plan management via `erk plan <subcommand>`: `create`, `view`, `close`, `submit`, `log`, etc.
+- Plan management via `erk plan <subcommand>`: `create`, `submit`, `list`, etc.
+- Plan viewing/closing via `erk pr <subcommand>`: `view`, `close`, `log`, `replan`
 
 ## Command Categories
 
@@ -53,19 +57,34 @@ Only the highest-frequency workflow entry points are at the top level:
 
 ### `erk plan` Subcommands
 
-All other plan management operations are under the `erk plan` group (table reflects `erk plan --help` output):
+Plan creation and submission operations are under the `erk plan` group:
 
 | Subcommand | Description                        |
 | ---------- | ---------------------------------- |
 | `create`   | Create a new plan issue            |
-| `view`     | View a plan                        |
 | `list`     | List open plans                    |
-| `close`    | Close a plan                       |
 | `submit`   | Submit a plan for remote execution |
-| `log`      | View plan execution logs           |
-| `replan`   | Replan an existing plan issue      |
 | `co`       | Check out a plan's branch          |
 | `check`    | Check plan status                  |
+
+### `erk pr` Subcommands
+
+Plan viewing, closing, and PR operations are under the `erk pr` group:
+
+| Subcommand        | Description                                    |
+| ----------------- | ---------------------------------------------- |
+| `view`            | View a plan                                    |
+| `close`           | Close a plan                                   |
+| `log`             | View plan execution logs                       |
+| `replan`          | Replan an existing plan issue                  |
+| `submit`          | Submit current branch as a pull request        |
+| `address`         | Address PR review comments with AI resolution  |
+| `check`           | Validate PR rules for the current branch       |
+| `checkout` (`co`) | Checkout PR into a worktree for review         |
+| `fix-conflicts`   | Fix merge conflicts with AI resolution         |
+| `rewrite`         | Squash, regenerate commit message, push        |
+| `sync`            | Synchronize current PR branch with remote base |
+| `sync-divergence` | Sync branch with remote and resolve divergence |
 
 ### Grouped Commands
 
@@ -159,7 +178,7 @@ When adding a new command, use this flowchart to determine placement:
               │
         ┌─────▼──────────────────────────────────┐
         │ Group under `erk plan <verb>`           │
-        │ Examples: plan create, plan view        │
+        │ Examples: plan create, plan submit      │
         └─────────────────────────────────────────┘
 
           │ NO
@@ -225,14 +244,16 @@ erk implement 42
 erk prepare 42
 erk dash
 
-# GOOD: erk plan subcommands for plan management operations
+# GOOD: erk plan subcommands for plan creation/submission
 erk plan create --file plan.md
-erk plan view 42
-erk plan close 42
 erk plan submit 42
+
+# GOOD: erk pr subcommands for plan viewing/closing
+erk pr view 42
+erk pr close 42
 ```
 
-**Why?** Only `implement`, `prepare`, and `dash` are top-level — they are the most common workflow entry points. All other plan operations (create, view, close, submit, log, etc.) live under `erk plan <subcommand>`.
+**Why?** Only `implement`, `prepare`, and `dash` are top-level — they are the most common workflow entry points. Plan creation and submission live under `erk plan`, while view/close/log/replan operations live under `erk pr`.
 
 ### ✅ Infrastructure Grouped Under Noun
 
@@ -305,7 +326,7 @@ erk plan create --file implementation-plan.md
 
 # View plans
 erk dash                  # Display plan dashboard
-erk plan view 42          # View specific plan
+erk pr view 42            # View specific plan
 
 # Work on a plan
 erk implement 42          # Set up .impl/ and implement in current directory
@@ -314,10 +335,10 @@ erk implement 42          # Set up .impl/ and implement in current directory
 erk plan submit 42        # Queue for remote execution
 
 # Track progress
-erk plan log 42           # View execution history
+erk pr log 42             # View execution history
 
 # Finish
-erk plan close 42         # Close completed plan
+erk pr close 42           # Close completed plan
 ```
 
 ### Worktree Management

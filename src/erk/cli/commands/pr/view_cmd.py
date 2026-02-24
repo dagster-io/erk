@@ -223,7 +223,7 @@ def _format_header_section(header_info: dict[str, object], *, plan_url: str | No
 @click.argument("identifier", type=str, required=False, default=None)
 @click.option("--full", "-f", is_flag=True, help="Show full plan body")
 @click.pass_obj
-def view_plan(ctx: ErkContext, identifier: str | None, *, full: bool) -> None:
+def pr_view(ctx: ErkContext, identifier: str | None, *, full: bool) -> None:
     """Fetch and display a plan by identifier.
 
     IDENTIFIER can be a plain number (e.g., "42") or a GitHub issue URL
@@ -255,7 +255,7 @@ def view_plan(ctx: ErkContext, identifier: str | None, *, full: bool) -> None:
                 click.style("Error: ", fg="red")
                 + "No identifier specified and could not infer from branch name"
             )
-            user_output("Usage: erk plan view <identifier>")
+            user_output("Usage: erk pr view <identifier>")
             user_output("Or run from a branch named P{issue}-...")
             raise SystemExit(1)
         result = ctx.plan_backend.get_plan_for_branch(repo_root, branch)
@@ -265,7 +265,7 @@ def view_plan(ctx: ErkContext, identifier: str | None, *, full: bool) -> None:
                 click.style("Error: ", fg="red")
                 + "No identifier specified and could not infer from branch name"
             )
-            user_output("Usage: erk plan view <identifier>")
+            user_output("Usage: erk pr view <identifier>")
             user_output("Or run from a branch named P{issue}-...")
             raise SystemExit(1)
 
