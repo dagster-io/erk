@@ -112,8 +112,10 @@ class GraphiteBranchManager(BranchManager):
 
         If the local branch doesn't exist, it is created from the remote ref.
         If the local branch exists but has diverged from remote, it is
-        force-updated to match remote. This is safe because the caller is not
-        on the local_branch being updated.
+        force-updated to match remote — unless the branch is currently checked
+        out, in which case we skip the force-update (git refuses to force-update
+        a checked-out branch). The retrack_branch fallback in the caller handles
+        any Graphite tracking divergence.
 
         Args:
             repo_root: Repository root directory
@@ -134,8 +136,12 @@ class GraphiteBranchManager(BranchManager):
         if local_sha == remote_sha:
             return  # Already in sync
 
+        # Check if branch is currently checked out (can't force-update)
+        current_branch = self.git.branch.get_current_branch(repo_root)
+        if local_branch == current_branch:
+            return  # Can't force-update checked-out branch; retrack handles divergence
+
         # Local and remote diverged - force-update local to match remote
-        # This is safe because the caller is not on local_branch
         self.git.branch.create_branch(repo_root, local_branch, remote_ref, force=True)
 
     def delete_branch(self, repo_root: Path, branch: str, *, force: bool = False) -> None:
