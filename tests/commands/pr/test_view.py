@@ -756,7 +756,7 @@ def test_view_plan_json_output(plan_backend_type: str) -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, plan_store=store)
 
         result = runner.invoke(cli, ["plan", "view", "42", "--json-output"], obj=ctx)
@@ -793,7 +793,7 @@ def test_view_plan_json_with_full_flag(plan_backend_type: str) -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, plan_store=store)
 
         result = runner.invoke(cli, ["plan", "view", "42", "--full", "--json-output"], obj=ctx)
@@ -821,7 +821,7 @@ def test_view_plan_json_without_full_has_null_body(plan_backend_type: str) -> No
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, plan_store=store)
 
         result = runner.invoke(cli, ["plan", "view", "42", "--json-output"], obj=ctx)
@@ -870,7 +870,7 @@ Some other content here.
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, plan_store=store)
 
         result = runner.invoke(cli, ["plan", "view", "42", "--json-output"], obj=ctx)
