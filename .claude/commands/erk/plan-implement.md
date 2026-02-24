@@ -36,190 +36,47 @@ This is the primary implementation workflow - it orchestrates:
 
 ## Agent Instructions
 
-### Step 0: Parse Arguments
+### Step 1: Set Up Implementation
 
-Extract optional argument from `$ARGUMENTS`:
+Parse `$ARGUMENTS` and run the consolidated setup command:
 
-- **If numeric** (e.g., `2521`): Store as `ISSUE_ARG`
-- **If GitHub URL** (e.g., `https://github.com/owner/repo/issues/2521`): Extract number from path, store as `ISSUE_ARG`
-- **If path to file** (anything else non-empty): Store as `FILE_ARG`
-- **If empty**: Proceed to check `.impl/` folder
-
-Store either `ISSUE_ARG` (issue number) or `FILE_ARG` (file path), or neither if empty.
-
-### Step 1: Determine Implementation Source
-
-Follow this priority order:
-
-#### 1a. If ISSUE_ARG is provided
-
-First, check if `.impl/` already exists and is valid:
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file <path>`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.impl/`, branch, or fails)
 
 ```bash
-erk exec impl-init --json
+erk exec setup-impl [--issue <N> | --file <path>]
 ```
 
-If this succeeds with `"valid": true`:
+This single command handles:
 
-- If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
-- If `has_issue_tracking: true`: **Still call `setup-impl-from-issue`** to ensure the local branch is synced with remote (see below). The command is idempotent — if already on the plan branch it just pulls the latest.
+- Fetching plan from GitHub issue/PR (draft-PR or issue-based)
+- Setting up from a local markdown file
+- Auto-detecting from existing `.impl/` folder
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating `.impl/` folder with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
 
-Otherwise, set up from the specified issue:
-
-```bash
-erk exec setup-impl-from-issue <ISSUE_ARG>
-```
-
-This command:
-
-- For draft-PR plans: checks out the plan branch and syncs with remote via pull-rebase
-- For issue-based plans: creates a feature branch from current branch (stacked) or trunk
-- Checks out the branch in the current worktree
-- Creates `.impl/` folder with the plan content
-- Saves issue reference for PR linking
-
-If this fails, display the error and stop.
-
-Then run impl-init:
-
-```bash
-erk exec impl-init --json
-```
-
-#### 1a-file. If FILE_ARG is provided
-
-Set up from the specified markdown file:
-
-1. **Verify the file exists** using the Read tool
-2. **Extract the title** from the first `# ` heading in the file
-3. **Generate branch name** from the title (slugify: lowercase, replace spaces with hyphens, remove special chars)
-4. **Create a feature branch** (use devrun agent for gt commands):
-   ```bash
-   gt create <branch-name>
-   ```
-5. **Create `.impl/` folder** and copy the plan:
-   ```bash
-   mkdir -p .impl && cp <FILE_ARG> .impl/plan.md
-   ```
-
-This is a local-only plan (no GitHub issue tracking).
-
-Then run impl-init:
-
-```bash
-erk exec impl-init --json
-```
-
-Note: `has_issue_tracking` will be `false` for file-based plans.
-
-#### 1b. If .impl/ already exists
-
-Check if implementation is already set up:
-
-```bash
-erk exec impl-init --json
-```
-
-If this succeeds with `"valid": true`:
-
-- If `has_issue_tracking: false`: **Skip directly to Step 2d** (file-based plan, no remote to sync with).
-- If `has_issue_tracking: true`: **Call `setup-impl-from-issue <issue_number>`** to sync the local branch with remote, then proceed to Step 2d. The `issue_number` is available in `.impl/issue.json`.
-
-If it fails or returns `"valid": false`, continue to Step 1b-branch.
-
-#### 1b-branch. Detect plan from current branch
-
-If no `.impl/` folder exists (or it's invalid), try to detect the plan from the current branch name:
-
-```bash
-# Get current branch
-BRANCH=$(git branch --show-current)
-
-# Try issue-based detection: P{number}-slug or {number}-slug
-PLAN_NUMBER=$(echo "$BRANCH" | grep -oE '^[Pp]?([0-9]+)-' | grep -oE '[0-9]+' | head -1)
-
-# If not found, try draft-PR detection: look for an associated PR
-if [ -z "$PLAN_NUMBER" ]; then
-  PLAN_NUMBER=$(gh pr view --json number -q .number 2>/dev/null || echo "")
-fi
-```
-
-If `PLAN_NUMBER` is non-empty:
-
-1. Display: "Auto-detected plan #PLAN_NUMBER from branch"
-2. Set up from the detected plan:
-   ```bash
-   erk exec setup-impl-from-issue <PLAN_NUMBER>
-   ```
-3. Run impl-init:
-   ```bash
-   erk exec impl-init --json
-   ```
-4. Proceed to Step 2d.
-
-If `PLAN_NUMBER` is empty, continue to Step 1c.
-
-#### 1c. Fall back to saving current plan
-
-If neither argument nor valid `.impl/` exists, save the current plan from plan mode (Step 2).
-
-### Step 2: Save Plan to GitHub
-
-Save the current plan to GitHub and capture the issue number:
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
 
 ```bash
 erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}"
 ```
 
-Parse the JSON output to get:
+Parse the JSON output to get `issue_number`, then:
 
-- `issue_number`: The created issue number
-- `title`: The issue title (for branch naming)
+```bash
+erk exec setup-impl --issue <issue_number>
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
 
 If this fails, display the error and stop.
 
-### Step 2b: Create Branch and Setup .impl/
-
-Now set up the implementation environment using the saved issue:
-
-```bash
-erk exec setup-impl-from-issue <issue-number>
-```
-
-This command:
-
-- Creates a feature branch from current branch (stacked) or trunk
-- Checks out the new branch in the current worktree
-- Creates `.impl/` folder with the plan content
-- Saves issue reference for PR linking
-
-If this fails, display the error and stop.
-
-### Step 2c: Re-run Implementation Initialization
-
-Run impl-init again now that .impl/ is set up:
-
-```bash
-erk exec impl-init --json
-```
-
-Use the returned `phases` for TodoWrite entries. If validation fails, display error and stop.
-
-### Step 2d: Clean Up Plan Staging Directory (All Paths)
-
-**All setup paths converge here before Step 3.** If `.erk/impl-context/` exists in git tracking (from draft-PR plan save), remove it:
-
-```bash
-if [ -d .erk/impl-context/ ]; then
-  git rm -rf .erk/impl-context/
-  git commit -m "Remove .erk/impl-context/ before implementation"
-  git push origin "$(git branch --show-current)"
-fi
-```
-
-This directory contains plan content committed during plan-save. It is idempotent — safe to run even when the directory doesn't exist.
-
-### Step 3: Read Plan and Load Context
+### Step 2: Read Plan and Load Context
 
 Read `.impl/plan.md` to understand:
 
@@ -230,15 +87,15 @@ Read `.impl/plan.md` to understand:
 
 **Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
 
-### Step 4: Load Related Documentation
+### Step 3: Load Related Documentation
 
 If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
 
-### Step 5: Create TodoWrite Entries
+### Step 4: Create TodoWrite Entries
 
-Create todo entries for each phase from impl-init output.
+Create todo entries for each phase from the plan.
 
-### Step 6: Signal GitHub Started
+### Step 5: Signal GitHub Started
 
 ```bash
 erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2>/dev/null || true
@@ -250,7 +107,7 @@ This also deletes the Claude plan file (from `~/.claude/plans/`) since:
 - The content has been snapshotted to `.erk/scratch/`
 - Keeping it could cause confusion if the user tries to re-save
 
-### Step 7: Execute Each Phase Sequentially
+### Step 6: Execute Each Phase Sequentially
 
 For each phase:
 
@@ -265,42 +122,27 @@ For each phase:
 
 **Important:** `.impl/plan.md` is immutable - NEVER edit during implementation
 
-### Step 8: Report Progress
+### Step 7: Report Progress
 
 After each phase: report changes made and what's next.
 
-### Step 9: Final Verification
+### Step 8: Final Verification
 
 Confirm all tasks executed, success criteria met, note deviations, summarize changes.
 
-### Step 10: Signal GitHub Ended
+### Step 9: Signal GitHub Ended
 
 ```bash
 erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2>/dev/null || true
 ```
 
-### Step 10b: Upload Session for Async Learn
-
-Upload the current session to enable async learn:
+### Step 10: Upload Session for Async Learn
 
 ```bash
-# Capture session info
-eval "$(erk exec capture-session-info)"
-
-# Get issue number from .impl/issue.json (jq extracts issue_number field)
-ISSUE_NUMBER=$(jq -r '.issue_number // empty' .impl/issue.json 2>/dev/null || echo "")
-
-# Upload if we have both session and issue tracking
-if [ -n "$SESSION_ID" ] && [ -n "$SESSION_FILE" ] && [ -n "$ISSUE_NUMBER" ]; then
-  erk exec upload-session \
-    --session-file "$SESSION_FILE" \
-    --session-id "$SESSION_ID" \
-    --source local \
-    --issue-number "$ISSUE_NUMBER" || true
-fi
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2>/dev/null || true
 ```
 
-This enables `erk learn --async` to work for locally-implemented PRs by uploading the session to a gist.
+This reads plan reference from `.impl/`, captures session info, and uploads for async learn processing.
 
 ### Step 11: Verify .impl/ Preserved
 
@@ -316,8 +158,6 @@ If this fails, you have violated instructions. The .impl/ folder must be preserv
 
 1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
 2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
-
-**Note:** `.erk/impl-context/` cleanup is handled by the workflow before implementation begins. For local execution, Step 2d handles `.erk/impl-context/` cleanup.
 
 **CRITICAL**: Never delete `.impl/` - leave for user review (no auto-commit).
 

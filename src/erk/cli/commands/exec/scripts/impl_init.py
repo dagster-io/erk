@@ -38,8 +38,11 @@ def _error_json(error_type: str, message: str) -> NoReturn:
     raise SystemExit(1)
 
 
-def _validate_impl_folder() -> tuple[Path, str]:
+def _validate_impl_folder(cwd: Path | None = None) -> tuple[Path, str]:
     """Validate .impl/ or .erk/impl-context/ folder exists and has required files.
+
+    Args:
+        cwd: Working directory to search in. Defaults to Path.cwd().
 
     Returns:
         Tuple of (impl_dir Path, impl_type string)
@@ -47,7 +50,8 @@ def _validate_impl_folder() -> tuple[Path, str]:
     Raises:
         SystemExit: If validation fails
     """
-    cwd = Path.cwd()
+    if cwd is None:
+        cwd = Path.cwd()
 
     # Check .impl/ first, then .erk/impl-context/
     impl_dir = cwd / ".impl"

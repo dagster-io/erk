@@ -20,6 +20,7 @@ from erk.cli.commands.exec.scripts.capture_session_info import (
 from erk.cli.commands.exec.scripts.check_impl import check_impl
 from erk.cli.commands.exec.scripts.ci_update_pr_body import ci_update_pr_body
 from erk.cli.commands.exec.scripts.ci_verify_autofix import ci_verify_autofix
+from erk.cli.commands.exec.scripts.cleanup_impl_context import cleanup_impl_context
 from erk.cli.commands.exec.scripts.close_issue_with_comment import (
     close_issue_with_comment,
 )
@@ -33,6 +34,9 @@ from erk.cli.commands.exec.scripts.create_plan_from_context import (
     create_plan_from_context,
 )
 from erk.cli.commands.exec.scripts.dash_data import dash_data
+from erk.cli.commands.exec.scripts.detect_plan_from_branch import (
+    detect_plan_from_branch,
+)
 from erk.cli.commands.exec.scripts.detect_trunk_branch import detect_trunk_branch
 from erk.cli.commands.exec.scripts.discover_reviews import discover_reviews
 from erk.cli.commands.exec.scripts.download_remote_session import (
@@ -148,6 +152,7 @@ from erk.cli.commands.exec.scripts.set_local_review_marker import (
     set_local_review_marker,
 )
 from erk.cli.commands.exec.scripts.set_pr_description import set_pr_description
+from erk.cli.commands.exec.scripts.setup_impl import setup_impl
 from erk.cli.commands.exec.scripts.setup_impl_from_issue import (
     setup_impl_from_issue,
 )
@@ -170,6 +175,7 @@ from erk.cli.commands.exec.scripts.update_plan_header import update_plan_header
 from erk.cli.commands.exec.scripts.update_pr_description import (
     update_pr_description,
 )
+from erk.cli.commands.exec.scripts.upload_impl_session import upload_impl_session
 from erk.cli.commands.exec.scripts.upload_session import upload_session
 from erk.cli.commands.exec.scripts.user_prompt_hook import user_prompt_hook
 from erk.cli.commands.exec.scripts.validate_claude_credentials import (
@@ -195,10 +201,12 @@ exec_group.add_command(add_reaction_to_comment, name="add-reaction-to-comment")
 exec_group.add_command(add_remote_execution_note, name="add-remote-execution-note")
 exec_group.add_command(capture_session_info, name="capture-session-info")
 exec_group.add_command(check_impl, name="check-impl")
+exec_group.add_command(cleanup_impl_context, name="cleanup-impl-context")
 exec_group.add_command(create_issue_from_session, name="create-issue-from-session")
 exec_group.add_command(create_plan_from_context, name="create-plan-from-context")
 exec_group.add_command(dash_data, name="dash-data")
 exec_group.add_command(create_impl_context_from_plan, name="create-impl-context-from-plan")
+exec_group.add_command(detect_plan_from_branch, name="detect-plan-from-branch")
 exec_group.add_command(detect_trunk_branch, name="detect-trunk-branch")
 exec_group.add_command(discover_reviews, name="discover-reviews")
 exec_group.add_command(download_remote_session, name="download-remote-session")
@@ -262,6 +270,7 @@ exec_group.add_command(reply_to_discussion_comment, name="reply-to-discussion-co
 exec_group.add_command(session_id_injector_hook, name="session-id-injector-hook")
 exec_group.add_command(set_local_review_marker, name="set-local-review-marker")
 exec_group.add_command(set_pr_description, name="set-pr-description")
+exec_group.add_command(setup_impl, name="setup-impl")
 exec_group.add_command(setup_impl_from_issue, name="setup-impl-from-issue")
 exec_group.add_command(store_tripwire_candidates, name="store-tripwire-candidates")
 exec_group.add_command(track_learn_evaluation, name="track-learn-evaluation")
@@ -272,6 +281,7 @@ exec_group.add_command(update_issue_body, name="update-issue-body")
 exec_group.add_command(update_plan_header, name="update-plan-header")
 exec_group.add_command(update_objective_node, name="update-objective-node")
 exec_group.add_command(update_pr_description, name="update-pr-description")
+exec_group.add_command(upload_impl_session, name="upload-impl-session")
 exec_group.add_command(upload_session, name="upload-session")
 exec_group.add_command(ci_update_pr_body)
 exec_group.add_command(ci_verify_autofix, name="ci-verify-autofix")
