@@ -771,11 +771,19 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
     click.echo(click.style("   PR metadata updated", fg="green"))
 
     # Update lifecycle stage for linked plan
+    plan_id_for_lifecycle: str | None = None
     if state.plan_context is not None:
+        plan_id_for_lifecycle = state.plan_context.plan_id
+    elif state.issue_number is not None:
+        plan_id_for_lifecycle = str(state.issue_number)
+    elif ctx.plan_backend.get_provider_name() == "github-draft-pr" and state.pr_number is not None:
+        plan_id_for_lifecycle = str(state.pr_number)
+
+    if plan_id_for_lifecycle is not None:
         maybe_advance_lifecycle_to_impl(
             ctx,
             repo_root=state.repo_root,
-            plan_id=state.plan_context.plan_id,
+            plan_id=plan_id_for_lifecycle,
             quiet=state.quiet,
         )
 
