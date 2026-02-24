@@ -3,6 +3,7 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
+from erk_slack_bot.app import create_app
 from erk_slack_bot.config import Settings
 
 
@@ -12,8 +13,6 @@ class TestCreateApp(unittest.TestCase):
     def test_create_app_returns_app_with_handlers(
         self, mock_app_cls: MagicMock, mock_register: MagicMock
     ) -> None:
-        from erk_slack_bot.app import create_app
-
         settings = Settings(SLACK_BOT_TOKEN="xoxb-token", SLACK_APP_TOKEN="xapp-token")
         result = create_app(settings=settings)
 

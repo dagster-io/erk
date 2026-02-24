@@ -3,6 +3,8 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
+from erk_slack_bot.cli import main
+
 
 class TestMain(unittest.TestCase):
     @patch("erk_slack_bot.cli.SocketModeHandler")
@@ -16,8 +18,6 @@ class TestMain(unittest.TestCase):
         mock_create_app: MagicMock,
         mock_handler_cls: MagicMock,
     ) -> None:
-        from erk_slack_bot.cli import main
-
         main()
 
         mock_load_dotenv.assert_called_once()
