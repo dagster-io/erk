@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Rename deps-state/deps columns to head-state/head in Objectives dashboard"
+}
