@@ -110,6 +110,8 @@ If you find an LLM call inside an exec script, follow these steps:
 **Skills with generation steps:**
 
 - `.claude/commands/erk/plan-save.md` — Step 1.5 generates `BRANCH_SLUG` before calling `erk exec plan-save`
+- `.claude/commands/erk/plan-implement.md` — Generates `BRANCH_SLUG` before calling `erk exec setup-impl` and `erk exec plan-save`
+- `.claude/commands/erk/migrate-plan-to-draft-pr.md` — Step 2.5 generates `BRANCH_SLUG` before calling `erk exec plan-migrate-to-draft-pr`
 
 **Pre-existing correct implementation:**
 
