@@ -1,4 +1,9 @@
 {
   "provider": "github-draft-pr",
-  "title": "Fix: Remove non-slot worktree after landing"
+  "plan_id": "8017",
+  "url": "https://github.com/dagster-io/erk/pull/8017",
+  "created_at": "2026-02-23T16:59:49.547187",
+  "synced_at": "2026-02-23T16:59:49.547187",
+  "labels": [],
+  "objective_id": null
 }
