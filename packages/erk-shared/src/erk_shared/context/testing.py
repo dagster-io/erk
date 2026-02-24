@@ -66,8 +66,7 @@ def context_for_test(
     This is the factory function for creating test contexts in tests.
     It creates an ErkContext with fake implementations for all services.
 
-    Plan backend is resolved from ERK_PLAN_BACKEND env var (set via
-    monkeypatch.setenv in tests that need planned_pr backend).
+    Plan backend defaults to PlannedPRBackend unless explicitly overridden.
 
     Args:
         github_issues: Optional GitHubIssues implementation. If None, creates FakeGitHubIssues.
@@ -79,8 +78,7 @@ def context_for_test(
         agent_docs: Optional AgentDocs. If None, creates FakeAgentDocs.
         prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
         codespace: Optional Codespace. If None, creates FakeCodespace.
-        plan_store: Optional PlanStore. If None, creates GitHubPlanStore or
-            PlannedPRBackend based on ERK_PLAN_BACKEND env var.
+        plan_store: Optional PlanStore. If None, creates PlannedPRBackend.
         local_config: Optional LoadedConfig. If None, uses LoadedConfig.test().
         debug: Whether to enable debug mode (default False).
         repo_root: Repository root path (defaults to Path("/fake/repo"))
@@ -112,7 +110,6 @@ def context_for_test(
     from erk_shared.gateway.graphite.fake import FakeGraphite
     from erk_shared.gateway.shell.fake import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
-    from erk_shared.plan_store.github import GitHubPlanStore
 
     # Resolve defaults - create issues first since it's composed into github
     # Track whether issues was explicitly passed (for composition logic below)
@@ -184,17 +181,18 @@ def context_for_test(
 
     resolved_local_config = local_config if local_config is not None else LoadedConfig.test()
 
-    # Resolve plan_store: explicit > ERK_PLAN_BACKEND env var > default (GitHubPlanStore)
+    # Resolve plan_store: explicit > issue-aware default > PlannedPRBackend
     resolved_plan_store: PlanStore
     if plan_store is not None:
         resolved_plan_store = plan_store
-    # When github_issues is explicitly passed, the caller is setting up for the github
-    # backend (FakeGitHubIssues with issues/comments). Use GitHubPlanStore to match
-    # their intent rather than switching to PlannedPRBackend.
-    elif "planned_pr" == "planned_pr" and not issues_explicitly_passed:
-        resolved_plan_store = PlannedPRBackend(resolved_github, resolved_issues, time=FakeTime())
+    elif issues_explicitly_passed:
+        # Caller seeded issue data — use GitHubPlanStore so plan lookups
+        # go through the issues gateway the caller configured.
+        from erk_shared.plan_store.github import GitHubPlanStore
+
+        resolved_plan_store = GitHubPlanStore(resolved_issues, FakeTime())
     else:
-        resolved_plan_store = GitHubPlanStore(resolved_issues, fake_time)
+        resolved_plan_store = PlannedPRBackend(resolved_github, resolved_issues, time=FakeTime())
 
     return ErkContext(
         git=resolved_git,

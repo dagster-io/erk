@@ -13,6 +13,7 @@ from erk.cli.commands.pr import pr_group
 from erk_shared.gateway.git.abc import BranchDivergence
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
@@ -1673,6 +1674,7 @@ def test_pr_submit_shows_no_plan_message() -> None:
             github=github,
             graphite=graphite,
             prompt_executor=executor,
+            issues=FakeGitHubIssues(),  # Force GitHubPlanStore (no plan for "feature" branch)
         )
 
         result = runner.invoke(pr_group, ["submit"], obj=ctx)

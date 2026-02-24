@@ -2,6 +2,7 @@
 
 import json
 import subprocess
+from datetime import UTC, datetime
 from pathlib import Path
 
 import click
@@ -21,8 +22,37 @@ from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
-from tests.test_utils.github_helpers import create_test_issue
-from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+from erk_shared.plan_store.types import Plan, PlanState
+from tests.test_utils.plan_helpers import (
+    create_plan_store_with_plans,
+    format_plan_header_body_for_test,
+)
+
+
+def _make_plan(
+    *,
+    number: int,
+    title: str = "Test plan",
+    labels: list[str] | None = None,
+    **header_kwargs: object,
+) -> Plan:
+    """Create a Plan object with plan-header metadata for testing."""
+    now = datetime(2024, 1, 15, 10, 30, tzinfo=UTC)
+    body = format_plan_header_body_for_test(**header_kwargs)
+    return Plan(
+        plan_identifier=str(number),
+        title=title,
+        body=body,
+        state=PlanState.OPEN,
+        url=f"https://github.com/test-owner/test-repo/pull/{number}",
+        labels=labels if labels is not None else ["erk-plan"],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        metadata={},
+        objective_id=None,
+        header_fields={},
+    )
 
 
 def test_check_learn_status_and_prompt_skips_when_already_learned(
@@ -37,20 +67,15 @@ def test_check_learn_status_and_prompt_skips_when_already_learned(
 
     issue_number = 123
 
-    # Create issue with session metadata so find_sessions_for_plan finds them naturally
-    issue = create_test_issue(
+    plan = _make_plan(
         number=issue_number,
-        title="Test plan",
-        body=format_plan_header_body_for_test(
-            created_from_session="plan-session-1",
-            last_local_impl_session="impl-session-1",
-            last_learn_session="learn-session-1",
-        ),
-        labels=["erk-plan"],
+        created_from_session="plan-session-1",
+        last_local_impl_session="impl-session-1",
+        last_learn_session="learn-session-1",
     )
-    fake_issues = FakeGitHubIssues(issues={issue_number: issue})
+    backend, fake_github = create_plan_store_with_plans({str(issue_number): plan})
 
-    ctx = context_for_test(cwd=repo_root, issues=fake_issues)
+    ctx = context_for_test(cwd=repo_root, github=fake_github, plan_store=backend)
 
     # Should return without any interaction (plan already learned from)
     _check_learn_status_and_prompt(
@@ -91,14 +116,8 @@ def test_check_learn_status_and_prompt_warns_when_not_learned(
 
     issue_number = 123
 
-    # Create issue (without learn_status - will fall back to session check)
-    issue = create_test_issue(
-        number=issue_number,
-        title="Test plan",
-        body=format_plan_header_body_for_test(),
-        labels=["erk-plan"],
-    )
-    fake_issues = FakeGitHubIssues(issues={issue_number: issue})
+    plan = _make_plan(number=issue_number)
+    backend, fake_github = create_plan_store_with_plans({str(issue_number): plan})
 
     # Mock click.prompt to return choice 2 (continue without learning)
     monkeypatch.setattr(click, "prompt", lambda *args, **kwargs: 2)
@@ -110,7 +129,9 @@ def test_check_learn_status_and_prompt_warns_when_not_learned(
         is_stderr_tty=True,
         confirm_responses=[],  # Not used - we mock click.prompt instead
     )
-    ctx = context_for_test(cwd=repo_root, console=fake_console, issues=fake_issues)
+    ctx = context_for_test(
+        cwd=repo_root, console=fake_console, github=fake_github, plan_store=backend
+    )
 
     # Should show warning and continue
     _check_learn_status_and_prompt(
@@ -134,14 +155,8 @@ def test_check_learn_status_and_prompt_cancels_when_user_declines(
 
     issue_number = 123
 
-    # Create issue (without learn_status - will fall back to session check)
-    issue = create_test_issue(
-        number=issue_number,
-        title="Test plan",
-        body=format_plan_header_body_for_test(),
-        labels=["erk-plan"],
-    )
-    fake_issues = FakeGitHubIssues(issues={issue_number: issue})
+    plan = _make_plan(number=issue_number)
+    backend, fake_github = create_plan_store_with_plans({str(issue_number): plan})
 
     # Mock click.prompt to return choice 3 (cancel)
     monkeypatch.setattr(click, "prompt", lambda *args, **kwargs: 3)
@@ -153,7 +168,9 @@ def test_check_learn_status_and_prompt_cancels_when_user_declines(
         is_stderr_tty=True,
         confirm_responses=[],  # Not used - we mock click.prompt instead
     )
-    ctx = context_for_test(cwd=repo_root, console=fake_console, issues=fake_issues)
+    ctx = context_for_test(
+        cwd=repo_root, console=fake_console, github=fake_github, plan_store=backend
+    )
 
     # Should raise SystemExit(0) when user chooses cancel
     with pytest.raises(SystemExit) as exc_info:
@@ -180,14 +197,8 @@ def test_check_learn_status_and_prompt_outputs_script_when_user_declines(
 
     issue_number = 123
 
-    # Create issue (without learn_status - will fall back to session check)
-    issue = create_test_issue(
-        number=issue_number,
-        title="Test plan",
-        body=format_plan_header_body_for_test(),
-        labels=["erk-plan"],
-    )
-    fake_issues = FakeGitHubIssues(issues={issue_number: issue})
+    plan = _make_plan(number=issue_number)
+    backend, fake_github = create_plan_store_with_plans({str(issue_number): plan})
 
     # Mock click.prompt to return choice 3 (cancel)
     monkeypatch.setattr(click, "prompt", lambda *args, **kwargs: 3)
@@ -199,7 +210,9 @@ def test_check_learn_status_and_prompt_outputs_script_when_user_declines(
         is_stderr_tty=True,
         confirm_responses=[],  # Not used - we mock click.prompt instead
     )
-    ctx = context_for_test(cwd=repo_root, console=fake_console, issues=fake_issues)
+    ctx = context_for_test(
+        cwd=repo_root, console=fake_console, github=fake_github, plan_store=backend
+    )
 
     # Should raise SystemExit(0) when user cancels, but with script output
     with pytest.raises(SystemExit) as exc_info:
@@ -228,17 +241,14 @@ def test_check_learn_status_and_prompt_skips_for_learn_plans(
 
     issue_number = 123
 
-    # Create a learn plan issue (has erk-learn label)
-    learn_issue = create_test_issue(
+    plan = _make_plan(
         number=issue_number,
         title="Learn: Extract testing patterns",
-        body=format_plan_header_body_for_test(),
         labels=["erk-plan", "erk-learn"],
     )
+    backend, fake_github = create_plan_store_with_plans({str(issue_number): plan})
 
-    fake_issues = FakeGitHubIssues(issues={issue_number: learn_issue})
-
-    ctx = context_for_test(cwd=repo_root, issues=fake_issues)
+    ctx = context_for_test(cwd=repo_root, github=fake_github, plan_store=backend)
 
     # Should return immediately without calling find_sessions_for_plan
     _check_learn_status_and_prompt(
@@ -276,25 +286,22 @@ def test_check_learn_status_and_prompt_runs_when_config_enabled(
 
     issue_number = 123
 
-    # Create issue with session metadata so find_sessions_for_plan finds them naturally
-    issue = create_test_issue(
+    plan = _make_plan(
         number=issue_number,
-        title="Test plan",
-        body=format_plan_header_body_for_test(
-            created_from_session="plan-session-1",
-            last_local_impl_session="impl-session-1",
-            last_learn_session="learn-session-1",
-        ),
-        labels=["erk-plan"],
+        created_from_session="plan-session-1",
+        last_local_impl_session="impl-session-1",
+        last_learn_session="learn-session-1",
     )
-    fake_issues = FakeGitHubIssues(issues={issue_number: issue})
+    backend, fake_github = create_plan_store_with_plans({str(issue_number): plan})
 
     # Create context with prompt_learn_on_land=True (default)
     global_config = GlobalConfig.test(
         erk_root=tmp_path / ".erk",
         prompt_learn_on_land=True,
     )
-    ctx = context_for_test(cwd=repo_root, global_config=global_config, issues=fake_issues)
+    ctx = context_for_test(
+        cwd=repo_root, global_config=global_config, github=fake_github, plan_store=backend
+    )
 
     # Should run the check and show positive feedback
     _check_learn_status_and_prompt(
@@ -319,18 +326,10 @@ def test_check_learn_status_completed_shows_success(
 
     issue_number = 123
 
-    # Create issue with learn_status=completed_no_plan in plan header
-    issue_body = format_plan_header_body_for_test(learn_status="completed_no_plan")
-    issue = create_test_issue(
-        number=issue_number,
-        title="Test plan",
-        body=issue_body,
-        labels=["erk-plan"],
-    )
+    plan = _make_plan(number=issue_number, learn_status="completed_no_plan")
+    backend, fake_github = create_plan_store_with_plans({str(issue_number): plan})
 
-    fake_issues = FakeGitHubIssues(issues={issue_number: issue})
-
-    ctx = context_for_test(cwd=repo_root, issues=fake_issues)
+    ctx = context_for_test(cwd=repo_root, github=fake_github, plan_store=backend)
 
     # Should return immediately with success message
     _check_learn_status_and_prompt(
@@ -352,18 +351,10 @@ def test_check_learn_status_pending_shows_progress(
 
     issue_number = 123
 
-    # Create issue with learn_status=pending in plan header
-    issue_body = format_plan_header_body_for_test(learn_status="pending")
-    issue = create_test_issue(
-        number=issue_number,
-        title="Test plan",
-        body=issue_body,
-        labels=["erk-plan"],
-    )
+    plan = _make_plan(number=issue_number, learn_status="pending")
+    backend, fake_github = create_plan_store_with_plans({str(issue_number): plan})
 
-    fake_issues = FakeGitHubIssues(issues={issue_number: issue})
-
-    ctx = context_for_test(cwd=repo_root, issues=fake_issues)
+    ctx = context_for_test(cwd=repo_root, github=fake_github, plan_store=backend)
 
     # Should return immediately with progress message
     _check_learn_status_and_prompt(
@@ -389,21 +380,14 @@ def test_check_learn_status_null_with_sessions_shows_success(
 
     issue_number = 123
 
-    # Create issue without learn_status but with learn session in header metadata
-    issue_body = format_plan_header_body_for_test(
+    plan = _make_plan(
+        number=issue_number,
         learn_status=None,
         last_learn_session="learn-session-1",
     )
-    issue = create_test_issue(
-        number=issue_number,
-        title="Test plan",
-        body=issue_body,
-        labels=["erk-plan"],
-    )
+    backend, fake_github = create_plan_store_with_plans({str(issue_number): plan})
 
-    fake_issues = FakeGitHubIssues(issues={issue_number: issue})
-
-    ctx = context_for_test(cwd=repo_root, issues=fake_issues)
+    ctx = context_for_test(cwd=repo_root, github=fake_github, plan_store=backend)
 
     # Should return with success message
     _check_learn_status_and_prompt(
@@ -426,16 +410,8 @@ def test_check_learn_status_null_no_sessions_triggers_async_in_non_interactive(
 
     issue_number = 123
 
-    # Create issue without learn_status
-    issue_body = format_plan_header_body_for_test(learn_status=None)
-    issue = create_test_issue(
-        number=issue_number,
-        title="Test plan",
-        body=issue_body,
-        labels=["erk-plan"],
-    )
-
-    fake_issues = FakeGitHubIssues(issues={issue_number: issue})
+    plan = _make_plan(number=issue_number, learn_status=None)
+    backend, fake_github = create_plan_store_with_plans({str(issue_number): plan})
 
     # Mock subprocess.Popen to simulate successful async learn trigger
     # The _trigger_async_learn function uses Popen to stream stderr in real-time
@@ -460,7 +436,9 @@ def test_check_learn_status_null_no_sessions_triggers_async_in_non_interactive(
         is_stderr_tty=False,
         confirm_responses=[],
     )
-    ctx = context_for_test(cwd=repo_root, issues=fake_issues, console=fake_console)
+    ctx = context_for_test(
+        cwd=repo_root, console=fake_console, github=fake_github, plan_store=backend
+    )
 
     # Should auto-trigger async learn without prompting
     _check_learn_status_and_prompt(
@@ -484,14 +462,8 @@ def test_check_learn_status_and_prompt_manual_learn_preprocesses_and_continues(
 
     issue_number = 456
 
-    # Create issue (without learn_status - will fall back to session check)
-    issue = create_test_issue(
-        number=issue_number,
-        title="Test plan",
-        body=format_plan_header_body_for_test(),
-        labels=["erk-plan"],
-    )
-    fake_issues = FakeGitHubIssues(issues={issue_number: issue})
+    plan = _make_plan(number=issue_number)
+    backend, fake_github = create_plan_store_with_plans({str(issue_number): plan})
 
     # Mock click.prompt to return choice 4 (preprocess and continue)
     monkeypatch.setattr(click, "prompt", lambda *args, **kwargs: 4)
@@ -512,7 +484,9 @@ def test_check_learn_status_and_prompt_manual_learn_preprocesses_and_continues(
         is_stderr_tty=True,
         confirm_responses=[],
     )
-    ctx = context_for_test(cwd=repo_root, console=fake_console, issues=fake_issues)
+    ctx = context_for_test(
+        cwd=repo_root, console=fake_console, github=fake_github, plan_store=backend
+    )
 
     # Should return normally (no SystemExit) - landing continues
     _check_learn_status_and_prompt(
@@ -535,17 +509,10 @@ def test_store_learn_materials_branch_updates_plan_header(
 
     issue_number = 123
 
-    # Create issue with plan header body (required for update_plan_header_learn_materials_branch)
-    issue_body = format_plan_header_body_for_test()
-    issue = create_test_issue(
-        number=issue_number,
-        title="Test plan",
-        body=issue_body,
-        labels=["erk-plan"],
-    )
-    fake_issues = FakeGitHubIssues(issues={issue_number: issue})
+    plan = _make_plan(number=issue_number)
+    backend, fake_github = create_plan_store_with_plans({str(issue_number): plan})
 
-    ctx = context_for_test(cwd=repo_root, issues=fake_issues)
+    ctx = context_for_test(cwd=repo_root, github=fake_github, plan_store=backend)
 
     _store_learn_materials_branch(
         ctx,
@@ -554,12 +521,10 @@ def test_store_learn_materials_branch_updates_plan_header(
         learn_branch="learn/123",
     )
 
-    # Verify FakeGitHubIssues had its body updated
-    assert len(fake_issues.updated_bodies) == 1
-    updated_issue_number, updated_body = fake_issues.updated_bodies[0]
-    assert updated_issue_number == issue_number
-    assert "learn_materials_branch" in updated_body
-    assert "learn/123" in updated_body
+    # Verify PR body was updated with learn_materials_branch
+    pr = fake_github.get_pr(Path("/repo"), issue_number)
+    assert "learn_materials_branch" in pr.body
+    assert "learn/123" in pr.body
 
 
 def test_store_learn_materials_branch_handles_missing_issue(
@@ -570,9 +535,7 @@ def test_store_learn_materials_branch_handles_missing_issue(
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
-    # Create context with empty FakeGitHubIssues (no issues)
-    fake_issues = FakeGitHubIssues()
-    ctx = context_for_test(cwd=repo_root, issues=fake_issues)
+    ctx = context_for_test(cwd=repo_root)
 
     # Should not raise, just print warning
     _store_learn_materials_branch(
@@ -586,9 +549,6 @@ def test_store_learn_materials_branch_handles_missing_issue(
     captured = capsys.readouterr()
     assert "Could not store learn branch" in captured.err
     assert "#999" in captured.err
-
-    # Verify no body updates occurred
-    assert len(fake_issues.updated_bodies) == 0
 
 
 # Tests for _trigger_async_learn storing learn branch
@@ -605,15 +565,8 @@ def test_trigger_async_learn_stores_learn_branch_on_plan_header(
 
     issue_number = 123
 
-    # Create issue with plan header body
-    issue_body = format_plan_header_body_for_test()
-    issue = create_test_issue(
-        number=issue_number,
-        title="Test plan",
-        body=issue_body,
-        labels=["erk-plan"],
-    )
-    fake_issues = FakeGitHubIssues(issues={issue_number: issue})
+    plan = _make_plan(number=issue_number)
+    backend, fake_github = create_plan_store_with_plans({str(issue_number): plan})
 
     # Mock subprocess.Popen to return successful JSON with learn_branch
     class MockPopen:
@@ -636,16 +589,14 @@ def test_trigger_async_learn_stores_learn_branch_on_plan_header(
 
     monkeypatch.setattr(subprocess, "Popen", MockPopen)
 
-    ctx = context_for_test(cwd=repo_root, issues=fake_issues)
+    ctx = context_for_test(cwd=repo_root, github=fake_github, plan_store=backend)
 
     _trigger_async_learn(ctx, repo_root=repo_root, plan_issue_number=issue_number)
 
-    # Verify FakeGitHubIssues was updated with the learn branch
-    assert len(fake_issues.updated_bodies) == 1
-    updated_issue_number, updated_body = fake_issues.updated_bodies[0]
-    assert updated_issue_number == issue_number
-    assert "learn_materials_branch" in updated_body
-    assert "learn/123" in updated_body
+    # Verify PR body was updated with learn_materials_branch
+    pr = fake_github.get_pr(Path("/repo"), issue_number)
+    assert "learn_materials_branch" in pr.body
+    assert "learn/123" in pr.body
 
     # Verify success message was shown
     captured = capsys.readouterr()
@@ -666,14 +617,8 @@ def test_option4_calls_preprocess_and_continues_landing(
 
     issue_number = 456
 
-    # Create issue (without learn_status - will fall back to session check)
-    issue = create_test_issue(
-        number=issue_number,
-        title="Test plan",
-        body=format_plan_header_body_for_test(),
-        labels=["erk-plan"],
-    )
-    fake_issues = FakeGitHubIssues(issues={issue_number: issue})
+    plan = _make_plan(number=issue_number)
+    backend, fake_github = create_plan_store_with_plans({str(issue_number): plan})
 
     # Mock click.prompt to return choice 4 (preprocess and continue)
     monkeypatch.setattr(click, "prompt", lambda *args, **kwargs: 4)
@@ -696,7 +641,9 @@ def test_option4_calls_preprocess_and_continues_landing(
         is_stderr_tty=True,
         confirm_responses=[],
     )
-    ctx = context_for_test(cwd=repo_root, console=fake_console, issues=fake_issues)
+    ctx = context_for_test(
+        cwd=repo_root, console=fake_console, github=fake_github, plan_store=backend
+    )
 
     # Should return normally (no SystemExit) - landing continues after preprocessing
     _check_learn_status_and_prompt(

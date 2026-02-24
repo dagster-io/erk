@@ -30,6 +30,7 @@ from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo, RepoInfo
 from erk_shared.gateway.github_admin.fake import FakeGitHubAdmin
 from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 
 
@@ -249,6 +250,7 @@ def test_trigger_async_learn_success(tmp_path: Path) -> None:
         cwd=tmp_path,
         github=fake_gh,
         github_issues=fake_issues,
+        plan_store=GitHubPlanStore(fake_issues),
         claude_installation=fake_claude,
         repo_info=repo_info,
     )
@@ -289,6 +291,7 @@ def test_trigger_async_learn_verifies_workflow_call(tmp_path: Path) -> None:
         cwd=tmp_path,
         github=fake_gh,
         github_issues=fake_issues,
+        plan_store=GitHubPlanStore(fake_issues),
         claude_installation=fake_claude,
         git=fake_git,
         repo_info=repo_info,
@@ -329,6 +332,7 @@ def test_trigger_async_learn_no_repo_info(tmp_path: Path) -> None:
         repo_root=tmp_path,
         github=fake_gh,
         github_issues=fake_issues,
+        plan_store=GitHubPlanStore(fake_issues),
         claude_installation=fake_claude,
     )
 
@@ -367,6 +371,7 @@ def test_trigger_async_learn_json_output_structure(tmp_path: Path) -> None:
         cwd=tmp_path,
         github=fake_gh,
         github_issues=fake_issues,
+        plan_store=GitHubPlanStore(fake_issues),
         claude_installation=fake_claude,
         repo_info=repo_info,
     )
@@ -439,6 +444,7 @@ def test_trigger_async_learn_filtered_session_skipped(tmp_path: Path) -> None:
         cwd=tmp_path,
         github=fake_gh,
         github_issues=fake_issues,
+        plan_store=GitHubPlanStore(fake_issues),
         claude_installation=fake_claude,
         repo_info=repo_info,
     )
@@ -493,6 +499,7 @@ def test_trigger_async_learn_preprocess_failure(tmp_path: Path) -> None:
         cwd=tmp_path,
         github=fake_gh,
         github_issues=fake_issues,
+        plan_store=GitHubPlanStore(fake_issues),
         claude_installation=fake_claude,
         repo_info=repo_info,
     )
@@ -559,6 +566,7 @@ def test_trigger_async_learn_logs_session_source_summary(tmp_path: Path) -> None
         cwd=tmp_path,
         github=fake_gh,
         github_issues=fake_issues,
+        plan_store=GitHubPlanStore(fake_issues),
         claude_installation=fake_claude,
         repo_info=repo_info,
     )
@@ -598,6 +606,7 @@ def test_trigger_async_learn_pr_lookup_failure_continues(tmp_path: Path) -> None
         cwd=tmp_path,
         github=fake_gh,
         github_issues=fake_issues,
+        plan_store=GitHubPlanStore(fake_issues),
         claude_installation=fake_claude,
         repo_info=repo_info,
     )
@@ -661,6 +670,7 @@ def test_trigger_async_learn_logs_output_file_sizes(tmp_path: Path) -> None:
         cwd=tmp_path,
         github=fake_gh,
         github_issues=fake_issues,
+        plan_store=GitHubPlanStore(fake_issues),
         claude_installation=fake_claude,
         repo_info=repo_info,
     )
@@ -691,6 +701,7 @@ def test_trigger_async_learn_logs_branch_size(tmp_path: Path) -> None:
         cwd=tmp_path,
         github=fake_gh,
         github_issues=fake_issues,
+        plan_store=GitHubPlanStore(fake_issues),
         claude_installation=fake_claude,
         repo_info=repo_info,
     )
@@ -728,6 +739,7 @@ def test_trigger_async_learn_skip_workflow(tmp_path: Path) -> None:
         cwd=tmp_path,
         github=fake_gh,
         github_issues=fake_issues,
+        plan_store=GitHubPlanStore(fake_issues),
         claude_installation=fake_claude,
         repo_info=repo_info,
     )
@@ -849,6 +861,7 @@ def test_trigger_async_learn_includes_remote_session(tmp_path: Path) -> None:
         cwd=tmp_path,
         github=fake_gh,
         github_issues=fake_issues,
+        plan_store=GitHubPlanStore(fake_issues),
         claude_installation=fake_claude,
         git=fake_git,
         repo_info=repo_info,
@@ -915,6 +928,7 @@ def test_trigger_async_learn_remote_session_download_failure(tmp_path: Path) -> 
         cwd=tmp_path,
         github=fake_gh,
         github_issues=fake_issues,
+        plan_store=GitHubPlanStore(fake_issues),
         claude_installation=fake_claude,
         repo_info=repo_info,
     )
@@ -1009,6 +1023,7 @@ def test_trigger_async_learn_claude_enabled_false_skips(tmp_path: Path) -> None:
         github=fake_gh,
         github_admin=fake_admin,
         github_issues=fake_issues,
+        plan_store=GitHubPlanStore(fake_issues),
         claude_installation=fake_claude,
         repo_info=repo_info,
     )
@@ -1042,6 +1057,7 @@ def test_trigger_async_learn_claude_enabled_unset_proceeds(tmp_path: Path) -> No
         github=fake_gh,
         github_admin=fake_admin,
         github_issues=fake_issues,
+        plan_store=GitHubPlanStore(fake_issues),
         claude_installation=fake_claude,
         repo_info=repo_info,
     )

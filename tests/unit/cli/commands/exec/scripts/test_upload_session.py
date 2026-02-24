@@ -12,6 +12,7 @@ from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import find_metadata_block
+from erk_shared.plan_store.github import GitHubPlanStore
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 
@@ -141,6 +142,7 @@ def test_upload_session_with_issue_update(tmp_path: Path) -> None:
             git=fake_git,
             repo_root=repo_root,
             cwd=repo_root,
+            plan_store=GitHubPlanStore(fake_gh_issues),
         ),
     )
 

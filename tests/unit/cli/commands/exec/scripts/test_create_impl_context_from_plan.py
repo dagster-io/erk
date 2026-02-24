@@ -18,6 +18,7 @@ from erk.cli.commands.exec.scripts.create_impl_context_from_plan import (
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.plan_store.github import GitHubPlanStore
 
 
 def _make_plan_issue(
@@ -57,7 +58,11 @@ def test_success_creates_impl_context(tmp_path: Path) -> None:
     result = runner.invoke(
         create_impl_context_from_plan,
         ["123"],
-        obj=ErkContext.for_test(github_issues=fake_issues, repo_root=tmp_path),
+        obj=ErkContext.for_test(
+            github_issues=fake_issues,
+            plan_store=GitHubPlanStore(fake_issues),
+            repo_root=tmp_path,
+        ),
     )
 
     assert result.exit_code == 0, f"Command failed: {result.output}"
@@ -92,7 +97,11 @@ def test_plan_not_found_exits_with_error(tmp_path: Path) -> None:
     result = runner.invoke(
         create_impl_context_from_plan,
         ["999"],
-        obj=ErkContext.for_test(github_issues=fake_issues, repo_root=tmp_path),
+        obj=ErkContext.for_test(
+            github_issues=fake_issues,
+            plan_store=GitHubPlanStore(fake_issues),
+            repo_root=tmp_path,
+        ),
     )
 
     assert result.exit_code == 1
@@ -122,7 +131,11 @@ def test_objective_id_preserved_in_ref_json(tmp_path: Path) -> None:
     result = runner.invoke(
         create_impl_context_from_plan,
         ["456"],
-        obj=ErkContext.for_test(github_issues=fake_issues, repo_root=tmp_path),
+        obj=ErkContext.for_test(
+            github_issues=fake_issues,
+            plan_store=GitHubPlanStore(fake_issues),
+            repo_root=tmp_path,
+        ),
     )
 
     assert result.exit_code == 0, f"Command failed: {result.output}"

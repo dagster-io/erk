@@ -16,6 +16,7 @@ from erk.cli.commands.exec.scripts.close_issue_with_comment import (
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.plan_store.github import GitHubPlanStore
 
 
 def _make_issue(
@@ -48,7 +49,7 @@ def test_close_issue_with_comment_success() -> None:
     result = runner.invoke(
         close_issue_with_comment,
         ["42", "--comment", "Closing: work is done."],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github_issues=fake_gh, plan_store=GitHubPlanStore(fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -78,7 +79,7 @@ def test_close_issue_with_comment_not_found() -> None:
     result = runner.invoke(
         close_issue_with_comment,
         ["999", "--comment", "This should fail"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github_issues=fake_gh, plan_store=GitHubPlanStore(fake_gh)),
     )
 
     assert result.exit_code == 1
@@ -108,7 +109,7 @@ See #1234 for details."""
     result = runner.invoke(
         close_issue_with_comment,
         ["100", "--comment", multiline_comment],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github_issues=fake_gh, plan_store=GitHubPlanStore(fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -131,7 +132,7 @@ def test_close_issue_with_comment_changes_state() -> None:
     result = runner.invoke(
         close_issue_with_comment,
         ["55", "--comment", "Done"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github_issues=fake_gh, plan_store=GitHubPlanStore(fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -150,7 +151,7 @@ def test_close_issue_with_comment_requires_comment_flag() -> None:
     result = runner.invoke(
         close_issue_with_comment,
         ["10"],  # Missing --comment
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github_issues=fake_gh, plan_store=GitHubPlanStore(fake_gh)),
     )
 
     # Click should reject missing required option

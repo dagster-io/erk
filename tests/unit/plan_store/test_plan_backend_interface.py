@@ -1,10 +1,9 @@
 """Interface tests for PlanBackend implementations.
 
-These tests verify that all PlanBackend implementations satisfy the ABC interface.
-Tests are parameterized to run against both GitHubPlanStore and PlannedPRBackend.
+These tests verify that PlannedPRBackend satisfies the PlanBackend ABC interface.
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -16,7 +15,6 @@ from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.types import PlanNotFound, PlanQuery, PlanState
-from tests.test_utils.github_helpers import create_test_issue
 
 # =============================================================================
 # Fixtures
@@ -32,12 +30,6 @@ def _next_branch() -> str:
     return f"test-branch-{_BRANCH_COUNTER}"
 
 
-def _make_github_plan_store() -> PlanBackend:
-    """Create a GitHubPlanStore backed by FakeGitHubIssues."""
-    fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-plan"})
-    return GitHubPlanStore(fake_issues)
-
-
 def _make_planned_pr_backend() -> PlanBackend:
     """Create a PlannedPRBackend backed by FakeGitHub."""
     fake_github = FakeGitHub()
@@ -47,26 +39,9 @@ def _make_planned_pr_backend() -> PlanBackend:
 def _create_metadata(backend: PlanBackend) -> dict[str, object]:
     """Build the required metadata dict for create_plan().
 
-    PlannedPRBackend requires branch_name; GitHubPlanStore does not.
+    PlannedPRBackend requires branch_name metadata.
     """
-    # PLAN_BACKEND_SPLIT: PlannedPRBackend requires branch_name metadata; GitHubPlanStore does not
-    if isinstance(backend, PlannedPRBackend):
-        return {"branch_name": _next_branch()}
-    return {}
-
-
-def _make_github_backend_with_plan() -> tuple[PlanBackend, str]:
-    """Create GitHubPlanStore with a pre-existing plan."""
-    issue = create_test_issue(
-        number=42,
-        title="Existing Plan",
-        body="Plan content",
-        labels=["erk-plan"],
-        created_at=datetime(2024, 1, 15, 10, 0, 0, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 16, 12, 0, 0, tzinfo=UTC),
-    )
-    fake_issues = FakeGitHubIssues(issues={42: issue})
-    return GitHubPlanStore(fake_issues), "42"
+    return {"branch_name": _next_branch()}
 
 
 def _make_planned_pr_backend_with_plan() -> tuple[PlanBackend, str]:
@@ -84,26 +59,19 @@ def _make_planned_pr_backend_with_plan() -> tuple[PlanBackend, str]:
     return backend, result.plan_id
 
 
-@pytest.fixture(params=["github_issues", "planned_pr"])
-def plan_backend(request: pytest.FixtureRequest) -> PlanBackend:
-    """Provide a PlanBackend implementation.
-
-    Parameterized to test both GitHubPlanStore and PlannedPRBackend.
-    """
-    if request.param == "github_issues":
-        return _make_github_plan_store()
+@pytest.fixture()
+def plan_backend() -> PlanBackend:
+    """Provide a PlannedPRBackend instance."""
     return _make_planned_pr_backend()
 
 
-@pytest.fixture(params=["github_issues", "planned_pr"])
-def backend_with_plan(request: pytest.FixtureRequest) -> tuple[PlanBackend, str]:
-    """Fixture providing backend with a pre-existing plan.
+@pytest.fixture()
+def backend_with_plan() -> tuple[PlanBackend, str]:
+    """Fixture providing PlannedPRBackend with a pre-existing plan.
 
     Returns:
         Tuple of (backend, plan_id)
     """
-    if request.param == "github_issues":
-        return _make_github_backend_with_plan()
     return _make_planned_pr_backend_with_plan()
 
 
@@ -519,11 +487,6 @@ def test_post_event_not_found_raises(plan_backend: PlanBackend) -> None:
 
 
 # =============================================================================
-# Whitelist removal test (GitHub-specific)
-# =============================================================================
-
-
-# =============================================================================
 # get_comments tests
 # =============================================================================
 
@@ -536,28 +499,6 @@ def test_get_comments_returns_empty_list_for_no_comments(
 
     comments = backend.get_comments(Path("/repo"), plan_id)
     assert isinstance(comments, list)
-
-
-def test_get_comments_returns_preconfigured_comments_github() -> None:
-    """GitHubPlanStore returns pre-configured comments from FakeGitHubIssues."""
-    issue = create_test_issue(
-        number=42,
-        title="Plan",
-        body="content",
-        labels=["erk-plan"],
-        created_at=datetime(2024, 1, 15, 10, 0, 0, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 16, 12, 0, 0, tzinfo=UTC),
-    )
-    fake_issues = FakeGitHubIssues(
-        issues={42: issue},
-        comments={42: ["First comment", "Second comment"]},
-    )
-    backend = GitHubPlanStore(fake_issues)
-
-    comments = backend.get_comments(Path("/repo"), "42")
-    assert len(comments) == 2
-    assert "First comment" in comments
-    assert "Second comment" in comments
 
 
 def test_get_comments_returns_preconfigured_comments_planned_pr() -> None:
@@ -659,11 +600,6 @@ def test_find_sessions_for_plan_raises_for_nonexistent_plan(
     """Backend raises RuntimeError when plan not found."""
     with pytest.raises(RuntimeError):
         plan_backend.find_sessions_for_plan(Path("/repo"), "99999999")
-
-
-# =============================================================================
-# Whitelist removal test (GitHub-specific)
-# =============================================================================
 
 
 # =============================================================================
