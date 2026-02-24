@@ -1345,6 +1345,10 @@ def _execute_land_directly(
 
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
 
+    # Capture plan context BEFORE execution pipeline (which deletes the branch)
+    plan_id = ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, branch)
+    objective_number = get_objective_for_branch(ctx, main_repo_root, branch)
+
     # Build execution state and run the pipeline directly
     state = make_execution_state(
         cwd=ctx.cwd,
@@ -1376,13 +1380,13 @@ def _execute_land_directly(
         exit_after = exc
 
     # Objective update (fail-open — merge already succeeded)
-    objective_number = get_objective_for_branch(ctx, main_repo_root, branch)
     if objective_number is not None:
         run_objective_update_after_land(
             ctx,
             objective=objective_number,
             pr=pr_number,
             branch=branch,
+            plan=int(plan_id) if plan_id is not None else None,
         )
 
     # Determine navigation target — if worktree was removed, navigate to root repo
@@ -1457,7 +1461,8 @@ def _land_target(
     pr_number = target.pr_details.number
     branch = target.branch
 
-    # Step 1: Look up objective for branch (needed for script generation)
+    # Step 1: Look up plan and objective for branch (needed for script generation)
+    plan_id = ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, branch)
     objective_number = get_objective_for_branch(ctx, main_repo_root, branch)
 
     # Step 2: Look up slot assignment (needed for dry-run output)
@@ -1501,6 +1506,7 @@ def _land_target(
         worktree_path=worktree_path,
         is_current_branch=target.is_current_branch,
         objective_number=objective_number,
+        plan_number=int(plan_id) if plan_id is not None else None,
         use_graphite=target.use_graphite,
         cleanup_confirmed=cleanup_confirmed,
         target_path=target_path,
@@ -1739,6 +1745,7 @@ def render_land_execution_script(
     worktree_path: Path | None,
     is_current_branch: bool,
     objective_number: int | None,
+    plan_number: int | None,
     use_graphite: bool,
     cleanup_confirmed: bool,
     target_path: Path,
@@ -1810,6 +1817,8 @@ def render_land_execution_script(
         cmd_parts.append("--no-cleanup")
     if objective_number is not None:
         cmd_parts.append(f"--objective-number={objective_number}")
+    if plan_number is not None:
+        cmd_parts.append(f"--plan-number={plan_number}")
     # User-controllable flags passed through "$@"
     cmd_parts.append('"$@"')
 

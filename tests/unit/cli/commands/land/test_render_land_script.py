@@ -13,6 +13,7 @@ def test_render_land_execution_script_uses_shell_variables_for_pr_and_branch() -
         worktree_path=None,
         is_current_branch=False,
         objective_number=None,
+        plan_number=None,
         use_graphite=False,
         cleanup_confirmed=True,
         target_path=Path("/repo"),
@@ -39,6 +40,7 @@ def test_render_land_execution_script_includes_usage_comment() -> None:
         worktree_path=None,
         is_current_branch=False,
         objective_number=None,
+        plan_number=None,
         use_graphite=False,
         cleanup_confirmed=True,
         target_path=Path("/repo"),
@@ -55,6 +57,7 @@ def test_render_land_execution_script_includes_shift_and_passthrough() -> None:
         worktree_path=None,
         is_current_branch=False,
         objective_number=None,
+        plan_number=None,
         use_graphite=False,
         cleanup_confirmed=True,
         target_path=Path("/repo"),
@@ -75,6 +78,7 @@ def test_render_land_execution_script_bakes_in_static_flags() -> None:
         worktree_path=Path("/worktrees/feature"),
         is_current_branch=True,
         objective_number=42,
+        plan_number=100,
         use_graphite=True,
         cleanup_confirmed=True,
         target_path=Path("/repo"),
@@ -84,8 +88,9 @@ def test_render_land_execution_script_bakes_in_static_flags() -> None:
     assert "--worktree-path=/worktrees/feature" in script
     assert "--is-current-branch" in script
     assert "--use-graphite" in script
-    # Objective number is baked into the land-execute command as a flag
+    # Objective and plan numbers are baked into the land-execute command as flags
     assert "--objective-number=42" in script
+    assert "--plan-number=100" in script
 
 
 def test_render_land_execution_script_without_static_flags() -> None:
@@ -96,6 +101,7 @@ def test_render_land_execution_script_without_static_flags() -> None:
         worktree_path=None,
         is_current_branch=False,
         objective_number=None,
+        plan_number=None,
         use_graphite=False,
         cleanup_confirmed=True,
         target_path=Path("/repo"),
@@ -104,8 +110,9 @@ def test_render_land_execution_script_without_static_flags() -> None:
     assert "--worktree-path" not in script
     assert "--is-current-branch" not in script
     assert "--use-graphite" not in script
-    # No objective flag when objective_number is None
+    # No objective/plan flags when values are None
     assert "--objective-number" not in script
+    assert "--plan-number" not in script
 
 
 def test_render_land_execution_script_does_not_bake_user_flags() -> None:
@@ -120,6 +127,7 @@ def test_render_land_execution_script_does_not_bake_user_flags() -> None:
         worktree_path=None,
         is_current_branch=False,
         objective_number=None,
+        plan_number=None,
         use_graphite=False,
         cleanup_confirmed=True,
         target_path=Path("/repo"),
@@ -140,6 +148,7 @@ def test_render_land_execution_script_includes_cd_command() -> None:
         worktree_path=None,
         is_current_branch=False,
         objective_number=None,
+        plan_number=None,
         use_graphite=False,
         cleanup_confirmed=True,
         target_path=Path("/path/to/target"),
@@ -156,6 +165,7 @@ def test_render_land_execution_script_bakes_no_cleanup_when_cleanup_declined() -
         worktree_path=None,
         is_current_branch=False,
         objective_number=None,
+        plan_number=None,
         use_graphite=False,
         cleanup_confirmed=False,
         target_path=Path("/repo"),
@@ -172,6 +182,7 @@ def test_render_land_execution_script_omits_no_cleanup_when_cleanup_confirmed() 
         worktree_path=None,
         is_current_branch=False,
         objective_number=None,
+        plan_number=None,
         use_graphite=False,
         cleanup_confirmed=True,
         target_path=Path("/repo"),
@@ -188,6 +199,7 @@ def test_render_land_execution_script_stops_on_execute_failure() -> None:
         worktree_path=None,
         is_current_branch=False,
         objective_number=None,
+        plan_number=None,
         use_graphite=False,
         cleanup_confirmed=True,
         target_path=Path("/repo"),
@@ -210,6 +222,7 @@ def test_render_land_execution_script_has_header_comment() -> None:
         worktree_path=None,
         is_current_branch=False,
         objective_number=None,
+        plan_number=None,
         use_graphite=False,
         cleanup_confirmed=True,
         target_path=Path("/repo"),

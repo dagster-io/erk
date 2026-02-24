@@ -159,6 +159,13 @@ def _update_comment_table(
     default=None,
     help="Branch name (auto-discovered if omitted)",
 )
+@click.option(
+    "--plan",
+    "plan_number",
+    type=int,
+    default=None,
+    help="Plan number (direct lookup, skips branch-based discovery)",
+)
 @click.pass_context
 def objective_apply_landed_update(
     ctx: click.Context,
@@ -166,6 +173,7 @@ def objective_apply_landed_update(
     pr_number: int | None,
     objective_number: int | None,
     branch_name: str | None,
+    plan_number: int | None,
 ) -> None:
     """Apply mechanical updates to an objective after landing a PR.
 
@@ -187,11 +195,17 @@ def objective_apply_landed_update(
             click.echo(_error_json("Could not determine current branch (detached HEAD?)"))
             raise SystemExit(1)
 
-    # --- Resolve plan from branch ---
-    plan_result = plan_backend.get_plan_for_branch(repo_root, branch_name)
-    if isinstance(plan_result, PlanNotFound):
-        click.echo(_error_json(f"No plan found for branch '{branch_name}'"))
-        raise SystemExit(1)
+    # --- Resolve plan (direct lookup or branch-based discovery) ---
+    if plan_number is not None:
+        plan_result = plan_backend.get_plan(repo_root, str(plan_number))
+        if isinstance(plan_result, PlanNotFound):
+            click.echo(_error_json(f"Plan #{plan_number} not found"))
+            raise SystemExit(1)
+    else:
+        plan_result = plan_backend.get_plan_for_branch(repo_root, branch_name)
+        if isinstance(plan_result, PlanNotFound):
+            click.echo(_error_json(f"No plan found for branch '{branch_name}'"))
+            raise SystemExit(1)
 
     plan_id = plan_result.plan_identifier
 

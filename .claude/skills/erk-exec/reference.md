@@ -669,6 +669,7 @@ Execute deferred land operations.
 | `--is-current-branch` | FLAG    | No       | -              | Whether landing from the branch's own worktree                                           |
 | `--target-child`      | TEXT    | No       | Sentinel.UNSET | Target child branch for --up navigation                                                  |
 | `--objective-number`  | INTEGER | No       | Sentinel.UNSET | Linked objective issue number                                                            |
+| `--plan-number`       | INTEGER | No       | Sentinel.UNSET | Linked plan issue number                                                                 |
 | `--use-graphite`      | FLAG    | No       | -              | Use Graphite for merge                                                                   |
 | `--pull`              | FLAG    | No       | -              | Pull latest changes after landing (default: --pull)                                      |
 | `--no-delete`         | FLAG    | No       | -              | Preserve the local branch and its slot assignment after landing                          |
@@ -834,11 +835,12 @@ Apply mechanical updates to an objective after landing a PR.
 
 **Options:**
 
-| Flag          | Type    | Required | Default | Description                                  |
-| ------------- | ------- | -------- | ------- | -------------------------------------------- |
-| `--pr`        | INTEGER | No       | -       | PR number (auto-discovered if omitted)       |
-| `--objective` | INTEGER | No       | -       | Objective issue (auto-discovered if omitted) |
-| `--branch`    | TEXT    | No       | -       | Branch name (auto-discovered if omitted)     |
+| Flag          | Type    | Required | Default | Description                                               |
+| ------------- | ------- | -------- | ------- | --------------------------------------------------------- |
+| `--pr`        | INTEGER | No       | -       | PR number (auto-discovered if omitted)                    |
+| `--objective` | INTEGER | No       | -       | Objective issue (auto-discovered if omitted)              |
+| `--branch`    | TEXT    | No       | -       | Branch name (auto-discovered if omitted)                  |
+| `--plan`      | INTEGER | No       | -       | Plan number (direct lookup, skips branch-based discovery) |
 
 ### objective-fetch-context
 
@@ -890,11 +892,12 @@ Update objective after landing a PR.
 
 **Options:**
 
-| Flag          | Type    | Required | Default        | Description                    |
-| ------------- | ------- | -------- | -------------- | ------------------------------ |
-| `--objective` | INTEGER | Yes      | Sentinel.UNSET | Linked objective issue number  |
-| `--pr`        | INTEGER | Yes      | Sentinel.UNSET | PR number that was just landed |
-| `--branch`    | TEXT    | Yes      | Sentinel.UNSET | Branch name that was landed    |
+| Flag            | Type    | Required | Default        | Description                    |
+| --------------- | ------- | -------- | -------------- | ------------------------------ |
+| `--objective`   | INTEGER | Yes      | Sentinel.UNSET | Linked objective issue number  |
+| `--pr`          | INTEGER | Yes      | Sentinel.UNSET | PR number that was just landed |
+| `--branch`      | TEXT    | Yes      | Sentinel.UNSET | Branch name that was landed    |
+| `--plan-number` | INTEGER | No       | -              | Linked plan issue number       |
 
 ### plan-save
 

@@ -202,6 +202,7 @@ def run_objective_update_after_land(
     objective: int,
     pr: int,
     branch: str,
+    plan: int | None,
 ) -> None:
     """Run the objective update after a PR has been landed.
 
@@ -212,9 +213,10 @@ def run_objective_update_after_land(
     user_output("")
     user_output("Starting objective update...")
 
+    plan_arg = f" --plan {plan}" if plan is not None else ""
     cmd = (
         f"/erk:objective-update-with-landed-pr "
-        f"--pr {pr} --objective {objective} --branch {branch} --auto-close"
+        f"--pr {pr} --objective {objective} --branch {branch}{plan_arg} --auto-close"
     )
 
     result = stream_command_with_feedback(

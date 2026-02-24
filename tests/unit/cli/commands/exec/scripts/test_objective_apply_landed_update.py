@@ -398,3 +398,80 @@ class TestApplyLandedUpdateDiscovery:
         data = json.loads(result.output)
         assert data["success"] is True
         assert data["plan"]["number"] == "6513"
+
+    def test_plan_direct_lookup_skips_branch_discovery(self, tmp_path: Path) -> None:
+        """--plan enables direct plan lookup, avoiding branch-based discovery."""
+        objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY)
+        plan = _make_issue(number=6513, title="My Plan", body=PLAN_BODY_WITH_OBJECTIVE)
+        pr = _make_pr_details(number=6517, title="PR Title", body="pr body")
+
+        comment = IssueComment(
+            body=OBJECTIVE_COMMENT_BODY,
+            url="https://github.com/owner/repo/issues/6423#issuecomment-55555",
+            id=55555,
+            author="testuser",
+        )
+        fake_issues = FakeGitHubIssues(
+            issues={6423: objective, 6513: plan},
+            comments_with_urls={6423: [comment]},
+        )
+        fake_github = FakeGitHub(pr_details={6517: pr})
+
+        runner = CliRunner()
+        # Use a branch name that does NOT encode the plan number —
+        # branch-based discovery would fail, but --plan bypasses it.
+        result = runner.invoke(
+            objective_apply_landed_update,
+            [
+                "--pr",
+                "6517",
+                "--objective",
+                "6423",
+                "--branch",
+                "plnd/unrelated-branch-name",
+                "--plan",
+                "6513",
+            ],
+            obj=context_for_test(
+                github_issues=fake_issues,
+                github=fake_github,
+                repo_root=tmp_path,
+                cwd=tmp_path,
+            ),
+        )
+
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert data["success"] is True
+        assert data["plan"]["number"] == "6513"
+
+    def test_plan_direct_lookup_not_found(self, tmp_path: Path) -> None:
+        """--plan returns error when the specified plan doesn't exist."""
+        fake_issues = FakeGitHubIssues()
+        fake_github = FakeGitHub()
+
+        runner = CliRunner()
+        result = runner.invoke(
+            objective_apply_landed_update,
+            [
+                "--pr",
+                "6517",
+                "--objective",
+                "6423",
+                "--branch",
+                "some-branch",
+                "--plan",
+                "9999",
+            ],
+            obj=context_for_test(
+                github_issues=fake_issues,
+                github=fake_github,
+                repo_root=tmp_path,
+                cwd=tmp_path,
+            ),
+        )
+
+        assert result.exit_code == 1
+        data = json.loads(result.output)
+        assert data["success"] is False
+        assert "9999" in data["error"]

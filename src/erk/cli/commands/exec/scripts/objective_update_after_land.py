@@ -36,6 +36,13 @@ from erk_shared.context.helpers import require_context
     required=True,
     help="Branch name that was landed",
 )
+@click.option(
+    "--plan-number",
+    "plan_number",
+    type=int,
+    default=None,
+    help="Linked plan issue number",
+)
 @click.pass_context
 def objective_update_after_land(
     ctx: click.Context,
@@ -43,6 +50,7 @@ def objective_update_after_land(
     objective: int,
     pr: int,
     branch: str,
+    plan_number: int | None,
 ) -> None:
     """Update objective after landing a PR.
 
@@ -50,4 +58,6 @@ def objective_update_after_land(
     Always exits 0 (fail-open) because the landing has already succeeded.
     """
     erk_ctx = require_context(ctx)
-    run_objective_update_after_land(erk_ctx, objective=objective, pr=pr, branch=branch)
+    run_objective_update_after_land(
+        erk_ctx, objective=objective, pr=pr, branch=branch, plan=plan_number
+    )
