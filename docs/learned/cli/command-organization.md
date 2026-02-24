@@ -26,10 +26,10 @@ erk implement     # Implement a plan in current directory
 erk prepare       # Create a worktree from a plan issue
 
 # Most plan management operations are under `erk plan`:
-erk plan create   # Create a new plan issue
 erk plan submit   # Submit a plan for remote execution
 
-# Plan view/close/log/replan operations are under `erk pr`:
+# Plan creation, view/close/log/replan operations are under `erk pr`:
+erk pr create     # Create a new plan issue
 erk pr view       # View a plan
 erk pr close      # Close a plan
 erk pr log        # View plan execution logs
@@ -40,8 +40,8 @@ erk pr replan     # Replan a plan issue
 
 - Highest-frequency entry points: `implement`, `prepare`, and `dash` are the most common workflow starters
 - Natural mental model: "I want to work on a plan" → `erk implement 42`
-- Plan management via `erk plan <subcommand>`: `create`, `submit`, `list`, etc.
-- Plan viewing/closing via `erk pr <subcommand>`: `view`, `close`, `log`, `replan`
+- Plan management via `erk plan <subcommand>`: `submit`, `list`, etc.
+- Plan creation/viewing/closing via `erk pr <subcommand>`: `create`, `view`, `close`, `log`, `replan`
 
 ## Command Categories
 
@@ -57,11 +57,10 @@ Only the highest-frequency workflow entry points are at the top level:
 
 ### `erk plan` Subcommands
 
-Plan creation and submission operations are under the `erk plan` group:
+Plan submission operations are under the `erk plan` group:
 
 | Subcommand | Description                        |
 | ---------- | ---------------------------------- |
-| `create`   | Create a new plan issue            |
 | `list`     | List open plans                    |
 | `submit`   | Submit a plan for remote execution |
 | `co`       | Check out a plan's branch          |
@@ -69,10 +68,11 @@ Plan creation and submission operations are under the `erk plan` group:
 
 ### `erk pr` Subcommands
 
-Plan viewing, closing, and PR operations are under the `erk pr` group:
+Plan creation, viewing, closing, and PR operations are under the `erk pr` group:
 
 | Subcommand        | Description                                    |
 | ----------------- | ---------------------------------------------- |
+| `create`          | Create a new plan issue                        |
 | `view`            | View a plan                                    |
 | `close`           | Close a plan                                   |
 | `log`             | View plan execution logs                       |
@@ -177,8 +177,8 @@ When adding a new command, use this flowchart to determine placement:
         └─────┬─────┘
               │
         ┌─────▼──────────────────────────────────┐
-        │ Group under `erk plan <verb>`           │
-        │ Examples: plan create, plan submit      │
+        │ Group under `erk pr <verb>`             │
+        │ Examples: pr create, pr view            │
         └─────────────────────────────────────────┘
 
           │ NO
@@ -244,16 +244,16 @@ erk implement 42
 erk prepare 42
 erk dash
 
-# GOOD: erk plan subcommands for plan creation/submission
-erk plan create --file plan.md
+# GOOD: erk plan subcommands for plan submission
 erk plan submit 42
 
-# GOOD: erk pr subcommands for plan viewing/closing
+# GOOD: erk pr subcommands for plan creation/viewing/closing
+erk pr create --file plan.md
 erk pr view 42
 erk pr close 42
 ```
 
-**Why?** Only `implement`, `prepare`, and `dash` are top-level — they are the most common workflow entry points. Plan creation and submission live under `erk plan`, while view/close/log/replan operations live under `erk pr`.
+**Why?** Only `implement`, `prepare`, and `dash` are top-level — they are the most common workflow entry points. Plan submission lives under `erk plan`, while create/view/close/log/replan operations live under `erk pr`.
 
 ### ✅ Infrastructure Grouped Under Noun
 
@@ -297,7 +297,7 @@ erk create <name>         # Create what? Plan or worktree?
 erk delete <name>         # Delete what?
 
 # GOOD: Explicit namespace
-erk plan create --file plan.md  # Clearly a plan
+erk pr create --file plan.md    # Clearly a plan
 erk wt create <name>            # Clearly a worktree
 erk wt delete <name>            # Clearly a worktree
 ```
@@ -322,7 +322,7 @@ erk wt list
 
 ```bash
 # Create a plan
-erk plan create --file implementation-plan.md
+erk pr create --file implementation-plan.md
 
 # View plans
 erk dash                  # Display plan dashboard
@@ -381,12 +381,12 @@ erk down                  # Move to child branch
 
 **Step 3: Register in `src/erk/cli/cli.py`**
 
-For plan subcommands:
+For pr subcommands:
 
 ```python
-from erk.cli.commands.plan.create_cmd import create_plan
+from erk.cli.commands.pr.create_cmd import pr_create
 
-plan_group.add_command(create_plan, name="create")  # Plan subcommand
+pr_group.add_command(pr_create, name="create")  # PR subcommand
 ```
 
 For grouped commands:

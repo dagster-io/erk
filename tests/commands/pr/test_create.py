@@ -1,4 +1,4 @@
-"""Tests for plan create command."""
+"""Tests for pr create command."""
 
 from click.testing import CliRunner
 
@@ -23,7 +23,7 @@ def test_create_from_file(tmp_path) -> None:
         ctx = build_workspace_test_context(env, issues=issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "create", "--file", str(plan_file)], obj=ctx)
+        result = runner.invoke(cli, ["pr", "create", "--file", str(plan_file)], obj=ctx)
 
         # Assert
         assert result.exit_code == 0, f"Command failed: {result.output}"
@@ -31,7 +31,7 @@ def test_create_from_file(tmp_path) -> None:
         assert "https://github.com/test-owner/test-repo/issues/1" in result.output
         assert "View:       erk get 1" in result.output
         assert "Checkout:   erk br co --for-plan 1" in result.output
-        assert "Submit:     erk plan submit 1" in result.output
+        assert "Submit:     erk pr submit 1" in result.output
 
         # Verify issue was created with correct data
         assert len(issues.created_issues) == 1
@@ -70,7 +70,7 @@ def test_create_from_stdin() -> None:
         )
 
         # Act
-        result = runner.invoke(cli, ["plan", "create"], input=plan_content, obj=ctx)
+        result = runner.invoke(cli, ["pr", "create"], input=plan_content, obj=ctx)
 
         # Assert
         assert result.exit_code == 0, f"Command failed: {result.output}"
@@ -94,7 +94,7 @@ def test_create_extracts_h1_title(tmp_path) -> None:
         ctx = build_workspace_test_context(env, issues=issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "create", "--file", str(plan_file)], obj=ctx)
+        result = runner.invoke(cli, ["pr", "create", "--file", str(plan_file)], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -116,7 +116,7 @@ def test_create_with_explicit_title(tmp_path) -> None:
 
         # Act
         result = runner.invoke(
-            cli, ["plan", "create", "--file", str(plan_file), "--title", "Custom Title"], obj=ctx
+            cli, ["pr", "create", "--file", str(plan_file), "--title", "Custom Title"], obj=ctx
         )
 
         # Assert
@@ -140,7 +140,7 @@ def test_create_with_additional_labels(tmp_path) -> None:
         # Act
         result = runner.invoke(
             cli,
-            ["plan", "create", "--file", str(plan_file), "--label", "bug", "--label", "urgent"],
+            ["pr", "create", "--file", str(plan_file), "--label", "bug", "--label", "urgent"],
             obj=ctx,
         )
 
@@ -161,7 +161,7 @@ def test_create_fails_with_no_input() -> None:
         ctx = build_workspace_test_context(env, issues=issues)
 
         # Act - With interactive terminal (default), no input is detected
-        result = runner.invoke(cli, ["plan", "create"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "create"], obj=ctx)
 
         # Assert
         assert result.exit_code == 1
@@ -187,7 +187,7 @@ def test_create_fails_with_empty_stdin() -> None:
         )
 
         # Act (CliRunner provides empty stdin by default when no input provided)
-        result = runner.invoke(cli, ["plan", "create"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "create"], obj=ctx)
 
         # Assert
         assert result.exit_code == 1
@@ -210,7 +210,7 @@ def test_create_with_file_ignores_stdin(tmp_path) -> None:
         # Act (provide both file and stdin - file should take precedence)
         result = runner.invoke(
             cli,
-            ["plan", "create", "--file", str(plan_file)],
+            ["pr", "create", "--file", str(plan_file)],
             input="# Stdin Title\n\nStdin content should be ignored",
             obj=ctx,
         )
@@ -234,7 +234,7 @@ def test_create_ensures_label_exists(tmp_path) -> None:
         ctx = build_workspace_test_context(env, issues=issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "create", "--file", str(plan_file)], obj=ctx)
+        result = runner.invoke(cli, ["pr", "create", "--file", str(plan_file)], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -260,7 +260,7 @@ def test_create_uses_current_schema(tmp_path) -> None:
         ctx = build_workspace_test_context(env, issues=issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "create", "--file", str(plan_file)], obj=ctx)
+        result = runner.invoke(cli, ["pr", "create", "--file", str(plan_file)], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -295,7 +295,7 @@ def test_create_with_empty_file(tmp_path) -> None:
         ctx = build_workspace_test_context(env, issues=issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "create", "--file", str(plan_file)], obj=ctx)
+        result = runner.invoke(cli, ["pr", "create", "--file", str(plan_file)], obj=ctx)
 
         # Assert
         assert result.exit_code == 1
@@ -312,7 +312,7 @@ def test_create_with_nonexistent_file() -> None:
         ctx = build_workspace_test_context(env, issues=issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "create", "--file", "/nonexistent/plan.md"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "create", "--file", "/nonexistent/plan.md"], obj=ctx)
 
         # Assert
         # Click's Path(exists=True) validation causes exit code 2 (usage error)
@@ -333,7 +333,7 @@ def test_create_with_h2_title_fallback(tmp_path) -> None:
         ctx = build_workspace_test_context(env, issues=issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "create", "--file", str(plan_file)], obj=ctx)
+        result = runner.invoke(cli, ["pr", "create", "--file", str(plan_file)], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -358,7 +358,7 @@ def test_create_does_not_include_worktree_name(tmp_path) -> None:
         ctx = build_workspace_test_context(env, issues=issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "create", "--file", str(plan_file)], obj=ctx)
+        result = runner.invoke(cli, ["pr", "create", "--file", str(plan_file)], obj=ctx)
 
         # Assert
         assert result.exit_code == 0

@@ -127,7 +127,7 @@ erk objective view <issue-number>
 To implement a specific roadmap node, create an erk-plan that references the objective:
 
 ```bash
-erk plan create --title "Implement [node description]" --body "Part of Objective #123, Node 1.2"
+erk pr create --title "Implement [node description]" --body "Part of Objective #123, Node 1.2"
 ```
 
 ## Workflow Summary
