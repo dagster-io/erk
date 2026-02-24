@@ -144,6 +144,17 @@ jobs:
         run: pnpm test
         working-directory: erkdesk
 
+  erkbot-tests:
+    needs: check-submission
+    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-python-uv
+      - name: Run erkbot tests
+        run: make test-erkbot
+
   # === Autofix (runs after ALL checks) ===
   autofix:
     needs:

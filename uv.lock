@@ -679,6 +679,8 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
     { name = "ruff" },
     { name = "ty" },
 ]
@@ -696,6 +698,8 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "pytest", specifier = ">=8.0" },
+    { name = "pytest-asyncio", specifier = ">=1.0" },
     { name = "ruff", specifier = ">=0.15.0" },
     { name = "ty", specifier = ">=0.0.1a19" },
 ]
