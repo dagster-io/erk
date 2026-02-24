@@ -776,7 +776,7 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
         plan_id_for_lifecycle = state.plan_context.plan_id
     elif state.issue_number is not None:
         plan_id_for_lifecycle = str(state.issue_number)
-    elif ctx.plan_backend.get_provider_name() == "github-draft-pr" and state.pr_number is not None:
+    elif state.pr_number is not None:
         plan_id_for_lifecycle = str(state.pr_number)
 
     if plan_id_for_lifecycle is not None:
