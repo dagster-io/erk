@@ -1,8 +1,8 @@
 import unittest
 from unittest.mock import MagicMock
 
-from erk_slack_bot.config import Settings
-from erk_slack_bot.utils import (
+from erkbot.config import Settings
+from erkbot.utils import (
     build_one_shot_progress_text,
     chunk_for_slack,
     extract_one_shot_links,

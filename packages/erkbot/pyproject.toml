@@ -1,5 +1,5 @@
 [project]
-name = "erk-slack-bot"
+name = "erkbot"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [project.scripts]
-erk-slack-bot = "erk_slack_bot.cli:main"
+erkbot = "erkbot.cli:main"
 
 [tool.uv.sources]
 erk = { workspace = true }

@@ -5,16 +5,16 @@ from typing import Any
 
 from slack_sdk.errors import SlackApiError
 
-from erk_slack_bot.config import Settings
-from erk_slack_bot.models import (
+from erkbot.config import Settings
+from erkbot.models import (
     OneShotCommand,
     OneShotMissingMessageCommand,
     PlanListCommand,
     QuoteCommand,
 )
-from erk_slack_bot.parser import parse_erk_command
-from erk_slack_bot.runner import run_erk_plan_list, stream_erk_one_shot
-from erk_slack_bot.utils import (
+from erkbot.parser import parse_erk_command
+from erkbot.runner import run_erk_plan_list, stream_erk_one_shot
+from erkbot.utils import (
     build_one_shot_progress_text,
     chunk_for_slack,
     extract_one_shot_links,

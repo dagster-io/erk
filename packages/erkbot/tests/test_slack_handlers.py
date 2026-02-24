@@ -1,9 +1,9 @@
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from erk_slack_bot.config import Settings
-from erk_slack_bot.models import RunResult
-from erk_slack_bot.slack_handlers import register_handlers
+from erkbot.config import Settings
+from erkbot.models import RunResult
+from erkbot.slack_handlers import register_handlers
 
 
 class FakeApp:
@@ -32,7 +32,7 @@ class TestSlackHandlers(unittest.IsolatedAsyncioTestCase):
         self.app = FakeApp()
         register_handlers(self.app, settings=self.settings)
 
-    @patch("erk_slack_bot.slack_handlers.run_erk_plan_list", new_callable=AsyncMock)
+    @patch("erkbot.slack_handlers.run_erk_plan_list", new_callable=AsyncMock)
     async def test_plan_list(self, mock_run_plan_list: AsyncMock) -> None:
         mock_run_plan_list.return_value = RunResult(exit_code=0, output="plan output")
 
@@ -56,7 +56,7 @@ class TestSlackHandlers(unittest.IsolatedAsyncioTestCase):
 
         say.assert_called_with("Usage: `@erk one-shot <message>`", thread_ts="1.23")
 
-    @patch("erk_slack_bot.slack_handlers.asyncio")
+    @patch("erkbot.slack_handlers.asyncio")
     async def test_one_shot_starts_background_task(self, mock_asyncio: MagicMock) -> None:
         handler = self.app.event_handlers["app_mention"]
         say = AsyncMock()

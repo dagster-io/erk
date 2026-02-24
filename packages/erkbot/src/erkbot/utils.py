@@ -3,9 +3,9 @@ from importlib import resources
 from importlib.util import find_spec
 from pathlib import Path
 
-from erk_slack_bot.config import Settings
+from erkbot.config import Settings
 
-_QUOTE_RESOURCE_PACKAGE = "erk_slack_bot.resources"
+_QUOTE_RESOURCE_PACKAGE = "erkbot.resources"
 _QUOTE_RESOURCE_NAME = "QUOTE.md"
 _PR_URL_RE = re.compile(r"^PR:\s+(https://\S+)")
 _RUN_URL_RE = re.compile(r"^Run:\s+(https://\S+)")

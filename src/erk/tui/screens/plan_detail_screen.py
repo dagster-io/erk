@@ -701,7 +701,8 @@ class PlanDetailScreen(ModalScreen):
             if row.pr_number is not None:
                 self.dismiss()
                 if isinstance(self.app, ErkDashApp):
-                    self.app.notify(f"Dispatching: erk launch pr-fix-conflicts --pr {row.pr_number}")
+                    msg = f"Dispatching: erk launch pr-fix-conflicts --pr {row.pr_number}"
+                    self.app.notify(msg)
                     self.app._fix_conflicts_remote_async(row.pr_number)
 
         elif command_id == "address_remote":

@@ -2,11 +2,11 @@ import asyncio
 import unittest
 from unittest.mock import AsyncMock, patch
 
-from erk_slack_bot.runner import run_erk_one_shot, stream_erk_one_shot
+from erkbot.runner import run_erk_one_shot, stream_erk_one_shot
 
 
 class TestRunErkOneShot(unittest.IsolatedAsyncioTestCase):
-    @patch("erk_slack_bot.runner.asyncio.create_subprocess_exec", new_callable=AsyncMock)
+    @patch("erkbot.runner.asyncio.create_subprocess_exec", new_callable=AsyncMock)
     async def test_run_one_shot_passes_single_argument(self, mock_create: AsyncMock) -> None:
         process = AsyncMock()
         process.communicate.return_value = (b"ok", b"")
@@ -30,7 +30,7 @@ class TestRunErkOneShot(unittest.IsolatedAsyncioTestCase):
 
 
 class TestStreamErkOneShot(unittest.IsolatedAsyncioTestCase):
-    @patch("erk_slack_bot.runner.asyncio.create_subprocess_exec", new_callable=AsyncMock)
+    @patch("erkbot.runner.asyncio.create_subprocess_exec", new_callable=AsyncMock)
     async def test_stream_one_shot_emits_lines_and_uses_safe_args(
         self, mock_create: AsyncMock
     ) -> None:
@@ -61,7 +61,7 @@ class TestStreamErkOneShot(unittest.IsolatedAsyncioTestCase):
             stderr=asyncio.subprocess.STDOUT,
         )
 
-    @patch("erk_slack_bot.runner.asyncio.create_subprocess_exec", new_callable=AsyncMock)
+    @patch("erkbot.runner.asyncio.create_subprocess_exec", new_callable=AsyncMock)
     async def test_stream_one_shot_timeout(self, mock_create: AsyncMock) -> None:
         process = AsyncMock()
 

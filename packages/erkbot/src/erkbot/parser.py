@@ -1,6 +1,6 @@
 import re
 
-from erk_slack_bot.models import (
+from erkbot.models import (
     Command,
     OneShotCommand,
     OneShotMissingMessageCommand,

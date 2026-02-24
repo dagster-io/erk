@@ -1,7 +1,7 @@
 from slack_bolt.async_app import AsyncApp
 
-from erk_slack_bot.config import Settings
-from erk_slack_bot.slack_handlers import register_handlers
+from erkbot.config import Settings
+from erkbot.slack_handlers import register_handlers
 
 
 def create_app(*, settings: Settings) -> AsyncApp:

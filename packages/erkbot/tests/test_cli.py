@@ -1,17 +1,17 @@
-# NOTE: @patch usage is deliberate here. erk-slack-bot is a standalone package that
+# NOTE: @patch usage is deliberate here. erkbot is a standalone package that
 # tests third-party Slack SDK wiring and does not use erk's gateway layer.
 import asyncio
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from erk_slack_bot.cli import _run
+from erkbot.cli import _run
 
 
 class TestMain(unittest.TestCase):
-    @patch("erk_slack_bot.cli.AsyncSocketModeHandler")
-    @patch("erk_slack_bot.cli.create_app")
-    @patch("erk_slack_bot.cli.Settings")
-    @patch("erk_slack_bot.cli.load_dotenv")
+    @patch("erkbot.cli.AsyncSocketModeHandler")
+    @patch("erkbot.cli.create_app")
+    @patch("erkbot.cli.Settings")
+    @patch("erkbot.cli.load_dotenv")
     def test_run_wires_app_and_starts_handler(
         self,
         mock_load_dotenv: MagicMock,
