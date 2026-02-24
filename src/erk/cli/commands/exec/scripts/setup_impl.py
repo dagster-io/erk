@@ -47,8 +47,11 @@ from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.impl_folder import create_impl_folder, read_plan_ref
 
 
-def _run_impl_init() -> dict[str, object]:
+def _run_impl_init(cwd: Path) -> dict[str, object]:
     """Run impl-init validation and return the result.
+
+    Args:
+        cwd: Working directory to search for .impl/ in.
 
     Returns:
         Dict with 'valid' key and plan metadata.
@@ -56,7 +59,7 @@ def _run_impl_init() -> dict[str, object]:
     Raises:
         SystemExit: If validation fails.
     """
-    impl_dir, impl_type = _validate_impl_folder()
+    impl_dir, impl_type = _validate_impl_folder(cwd)
     plan_ref = read_plan_ref(impl_dir)
     has_plan_tracking = plan_ref is not None
     if plan_ref is not None:
@@ -182,7 +185,7 @@ def setup_impl(ctx: click.Context, issue_number: int | None, file_path: Path | N
             raise SystemExit(1)
 
         # Run impl-init for validation
-        init_result = _run_impl_init()
+        init_result = _run_impl_init(cwd)
         result["related_docs"] = init_result.get("related_docs", {"skills": [], "docs": []})
         click.echo(json.dumps(result))
         return
@@ -204,7 +207,7 @@ def setup_impl(ctx: click.Context, issue_number: int | None, file_path: Path | N
 
         # File-based plan (no tracking) - just validate
         if (impl_dir / "plan.md").exists():
-            init_result = _run_impl_init()
+            init_result = _run_impl_init(cwd)
             # Run cleanup and output
             ctx.invoke(cleanup_impl_context)
             click.echo(
@@ -280,7 +283,7 @@ def _handle_issue_setup(ctx: click.Context, *, issue_number: int) -> None:
 
     # Run impl-init for validation and metadata
     try:
-        init_result = _run_impl_init()
+        init_result = _run_impl_init(require_cwd(ctx))
     except SystemExit:
         click.echo(
             json.dumps(
