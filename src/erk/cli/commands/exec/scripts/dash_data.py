@@ -44,8 +44,8 @@ def _serialize_plan_row(row: PlanRowData) -> dict[str, Any]:
             data[key] = data[key].isoformat()
     # Convert log_entries tuple of tuples to list of lists
     data["log_entries"] = [list(entry) for entry in row.log_entries]
-    # Convert objective_deps_plans tuple of tuples to list of lists
-    data["objective_deps_plans"] = [list(entry) for entry in row.objective_deps_plans]
+    # Convert objective_head_plans tuple of tuples to list of lists
+    data["objective_head_plans"] = [list(entry) for entry in row.objective_head_plans]
     return data
 
 

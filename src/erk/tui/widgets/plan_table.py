@@ -72,7 +72,7 @@ class PlanDataTable(DataTable):
             self.row_index = row_index
 
     class DepsClicked(Message):
-        """Posted when user clicks deps column on a row with blocking dep plans."""
+        """Posted when user clicks head column on a row with blocking head plans."""
 
         def __init__(self, row_index: int) -> None:
             super().__init__()
@@ -96,7 +96,7 @@ class PlanDataTable(DataTable):
         self._branch_column_index: int | None = None
         self._local_wt_column_index: int | None = None
         self._run_id_column_index: int | None = None
-        self._deps_column_index: int | None = None
+        self._head_column_index: int | None = None
         self._stage_column_index: int | None = None
 
     @property
@@ -139,7 +139,7 @@ class PlanDataTable(DataTable):
         self._branch_column_index = None
         self._local_wt_column_index = None
         self._run_id_column_index = None
-        self._deps_column_index = None
+        self._head_column_index = None
         self._stage_column_index = None
         self.clear(columns=True)
         self._setup_columns()
@@ -173,10 +173,10 @@ class PlanDataTable(DataTable):
             col_index += 1
             self.add_column("state", key="state", width=20)
             col_index += 1
-            self.add_column("deps-state", key="deps_state", width=12)
+            self.add_column("head-state", key="head_state", width=12)
             col_index += 1
-            self._deps_column_index = col_index
-            self.add_column("deps", key="deps", width=18)
+            self._head_column_index = col_index
+            self.add_column("head", key="head", width=18)
             col_index += 1
             self.add_column("next", key="next", width=6)
             col_index += 1
@@ -284,14 +284,14 @@ class PlanDataTable(DataTable):
         if row.plan_url:
             plan_cell = f"[link={row.plan_url}]#{row.plan_id}[/link]"
 
-        # Objectives view: plan, slug, progress, state, deps-state, deps, next, updated, author
+        # Objectives view: plan, slug, progress, state, head-state, head, next, updated, author
         if self._view_mode == ViewMode.OBJECTIVES:
-            # Build linkified deps cell (show up to 3, truncate with ... if more)
-            if row.objective_deps_plans:
-                limit = 3 if len(row.objective_deps_plans) <= 3 else 2
-                show = row.objective_deps_plans[:limit]
+            # Build linkified head cell (show up to 3, truncate with ... if more)
+            if row.objective_head_plans:
+                limit = 3 if len(row.objective_head_plans) <= 3 else 2
+                show = row.objective_head_plans[:limit]
                 parts = [f"[link={url}]{display}[/link]" for display, url in show]
-                if len(row.objective_deps_plans) > 3:
+                if len(row.objective_head_plans) > 3:
                     parts.append("\u2026")
                 deps_cell = " ".join(parts)
             else:
@@ -302,7 +302,7 @@ class PlanDataTable(DataTable):
                 row.objective_slug_display,
                 row.objective_progress_display,
                 Text(row.objective_state_display),
-                row.objective_deps_display,
+                row.objective_head_state,
                 deps_cell,
                 row.objective_next_node_display,
                 row.updated_display,
@@ -450,9 +450,9 @@ class PlanDataTable(DataTable):
                 event.stop()
                 return
 
-        # Check deps column - post event if blocking dep plans exist
-        if self._deps_column_index is not None and col_index == self._deps_column_index:
-            if row_index < len(self._rows) and self._rows[row_index].objective_deps_plans:
+        # Check head column - post event if blocking head plans exist
+        if self._head_column_index is not None and col_index == self._head_column_index:
+            if row_index < len(self._rows) and self._rows[row_index].objective_head_plans:
                 self.post_message(self.DepsClicked(row_index))
                 event.prevent_default()
                 event.stop()

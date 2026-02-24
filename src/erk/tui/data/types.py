@@ -74,8 +74,8 @@ class PlanRowData:
         objective_progress_display: Progress display (e.g., "3/7" or "-").
         objective_slug_display: Slug or stripped title fallback (max 25 chars).
         objective_state_display: Sparkline string (e.g., "✓✓✓▶▶○○○○").
-        objective_deps_display: Dep status of next node ("ready", "in progress", "-").
-        objective_deps_plans: Tuple of (display, url) pairs for blocking dep plans.
+        objective_head_state: Head state of next node ("active", "ready", "-").
+        objective_head_plans: Tuple of (display, url) pairs for blocking head plans.
             Each entry is a plan number like "#7911" paired with its GitHub URL.
             Empty tuple when no blocking deps have associated plans.
         objective_next_node_display: Next node ID display (e.g., "1.1" or "-").
@@ -133,8 +133,8 @@ class PlanRowData:
     objective_progress_display: str
     objective_slug_display: str
     objective_state_display: str
-    objective_deps_display: str
-    objective_deps_plans: tuple[tuple[str, str], ...]
+    objective_head_state: str
+    objective_head_plans: tuple[tuple[str, str], ...]
     objective_next_node_display: str
     updated_at: datetime
     updated_display: str

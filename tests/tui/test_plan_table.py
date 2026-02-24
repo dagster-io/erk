@@ -339,7 +339,7 @@ class TestObjectivesViewRowConversion:
     """Tests for row conversion in Objectives view."""
 
     def test_objectives_view_has_enriched_columns(self) -> None:
-        """Objectives view produces enriched columns including deps-state."""
+        """Objectives view produces enriched columns including head-state."""
         filters = PlanFilters.default()
         table = PlanDataTable(filters, plan_backend="github")
         table._view_mode = ViewMode.OBJECTIVES
@@ -347,14 +347,14 @@ class TestObjectivesViewRowConversion:
 
         values = table._row_to_values(row)
 
-        # Objectives view: plan, slug, progress, state, deps-state, deps, next, updated, author
+        # Objectives view: plan, slug, progress, state, head-state, head, next, updated, author
         assert len(values) == 9
         assert _text_to_str(values[0]) == "#42"
         assert values[1] == "-"  # slug_display
         assert values[2] == "-"  # progress_display
         assert _text_to_str(values[3]) == "-"  # state_display
-        assert values[4] == "-"  # deps-state display
-        assert values[5] == "-"  # deps (no deps plans)
+        assert values[4] == "-"  # head-state display
+        assert values[5] == "-"  # head (no head plans)
         assert values[6] == "-"  # next node display
         assert values[7] == "-"  # updated_display
         assert values[8] == "test-user"  # author
@@ -380,8 +380,8 @@ class TestObjectivesViewRowConversion:
         assert values[1] == "build-feature"  # slug
         assert values[2] == "3/7"  # progress
         assert _text_to_str(values[3]) == "✓✓✓▶▶○○"  # state sparkline
-        assert values[4] == "-"  # deps-state display
-        assert values[5] == "-"  # deps (no deps plans)
+        assert values[4] == "-"  # head-state display
+        assert values[5] == "-"  # head (no head plans)
         assert values[6] == "-"  # next node display
         assert values[7] == "2h ago"  # updated
 
@@ -394,7 +394,7 @@ class TestObjectivesViewDepsColumn:
         filters = PlanFilters.default()
         table = PlanDataTable(filters, plan_backend="github")
         table._view_mode = ViewMode.OBJECTIVES
-        row = make_plan_row(42, "Obj Plan", objective_deps_plans=())
+        row = make_plan_row(42, "Obj Plan", objective_head_plans=())
 
         values = table._row_to_values(row)
 
@@ -408,7 +408,7 @@ class TestObjectivesViewDepsColumn:
         row = make_plan_row(
             42,
             "Obj Plan",
-            objective_deps_plans=(("#100", "https://github.com/test/repo/issues/100"),),
+            objective_head_plans=(("#100", "https://github.com/test/repo/issues/100"),),
         )
 
         values = table._row_to_values(row)
@@ -423,7 +423,7 @@ class TestObjectivesViewDepsColumn:
         row = make_plan_row(
             42,
             "Obj Plan",
-            objective_deps_plans=(
+            objective_head_plans=(
                 ("#100", "https://github.com/test/repo/issues/100"),
                 ("#200", "https://github.com/test/repo/issues/200"),
                 ("#300", "https://github.com/test/repo/issues/300"),
@@ -446,7 +446,7 @@ class TestObjectivesViewDepsColumn:
         row = make_plan_row(
             42,
             "Obj Plan",
-            objective_deps_plans=(
+            objective_head_plans=(
                 ("#100", "https://github.com/test/repo/issues/100"),
                 ("#200", "https://github.com/test/repo/issues/200"),
                 ("#300", "https://github.com/test/repo/issues/300"),
