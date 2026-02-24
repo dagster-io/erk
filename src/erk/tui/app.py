@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import shlex
 import subprocess
 import time
 from collections.abc import Callable, Iterator
@@ -540,15 +541,17 @@ class ErkDashApp(App):
     def _address_remote_async(self, pr_number: int) -> None:
         """Dispatch address-remote workflow in background thread with toast."""
         try:
+            cmd = ["erk", "launch", "pr-address", "--pr", str(pr_number), "--no-wait"]
             subprocess.run(
-                ["erk", "launch", "pr-address", "--pr", str(pr_number), "--no-wait"],
+                cmd,
                 capture_output=True,
                 text=True,
                 check=True,
                 stdin=subprocess.DEVNULL,
                 cwd=str(self._provider.repo_root),
             )
-            self.call_from_thread(self.notify, f"Dispatched address for PR #{pr_number}", timeout=3)
+            cmd_str = shlex.join(cmd)
+            self.call_from_thread(self.notify, f"Dispatched: {cmd_str}", timeout=3)
         except subprocess.CalledProcessError as e:
             error_msg = (e.stderr or "").strip() or (e.stdout or "").strip() or "Unknown error"
             self.call_from_thread(
