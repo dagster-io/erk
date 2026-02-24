@@ -1,9 +1,4 @@
 {
   "provider": "github-draft-pr",
-  "plan_id": "7975",
-  "url": "https://github.com/dagster-io/erk/pull/7975",
-  "created_at": "2026-02-23T12:30:49.677654",
-  "synced_at": "2026-02-23T12:30:49.677654",
-  "labels": [],
-  "objective_id": null
+  "title": "Plan: Strip impl-context before restack in pr sync"
 }

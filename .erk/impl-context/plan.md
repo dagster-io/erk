@@ -1,100 +1,79 @@
-# Plan: Merge `plan`/`pr` into single `planned_pr` field in objective roadmap
+# Plan: Strip impl-context before restack in pr sync
 
 ## Context
 
-In the draft-PR plan backend (now the only backend), a plan IS a draft PR — they share the same GitHub PR number. The current roadmap format has separate `plan` and `pr` fields on each node, plus separate "Plan" and "PR" columns in the markdown table. This is redundant: when both are set, they always contain the same value (e.g., `plan: "#7971", pr: "#7971"`). Merging into a single `planned_pr` field simplifies the data model, CLI interface, and display.
+When running `erk pr sync --dangerous`, `gt restack` hits merge conflicts in `.erk/impl-context/` files. These are temporary staging files committed to plan branches -- they get cleaned up before implementation. The user must manually delete and `gt continue` (sometimes multiple times) to get past the conflicts.
 
-## Approach
+**Root cause**: Plan branches have commits adding `.erk/impl-context/` files. When rebasing onto updated master, these transient files cause conflicts.
 
-Merge `plan: str | None` and `pr: str | None` into a single `planned_pr: str | None` across the data model, YAML schema, CLI, rendering, and tests. Bump schema version from "4" to "5". Support parsing v4 (auto-coalesce `pr` > `plan` > null) for existing objectives.
+**Fix**: Before restack, strip impl-context files from the branch and squash. No conflict detection loops needed -- the files are simply removed before rebase starts.
 
 ## Changes
 
-### 1. Core data model (`packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`)
+### File: `src/erk/cli/commands/pr/sync_cmd.py`
 
-- **RoadmapNode**: Replace `plan: str | None` + `pr: str | None` with `planned_pr: str | None`
-- **validate_roadmap_frontmatter()**:
-  - Accept schema_version "5" (new) with `planned_pr` key
-  - Accept schema_version "2"/"3"/"4" (existing) with separate `plan`/`pr` keys — coalesce: `pr or plan or None`
-- **render_roadmap_block_inner()**: Emit `schema_version: "5"` with `planned_pr` key
-- **update_node_in_frontmatter()**: Replace separate `plan`/`pr` params with single `planned_pr` param. Simplify status inference: `planned_pr` set → `in_progress`
-- **render_roadmap_tables()**: Merge "Plan"/"PR" columns into single "Planned PR" column. Change `pr_count` to count done nodes instead of `step.pr is not None`
-- **serialize_phases()**: Replace `plan`/`pr` keys with `planned_pr`
+**1. Add helper function:**
 
-### 2. Dependency graph (`packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py`)
+```python
+def _strip_impl_context_if_present(ctx: ErkContext, repo_root: Path) -> bool:
+    """Remove .erk/impl-context/ from working tree and stage if present."""
+    impl_dir = repo_root / IMPL_CONTEXT_DIR
+    if not impl_dir.exists():
+        return False
+    shutil.rmtree(impl_dir)
+    ctx.git.commit.add_all(repo_root)
+    return True
+```
 
-- **ObjectiveNode**: Replace `plan: str | None` + `pr: str | None` with `planned_pr: str | None`
-- Update `graph_from_phases()`, `graph_from_nodes()`, `nodes_from_graph()` to pass `planned_pr`
+**2. Add new imports:**
+- `import shutil`
+- `from erk_shared.plan_store.draft_pr_lifecycle import IMPL_CONTEXT_DIR`
 
-### 3. Render roadmap exec script (`src/erk/cli/commands/exec/scripts/objective_render_roadmap.py`)
+**3. Already-tracked path (line ~234, before restack):**
 
-- Update table header: `| Node | Description | Status | Planned PR |`
-- Update table rows to emit single `planned_pr` column (always `-` for new roadmaps)
+Insert before `restack_idempotent` call:
+```python
+if _strip_impl_context_if_present(ctx, repo.root):
+    user_output("Stripping .erk/impl-context/ before restack...")
+    ctx.git.commit.commit(repo.root, "Remove impl-context before sync")
+    _squash_commits(ctx, repo.root)
+```
 
-### 4. Update objective node CLI (`src/erk/cli/commands/exec/scripts/update_objective_node.py`)
+**4. First-time-tracking path (line ~300, after message update, before restack):**
 
-- Replace `--plan`/`--pr` options with single `--planned-pr` option
-- Remove the validation that `--plan` is required when `--pr` is set (no longer needed)
-- Update `_replace_table_in_text()`: Match 4-column rows (was 5-column)
-- Update `_find_node_refs()`: Return single `planned_pr` value
-- Update `_replace_node_refs_in_body()`: Pass single `planned_pr`
-- Update `_build_output()`: Replace `previous_plan`/`new_plan`/`previous_pr`/`new_pr` with `previous_planned_pr`/`new_planned_pr`
+Insert after `_update_commit_message_from_pr` and before `restack_idempotent`:
+```python
+if _strip_impl_context_if_present(ctx, repo.root):
+    user_output("Stripping .erk/impl-context/ before restack...")
+    ctx.git.commit.commit(repo.root, "Remove impl-context before sync")
+    _squash_commits(ctx, repo.root)
+```
 
-### 5. View command (`src/erk/cli/commands/objective/view_cmd.py`)
+The pattern is identical at both sites: strip files → commit removal → squash (folds removal into the main commit) → restack proceeds without impl-context files.
 
-- **_format_node_status()**: Rename `plan` param → `planned_pr`
-- Merge `max_plan_width`/`max_pr_width` into `max_planned_pr_width`
-- Merge separate "plan"/"pr" table columns into single "planned_pr" column
-- Update JSON output: replace `plan`/`pr` keys with `planned_pr`
+### File: `tests/commands/pr/test_sync.py`
 
-### 6. Check command (`src/erk/cli/commands/objective/check_cmd.py`)
+**Test 1: `test_pr_sync_strips_impl_context_before_restack`**
+- Set up already-tracked branch with impl-context directory on disk
+- Run sync
+- Assert: `commit.commit()` was called with "Remove impl-context before sync"
+- Assert: squash was called
+- Assert: restack succeeded (no conflict)
 
-- Merge plan/pr consistency checks: single check for `planned_pr` reference format
-- Update orphaned done check: `node.status == "done" and node.planned_pr is None`
-- Merge plan/pr `#` prefix validation into single `planned_pr` check
+**Test 2: `test_pr_sync_skips_strip_when_no_impl_context`**
+- Set up already-tracked branch WITHOUT impl-context directory
+- Run sync
+- Assert: no extra commit created for impl-context removal
+- Assert: restack called normally
 
-### 7. Fetch context (`src/erk/cli/commands/exec/scripts/objective_fetch_context.py`)
-
-- Update `step.plan == plan_ref` → `step.planned_pr == plan_ref` for step matching
-
-### 8. Skill/command docs (update CLI examples)
-
-- `.claude/commands/erk/objective-update-with-landed-pr.md` — `--planned-pr` instead of `--plan`/`--pr`
-- `.claude/commands/erk/objective-update-with-closed-plan.md` — `--planned-pr ""`
-- `.claude/commands/erk/plan-save.md` — `--planned-pr`
-- `.claude/commands/local/objective-reevaluate.md` — `--planned-pr`
-- `.claude/skills/erk-exec/reference.md` — update parameter docs
-- `.claude/skills/objective/references/format.md` — update format docs
-
-### 9. CI workflow (`.github/workflows/one-shot.yml`)
-
-- Change `--plan "$PLAN_NUMBER"` → `--planned-pr "$PLAN_NUMBER"`
-
-### 10. Tests
-
-- `test_roadmap.py` — update `.pr`/`.plan` assertions → `.planned_pr`
-- `test_roadmap_frontmatter.py` — update all plan/pr assertions and YAML fixtures
-- `test_dependency_graph.py` — update ObjectiveNode assertions
-- `test_update_objective_node.py` — update --plan/--pr to --planned-pr, update output keys
-- `test_objective_render_roadmap.py` — update table format assertions
-
-### 11. Docs (update roadmap-related learned docs)
-
-- `docs/learned/architecture/roadmap-mutation-semantics.md` — if it references plan/pr separately
-- `docs/learned/objectives/roadmap-status-system.md` — update two-tier status docs
-- `docs/learned/reference/objective-summary-format.md` — update format reference
-
-## Migration strategy
-
-- **Parsing**: `validate_roadmap_frontmatter()` accepts v2/3/4 (coalesces `pr ?? plan` into `planned_pr`) and v5 (reads `planned_pr` directly)
-- **Writing**: Always emits v5 with `planned_pr`
-- **Existing objectives**: First read coalesces to v5 in memory; next write (via `update-objective-node` or any mutation) upgrades the on-disk YAML to v5
-- **No explicit migration script needed**: objectives upgrade lazily on next mutation
+## Key files
+- `src/erk/cli/commands/pr/sync_cmd.py` -- primary modification
+- `tests/commands/pr/test_sync.py` -- add 2 tests following existing patterns
+- `packages/erk-shared/src/erk_shared/plan_store/draft_pr_lifecycle.py` -- `IMPL_CONTEXT_DIR` constant
+- `packages/erk-shared/src/erk_shared/impl_context.py` -- existing precedent for `shutil.rmtree`
 
 ## Verification
 
-1. Run `make fast-ci` — all unit tests pass
-2. `erk objective view 7911` — renders correctly with single "planned_pr" column (existing v4 YAML auto-coalesced)
-3. `erk objective check 7911` — passes all validation checks
-4. `erk exec update-objective-node 7911 --node 1.2 --planned-pr "#9999" --status in_progress` — sets single field, then revert
-5. `erk exec objective-render-roadmap` with test JSON — produces 4-column table (Node | Description | Status | Planned PR)
+1. Run existing sync tests: `pytest tests/commands/pr/test_sync.py`
+2. Run new tests
+3. Type check: `ty check src/erk/cli/commands/pr/sync_cmd.py`
