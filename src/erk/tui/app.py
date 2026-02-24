@@ -541,7 +541,7 @@ class ErkDashApp(App):
         """Dispatch address-remote workflow in background thread with toast."""
         try:
             subprocess.run(
-                ["erk", "launch", "pr-address", "--pr", str(pr_number), "--no-wait"],
+                ["erk", "launch", "pr-address", "--pr", str(pr_number)],
                 capture_output=True,
                 text=True,
                 check=True,
@@ -549,6 +549,8 @@ class ErkDashApp(App):
                 cwd=str(self._provider.repo_root),
             )
             self.call_from_thread(self.notify, f"Dispatched address for PR #{pr_number}", timeout=3)
+            # Trigger data refresh to pick up updated run_id/run_status
+            self.call_from_thread(self.action_refresh)
         except subprocess.CalledProcessError as e:
             error_msg = (e.stderr or "").strip() or (e.stdout or "").strip() or "Unknown error"
             self.call_from_thread(
