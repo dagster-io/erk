@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Documentation Plan: Consolidate PR validation into --stage=impl flag, remove scattered exec scripts"
+}
