@@ -1187,9 +1187,6 @@ def main():
         issue_number = None
         objective_issue = None
         github_data = None
-
-        backend_display = "planned-pr"
-
         if cwd:
             # Create context with real gateways
             ctx = create_context(cwd)
@@ -1256,7 +1253,6 @@ def main():
                     issue_number=issue_number,
                     objective_issue=objective_issue,
                 ),
-                TokenSeq((Token("(be:"), Token(backend_display), Token(")"))),
                 TokenSeq((Token("│ ("), Token(model_code), Token(")"))),
             )
         )

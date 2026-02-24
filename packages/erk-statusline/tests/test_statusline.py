@@ -9,8 +9,6 @@ import time
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from erk_shared.gateway.branch_manager.fake import FakeBranchManager
 from erk_shared.gateway.branch_manager.types import PrInfo
 from erk_shared.gateway.git.abc import WorktreeInfo
@@ -1718,24 +1716,6 @@ class TestFetchGitHubDataViaGateway:
         assert len(result.check_contexts) == 1
         assert result.review_thread_counts == (3, 5)
         assert result.from_fallback is False
-
-
-class TestBackendLabel:
-    """Test plan backend label in statusline output."""
-
-    def test_default_backend_shows_planned_pr(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Default backend should show (be:planned-pr) in output."""
-        monkeypatch.delenv("ERK_PLAN_BACKEND", raising=False)
-        stdin_payload = {
-            "workspace": {"current_dir": ""},
-            "session_id": "test",
-            "model": {"display_name": "opus", "id": "opus"},
-        }
-        with patch("json.load", return_value=stdin_payload):
-            with patch("builtins.print") as mock_print:
-                main()
-        output = mock_print.call_args[0][0]
-        assert "(be:planned-pr)" in output
 
 
 class TestMainSetsGitOptionalLocks:
