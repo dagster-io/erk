@@ -895,10 +895,11 @@ Migrate an issue-based plan to a draft-PR-based plan.
 
 **Options:**
 
-| Flag        | Type   | Required | Default | Description                                               |
-| ----------- | ------ | -------- | ------- | --------------------------------------------------------- |
-| `--dry-run` | FLAG   | No       | -       | Preview the migration without making any changes          |
-| `--format`  | CHOICE | No       | 'json'  | Output format: json (default) or display (formatted text) |
+| Flag            | Type   | Required | Default | Description                                               |
+| --------------- | ------ | -------- | ------- | --------------------------------------------------------- |
+| `--dry-run`     | FLAG   | No       | -       | Preview the migration without making any changes          |
+| `--format`      | CHOICE | No       | 'json'  | Output format: json (default) or display (formatted text) |
+| `--branch-slug` | TEXT   | No       | -       | Pre-generated branch slug (skips LLM call when provided)  |
 
 ### plan-save
 
@@ -917,6 +918,7 @@ Backend-aware plan save: dispatches to issue or draft-PR based on constant.
 | `--plan-type`                     | CHOICE  | No       | -       | Plan type: standard (default) or learn                    |
 | `--learned-from-issue`            | INTEGER | No       | -       | Parent plan issue number (for learn plans)                |
 | `--created-from-workflow-run-url` | TEXT    | No       | -       | GitHub Actions workflow run URL                           |
+| `--branch-slug`                   | TEXT    | No       | -       | Pre-generated branch slug (skips LLM call when provided)  |
 
 ### plan-save-to-issue
 
@@ -1193,10 +1195,11 @@ Consolidated implementation setup.
 
 **Options:**
 
-| Flag      | Type    | Required | Default | Description                    |
-| --------- | ------- | -------- | ------- | ------------------------------ |
-| `--issue` | INTEGER | No       | -       | Issue/PR number to set up from |
-| `--file`  | PATH    | No       | -       | Markdown file to set up from   |
+| Flag            | Type    | Required | Default | Description                                              |
+| --------------- | ------- | -------- | ------- | -------------------------------------------------------- |
+| `--issue`       | INTEGER | No       | -       | Issue/PR number to set up from                           |
+| `--file`        | PATH    | No       | -       | Markdown file to set up from                             |
+| `--branch-slug` | TEXT    | No       | -       | Pre-generated branch slug (skips LLM call when provided) |
 
 ### setup-impl-from-issue
 
@@ -1212,10 +1215,11 @@ Set up .impl/ folder from GitHub issue in current worktree.
 
 **Options:**
 
-| Flag           | Type | Required | Default | Description                                                             |
-| -------------- | ---- | -------- | ------- | ----------------------------------------------------------------------- |
-| `--session-id` | TEXT | No       | -       | Claude session ID for marker creation                                   |
-| `--no-impl`    | FLAG | No       | -       | Skip .impl/ folder creation (for local execution without file overhead) |
+| Flag            | Type | Required | Default | Description                                                             |
+| --------------- | ---- | -------- | ------- | ----------------------------------------------------------------------- |
+| `--session-id`  | TEXT | No       | -       | Claude session ID for marker creation                                   |
+| `--no-impl`     | FLAG | No       | -       | Skip .impl/ folder creation (for local execution without file overhead) |
+| `--branch-slug` | TEXT | No       | -       | Pre-generated branch slug (skips LLM call when provided)                |
 
 ### store-tripwire-candidates
 

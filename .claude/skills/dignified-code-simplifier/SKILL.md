@@ -28,7 +28,8 @@ You will analyze recently modified code and apply refinements that:
    - Improving readability through clear variable and function names
    - Consolidating related logic
    - Removing unnecessary comments that describe obvious code
-   - IMPORTANT: Avoid nested ternary operators - prefer switch statements or if/else chains for multiple conditions
+   - IMPORTANT: Avoid **nested** ternary operators (ternaries inside ternaries) - prefer if/else chains for multiple conditions
+   - Simple single-level ternaries are idiomatic and acceptable: `slug = branch_slug if branch_slug else fallback()`, `x = a if condition else b`
    - Choose clarity over brevity - explicit code is often better than overly compact code
 
 4. **Maintain Balance**: Avoid over-simplification that could:
@@ -36,7 +37,7 @@ You will analyze recently modified code and apply refinements that:
    - Create overly clever solutions that are hard to understand
    - Combine too many concerns into single functions or components
    - Remove helpful abstractions that improve code organization
-   - Prioritize "fewer lines" over readability (e.g., nested ternaries, dense one-liners)
+   - Prioritize "fewer lines" over readability (e.g., multi-level nested ternaries, dense one-liners that chain 3+ operations)
    - Make the code harder to debug or extend
 
 5. **Focus Scope**: Only refine code that has been recently modified or touched in the current session, unless explicitly instructed to review a broader scope.

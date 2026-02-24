@@ -24,6 +24,8 @@ Rules triggered by matching actions in code.
 
 **adding HTML, badges, or GitHub-specific markup to commit messages** → Read [PR Body Formatting Pattern](pr-body-formatting.md) first. Use the two-target pattern: plain text pr_body for commits, enhanced pr_body_for_github for the PR. Never put GitHub-specific HTML into git commit messages.
 
+**adding LLM-dependent logic inside a Click @command function in exec/scripts/** → Read [Inference Hoisting Pattern](inference-hoisting.md) first. Inference hoisting violation: exec scripts run as subprocesses; they cannot nest LLM calls within a Claude Code session. Move reasoning to the calling skill.
+
 **adding a Claude subprocess call with --print mode** → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Always include --no-session-persistence flag and use env=build_claude_subprocess_env() parameter. Both are required to prevent session persistence and CLAUDECODE context leakage. See the 'Claude Subprocess Environment' section.
 
 **adding a field to PullRequestInfo in types.py** → Read [GitHub Interface Patterns](github-interface-patterns.md) first. Must update all three parsers in real.py: \_parse_pr_from_timeline_event(), list_prs(), and \_parse_plan_prs_with_details(). See PullRequestInfo Field Addition Protocol in this doc.
@@ -69,6 +71,8 @@ Rules triggered by matching actions in code.
 **assuming cursor position will persist across DataTable.clear() calls** → Read [Selection Preservation by Value](selection-preservation-by-value.md) first. Save cursor position by row key before clear(), restore after repopulating. See textual/quirks.md for pattern.
 
 **calling GraphiteBranchManager.create_branch() without explicit checkout** → Read [Erk Architecture Patterns](erk-architecture.md) first. GraphiteBranchManager.create_branch() restores the original branch after tracking. Always call branch_manager.checkout_branch() afterward if you need to be on the new branch.
+
+**calling PromptExecutor, generate_slug_or_fallback, or BranchSlugGenerator from an exec script** [pattern: `PromptExecutor|generate_slug_or_fallback|BranchSlugGenerator`] → Read [Inference Hoisting Pattern](inference-hoisting.md) first. Exec scripts must be deterministic. LLM calls belong in the skill layer (.claude/commands/\*.md). Hoist: generate the value in the skill, pass it via --flag to the exec script. Read inference-hoisting.md.
 
 **calling allocate_slot_for_branch without sync_pool_assignments running first** → Read [Slot Pool State Sync](slot-pool-state-sync.md) first. Pool sync must run BEFORE find_branch_assignment call. Without it, stale pool.json entries cause silent misassignment — a slot may appear free when it's actually occupied by a different branch.
 

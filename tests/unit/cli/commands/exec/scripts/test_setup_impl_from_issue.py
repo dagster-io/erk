@@ -154,7 +154,7 @@ class TestSetupImplFromIssueBranchManager:
         runner = CliRunner()
         result = runner.invoke(
             setup_impl_from_issue,
-            ["42", "--no-impl"],
+            ["42", "--no-impl", "--branch-slug", "test-slug"],
             obj=ctx,
         )
 
@@ -230,7 +230,7 @@ class TestSetupImplFromIssueBranchManager:
         runner = CliRunner()
         result = runner.invoke(
             setup_impl_from_issue,
-            ["99", "--no-impl"],
+            ["99", "--no-impl", "--branch-slug", "test-slug"],
             obj=ctx,
         )
 
@@ -594,7 +594,7 @@ def test_issue_plan_without_branch_name_uses_p_prefix(tmp_path: Path) -> None:
     runner = CliRunner()
     result = runner.invoke(
         setup_impl_from_issue,
-        ["42", "--no-impl"],
+        ["42", "--no-impl", "--branch-slug", "test-slug"],
         obj=ctx,
     )
 
@@ -723,6 +723,79 @@ def test_draft_pr_falls_back_to_pr_body_when_no_impl_context(tmp_path: Path) -> 
     # "# Plan\n\nImplement something."
     assert "Plan" in impl_plan.read_text(encoding="utf-8")
     assert "Implement something" in impl_plan.read_text(encoding="utf-8")
+
+
+def test_branch_slug_provided_used_in_branch_name(tmp_path: Path) -> None:
+    """When --branch-slug is provided, branch name incorporates that slug."""
+    now = datetime.now(UTC)
+    plan_issue = IssueInfo(
+        number=42,
+        title="Fix Authentication Bug",
+        body="# Plan Content\n\nFix the auth flow.",
+        state="OPEN",
+        url="https://github.com/test-owner/test-repo/issues/42",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        author="test-author",
+    )
+    fake_issues = FakeGitHubIssues(issues={42: plan_issue})
+    fake_git = FakeGit(current_branches={tmp_path: "main"}, local_branches=[])
+    ctx = context_for_test(
+        github_issues=fake_issues,
+        git=fake_git,
+        cwd=tmp_path,
+        repo_root=tmp_path,
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(
+        setup_impl_from_issue,
+        ["42", "--no-impl", "--branch-slug", "my-custom-slug"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, f"Command failed: {result.output}"
+    # Branch name should contain the provided slug
+    assert len(fake_git.created_branches) == 1
+    branch_name = fake_git.created_branches[0][1]
+    assert "my-custom-slug" in branch_name
+
+
+def test_branch_slug_missing_errors(tmp_path: Path) -> None:
+    """When --branch-slug is not provided, exits with error and remediation message."""
+    now = datetime.now(UTC)
+    plan_issue = IssueInfo(
+        number=42,
+        title="Fix Authentication Bug",
+        body="# Plan Content\n\nFix the auth flow.",
+        state="OPEN",
+        url="https://github.com/test-owner/test-repo/issues/42",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        author="test-author",
+    )
+    fake_issues = FakeGitHubIssues(issues={42: plan_issue})
+    fake_git = FakeGit(current_branches={tmp_path: "main"}, local_branches=[])
+    ctx = context_for_test(
+        github_issues=fake_issues,
+        git=fake_git,
+        cwd=tmp_path,
+        repo_root=tmp_path,
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(
+        setup_impl_from_issue,
+        ["42", "--no-impl"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 1
+    assert "--branch-slug is required" in result.output
 
 
 def test_draft_pr_pr_not_found_reports_error(tmp_path: Path) -> None:

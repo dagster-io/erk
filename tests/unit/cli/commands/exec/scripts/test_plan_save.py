@@ -56,7 +56,7 @@ def test_draft_pr_success_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     ctx = _draft_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
     runner = CliRunner()
 
-    result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
+    result = runner.invoke(plan_save, ["--format", "json", "--branch-slug", "test-slug"], obj=ctx)
 
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
@@ -72,7 +72,9 @@ def test_draft_pr_success_display(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
     ctx = _draft_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
     runner = CliRunner()
 
-    result = runner.invoke(plan_save, ["--format", "display"], obj=ctx)
+    result = runner.invoke(
+        plan_save, ["--format", "display", "--branch-slug", "test-slug"], obj=ctx
+    )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
     assert "Plan saved as draft PR" in result.output
@@ -126,7 +128,7 @@ def test_draft_pr_session_deduplication(tmp_path: Path, monkeypatch: pytest.Monk
     # First call creates the plan
     result1 = runner.invoke(
         plan_save,
-        ["--format", "json", "--session-id", session_id],
+        ["--format", "json", "--session-id", session_id, "--branch-slug", "test-slug"],
         obj=ctx,
     )
     assert result1.exit_code == 0, f"First call failed: {result1.output}"
@@ -137,7 +139,7 @@ def test_draft_pr_session_deduplication(tmp_path: Path, monkeypatch: pytest.Monk
     # Second call with same session_id should detect duplicate
     result2 = runner.invoke(
         plan_save,
-        ["--format", "json", "--session-id", session_id],
+        ["--format", "json", "--session-id", session_id, "--branch-slug", "test-slug"],
         obj=ctx,
     )
     assert result2.exit_code == 0, f"Second call failed: {result2.output}"
@@ -163,7 +165,7 @@ def test_draft_pr_plan_file_priority(tmp_path: Path, monkeypatch: pytest.MonkeyP
 
     result = runner.invoke(
         plan_save,
-        ["--format", "json", "--plan-file", str(plan_file)],
+        ["--format", "json", "--plan-file", str(plan_file), "--branch-slug", "test-slug"],
         obj=ctx,
     )
 
@@ -181,7 +183,7 @@ def test_draft_pr_objective_issue_metadata(tmp_path: Path, monkeypatch: pytest.M
 
     result = runner.invoke(
         plan_save,
-        ["--format", "json", "--objective-issue", "123"],
+        ["--format", "json", "--objective-issue", "123", "--branch-slug", "test-slug"],
         obj=ctx,
     )
 
@@ -202,7 +204,7 @@ def test_draft_pr_does_not_checkout_branch(tmp_path: Path, monkeypatch: pytest.M
     ctx = _draft_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
     runner = CliRunner()
 
-    result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
+    result = runner.invoke(plan_save, ["--format", "json", "--branch-slug", "test-slug"], obj=ctx)
 
     assert result.exit_code == 0, f"Failed: {result.output}"
     # No checkouts at all — gt track accepts branch positionally, and
@@ -216,7 +218,7 @@ def test_draft_pr_commits_plan_file(tmp_path: Path, monkeypatch: pytest.MonkeyPa
     ctx = _draft_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
     runner = CliRunner()
 
-    result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
+    result = runner.invoke(plan_save, ["--format", "json", "--branch-slug", "test-slug"], obj=ctx)
 
     assert result.exit_code == 0, f"Failed: {result.output}"
     # Verify branch commit was created with impl-context files (via git plumbing)
@@ -251,7 +253,7 @@ def test_draft_pr_trunk_branch_passes_through_to_pr_base(
     )
     runner = CliRunner()
 
-    result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
+    result = runner.invoke(plan_save, ["--format", "json", "--branch-slug", "test-slug"], obj=ctx)
 
     assert result.exit_code == 0, f"Failed: {result.output}"
     assert len(fake_github.created_prs) == 1
@@ -274,7 +276,7 @@ def test_draft_pr_tracks_branch_with_graphite(
     )
     runner = CliRunner()
 
-    result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
+    result = runner.invoke(plan_save, ["--format", "json", "--branch-slug", "test-slug"], obj=ctx)
 
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
@@ -309,7 +311,7 @@ def test_draft_pr_branch_not_stacked_on_current_branch(
     )
     runner = CliRunner()
 
-    result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
+    result = runner.invoke(plan_save, ["--format", "json", "--branch-slug", "test-slug"], obj=ctx)
 
     assert result.exit_code == 0, f"Failed: {result.output}"
 
@@ -396,3 +398,33 @@ def test_draft_pr_rejects_untitled_plan_display(
 
     assert result.exit_code == 2
     assert "Invalid plan title" in result.output
+
+
+def test_draft_pr_branch_slug_provided(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """When --branch-slug is provided, branch name incorporates that slug."""
+    ctx = _draft_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_save,
+        ["--format", "json", "--branch-slug", "my-custom-slug"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert "my-custom-slug" in output["branch_name"]
+
+
+def test_draft_pr_branch_slug_missing_errors(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """When --branch-slug is not provided, exits with error and remediation message."""
+    ctx = _draft_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
+    runner = CliRunner()
+
+    result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
+
+    assert result.exit_code == 1
+    assert "--branch-slug is required" in result.output

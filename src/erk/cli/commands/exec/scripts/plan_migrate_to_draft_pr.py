@@ -21,13 +21,11 @@ import json
 
 import click
 
-from erk.core.branch_slug_generator import generate_slug_or_fallback
 from erk_shared.context.helpers import (
     require_cwd,
     require_git,
     require_github,
     require_issues,
-    require_prompt_executor,
     require_repo_root,
     require_time,
 )
@@ -98,6 +96,11 @@ def _output_dry_run(
     default="json",
     help="Output format: json (default) or display (formatted text)",
 )
+@click.option(
+    "--branch-slug",
+    default=None,
+    help="Pre-generated branch slug (skips LLM call when provided)",
+)
 @click.pass_context
 def plan_migrate_to_draft_pr(
     ctx: click.Context,
@@ -105,6 +108,7 @@ def plan_migrate_to_draft_pr(
     *,
     dry_run: bool,
     output_format: str,
+    branch_slug: str | None,
 ) -> None:
     """Migrate an issue-based plan to a draft-PR-based plan.
 
@@ -142,10 +146,16 @@ def plan_migrate_to_draft_pr(
         )
         raise SystemExit(1)
 
-    # Generate draft-PR branch name from trunk with LLM-generated slug
+    if not branch_slug:
+        click.echo(
+            "Error: --branch-slug is required. "
+            "Generate a slug in the calling skill "
+            "and pass it via --branch-slug.",
+            err=True,
+        )
+        raise SystemExit(1)
     trunk = git.branch.detect_trunk_branch(cwd)
-    executor = require_prompt_executor(ctx)
-    slug = generate_slug_or_fallback(executor, plan.title)
+    slug = branch_slug
     branch_name = generate_draft_pr_branch_name(
         slug,
         now,

@@ -87,7 +87,7 @@ def test_migrate_success_json(tmp_path: Path) -> None:
 
     result = runner.invoke(
         plan_migrate_to_draft_pr,
-        ["42", "--format", "json"],
+        ["42", "--format", "json", "--branch-slug", "test-slug"],
         obj=ctx,
     )
 
@@ -108,7 +108,7 @@ def test_migrate_success_display(tmp_path: Path) -> None:
 
     result = runner.invoke(
         plan_migrate_to_draft_pr,
-        ["42", "--format", "display"],
+        ["42", "--format", "display", "--branch-slug", "test-slug"],
         obj=ctx,
     )
 
@@ -134,7 +134,7 @@ def test_migrate_dry_run(tmp_path: Path) -> None:
 
     result = runner.invoke(
         plan_migrate_to_draft_pr,
-        ["42", "--dry-run", "--format", "json"],
+        ["42", "--dry-run", "--format", "json", "--branch-slug", "test-slug"],
         obj=ctx,
     )
 
@@ -226,7 +226,7 @@ def test_migrate_preserves_objective_id(tmp_path: Path) -> None:
 
     result = runner.invoke(
         plan_migrate_to_draft_pr,
-        ["42", "--format", "json"],
+        ["42", "--format", "json", "--branch-slug", "test-slug"],
         obj=ctx,
     )
 
@@ -254,7 +254,7 @@ def test_migrate_preserves_erk_learn_label(tmp_path: Path) -> None:
 
     result = runner.invoke(
         plan_migrate_to_draft_pr,
-        ["42", "--format", "json"],
+        ["42", "--format", "json", "--branch-slug", "test-slug"],
         obj=ctx,
     )
 
@@ -280,7 +280,7 @@ def test_migrate_closes_original_issue(tmp_path: Path) -> None:
 
     result = runner.invoke(
         plan_migrate_to_draft_pr,
-        ["42", "--format", "json"],
+        ["42", "--format", "json", "--branch-slug", "test-slug"],
         obj=ctx,
     )
 
@@ -334,7 +334,7 @@ def test_migrate_preserves_operational_metadata(tmp_path: Path) -> None:
 
     result = runner.invoke(
         plan_migrate_to_draft_pr,
-        ["42", "--format", "json"],
+        ["42", "--format", "json", "--branch-slug", "test-slug"],
         obj=ctx,
     )
 
@@ -368,7 +368,7 @@ def test_migrate_commits_to_branch_without_checkout(tmp_path: Path) -> None:
 
     result = runner.invoke(
         plan_migrate_to_draft_pr,
-        ["42", "--format", "json"],
+        ["42", "--format", "json", "--branch-slug", "test-slug"],
         obj=ctx,
     )
 
@@ -394,6 +394,40 @@ def test_migrate_commits_to_branch_without_checkout(tmp_path: Path) -> None:
     assert fake_git.pushed_branches[0].branch == branch_commit.branch
 
 
+def test_migrate_branch_slug_provided(tmp_path: Path) -> None:
+    """When --branch-slug is provided, the branch name incorporates that slug."""
+    issue = _make_issue()
+    ctx = _make_context(tmp_path=tmp_path, issue=issue)
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_migrate_to_draft_pr,
+        ["42", "--format", "json", "--branch-slug", "my-custom-slug"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert "my-custom-slug" in output["branch_name"]
+
+
+def test_migrate_branch_slug_missing_errors(tmp_path: Path) -> None:
+    """When --branch-slug is not provided, exits with error and remediation message."""
+    issue = _make_issue(title="Fix Authentication Bug")
+    ctx = _make_context(tmp_path=tmp_path, issue=issue)
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_migrate_to_draft_pr,
+        ["42", "--format", "json"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 1
+    assert "--branch-slug is required" in result.output
+
+
 def test_migrate_posts_migration_comment(tmp_path: Path) -> None:
     """Migration notice comment is posted to original issue."""
     issue = _make_issue()
@@ -411,7 +445,7 @@ def test_migrate_posts_migration_comment(tmp_path: Path) -> None:
 
     result = runner.invoke(
         plan_migrate_to_draft_pr,
-        ["42", "--format", "json"],
+        ["42", "--format", "json", "--branch-slug", "test-slug"],
         obj=ctx,
     )
 
