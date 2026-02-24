@@ -461,16 +461,29 @@ def test_implementing_draft_with_conflicts_shows_both() -> None:
 
 
 def test_impl_checks_passing_no_comments_shows_rocket() -> None:
-    """Impl with passing checks and no unresolved comments shows rocket."""
+    """Published impl with passing checks and no unresolved comments shows rocket."""
     result = _format_lifecycle(
         "[yellow]impl[/yellow]",
-        is_draft=None,
+        is_draft=False,
         has_conflicts=False,
         review_decision=None,
         checks_passing=True,
         has_unresolved_comments=False,
     )
-    assert result == "[yellow]impl 🚀[/yellow]"
+    assert result == "[yellow]impl 👀 🚀[/yellow]"
+
+
+def test_impl_draft_checks_passing_shows_rocket() -> None:
+    """Draft impl with passing checks and no unresolved comments shows rocket."""
+    result = _format_lifecycle(
+        "[yellow]impl[/yellow]",
+        is_draft=True,
+        has_conflicts=False,
+        review_decision=None,
+        checks_passing=True,
+        has_unresolved_comments=False,
+    )
+    assert result == "[yellow]impl 🚧 🚀[/yellow]"
 
 
 def test_impl_checks_failing_no_rocket() -> None:
