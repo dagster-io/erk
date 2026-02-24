@@ -1862,12 +1862,14 @@ def _execute_land(
 @script_option
 @click.argument("target", required=False)
 @click.option(
+    "-u",
     "--up",
     "up_flag",
     is_flag=True,
     help="Navigate to child branch instead of trunk after landing",
 )
 @click.option(
+    "-d",
     "--down",
     "down_flag",
     is_flag=True,
