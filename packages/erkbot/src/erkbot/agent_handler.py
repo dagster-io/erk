@@ -1,8 +1,8 @@
-import time
 from typing import Any
 
 from slack_sdk.errors import SlackApiError
 
+from erk_shared.gateway.time.abc import Time
 from erkbot.agent.bot import ErkBot
 from erkbot.agent.events import TextDelta, ToolEnd, ToolStart
 from erkbot.emoji import add_result_emoji, remove_eyes_emoji
@@ -26,6 +26,7 @@ async def run_agent_background(
     source_ts: str,
     prompt: str,
     bot: ErkBot,
+    time: Time,
     progress_update_interval_seconds: float,
     max_slack_code_block_chars: int,
 ) -> None:

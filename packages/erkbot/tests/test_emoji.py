@@ -1,9 +1,8 @@
 import unittest
 from unittest.mock import AsyncMock
 
-from slack_sdk.errors import SlackApiError
-
 from erkbot.emoji import add_eyes_emoji, add_result_emoji, remove_eyes_emoji
+from slack_sdk.errors import SlackApiError
 
 
 def _slack_api_error(error_code: str) -> SlackApiError:

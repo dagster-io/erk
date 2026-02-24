@@ -1,9 +1,14 @@
+# NOTE: @patch usage is deliberate here. These tests patch asyncio.create_task
+# and run_erk_plan_list to verify Slack handler dispatch without launching real
+# background tasks or subprocess calls.
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from erkbot.config import Settings
 from erkbot.models import RunResult
 from erkbot.slack_handlers import register_handlers
+
+from erk_shared.gateway.time.fake import FakeTime
 
 
 class FakeApp:
@@ -30,7 +35,7 @@ class TestSlackHandlers(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.settings = Settings(SLACK_BOT_TOKEN="x", SLACK_APP_TOKEN="y")
         self.app = FakeApp()
-        register_handlers(self.app, settings=self.settings, bot=None)
+        register_handlers(self.app, settings=self.settings, bot=None, time=FakeTime())
 
     @patch("erkbot.slack_handlers.run_erk_plan_list", new_callable=AsyncMock)
     async def test_plan_list(self, mock_run_plan_list: AsyncMock) -> None:
@@ -91,7 +96,7 @@ class TestSlackHandlers(unittest.IsolatedAsyncioTestCase):
     async def test_chat_with_bot_starts_background_task(self, mock_asyncio: MagicMock) -> None:
         bot = MagicMock()
         app = FakeApp()
-        register_handlers(app, settings=self.settings, bot=bot)
+        register_handlers(app, settings=self.settings, bot=bot, time=FakeTime())
 
         handler = app.event_handlers["app_mention"]
         say = AsyncMock()

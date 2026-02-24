@@ -28,3 +28,13 @@ class Time(ABC):
             Current datetime (timezone-naive for simplicity)
         """
         ...
+
+    @abstractmethod
+    def monotonic(self) -> float:
+        """Get a monotonic clock value for measuring elapsed time.
+
+        Returns:
+            A float representing seconds from an arbitrary reference point.
+            Only differences between calls are meaningful.
+        """
+        ...

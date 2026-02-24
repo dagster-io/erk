@@ -1,8 +1,10 @@
 import unittest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 from erkbot.agent.events import AgentResult, TextDelta, ToolEnd, ToolStart, TurnEnd, TurnStart
 from erkbot.agent_handler import _build_progress_display, run_agent_background
+
+from erk_shared.gateway.time.fake import FakeTime
 
 
 class TestBuildProgressDisplay(unittest.TestCase):
@@ -23,14 +25,6 @@ class TestBuildProgressDisplay(unittest.TestCase):
         self.assertNotIn("x" * 3000, result)
 
 
-async def _make_fake_chat_stream(events):
-    async def chat_stream(*, prompt):
-        for event in events:
-            yield event
-
-    return chat_stream
-
-
 class TestRunAgentBackground(unittest.IsolatedAsyncioTestCase):
     def _make_bot(self, events):
         bot = MagicMock()
@@ -42,10 +36,8 @@ class TestRunAgentBackground(unittest.IsolatedAsyncioTestCase):
         bot.chat_stream = fake_chat_stream
         return bot
 
-    @patch("erkbot.agent_handler.time")
-    async def test_full_lifecycle_success(self, mock_time: MagicMock) -> None:
-        # Make time always trigger updates
-        mock_time.monotonic.return_value = 100.0
+    async def test_full_lifecycle_success(self) -> None:
+        fake_time = FakeTime(monotonic_values=[100.0])
 
         events = [
             TurnStart(turn_index=0),
@@ -65,6 +57,7 @@ class TestRunAgentBackground(unittest.IsolatedAsyncioTestCase):
             source_ts="0.99",
             prompt="hello",
             bot=bot,
+            time=fake_time,
             progress_update_interval_seconds=1.0,
             max_slack_code_block_chars=2800,
         )
@@ -80,9 +73,8 @@ class TestRunAgentBackground(unittest.IsolatedAsyncioTestCase):
             channel="C1", timestamp="0.99", name="white_check_mark"
         )
 
-    @patch("erkbot.agent_handler.time")
-    async def test_error_in_stream(self, mock_time: MagicMock) -> None:
-        mock_time.monotonic.return_value = 0.0
+    async def test_error_in_stream(self) -> None:
+        fake_time = FakeTime(monotonic_values=[0.0])
 
         bot = MagicMock()
 
@@ -101,6 +93,7 @@ class TestRunAgentBackground(unittest.IsolatedAsyncioTestCase):
             source_ts="0.99",
             prompt="hello",
             bot=bot,
+            time=fake_time,
             progress_update_interval_seconds=1.0,
             max_slack_code_block_chars=2800,
         )
@@ -114,9 +107,8 @@ class TestRunAgentBackground(unittest.IsolatedAsyncioTestCase):
         # Should still add failure emoji
         client.reactions_add.assert_any_call(channel="C1", timestamp="0.99", name="x")
 
-    @patch("erkbot.agent_handler.time")
-    async def test_empty_response(self, mock_time: MagicMock) -> None:
-        mock_time.monotonic.return_value = 100.0
+    async def test_empty_response(self) -> None:
+        fake_time = FakeTime(monotonic_values=[100.0])
 
         events = [
             TurnStart(turn_index=0),
@@ -134,6 +126,7 @@ class TestRunAgentBackground(unittest.IsolatedAsyncioTestCase):
             source_ts="0.99",
             prompt="hello",
             bot=bot,
+            time=fake_time,
             progress_update_interval_seconds=1.0,
             max_slack_code_block_chars=2800,
         )
@@ -145,17 +138,8 @@ class TestRunAgentBackground(unittest.IsolatedAsyncioTestCase):
             thread_ts="1.23",
         )
 
-    @patch("erkbot.agent_handler.time")
-    async def test_tool_events_track_active_state(self, mock_time: MagicMock) -> None:
-        # Incrementing time to trigger at least one update during tool use
-        call_count = 0
-
-        def incrementing_time():
-            nonlocal call_count
-            call_count += 1
-            return float(call_count * 2)
-
-        mock_time.monotonic.side_effect = incrementing_time
+    async def test_tool_events_track_active_state(self) -> None:
+        fake_time = FakeTime(monotonic_values=[2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0])
 
         events = [
             TurnStart(turn_index=0),
@@ -176,6 +160,7 @@ class TestRunAgentBackground(unittest.IsolatedAsyncioTestCase):
             source_ts="0.99",
             prompt="hello",
             bot=bot,
+            time=fake_time,
             progress_update_interval_seconds=1.0,
             max_slack_code_block_chars=2800,
         )

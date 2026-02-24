@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import asyncio
-import time
 from collections import deque
 from typing import TYPE_CHECKING, Any
 
 from slack_sdk.errors import SlackApiError
 
+from erk_shared.gateway.time.abc import Time
 from erkbot.agent_handler import run_agent_background
 from erkbot.config import Settings
 from erkbot.models import (
@@ -35,7 +35,7 @@ SUPPORTED_COMMANDS_TEXT = (
 )
 
 
-def register_handlers(app, *, settings: Settings, bot: ErkBot | None) -> None:  # type: ignore[no-untyped-def]
+def register_handlers(app, *, settings: Settings, bot: ErkBot | None, time: Time) -> None:  # type: ignore[no-untyped-def]
     async def add_read_ack(client: Any, channel: str, timestamp: str) -> None:
         try:
             await client.reactions_add(channel=channel, timestamp=timestamp, name="eyes")
@@ -231,6 +231,7 @@ def register_handlers(app, *, settings: Settings, bot: ErkBot | None) -> None:  
                     source_ts=source_ts,
                     prompt=command.message,
                     bot=bot,
+                    time=time,
                     progress_update_interval_seconds=settings.one_shot_progress_update_interval_seconds,
                     max_slack_code_block_chars=settings.max_slack_code_block_chars,
                 )

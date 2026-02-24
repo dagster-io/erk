@@ -1,3 +1,6 @@
+# NOTE: @patch usage is deliberate here. These tests verify the wiring between
+# ErkBot and the claude-agent-sdk third-party library (query/stream_agent_events),
+# which cannot be replaced with erk gateway fakes.
 import unittest
 from pathlib import Path
 from unittest.mock import AsyncMock, patch

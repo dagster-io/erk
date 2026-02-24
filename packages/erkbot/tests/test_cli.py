@@ -2,7 +2,7 @@
 # tests third-party Slack SDK wiring and does not use erk's gateway layer.
 import asyncio
 import unittest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import ANY, AsyncMock, MagicMock, patch
 
 from erkbot.cli import _run
 
@@ -25,7 +25,9 @@ class TestMain(unittest.TestCase):
 
         mock_load_dotenv.assert_called_once()
         mock_settings_cls.assert_called_once()
-        mock_create_app.assert_called_once_with(settings=mock_settings_cls.return_value, bot=None)
+        mock_create_app.assert_called_once_with(
+            settings=mock_settings_cls.return_value, bot=None, time=ANY
+        )
         mock_handler_cls.assert_called_once_with(
             mock_create_app.return_value,
             mock_settings_cls.return_value.slack_app_token,
