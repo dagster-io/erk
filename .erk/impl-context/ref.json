@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Add commit-history relevance check to `erk plan duplicate-check`"
+}
