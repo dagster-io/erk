@@ -234,6 +234,59 @@ def test_create_branch_auto_fixes_diverged_parent() -> None:
     )
 
 
+def test_create_branch_from_origin_skips_force_update_when_on_checked_out_branch() -> None:
+    """Test that create_branch skips force-update when parent branch is checked out.
+
+    When the user is on master and creates a branch from origin/master,
+    local master may be behind origin/master. Git refuses to force-update
+    a checked-out branch, so we skip the force-update entirely. The child
+    branch is still created correctly from origin/master.
+    """
+    fake_git = FakeGit(
+        current_branches={REPO_ROOT: "master"},  # User is ON master
+        worktrees={REPO_ROOT: [WorktreeInfo(path=REPO_ROOT, branch="master", is_root=True)]},
+        local_branches={REPO_ROOT: ["master"]},
+        branch_heads={
+            "master": "local-behind",  # Local master is behind
+            "origin/master": "remote-ahead",  # Remote is ahead
+        },
+    )
+    fake_graphite = FakeGraphite()
+    fake_graphite_branch_ops = fake_graphite.create_linked_branch_ops()
+    fake_github = FakeGitHub()
+
+    manager = GraphiteBranchManager(
+        git=fake_git,
+        graphite=fake_graphite,
+        graphite_branch_ops=fake_graphite_branch_ops,
+        github=fake_github,
+    )
+
+    # Should succeed without crashing — previously this would fail with
+    # "cannot force-update checked out branch"
+    manager.create_branch(REPO_ROOT, "plan/my-plan", "origin/master")
+
+    # The child branch should be created from origin/master
+    branch_gateway = fake_git.branch
+    assert isinstance(branch_gateway, FakeGitBranchOps)
+    assert any(
+        branch == "plan/my-plan" and start == "origin/master"
+        for (_, branch, start, _) in branch_gateway.created_branches
+    )
+
+    # master should NOT be force-updated (it's currently checked out)
+    assert not any(
+        branch == "master" and force is True
+        for (_, branch, _, force) in branch_gateway.created_branches
+    )
+
+    # Track was called with local branch name
+    assert any(
+        branch == "plan/my-plan" and parent == "master"
+        for (_, branch, parent) in fake_graphite.track_branch_calls
+    )
+
+
 def test_create_branch_skips_retrack_when_parent_not_diverged() -> None:
     """Test that create_branch does not retrack parent when not diverged."""
     fake_git = FakeGit(
