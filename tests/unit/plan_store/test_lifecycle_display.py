@@ -473,8 +473,8 @@ def test_impl_checks_passing_no_comments_shows_rocket() -> None:
     assert result == "[yellow]impl 👀 🚀[/yellow]"
 
 
-def test_impl_draft_checks_passing_shows_rocket() -> None:
-    """Draft impl with passing checks and no unresolved comments shows rocket."""
+def test_impl_draft_checks_passing_no_rocket() -> None:
+    """Draft impl with passing checks does not show rocket — draft PRs aren't landable."""
     result = _format_lifecycle(
         "[yellow]impl[/yellow]",
         is_draft=True,
@@ -483,7 +483,7 @@ def test_impl_draft_checks_passing_shows_rocket() -> None:
         checks_passing=True,
         has_unresolved_comments=False,
     )
-    assert result == "[yellow]impl 🚧 🚀[/yellow]"
+    assert result == "[yellow]impl 🚧[/yellow]"
 
 
 def test_impl_checks_failing_no_rocket() -> None:

@@ -223,8 +223,13 @@ def _build_indicators(
                 indicators.append("❌")
 
     # Ready-to-land indicator for impl stage:
-    # conflicts and changes-requested mean the PR is not landable
-    if is_impl and has_conflicts is not True and review_decision != "CHANGES_REQUESTED":
+    # draft, conflicts and changes-requested mean the PR is not landable
+    if (
+        is_impl
+        and is_draft is not True
+        and has_conflicts is not True
+        and review_decision != "CHANGES_REQUESTED"
+    ):
         if checks_passing is True and has_unresolved_comments is not True:
             indicators.append("🚀")
 
