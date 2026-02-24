@@ -29,7 +29,7 @@ from erk_shared.gateway.pr.diff_extraction import execute_diff_extraction
 from erk_shared.impl_folder import read_plan_ref
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.plan_store.conversion import header_str
-from erk_shared.plan_store.draft_pr_lifecycle import (
+from erk_shared.plan_store.planned_pr_lifecycle import (
     PLAN_CONTENT_SEPARATOR,
     build_original_plan_section,
 )
@@ -238,10 +238,10 @@ def discover_issue_for_footer(
 
     Tries two sources in order:
     1. .impl/plan-ref.json (or legacy issue.json) or branch name pattern
-       (``P{N}-{slug}`` for issue-based, ``plan-{slug}`` for draft-PR)
+       (``P{N}-{slug}`` for issue-based, ``plan-{slug}`` for planned-PR)
     2. Closing reference in existing PR footer (fallback)
 
-    For draft-PR branches (``plan-{slug}-{timestamp}``), ``branch_issue`` is None,
+    For planned-PR branches (``plan-{slug}-{timestamp}``), ``branch_issue`` is None,
     so the function relies entirely on plan-ref.json for the issue number.
 
     Args:
@@ -256,7 +256,7 @@ def discover_issue_for_footer(
     """
     # Primary: discover from .impl/plan-ref.json (or legacy issue.json) or branch name
     # For issue-based branches (P{N}-...), branch_issue is extracted from the prefix.
-    # For draft-PR branches (plan-...), branch_issue is None.
+    # For planned-PR branches (plan-...), branch_issue is None.
     branch_issue = extract_leading_issue_number(branch_name)
     plan_ref = read_plan_ref(impl_dir) if impl_dir.exists() else None
     impl_issue = int(plan_ref.plan_id) if plan_ref is not None else None

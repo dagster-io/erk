@@ -1188,8 +1188,7 @@ def main():
         objective_issue = None
         github_data = None
 
-        backend_type = "draft_pr"
-        backend_display = "draft-pr" if backend_type == "draft_pr" else "issue"
+        backend_display = "planned-pr"
 
         if cwd:
             # Create context with real gateways

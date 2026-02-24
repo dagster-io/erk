@@ -376,11 +376,11 @@ def test_branch_create_for_plan_creates_branch_and_impl_folder(tmp_path) -> None
             metadata={},
             objective_id=None,
         )
-        backend = "draft_pr"
+        backend = "planned_pr"
         plan_store, _ = create_plan_store({"123": plan}, backend=backend)
 
-        # draft_pr backend reuses an existing branch; pre-configure FakeGit with it
-        if backend == "draft_pr":
+        # planned_pr backend reuses an existing branch; pre-configure FakeGit with it
+        if backend == "planned_pr":
             git_ops = FakeGit(
                 worktrees=env.build_worktrees("main"),
                 current_branches={env.cwd: "main"},
@@ -398,7 +398,7 @@ def test_branch_create_for_plan_creates_branch_and_impl_folder(tmp_path) -> None
         )
 
         assert result.exit_code == 0
-        if backend == "draft_pr":
+        if backend == "planned_pr":
             assert "plan-123" in result.output
         else:
             # Branch name is derived from issue number and title
@@ -460,10 +460,10 @@ def test_branch_create_for_plan_with_issue_url(tmp_path) -> None:
             metadata={},
             objective_id=None,
         )
-        backend = "draft_pr"
+        backend = "planned_pr"
         plan_store, _ = create_plan_store({"456": plan}, backend=backend)
 
-        if backend == "draft_pr":
+        if backend == "planned_pr":
             git_ops = FakeGit(
                 worktrees=env.build_worktrees("main"),
                 current_branches={env.cwd: "main"},
@@ -484,7 +484,7 @@ def test_branch_create_for_plan_with_issue_url(tmp_path) -> None:
         )
 
         assert result.exit_code == 0
-        if backend == "draft_pr":
+        if backend == "planned_pr":
             assert "plan-456" in result.output
         else:
             assert "P456" in result.output
@@ -578,10 +578,10 @@ def test_branch_create_for_plan_with_no_slot_skips_impl() -> None:
             metadata={},
             objective_id=None,
         )
-        backend = "draft_pr"
+        backend = "planned_pr"
         plan_store, _ = create_plan_store({"100": plan}, backend=backend)
 
-        if backend == "draft_pr":
+        if backend == "planned_pr":
             git_ops = FakeGit(
                 worktrees=env.build_worktrees("main"),
                 current_branches={env.cwd: "main"},
@@ -602,7 +602,7 @@ def test_branch_create_for_plan_with_no_slot_skips_impl() -> None:
         )
 
         assert result.exit_code == 0
-        if backend == "draft_pr":
+        if backend == "planned_pr":
             assert "plan-100" in result.output
         else:
             assert "Created branch:" in result.output
@@ -757,10 +757,10 @@ def test_branch_create_for_plan_stacks_on_current_branch() -> None:
             metadata={},
             objective_id=None,
         )
-        backend = "draft_pr"
+        backend = "planned_pr"
         plan_store, _ = create_plan_store({"200": plan}, backend=backend)
 
-        if backend == "draft_pr":
+        if backend == "planned_pr":
             git_ops = FakeGit(
                 worktrees=env.build_worktrees("main"),
                 current_branches={env.cwd: "feature-parent"},
@@ -778,7 +778,7 @@ def test_branch_create_for_plan_stacks_on_current_branch() -> None:
         )
 
         assert result.exit_code == 0
-        if backend == "draft_pr":
+        if backend == "planned_pr":
             assert "plan-200" in result.output
         else:
             assert "P200" in result.output
@@ -981,10 +981,10 @@ def test_branch_create_for_plan_stacks_in_place_creates_impl() -> None:
             metadata={},
             objective_id=None,
         )
-        backend = "draft_pr"
+        backend = "planned_pr"
         plan_store, _ = create_plan_store({"300": plan}, backend=backend)
 
-        if backend == "draft_pr":
+        if backend == "planned_pr":
             git_ops = FakeGit(
                 worktrees=env.build_worktrees("main"),
                 current_branches={env.cwd: "existing-branch"},
@@ -1010,7 +1010,7 @@ def test_branch_create_for_plan_stacks_in_place_creates_impl() -> None:
         state = load_pool_state(repo.pool_json_path)
         assert state is not None
         assert len(state.assignments) == 1
-        if backend == "draft_pr":
+        if backend == "planned_pr":
             assert "plan-300" in state.assignments[0].branch_name
         else:
             assert "P300" in state.assignments[0].branch_name

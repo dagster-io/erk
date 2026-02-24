@@ -1,24 +1,24 @@
 ---
-title: Draft PR Branch Sync
+title: Planned PR Branch Sync
 read_when:
-  - "implementing or debugging draft-PR plan setup"
+  - "implementing or debugging planned-PR plan setup"
   - "understanding branch sync during plan implementation"
-  - "working with setup_impl_from_issue for draft PR plans"
+  - "working with setup_impl_from_issue for planned PR plans"
   - "debugging divergence between local and remote plan branches"
 tripwires:
-  - action: "implementing draft-PR plan without syncing with remote"
-    warning: "Before implementing a draft-PR plan, always sync with remote: fetch_branch -> checkout/create_tracking -> pull_rebase"
+  - action: "implementing planned-PR plan without syncing with remote"
+    warning: "Before implementing a planned-PR plan, always sync with remote: fetch_branch -> checkout/create_tracking -> pull_rebase"
   - action: "detecting plan backend by checking backend type directly"
-    warning: "Use plan.header_fields.get(BRANCH_NAME) to detect draft-PR plans. This is backend-agnostic and works across all backends."
-  - action: "creating a new branch for a draft-PR plan"
-    warning: "Draft-PR plans already have a branch created during plan-save. Reuse the existing branch, don't create a new one."
-  - action: "committing to draft-PR plan branches after checkout without pulling remote"
+    warning: "Use plan.header_fields.get(BRANCH_NAME) to detect planned-PR plans. This is backend-agnostic and works across all backends."
+  - action: "creating a new branch for a planned-PR plan"
+    warning: "Planned PR plans already have a branch created during plan-save. Reuse the existing branch, don't create a new one."
+  - action: "committing to planned-PR plan branches after checkout without pulling remote"
     warning: "Both setup_impl_from_issue.py and submit.py use the same three-step sync: fetch_branch -> checkout/create_tracking -> pull_rebase. Skipping pull_rebase causes non-fast-forward push failures."
 ---
 
-# Draft PR Branch Sync
+# Planned PR Branch Sync
 
-When implementing a draft-PR plan, the local branch must be synced with remote because plan-save creates the branch and pushes it, then checks out the original branch. Remote may receive additional commits before implementation runs.
+When implementing a planned-PR plan, the local branch must be synced with remote because plan-save creates the branch and pushes it, then checks out the original branch. Remote may receive additional commits before implementation runs.
 
 ## The Problem
 
@@ -63,7 +63,7 @@ The branch name is stored in the plan's header fields. Detection uses a backend-
 
 <!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py:103-112 -->
 
-Reads `plan.header_fields.get(BRANCH_NAME)`. If the result is a non-empty string, this is a draft-PR plan (reuse the existing branch and sync with remote). Otherwise, it is an issue-based plan (generate a new branch name).
+Reads `plan.header_fields.get(BRANCH_NAME)`. If the result is a non-empty string, this is a planned-PR plan (reuse the existing branch and sync with remote). Otherwise, it is an issue-based plan (generate a new branch name).
 
 ## Backend-Aware Branching
 
@@ -71,7 +71,7 @@ The `create_cmd.py` branch creation also handles the two backends explicitly:
 
 <!-- Source: src/erk/cli/commands/branch/create_cmd.py:164-198 -->
 
-For `draft_pr` backend: the branch was created by plan-save and is expected to exist on remote — fetches and creates a tracking branch if needed. For `github` (issue-based) backend: standard path, creates a new branch which must not already exist. Any other backend raises `RuntimeError`.
+For `planned_pr` backend: the branch was created by plan-save and is expected to exist on remote — fetches and creates a tracking branch if needed. For `github` (issue-based) backend: standard path, creates a new branch which must not already exist. Any other backend raises `RuntimeError`.
 
 ## Idempotent Design
 
@@ -106,6 +106,6 @@ If already on a branch matching the expected prefix (`P{issue_number}-`), the ex
 
 ## Related Topics
 
-- [Draft PR Lifecycle](draft-pr-lifecycle.md) - PR body format through lifecycle stages
+- [Planned PR Lifecycle](planned-pr-lifecycle.md) - PR body format through lifecycle stages
 - [Plan Lifecycle](lifecycle.md) - Overall plan lifecycle
 - [Plan Backend Migration](../architecture/plan-backend-migration.md) - Migrating to backend abstraction

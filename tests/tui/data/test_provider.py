@@ -238,7 +238,7 @@ class TestBuildWorktreeMapping:
         # Non-plan branch should not produce an entry
         assert len(mapping) == 0
 
-    def test_draft_pr_branch_resolved_via_plan_ref_json(self, tmp_path: Path) -> None:
+    def test_planned_pr_branch_resolved_via_plan_ref_json(self, tmp_path: Path) -> None:
         """Draft PR branch (plnd/*) resolved via .impl/plan-ref.json.
 
         Branch name 'plnd/fix-missing-data-02-19-1416' doesn't contain a
@@ -435,7 +435,7 @@ class TestBuildWorktreeMapping:
         assert 9999 not in mapping
         assert len(mapping) == 0
 
-    def test_draft_pr_branch_without_plan_ref_not_in_mapping(self, tmp_path: Path) -> None:
+    def test_planned_pr_branch_without_plan_ref_not_in_mapping(self, tmp_path: Path) -> None:
         """Draft PR branch without .impl/plan-ref.json is not in mapping."""
         repo_root = tmp_path / "repo"
         repo_root.mkdir()

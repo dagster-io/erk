@@ -759,8 +759,8 @@ def test_validate_plan_linkage_legacy_fallback(tmp_path: Path) -> None:
     assert result == "42"
 
 
-def test_validate_plan_linkage_draft_pr_with_plan_ref(tmp_path: Path) -> None:
-    """Test draft-PR branch returns plan_id from plan-ref.json."""
+def test_validate_plan_linkage_planned_pr_with_plan_ref(tmp_path: Path) -> None:
+    """Test planned-PR branch returns plan_id from plan-ref.json."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
     save_plan_ref(
@@ -776,8 +776,8 @@ def test_validate_plan_linkage_draft_pr_with_plan_ref(tmp_path: Path) -> None:
     assert result == "789"
 
 
-def test_validate_plan_linkage_draft_pr_without_plan_ref(tmp_path: Path) -> None:
-    """Test draft-PR branch without plan-ref.json returns None."""
+def test_validate_plan_linkage_planned_pr_without_plan_ref(tmp_path: Path) -> None:
+    """Test planned-PR branch without plan-ref.json returns None."""
     impl_dir = tmp_path / ".impl"
 
     result = validate_plan_linkage(impl_dir, "plan-fix-auth-bug-01-15-1430")

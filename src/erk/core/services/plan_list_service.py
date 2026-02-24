@@ -20,14 +20,14 @@ from erk_shared.gateway.github.types import (
     WorkflowRun,
 )
 from erk_shared.plan_store.conversion import issue_info_to_plan, pr_details_to_plan
-from erk_shared.plan_store.draft_pr_lifecycle import (
+from erk_shared.plan_store.planned_pr_lifecycle import (
     extract_plan_content,
     has_original_plan_section,
 )
 
 
-class DraftPRPlanListService(PlanListService):
-    """Plan list service for draft-PR-backed plans.
+class PlannedPRPlanListService(PlanListService):
+    """Plan list service for planned-PR-backed plans.
 
     Uses a single GraphQL query to fetch draft PRs with the erk-plan label
     along with rich data (checks, review threads, merge status). Converts

@@ -15,7 +15,7 @@ from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
 
 
 def _make_issue_info(number: int, body: str) -> IssueInfo:
@@ -103,10 +103,10 @@ def test_get_plan_info_includes_objective_id() -> None:
 # ============================================================================
 
 
-def test_get_plan_info_draft_pr_backend() -> None:
+def test_get_plan_info_planned_pr_backend() -> None:
     """Test plan info retrieval from draft PR backend."""
     fake_github = FakeGitHub()
-    backend = DraftPRPlanBackend(fake_github, fake_github.issues, time=FakeTime())
+    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
 
     create_result = backend.create_plan(
         repo_root=Path("/repo"),

@@ -133,7 +133,7 @@ class TestGetRepoInfo:
             has_conflicts=False,
         )
 
-    def test_draft_pr_returns_draft_state(self) -> None:
+    def test_planned_pr_returns_draft_state(self) -> None:
         """Draft PR should have pr_state='draft'."""
         github_data = GitHubData(
             owner="testowner",
@@ -1723,8 +1723,8 @@ class TestFetchGitHubDataViaGateway:
 class TestBackendLabel:
     """Test plan backend label in statusline output."""
 
-    def test_default_backend_shows_draft_pr(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Default backend (draft_pr) should show (be:draft-pr) in output."""
+    def test_default_backend_shows_planned_pr(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Default backend should show (be:planned-pr) in output."""
         monkeypatch.delenv("ERK_PLAN_BACKEND", raising=False)
         stdin_payload = {
             "workspace": {"current_dir": ""},
@@ -1735,21 +1735,7 @@ class TestBackendLabel:
             with patch("builtins.print") as mock_print:
                 main()
         output = mock_print.call_args[0][0]
-        assert "(be:draft-pr)" in output
-
-    def test_draft_pr_backend_shows_draft_pr(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """draft_pr backend via env var should show (be:draft-pr) in output."""
-        monkeypatch.setenv("ERK_PLAN_BACKEND", "draft_pr")
-        stdin_payload = {
-            "workspace": {"current_dir": ""},
-            "session_id": "test",
-            "model": {"display_name": "opus", "id": "opus"},
-        }
-        with patch("json.load", return_value=stdin_payload):
-            with patch("builtins.print") as mock_print:
-                main()
-        output = mock_print.call_args[0][0]
-        assert "(be:draft-pr)" in output
+        assert "(be:planned-pr)" in output
 
 
 class TestMainSetsGitOptionalLocks:

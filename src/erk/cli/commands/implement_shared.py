@@ -530,7 +530,7 @@ def prepare_plan_source_from_issue(
 
     # Prepare and validate using shared helper (returns union type)
     result = prepare_plan_for_worktree(
-        plan, ctx.time.now(), plan_backend="draft_pr", warn_non_open=True
+        plan, ctx.time.now(), plan_backend="planned_pr", warn_non_open=True
     )
 
     if isinstance(result, IssueValidationFailed):

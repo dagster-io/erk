@@ -4,7 +4,7 @@ last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 tripwires:
   - action: "changing branch naming convention (P{issue}- or plnd/ prefix)"
-    warning: "The P{issue}- prefix (issue-based) and plnd/ prefix (draft-PR) are cross-cutting contracts used by branch creation, extraction functions, and PR recovery. Changing either prefix format requires updating all consumers."
+    warning: "The P{issue}- prefix (issue-based) and plnd/ prefix (planned-PR) are cross-cutting contracts used by branch creation, extraction functions, and PR recovery. Changing either prefix format requires updating all consumers."
   - action: "adding branch_name to plan-header at creation time"
     warning: "branch_name is intentionally omitted at creation because the branch doesn't exist yet. The plan-save → branch-create → impl-signal lifecycle requires this gap. See the temporal gap section below."
 read_when:
@@ -58,14 +58,14 @@ Branches for issue-based plans start with `P{issue_number}-`. This prefix is gen
 
 The prefix is the stable part of the contract. The slug and timestamp segments after the prefix vary, but inference only needs the prefix to establish the plan-to-branch mapping.
 
-### Draft-PR Branches: `plnd/`
+### Planned PR Branches: `plnd/`
 
-Branches for draft-PR plans start with `plnd/` and follow the pattern `plnd/{slug}-{timestamp}` (with optional `O{objective_id}` segment). These branches have **no extractable plan ID** from the branch name alone. Legacy branches may use `planned/` prefix.
+Branches for planned-PR plans start with `plnd/` and follow the pattern `plnd/{slug}-{timestamp}` (with optional `O{objective_id}` segment). These branches have **no extractable plan ID** from the branch name alone. Legacy branches may use `planned/` prefix.
 
-<!-- Source: packages/erk-shared/src/erk_shared/naming.py, generate_draft_pr_branch_name -->
+<!-- Source: packages/erk-shared/src/erk_shared/naming.py, generate_planned_pr_branch_name -->
 
-- **Branch creation**: `generate_draft_pr_branch_name()` produces `plnd/{slug}-{timestamp}`
-- **Plan ID resolution**: `DraftPRPlanBackend.resolve_plan_id_for_branch()` uses an API call, not regex
+- **Branch creation**: `generate_planned_pr_branch_name()` produces `plnd/{slug}-{timestamp}`
+- **Plan ID resolution**: `PlannedPRBackend.resolve_plan_id_for_branch()` uses an API call, not regex
 - **Source of truth**: `plan-ref.json` is the sole source of plan ID for draft-PR branches
 - **Extraction functions**: `extract_leading_issue_number()` returns `None` for `plnd/` branches; `extract_objective_number()` handles `P{issue}-O{obj}-`, `plnd/O{obj}-`, and legacy `planned/O{obj}-` patterns
 

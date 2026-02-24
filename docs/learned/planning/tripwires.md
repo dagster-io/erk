@@ -12,9 +12,9 @@ read_when:
 
 Rules triggered by matching actions in code.
 
-**adding <code> inside <summary> elements in PR bodies** → Read [Draft PR Lifecycle](draft-pr-lifecycle.md) first. Graphite doesn't render <code> inside <summary> — use plain text instead. GitHub renders it but Graphite does not. The correct format is <summary>original-plan</summary> not <summary><code>original-plan</code></summary>.
+**adding <code> inside <summary> elements in PR bodies** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Graphite doesn't render <code> inside <summary> — use plain text instead. GitHub renders it but Graphite does not. The correct format is <summary>original-plan</summary> not <summary><code>original-plan</code></summary>.
 
-**adding Closes #N to a draft PR footer** → Read [Draft PR Lifecycle](draft-pr-lifecycle.md) first. Draft PR IS the plan. Self-referential close would close the plan itself. Use issue_number=None for draft-PR backend.
+**adding Closes #N to a planned PR footer** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Planned PR IS the plan. Self-referential close would close the plan itself. Use issue_number=None for github-draft-pr backend.
 
 **adding a new PR-dependent step to trigger-async-learn** → Read [Learn Without PR Context](learn-without-pr-context.md) first. Any new PR-dependent step must handle the None case from \_get_pr_for_plan_direct. The entire PR comment block is gated on pr_result not being None.
 
@@ -30,7 +30,7 @@ Rules triggered by matching actions in code.
 
 **adding erk-consolidated label to a single-issue replan** → Read [Consolidation Labels](consolidation-labels.md) first. Only multi-plan consolidation gets the erk-consolidated label. Single-issue replans are updates, not consolidations.
 
-**adding footer before PR creation** → Read [Draft PR Lifecycle](draft-pr-lifecycle.md) first. PR footer needs the PR number, which isn't known until after create_pr returns. Add footer AFTER PR creation.
+**adding footer before PR creation** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. PR footer needs the PR number, which isn't known until after create_pr returns. Add footer AFTER PR creation.
 
 **adding new agents to learn workflow** → Read [Learn Workflow](learn-workflow.md) first. Document input/output format and test file passing. Learn workflow uses stateless agents with file-based composition.
 
@@ -66,11 +66,11 @@ Rules triggered by matching actions in code.
 
 **catching PlanHeaderNotFoundError** → Read [PlanBackend Migration Guide](plan-backend-migration.md) first. PlanHeaderNotFoundError is an exception; PlanNotFound is a result type - use LBYL for the latter
 
-**changing branch naming convention (P{issue}- or plnd/ prefix)** → Read [Branch Name Inference](branch-name-inference.md) first. The P{issue}- prefix (issue-based) and plnd/ prefix (draft-PR) are cross-cutting contracts used by branch creation, extraction functions, and PR recovery. Changing either prefix format requires updating all consumers.
+**changing branch naming convention (P{issue}- or plnd/ prefix)** → Read [Branch Name Inference](branch-name-inference.md) first. The P{issue}- prefix (issue-based) and plnd/ prefix (planned-PR) are cross-cutting contracts used by branch creation, extraction functions, and PR recovery. Changing either prefix format requires updating all consumers.
 
 **changing how sessions are classified as planning vs impl** → Read [Learn Pipeline Workflow](learn-pipeline-workflow.md) first. Classification uses planning_session_id from GitHub metadata. The resulting prefix (planning- vs impl-) propagates into XML filenames and is used by downstream learn agents to weight insights differently.
 
-**checking erk exec plan-save --format json output for empty result** → Read [Draft PR Plan Backend](draft-pr-plan-backend.md) first. Empty stdout does not mean failure. The duplicate-detection path writes JSON to stderr, not stdout. Always capture both streams with 2>&1 or check for empty stdout and retry with stderr capture.
+**checking erk exec plan-save --format json output for empty result** → Read [Planned PR Backend](planned-pr-backend.md) first. Empty stdout does not mean failure. The duplicate-detection path writes JSON to stderr, not stdout. Always capture both streams with 2>&1 or check for empty stdout and retry with stderr capture.
 
 **checking only one location when extracting plan content** → Read [Plan Content Extraction Fallback](metadata-block-fallback.md) first. Always check both the first comment (plan-body metadata block) and the issue body before reporting 'no plan content found'. The replan command documents this explicitly in Step 4a.
 
@@ -78,7 +78,7 @@ Rules triggered by matching actions in code.
 
 **closing a plan issue without verifying all items were addressed** → Read [Complete File Inventory Protocol](complete-inventory-protocol.md) first. Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode.
 
-**committing to draft-PR plan branches after checkout without pulling remote** → Read [Draft PR Branch Sync](draft-pr-branch-sync.md) first. Both setup_impl_from_issue.py and submit.py use the same three-step sync: fetch_branch -> checkout/create_tracking -> pull_rebase. Skipping pull_rebase causes non-fast-forward push failures.
+**committing to planned-PR plan branches after checkout without pulling remote** → Read [Planned PR Branch Sync](planned-pr-branch-sync.md) first. Both setup_impl_from_issue.py and submit.py use the same three-step sync: fetch_branch -> checkout/create_tracking -> pull_rebase. Skipping pull_rebase causes non-fast-forward push failures.
 
 **consolidating issues that already have erk-consolidated label** → Read [Consolidation Labels](consolidation-labels.md) first. Filter out erk-consolidated issues before consolidation. These are outputs of previous consolidation and should not be re-consolidated.
 
@@ -88,7 +88,7 @@ Rules triggered by matching actions in code.
 
 **creating a learn plan without setting learned_from_issue** → Read [Learn Plans vs. Implementation Plans](learn-vs-implementation-plans.md) first. Learn plans MUST set learned_from_issue to their parent implementation plan's issue number. Without it, base branch auto-detection fails and the learn plan lands on trunk instead of stacking on the parent.
 
-**creating a new branch for a draft-PR plan** → Read [Draft PR Branch Sync](draft-pr-branch-sync.md) first. Draft-PR plans already have a branch created during plan-save. Reuse the existing branch, don't create a new one.
+**creating a new branch for a planned-PR plan** → Read [Planned PR Branch Sync](planned-pr-branch-sync.md) first. Planned PR plans already have a branch created during plan-save. Reuse the existing branch, don't create a new one.
 
 **creating a new plan-generating command without a pre-plan gathering step** → Read [Context Preservation Prompting Patterns](context-preservation-prompting.md) first. Without explicit context materialization before EnterPlanMode, agents produce sparse plans. Apply the two-phase pattern from this document.
 
@@ -102,7 +102,7 @@ Rules triggered by matching actions in code.
 
 **designing output routing for a multi-agent workflow** → Read [Agent Output Routing Strategies](agent-output-routing-strategies.md) first. Choose between embedded-prompt routing (in orchestrator Task prompts) and agent-file routing (in agent definitions). See this doc for the decision framework.
 
-**detecting plan backend by checking backend type directly** → Read [Draft PR Branch Sync](draft-pr-branch-sync.md) first. Use plan.header_fields.get(BRANCH_NAME) to detect draft-PR plans. This is backend-agnostic and works across all backends.
+**detecting plan backend by checking backend type directly** → Read [Planned PR Branch Sync](planned-pr-branch-sync.md) first. Use plan.header_fields.get(BRANCH_NAME) to detect planned-PR plans. This is backend-agnostic and works across all backends.
 
 **editing plan body content in plan creation, replan, or one-shot dispatch** → Read [One-Shot Workflow](one-shot-workflow.md) first. One-shot metadata block preservation: the metadata block in the plan body (HTML comment with erk:metadata-block markers) must survive all edits. Never strip or overwrite HTML comment blocks that contain erk:metadata-block markers.
 
@@ -122,7 +122,7 @@ Rules triggered by matching actions in code.
 
 **implementing custom PR/plan relevance assessment logic** → Read [Plan Lifecycle](lifecycle.md) first. Reference `/local:check-relevance` verdict classification system first. Use SUPERSEDED (80%+ overlap), PARTIALLY_IMPLEMENTED (30-80% overlap), DIFFERENT_APPROACH, STILL_RELEVANT, NEEDS_REVIEW categories for consistency.
 
-**implementing draft-PR plan without syncing with remote** → Read [Draft PR Branch Sync](draft-pr-branch-sync.md) first. Before implementing a draft-PR plan, always sync with remote: fetch_branch -> checkout/create_tracking -> pull_rebase
+**implementing planned-PR plan without syncing with remote** → Read [Planned PR Branch Sync](planned-pr-branch-sync.md) first. Before implementing a planned-PR plan, always sync with remote: fetch_branch -> checkout/create_tracking -> pull_rebase
 
 **importing functions directly from plan_header.py** → Read [Plan Header Privatization](plan-header-privatization.md) first. plan_header.py functions are being privatized. Use PlanBackend methods instead for metadata operations.
 
@@ -140,9 +140,7 @@ Rules triggered by matching actions in code.
 
 **manually setting the base branch for a learn plan submission** → Read [Learn Plans vs. Implementation Plans](learn-vs-implementation-plans.md) first. Learn plan base branch is auto-detected from learned_from_issue → parent branch. Only use --base to override if the parent branch is missing from the remote.
 
-**marking a draft-PR plan as 'implementation complete' and referencing itself as the implementing PR** → Read [Draft PR Lifecycle](draft-pr-lifecycle.md) first. Self-referential close prevention: when a draft PR IS the plan, it cannot close itself. The plan's implementation-complete event cannot reference the plan PR as the implementing PR. One-shot dispatch guards against this — do not remove the guard.
-
-**migrating a plan without preserving operational metadata** → Read [Plan Migration to Draft PR](plan-migrate-to-draft-pr.md) first. create_plan() only sets a subset of fields. Use update_metadata() in a second phase to carry over operational fields like lifecycle_stage, last_dispatched_at, etc. See \_FIELDS_HANDLED_BY_CREATE in plan_migrate_to_draft_pr.py.
+**marking a planned-PR plan as 'implementation complete' and referencing itself as the implementing PR** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Self-referential close prevention: when a planned PR IS the plan, it cannot close itself. The plan's implementation-complete event cannot reference the plan PR as the implementing PR. One-shot dispatch guards against this — do not remove the guard.
 
 **modifying learn command to add/remove/reorder agents** → Read [Learn Workflow](learn-workflow.md) first. Verify tier placement before assigning model. Parallel extraction uses haiku, sequential synthesis may need opus for quality-critical output.
 
@@ -156,7 +154,7 @@ Rules triggered by matching actions in code.
 
 **moving gateway files without git mv** → Read [Gateway Consolidation Checklist](gateway-consolidation-checklist.md) first. Always use git mv to preserve file history. Plain mv + git add loses blame history, making future archaeology harder.
 
-**parsing plan content without backward compatibility** → Read [Draft PR Lifecycle](draft-pr-lifecycle.md) first. extract_plan_content() handles both details-wrapped and old flat format. Always use it instead of manual parsing.
+**parsing plan content without backward compatibility** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. extract_plan_content() handles both details-wrapped and old flat format. Always use it instead of manual parsing.
 
 **passing ${CLAUDE_SESSION_ID} to a sub-agent via the prompt string** → Read [Sub-Agent Context Limitations](sub-agent-context-limitations.md) first. String substitution of ${CLAUDE_SESSION_ID} happens at the root agent level. By the time the sub-agent runs the bash command, the variable is not in its environment. The root agent must resolve the value and pass it as a literal.
 
@@ -184,7 +182,7 @@ Rules triggered by matching actions in code.
 
 **reviewing a PR that contains .erk/impl-context/ files** → Read [Impl-Context Staging Directory](impl-context.md) first. Leave a PR comment telling the author to remove .erk/impl-context/. This is an erk tooling error — the directory should have been cleaned up before implementation. Run: git rm -rf .erk/impl-context/ && git commit -m 'Remove leaked impl-context'
 
-**rewriting PR body without preserving metadata** → Read [Draft PR Lifecycle](draft-pr-lifecycle.md) first. Extract metadata prefix on every lifecycle transition via extract_metadata_prefix() to prevent metadata loss.
+**rewriting PR body without preserving metadata** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Extract metadata prefix on every lifecycle transition via extract_metadata_prefix() to prevent metadata loss.
 
 **running /erk:learn in CI** → Read [Learn Workflow](learn-workflow.md) first. CI mode skips interactive prompts and auto-proceeds. Check CI/GITHUB_ACTIONS env vars. See CI Environment Behavior section.
 
@@ -204,11 +202,11 @@ Rules triggered by matching actions in code.
 
 **using 'steps' instead of 'nodes' in new plan metadata code** → Read [Schema V3 Migration](schema-v3-migration.md) first. Schema v3 uses 'nodes' (not 'steps'). The parser accepts both for backward compatibility but the renderer always emits v3. See schema-v3-migration.md.
 
-**using `extract_metadata_prefix` or `extract_plan_content` without validating separator context** → Read [Draft PR Lifecycle](draft-pr-lifecycle.md) first. The content separator `\n\n---\n\n` can accidentally form from 'Remotely executed' notes + footer delimiter. extract_metadata_prefix() validates via `<!-- erk:metadata-block:` marker in the prefix. Never skip this validation.
+**using `extract_metadata_prefix` or `extract_plan_content` without validating separator context** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. The content separator `\n\n---\n\n` can accidentally form from 'Remotely executed' notes + footer delimiter. extract_metadata_prefix() validates via `<!-- erk:metadata-block:` marker in the prefix. Never skip this validation.
 
 **using background agents without waiting for completion before dependent operations** → Read [Command-Agent Delegation](agent-delegation.md) first. Use TaskOutput with block=true to wait for all background agents to complete. Without synchronization, dependent agents may read incomplete outputs or missing files.
 
-**using gh issue view on a plan ID without checking plan backend type** → Read [Draft PR Plan Backend](draft-pr-plan-backend.md) first. Draft-PR plan IDs are PR numbers. Using gh issue view on a draft-PR plan produces a confusing 404. Route to gh pr view based on backend type.
+**using gh issue view on a plan ID without checking plan backend type** → Read [Planned PR Backend](planned-pr-backend.md) first. Planned PR plan IDs are PR numbers. Using gh issue view on a planned-PR plan produces a confusing 404. Route to gh pr view based on backend type.
 
 **using issue number from .impl/issue.json in a checkout footer** → Read [PR Submission Patterns](pr-submission-patterns.md) first. Checkout footers require the PR number, not the issue number. The issue is the plan; the PR is the implementation. See the PR Number vs Issue Number section.
 
@@ -218,7 +216,7 @@ Rules triggered by matching actions in code.
 
 **using session-scoped markers in exec scripts** → Read [Session-Based Plan Deduplication](session-deduplication.md) first. Session markers enable idempotency in command retries. Always write markers AFTER successful operation completion, never before. Use triple-check guard on marker read: file exists AND content is valid AND expected type (numeric for issue numbers).
 
-**validating plan_id in exec scripts without checking provider type** → Read [Draft PR Plan Backend](draft-pr-plan-backend.md) first. Draft-PR plan_id IS the PR number (not an issue number). Check provider type before assuming plan_id semantics. Issue-based plans use issue numbers; draft-PR plans use PR numbers.
+**validating plan_id in exec scripts without checking provider type** → Read [Planned PR Backend](planned-pr-backend.md) first. Planned PR plan_id IS the PR number (not an issue number). Check provider type before assuming plan_id semantics. Issue-based plans use issue numbers; planned-PR plans use PR numbers.
 
 **writing a plan step that says 'update X' without a file path** → Read [Context Preservation Patterns](context-preservation-patterns.md) first. Generic references force re-discovery. Include the full path, line numbers, and evidence. See the five dimensions below.
 

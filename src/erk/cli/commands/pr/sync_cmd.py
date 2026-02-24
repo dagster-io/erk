@@ -42,7 +42,7 @@ from erk_shared.gateway.gt.events import CompletionEvent
 from erk_shared.gateway.gt.operations.squash import execute_squash
 from erk_shared.gateway.gt.types import RestackError, SquashError, SquashSuccess
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.draft_pr_lifecycle import IMPL_CONTEXT_DIR
+from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 
 
 def _squash_commits(ctx: ErkContext, repo_root: Path) -> None:

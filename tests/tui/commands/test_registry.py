@@ -686,7 +686,7 @@ def test_shortcuts_no_conflicts_within_view() -> None:
 
     Plan commands and objective commands can reuse shortcuts (e.g., "i", "s", "1")
     because they are mutually exclusive (filtered by view mode). But within a single
-    view, shortcuts must be unique. Check both github and draft_pr backends.
+    view, shortcuts must be unique. Check both github and planned_pr backends.
     """
     row = make_plan_row(
         123,
@@ -699,7 +699,7 @@ def test_shortcuts_no_conflicts_within_view() -> None:
         run_url="https://github.com/test/repo/actions/runs/789",
     )
 
-    for plan_backend in ("github", "draft_pr"):
+    for plan_backend in ("github", "planned_pr"):
         for view_mode in (ViewMode.PLANS, ViewMode.OBJECTIVES):
             ctx = CommandContext(row=row, view_mode=view_mode, plan_backend=plan_backend)
             commands = get_available_commands(ctx)
@@ -713,17 +713,17 @@ def test_shortcuts_no_conflicts_within_view() -> None:
 # === Draft PR Backend Tests ===
 
 
-def test_prepare_commands_hidden_in_draft_pr_mode() -> None:
+def test_prepare_commands_hidden_in_planned_pr_mode() -> None:
     """Prepare commands should be hidden when plan backend is draft_pr."""
     row = make_plan_row(123, "Test")
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="draft_pr")
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="planned_pr")
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "copy_prepare" not in cmd_ids
     assert "copy_prepare_activate" not in cmd_ids
 
 
-def test_commands_available_in_draft_pr_mode() -> None:
+def test_commands_available_in_planned_pr_mode() -> None:
     """Non-prepare plan commands should remain available in draft_pr mode."""
     row = make_plan_row(
         123,
@@ -735,7 +735,7 @@ def test_commands_available_in_draft_pr_mode() -> None:
         worktree_branch="feature-123",
         run_url="https://github.com/test/repo/actions/runs/789",
     )
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="draft_pr")
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, plan_backend="planned_pr")
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
 

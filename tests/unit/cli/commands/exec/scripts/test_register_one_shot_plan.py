@@ -169,7 +169,7 @@ def test_pr_not_found_others_succeed(tmp_path: Path) -> None:
 
 def test_self_referential_closes_skipped(tmp_path: Path) -> None:
     """When issue_number == pr_number (draft_pr mode), skip Closes #N to avoid self-close."""
-    # In draft_pr mode, the PR IS the plan entity. issue_number and pr_number are the same.
+    # In planned_pr mode, the PR IS the plan entity. issue_number and pr_number are the same.
     pr_body = _plan_header_body()
     issues = FakeGitHubIssues(issues={42: _issue(42, pr_body)})
     github = FakeGitHub(pr_details={42: _pr(42, pr_body)})

@@ -13,7 +13,7 @@ from erk_shared.gateway.github.issues.types import PRReference
 from tests.commands.submit.conftest import create_plan, setup_submit_context
 
 
-def test_close_orphaned_draft_prs_closes_old_drafts(tmp_path: Path) -> None:
+def test_close_orphaned_planned_prs_closes_old_drafts(tmp_path: Path) -> None:
     """Test _close_orphaned_draft_prs closes old draft PRs linked to issue."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
@@ -58,7 +58,7 @@ def test_close_orphaned_draft_prs_closes_old_drafts(tmp_path: Path) -> None:
     assert sorted(fake_github.closed_prs) == [100, 101]
 
 
-def test_close_orphaned_draft_prs_skips_non_drafts(tmp_path: Path) -> None:
+def test_close_orphaned_planned_prs_skips_non_drafts(tmp_path: Path) -> None:
     """Test _close_orphaned_draft_prs does NOT close non-draft PRs."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
@@ -98,7 +98,7 @@ def test_close_orphaned_draft_prs_skips_non_drafts(tmp_path: Path) -> None:
     assert fake_github.closed_prs == []
 
 
-def test_close_orphaned_draft_prs_skips_already_closed(tmp_path: Path) -> None:
+def test_close_orphaned_planned_prs_skips_already_closed(tmp_path: Path) -> None:
     """Test _close_orphaned_draft_prs does NOT close already-closed PRs."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
@@ -138,7 +138,7 @@ def test_close_orphaned_draft_prs_skips_already_closed(tmp_path: Path) -> None:
     assert fake_github.closed_prs == []
 
 
-def test_close_orphaned_draft_prs_no_linked_prs(tmp_path: Path) -> None:
+def test_close_orphaned_planned_prs_no_linked_prs(tmp_path: Path) -> None:
     """Test _close_orphaned_draft_prs handles no linked PRs gracefully."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
@@ -176,7 +176,7 @@ def test_close_orphaned_draft_prs_no_linked_prs(tmp_path: Path) -> None:
     assert fake_github.closed_prs == []
 
 
-def test_submit_closes_orphaned_draft_prs(tmp_path: Path) -> None:
+def test_submit_closes_orphaned_planned_prs(tmp_path: Path) -> None:
     """Test submit command closes orphaned draft PRs after creating new one."""
     plan = create_plan("123", "Implement feature X")
 

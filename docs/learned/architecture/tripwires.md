@@ -20,7 +20,7 @@ Rules triggered by matching actions in code.
 
 **accessing properties on a discriminated union result without isinstance() check** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Always check isinstance(result, ErrorType) before accessing success-variant properties. Without type narrowing, you may access .message on a success type or .data on an error type.
 
-**adding Closes #N for draft-PR backend** → Read [PR Body Assembly](pr-body-assembly.md) first. Set issue_number=None for draft-PR backend. The draft PR IS the plan — Closes #N would be self-referential.
+**adding Closes #N for github-draft-pr backend** → Read [PR Body Assembly](pr-body-assembly.md) first. Set issue_number=None for github-draft-pr backend. The planned PR IS the plan — Closes #N would be self-referential.
 
 **adding HTML, badges, or GitHub-specific markup to commit messages** → Read [PR Body Formatting Pattern](pr-body-formatting.md) first. Use the two-target pattern: plain text pr_body for commits, enhanced pr_body_for_github for the PR. Never put GitHub-specific HTML into git commit messages.
 
@@ -76,7 +76,7 @@ Rules triggered by matching actions in code.
 
 **calling allocate_slot_for_branch without sync_pool_assignments running first** → Read [Slot Pool State Sync](slot-pool-state-sync.md) first. Pool sync must run BEFORE find_branch_assignment call. Without it, stale pool.json entries cause silent misassignment — a slot may appear free when it's actually occupied by a different branch.
 
-**calling assemble_pr_body without metadata_prefix for draft-PR plans** → Read [PR Body Assembly](pr-body-assembly.md) first. Draft-PR plans require metadata_prefix from extract_metadata_prefix(). Without it, plan-header metadata is lost on every PR rewrite.
+**calling assemble_pr_body without metadata_prefix for planned-PR plans** → Read [PR Body Assembly](pr-body-assembly.md) first. Planned PR plans require metadata_prefix from extract_metadata_prefix(). Without it, plan-header metadata is lost on every PR rewrite.
 
 **calling checkout_branch() in a multi-worktree repository** → Read [Multi-Worktree State Handling](multi-worktree-state.md) first. Verify the target branch is not already checked out in another worktree using `git.worktree.find_worktree_for_branch()`. Git enforces a single-checkout constraint - attempting to checkout a branch held elsewhere causes silent state corruption or unexpected failures.
 

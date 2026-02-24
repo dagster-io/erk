@@ -3,7 +3,7 @@
 This module provides utilities for tests that need to set up plan state.
 It converts Plan objects to the appropriate backing store format:
 - GitHubPlanStore backed by FakeGitHubIssues (GitHub Issues backend)
-- DraftPRPlanBackend backed by FakeGitHub (Draft PR backend)
+- PlannedPRBackend backed by FakeGitHub (Planned PR backend)
 
 For dual-backend testing, use create_plan_store() which dispatches based
 on a backend parameter.
@@ -17,13 +17,13 @@ from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
-from erk_shared.plan_store.draft_pr_lifecycle import (
+from erk_shared.plan_store.github import GitHubPlanStore
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.plan_store.planned_pr_lifecycle import (
     DETAILS_CLOSE,
     DETAILS_OPEN,
     PLAN_CONTENT_SEPARATOR,
 )
-from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.store import PlanStore
 from erk_shared.plan_store.types import Plan, PlanState
 
@@ -118,8 +118,8 @@ def _plan_to_pr_details(plan: Plan) -> PRDetails:
         pr_body = metadata_part + PLAN_CONTENT_SEPARATOR + details_section
     else:
         # Plain body without a plan-header block - synthesize one with branch_name so
-        # DraftPRPlanBackend._convert_to_plan() can populate header_fields["branch_name"].
-        # Real draft-PR plans always have branch_name in plan-header (set by plan_save).
+        # PlannedPRBackend._convert_to_plan() can populate header_fields["branch_name"].
+        # Real planned-PR plans always have branch_name in plan-header (set by plan_save).
         metadata_body = format_plan_header_body_for_test(branch_name=branch_name)
         details_section = DETAILS_OPEN + body + DETAILS_CLOSE
         pr_body = metadata_body + PLAN_CONTENT_SEPARATOR + details_section
@@ -145,13 +145,13 @@ def _plan_to_pr_details(plan: Plan) -> PRDetails:
     )
 
 
-def create_draft_pr_store_with_plans(
+def create_planned_pr_store_with_plans(
     plans: dict[str, Plan],
-) -> tuple[DraftPRPlanBackend, FakeGitHub]:
-    """Create DraftPRPlanBackend backed by FakeGitHub.
+) -> tuple[PlannedPRBackend, FakeGitHub]:
+    """Create PlannedPRBackend backed by FakeGitHub.
 
     This helper converts Plan objects to PRDetails so tests can continue
-    constructing Plan objects while using DraftPRPlanBackend internally.
+    constructing Plan objects while using PlannedPRBackend internally.
 
     Args:
         plans: Mapping of plan_identifier -> Plan
@@ -193,7 +193,7 @@ def create_draft_pr_store_with_plans(
     for pr_number, labels in pr_labels.items():
         fake_github.set_pr_labels(pr_number, labels)
 
-    return DraftPRPlanBackend(fake_github, fake_github.issues, time=FakeTime()), fake_github
+    return PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime()), fake_github
 
 
 def create_plan_store(
@@ -214,8 +214,8 @@ def create_plan_store(
     Returns:
         Tuple of (store, fake) where fake is FakeGitHubIssues or FakeGitHub.
     """
-    if backend == "draft_pr":
-        return create_draft_pr_store_with_plans(plans)
+    if backend == "planned_pr":
+        return create_planned_pr_store_with_plans(plans)
     return create_plan_store_with_plans(plans)
 
 

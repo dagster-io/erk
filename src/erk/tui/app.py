@@ -112,7 +112,7 @@ class ErkDashApp(App):
         filters: PlanFilters,
         refresh_interval: float = 15.0,
         initial_sort: SortState | None = None,
-        plan_backend: Literal["draft_pr"] = "draft_pr",
+        plan_backend: Literal["planned_pr"] = "planned_pr",
     ) -> None:
         """Initialize the dashboard app.
 
@@ -121,7 +121,7 @@ class ErkDashApp(App):
             filters: Filter options for the plan list
             refresh_interval: Seconds between auto-refresh (0 to disable)
             initial_sort: Initial sort state (defaults to by issue number)
-            plan_backend: Plan backend type ("github" or "draft_pr")
+            plan_backend: Plan backend type ("github" or "planned_pr")
         """
         super().__init__()
         self._provider = provider
@@ -155,7 +155,7 @@ class ErkDashApp(App):
         Returns:
             Display name string
         """
-        if mode == ViewMode.PLANS and self._plan_backend == "draft_pr":
+        if mode == ViewMode.PLANS and self._plan_backend == "planned_pr":
             return "Planned PRs"
         return get_view_config(mode).display_name
 

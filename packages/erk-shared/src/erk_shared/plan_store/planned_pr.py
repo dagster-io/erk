@@ -33,7 +33,7 @@ from erk_shared.gateway.github.types import BodyText, PRDetails, PRNotFound
 from erk_shared.gateway.time.abc import Time
 from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.conversion import pr_details_to_plan
-from erk_shared.plan_store.draft_pr_lifecycle import (
+from erk_shared.plan_store.planned_pr_lifecycle import (
     PLAN_CONTENT_SEPARATOR,
     build_plan_stage_body,
     extract_metadata_prefix,
@@ -72,7 +72,7 @@ def _parse_objective_id(value: object) -> int | None:
     raise ValueError(f"objective_issue must be str or int, got {type(value).__name__}")
 
 
-class DraftPRPlanBackend(PlanBackend):
+class PlannedPRBackend(PlanBackend):
     """Draft PR implementation of plan storage.
 
     Uses GitHub draft pull requests as the backing store for plans.
@@ -90,7 +90,7 @@ class DraftPRPlanBackend(PlanBackend):
     """
 
     def __init__(self, github: GitHub, github_issues: GitHubIssues, *, time: Time) -> None:
-        """Initialize DraftPRPlanBackend with GitHub and issues gateways.
+        """Initialize PlannedPRBackend with GitHub and issues gateways.
 
         Args:
             github: GitHub gateway implementation (real or fake)
@@ -279,7 +279,7 @@ class DraftPRPlanBackend(PlanBackend):
         """
         branch_name = metadata.get("branch_name")
         if branch_name is None or not isinstance(branch_name, str):
-            raise RuntimeError("branch_name is required in metadata for DraftPRPlanBackend")
+            raise RuntimeError("branch_name is required in metadata for PlannedPRBackend")
 
         # Get username for metadata
         auth_result = self._github.check_auth_status()

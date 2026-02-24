@@ -31,7 +31,7 @@ from erk_shared.context.helpers import (
     require_time,
 )
 from erk_shared.impl_context import create_impl_context
-from erk_shared.plan_store.draft_pr_lifecycle import IMPL_CONTEXT_DIR
+from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 from erk_shared.plan_store.types import PlanNotFound
 
 

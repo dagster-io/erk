@@ -663,7 +663,7 @@ def trigger_async_learn(ctx: click.Context, plan_id: str, *, skip_workflow: bool
         "plan_id": plan_id,
         "learn_branch": learn_branch,
         "plan_backend": (
-            "draft_pr" if plan_backend.get_provider_name() == "github-draft-pr" else "github"
+            "planned_pr" if plan_backend.get_provider_name() == "github-draft-pr" else "github"
         ),
     }
 

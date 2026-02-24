@@ -230,7 +230,7 @@ def test_create_impl_context_with_objective_id(tmp_path: Path) -> None:
     assert ref_data["objective_id"] == 456
 
 
-def test_create_impl_context_with_draft_pr_provider(tmp_path: Path) -> None:
+def test_create_impl_context_with_planned_pr_provider(tmp_path: Path) -> None:
     """Test creating .erk/impl-context/ folder with github-draft-pr provider."""
     create_impl_context(
         plan_content="# Test Plan\n",
@@ -332,7 +332,7 @@ def test_build_impl_context_files_with_objective_id() -> None:
     assert ref_data["objective_id"] == 7813
 
 
-def test_build_impl_context_files_draft_pr_provider() -> None:
+def test_build_impl_context_files_planned_pr_provider() -> None:
     """Test that github-draft-pr provider is passed through correctly."""
     result = build_impl_context_files(
         plan_content="# Plan\n",

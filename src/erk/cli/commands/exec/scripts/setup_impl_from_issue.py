@@ -46,7 +46,7 @@ from erk_shared.naming import (
     sanitize_worktree_name,
     validate_worktree_name,
 )
-from erk_shared.plan_store.draft_pr_lifecycle import IMPL_CONTEXT_DIR, extract_plan_content
+from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR, extract_plan_content
 from erk_shared.plan_store.types import PlanNotFound
 
 
@@ -68,7 +68,7 @@ def _checkout_plan_branch(
     current_branch: str,
     branch_name: str,
 ) -> None:
-    """Fetch, checkout, and sync a draft-PR plan branch.
+    """Fetch, checkout, and sync a planned-PR plan branch.
 
     Handles three cases:
     - Already on the branch: just sync
@@ -112,20 +112,20 @@ def _checkout_plan_branch(
             raise SystemExit(1)
 
 
-def _setup_draft_pr_plan(
+def _setup_planned_pr_plan(
     ctx: click.Context,
     *,
     plan_number: int,
     no_impl: bool,
 ) -> dict[str, str | int | bool | None]:
-    """Set up implementation from a draft-PR plan.
+    """Set up implementation from a planned-PR plan.
 
     Uses github.get_pr() for branch discovery, then reads plan content
     from .erk/impl-context/ on the branch (falling back to PR body).
 
     Args:
         ctx: Click context
-        plan_number: PR number for the draft-PR plan
+        plan_number: PR number for the planned-PR plan
         no_impl: Skip .impl/ folder creation
 
     Returns:
@@ -420,7 +420,7 @@ def setup_impl_from_issue(
 
     # Dispatch based on plan backend
     if plan_backend.get_provider_name() == "github-draft-pr":
-        output = _setup_draft_pr_plan(ctx, plan_number=plan_number, no_impl=no_impl)
+        output = _setup_planned_pr_plan(ctx, plan_number=plan_number, no_impl=no_impl)
     else:
         output = _setup_issue_plan(
             ctx, plan_number=plan_number, no_impl=no_impl, branch_slug=branch_slug

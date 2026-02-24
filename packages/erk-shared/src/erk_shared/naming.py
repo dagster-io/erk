@@ -1010,13 +1010,13 @@ def generate_issue_branch_name(
     return base_branch_name + timestamp_suffix
 
 
-def generate_draft_pr_branch_name(
+def generate_planned_pr_branch_name(
     title: str,
     timestamp: datetime,
     *,
     objective_id: int | None,
 ) -> str:
-    """Generate branch name for draft-PR-backed plans.
+    """Generate branch name for planned-PR-backed plans.
 
     Format: plnd/{sanitized_title}-{timestamp}
     Or with objective: plnd/O{objective_id}-{sanitized_title}-{timestamp}
@@ -1035,11 +1035,11 @@ def generate_draft_pr_branch_name(
 
     Examples:
         >>> from datetime import datetime
-        >>> generate_draft_pr_branch_name(
+        >>> generate_planned_pr_branch_name(
         ...     "Fix Auth Bug", datetime(2024, 1, 15, 14, 30), objective_id=None
         ... )
         "plnd/fix-auth-bug-01-15-1430"
-        >>> generate_draft_pr_branch_name(
+        >>> generate_planned_pr_branch_name(
         ...     "Fix Auth Bug", datetime(2024, 1, 15, 14, 30), objective_id=456
         ... )
         "plnd/O456-fix-auth-bug-01-15-1430"

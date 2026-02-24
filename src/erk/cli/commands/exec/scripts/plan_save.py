@@ -1,9 +1,9 @@
-"""Backend-aware plan save: dispatches to issue or draft-PR based on constant.
+"""Backend-aware plan save: dispatches to issue or planned-PR based on constant.
 
 Usage:
     erk exec plan-save [OPTIONS]
 
-When ERK_PLAN_BACKEND is "draft_pr", creates a draft PR with the plan.
+When ERK_PLAN_BACKEND is "planned_pr", creates a planned PR with the plan.
 Otherwise delegates to the existing plan-save-to-issue logic (default).
 
 Options:
@@ -47,13 +47,13 @@ from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.naming import (
     InvalidPlanTitle,
-    generate_draft_pr_branch_name,
+    generate_planned_pr_branch_name,
     validate_plan_title,
 )
-from erk_shared.output.next_steps import format_draft_pr_next_steps_plain
-from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
-from erk_shared.plan_store.draft_pr_lifecycle import IMPL_CONTEXT_DIR
+from erk_shared.output.next_steps import format_planned_pr_next_steps_plain
 from erk_shared.plan_store.plan_content import extract_title_from_plan, resolve_plan_content
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 from erk_shared.plan_utils import get_title_tag_from_labels
 from erk_shared.scratch.plan_snapshots import PlanSnapshot, snapshot_plan_for_session
 from erk_shared.scratch.session_markers import (
@@ -107,7 +107,7 @@ def _get_snapshot_result(
     )
 
 
-def _save_as_draft_pr(
+def _save_as_planned_pr(
     ctx: click.Context,
     *,
     plan_content: str,
@@ -120,9 +120,9 @@ def _save_as_draft_pr(
     created_from_workflow_run_url: str | None,
     branch_slug: str | None,
 ) -> None:
-    """Save plan as a draft PR.
+    """Save plan as a planned PR.
 
-    Creates a branch, pushes it, then creates a draft PR with plan content.
+    Creates a branch, pushes it, then creates a planned PR with plan content.
 
     Args:
         ctx: Click context
@@ -174,7 +174,7 @@ def _save_as_draft_pr(
         raise SystemExit(1)
     slug = branch_slug
     now = require_time(ctx).now()
-    branch_name = generate_draft_pr_branch_name(
+    branch_name = generate_planned_pr_branch_name(
         slug,
         now,
         objective_id=objective_issue,
@@ -239,7 +239,7 @@ def _save_as_draft_pr(
     prefixed_title = f"{title_tag} {title}"
 
     # Create draft PR via backend
-    backend = DraftPRPlanBackend(github, github_issues, time=RealTime())
+    backend = PlannedPRBackend(github, github_issues, time=RealTime())
     result = backend.create_plan(
         repo_root=repo_root,
         title=prefixed_title,
@@ -249,7 +249,7 @@ def _save_as_draft_pr(
     )
 
     if not result.plan_id.isdigit():
-        msg = f"Expected numeric plan_id from draft PR creation, got: {result.plan_id!r}"
+        msg = f"Expected numeric plan_id from planned PR creation, got: {result.plan_id!r}"
         raise RuntimeError(msg)
     plan_number = int(result.plan_id)
 
@@ -270,7 +270,7 @@ def _save_as_draft_pr(
 
     # Output
     if output_format == "display":
-        click.echo(f"Plan saved as draft PR #{plan_number}")
+        click.echo(f"Plan saved as planned PR #{plan_number}")
         click.echo(f"Title: {prefixed_title}")
         click.echo(f"URL: {result.url}")
         click.echo(f"Branch: {branch_name}")
@@ -278,7 +278,7 @@ def _save_as_draft_pr(
             click.echo(f"Archived: {snapshot_result.snapshot_dir}")
         click.echo()
         click.echo(
-            format_draft_pr_next_steps_plain(plan_number, branch_name=branch_name, url=result.url)
+            format_planned_pr_next_steps_plain(plan_number, branch_name=branch_name, url=result.url)
         )
     else:
         output_data: dict[str, str | int | bool | None] = {
@@ -287,14 +287,14 @@ def _save_as_draft_pr(
             "plan_url": result.url,
             "title": prefixed_title,
             "branch_name": branch_name,
-            "plan_backend": "draft_pr",
+            "plan_backend": "planned_pr",
         }
         if snapshot_result is not None:
             output_data["archived_to"] = str(snapshot_result.snapshot_dir)
         click.echo(json.dumps(output_data))
 
 
-def _save_plan_via_draft_pr(
+def _save_plan_via_planned_pr(
     ctx: click.Context,
     *,
     output_format: str,
@@ -306,7 +306,7 @@ def _save_plan_via_draft_pr(
     created_from_workflow_run_url: str | None,
     branch_slug: str | None,
 ) -> None:
-    """Handle draft-PR backend: dedup check, plan extraction, validation, and save.
+    """Handle planned-PR backend: dedup check, plan extraction, validation, and save.
 
     Args:
         ctx: Click context
@@ -340,7 +340,7 @@ def _save_plan_via_draft_pr(
                     "plan_number": existing_issue,
                     "skipped_duplicate": True,
                     "message": f"Session already saved plan #{existing_issue}",
-                    "plan_backend": "draft_pr",
+                    "plan_backend": "planned_pr",
                 }
                 if existing_branch is not None:
                     dedup_response["branch_name"] = existing_branch
@@ -381,7 +381,7 @@ def _save_plan_via_draft_pr(
             )
         raise SystemExit(2)
 
-    _save_as_draft_pr(
+    _save_as_planned_pr(
         ctx,
         plan_content=plan,
         session_id=session_id,
@@ -455,14 +455,14 @@ def plan_save(
     created_from_workflow_run_url: str | None,
     branch_slug: str | None,
 ) -> None:
-    """Backend-aware plan save: dispatches to issue or draft-PR based on constant.
+    """Backend-aware plan save: dispatches to issue or planned-PR based on constant.
 
-    When ERK_PLAN_BACKEND is "draft_pr", creates a draft PR.
+    When ERK_PLAN_BACKEND is "planned_pr", creates a planned PR.
     Otherwise delegates to plan-save-to-issue.
     """
-    # PLAN_BACKEND_SPLIT: dispatches to issue-based save or draft-PR save based on config/env
+    # PLAN_BACKEND_SPLIT: dispatches to issue-based save or planned-PR save based on config/env
     # Default backend: delegate to issue-based save
-    if "draft_pr" != "draft_pr":
+    if "planned_pr" != "planned_pr":
         ctx.invoke(
             plan_save_to_issue,
             output_format=output_format,
@@ -475,7 +475,7 @@ def plan_save(
         )
         return
 
-    _save_plan_via_draft_pr(
+    _save_plan_via_planned_pr(
         ctx,
         output_format=output_format,
         plan_file=plan_file,

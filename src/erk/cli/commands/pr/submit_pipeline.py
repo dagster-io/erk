@@ -44,7 +44,7 @@ from erk_shared.impl_folder import (
     save_plan_ref,
     validate_plan_linkage,
 )
-from erk_shared.plan_store.draft_pr_lifecycle import extract_metadata_prefix
+from erk_shared.plan_store.planned_pr_lifecycle import extract_metadata_prefix
 from erk_shared.scratch.scratch import write_scratch_file
 
 # ---------------------------------------------------------------------------
@@ -693,7 +693,7 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
     pr_title = state.title or "Update"
     plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
 
-    # Detect draft-PR backend and extract metadata prefix
+    # Detect planned-PR backend and extract metadata prefix
     metadata_prefix = ""
     issue_number = state.issue_number
     effective_plans_repo = plans_repo

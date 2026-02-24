@@ -1,7 +1,7 @@
 """Interface tests for PlanBackend implementations.
 
 These tests verify that all PlanBackend implementations satisfy the ABC interface.
-Tests are parameterized to run against both GitHubPlanStore and DraftPRPlanBackend.
+Tests are parameterized to run against both GitHubPlanStore and PlannedPRBackend.
 """
 
 from datetime import UTC, datetime
@@ -13,8 +13,8 @@ from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.backend import PlanBackend
-from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 from erk_shared.plan_store.github import GitHubPlanStore
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.types import PlanNotFound, PlanQuery, PlanState
 from tests.test_utils.github_helpers import create_test_issue
 
@@ -38,19 +38,19 @@ def _make_github_plan_store() -> PlanBackend:
     return GitHubPlanStore(fake_issues)
 
 
-def _make_draft_pr_plan_backend() -> PlanBackend:
-    """Create a DraftPRPlanBackend backed by FakeGitHub."""
+def _make_planned_pr_backend() -> PlanBackend:
+    """Create a PlannedPRBackend backed by FakeGitHub."""
     fake_github = FakeGitHub()
-    return DraftPRPlanBackend(fake_github, fake_github.issues, time=FakeTime())
+    return PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
 
 
 def _create_metadata(backend: PlanBackend) -> dict[str, object]:
     """Build the required metadata dict for create_plan().
 
-    DraftPRPlanBackend requires branch_name; GitHubPlanStore does not.
+    PlannedPRBackend requires branch_name; GitHubPlanStore does not.
     """
-    # PLAN_BACKEND_SPLIT: DraftPRPlanBackend requires branch_name metadata; GitHubPlanStore does not
-    if isinstance(backend, DraftPRPlanBackend):
+    # PLAN_BACKEND_SPLIT: PlannedPRBackend requires branch_name metadata; GitHubPlanStore does not
+    if isinstance(backend, PlannedPRBackend):
         return {"branch_name": _next_branch()}
     return {}
 
@@ -69,10 +69,10 @@ def _make_github_backend_with_plan() -> tuple[PlanBackend, str]:
     return GitHubPlanStore(fake_issues), "42"
 
 
-def _make_draft_pr_backend_with_plan() -> tuple[PlanBackend, str]:
-    """Create DraftPRPlanBackend with a pre-existing plan by creating one via API."""
+def _make_planned_pr_backend_with_plan() -> tuple[PlanBackend, str]:
+    """Create PlannedPRBackend with a pre-existing plan by creating one via API."""
     fake_github = FakeGitHub()
-    backend = DraftPRPlanBackend(fake_github, fake_github.issues, time=FakeTime())
+    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
 
     result = backend.create_plan(
         repo_root=Path("/repo"),
@@ -84,18 +84,18 @@ def _make_draft_pr_backend_with_plan() -> tuple[PlanBackend, str]:
     return backend, result.plan_id
 
 
-@pytest.fixture(params=["github_issues", "draft_pr"])
+@pytest.fixture(params=["github_issues", "planned_pr"])
 def plan_backend(request: pytest.FixtureRequest) -> PlanBackend:
     """Provide a PlanBackend implementation.
 
-    Parameterized to test both GitHubPlanStore and DraftPRPlanBackend.
+    Parameterized to test both GitHubPlanStore and PlannedPRBackend.
     """
     if request.param == "github_issues":
         return _make_github_plan_store()
-    return _make_draft_pr_plan_backend()
+    return _make_planned_pr_backend()
 
 
-@pytest.fixture(params=["github_issues", "draft_pr"])
+@pytest.fixture(params=["github_issues", "planned_pr"])
 def backend_with_plan(request: pytest.FixtureRequest) -> tuple[PlanBackend, str]:
     """Fixture providing backend with a pre-existing plan.
 
@@ -104,7 +104,7 @@ def backend_with_plan(request: pytest.FixtureRequest) -> tuple[PlanBackend, str]
     """
     if request.param == "github_issues":
         return _make_github_backend_with_plan()
-    return _make_draft_pr_backend_with_plan()
+    return _make_planned_pr_backend_with_plan()
 
 
 # =============================================================================
@@ -560,10 +560,10 @@ def test_get_comments_returns_preconfigured_comments_github() -> None:
     assert "Second comment" in comments
 
 
-def test_get_comments_returns_preconfigured_comments_draft_pr() -> None:
-    """DraftPRPlanBackend returns pre-configured comments from FakeGitHubIssues."""
+def test_get_comments_returns_preconfigured_comments_planned_pr() -> None:
+    """PlannedPRBackend returns pre-configured comments from FakeGitHubIssues."""
     fake_github = FakeGitHub()
-    backend = DraftPRPlanBackend(fake_github, fake_github.issues, time=FakeTime())
+    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
 
     # Create a plan so the PR exists
     result = backend.create_plan(

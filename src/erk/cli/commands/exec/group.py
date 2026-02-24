@@ -106,9 +106,6 @@ from erk.cli.commands.exec.scripts.objective_save_to_issue import (
 from erk.cli.commands.exec.scripts.objective_update_after_land import (
     objective_update_after_land,
 )
-from erk.cli.commands.exec.scripts.plan_migrate_to_draft_pr import (
-    plan_migrate_to_draft_pr,
-)
 from erk.cli.commands.exec.scripts.plan_save import plan_save
 from erk.cli.commands.exec.scripts.plan_save_to_issue import plan_save_to_issue
 from erk.cli.commands.exec.scripts.plan_update_from_feedback import (
@@ -248,7 +245,6 @@ exec_group.add_command(objective_save_to_issue, name="objective-save-to-issue")
 exec_group.add_command(objective_fetch_context, name="objective-fetch-context")
 exec_group.add_command(objective_update_after_land, name="objective-update-after-land")
 exec_group.add_command(objective_post_action_comment, name="objective-post-action-comment")
-exec_group.add_command(plan_migrate_to_draft_pr, name="plan-migrate-to-draft-pr")
 exec_group.add_command(plan_save, name="plan-save")
 exec_group.add_command(plan_save_to_issue, name="plan-save-to-issue")
 exec_group.add_command(plan_update_from_feedback, name="plan-update-from-feedback")

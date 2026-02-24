@@ -8,23 +8,23 @@ read_when:
 
 # Plan Creation Pathways
 
-Plans can be created through multiple entry points, all routing to the draft-PR backend.
+Plans can be created through multiple entry points, all routing to the planned-PR backend.
 
 ## Entry Points
 
 | Entry Point                             | Backend Used                   | Creates                |
 | --------------------------------------- | ------------------------------ | ---------------------- |
-| `/erk:plan-save`                        | Draft-PR (DraftPRPlanBackend)  | Draft pull request     |
+| `/erk:plan-save`                        | Planned PR (PlannedPRBackend)  | Draft pull request     |
 | `erk plan create --file <path>`         | Issue-based (GitHubPlanStore)  | GitHub issue           |
 | `erk exec plan-save-to-issue`           | Issue-based (GitHubPlanStore)  | GitHub issue           |
 | One-shot dispatch (`one_shot_dispatch`) | Issue-based (GitHubPlanStore)  | Skeleton issue         |
-| `DraftPRPlanBackend.create_plan()`      | Draft-PR                       | Draft pull request     |
+| `PlannedPRBackend.create_plan()`        | Planned PR                     | Draft pull request     |
 | `GitHubPlanStore.create_plan()`         | Issue-based                    | GitHub issue           |
 | `register_one_shot_plan`                | Issue-based (updates existing) | Updates skeleton issue |
 
 ## Backend Routing
 
-The plan backend is hardcoded to `"draft_pr"`. All plan creation routes through DraftPRPlanBackend. The former dynamic backend selection via `get_plan_backend()` was removed in PR #7971 (objective #7911 node 1.1). There is no longer a `"github"` issue-based plan storage path for new plans.
+The plan backend is hardcoded to `"planned_pr"`. All plan creation routes through PlannedPRBackend. The former dynamic backend selection via `get_plan_backend()` was removed in PR #7971 (objective #7911 node 1.1). There is no longer a `"github"` issue-based plan storage path for new plans.
 
 The `ERK_PLAN_BACKEND` environment variable is no longer read by application code.
 
@@ -44,5 +44,5 @@ Plans are created with `lifecycle_stage: planned` by default. The exception is o
 ## Related Documentation
 
 - [Plan Lifecycle](lifecycle.md) — Full lifecycle from creation through merge
-- [Draft PR Plan Backend](draft-pr-plan-backend.md) — Draft-PR backend details
+- [Planned PR Backend](planned-pr-backend.md) — Planned PR backend details
 - [Plan Title Prefix System](plan-title-prefix-system.md) — Title prefixing behavior

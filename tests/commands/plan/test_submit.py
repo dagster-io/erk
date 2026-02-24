@@ -15,8 +15,8 @@ from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
-from erk_shared.plan_store.draft_pr_lifecycle import build_plan_stage_body
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
 
@@ -295,14 +295,14 @@ def test_submit_updates_pr_body_with_workflow_run_link() -> None:
         assert "Traceback" not in result.output
 
 
-def test_submit_draft_pr_plan_triggers_workflow_with_draft_pr_backend() -> None:
-    """Test that submitting a draft-PR plan triggers workflow with plan_backend=draft_pr.
+def test_submit_planned_pr_plan_triggers_workflow_with_planned_pr_backend() -> None:
+    """Test that submitting a planned-PR plan triggers workflow with plan_backend=planned_pr.
 
-    Draft-PR plans already have a branch and PR. Submit should:
+    Planned-PR plans already have a branch and PR. Submit should:
     - Validate the PR has the erk-plan label and is OPEN
     - Fetch and checkout the existing branch
     - Create .erk/impl-context/ with provider="github-draft-pr"
-    - Trigger workflow with plan_backend="draft_pr" in inputs
+    - Trigger workflow with plan_backend="planned_pr" in inputs
     - NOT create a new branch or PR
     """
     runner = CliRunner()
@@ -352,8 +352,8 @@ def test_submit_draft_pr_plan_triggers_workflow_with_draft_pr_backend() -> None:
         fake_issues = FakeGitHubIssues()
         fake_time = FakeTime()
 
-        # DraftPRPlanBackend makes get_provider_name() return "github-draft-pr"
-        draft_pr_backend = DraftPRPlanBackend(fake_gh, fake_issues, time=fake_time)
+        # PlannedPRBackend makes get_provider_name() return "github-draft-pr"
+        planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=fake_time)
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -385,22 +385,22 @@ def test_submit_draft_pr_plan_triggers_workflow_with_draft_pr_backend() -> None:
             github=fake_gh,
             issues=fake_issues,
             use_graphite=True,
-            plan_store=draft_pr_backend,
+            plan_store=planned_pr_backend,
         )
 
         result = runner.invoke(cli, ["plan", "submit", "42", "--base", "main"], obj=ctx)
 
-        # Verify: workflow was triggered with plan_backend="draft_pr"
+        # Verify: workflow was triggered with plan_backend="planned_pr"
         assert len(fake_gh.triggered_workflows) >= 1, (
             f"Expected workflow trigger, got: {fake_gh.triggered_workflows}\n"
             f"Output: {result.output}"
         )
         _workflow_name, inputs = fake_gh.triggered_workflows[0]
-        assert inputs["plan_backend"] == "draft_pr"
+        assert inputs["plan_backend"] == "planned_pr"
         assert inputs["plan_id"] == "42"
         assert inputs["branch_name"] == plan_branch
 
-        # Verify: no new PR was created (draft-PR already exists)
+        # Verify: no new PR was created (planned-PR already exists)
         assert len(fake_gh.created_prs) == 0
 
         # Verify: expected output messages
@@ -415,11 +415,11 @@ def test_submit_draft_pr_plan_triggers_workflow_with_draft_pr_backend() -> None:
         assert "Traceback" not in result.output
 
 
-def test_submit_draft_pr_plan_cleans_up_stale_impl_context_folder() -> None:
-    """Test that _submit_draft_pr_plan cleans up stale .erk/impl-context/ before creating new one.
+def test_submit_planned_pr_plan_cleans_up_stale_impl_context_folder() -> None:
+    """Test that _submit_planned_pr_plan cleans up stale .erk/impl-context/ before creating new one.
 
     When a previous submission failed and left behind a .erk/impl-context/ folder,
-    the draft-PR submit path should remove it before creating the new one.
+    the planned-PR submit path should remove it before creating the new one.
     This tests the cleanup logic at submit.py:440-443.
     """
     runner = CliRunner()
@@ -469,7 +469,7 @@ def test_submit_draft_pr_plan_cleans_up_stale_impl_context_folder() -> None:
         fake_issues = FakeGitHubIssues()
         fake_time = FakeTime()
 
-        draft_pr_backend = DraftPRPlanBackend(fake_gh, fake_issues, time=fake_time)
+        planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=fake_time)
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -507,7 +507,7 @@ def test_submit_draft_pr_plan_cleans_up_stale_impl_context_folder() -> None:
             github=fake_gh,
             issues=fake_issues,
             use_graphite=True,
-            plan_store=draft_pr_backend,
+            plan_store=planned_pr_backend,
         )
 
         result = runner.invoke(cli, ["plan", "submit", "42", "--base", "main"], obj=ctx)

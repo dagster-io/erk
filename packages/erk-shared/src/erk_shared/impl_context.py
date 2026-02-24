@@ -21,7 +21,7 @@ import json
 import shutil
 from pathlib import Path
 
-from erk_shared.plan_store.draft_pr_lifecycle import IMPL_CONTEXT_DIR
+from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 
 
 def create_impl_context(

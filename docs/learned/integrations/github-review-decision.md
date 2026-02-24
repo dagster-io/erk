@@ -19,18 +19,18 @@ PullRequestInfo.review_decision: str | None
     ↓
 real.py: selected_pr.review_decision → pr_review_decision
     ↓
-format_lifecycle_with_status(review_decision=pr_review_decision)
+compute_status_indicators(review_decision=pr_review_decision)
     ↓
-TUI plan list cell with emoji suffix
+TUI plan list "sts" column with emoji indicators
 ```
 
 ## GraphQL Source
 
 The `reviewDecision` field is fetched in three queries in `graphql_queries.py`:
 
-- Line 75: Single PR detail query
-- Line 148: PR list query for plan linkages
-- Line 197: PR detail with review info
+- Line 76: Single PR detail query
+- Line 149: PR list query for plan linkages
+- Line 198: PR detail with review info
 
 Raw values returned by GitHub: `"APPROVED"`, `"CHANGES_REQUESTED"`, `"REVIEW_REQUIRED"`, or `null`.
 
@@ -44,9 +44,9 @@ The `review_decision: str | None` field at `packages/erk-shared/src/erk_shared/g
 
 ## Display Logic
 
-**Location:** `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py:61-140`
+**Location:** `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py:67-108`
 
-`format_lifecycle_with_status()` adds emoji indicators to the lifecycle stage string:
+`compute_status_indicators()` produces emoji indicators for the separate "sts" column:
 
 | `review_decision` value | Indicator added |
 | ----------------------- | --------------- |
@@ -61,11 +61,11 @@ Review decision indicators only appear on plans in the `review` lifecycle stage.
 
 **Location:** `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py`
 
-- Line 612: `pr_review_decision: str | None = None` — default before PR is found
-- Line 639: `pr_review_decision = selected_pr.review_decision` — extracted from matched PR
-- Line 731: `review_decision=pr_review_decision` — passed to `format_lifecycle_with_status()`
+- Line 573: `pr_review_decision: str | None = None` — default before PR is found
+- Line 599: `pr_review_decision = selected_pr.review_decision` — extracted from matched PR
+- Line 715: `review_decision=pr_review_decision` — passed to `compute_status_indicators()`
 
 ## Related Documentation
 
 - [Visual Status Indicators](../desktop-dash/visual-status-indicators.md) — Broader status display context
-- [Draft PR Lifecycle](../planning/draft-pr-lifecycle.md) — Lifecycle stage definitions
+- [Planned PR Lifecycle](../planning/planned-pr-lifecycle.md) — Lifecycle stage definitions

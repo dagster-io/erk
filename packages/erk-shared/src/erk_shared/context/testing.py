@@ -34,7 +34,7 @@ from erk_shared.gateway.github_admin.abc import GitHubAdmin
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
-from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.store import PlanStore
 
 
@@ -67,7 +67,7 @@ def context_for_test(
     It creates an ErkContext with fake implementations for all services.
 
     Plan backend is resolved from ERK_PLAN_BACKEND env var (set via
-    monkeypatch.setenv in tests that need draft_pr backend).
+    monkeypatch.setenv in tests that need planned_pr backend).
 
     Args:
         github_issues: Optional GitHubIssues implementation. If None, creates FakeGitHubIssues.
@@ -80,7 +80,7 @@ def context_for_test(
         prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
         codespace: Optional Codespace. If None, creates FakeCodespace.
         plan_store: Optional PlanStore. If None, creates GitHubPlanStore or
-            DraftPRPlanBackend based on ERK_PLAN_BACKEND env var.
+            PlannedPRBackend based on ERK_PLAN_BACKEND env var.
         local_config: Optional LoadedConfig. If None, uses LoadedConfig.test().
         debug: Whether to enable debug mode (default False).
         repo_root: Repository root path (defaults to Path("/fake/repo"))
@@ -190,9 +190,9 @@ def context_for_test(
         resolved_plan_store = plan_store
     # When github_issues is explicitly passed, the caller is setting up for the github
     # backend (FakeGitHubIssues with issues/comments). Use GitHubPlanStore to match
-    # their intent rather than switching to DraftPRPlanBackend.
-    elif "draft_pr" == "draft_pr" and not issues_explicitly_passed:
-        resolved_plan_store = DraftPRPlanBackend(resolved_github, resolved_issues, time=FakeTime())
+    # their intent rather than switching to PlannedPRBackend.
+    elif "planned_pr" == "planned_pr" and not issues_explicitly_passed:
+        resolved_plan_store = PlannedPRBackend(resolved_github, resolved_issues, time=FakeTime())
     else:
         resolved_plan_store = GitHubPlanStore(resolved_issues, fake_time)
 

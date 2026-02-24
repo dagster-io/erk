@@ -1,13 +1,13 @@
 ---
-title: Draft PR Lifecycle
+title: Planned PR Lifecycle
 read_when:
-  - "working with draft-PR-backed plans"
-  - "understanding PR body format for draft PR plans"
+  - "working with planned-PR-backed plans"
+  - "understanding PR body format for planned PR plans"
   - "debugging plan content extraction from PR bodies"
   - "building or modifying lifecycle stage transitions"
 tripwires:
-  - action: "adding Closes #N to a draft PR footer"
-    warning: "Draft PR IS the plan. Self-referential close would close the plan itself. Use issue_number=None for draft-PR backend."
+  - action: "adding Closes #N to a planned PR footer"
+    warning: "Planned PR IS the plan. Self-referential close would close the plan itself. Use issue_number=None for github-draft-pr backend."
   - action: "adding footer before PR creation"
     warning: "PR footer needs the PR number, which isn't known until after create_pr returns. Add footer AFTER PR creation."
   - action: "rewriting PR body without preserving metadata"
@@ -19,20 +19,20 @@ tripwires:
   - action: "adding <code> inside <summary> elements in PR bodies"
     warning: "Graphite doesn't render <code> inside <summary> — use plain text instead. GitHub renders it but Graphite does not. The correct format is <summary>original-plan</summary> not <summary><code>original-plan</code></summary>."
     score: 8
-  - action: "marking a draft-PR plan as 'implementation complete' and referencing itself as the implementing PR"
-    warning: "Self-referential close prevention: when a draft PR IS the plan, it cannot close itself. The plan's implementation-complete event cannot reference the plan PR as the implementing PR. One-shot dispatch guards against this — do not remove the guard."
+  - action: "marking a planned-PR plan as 'implementation complete' and referencing itself as the implementing PR"
+    warning: "Self-referential close prevention: when a planned PR IS the plan, it cannot close itself. The plan's implementation-complete event cannot reference the plan PR as the implementing PR. One-shot dispatch guards against this — do not remove the guard."
     score: 9
 ---
 
-# Draft PR Lifecycle
+# Planned PR Lifecycle
 
-Draft PRs serve as the backing store for plans when the plan backend is `github-draft-pr`. Unlike issue-based plans (where the plan issue and implementation PR are separate), draft-PR-backed plans evolve through lifecycle stages within a single PR.
+Planned PRs serve as the backing store for plans when the plan backend is `github-draft-pr`. Unlike issue-based plans (where the plan issue and implementation PR are separate), planned-PR-backed plans evolve through lifecycle stages within a single PR.
 
 ## Stage Definitions
 
 ### Stage 1: Plan Creation
 
-`plan_save` / `DraftPRPlanBackend.create_plan()` creates a draft PR with `lifecycle_stage: planned` in the plan-header metadata. The body contains the plan-header metadata block, the plan content collapsed in a `<details>` tag, and a checkout footer.
+`plan_save` / `PlannedPRBackend.create_plan()` creates a draft PR with `lifecycle_stage: planned` in the plan-header metadata. The body contains the plan-header metadata block, the plan content collapsed in a `<details>` tag, and a checkout footer.
 
 Body format:
 
@@ -76,7 +76,7 @@ PR is marked ready for review. Standard review/merge flow. No body format change
 
 ## Key Functions
 
-All in `packages/erk-shared/src/erk_shared/plan_store/draft_pr_lifecycle.py`:
+All in `packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py`:
 
 | Function                                             | Purpose                                                                                                     |
 | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
@@ -98,7 +98,7 @@ These are distinct: `find()` matches the first (content), `rsplit()` matches the
 
 The content separator `\n\n---\n\n` can accidentally form when "Remotely executed" notes or other text end with a blank line followed by the footer delimiter `\n---\n`. This creates a false positive for `find()`.
 
-<!-- Source: packages/erk-shared/src/erk_shared/plan_store/draft_pr_lifecycle.py:186-192 -->
+<!-- Source: packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py:186-192 -->
 
 `extract_metadata_prefix()` defends against this by validating that `<!-- erk:metadata-block:` appears in the prefix (line 190). If the marker is absent, the function returns an empty string rather than treating the accidental separator as the real content boundary.
 
@@ -111,11 +111,11 @@ This means even if `\n\n---\n\n` appears mid-body, `find()` still finds the real
 
 ## Constants
 
-**Source:** `PLAN_CONTENT_SEPARATOR`, `DETAILS_OPEN`, `DETAILS_CLOSE` in `packages/erk-shared/src/erk_shared/plan_store/draft_pr_lifecycle.py`
+**Source:** `PLAN_CONTENT_SEPARATOR`, `DETAILS_OPEN`, `DETAILS_CLOSE` in `packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py`
 
 ## Self-Referential Close Prevention
 
-Draft PR IS the plan. The `plan_id` from prepare_state is the PR's own number. Using `Closes #N` in the footer would be self-referential, causing the plan to close itself. All three consumers of `assemble_pr_body()` set `issue_number=None` when the backend is `github-draft-pr`.
+Planned PR IS the plan. The `plan_id` from prepare_state is the PR's own number. Using `Closes #N` in the footer would be self-referential, causing the plan to close itself. All three consumers of `assemble_pr_body()` set `issue_number=None` when the backend is `github-draft-pr`.
 
 ## Footer Timing Constraint
 
@@ -133,16 +133,16 @@ The `<code>` tags were removed because Graphite does not render them inside `<su
 
 ## Branch Data Files
 
-Draft PR branches contain `.erk/branch-data/plan.md` and `.erk/branch-data/ref.json`, committed before PR creation to avoid GitHub's "empty branch" rejection. `plan.md` enables inline review comments on the plan via the PR's "Files Changed" tab.
+Planned PR branches contain `.erk/impl-context/plan.md` and `.erk/impl-context/ref.json`, committed before PR creation to avoid GitHub's "empty branch" rejection. `plan.md` enables inline review comments on the plan via the PR's "Files Changed" tab.
 
 ## Lifecycle Stage Tracking
 
-Draft-PR plans participate in the same `lifecycle_stage` tracking as issue-based plans. The stage progresses through the same values (`planned` → `implementing` → `implemented`) and is stored in the plan-header metadata block within the PR body.
+Planned PR plans participate in the same `lifecycle_stage` tracking as issue-based plans. The stage progresses through the same values (`planned` → `implementing` → `implemented`) and is stored in the plan-header metadata block within the PR body.
 
 See [Lifecycle Stage Tracking](lifecycle.md#lifecycle-stage-tracking) for the complete stage definitions and write points.
 
 ## Related Topics
 
-- [Draft PR Branch Sync](draft-pr-branch-sync.md) - How branches are synced with remote
+- [Planned PR Branch Sync](planned-pr-branch-sync.md) - How branches are synced with remote
 - [PR Body Assembly](../architecture/pr-body-assembly.md) - How `assemble_pr_body()` handles both backends
 - [Plan Lifecycle](lifecycle.md) - Overall plan lifecycle including issue-based plans

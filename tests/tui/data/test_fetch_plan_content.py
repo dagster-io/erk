@@ -121,7 +121,7 @@ def test_fetch_plan_content_returns_content_from_comment(tmp_path: Path) -> None
     assert http_client.requests[0].endpoint == "repos/test/repo/issues/comments/99"
 
 
-def test_fetch_plan_content_draft_pr_body_returned_directly(tmp_path: Path) -> None:
+def test_fetch_plan_content_planned_pr_body_returned_directly(tmp_path: Path) -> None:
     """Draft PR plan: plan_body has no metadata block, returned directly without HTTP call."""
     http_client = FakeHttpClient()
     provider = _make_provider(tmp_path, http_client=http_client)
@@ -133,7 +133,7 @@ def test_fetch_plan_content_draft_pr_body_returned_directly(tmp_path: Path) -> N
     assert len(http_client.requests) == 0
 
 
-def test_fetch_plan_content_draft_pr_empty_body_returns_none(tmp_path: Path) -> None:
+def test_fetch_plan_content_planned_pr_empty_body_returns_none(tmp_path: Path) -> None:
     """Draft PR plan with empty body returns None."""
     http_client = FakeHttpClient()
     provider = _make_provider(tmp_path, http_client=http_client)

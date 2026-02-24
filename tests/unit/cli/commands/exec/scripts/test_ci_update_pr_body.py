@@ -175,7 +175,7 @@ def test_impl_success(tmp_path: Path) -> None:
         run_id=None,
         run_url=None,
         plans_repo=None,
-        is_draft_pr=False,
+        is_planned_pr=False,
     )
 
     assert isinstance(result, UpdateSuccess)
@@ -207,7 +207,7 @@ def test_impl_no_pr_for_branch(tmp_path: Path) -> None:
         run_id=None,
         run_url=None,
         plans_repo=None,
-        is_draft_pr=False,
+        is_planned_pr=False,
     )
 
     assert isinstance(result, UpdateError)
@@ -263,7 +263,7 @@ def test_impl_empty_diff(tmp_path: Path) -> None:
         run_id=None,
         run_url=None,
         plans_repo=None,
-        is_draft_pr=False,
+        is_planned_pr=False,
     )
 
     assert isinstance(result, UpdateError)
@@ -321,7 +321,7 @@ def test_impl_claude_failure(tmp_path: Path) -> None:
         run_id=None,
         run_url=None,
         plans_repo=None,
-        is_draft_pr=False,
+        is_planned_pr=False,
     )
 
     assert isinstance(result, UpdateError)
@@ -383,7 +383,7 @@ def test_impl_claude_failure_truncates_long_stderr(tmp_path: Path) -> None:
         run_id=None,
         run_url=None,
         plans_repo=None,
-        is_draft_pr=False,
+        is_planned_pr=False,
     )
 
     assert isinstance(result, UpdateError)
@@ -444,7 +444,7 @@ def test_impl_claude_empty_output(tmp_path: Path) -> None:
         run_id=None,
         run_url=None,
         plans_repo=None,
-        is_draft_pr=False,
+        is_planned_pr=False,
     )
 
     assert isinstance(result, UpdateError)
@@ -726,7 +726,7 @@ def test_cli_json_output_structure_error(tmp_path: Path) -> None:
 # ============================================================================
 
 
-def test_build_pr_body_draft_pr_no_closes_reference() -> None:
+def test_build_pr_body_planned_pr_no_closes_reference() -> None:
     """Test that _build_pr_body omits Closes #N when issue_number is None."""
     body = _build_pr_body(
         summary="This is the summary",
@@ -743,11 +743,11 @@ def test_build_pr_body_draft_pr_no_closes_reference() -> None:
     assert "erk pr checkout 123" in body
 
 
-def test_impl_draft_pr_preserves_metadata_and_adds_plan_section(tmp_path: Path) -> None:
-    """Test that draft-PR mode preserves metadata prefix and adds original plan section."""
+def test_impl_planned_pr_preserves_metadata_and_adds_plan_section(tmp_path: Path) -> None:
+    """Test that planned-PR mode preserves metadata prefix and adds original plan section."""
     git = FakeGit(current_branches={tmp_path: "plan-test-01-01"})
 
-    # Build a PR body with metadata prefix and plan content (draft-PR format)
+    # Build a PR body with metadata prefix and plan content (planned-PR format)
     metadata_prefix = (
         "<!-- erk:metadata-block:plan-header -->\n"
         "plan-header metadata\n"
@@ -805,7 +805,7 @@ def test_impl_draft_pr_preserves_metadata_and_adds_plan_section(tmp_path: Path) 
         run_id=None,
         run_url=None,
         plans_repo=None,
-        is_draft_pr=True,
+        is_planned_pr=True,
     )
 
     assert isinstance(result, UpdateSuccess)
@@ -835,11 +835,11 @@ def test_impl_draft_pr_preserves_metadata_and_adds_plan_section(tmp_path: Path) 
     assert "My Plan" in updated_body
 
 
-def test_cli_draft_pr_flag(tmp_path: Path) -> None:
-    """Test CLI command with --draft-pr flag takes the draft-PR body path."""
+def test_cli_planned_pr_flag(tmp_path: Path) -> None:
+    """Test CLI command with --planned-pr flag takes the planned-PR body path."""
     git = FakeGit(current_branches={tmp_path: "plan-test-01-01"})
 
-    # Build a PR body with metadata prefix and plan content (draft-PR format)
+    # Build a PR body with metadata prefix and plan content (planned-PR format)
     metadata_prefix = (
         "<!-- erk:metadata-block:plan-header -->\n"
         "plan-header metadata\n"
@@ -895,7 +895,7 @@ def test_cli_draft_pr_flag(tmp_path: Path) -> None:
     runner = CliRunner()
     result = runner.invoke(
         ci_update_pr_body_command,
-        ["--plan-id", "42", "--draft-pr"],
+        ["--plan-id", "42", "--planned-pr"],
         obj=ctx,
     )
 
@@ -916,7 +916,7 @@ def test_cli_draft_pr_flag(tmp_path: Path) -> None:
     # Should have metadata block at the bottom (not the top)
     assert not updated_body.startswith("<!-- erk:metadata-block:plan-header -->")
     assert "plan-header" in updated_body
-    # Should NOT have Closes #N (draft-PR path)
+    # Should NOT have Closes #N (planned-PR path)
     assert "Closes #42" not in updated_body
     # Should have original plan section
     assert "original-plan" in updated_body

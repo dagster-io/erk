@@ -9,7 +9,7 @@ from erk_shared.gateway.graphite.types import BranchMetadata
 from tests.commands.submit.conftest import create_plan, setup_submit_context
 
 
-def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
+def test_submit_creates_branch_and_planned_pr(tmp_path: Path) -> None:
     """Test submit creates linked branch, pushes, creates draft PR, triggers workflow."""
     plan = create_plan("123", "Implement feature X")
     repo_root = tmp_path / "repo"

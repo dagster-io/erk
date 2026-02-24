@@ -707,11 +707,11 @@ def test_checkout_for_plan_creates_impl_folder() -> None:
             metadata={},
             objective_id=None,
         )
-        backend = "draft_pr"
+        backend = "planned_pr"
         plan_store, _ = create_plan_store({"500": plan}, backend=backend)
 
         # Draft-PR backend needs the branch to exist already
-        if backend == "draft_pr":
+        if backend == "planned_pr":
             git = FakeGit(
                 git_common_dirs={env.cwd: env.git_dir},
                 default_branches={env.cwd: "main"},
@@ -907,11 +907,11 @@ def test_checkout_stacks_in_place_for_plan_with_script() -> None:
             metadata={},
             objective_id=None,
         )
-        backend = "draft_pr"
+        backend = "planned_pr"
         plan_store, _ = create_plan_store({"500": plan}, backend=backend)
 
         branch = "plnd/add-feature-01-15-1030"
-        if backend == "draft_pr":
+        if backend == "planned_pr":
             branch = "plan-500"
 
         git = FakeGit(

@@ -19,8 +19,8 @@ from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
-from erk_shared.plan_store.draft_pr_lifecycle import build_plan_stage_body
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 
@@ -339,8 +339,8 @@ def test_retracks_graphite_after_amend(tmp_path: Path) -> None:
     assert ctx.graphite_branch_ops.retrack_branch_calls[0] == (tmp_path, "feature")
 
 
-def test_finalize_pr_draft_pr_backend_extracts_metadata(tmp_path: Path) -> None:
-    """Draft PR backend: metadata prefix extracted, no self-close."""
+def test_finalize_pr_planned_pr_backend_extracts_metadata(tmp_path: Path) -> None:
+    """Planned PR backend: metadata prefix extracted, no self-close."""
     metadata_body = format_plan_header_body_for_test()
     plan_content = "# My Plan\n\nImplement the thing."
     pr_body = build_plan_stage_body(metadata_body, plan_content)
@@ -357,7 +357,7 @@ def test_finalize_pr_draft_pr_backend_extracts_metadata(tmp_path: Path) -> None:
     ctx = context_for_test(
         git=fake_git,
         github=fake_github,
-        plan_store=DraftPRPlanBackend(fake_github, fake_github.issues, time=FakeTime()),
+        plan_store=PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime()),
         cwd=tmp_path,
     )
     state = _make_state(cwd=tmp_path, title="Implement feature", body="Summary of work")
@@ -365,7 +365,7 @@ def test_finalize_pr_draft_pr_backend_extracts_metadata(tmp_path: Path) -> None:
     result = finalize_pr(ctx, state)
 
     assert isinstance(result, SubmitState)
-    # Draft PR backend sets issue_number to None (no self-close)
+    # Planned PR backend sets issue_number to None (no self-close)
     assert result.issue_number is None
     # PR body should contain metadata prefix
     updated_body = fake_github.updated_pr_bodies[0][1]
@@ -373,7 +373,7 @@ def test_finalize_pr_draft_pr_backend_extracts_metadata(tmp_path: Path) -> None:
     assert "Closes #" not in updated_body
 
 
-def test_marks_draft_pr_as_ready(tmp_path: Path) -> None:
+def test_marks_planned_pr_as_ready(tmp_path: Path) -> None:
     """Draft PR is marked ready for review during finalize."""
     pr = _pr_details(number=42)
     pr = dataclasses.replace(pr, is_draft=True)
@@ -394,7 +394,7 @@ def test_marks_draft_pr_as_ready(tmp_path: Path) -> None:
     assert fake_github.marked_ready_prs == [42]
 
 
-def test_does_not_mark_non_draft_pr_as_ready(tmp_path: Path) -> None:
+def test_does_not_mark_non_planned_pr_as_ready(tmp_path: Path) -> None:
     """Non-draft PR is not marked ready (mark_pr_ready not called)."""
     pr = _pr_details(number=42)
     fake_git = FakeGit(
@@ -414,8 +414,8 @@ def test_does_not_mark_non_draft_pr_as_ready(tmp_path: Path) -> None:
     assert fake_github.marked_ready_prs == []
 
 
-def test_finalize_pr_non_draft_pr_backend_uses_issue_fallback(tmp_path: Path) -> None:
-    """Non-draft-PR backend: closing reference extracted from existing PR footer."""
+def test_finalize_pr_non_planned_pr_backend_uses_issue_fallback(tmp_path: Path) -> None:
+    """Non-planned-PR backend: closing reference extracted from existing PR footer."""
     existing_body = "PR body\n\n---\n\nCloses #77\n\n```\nerk pr checkout 42\n```"
     pr = _pr_details(number=42, body=existing_body)
     fake_git = FakeGit(
@@ -426,7 +426,7 @@ def test_finalize_pr_non_draft_pr_backend_uses_issue_fallback(tmp_path: Path) ->
         prs_by_branch={"feature": pr},
         pr_details={42: pr},
     )
-    # Default plan_store is GitHubPlanStore (non-draft-PR backend)
+    # Default plan_store is GitHubPlanStore (non-planned-PR backend)
     ctx = context_for_test(git=fake_git, github=fake_github, cwd=tmp_path)
     state = _make_state(cwd=tmp_path, issue_number=None)
 
@@ -437,7 +437,7 @@ def test_finalize_pr_non_draft_pr_backend_uses_issue_fallback(tmp_path: Path) ->
     assert result.issue_number == 77
 
 
-def test_publishes_draft_pr(tmp_path: Path) -> None:
+def test_publishes_planned_pr(tmp_path: Path) -> None:
     """Draft PR is published (marked ready) during finalize."""
     pr = _pr_details(number=42, is_draft=True)
     fake_git = FakeGit(
@@ -457,7 +457,7 @@ def test_publishes_draft_pr(tmp_path: Path) -> None:
     assert 42 in fake_github.marked_pr_ready
 
 
-def test_does_not_publish_non_draft_pr(tmp_path: Path) -> None:
+def test_does_not_publish_non_planned_pr(tmp_path: Path) -> None:
     """Non-draft PR is NOT marked ready during finalize."""
     pr = _pr_details(number=42, is_draft=False)
     fake_git = FakeGit(

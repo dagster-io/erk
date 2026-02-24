@@ -1,39 +1,39 @@
 ---
-title: Draft PR Plan Backend
+title: Planned PR Backend
 read_when:
   - "working with plan storage or plan backends"
   - "adding plan storage behavior without checking plan backend type"
-  - "understanding how plans are stored as draft pull requests"
+  - "understanding how plans are stored as planned pull requests"
   - "modifying plan-save or land pipeline for plan handling"
 tripwires:
   - action: "validating plan_id in exec scripts without checking provider type"
-    warning: "Draft-PR plan_id IS the PR number (not an issue number). Check provider type before assuming plan_id semantics. Issue-based plans use issue numbers; draft-PR plans use PR numbers."
+    warning: "Planned PR plan_id IS the PR number (not an issue number). Check provider type before assuming plan_id semantics. Issue-based plans use issue numbers; planned-PR plans use PR numbers."
     score: 4
   - action: "using gh issue view on a plan ID without checking plan backend type"
-    warning: "Draft-PR plan IDs are PR numbers. Using gh issue view on a draft-PR plan produces a confusing 404. Route to gh pr view based on backend type."
+    warning: "Planned PR plan IDs are PR numbers. Using gh issue view on a planned-PR plan produces a confusing 404. Route to gh pr view based on backend type."
     score: 7
   - action: "checking erk exec plan-save --format json output for empty result"
     warning: "Empty stdout does not mean failure. The duplicate-detection path writes JSON to stderr, not stdout. Always capture both streams with 2>&1 or check for empty stdout and retry with stderr capture."
     score: 5
 ---
 
-# Draft PR Plan Backend
+# Planned PR Backend
 
-DraftPRPlanBackend stores plans as GitHub draft pull requests. It is the only active plan storage backend.
+PlannedPRBackend stores plans as GitHub draft pull requests. It is the only active plan storage backend.
 
 ## Backend Selection
 
-The plan backend is hardcoded to `"draft_pr"`. All plans are stored as GitHub draft pull requests via DraftPRPlanBackend. The former `get_plan_backend()` function and `PlanBackendType` type alias were deleted in PR #7971 (objective #7911 node 1.1).
+The plan backend is hardcoded to `"planned_pr"`. All plans are stored as GitHub draft pull requests via PlannedPRBackend. The former `get_plan_backend()` function and `PlanBackendType` type alias were deleted in PR #7971 (objective #7911 node 1.1).
 
 The `ERK_PLAN_BACKEND` environment variable is no longer read by application code. Setting it has no effect. CI workflows and test fixtures that reference it are vestigial and will be removed in later nodes of objective #7911.
 
-**Note:** Some code still contains `PLAN_BACKEND_SPLIT` comment blocks marking dead branches (e.g., `if "draft_pr" != "draft_pr":` in plan_save.py). These are intentionally preserved for node 1.2 cleanup.
+**Note:** Some code still contains `PLAN_BACKEND_SPLIT` comment blocks marking dead branches (e.g., `if "planned_pr" != "planned_pr":` in plan_save.py). These are intentionally preserved for node 1.2 cleanup.
 
 <!-- Source: src/erk/core/context.py, create_context -->
 
 ## Architecture
 
-DraftPRPlanBackend uses **composition** — it wraps the top-level GitHub gateway, not inheritance. The class is at `packages/erk-shared/src/erk_shared/plan_store/draft_pr.py`.
+PlannedPRBackend uses **composition** — it wraps the top-level GitHub gateway, not inheritance. The class is at `packages/erk-shared/src/erk_shared/plan_store/planned_pr.py`.
 
 Key design decisions:
 
@@ -49,11 +49,11 @@ Plan PRs use a structured body format: metadata block + separator + plan content
 - **Label**: `"erk-plan"`
 - **Structure**: `<!-- plan-header metadata -->` + separator + `# Plan: Title` + content
 
-Helper functions `build_plan_stage_body()` and `extract_plan_content()` (public, in `draft_pr_lifecycle.py`) handle composition and extraction.
+Helper functions `build_plan_stage_body()` and `extract_plan_content()` (public, in `planned_pr_lifecycle.py`) handle composition and extraction.
 
 ## Plan File Commit
 
-Plans are committed to `.erk/plan/PLAN.md` on the draft PR branch. The `plan_save.py` script uses a try/finally pattern for branch restoration — see [plan-save-branch-restoration.md](../architecture/plan-save-branch-restoration.md).
+Plans are committed to `.erk/impl-context/plan.md` on the planned PR branch. The `plan_save.py` script uses `commit_files_to_branch()` — a git plumbing approach that writes directly to the branch without checking it out, avoiding race conditions when multiple sessions share the same worktree.
 
 ## Branch Naming
 
@@ -61,13 +61,13 @@ Three branch name formats are supported:
 
 - **P-prefix**: `P{number}-{slug}` (issue-based plan branches)
 - **Objective format**: `P{number}-O{objective}-{slug}` (plans linked to objectives)
-- **Draft-PR**: `plnd/{slug}-{MM-DD-HHMM}` or `plnd/O{objective}-{slug}-{MM-DD-HHMM}` (draft-PR plans)
+- **Planned PR**: `plnd/{slug}-{MM-DD-HHMM}` or `plnd/O{objective}-{slug}-{MM-DD-HHMM}` (planned-PR plans)
 
 See [branch-plan-resolution.md](branch-plan-resolution.md) for how branches resolve to plans.
 
 ## Land Pipeline Integration
 
-Draft-PR plans don't have separate review PRs, so the land pipeline skips review PR cleanup for them.
+Planned PR plans don't have separate review PRs, so the land pipeline skips review PR cleanup for them.
 
 ## Type Narrowing
 
@@ -75,7 +75,7 @@ The backend uses explicit `isinstance()` checks and conditional type conversion 
 
 ## Title Prefixing Behavior
 
-Draft PR titles (and issue-based plan titles) are prefixed with a label-based tag via `get_title_tag_from_labels()` in `packages/erk-shared/src/erk_shared/plan_utils.py:178-190`.
+Planned PR titles (and issue-based plan titles) are prefixed with a label-based tag via `get_title_tag_from_labels()` in `packages/erk-shared/src/erk_shared/plan_utils.py:178-190`.
 
 <!-- Source: packages/erk-shared/src/erk_shared/plan_utils.py:178-190, get_title_tag_from_labels -->
 
@@ -83,7 +83,7 @@ The function returns `"[erk-learn]"` if `"erk-learn"` is in the labels list, oth
 
 ## GraphQL Refactor: `list_plan_prs_with_details()`
 
-The plan data provider fetches PRs via a single GraphQL query (`list_plan_prs_with_details()`) instead of N+1 REST calls. This function lives in `packages/erk-shared/src/erk_shared/gateway/github/real.py:1588` and returns:
+The plan data provider fetches PRs via a single GraphQL query (`list_plan_prs_with_details()`) instead of N+1 REST calls. This function lives in `packages/erk-shared/src/erk_shared/gateway/github/real.py:1636` and returns:
 
 - `list[PRDetails]` — for plan content extraction
 - `dict[int, list[PullRequestInfo]]` — for display metadata (checks, review threads, merge status)
@@ -92,7 +92,7 @@ The single query uses `GET_PLAN_PRS_WITH_DETAILS_QUERY` from `graphql_queries.py
 
 ## Implementation Setup and .erk/impl-context/ Cleanup
 
-When implementing a draft-PR plan, the `.erk/impl-context/` staging directory must be cleaned up before implementation begins. This directory contains `plan.md` and `ref.json` committed during plan-save to give the draft PR a non-empty diff.
+When implementing a planned-PR plan, the `.erk/impl-context/` staging directory must be cleaned up before implementation begins. This directory contains `plan.md` and `ref.json` committed during plan-save to give the draft PR a non-empty diff.
 
 **Cleanup pattern:**
 
@@ -119,6 +119,6 @@ If stdout is empty, check stderr for the duplicate-detection response before ass
 ## Related Topics
 
 - [Branch Plan Resolution](branch-plan-resolution.md) - How branches resolve to plans
-- [Plan Save Branch Restoration](../architecture/plan-save-branch-restoration.md) - Try/finally pattern for branch safety
+- [Plan Save Branch Restoration](../architecture/plan-save-branch-restoration.md) - Git plumbing approach for branch safety
 - [Plan Storage Testing](../testing/dual-backend-testing.md) - Plan storage testing patterns
 - [Impl-Context Staging Directory](impl-context.md) - Staging directory lifecycle and cleanup

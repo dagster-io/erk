@@ -1042,13 +1042,13 @@ The field is nullable — plans created before this feature have `lifecycle_stag
 
 Each stage is set by specific commands at well-defined moments:
 
-| Stage          | Set By                                                                                                                           | When                                    |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
-| `prompted`     | `one_shot_dispatch`                                                                                                              | One-shot plan issue created             |
-| `planning`     | `one-shot.yml` workflow                                                                                                          | Agent begins writing plan               |
-| `planned`      | `plan_save_to_issue`, `plan create`, `register_one_shot_plan`, `GitHubPlanBackend.create_plan`, `DraftPRPlanBackend.create_plan` | Plan saved to GitHub                    |
-| `implementing` | `mark-impl-started`                                                                                                              | Implementation begins (local or remote) |
-| `implemented`  | `handle-no-changes`                                                                                                              | Implementation complete, PR ready       |
+| Stage          | Set By                                                                                                                         | When                                    |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------- |
+| `prompted`     | `one_shot_dispatch`                                                                                                            | One-shot plan issue created             |
+| `planning`     | `one-shot.yml` workflow                                                                                                        | Agent begins writing plan               |
+| `planned`      | `plan_save_to_issue`, `plan create`, `register_one_shot_plan`, `GitHubPlanBackend.create_plan`, `PlannedPRBackend.create_plan` | Plan saved to GitHub                    |
+| `implementing` | `mark-impl-started`                                                                                                            | Implementation begins (local or remote) |
+| `implemented`  | `handle-no-changes`                                                                                                            | Implementation complete, PR ready       |
 
 ### Explicit Updates via Exec Command
 
@@ -1084,13 +1084,13 @@ See [Stacked PR Indicator](../tui/stacked-pr-indicator.md) for the full detectio
 
 ---
 
-## Draft-PR Plan Lifecycle
+## Planned PR Lifecycle
 
-Draft-PR-backed plans differ from issue-based plans in their storage model and branch creation timing. Instead of a separate plan issue and implementation PR, draft-PR plans evolve through lifecycle stages within a single PR.
+Planned-PR-backed plans differ from issue-based plans in their storage model and branch creation timing. Instead of a separate plan issue and implementation PR, planned-PR plans evolve through lifecycle stages within a single PR.
 
 **Key differences from issue-based plans:**
 
-| Aspect               | Issue-Based            | Draft-PR                    |
+| Aspect               | Issue-Based            | Planned PR                  |
 | -------------------- | ---------------------- | --------------------------- |
 | Plan storage         | GitHub issue body      | Draft PR body               |
 | Branch creation      | At implementation time | At plan-save time           |
@@ -1101,14 +1101,14 @@ Draft-PR-backed plans differ from issue-based plans in their storage model and b
 
 **Branch sync:** Because the branch is created during plan-save and the user returns to their original branch, implementation must sync with remote before starting work.
 
-See [Draft PR Lifecycle](draft-pr-lifecycle.md) for body format details and [Draft PR Branch Sync](draft-pr-branch-sync.md) for the sync mechanism.
+See [Planned PR Lifecycle](planned-pr-lifecycle.md) for body format details and [Planned PR Branch Sync](planned-pr-branch-sync.md) for the sync mechanism.
 
 ---
 
 ## Related Documentation
 
 - [Planning Workflow](workflow.md) - `.impl/` folder structure and commands
-- [Draft PR Lifecycle](draft-pr-lifecycle.md) - Draft PR body format and stage transitions
-- [Draft PR Branch Sync](draft-pr-branch-sync.md) - Branch sync during draft-PR implementation
+- [Planned PR Lifecycle](planned-pr-lifecycle.md) - Planned PR body format and stage transitions
+- [Planned PR Branch Sync](planned-pr-branch-sync.md) - Branch sync during planned-PR implementation
 - [Exec Command Patterns](../cli/exec-command-patterns.md) - Available `erk exec` commands
 - [Glossary](../glossary.md) - Erk terminology definitions

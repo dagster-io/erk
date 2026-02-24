@@ -27,7 +27,7 @@ from erk.core.plan_context_provider import PlanContextProvider
 from erk_shared.context.helpers import require_context
 from erk_shared.gateway.github.pr_footer import extract_header_from_body
 from erk_shared.gateway.github.types import BodyText, PRNotFound
-from erk_shared.plan_store.draft_pr_lifecycle import extract_metadata_prefix
+from erk_shared.plan_store.planned_pr_lifecycle import extract_metadata_prefix
 
 
 @click.command(name="set-pr-description")
@@ -81,7 +81,7 @@ def set_pr_description(
         branch_name=discovery.current_branch,
     )
 
-    # Detect draft-PR backend and extract metadata prefix
+    # Detect planned-PR backend and extract metadata prefix
     impl_dir = cwd / ".impl"
     plans_repo = erk_ctx.local_config.plans_repo if erk_ctx.local_config else None
 

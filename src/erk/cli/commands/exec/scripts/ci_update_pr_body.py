@@ -57,7 +57,7 @@ from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer, build_remote_execution_note
 from erk_shared.gateway.github.types import BodyText, PRNotFound
 from erk_shared.gateway.gt.prompts import get_commit_message_prompt, truncate_diff
-from erk_shared.plan_store.draft_pr_lifecycle import (
+from erk_shared.plan_store.planned_pr_lifecycle import (
     PLAN_CONTENT_SEPARATOR,
     build_original_plan_section,
     extract_metadata_prefix,
@@ -145,7 +145,7 @@ def _build_pr_body(
     Args:
         summary: AI-generated PR summary
         pr_number: PR number for checkout instructions
-        issue_number: Issue number to close on merge, or None for draft-PR plans
+        issue_number: Issue number to close on merge, or None for planned-PR plans
         run_id: Optional workflow run ID
         run_url: Optional workflow run URL
         plans_repo: Target repo in "owner/repo" format for cross-repo plans
@@ -177,7 +177,7 @@ def _update_pr_body_impl(
     run_id: str | None,
     run_url: str | None,
     plans_repo: str | None,
-    is_draft_pr: bool,
+    is_planned_pr: bool,
 ) -> UpdateSuccess | UpdateError:
     """Implementation of PR body update.
 
@@ -190,7 +190,7 @@ def _update_pr_body_impl(
         run_id: Optional workflow run ID
         run_url: Optional workflow run URL
         plans_repo: Target repo in "owner/repo" format for cross-repo plans
-        is_draft_pr: True if this is a draft-PR plan (no Closes #N)
+        is_planned_pr: True if this is a planned-PR plan (no Closes #N)
 
     Returns:
         UpdateSuccess on success, UpdateError on failure
@@ -272,8 +272,8 @@ def _update_pr_body_impl(
     title, summary = _parse_title_and_summary(result.output)
 
     # Build full PR body
-    if is_draft_pr:
-        # For draft-PR plans: preserve metadata prefix, include original plan section
+    if is_planned_pr:
+        # For planned-PR plans: preserve metadata prefix, include original plan section
         metadata_prefix_raw = extract_metadata_prefix(pr_result.body)
         plan_content = extract_plan_content(pr_result.body)
         original_plan_section = build_original_plan_section(plan_content)
@@ -325,14 +325,14 @@ def _update_pr_body_impl(
 @click.option("--plan-id", type=int, required=True, help="Plan identifier to close on merge")
 @click.option("--run-id", type=str, default=None, help="Optional workflow run ID")
 @click.option("--run-url", type=str, default=None, help="Optional workflow run URL")
-@click.option("--draft-pr", is_flag=True, default=False, help="Draft-PR plan (no Closes #N)")
+@click.option("--planned-pr", is_flag=True, default=False, help="Planned-PR plan (no Closes #N)")
 @click.pass_context
 def ci_update_pr_body(
     ctx: click.Context,
     plan_id: int,
     run_id: str | None,
     run_url: str | None,
-    draft_pr: bool,
+    planned_pr: bool,
 ) -> None:
     """Update PR body with AI-generated summary and footer.
 
@@ -358,7 +358,7 @@ def ci_update_pr_body(
         run_id=run_id,
         run_url=run_url,
         plans_repo=plans_repo,
-        is_draft_pr=draft_pr,
+        is_planned_pr=planned_pr,
     )
 
     # Output JSON result
