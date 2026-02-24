@@ -66,7 +66,7 @@ def _build_no_changes_title(*, plan_id: int, original_title: str) -> str:
     Returns:
         New title with [no-changes] prefix and plan reference
     """
-    return f"[no-changes] P{plan_id} Impl Attempt: {original_title}"
+    return f"[no-changes] #{plan_id} Impl Attempt: {original_title}"
 
 
 def _build_pr_body(

@@ -1,6 +1,8 @@
 """Tests for erk plan co command."""
 
+import json
 import os
+from pathlib import Path
 from unittest.mock import patch
 
 from click.testing import CliRunner
@@ -74,18 +76,46 @@ def _make_pr_details(
     )
 
 
+def _write_plan_ref(worktree_path: Path, plan_id: str) -> None:
+    """Write a plan-ref.json in a worktree's .impl/ directory."""
+    impl_dir = worktree_path / ".impl"
+    impl_dir.mkdir(parents=True, exist_ok=True)
+    ref_file = impl_dir / "plan-ref.json"
+    ref_file.write_text(
+        json.dumps(
+            {
+                "plan_id": plan_id,
+                "provider": "github",
+                "url": f"https://github.com/owner/repo/issues/{plan_id}",
+                "created_at": "2024-01-15T14:30:00+00:00",
+                "synced_at": "2024-01-15T14:30:00+00:00",
+            }
+        )
+    )
+
+
 def test_checkout_local_branch_exists() -> None:
-    """Test checkout when local branch exists for the plan."""
+    """Test checkout when local branch with matching .impl/ exists for the plan."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
-        # Create a local branch that matches issue 123
+        branch_name = "plnd/fix-bug-01-15-1430"
+        worktree_path = env.repo.worktrees_dir / "fix-bug"
+        worktree_path.mkdir(parents=True)
+        _write_plan_ref(worktree_path, "123")
+
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
-            local_branches={env.cwd: ["main", "P123-fix-bug-01-15-1430"]},
-            remote_branches={env.cwd: ["origin/main", "origin/P123-fix-bug-01-15-1430"]},
-            existing_paths={env.cwd, env.repo.worktrees_dir},
+            local_branches={env.cwd: ["main", branch_name]},
+            remote_branches={env.cwd: ["origin/main", f"origin/{branch_name}"]},
+            existing_paths={env.cwd, env.repo.worktrees_dir, worktree_path},
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=worktree_path, branch=branch_name, is_root=False),
+                ]
+            },
         )
         github = FakeGitHub()
         ctx = build_workspace_test_context(env, git=git, github=github)
@@ -94,30 +124,40 @@ def test_checkout_local_branch_exists() -> None:
             result = runner.invoke(cli, ["plan", "co", "P123"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created worktree for plan #123" in result.output
-        assert len(git.added_worktrees) == 1
+        assert "already checked out" in result.output
 
 
 def test_checkout_with_plain_number() -> None:
-    """Test checkout using plain number instead of P-prefix."""
+    """Test checkout using plain number falls through to PR lookup."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
+        pr_details = _make_pr_details(
+            number=200,
+            head_ref_name="plnd/feature-02-20-0900",
+            state="OPEN",
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
-            local_branches={env.cwd: ["main", "P456-feature-02-20-0900"]},
-            remote_branches={env.cwd: ["origin/main"]},
+            local_branches={env.cwd: ["main"]},
+            remote_branches={env.cwd: ["origin/main", "origin/plnd/feature-02-20-0900"]},
             existing_paths={env.cwd, env.repo.worktrees_dir},
         )
-        github = FakeGitHub()
-        ctx = build_workspace_test_context(env, git=git, github=github)
+        fake_issues = FakeGitHubIssues(
+            pr_references={456: [PRReference(number=200, state="OPEN", is_draft=False)]},
+        )
+        github = FakeGitHub(
+            pr_details={200: pr_details},
+            issues_gateway=fake_issues,
+        )
+        ctx = build_workspace_test_context(env, git=git, github=github, issues=fake_issues)
 
         with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
             result = runner.invoke(cli, ["plan", "co", "456"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created worktree for plan #456" in result.output
+        assert "Created worktree for plan #456 (PR #200)" in result.output
 
 
 def test_checkout_branch_already_in_worktree() -> None:
@@ -125,9 +165,10 @@ def test_checkout_branch_already_in_worktree() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
-        branch_name = "P789-existing-03-01-1200"
-        worktree_path = env.repo.worktrees_dir / branch_name
+        branch_name = "plnd/existing-03-01-1200"
+        worktree_path = env.repo.worktrees_dir / "existing"
         worktree_path.mkdir(parents=True)
+        _write_plan_ref(worktree_path, "789")
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -155,23 +196,33 @@ def test_checkout_branch_already_in_worktree() -> None:
 
 
 def test_checkout_multiple_local_branches_shows_table() -> None:
-    """Test checkout shows table when multiple local branches match."""
+    """Test checkout shows table when multiple worktrees match via plan-ref.json."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
-        # Multiple branches for the same issue (different timestamps)
+        # Multiple worktrees for the same plan issue
+        wt1 = env.repo.worktrees_dir / "feature-v1"
+        wt2 = env.repo.worktrees_dir / "feature-v2"
+        wt1.mkdir(parents=True)
+        wt2.mkdir(parents=True)
+        _write_plan_ref(wt1, "100")
+        _write_plan_ref(wt2, "100")
+
+        branch1 = "plnd/feature-01-01-0900"
+        branch2 = "plnd/feature-01-02-1000"
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
-            local_branches={
+            local_branches={env.cwd: ["main", branch1, branch2]},
+            remote_branches={env.cwd: ["origin/main"]},
+            existing_paths={env.cwd, env.repo.worktrees_dir, wt1, wt2},
+            worktrees={
                 env.cwd: [
-                    "main",
-                    "P100-feature-01-01-0900",
-                    "P100-feature-01-02-1000",
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=wt1, branch=branch1, is_root=False),
+                    WorktreeInfo(path=wt2, branch=branch2, is_root=False),
                 ]
             },
-            remote_branches={env.cwd: ["origin/main"]},
-            existing_paths={env.cwd, env.repo.worktrees_dir},
         )
         github = FakeGitHub()
         ctx = build_workspace_test_context(env, git=git, github=github)
@@ -180,8 +231,6 @@ def test_checkout_multiple_local_branches_shows_table() -> None:
 
         assert result.exit_code == 0  # Should exit cleanly after showing table
         assert "Multiple branches found" in result.output
-        assert "P100-feature-01-01-0900" in result.output
-        assert "P100-feature-01-02-1000" in result.output
         assert "erk wt create" in result.output
 
 
@@ -192,14 +241,14 @@ def test_checkout_no_local_branch_fetches_pr() -> None:
         env.setup_repo_structure()
         pr_details = _make_pr_details(
             number=200,
-            head_ref_name="P42-from-pr-04-15-1400",
+            head_ref_name="plnd/from-pr-04-15-1400",
             state="OPEN",
         )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
             local_branches={env.cwd: ["main"]},  # No matching branch
-            remote_branches={env.cwd: ["origin/main", "origin/P42-from-pr-04-15-1400"]},
+            remote_branches={env.cwd: ["origin/main", "origin/plnd/from-pr-04-15-1400"]},
             existing_paths={env.cwd, env.repo.worktrees_dir},
         )
         # PR references the issue
@@ -218,7 +267,7 @@ def test_checkout_no_local_branch_fetches_pr() -> None:
         assert result.exit_code == 0
         assert "Created worktree for plan #42 (PR #200)" in result.output
         # Verify fetch was called
-        assert ("origin", "P42-from-pr-04-15-1400") in git.fetched_branches
+        assert ("origin", "plnd/from-pr-04-15-1400") in git.fetched_branches
 
 
 def test_checkout_multiple_open_prs_shows_table() -> None:
@@ -261,14 +310,14 @@ def test_checkout_filters_to_open_prs_only() -> None:
         env.setup_repo_structure()
         pr_details = _make_pr_details(
             number=400,
-            head_ref_name="P60-still-open-05-01-1200",
+            head_ref_name="plnd/still-open-05-01-1200",
             state="OPEN",
         )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
             local_branches={env.cwd: ["main"]},
-            remote_branches={env.cwd: ["origin/main", "origin/P60-still-open-05-01-1200"]},
+            remote_branches={env.cwd: ["origin/main", "origin/plnd/still-open-05-01-1200"]},
             existing_paths={env.cwd, env.repo.worktrees_dir},
         )
         # Multiple PRs, but only one is OPEN
@@ -335,7 +384,6 @@ def test_checkout_invalid_identifier() -> None:
 
         assert result.exit_code == 1
         assert "Invalid issue number or URL" in result.output
-        assert "P-prefixed" in result.output  # Should mention new P-prefix format
 
 
 def test_checkout_with_github_url() -> None:
@@ -343,12 +391,24 @@ def test_checkout_with_github_url() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
+        # Create worktree with plan-ref.json for issue 555
+        wt = env.repo.worktrees_dir / "url-test"
+        wt.mkdir(parents=True)
+        _write_plan_ref(wt, "555")
+
+        branch = "plnd/url-test-06-01-0800"
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
-            local_branches={env.cwd: ["main", "P555-url-test-06-01-0800"]},
+            local_branches={env.cwd: ["main", branch]},
             remote_branches={env.cwd: ["origin/main"]},
-            existing_paths={env.cwd, env.repo.worktrees_dir},
+            existing_paths={env.cwd, env.repo.worktrees_dir, wt},
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=wt, branch=branch, is_root=False),
+                ]
+            },
         )
         github = FakeGitHub()
         ctx = build_workspace_test_context(env, git=git, github=github)
@@ -361,21 +421,32 @@ def test_checkout_with_github_url() -> None:
             )
 
         assert result.exit_code == 0
-        assert "Created worktree for plan #555" in result.output
+        assert "already checked out" in result.output
 
 
-def test_checkout_legacy_branch_format_without_p_prefix() -> None:
-    """Test checkout finds legacy branches without P prefix."""
+def test_checkout_worktree_with_plan_ref_json() -> None:
+    """Test checkout finds branches via .impl/plan-ref.json in worktrees."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
-        # Legacy format: issue number without P prefix
+        # Worktree with plan-ref.json linking to issue 777
+        wt = env.repo.worktrees_dir / "old-style"
+        wt.mkdir(parents=True)
+        _write_plan_ref(wt, "777")
+
+        branch = "plnd/old-style-branch"
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
-            local_branches={env.cwd: ["main", "777-old-style-branch"]},
+            local_branches={env.cwd: ["main", branch]},
             remote_branches={env.cwd: ["origin/main"]},
-            existing_paths={env.cwd, env.repo.worktrees_dir},
+            existing_paths={env.cwd, env.repo.worktrees_dir, wt},
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=wt, branch=branch, is_root=False),
+                ]
+            },
         )
         github = FakeGitHub()
         ctx = build_workspace_test_context(env, git=git, github=github)
@@ -384,4 +455,4 @@ def test_checkout_legacy_branch_format_without_p_prefix() -> None:
             result = runner.invoke(cli, ["plan", "co", "777"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created worktree for plan #777" in result.output
+        assert "already checked out" in result.output

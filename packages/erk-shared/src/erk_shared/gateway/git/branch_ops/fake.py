@@ -326,15 +326,11 @@ class FakeGitBranchOps(GitBranchOps):
         )
 
     def get_branch_issue(self, repo_root: Path, branch: str) -> int | None:
-        """Extract GitHub issue number from branch name."""
-        # Check pre-configured mapping first
-        if branch in self._branch_issues:
-            return self._branch_issues[branch]
+        """Deprecated: Branch names no longer encode issue numbers.
 
-        # Fall back to real parsing logic
-        from erk_shared.naming import extract_leading_issue_number
-
-        return extract_leading_issue_number(branch)
+        Returns pre-configured mapping value if set, otherwise None.
+        """
+        return self._branch_issues.get(branch)
 
     def get_behind_commit_authors(self, cwd: Path, branch: str) -> list[str]:
         """Get authors of commits on remote that are not in local branch."""

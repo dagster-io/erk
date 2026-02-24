@@ -22,7 +22,6 @@ from erk_shared.gateway.github.metadata.core import (
     render_erk_issue_event,
 )
 from erk_shared.gateway.github.metadata.schemas import CREATED_BY, LAST_DISPATCHED_RUN_ID
-from erk_shared.naming import extract_leading_issue_number
 
 _REQUIRED_REF_FIELDS = ("provider", "plan_id", "url", "created_at", "synced_at")
 """Fields required in plan-ref.json and ref.json for valid PlanRef construction."""
@@ -294,47 +293,21 @@ def has_plan_ref(impl_dir: Path) -> bool:
 
 
 def validate_plan_linkage(impl_dir: Path, branch_name: str) -> str | None:
-    """Validate branch name and plan reference agree. Returns plan_id.
+    """Return plan_id from plan-ref.json.
 
-    Supports two branch naming patterns:
-
-    - Issue-based: ``P{issue_number}-{slug}`` — issue number extracted from prefix
-    - Draft-PR: ``plan-{slug}-{timestamp}`` — no extractable issue number;
-      plan-ref.json is the sole source of truth
-
-    For issue-based branches, if both the branch name and plan reference contain
-    an issue number, they MUST match. For planned-PR branches, ``branch_issue`` is
-    None, so the function falls through to returning ``plan_id`` from plan-ref.json.
+    Plan-ref.json is the sole source of truth for plan-to-branch mapping.
+    Branch names no longer encode issue numbers.
 
     Args:
         impl_dir: Path to .impl/ or .erk/impl-context/ directory
-        branch_name: Current git branch name
+        branch_name: Current git branch name (unused, kept for interface compat)
 
     Returns:
-        Plan ID (as string) if discoverable from either source, None if neither has one.
-
-    Raises:
-        ValueError: If both sources have issue numbers and they disagree.
+        Plan ID (as string) from plan-ref.json, or None if not found.
     """
-    branch_issue = extract_leading_issue_number(branch_name)
-
-    plan_ref = read_plan_ref(impl_dir) if impl_dir.exists() else None
-    impl_plan_id = plan_ref.plan_id if plan_ref is not None else None
-
-    # If both exist, they must match
-    if branch_issue is not None and impl_plan_id is not None:
-        if str(branch_issue) != impl_plan_id:
-            raise ValueError(
-                f"Branch issue ({branch_issue}) disagrees with "
-                f"plan reference (#{impl_plan_id}). Fix the mismatch before proceeding."
-            )
-        return impl_plan_id
-
-    # Return whichever is available
-    if impl_plan_id is not None:
-        return impl_plan_id
-    if branch_issue is not None:
-        return str(branch_issue)
+    plan_ref = read_plan_ref(impl_dir)
+    if plan_ref is not None:
+        return plan_ref.plan_id
     return None
 
 

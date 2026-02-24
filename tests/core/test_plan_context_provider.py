@@ -54,7 +54,11 @@ def test_get_plan_context_returns_none_for_non_plan_branch(tmp_path: Path) -> No
 
 
 def test_get_plan_context_returns_none_for_missing_issue(tmp_path: Path) -> None:
-    """Test that missing issues return None (graceful degradation)."""
+    """Test that branches return None when branch-based resolution no longer works.
+
+    Since extract_leading_issue_number() now always returns None, P-prefix branches
+    can no longer be resolved to plan IDs from the branch name alone.
+    """
     provider = _make_provider(FakeGitHubIssues(issues={}))
 
     result = provider.get_plan_context(
@@ -66,10 +70,10 @@ def test_get_plan_context_returns_none_for_missing_issue(tmp_path: Path) -> None
 
 
 def test_get_plan_context_returns_content_for_old_format_issue(tmp_path: Path) -> None:
-    """Test that old-format issues (body as plan content) return plan context.
+    """Test that branch-based resolution returns None since it's no longer supported.
 
-    PlanStore supports backward compatibility - issues without plan-header
-    metadata have their body treated as plan content directly.
+    Since extract_leading_issue_number() always returns None, P-prefix branches
+    cannot resolve to plan IDs, even when the issue exists.
     """
     issue = _make_issue_info(
         number=123,
@@ -83,16 +87,15 @@ def test_get_plan_context_returns_content_for_old_format_issue(tmp_path: Path) -
         branch_name="P123-fix-bug",
     )
 
-    assert result is not None
-    assert result.plan_id == "123"
-    assert result.plan_content == "This is just a regular issue body"
+    # Branch-based resolution no longer works
+    assert result is None
 
 
 def test_get_plan_context_falls_back_to_body_for_missing_comment(tmp_path: Path) -> None:
-    """Test that missing plan comment falls back to issue body via PlanStore.
+    """Test that branch-based resolution returns None since it's no longer supported.
 
-    When plan_comment_id points to a deleted/missing comment, PlanStore
-    falls back to the issue body as plan content (backward compatibility).
+    Even when the issue exists and has plan metadata, P-prefix branches cannot
+    resolve to plan IDs because extract_leading_issue_number() always returns None.
     """
     body = format_plan_header_body(
         created_at="2024-01-01T00:00:00Z",
@@ -130,13 +133,16 @@ def test_get_plan_context_falls_back_to_body_for_missing_comment(tmp_path: Path)
         branch_name="P123-fix-bug",
     )
 
-    # PlanStore falls back to issue body when comment is missing
-    assert result is not None
-    assert result.plan_id == "123"
+    # Branch-based resolution no longer works
+    assert result is None
 
 
 def test_get_plan_context_extracts_plan_content(tmp_path: Path) -> None:
-    """Test successful extraction of plan content from issue."""
+    """Test that branch-based resolution returns None since it's no longer supported.
+
+    Even with a complete plan issue and comment, P-prefix branches cannot resolve
+    to plan IDs because extract_leading_issue_number() always returns None.
+    """
     plan_content = """# Plan: Fix Authentication Bug
 
 ## Problem
@@ -195,15 +201,16 @@ Fix the session token expiration logic."""
         branch_name="P123-fix-auth-bug",
     )
 
-    assert result is not None
-    assert result.plan_id == "123"
-    assert "Fix Authentication Bug" in result.plan_content
-    assert "session token expiration" in result.plan_content
-    assert result.objective_summary is None
+    # Branch-based resolution no longer works
+    assert result is None
 
 
 def test_get_plan_context_includes_objective_summary(tmp_path: Path) -> None:
-    """Test that objective summary is included when plan is linked to objective."""
+    """Test that branch-based resolution returns None since it's no longer supported.
+
+    Even when a plan is linked to an objective, P-prefix branches cannot resolve
+    to plan IDs because extract_leading_issue_number() always returns None.
+    """
     plan_content = "# Plan: Implement Feature\n\nDetails here."
     comment_body = format_plan_content_comment(plan_content)
 
@@ -261,13 +268,16 @@ def test_get_plan_context_includes_objective_summary(tmp_path: Path) -> None:
         branch_name="P123-implement-feature",
     )
 
-    assert result is not None
-    assert result.plan_id == "123"
-    assert result.objective_summary == "Objective #200: Improve CI Reliability"
+    # Branch-based resolution no longer works
+    assert result is None
 
 
 def test_get_plan_context_handles_missing_objective(tmp_path: Path) -> None:
-    """Test that missing objective issue doesn't fail extraction."""
+    """Test that branch-based resolution returns None since it's no longer supported.
+
+    Even when a plan references a missing objective, P-prefix branches cannot
+    resolve to plan IDs because extract_leading_issue_number() always returns None.
+    """
     plan_content = "# Plan: Implement Feature\n\nDetails here."
     comment_body = format_plan_content_comment(plan_content)
 
@@ -319,13 +329,16 @@ def test_get_plan_context_handles_missing_objective(tmp_path: Path) -> None:
         branch_name="P123-implement-feature",
     )
 
-    assert result is not None
-    assert result.plan_id == "123"
-    assert result.objective_summary is None
+    # Branch-based resolution no longer works
+    assert result is None
 
 
 def test_get_plan_context_supports_legacy_branch_format(tmp_path: Path) -> None:
-    """Test that legacy branch format without P prefix works."""
+    """Test that branch-based resolution returns None for legacy format too.
+
+    Even plain numeric-prefixed branches (without P) cannot resolve to plan IDs
+    because extract_leading_issue_number() always returns None.
+    """
     plan_content = "# Plan: Fix Bug\n\nDetails."
     comment_body = format_plan_content_comment(plan_content)
 
@@ -376,8 +389,8 @@ def test_get_plan_context_supports_legacy_branch_format(tmp_path: Path) -> None:
         branch_name="456-fix-bug",
     )
 
-    assert result is not None
-    assert result.plan_id == "456"
+    # Branch-based resolution no longer works
+    assert result is None
 
 
 def test_plan_context_dataclass_frozen() -> None:

@@ -408,28 +408,29 @@ def test_fake_git_is_worktree_clean_with_nonexistent_path() -> None:
 
 
 def test_fake_git_get_branch_issue_extracts_from_branch_name() -> None:
-    """Test get_branch_issue extracts issue number from branch name prefix."""
+    """Test get_branch_issue returns None since branch-based extraction is removed.
+
+    Since extract_leading_issue_number() always returns None, get_branch_issue()
+    always returns None regardless of branch name format.
+    """
     git_ops = FakeGit()
 
-    # Branch names with P-prefixed issue number (new format uses uppercase P)
+    # All branch name formats now return None (branch-based extraction removed)
     assert (
         git_ops.branch.get_branch_issue(
             Path("/repo"), "P2382-convert-erk-create-raw-ext-12-05-2359"
         )
-        == 2382
+        is None
     )
-    assert git_ops.branch.get_branch_issue(Path("/repo"), "P42-fix-bug") == 42
-    assert git_ops.branch.get_branch_issue(Path("/repo"), "P123-feature-name") == 123
-    # Lowercase p also supported for backwards compatibility
-    assert git_ops.branch.get_branch_issue(Path("/repo"), "p100-lowercase-prefix") == 100
-
-    # Branch names with legacy format (no P prefix, backwards compatibility)
+    assert git_ops.branch.get_branch_issue(Path("/repo"), "P42-fix-bug") is None
+    assert git_ops.branch.get_branch_issue(Path("/repo"), "P123-feature-name") is None
+    assert git_ops.branch.get_branch_issue(Path("/repo"), "p100-lowercase-prefix") is None
     assert (
         git_ops.branch.get_branch_issue(Path("/repo"), "2382-convert-erk-create-raw-ext-12-05-2359")
-        == 2382
+        is None
     )
-    assert git_ops.branch.get_branch_issue(Path("/repo"), "42-fix-bug") == 42
-    assert git_ops.branch.get_branch_issue(Path("/repo"), "123-feature-name") == 123
+    assert git_ops.branch.get_branch_issue(Path("/repo"), "42-fix-bug") is None
+    assert git_ops.branch.get_branch_issue(Path("/repo"), "123-feature-name") is None
 
 
 def test_fake_git_get_branch_issue_returns_none_for_no_prefix() -> None:

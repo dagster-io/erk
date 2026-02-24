@@ -101,7 +101,7 @@ def test_track_learn_evaluation_without_session_id(tmp_path: Path) -> None:
 
 
 def test_track_learn_evaluation_infers_from_branch(tmp_path: Path) -> None:
-    """Test tracking infers issue from branch name."""
+    """Test tracking fails when branch doesn't resolve."""
     runner = CliRunner()
     plan_body = format_plan_header_body_for_test()
     with runner.isolated_filesystem(temp_dir=tmp_path):
@@ -125,10 +125,10 @@ def test_track_learn_evaluation_infers_from_branch(tmp_path: Path) -> None:
             ),
         )
 
-    assert result.exit_code == 0, result.output
+    assert result.exit_code == 1
     output = json.loads(result.output)
-    assert output["success"] is True
-    assert output["issue_number"] == 456
+    assert output["success"] is False
+    assert "No issue specified" in output["message"]
 
 
 def test_track_learn_evaluation_with_url_format(tmp_path: Path) -> None:

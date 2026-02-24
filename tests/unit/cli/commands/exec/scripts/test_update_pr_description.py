@@ -347,8 +347,17 @@ def test_uses_graphite_parent() -> None:
         assert "branch-2" in prompt
 
 
-def test_embeds_plan_context() -> None:
-    """Test that plan context is embedded in the updated PR body."""
+def test_no_plan_context_after_pxxxx_removal() -> None:
+    """Test that plan context is NOT embedded after removing P<N> branch naming.
+
+    Since branch-based plan discovery is removed and GitHubPlanStore.get_plan_for_branch
+    always returns PlanNotFound (resolve_plan_id_for_branch returns None), plan context
+    is no longer available for PR description generation. This test verifies that
+    update-pr-description gracefully degrades when plan context is unavailable.
+
+    Note: plan-ref.json exists in .impl/ but GitHubPlanStore.get_plan_for_branch
+    doesn't read it. Future work may restore plan context via plan-ref.json lookup.
+    """
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         plan_body = format_plan_header_body_for_test(plan_comment_id=1000)
@@ -366,8 +375,22 @@ def test_embeds_plan_context() -> None:
 
         git, graphite, github, executor = _make_standard_fakes(
             env,
-            branch_name="P123-fix-bug",
+            branch_name="plnd/fix-bug-123-01-01-1200",
             fake_github_issues=fake_github_issues,
+        )
+
+        # Create .impl/plan-ref.json (not currently used by GitHubPlanStore.get_plan_for_branch)
+        impl_dir = env.cwd / ".impl"
+        impl_dir.mkdir(parents=True, exist_ok=True)
+        from erk_shared.impl_folder import save_plan_ref
+
+        save_plan_ref(
+            impl_dir,
+            provider="github",
+            plan_id="123",
+            url="https://github.com/test-owner/test-repo/issues/123",
+            labels=("erk-plan",),
+            objective_id=None,
         )
 
         ctx = build_workspace_test_context(
@@ -382,12 +405,12 @@ def test_embeds_plan_context() -> None:
         result = runner.invoke(update_pr_description, [], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Incorporating plan from issue #123" in result.output
+        # Plan context is NOT available — should NOT see this message
+        assert "Incorporating plan from issue #123" not in result.output
 
-        # Verify plan details section is in the updated body
+        # PR body should not contain plan details section
         _, updated_body = github.updated_pr_bodies[0]
-        assert "Implementation Plan" in updated_body
-        assert "Issue #123" in updated_body
+        assert "Implementation Plan" not in updated_body
 
 
 def test_update_pr_description_planned_pr_backend_preserves_metadata() -> None:

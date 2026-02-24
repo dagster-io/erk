@@ -77,7 +77,7 @@ def abbreviate_for_header(current_branch: str | None) -> str:
     Returns:
         Abbreviated header string, max 12 characters.
         Examples:
-        - "P4535-add-feature" -> "br:P4535-ad" (11 chars)
+        - "plnd/add-feature" -> "br:plnd/add-" (12 chars)
         - "feature-x" -> "br:feature-x" (12 chars)
         - None -> "Plan Action"
     """

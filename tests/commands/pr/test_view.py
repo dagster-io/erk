@@ -99,7 +99,7 @@ def test_view_plan_error_when_cannot_infer_from_branch() -> None:
         assert result.exit_code == 1
         assert "Error" in result.output
         assert "No identifier specified and could not infer from branch name" in result.output
-        assert "P{issue}-..." in result.output
+        assert ".impl/plan-ref.json" in result.output
 
 
 def test_view_plan_with_full_flag() -> None:

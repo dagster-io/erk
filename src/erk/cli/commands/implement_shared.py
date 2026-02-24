@@ -454,8 +454,7 @@ def extract_plan_from_current_branch(ctx: ErkContext) -> str | None:
         Plan identifier as string if current branch is a plan branch, else None
 
     Examples:
-        P123-fix-bug → "123"
-        P4567-feature → "4567"
+        plnd/fix-bug-01-15-1430 (with .impl/) → "123"
         main → None
         feature-branch → None
     """

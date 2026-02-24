@@ -257,7 +257,7 @@ class PlanBackend(PlanStore):
 
         Args:
             repo_root: Repository root directory
-            branch_name: Git branch name (e.g., "P123-fix-bug-01-15-1430")
+            branch_name: Git branch name (e.g., "plnd/fix-bug-01-15-1430")
 
         Returns:
             Plan if found, PlanNotFound otherwise

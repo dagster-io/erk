@@ -1,15 +1,13 @@
 ---
 title: One-Shot Workflow
-last_audited: "2026-02-16 00:00 PT"
+last_audited: "2026-02-24 00:00 PT"
 audit_result: clean
 read_when:
   - "working with erk one-shot dispatch"
   - "understanding how plans are autonomously created and implemented"
-  - "debugging one-shot workflow failures or skeleton plan issues"
+  - "debugging one-shot workflow failures"
   - "integrating objectives with one-shot dispatch"
 tripwires:
-  - action: "modifying one-shot dispatch or skeleton issue creation"
-    warning: "Skeleton plan issues must be created BEFORE generating branch names to get P<N>- prefix"
   - action: "adding dry-run support to one-shot commands"
     warning: "One-shot dry-run mode must NOT create skeleton issues"
   - action: "modifying register-one-shot-plan exit behavior"
@@ -30,8 +28,8 @@ The one-shot workflow enables fully autonomous planning and implementation from 
 ## End-to-End Pipeline
 
 ```
-CLI dispatch → skeleton issue → branch + draft PR → workflow trigger
-  → Claude planning → plan saved to issue → implementation → PR ready
+CLI dispatch → branch + draft PR → workflow trigger
+  → Claude planning → plan saved to PR → implementation → PR ready
 ```
 
 ### Entry Points
@@ -43,27 +41,31 @@ Two CLI commands trigger the pipeline:
 
 Both converge on `dispatch_one_shot()` in `src/erk/cli/commands/one_shot_dispatch.py`.
 
-## Backend-Specific Behavior
+## Backend-Conditional Dispatch
 
-One-shot dispatch uses the configured plan backend via `ctx.plan_backend.get_provider_name()`. Since the backend is now hardcoded to `"planned_pr"` (PlannedPRBackend), all one-shot dispatches create draft PRs:
+The dispatch behavior depends on the active plan backend:
 
-| Backend          | Provider Name     | Creates               | Branch Format                       |
-| ---------------- | ----------------- | --------------------- | ----------------------------------- |
-| PlannedPRBackend | `github-draft-pr` | Skeleton draft PR     | `plnd/{slug}-{MM-DD-HHMM}`          |
-| GitHubPlanStore  | `github` (legacy) | Skeleton GitHub issue | `P{N}-{slug}-{MM-DD-HHMM}` (legacy) |
+### PlannedPRBackend (default)
 
-The dispatch code detects the backend dynamically (`is_planned_pr = backend_name == "github-draft-pr"`) and conditionally branches for PR creation vs issue creation. Since the backend is always `planned_pr`, the issue-based path is effectively dead code.
+The draft PR **is** the plan entity. No skeleton issue is created:
 
-## Skeleton Plan Issue Pattern
-
-The dispatch function creates a **skeleton plan** before generating the branch name. This ordering is critical because it enables the `P<N>-` or `plnd/` branch naming:
-
-1. `create_plan_issue()` creates a skeleton with placeholder content
-2. `generate_branch_name()` uses the issue number for the `P{N}-` prefix
-3. Branch is created, pushed, and draft PR opened
+1. `generate_planned_pr_branch_name()` creates a `plnd/` branch name
+2. Branch is created, pushed, and draft PR opened with `plan-header` metadata
+3. `plan_issue_number` is set to the PR number (the PR is the plan)
 4. Workflow fills in the actual plan content later
 
-**Skeleton content:**
+**Branch naming:** `plnd/{slug}-{MM-DD-HHMM}` (e.g., `plnd/my-task-01-15-1430`)
+
+### GitHubPlanStore (legacy)
+
+A skeleton plan issue is created first, then a branch and PR:
+
+1. `create_plan_issue()` creates a skeleton with placeholder content
+2. Branch is created with `plnd/` prefix (issue number is **not** encoded in branch name)
+3. Draft PR is created with `Closes #{issue}` reference
+4. Workflow fills in the actual plan content later
+
+**Placeholder content:**
 
 ```
 _One-shot: plan content will be populated by one-shot workflow._
@@ -72,11 +74,6 @@ _One-shot: plan content will be populated by one-shot workflow._
 ```
 
 The skeleton optionally includes `objective_id` when dispatched from an objective roadmap.
-
-**Branch naming patterns:**
-
-- With plan issue: `P{N}-{slug}-{MM-DD-HHMM}` (e.g., `P123-my-task-01-15-1430`)
-- Without plan issue (legacy): `oneshot-{slug}-{MM-DD-HHMM}`
 
 The slug is truncated to stay under git's 31-character worktree limit.
 
@@ -102,7 +99,7 @@ The `.github/workflows/one-shot.yml` workflow has two jobs:
    - `WORKFLOW_RUN_URL` -- current workflow run URL
    - `OBJECTIVE_ISSUE` -- objective issue number (if from roadmap)
    - `NODE_ID` -- specific roadmap node ID
-   - `PLAN_ISSUE_NUMBER` -- pre-created skeleton issue number
+   - `PLAN_ISSUE_NUMBER` -- plan entity number (PR number for planned-PR backend)
 5. Validates Claude produced `.impl/plan.md` and `.impl/plan-result.json`
 6. Runs `erk exec register-one-shot-plan` for metadata registration
 7. Optionally updates objective roadmap step
@@ -123,10 +120,10 @@ concurrency:
 
 `src/erk/cli/commands/exec/scripts/register_one_shot_plan.py` performs four independent operations that `erk plan submit` normally handles at submit time. Each operation is best-effort -- failures are logged but don't block others:
 
-1. **Dispatch metadata** -- the primary metadata source is the CLI dispatch (`write_dispatch_metadata()` in `src/erk/cli/commands/pr/metadata_helpers.py`), with CI registration as a fallback. Writes `run_id`, `node_id`, `dispatched_at` to the plan issue's `plan-header` metadata block.
-2. **Queued comment** -- adds a "Queued for Implementation" emoji comment to the issue with PR link and workflow run URL
-3. **PR closing reference** -- updates the PR body with `Closes #N` to enable auto-close on merge
-4. **Lifecycle stage** -- updates the plan issue's lifecycle stage to "planned"
+1. **Dispatch metadata** -- the primary metadata source is the CLI dispatch (`write_dispatch_metadata()` in `src/erk/cli/commands/pr/metadata_helpers.py`), with CI registration as a fallback. Writes `run_id`, `node_id`, `dispatched_at` to the plan entity's `plan-header` metadata block.
+2. **Queued comment** -- adds a "Queued for Implementation" emoji comment to the plan with PR link and workflow run URL
+3. **PR closing reference** -- updates the PR body with `Closes #N` to enable auto-close on merge (GitHubPlanStore backend only)
+4. **Lifecycle stage** -- updates the plan entity's lifecycle stage to "planned"
 
 The command outputs JSON results for each operation with success/error details.
 
@@ -156,7 +153,7 @@ One-shot dispatch and `erk plan submit` both push branches and create PRs, but o
 3. Explores codebase following documentation-first discovery
 4. Writes a comprehensive, self-contained plan to `.impl/plan.md`
 5. Saves plan to GitHub issue:
-   - If `$PLAN_ISSUE_NUMBER` is set: updates the pre-created skeleton
+   - If `$PLAN_ISSUE_NUMBER` is set: updates the pre-created entity
    - Otherwise: creates a new issue (backward compatible)
 6. Writes `plan-result.json` with `issue_number` and `title`
 

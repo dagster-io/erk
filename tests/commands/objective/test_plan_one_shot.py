@@ -510,8 +510,8 @@ def test_plan_one_shot_next_with_issue_ref() -> None:
         assert inputs["objective_issue"] == "42"
 
 
-def test_plan_one_shot_next_infers_from_branch() -> None:
-    """Test --one-shot --next without ISSUE_REF infers objective from branch."""
+def test_plan_one_shot_next_fails_on_branch_without_objective() -> None:
+    """Test --one-shot --next fails when branch doesn't encode objective."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
@@ -526,7 +526,7 @@ def test_plan_one_shot_next_infers_from_branch() -> None:
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
             trunk_branches={env.cwd: "main"},
-            current_branches={env.cwd: "P100-setup-infra-01-15-1200"},
+            current_branches={env.cwd: "plnd/setup-infra-01-15-1200"},
         )
         github = FakeGitHub(authenticated=True, issues_gateway=issues)
         ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
@@ -535,13 +535,7 @@ def test_plan_one_shot_next_infers_from_branch() -> None:
             cli,
             ["objective", "plan", "--one-shot", "--next"],
             obj=ctx,
-            catch_exceptions=False,
         )
 
-        assert result.exit_code == 0, f"Command failed: {result.output}"
-
-        assert isinstance(github, FakeGitHub)
-        assert len(github.triggered_workflows) == 1
-        _workflow, inputs = github.triggered_workflows[0]
-        assert inputs["node_id"] == "1.1"
-        assert inputs["objective_issue"] == "42"
+        assert result.exit_code == 1
+        assert "not linked to an objective" in result.output

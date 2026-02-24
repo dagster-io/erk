@@ -3,46 +3,27 @@ title: Branch Naming Conventions
 read_when:
   - "creating or modifying branch name generation"
   - "extracting issue or objective numbers from branch names"
-  - "working with generate_issue_branch_name(), generate_planned_pr_branch_name(), or extract functions"
+  - "working with generate_planned_pr_branch_name(), or extract functions"
 tripwires:
   - action: "constructing branch names manually"
-    warning: "Use generate_issue_branch_name() for consistent objective ID encoding."
-last_audited: "2026-02-17 00:00 PT"
+    warning: "Use generate_planned_pr_branch_name() for consistent objective ID encoding."
+  - action: "trying to extract plan issue number from branch name"
+    warning: "Plan issue numbers are NOT encoded in branch names. Use plan-ref.json as the sole source of truth."
+last_audited: "2026-02-24 00:00 PT"
 audit_result: clean
 ---
 
 # Branch Naming Conventions
 
-All erk-managed branches follow a canonical naming pattern that encodes plan and objective references for downstream inference.
+All erk-managed plan branches use the `plnd/` prefix. Plan issue numbers are **not** encoded in branch names — `.impl/plan-ref.json` is the sole source of truth for plan-to-branch mapping.
 
 ## Canonical Function
 
-<!-- Source: packages/erk-shared/src/erk_shared/naming.py, generate_issue_branch_name -->
+<!-- Source: packages/erk-shared/src/erk_shared/naming.py, generate_planned_pr_branch_name -->
 
-See `generate_issue_branch_name()` in `packages/erk-shared/src/erk_shared/naming.py`. Accepts `issue_number`, `title`, `timestamp`, and optional `objective_id` keyword argument.
+See `generate_planned_pr_branch_name()` in `packages/erk-shared/src/erk_shared/naming.py`. Accepts `title`, `timestamp`, and optional `objective_id` keyword argument.
 
 ## Branch Format
-
-### Issue-Based Branches
-
-**Without objective:**
-
-```
-P{issue}-{slug}-{MM-DD-HHMM}
-```
-
-**With objective:**
-
-```
-P{issue}-O{objective}-{slug}-{MM-DD-HHMM}
-```
-
-**Examples:**
-
-- `P123-fix-auth-bug-01-15-1430`
-- `P123-O456-fix-auth-bug-01-15-1430`
-
-### Planned PR Branches
 
 **Without objective:**
 
@@ -61,59 +42,42 @@ plnd/O{objective}-{slug}-{MM-DD-HHMM}
 - `plnd/fix-auth-bug-01-15-1430`
 - `plnd/O456-fix-auth-bug-01-15-1430`
 
-Planned PR branches have no extractable plan ID from the branch name. `plan-ref.json` is the sole source of truth.
-
 **Constraints:**
 
-- Prefix (`P{num}-` or `P{num}-O{obj}-` or `plnd/`) + sanitized title must not exceed 31 characters
+- Prefix (`plnd/` or `plnd/O{obj}-`) + sanitized title must not exceed 31 characters
 - Title is sanitized via `sanitize_worktree_name()` (lowercased, special chars replaced with hyphens)
 - Timestamp suffix: `-MM-DD-HHMM` format
 - Trailing hyphens stripped before timestamp
 
+## Plan-to-Branch Mapping
+
+Since branch names do not encode plan issue numbers, `plan-ref.json` is the sole mechanism for mapping plans to branches:
+
+- **`.impl/plan-ref.json`** in each worktree contains `provider`, `plan_id`, `url`, etc.
+- **`PlannedPRBackend.get_plan_for_branch()`** resolves plans by looking up the PR associated with the branch
+
 ## Extraction Functions
-
-### extract_leading_issue_number()
-
-<!-- Source: packages/erk-shared/src/erk_shared/naming.py, extract_leading_issue_number -->
-
-Extracts the plan issue number from a branch name. See `extract_leading_issue_number()` in `packages/erk-shared/src/erk_shared/naming.py`.
-
-- `"P2382-convert-erk-create-12-05-2359"` -> `2382`
-- `"P123-O456-fix-auth-bug-01-15-1430"` -> `123`
-- Supports legacy format without `P` prefix for backwards compatibility
 
 ### extract_objective_number()
 
 <!-- Source: packages/erk-shared/src/erk_shared/naming.py, extract_objective_number -->
 
-Extracts the optional objective ID from a branch name. Supports both issue-based (`P{issue}-O{obj}-`) and planned-PR (`plnd/O{obj}-`) patterns. See `extract_objective_number()` in `packages/erk-shared/src/erk_shared/naming.py`.
+Extracts the optional objective ID from a `plnd/` branch name. See `extract_objective_number()` in `packages/erk-shared/src/erk_shared/naming.py`.
 
-- `"P123-O456-fix-auth-bug-01-15-1430"` -> `456`
 - `"plnd/O456-fix-auth-01-15-1430"` -> `456`
-- `"P123-fix-auth-bug-01-15-1430"` -> `None`
 - `"plnd/fix-auth-bug-01-15-1430"` -> `None`
-- Case-insensitive: `"P123-o456-fix-bug"` -> `456`
 
 ## Usage Sites
 
-Branch creation codepaths delegate to one of two functions depending on whether a plan issue exists:
-
-**`generate_issue_branch_name()`** — for issue-backed plans (`P{issue}-...`):
-
-| Codepath              | File                                        |
-| --------------------- | ------------------------------------------- |
-| Plan submit           | `src/erk/cli/commands/submit.py`            |
-| One-shot dispatch     | `src/erk/cli/commands/one_shot_dispatch.py` |
-| setup-impl-from-issue | Branch creation during implementation       |
-
-**`generate_planned_pr_branch_name()`** — for planned-PR plans (`plnd/...`):
+All branch creation codepaths use `generate_planned_pr_branch_name()`:
 
 | Codepath               | File                                             |
 | ---------------------- | ------------------------------------------------ |
 | Plan save (planned-PR) | `src/erk/cli/commands/exec/scripts/plan_save.py` |
+| One-shot dispatch      | `src/erk/cli/commands/one_shot_dispatch.py`      |
 
 The one-shot dispatch also has a fallback for non-plan tasks: `oneshot-{slug}-{MM-DD-HHMM}`.
 
 ## Related Topics
 
-- [Branch Name Inference](../planning/branch-name-inference.md) - How plan/PR recovery uses the P{issue} prefix contract
+- [Plan Lifecycle](../planning/lifecycle.md) - Plan states and transitions

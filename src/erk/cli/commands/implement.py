@@ -6,7 +6,7 @@ It creates a .impl/ folder with the plan content and invokes Claude for executio
 Usage:
 - GitHub issue mode: erk implement 123 or erk implement <URL>
 - Plan file mode: erk implement path/to/plan.md
-- Auto-detect mode: erk implement (on PXXXX-* branch)
+- Auto-detect mode: erk implement (on plan branch with .impl/)
 """
 
 from pathlib import Path
@@ -326,7 +326,7 @@ def implement(
     - Plan number (e.g., #123 or 123)
     - GitHub issue URL (e.g., https://github.com/user/repo/issues/123)
     - Path to plan file (e.g., ./my-feature-plan.md)
-    - Omitted (auto-detects plan number from branch name when on PXXXX-* branch)
+    - Omitted (auto-detects plan number from .impl/plan-ref.json)
 
     Note: Plain numbers (e.g., 809) are always interpreted as plan numbers.
           For files with numeric names, use ./ prefix (e.g., ./809).
@@ -387,10 +387,10 @@ def implement(
             current_branch = ctx.git.branch.get_current_branch(ctx.cwd) or "unknown"
             raise click.ClickException(
                 f"Could not auto-detect plan number from branch '{current_branch}'.\n\n"
-                f"Branch does not follow PXXXX-* pattern. Either:\n"
+                f"No .impl/plan-ref.json found. Either:\n"
                 f"  1. Provide TARGET explicitly: erk implement <TARGET>\n"
-                f"  2. Switch to a plan branch: erk br checkout P<num>-...\n"
-                f"  3. Checkout plan branch: erk br co --for-plan <issue>"
+                f"  2. Switch to a plan branch: erk plan co <issue>\n"
+                f"  3. Set up .impl/ first: erk exec setup-impl --issue <issue>"
             )
 
         # Use detected plan number as target

@@ -74,10 +74,8 @@ def test_existing_impl_no_tracking(tmp_path: Path) -> None:
 
 
 def test_branch_detection_p_prefix(tmp_path: Path) -> None:
-    """Auto-detects plan number from P{number}- branch prefix."""
-    # This test verifies the branch detection path runs, but since
-    # setup-impl-from-issue requires full GitHub setup, we test
-    # that it at least attempts the right issue number.
+    """P-prefix branches no longer auto-detect plan numbers."""
+    # P-prefix branches no longer resolve to issue numbers
     git = FakeGit(current_branches={tmp_path: "P9999-feature"})
     github = FakeGitHub()
     ctx = ErkContext.for_test(cwd=tmp_path, git=git, github=github, repo_root=tmp_path)
@@ -85,6 +83,6 @@ def test_branch_detection_p_prefix(tmp_path: Path) -> None:
     runner = CliRunner()
     result = runner.invoke(setup_impl, obj=ctx)
 
-    # Will fail because issue 9999 doesn't exist, but the auto-detection
-    # message should appear in stderr
-    assert "Auto-detected plan #9999" in result.output
+    # Should fail with no_plan_found since branch doesn't resolve
+    assert result.exit_code == 1
+    assert "no_plan_found" in result.output

@@ -1,15 +1,14 @@
-"""Detect plan number from the current git branch name.
+"""Detect plan number from the current git branch.
 
-Replaces inline branch-detection bash logic in plan-implement.md Step 1b-branch.
-Uses extract_leading_issue_number() from erk_shared.naming for branch name parsing,
-with a fallback to github.get_pr_for_branch() for planned-PR branches.
+Uses github.get_pr_for_branch() to look up the associated PR for plnd/ branches.
+Plan-ref.json is the primary source; this exec script is the fallback when no
+.impl/ folder exists yet.
 
 Usage:
     erk exec detect-plan-from-branch
 
 Output:
     JSON with detection result:
-    {"found": true, "plan_number": 2521, "detection_method": "branch_name"}
     {"found": true, "plan_number": 2521, "detection_method": "pr_lookup"}
     {"found": false}
 
@@ -18,7 +17,7 @@ Exit Codes:
 
 Examples:
     $ erk exec detect-plan-from-branch
-    {"found": true, "plan_number": 2521, "detection_method": "branch_name"}
+    {"found": true, "plan_number": 2521, "detection_method": "pr_lookup"}
 """
 
 import json
@@ -28,7 +27,6 @@ import click
 
 from erk_shared.context.helpers import require_cwd, require_git, require_github, require_repo_root
 from erk_shared.gateway.github.types import PRNotFound
-from erk_shared.naming import extract_leading_issue_number
 
 
 def _detect_plan_from_branch_impl(
@@ -49,12 +47,7 @@ def _detect_plan_from_branch_impl(
     if current_branch is None:
         return {"found": False}
 
-    # Try branch name pattern: P{number}-slug or {number}-slug
-    issue_number = extract_leading_issue_number(current_branch)
-    if issue_number is not None:
-        return {"found": True, "plan_number": issue_number, "detection_method": "branch_name"}
-
-    # Fall back to PR lookup
+    # Look up associated PR for the current branch
     pr_number = pr_lookup()
     if pr_number is not None:
         return {"found": True, "plan_number": pr_number, "detection_method": "pr_lookup"}
@@ -65,10 +58,9 @@ def _detect_plan_from_branch_impl(
 @click.command(name="detect-plan-from-branch")
 @click.pass_context
 def detect_plan_from_branch(ctx: click.Context) -> None:
-    """Detect plan number from the current git branch name.
+    """Detect plan number from the current git branch.
 
-    Checks branch name for P{number}- or {number}- prefix patterns.
-    Falls back to looking up an associated PR for the current branch.
+    Looks up the associated PR for the current branch.
 
     Always exits with code 0 - caller decides how to handle not-found.
     """

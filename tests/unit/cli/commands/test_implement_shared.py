@@ -13,8 +13,8 @@ from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
-def test_extract_plan_from_current_branch_with_p_prefix() -> None:
-    """Test extraction from branch with P prefix."""
+def test_extract_plan_from_current_branch_with_p_prefix_returns_none() -> None:
+    """P-prefix branches no longer encode issue numbers — returns None."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
@@ -26,23 +26,23 @@ def test_extract_plan_from_current_branch_with_p_prefix() -> None:
 
         result = extract_plan_from_current_branch(ctx)
 
-        assert result == "123"
+        assert result is None
 
 
-def test_extract_plan_from_current_branch_with_large_issue_number() -> None:
-    """Test extraction works with large issue numbers."""
+def test_extract_plan_from_current_branch_with_plnd_prefix_returns_none() -> None:
+    """plnd/ branches don't encode issue numbers — returns None without plan-ref.json."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["P4567-feature-branch-01-16-1200"]},
-            current_branches={env.cwd: "P4567-feature-branch-01-16-1200"},
+            local_branches={env.cwd: ["plnd/feature-branch-01-16-1200"]},
+            current_branches={env.cwd: "plnd/feature-branch-01-16-1200"},
         )
         ctx = build_workspace_test_context(env, git=git)
 
         result = extract_plan_from_current_branch(ctx)
 
-        assert result == "4567"
+        assert result is None
 
 
 def test_extract_plan_from_current_branch_returns_none_for_non_plan_branch() -> None:
@@ -93,8 +93,8 @@ def test_extract_plan_handles_no_current_branch() -> None:
         assert result is None
 
 
-def test_extract_plan_from_legacy_branch_format() -> None:
-    """Test extraction from legacy branch format without P prefix."""
+def test_extract_plan_from_legacy_branch_format_returns_none() -> None:
+    """Legacy numeric-prefix branches no longer resolve — returns None."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
@@ -106,8 +106,7 @@ def test_extract_plan_from_legacy_branch_format() -> None:
 
         result = extract_plan_from_current_branch(ctx)
 
-        # Legacy format is supported
-        assert result == "123"
+        assert result is None
 
 
 class TestValidateFlags:

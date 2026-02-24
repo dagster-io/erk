@@ -31,7 +31,7 @@ Quick reference for all `erk exec` subcommands.
 | `create-issue-from-session`       | Extract plan from Claude session and create GitHub issue.                  |
 | `create-plan-from-context`        | Create GitHub issue from plan content with erk-plan label.                 |
 | `dash-data`                       | Serialize plan dashboard data to JSON.                                     |
-| `detect-plan-from-branch`         | Detect plan number from the current git branch name.                       |
+| `detect-plan-from-branch`         | Detect plan number from the current git branch.                            |
 | `detect-trunk-branch`             | Detect whether repo uses main or master as trunk branch.                   |
 | `discover-reviews`                | Discover code reviews matching PR changed files.                           |
 | `download-remote-session`         | Download a session from a git branch.                                      |
@@ -289,7 +289,7 @@ Serialize plan dashboard data to JSON.
 
 ### detect-plan-from-branch
 
-Detect plan number from the current git branch name.
+Detect plan number from the current git branch.
 
 **Usage:** `erk exec detect-plan-from-branch`
 

@@ -5,7 +5,7 @@ into a single JSON blob, eliminating multiple sequential LLM turns for data
 fetching and step matching.
 
 Usage:
-    erk exec objective-fetch-context --pr 6517 --objective 6423 --branch P6513-...
+    erk exec objective-fetch-context --pr 6517 --objective 6423 --branch plnd/...
     erk exec objective-fetch-context  # auto-discovers all arguments
 
 Output:

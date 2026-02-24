@@ -160,21 +160,17 @@ def test_implement_from_issue_dry_run() -> None:
         assert not (env.cwd / ".impl").exists()
 
 
-def test_auto_detect_plan_from_branch_name() -> None:
-    """Test auto-detection of plan number from PXXXX-* branch.
-
-    This test is GitHub-only because it relies on the P{id}-... branch naming
-    pattern which is specific to GitHub branch-based implementation detection.
-    """
+def test_auto_detect_fails_on_plnd_branch_without_plan_ref() -> None:
+    """Branch names no longer encode issue numbers — auto-detect requires plan-ref.json."""
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "P42-my-feature-01-16-1200"]},
+            local_branches={env.cwd: ["main", "plnd/my-feature-01-16-1200"]},
             default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "P42-my-feature-01-16-1200"},
+            current_branches={env.cwd: "plnd/my-feature-01-16-1200"},
         )
         store, fake_github = create_plan_store_with_plans({"42": plan_issue})
         # Also register the PR under the real branch name so PlannedPRBackend
@@ -185,16 +181,15 @@ def test_auto_detect_plan_from_branch_name() -> None:
         fake_github._prs_by_branch[real_branch] = fake_github._pr_details[42]
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
-        # TARGET omitted, should auto-detect from branch name
+        # TARGET omitted — cannot auto-detect without plan-ref.json
         result = runner.invoke(implement, ["--dry-run"], obj=ctx)
 
-        assert result.exit_code == 0
-        assert "Auto-detected plan #42" in result.output
-        assert "Dry-run mode" in result.output
+        assert result.exit_code != 0
+        assert "Could not auto-detect plan number" in result.output
 
 
 def test_auto_detect_fails_on_non_plan_branch() -> None:
-    """Test error when TARGET omitted and not on PXXXX-* branch."""
+    """Test error when TARGET omitted and not on a plan branch."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
@@ -210,4 +205,3 @@ def test_auto_detect_fails_on_non_plan_branch() -> None:
         assert result.exit_code != 0
         assert "Could not auto-detect plan number" in result.output
         assert "feature-branch" in result.output
-        assert "PXXXX-* pattern" in result.output

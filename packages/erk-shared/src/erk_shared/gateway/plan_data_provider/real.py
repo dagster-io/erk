@@ -59,7 +59,6 @@ from erk_shared.gateway.http.abc import HttpClient
 from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
 from erk_shared.gateway.plan_data_provider.lifecycle import compute_status_indicators
 from erk_shared.impl_folder import read_plan_ref
-from erk_shared.naming import extract_leading_issue_number
 from erk_shared.plan_store.conversion import (
     header_datetime,
     header_int,
@@ -444,12 +443,8 @@ class RealPlanDataProvider(PlanDataProvider):
     def _build_worktree_mapping(self) -> dict[int, tuple[str, str | None]]:
         """Build mapping of plan ID to (worktree name, branch).
 
-        Uses PXXXX prefix matching on branch names to associate worktrees
-        with issues. Branch names follow pattern: P{plan_id}-{slug}-{timestamp}
-
-        For planned-PR plan branches (plnd/{slug}-{timestamp}), falls back to
-        reading .impl/plan-ref.json from the worktree to get the plan ID,
-        since the PR number is not encoded in the branch name.
+        Reads .impl/plan-ref.json from each worktree to discover the plan ID.
+        Plan-ref.json is the sole source of truth for plan-to-branch mapping.
 
         Returns:
             Mapping of plan ID to tuple of (worktree_name, branch_name)
@@ -458,21 +453,10 @@ class RealPlanDataProvider(PlanDataProvider):
         worktree_by_plan_id: dict[int, tuple[str, str | None]] = {}
         worktrees = self._ctx.git.worktree.list_worktrees(self._location.root)
         for worktree in worktrees:
-            issue_number = (
-                extract_leading_issue_number(worktree.branch) if worktree.branch else None
-            )
-
-            # Fallback for planned-PR branches: read .impl/plan-ref.json
-            is_planned_pr_branch = worktree.branch and (
-                worktree.branch.startswith("plnd/") or worktree.branch.startswith("planned/")
-            )
-            if issue_number is None and is_planned_pr_branch:
-                impl_dir = worktree.path / ".impl"
-                plan_ref = read_plan_ref(impl_dir)
-                if plan_ref is not None and plan_ref.plan_id.isdigit():
-                    issue_number = int(plan_ref.plan_id)
-
-            if issue_number is not None:
+            impl_dir = worktree.path / ".impl"
+            plan_ref = read_plan_ref(impl_dir)
+            if plan_ref is not None and plan_ref.plan_id.isdigit():
+                issue_number = int(plan_ref.plan_id)
                 if issue_number not in worktree_by_plan_id:
                     worktree_by_plan_id[issue_number] = (
                         worktree.path.name,

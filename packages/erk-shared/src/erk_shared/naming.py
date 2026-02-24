@@ -789,46 +789,11 @@ def extract_trailing_number(name: str) -> tuple[str, int | None]:
     return (name, None)
 
 
-def extract_leading_issue_number(branch_name: str) -> int | None:
-    """Extract leading issue number from a branch name.
-
-    Branch names follow the pattern: P{issue_number}-{slug}-{timestamp}
-    Examples: "P2382-convert-erk-create-raw-ext-12-05-2359"
-
-    Also supports legacy format without "P" prefix for backwards compatibility.
-
-    Args:
-        branch_name: Branch name to parse
-
-    Returns:
-        Issue number if branch starts with optional "P" followed by digits and hyphen, else None
-
-    Examples:
-        >>> extract_leading_issue_number("P2382-convert-erk-create-raw-ext-12-05-2359")
-        2382
-        >>> extract_leading_issue_number("P42-fix-bug")
-        42
-        >>> extract_leading_issue_number("2382-convert-erk-create-raw-ext-12-05-2359")
-        2382
-        >>> extract_leading_issue_number("42-fix-bug")
-        42
-        >>> extract_leading_issue_number("feature-branch")
-        None
-        >>> extract_leading_issue_number("master")
-        None
-    """
-    match = re.match(r"^[Pp]?(\d+)-", branch_name)
-    if match:
-        return int(match.group(1))
-    return None
-
-
 def extract_objective_number(branch_name: str) -> int | None:
     """Extract objective number from branch name.
 
     Supports branch naming patterns:
 
-    - Issue-based: ``P{plan}-O{objective}-{slug}-{timestamp}``
     - Draft-PR (current): ``plnd/O{objective}-{slug}-{timestamp}``
     - Draft-PR (legacy): ``planned/O{objective}-{slug}-{timestamp}``
     - Draft-PR (legacy): ``plan/O{objective}-{slug}-{timestamp}``
@@ -842,22 +807,16 @@ def extract_objective_number(branch_name: str) -> int | None:
         Objective number if branch contains O{number} after the prefix, else None
 
     Examples:
-        >>> extract_objective_number("P123-O456-fix-auth-bug-01-15-1430")
-        456
-        >>> extract_objective_number("P123-o456-fix-bug")
-        456
         >>> extract_objective_number("plnd/O456-fix-auth-01-15-1430")
         456
         >>> extract_objective_number("planned/O456-fix-auth-01-15-1430")
         456
         >>> extract_objective_number("plan/O456-fix-auth-01-15-1430")
         456
-        >>> extract_objective_number("P123-fix-auth-bug-01-15-1430")
-        None
         >>> extract_objective_number("feature-branch")
         None
     """
-    match = re.match(r"^(?:[Pp]?\d+-|pl(?:an(?:ned)?|nd)/)[Oo](\d+)-", branch_name)
+    match = re.match(r"^pl(?:an(?:ned)?|nd)/[Oo](\d+)-", branch_name)
     if match:
         return int(match.group(1))
     return None
@@ -958,56 +917,6 @@ def default_branch_for_worktree(name: str) -> str:
         "fix-bug"
     """
     return sanitize_branch_component(name)
-
-
-def generate_issue_branch_name(
-    issue_number: int | str,
-    title: str,
-    timestamp: datetime,
-    *,
-    objective_id: int | None,
-) -> str:
-    """Generate branch name for issue-based worktree.
-
-    Format: P{issue_number}-{sanitized_title}-{timestamp}
-    Or with objective: P{issue_number}-O{objective_id}-{sanitized_title}-{timestamp}
-    Example: P123-fix-auth-bug-01-15-1430
-    Example with objective: P123-O456-fix-auth-bug-01-15-1430
-
-    The branch name is constructed as:
-    1. P prefix + issue number + hyphen
-    2. If objective_id provided: O prefix + objective_id + hyphen
-    3. Sanitized title (lowercased, special chars replaced)
-    4. Truncated to 31 chars total (before timestamp)
-    5. Timestamp suffix appended (format: -MM-DD-HHMM)
-
-    Args:
-        issue_number: GitHub issue number
-        title: Issue title to sanitize
-        timestamp: Timestamp for the suffix
-        objective_id: Optional objective ID to encode in branch name
-
-    Returns:
-        Branch name in format P{num}-{slug}-{timestamp} or P{num}-O{obj}-{slug}-{timestamp}
-
-    Examples:
-        >>> from datetime import datetime
-        >>> generate_issue_branch_name(
-        ...     123, "Fix Auth Bug", datetime(2024, 1, 15, 14, 30), objective_id=None
-        ... )
-        "P123-fix-auth-bug-01-15-1430"
-        >>> generate_issue_branch_name(
-        ...     123, "Fix Auth Bug", datetime(2024, 1, 15, 14, 30), objective_id=456
-        ... )
-        "P123-O456-fix-auth-bug-01-15-1430"
-    """
-    prefix = f"P{issue_number}-"
-    if objective_id is not None:
-        prefix += f"O{objective_id}-"
-    sanitized_title = sanitize_worktree_name(title)
-    base_branch_name = (prefix + sanitized_title)[:31].rstrip("-")
-    timestamp_suffix = format_branch_timestamp_suffix(timestamp)
-    return base_branch_name + timestamp_suffix
 
 
 def generate_planned_pr_branch_name(

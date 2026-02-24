@@ -918,8 +918,8 @@ def test_update_metadata_issue_not_found() -> None:
 # ============================================================================
 
 
-def test_get_plan_for_branch_with_plan_branch() -> None:
-    """Test get_plan_for_branch returns Plan for a P-prefix branch."""
+def test_get_plan_for_branch_returns_not_found() -> None:
+    """Test get_plan_for_branch returns PlanNotFound since branch names don't encode plan IDs."""
     issue = create_test_issue(
         number=123,
         title="Fix Auth Bug",
@@ -928,10 +928,9 @@ def test_get_plan_for_branch_with_plan_branch() -> None:
     fake_github = FakeGitHubIssues(issues={123: issue})
     store = GitHubPlanStore(fake_github)
 
-    result = store.get_plan_for_branch(Path("/fake/repo"), "P123-fix-auth-bug-01-15-1430")
-    assert not isinstance(result, PlanNotFound)
-    assert result.plan_identifier == "123"
-    assert result.body == "Plan content here"
+    # resolve_plan_id_for_branch always returns None, so get_plan_for_branch returns PlanNotFound
+    result = store.get_plan_for_branch(Path("/fake/repo"), "plnd/fix-auth-bug-01-15-1430")
+    assert isinstance(result, PlanNotFound)
 
 
 def test_get_plan_for_branch_with_non_plan_branch() -> None:
@@ -943,71 +942,16 @@ def test_get_plan_for_branch_with_non_plan_branch() -> None:
     assert isinstance(result, PlanNotFound)
 
 
-def test_get_plan_for_branch_with_missing_issue() -> None:
-    """Test get_plan_for_branch returns PlanNotFound when plan branch exists but issue doesn't."""
+def test_resolve_plan_id_for_branch_always_returns_none() -> None:
+    """Test resolve_plan_id_for_branch always returns None.
+
+    Branch names no longer encode issue numbers. Plan-ref.json is the sole
+    source of truth for plan-to-branch mapping.
+    """
     fake_github = FakeGitHubIssues(issues={})
     store = GitHubPlanStore(fake_github)
 
-    result = store.get_plan_for_branch(Path("/fake/repo"), "P999-fix-nonexistent")
-    assert isinstance(result, PlanNotFound)
-    assert result.plan_id == "999"
-
-
-def test_get_plan_for_branch_with_objective_format() -> None:
-    """Test get_plan_for_branch with P123-O456-slug objective branch format."""
-    issue = create_test_issue(
-        number=123,
-        title="Objective Step",
-        body="Plan content with objective",
-    )
-    fake_github = FakeGitHubIssues(issues={123: issue})
-    store = GitHubPlanStore(fake_github)
-
-    result = store.get_plan_for_branch(Path("/fake/repo"), "P123-O456-fix-auth-01-15-1430")
-    assert not isinstance(result, PlanNotFound)
-    assert result.plan_identifier == "123"
-
-
-def test_resolve_plan_id_for_branch_p_prefix() -> None:
-    """Test resolve_plan_id_for_branch with P-prefix branch."""
-    fake_github = FakeGitHubIssues(issues={})
-    store = GitHubPlanStore(fake_github)
-
-    result = store.resolve_plan_id_for_branch(Path("/fake/repo"), "P123-fix-bug")
-    assert result == "123"
-
-
-def test_resolve_plan_id_for_branch_legacy_format() -> None:
-    """Test resolve_plan_id_for_branch with legacy format (no P prefix)."""
-    fake_github = FakeGitHubIssues(issues={})
-    store = GitHubPlanStore(fake_github)
-
-    result = store.resolve_plan_id_for_branch(Path("/fake/repo"), "456-fix-bug")
-    assert result == "456"
-
-
-def test_resolve_plan_id_for_branch_non_plan() -> None:
-    """Test resolve_plan_id_for_branch with non-plan branch."""
-    fake_github = FakeGitHubIssues(issues={})
-    store = GitHubPlanStore(fake_github)
-
-    result = store.resolve_plan_id_for_branch(Path("/fake/repo"), "feature-branch")
-    assert result is None
-
-
-def test_resolve_plan_id_for_branch_objective_format() -> None:
-    """Test resolve_plan_id_for_branch with P123-O456-slug format."""
-    fake_github = FakeGitHubIssues(issues={})
-    store = GitHubPlanStore(fake_github)
-
-    result = store.resolve_plan_id_for_branch(Path("/fake/repo"), "P123-O456-fix-auth-01-15-1430")
-    assert result == "123"
-
-
-def test_resolve_plan_id_for_branch_master() -> None:
-    """Test resolve_plan_id_for_branch returns None for master."""
-    fake_github = FakeGitHubIssues(issues={})
-    store = GitHubPlanStore(fake_github)
-
-    result = store.resolve_plan_id_for_branch(Path("/fake/repo"), "master")
-    assert result is None
+    # All branch formats should return None
+    assert store.resolve_plan_id_for_branch(Path("/fake/repo"), "plnd/fix-bug-01-15-1430") is None
+    assert store.resolve_plan_id_for_branch(Path("/fake/repo"), "feature-branch") is None
+    assert store.resolve_plan_id_for_branch(Path("/fake/repo"), "master") is None

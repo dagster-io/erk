@@ -237,15 +237,15 @@ class GitBranchOps(ABC):
     def get_branch_issue(self, repo_root: Path, branch: str) -> int | None:
         """Extract GitHub issue number from branch name.
 
-        Branch names follow the pattern: {issue_number}-{slug}-{timestamp}
-        Examples: "2382-convert-erk-create-raw-ext-12-05-2359"
+        Deprecated: Branch names no longer encode issue numbers. This method
+        always returns None. Use plan-ref.json for plan-to-branch mapping.
 
         Args:
-            repo_root: Path to the git repository root (unused, kept for interface compat)
-            branch: Branch name to parse
+            repo_root: Path to the git repository root (unused)
+            branch: Branch name to parse (unused)
 
         Returns:
-            Issue number if branch starts with digits followed by hyphen, None otherwise
+            Always None — issue numbers are not encoded in branch names
         """
         ...
 

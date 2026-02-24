@@ -21,21 +21,21 @@ from erk_shared.gateway.github.fake import FakeGitHub
 
 
 def test_detect_impl_branch_name_p_prefix() -> None:
-    """Detects plan number from P{number}-slug pattern."""
+    """P-prefix branches no longer resolve to plan numbers."""
     result = _detect_plan_from_branch_impl(
         current_branch="P2521-fix-auth-bug-01-15-1430",
         pr_lookup=lambda: None,
     )
-    assert result == {"found": True, "plan_number": 2521, "detection_method": "branch_name"}
+    assert result == {"found": False}
 
 
 def test_detect_impl_branch_name_no_prefix() -> None:
-    """Detects plan number from {number}-slug pattern (no P prefix)."""
+    """Non-P branches don't resolve to plan numbers either."""
     result = _detect_plan_from_branch_impl(
         current_branch="42-fix-bug",
         pr_lookup=lambda: None,
     )
-    assert result == {"found": True, "plan_number": 42, "detection_method": "branch_name"}
+    assert result == {"found": False}
 
 
 def test_detect_impl_pr_lookup_fallback() -> None:
@@ -66,20 +66,20 @@ def test_detect_impl_detached_head() -> None:
 
 
 def test_detect_impl_branch_name_takes_priority() -> None:
-    """Branch name detection takes priority over PR lookup."""
+    """PR lookup is used when branch name doesn't resolve."""
     result = _detect_plan_from_branch_impl(
         current_branch="P100-feature",
         pr_lookup=lambda: 200,
     )
-    assert result["plan_number"] == 100
-    assert result["detection_method"] == "branch_name"
+    assert result["plan_number"] == 200
+    assert result["detection_method"] == "pr_lookup"
 
 
 # --- CLI Command Tests ---
 
 
 def test_cli_detects_from_branch_name(tmp_path: Path) -> None:
-    """CLI outputs JSON with plan number from branch name."""
+    """CLI outputs not-found for P-prefix branch."""
     git = FakeGit(current_branches={tmp_path: "P2521-fix-auth"})
     github = FakeGitHub()
     ctx = ErkContext.for_test(cwd=tmp_path, git=git, github=github, repo_root=tmp_path)
@@ -89,9 +89,7 @@ def test_cli_detects_from_branch_name(tmp_path: Path) -> None:
 
     assert result.exit_code == 0
     output = json.loads(result.output)
-    assert output["found"] is True
-    assert output["plan_number"] == 2521
-    assert output["detection_method"] == "branch_name"
+    assert output["found"] is False
 
 
 def test_cli_not_found_exits_zero(tmp_path: Path) -> None:
