@@ -14,6 +14,7 @@ from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.metadata.plan_header import extract_plan_from_comment
 from erk_shared.gateway.github.metadata.schemas import PlanHeaderSchema
 from erk_shared.output.output import user_output
+from erk_shared.plan_store.draft_pr_lifecycle import extract_plan_content, has_original_plan_section
 
 
 @dataclass(frozen=True)
@@ -92,24 +93,34 @@ def validate_plan_format(
             error_msg = str(e).split("\n")[0]
             checks.append((False, f"plan-header validation failed: {error_msg}"))
 
-    # Check 3: First comment exists
-    try:
-        comments = github_issues.get_issue_comments(repo_root, issue_number)
-    except RuntimeError as e:
-        return PlanValidationError(error=str(e))
-
-    if not comments:
-        checks.append((False, "First comment exists"))
-    else:
-        checks.append((True, "First comment exists"))
-
-        # Check 4: plan-body content extractable
-        first_comment = comments[0]
-        plan_content = extract_plan_from_comment(first_comment)
-        if plan_content is None:
-            checks.append((False, "plan-body content extractable"))
+    # Detect format: draft-PR (body has original-plan section) vs issue-based (comment)
+    if has_original_plan_section(issue_body):
+        # Draft-PR format: plan content is in the body
+        plan_content = extract_plan_content(issue_body)
+        if plan_content:
+            checks.append((True, "plan content extractable from body"))
         else:
-            checks.append((True, "plan-body content extractable"))
+            checks.append((False, "plan content extractable from body"))
+    else:
+        # Issue-based format: plan content is in first comment
+        # Check 3: First comment exists
+        try:
+            comments = github_issues.get_issue_comments(repo_root, issue_number)
+        except RuntimeError as e:
+            return PlanValidationError(error=str(e))
+
+        if not comments:
+            checks.append((False, "First comment exists"))
+        else:
+            checks.append((True, "First comment exists"))
+
+            # Check 4: plan-body content extractable
+            first_comment = comments[0]
+            plan_content = extract_plan_from_comment(first_comment)
+            if plan_content is None:
+                checks.append((False, "plan-body content extractable"))
+            else:
+                checks.append((True, "plan-body content extractable"))
 
     # Determine overall result
     failed_count = sum(1 for passed, _ in checks if not passed)

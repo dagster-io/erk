@@ -10,6 +10,7 @@ from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import render_metadata_block
 from erk_shared.gateway.github.metadata.types import MetadataBlock
+from erk_shared.plan_store.draft_pr_lifecycle import build_plan_stage_body
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
 
@@ -279,6 +280,59 @@ def test_check_github_url_parsing() -> None:
         assert "Plan validation passed" in result.output
 
 
+def test_check_valid_draft_pr_plan_passes() -> None:
+    """Test validating a valid draft-PR format plan (body has original-plan section)."""
+    # Arrange
+    plan_header_data = {
+        "schema_version": "2",
+        "created_at": "2024-01-01T00:00:00Z",
+        "created_by": "alice",
+        "worktree_name": "test-feature",
+    }
+    plan_header_block = render_metadata_block(MetadataBlock("plan-header", plan_header_data))
+
+    plan_content = """# Plan: Test Feature
+
+## Steps
+1. Step one
+2. Step two"""
+
+    # Build draft-PR format body: metadata + separator + <details>original-plan</details>
+    issue_body = build_plan_stage_body(plan_header_block, plan_content)
+
+    issue = IssueInfo(
+        number=42,
+        title="Test Feature",
+        body=issue_body,
+        state="OPEN",
+        url="https://github.com/owner/repo/issues/42",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        author="test-user",
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        # No comments needed for draft-PR format
+        issues = FakeGitHubIssues(
+            issues={42: issue},
+            comments={42: ["submission-queued comment"]},
+        )
+        ctx = build_workspace_test_context(env, issues=issues)
+
+        # Act
+        result = runner.invoke(cli, ["plan", "check", "42"], obj=ctx)
+
+        # Assert
+        assert result.exit_code == 0
+        assert "[PASS] plan-header metadata block present" in result.output
+        assert "[PASS] plan-header has required fields" in result.output
+        assert "[PASS] plan content extractable from body" in result.output
+        assert "Plan validation passed" in result.output
+
+
 def test_check_invalid_identifier_fails() -> None:
     """Test check command with invalid identifier format."""
     # Arrange
@@ -471,3 +525,50 @@ def test_validate_plan_format_returns_error_on_github_failure(tmp_path: Path) ->
 
     assert isinstance(result, PlanValidationError)
     assert "999" in result.error or "not found" in result.error.lower()
+
+
+def test_validate_plan_format_passes_draft_pr_plan(tmp_path: Path) -> None:
+    """Returns PlanValidationSuccess with passed=True for draft-PR format plan."""
+    from erk.cli.commands.plan.check_cmd import PlanValidationSuccess, validate_plan_format
+
+    plan_header_data = {
+        "schema_version": "2",
+        "created_at": "2024-01-01T00:00:00Z",
+        "created_by": "alice",
+        "worktree_name": "test-feature",
+    }
+    plan_header_block = render_metadata_block(MetadataBlock("plan-header", plan_header_data))
+
+    plan_content = """# Plan: Test Feature
+
+## Steps
+1. Step one
+2. Step two"""
+
+    issue_body = build_plan_stage_body(plan_header_block, plan_content)
+
+    issue = IssueInfo(
+        number=42,
+        title="Test Feature",
+        body=issue_body,
+        state="OPEN",
+        url="https://github.com/owner/repo/issues/42",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        author="test-user",
+    )
+
+    issues = FakeGitHubIssues(
+        issues={42: issue},
+        comments={42: []},
+    )
+
+    result = validate_plan_format(issues, tmp_path, 42)
+
+    assert isinstance(result, PlanValidationSuccess)
+    assert result.passed is True
+    assert result.failed_count == 0
+    assert len(result.checks) == 3
+    assert all(passed for passed, _ in result.checks)
