@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Documentation Plan: Add diagnostics for dispatch metadata failures and improve TUI feedback"
+}
