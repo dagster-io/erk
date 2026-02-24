@@ -29,12 +29,13 @@ Check `$ARGUMENTS` for optional overrides:
 - `--pr <number>`: PR number that was just landed
 - `--objective <number>`: Objective issue number to update
 - `--branch <name>`: Original branch name
+- `--plan <number>`: Plan issue number (enables direct plan lookup, avoids branch-based discovery which may fail after branch deletion)
 - `--auto-close`: If set and all nodes are complete, close objective without asking
 
 Run a single command that fetches context, updates roadmap nodes to done, and posts an action comment:
 
 ```bash
-erk exec objective-apply-landed-update [--pr <number>] [--objective <number>] [--branch <name>]
+erk exec objective-apply-landed-update [--pr <number>] [--objective <number>] [--plan <number>] [--branch <name>]
 ```
 
 This returns JSON with:

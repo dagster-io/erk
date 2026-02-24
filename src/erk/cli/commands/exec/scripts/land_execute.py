@@ -55,6 +55,11 @@ from erk_shared.context.helpers import require_context
     help="Linked objective issue number",
 )
 @click.option(
+    "--plan-number",
+    type=int,
+    help="Linked plan issue number",
+)
+@click.option(
     "--use-graphite",
     is_flag=True,
     help="Use Graphite for merge",
@@ -109,6 +114,7 @@ def land_execute(
     is_current_branch: bool,
     target_child: str | None,
     objective_number: int | None,
+    plan_number: int | None,
     use_graphite: bool,
     pull_flag: bool,
     no_delete: bool,
@@ -176,6 +182,7 @@ def land_execute(
             objective=objective_number,
             pr=pr_number,
             branch=branch,
+            plan=plan_number,
         )
 
     if exit_after is not None:
