@@ -2235,7 +2235,12 @@ class TestFixConflictsRemoteAsync:
             await pilot.pause(0.3)
 
             assert captured_args == [
-                "erk", "launch", "pr-fix-conflicts", "--pr", "456", "--no-wait",
+                "erk",
+                "launch",
+                "pr-fix-conflicts",
+                "--pr",
+                "456",
+                "--no-wait",
             ]
 
     @pytest.mark.asyncio
@@ -2333,7 +2338,12 @@ class TestLandPrAsync:
 
             assert len(captured_calls) == 1
             assert captured_calls[0] == [
-                "erk", "exec", "land-execute", "--pr-number=456", "--branch=test-branch", "-f",
+                "erk",
+                "exec",
+                "land-execute",
+                "--pr-number=456",
+                "--branch=test-branch",
+                "-f",
             ]
 
     @pytest.mark.asyncio
@@ -2404,12 +2414,15 @@ class TestLandPrAsync:
         import subprocess
 
         provider = FakePlanDataProvider(
-            plans=[make_plan_row(
-                123, "Test Plan",
-                pr_number=456,
-                pr_head_branch="test-branch",
-                objective_issue=789,
-            )],
+            plans=[
+                make_plan_row(
+                    123,
+                    "Test Plan",
+                    pr_number=456,
+                    pr_head_branch="test-branch",
+                    objective_issue=789,
+                )
+            ],
             repo_root=tmp_path,
         )
         filters = PlanFilters.default()
@@ -2432,8 +2445,12 @@ class TestLandPrAsync:
 
             assert len(captured_calls) == 2
             assert captured_calls[1] == [
-                "erk", "exec", "objective-update-after-land",
-                "--objective=789", "--pr=456", "--branch=test-branch",
+                "erk",
+                "exec",
+                "objective-update-after-land",
+                "--objective=789",
+                "--pr=456",
+                "--branch=test-branch",
             ]
 
     @pytest.mark.asyncio

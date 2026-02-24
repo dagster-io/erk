@@ -586,9 +586,7 @@ class ErkDashApp(App):
             )
 
     @work(thread=True)
-    def _land_pr_async(
-        self, pr_number: int, branch: str, objective_issue: int | None
-    ) -> None:
+    def _land_pr_async(self, pr_number: int, branch: str, objective_issue: int | None) -> None:
         """Land PR in background thread with toast."""
         try:
             subprocess.run(
@@ -642,9 +640,7 @@ class ErkDashApp(App):
                     self.notify, f"Updated objective #{objective_issue}", timeout=3
                 )
             except subprocess.CalledProcessError as e:
-                error_msg = (
-                    (e.stderr or "").strip() or (e.stdout or "").strip() or "Unknown error"
-                )
+                error_msg = (e.stderr or "").strip() or (e.stdout or "").strip() or "Unknown error"
                 self.call_from_thread(
                     self.notify,
                     f"Failed to update objective #{objective_issue}: {error_msg}",
@@ -664,9 +660,7 @@ class ErkDashApp(App):
                 stdin=subprocess.DEVNULL,
                 cwd=str(self._provider.repo_root),
             )
-            self.call_from_thread(
-                self.notify, f"Submitted plan #{plan_id} to queue", timeout=3
-            )
+            self.call_from_thread(self.notify, f"Submitted plan #{plan_id} to queue", timeout=3)
             self.call_from_thread(self.action_refresh)
         except subprocess.CalledProcessError as e:
             error_msg = (e.stderr or "").strip() or (e.stdout or "").strip() or "Unknown error"
@@ -689,9 +683,7 @@ class ErkDashApp(App):
                 stdin=subprocess.DEVNULL,
                 cwd=str(self._provider.repo_root),
             )
-            self.call_from_thread(
-                self.notify, f"Closed objective #{plan_id}", timeout=3
-            )
+            self.call_from_thread(self.notify, f"Closed objective #{plan_id}", timeout=3)
             self.call_from_thread(self.action_refresh)
         except subprocess.CalledProcessError as e:
             error_msg = (e.stderr or "").strip() or (e.stdout or "").strip() or "Unknown error"
@@ -714,9 +706,7 @@ class ErkDashApp(App):
                 stdin=subprocess.DEVNULL,
                 cwd=str(self._provider.repo_root),
             )
-            self.call_from_thread(
-                self.notify, f"Checked objective #{plan_id}", timeout=3
-            )
+            self.call_from_thread(self.notify, f"Checked objective #{plan_id}", timeout=3)
         except subprocess.CalledProcessError as e:
             error_msg = (e.stderr or "").strip() or (e.stdout or "").strip() or "Unknown error"
             self.call_from_thread(
