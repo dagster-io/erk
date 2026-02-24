@@ -80,10 +80,12 @@ def maybe_update_plan_dispatch_metadata(
     """
     plan_id = ctx.plan_backend.resolve_plan_id_for_branch(repo.root, branch_name)
     if plan_id is None:
+        user_output(f"Note: No plan found for branch '{branch_name}' — skipping metadata update")
         return
 
     node_id = ctx.github.get_workflow_run_node_id(repo.root, run_id)
     if node_id is None:
+        user_output(f"Warning: Could not get node_id for run {run_id} — metadata not updated")
         return
 
     # LBYL: Check if plan-header block exists before attempting update
@@ -91,6 +93,7 @@ def maybe_update_plan_dispatch_metadata(
     # to have P{number} prefix in their branch name
     schema_version = ctx.plan_backend.get_metadata_field(repo.root, plan_id, "schema_version")
     if isinstance(schema_version, PlanNotFound) or schema_version is None:
+        user_output(f"Warning: Plan #{plan_id} has no plan-header block — metadata not updated")
         return
 
     ctx.plan_backend.update_metadata(
@@ -130,11 +133,15 @@ def maybe_write_pending_dispatch_metadata(
     """
     plan_id = ctx.plan_backend.resolve_plan_id_for_branch(repo.root, branch_name)
     if plan_id is None:
+        user_output(f"Note: No plan found for branch '{branch_name}' — skipping pending metadata")
         return
 
     # LBYL: Check if plan-header block exists before attempting update
     schema_version = ctx.plan_backend.get_metadata_field(repo.root, plan_id, "schema_version")
     if isinstance(schema_version, PlanNotFound) or schema_version is None:
+        user_output(
+            f"Warning: Plan #{plan_id} has no plan-header block — pending metadata not written"
+        )
         return
 
     ctx.plan_backend.update_metadata(

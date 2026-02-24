@@ -549,7 +549,7 @@ class ErkDashApp(App):
     def _address_remote_async(self, pr_number: int) -> None:
         """Dispatch address-remote workflow in background thread with toast."""
         try:
-            subprocess.run(
+            result = subprocess.run(
                 ["erk", "launch", "pr-address", "--pr", str(pr_number)],
                 capture_output=True,
                 text=True,
@@ -557,7 +557,17 @@ class ErkDashApp(App):
                 stdin=subprocess.DEVNULL,
                 cwd=str(self._provider.repo_root),
             )
-            self.call_from_thread(self.notify, f"Dispatched address for PR #{pr_number}", timeout=3)
+            metadata_updated = "Updated dispatch metadata" in result.stderr
+            if metadata_updated:
+                self.call_from_thread(
+                    self.notify, f"Dispatched address for PR #{pr_number}", timeout=3
+                )
+            else:
+                self.call_from_thread(
+                    self.notify,
+                    f"Dispatched address for PR #{pr_number} (metadata not updated)",
+                    timeout=5,
+                )
             # Trigger data refresh to pick up updated run_id/run_status
             self.call_from_thread(self.action_refresh)
         except subprocess.CalledProcessError as e:
@@ -573,7 +583,7 @@ class ErkDashApp(App):
     def _fix_conflicts_remote_async(self, pr_number: int) -> None:
         """Dispatch fix-conflicts workflow in background thread with toast."""
         try:
-            subprocess.run(
+            result = subprocess.run(
                 ["erk", "launch", "pr-fix-conflicts", "--pr", str(pr_number)],
                 capture_output=True,
                 text=True,
@@ -581,9 +591,20 @@ class ErkDashApp(App):
                 stdin=subprocess.DEVNULL,
                 cwd=str(self._provider.repo_root),
             )
-            self.call_from_thread(
-                self.notify, f"Dispatched: erk launch pr-fix-conflicts --pr {pr_number}", timeout=3
-            )
+            metadata_updated = "Updated dispatch metadata" in result.stderr
+            if metadata_updated:
+                self.call_from_thread(
+                    self.notify,
+                    f"Dispatched: erk launch pr-fix-conflicts --pr {pr_number}",
+                    timeout=3,
+                )
+            else:
+                self.call_from_thread(
+                    self.notify,
+                    f"Dispatched: erk launch pr-fix-conflicts --pr {pr_number}"
+                    " (metadata not updated)",
+                    timeout=5,
+                )
             self.call_from_thread(self.action_refresh)
         except subprocess.CalledProcessError as e:
             error_msg = _extract_subprocess_error(e)

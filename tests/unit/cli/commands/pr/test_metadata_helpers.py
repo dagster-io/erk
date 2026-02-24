@@ -1,11 +1,15 @@
-"""Unit tests for maybe_write_pending_dispatch_metadata."""
+"""Unit tests for plan dispatch metadata helpers."""
 
 from datetime import UTC, datetime
 from pathlib import Path
 
-from erk.cli.commands.pr.metadata_helpers import maybe_write_pending_dispatch_metadata
+from erk.cli.commands.pr.metadata_helpers import (
+    maybe_update_plan_dispatch_metadata,
+    maybe_write_pending_dispatch_metadata,
+)
 from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
+from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.time.fake import FakeTime
 from tests.commands.submit.conftest import create_plan, make_plan_body
 from tests.test_utils.plan_helpers import create_plan_store_with_plans
@@ -64,4 +68,73 @@ def test_plan_branch_with_metadata_block_writes_pending_marker(tmp_path: Path) -
     _, updated_body = fake_issues.updated_bodies[0]
     assert "last_dispatched_run_id: null" in updated_body
     assert "last_dispatched_node_id: null" in updated_body
+    assert "2024-06-15T12:00:00+00:00" in updated_body
+
+
+# --- Tests for maybe_update_plan_dispatch_metadata ---
+
+
+class _FakeGitHubNoNodeId(FakeGitHub):
+    """FakeGitHub that returns None for node_id lookups."""
+
+    def get_workflow_run_node_id(self, repo_root: Path, run_id: str) -> None:
+        return None
+
+
+def test_update_non_plan_branch_skips_update(tmp_path: Path) -> None:
+    """Branch without P{number} prefix causes early return with no metadata update."""
+    repo = _make_repo(tmp_path)
+    plan = create_plan("123", "Test plan")
+    plan_store, fake_issues = create_plan_store_with_plans({"123": plan})
+    ctx = context_for_test(cwd=repo.root, plan_store=plan_store, repo=repo)
+
+    maybe_update_plan_dispatch_metadata(ctx, repo, "feature-branch", "run-99")
+
+    assert fake_issues.updated_bodies == []
+
+
+def test_update_missing_node_id_skips_update(tmp_path: Path) -> None:
+    """Run ID exists but node_id fetch returns None — skips metadata update."""
+    repo = _make_repo(tmp_path)
+    plan = create_plan("456", "Test plan", body=make_plan_body())
+    plan_store, fake_issues = create_plan_store_with_plans({"456": plan})
+    ctx = context_for_test(
+        cwd=repo.root,
+        plan_store=plan_store,
+        repo=repo,
+        github=_FakeGitHubNoNodeId(),
+    )
+
+    maybe_update_plan_dispatch_metadata(ctx, repo, "P456-fix-bug", "run-99")
+
+    assert fake_issues.updated_bodies == []
+
+
+def test_update_plan_without_header_skips_update(tmp_path: Path) -> None:
+    """Plan exists but has no plan-header block — skips metadata update."""
+    repo = _make_repo(tmp_path)
+    plan = create_plan("789", "Test plan", body="Just a plain description")
+    plan_store, fake_issues = create_plan_store_with_plans({"789": plan})
+    ctx = context_for_test(cwd=repo.root, plan_store=plan_store, repo=repo)
+
+    maybe_update_plan_dispatch_metadata(ctx, repo, "P789-fix-bug", "run-99")
+
+    assert fake_issues.updated_bodies == []
+
+
+def test_update_successful_writes_metadata(tmp_path: Path) -> None:
+    """Happy path: all guards pass, metadata written with run_id, node_id, timestamp."""
+    fixed_time = datetime(2024, 6, 15, 12, 0, 0, tzinfo=UTC)
+    fake_time = FakeTime(current_time=fixed_time)
+    repo = _make_repo(tmp_path)
+    plan = create_plan("321", "Test plan", body=make_plan_body())
+    plan_store, fake_issues = create_plan_store_with_plans({"321": plan})
+    ctx = context_for_test(cwd=repo.root, plan_store=plan_store, repo=repo, time=fake_time)
+
+    maybe_update_plan_dispatch_metadata(ctx, repo, "P321-fix-bug", "run-42")
+
+    assert len(fake_issues.updated_bodies) == 1
+    _, updated_body = fake_issues.updated_bodies[0]
+    assert "last_dispatched_run_id: run-42" in updated_body
+    assert "last_dispatched_node_id: WFR_fake_node_id_run-42" in updated_body
     assert "2024-06-15T12:00:00+00:00" in updated_body
