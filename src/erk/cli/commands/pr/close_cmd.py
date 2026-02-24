@@ -37,7 +37,7 @@ def _close_linked_prs(
 @click.command("close")
 @click.argument("identifier", type=str)
 @click.pass_obj
-def close_plan(ctx: ErkContext, identifier: str) -> None:
+def pr_close(ctx: ErkContext, identifier: str) -> None:
     """Close a plan by issue number or GitHub URL.
 
     Closes all OPEN PRs linked to the issue in addition to closing the issue itself.

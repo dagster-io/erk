@@ -80,19 +80,18 @@ If the metadata update itself fails after a successful PR close, that's tolerabl
 
 ## Canonical Example
 
-<!-- Source: src/erk/cli/commands/review_pr_cleanup.py, cleanup_review_pr -->
+<!-- Source: src/erk/cli/commands/pr/close_cmd.py, pr_close -->
 
-See `cleanup_review_pr()` in `src/erk/cli/commands/review_pr_cleanup.py`.
+See `pr_close()` in `src/erk/cli/commands/pr/close_cmd.py`.
 
-**Context**: When closing or landing a plan, we optionally close its review PR. The review PR is non-critical to the main operation, but metadata consistency matters.
+**Context**: When closing a plan, we close all linked PRs before closing the plan issue. PR closure is non-critical to the main operation—the plan close should still succeed even if PR cleanup fails.
 
-**Three-step pattern**:
+**Two-step pattern**:
 
-1. Add comment explaining closure (cosmetic) — catch, log, continue
-2. Close the PR (critical) — catch, log, **return None** to prevent metadata update
-3. Clear `review_pr` field (dependent) — only executes if step 2 succeeded
+1. Close linked PRs (optional, fail-open) — closes all OPEN PRs referencing the issue
+2. Close plan issue (critical, fail-closed) — closes the plan itself
 
-**Why this works**: If the PR close fails, `review_pr` remains in metadata, allowing retry later. If the PR close succeeds but metadata update fails, the inconsistency is tolerable—the PR is already closed.
+**Why this works**: If linked PR closure fails, the plan still closes successfully. Users can manually close lingering PRs later. The pattern separates optional cleanup from the critical operation.
 
 ## Implementation Checklist
 
@@ -183,23 +182,21 @@ The same gateway function (`_get_pr_for_plan_direct`) returns `None` in all case
 
 ## Real-World Usage
 
-### erk plan close
+### erk pr close
 
+- Close linked PRs (optional, fail-open)
 - Close plan issue (critical, fail-closed)
-- Cleanup review PR (optional, fail-open) ← `cleanup_review_pr()`
-- Update metadata (critical, fail-closed)
+- Update objective roadmap (dependent on plan close)
 
-If review PR cleanup fails, plan close still succeeds. Users can manually close the review PR later.
+If linked PR cleanup fails, plan close still succeeds. Users can manually close the PRs later.
 
 ### erk land
 
 - Merge PR (critical, fail-closed)
 - Delete worktree (critical, fail-closed)
-- Cleanup review PR (optional, fail-open) ← `cleanup_review_pr()`
+- Cleanup and navigate (dependent on merge success)
 
-If review PR cleanup fails, land still succeeds. The PR is merged and worktree is deleted—mission accomplished.
-
-Both commands call the same fail-open `cleanup_review_pr()` function, demonstrating reuse of the pattern.
+If cleanup fails, land still succeeds. The PR is merged—mission accomplished.
 
 ## Benefits
 

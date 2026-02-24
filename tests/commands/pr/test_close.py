@@ -42,7 +42,7 @@ def test_close_plan_with_issue_number() -> None:
         ctx = build_workspace_test_context(env, plan_store=store, issues=fake_issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "close", "42"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "close", "42"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -61,7 +61,7 @@ def test_close_plan_not_found() -> None:
         ctx = build_workspace_test_context(env, plan_store=store)
 
         # Act
-        result = runner.invoke(cli, ["plan", "close", "999"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "close", "999"], obj=ctx)
 
         # Assert
         assert result.exit_code == 1
@@ -119,7 +119,7 @@ def test_close_plan_closes_linked_open_prs() -> None:
         ctx = build_workspace_test_context(env, plan_store=store, github=github, issues=fake_issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "close", "42"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "close", "42"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -163,7 +163,7 @@ def test_close_plan_skips_closed_and_merged_prs() -> None:
         ctx = build_workspace_test_context(env, plan_store=store, github=github, issues=fake_issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "close", "42"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "close", "42"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -201,7 +201,7 @@ def test_close_plan_no_linked_prs() -> None:
         ctx = build_workspace_test_context(env, plan_store=store, github=github, issues=fake_issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "close", "42"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "close", "42"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -220,7 +220,7 @@ def test_close_plan_invalid_identifier() -> None:
         ctx = build_workspace_test_context(env, plan_store=store)
 
         # Act
-        result = runner.invoke(cli, ["plan", "close", "not-a-number"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "close", "not-a-number"], obj=ctx)
 
         # Assert
         assert result.exit_code != 0
@@ -238,7 +238,7 @@ def test_close_plan_invalid_url_format() -> None:
 
         # Act - GitHub URL but pointing to pulls instead of issues
         result = runner.invoke(
-            cli, ["plan", "close", "https://github.com/owner/repo/pulls/42"], obj=ctx
+            cli, ["pr", "close", "https://github.com/owner/repo/pulls/42"], obj=ctx
         )
 
         # Assert
@@ -280,7 +280,7 @@ def test_close_plan_reports_closed_prs() -> None:
         ctx = build_workspace_test_context(env, plan_store=store, github=github, issues=fake_issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "close", "42"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "close", "42"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -315,7 +315,7 @@ def test_close_plan_with_objective_invokes_update() -> None:
         )
 
         # Act
-        result = runner.invoke(cli, ["plan", "close", "42"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "close", "42"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -354,7 +354,7 @@ def test_close_plan_without_objective_skips_update() -> None:
         )
 
         # Act
-        result = runner.invoke(cli, ["plan", "close", "42"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "close", "42"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -391,7 +391,7 @@ def test_close_plan_objective_update_failure_does_not_break_close() -> None:
         )
 
         # Act
-        result = runner.invoke(cli, ["plan", "close", "42"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "close", "42"], obj=ctx)
 
         # Assert - close still succeeds even though objective update failed
         assert result.exit_code == 0

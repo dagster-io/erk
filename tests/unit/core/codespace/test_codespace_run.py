@@ -30,7 +30,7 @@ def test_build_codespace_ssh_command_uses_login_shell() -> None:
 
 def test_build_codespace_ssh_command_preserves_erk_command() -> None:
     """build_codespace_ssh_command preserves the exact erk command string."""
-    result = build_codespace_ssh_command("erk plan replan 123")
+    result = build_codespace_ssh_command("erk pr replan 123")
 
-    assert "erk plan replan 123" in result
+    assert "erk pr replan 123" in result
     assert "nohup" not in result

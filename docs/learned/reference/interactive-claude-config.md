@@ -170,7 +170,7 @@ allow_dangerous_override=True if dangerous_flag else None
 
 ### Example: Force Plan Mode
 
-**Use case:** `erk plan replan` always uses plan mode, regardless of config. It passes `permission_mode_override="plan"` and `None` for all other overrides. See `replan_plan()` in `src/erk/cli/commands/plan/replan_cmd.py` for the canonical example.
+**Use case:** `erk pr replan` always uses plan mode, regardless of config. It passes `permission_mode_override="plan"` and `None` for all other overrides. See `pr_replan()` in `src/erk/cli/commands/pr/replan_cmd.py` for the canonical example.
 
 ### Example: Conditional Override from CLI Flag
 

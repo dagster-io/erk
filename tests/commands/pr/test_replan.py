@@ -1,4 +1,4 @@
-"""Tests for erk plan replan command."""
+"""Tests for erk pr replan command."""
 
 from click.testing import CliRunner
 
@@ -13,7 +13,7 @@ def test_replan_launches_agent_with_plan_mode() -> None:
     fake_launcher = FakeAgentLauncher()
     ctx = context_for_test(agent_launcher=fake_launcher)
 
-    result = runner.invoke(cli, ["plan", "replan", "2521"], obj=ctx)
+    result = runner.invoke(cli, ["pr", "replan", "2521"], obj=ctx)
 
     assert result.exit_code == 0
     assert fake_launcher.launch_called
@@ -28,7 +28,7 @@ def test_replan_with_multiple_issue_refs() -> None:
     fake_launcher = FakeAgentLauncher()
     ctx = context_for_test(agent_launcher=fake_launcher)
 
-    result = runner.invoke(cli, ["plan", "replan", "123", "456", "789"], obj=ctx)
+    result = runner.invoke(cli, ["pr", "replan", "123", "456", "789"], obj=ctx)
 
     assert result.exit_code == 0
     assert fake_launcher.last_call is not None
@@ -40,7 +40,7 @@ def test_replan_requires_issue_ref_argument() -> None:
     """Test that replan requires at least one ISSUE_REF argument."""
     runner = CliRunner()
 
-    result = runner.invoke(cli, ["plan", "replan"])
+    result = runner.invoke(cli, ["pr", "replan"])
 
     assert result.exit_code == 2
     assert "Missing argument" in result.output
@@ -54,7 +54,7 @@ def test_replan_shows_error_when_agent_not_installed() -> None:
     )
     ctx = context_for_test(agent_launcher=fake_launcher)
 
-    result = runner.invoke(cli, ["plan", "replan", "2521"], obj=ctx)
+    result = runner.invoke(cli, ["pr", "replan", "2521"], obj=ctx)
 
     assert result.exit_code == 1
     assert "Claude CLI not found" in result.output

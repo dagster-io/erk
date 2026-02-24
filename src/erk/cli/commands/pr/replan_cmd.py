@@ -9,7 +9,7 @@ from erk_shared.context.types import InteractiveAgentConfig
 @click.command("replan")
 @click.argument("issue_refs", nargs=-1, required=True)
 @click.pass_obj
-def replan_plan(ctx: ErkContext, issue_refs: tuple[str, ...]) -> None:
+def pr_replan(ctx: ErkContext, issue_refs: tuple[str, ...]) -> None:
     """Replan existing erk-plan issue(s) against current codebase state.
 
     ISSUE_REFS are issue numbers or GitHub URLs. Multiple refs can be provided
@@ -20,9 +20,9 @@ def replan_plan(ctx: ErkContext, issue_refs: tuple[str, ...]) -> None:
     any changes. Original issues are closed after the new plan is created.
 
     Examples:
-        erk plan replan 2521
-        erk plan replan https://github.com/owner/repo/issues/2521
-        erk plan replan 123 456 789  # Consolidate multiple plans
+        erk pr replan 2521
+        erk pr replan https://github.com/owner/repo/issues/2521
+        erk pr replan 123 456 789  # Consolidate multiple plans
     """
     # Get interactive Claude config with plan mode override
     if ctx.global_config is None:

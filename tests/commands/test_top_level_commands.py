@@ -145,7 +145,7 @@ def test_dash_command_passes_filters_to_interactive_mode() -> None:
 
 
 def test_top_level_view_command_works(plan_backend_type: str) -> None:
-    """Test that 'erk plan view' command works."""
+    """Test that 'erk pr view' command works."""
     # Arrange
     issue1 = Plan(
         plan_identifier="123",
@@ -166,8 +166,8 @@ def test_top_level_view_command_works(plan_backend_type: str) -> None:
         store, _ = create_plan_store({"123": issue1}, backend=plan_backend_type)
         ctx = build_workspace_test_context(env, plan_store=store)
 
-        # Act - Use plan view command
-        result = runner.invoke(cli, ["plan", "view", "123"], obj=ctx)
+        # Act - Use pr view command
+        result = runner.invoke(cli, ["pr", "view", "123"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -177,7 +177,7 @@ def test_top_level_view_command_works(plan_backend_type: str) -> None:
 
 
 def test_top_level_close_command_works() -> None:
-    """Test that 'erk plan close' command works."""
+    """Test that 'erk pr close' command works."""
     # Arrange
     issue1 = Plan(
         plan_identifier="456",
@@ -198,8 +198,8 @@ def test_top_level_close_command_works() -> None:
         store, fake_issues = create_plan_store_with_plans({"456": issue1})
         ctx = build_workspace_test_context(env, plan_store=store, issues=fake_issues)
 
-        # Act - Use plan close command
-        result = runner.invoke(cli, ["plan", "close", "456"], obj=ctx)
+        # Act - Use pr close command
+        result = runner.invoke(cli, ["pr", "close", "456"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
