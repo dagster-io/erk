@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix `erk plan duplicate-check` to evaluate against all open plans"
+}
