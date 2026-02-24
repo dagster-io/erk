@@ -32,7 +32,6 @@ class TestParseErkCommand(unittest.TestCase):
     def test_parse_chat_command(self) -> None:
         command = parse_erk_command("<@U123> chat What is Python?")
         self.assertIsInstance(command, ChatCommand)
-        assert isinstance(command, ChatCommand)
         self.assertEqual(command.message, "What is Python?")
 
     def test_parse_chat_no_message(self) -> None:

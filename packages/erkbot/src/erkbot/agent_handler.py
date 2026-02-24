@@ -61,7 +61,7 @@ async def run_agent_background(
                 try:
                     await client.chat_update(channel=channel, ts=status_ts, text=progress_text)
                 except SlackApiError:
-                    pass
+                    pass  # Best-effort progress update; failure is non-fatal
                 last_update = now
 
         # Final update: remove status message, post final response
@@ -69,7 +69,7 @@ async def run_agent_background(
             try:
                 await client.chat_update(channel=channel, ts=status_ts, text="🤖 Done.")
             except SlackApiError:
-                pass
+                pass  # Best-effort status update; failure is non-fatal
 
         final_text = accumulated_text.strip()
         if final_text:
