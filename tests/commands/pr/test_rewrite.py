@@ -5,12 +5,16 @@ The command squashes commits, generates an AI-powered commit message,
 amends the commit, pushes, and updates the remote PR.
 """
 
+from datetime import UTC, datetime
+
 from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
 from erk_shared.gateway.branch_manager.types import SubmitBranchError
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
@@ -402,3 +406,50 @@ def test_pr_rewrite_draft_pr_backend_preserves_metadata() -> None:
         assert "plan-header" in updated_body
         # No self-closing reference for draft PR backend
         assert "Closes #" not in updated_body
+
+
+def test_pr_rewrite_updates_lifecycle_stage_for_linked_plan() -> None:
+    """Rewrite with a plan-linked branch triggers lifecycle update to 'impl'."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        # Use P-prefix branch so PlanContextProvider resolves the plan
+        branch_name = "P100-add-feature"
+
+        # Create plan issue with lifecycle_stage "planned"
+        plan_body = format_plan_header_body_for_test(lifecycle_stage="planned")
+        plan_issue = IssueInfo(
+            number=100,
+            title="Plan #100",
+            body=plan_body,
+            state="OPEN",
+            url="https://github.com/owner/repo/issues/100",
+            labels=["erk-plan"],
+            assignees=[],
+            created_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
+            updated_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
+            author="test-user",
+        )
+        fake_issues = FakeGitHubIssues(issues={100: plan_issue})
+
+        git, graphite, github, executor = _make_rewrite_fakes(
+            env,
+            branch_name=branch_name,
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            github=github,
+            graphite=graphite,
+            prompt_executor=executor,
+            issues=fake_issues,
+        )
+
+        result = runner.invoke(pr_group, ["rewrite"], obj=ctx)
+
+        assert result.exit_code == 0, result.output
+
+        # Verify lifecycle_stage was updated in the plan issue
+        assert len(fake_issues.updated_bodies) == 1
+        updated_body = fake_issues.updated_bodies[0][1]
+        assert "lifecycle_stage: impl" in updated_body

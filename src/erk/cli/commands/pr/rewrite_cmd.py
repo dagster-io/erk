@@ -17,6 +17,7 @@ from erk.cli.commands.pr.shared import (
     discover_branch_context,
     discover_issue_for_footer,
     echo_plan_context_status,
+    maybe_advance_lifecycle_to_impl,
     render_progress,
     require_claude_available,
     run_commit_message_generation,
@@ -201,6 +202,15 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
         body=BodyText(content=final_body),
     )
     click.echo(click.style("   PR updated", fg="green"))
+
+    # Update lifecycle stage for linked plan
+    if plan_context is not None:
+        maybe_advance_lifecycle_to_impl(
+            ctx,
+            repo_root=discovery.repo_root,
+            plan_id=plan_context.plan_id,
+            quiet=False,
+        )
 
     # Add learn skip label if applicable
     is_learn_origin = is_learn_plan(impl_dir)

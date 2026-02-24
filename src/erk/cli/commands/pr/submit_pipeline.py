@@ -18,6 +18,7 @@ import click
 from erk.cli.commands.pr.shared import (
     assemble_pr_body,
     echo_plan_context_status,
+    maybe_advance_lifecycle_to_impl,
     run_commit_message_generation,
 )
 from erk.cli.constants import PLANNED_PR_TITLE_PREFIX
@@ -768,6 +769,16 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
                 click.echo(click.style(f"   Failed to clean up diff file: {e}", dim=True))
 
     click.echo(click.style("   PR metadata updated", fg="green"))
+
+    # Update lifecycle stage for linked plan
+    if state.plan_context is not None:
+        maybe_advance_lifecycle_to_impl(
+            ctx,
+            repo_root=state.repo_root,
+            plan_id=state.plan_context.plan_id,
+            quiet=state.quiet,
+        )
+
     click.echo("")
 
     # Get final PR URL

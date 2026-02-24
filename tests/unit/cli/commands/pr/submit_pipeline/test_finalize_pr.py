@@ -2,6 +2,7 @@
 
 import dataclasses
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 
 from erk.cli.commands.pr.submit_pipeline import (
@@ -14,6 +15,8 @@ from erk.core.plan_context_provider import PlanContext
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
@@ -40,7 +43,7 @@ def _make_state(
     base_branch: str | None = "main",
     graphite_url: str | None = None,
     diff_file: Path | None = None,
-    plan_context: None = None,
+    plan_context: PlanContext | None = None,
     title: str | None = "My PR Title",
     body: str | None = "My PR body",
 ) -> SubmitState:
@@ -482,3 +485,48 @@ def test_skip_description_returns_state_unchanged(tmp_path: Path) -> None:
     result = finalize_pr(ctx, state)
 
     assert result is state
+
+
+def test_updates_lifecycle_stage_for_linked_plan(tmp_path: Path) -> None:
+    """finalize_pr with a PlanContext triggers lifecycle update to 'impl'."""
+    plan_body = format_plan_header_body_for_test(lifecycle_stage="planned")
+    plan_issue = IssueInfo(
+        number=321,
+        title="Plan #321",
+        body=plan_body,
+        state="OPEN",
+        url="https://github.com/owner/repo/issues/321",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
+        author="test-user",
+    )
+    fake_issues = FakeGitHubIssues(issues={321: plan_issue})
+
+    pr = _pr_details(number=42)
+    fake_git = FakeGit(
+        repository_roots={tmp_path: tmp_path},
+        remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
+    )
+    fake_github = FakeGitHub(
+        prs_by_branch={"feature": pr},
+        pr_details={42: pr},
+        issues_gateway=fake_issues,
+    )
+    ctx = context_for_test(git=fake_git, github=fake_github, issues=fake_issues, cwd=tmp_path)
+
+    plan_ctx = PlanContext(
+        plan_id="321",
+        plan_content="# Plan\n\nImplement the thing.",
+        objective_summary=None,
+    )
+    state = _make_state(cwd=tmp_path, plan_context=plan_ctx)
+
+    result = finalize_pr(ctx, state)
+
+    assert isinstance(result, SubmitState)
+    # Verify lifecycle_stage was updated in the plan issue
+    assert len(fake_issues.updated_bodies) == 1
+    updated_body = fake_issues.updated_bodies[0][1]
+    assert "lifecycle_stage: impl" in updated_body
