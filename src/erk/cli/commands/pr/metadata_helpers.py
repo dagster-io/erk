@@ -105,3 +105,47 @@ def maybe_update_plan_dispatch_metadata(
     user_output(
         click.style("\u2713", fg="green") + f" Updated dispatch metadata on plan #{plan_id}"
     )
+
+
+def maybe_write_pending_dispatch_metadata(
+    ctx: ErkContext,
+    repo: RepoContext,
+    branch_name: str,
+) -> None:
+    """Write pending dispatch sentinel to plan metadata if branch follows P{issue}-pattern.
+
+    Called at fire-and-forget dispatch time to record that a dispatch occurred,
+    before the workflow has a run ID. The workflow will later overwrite with real values.
+
+    Writes last_dispatched_at with current timestamp, run_id=None, node_id=None.
+
+    Uses early returns to skip updates when:
+    - Branch doesn't match P{issue_number} pattern
+    - Issue doesn't have a plan-header metadata block
+
+    Args:
+        ctx: Erk context with gateways
+        repo: Repository context with root path
+        branch_name: Branch name to extract issue number from
+    """
+    plan_id = ctx.plan_backend.resolve_plan_id_for_branch(repo.root, branch_name)
+    if plan_id is None:
+        return
+
+    # LBYL: Check if plan-header block exists before attempting update
+    schema_version = ctx.plan_backend.get_metadata_field(repo.root, plan_id, "schema_version")
+    if isinstance(schema_version, PlanNotFound) or schema_version is None:
+        return
+
+    ctx.plan_backend.update_metadata(
+        repo.root,
+        plan_id,
+        {
+            "last_dispatched_run_id": None,
+            "last_dispatched_node_id": None,
+            "last_dispatched_at": ctx.time.now().isoformat(),
+        },
+    )
+    user_output(
+        click.style("\u2713", fg="green") + f" Wrote pending dispatch marker on plan #{plan_id}"
+    )

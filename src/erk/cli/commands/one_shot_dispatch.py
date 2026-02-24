@@ -400,6 +400,7 @@ def dispatch_one_shot(
             repo_root=repo.root,
             workflow=ONE_SHOT_WORKFLOW,
             inputs=inputs,
+            ref=None,
         )
         user_output(click.style(f"  \u2192 Run ID: {run_id}", dim=True))
 

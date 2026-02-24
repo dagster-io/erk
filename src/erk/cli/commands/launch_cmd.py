@@ -10,13 +10,58 @@ Usage examples:
 
 import click
 
-from erk.cli.commands.pr.metadata_helpers import maybe_update_plan_dispatch_metadata
+from erk.cli.commands.pr.metadata_helpers import (
+    maybe_update_plan_dispatch_metadata,
+    maybe_write_pending_dispatch_metadata,
+)
 from erk.cli.constants import WORKFLOW_COMMAND_MAP
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.output.output import user_output
+
+
+def _dispatch_or_trigger_workflow(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    workflow_name: str,
+    inputs: dict[str, str],
+    branch_name: str,
+    pr_owner: str,
+    pr_repo: str,
+    no_wait: bool,
+) -> None:
+    """Dispatch (fire-and-forget) or trigger (wait for run ID) a workflow.
+
+    When no_wait is True, dispatches the workflow without polling for a run ID.
+    When no_wait is False, triggers the workflow and reports the run URL.
+    """
+    workflow_file = _get_workflow_file(workflow_name)
+    if no_wait:
+        ctx.github.dispatch_workflow(
+            repo_root=repo.root,
+            workflow=workflow_file,
+            inputs=inputs,
+            ref=None,
+        )
+        user_output(click.style("\u2713", fg="green") + " Workflow dispatched (fire-and-forget)")
+        maybe_write_pending_dispatch_metadata(ctx, repo, branch_name)
+    else:
+        run_id = ctx.github.trigger_workflow(
+            repo_root=repo.root,
+            workflow=workflow_file,
+            inputs=inputs,
+            ref=None,
+        )
+        user_output(click.style("\u2713", fg="green") + " Workflow triggered")
+
+        maybe_update_plan_dispatch_metadata(ctx, repo, branch_name, run_id)
+
+        user_output("")
+        run_url = f"https://github.com/{pr_owner}/{pr_repo}/actions/runs/{run_id}"
+        user_output(f"Run URL: {click.style(run_url, fg='cyan')}")
 
 
 def _get_workflow_file(workflow_name: str) -> str:
@@ -46,6 +91,7 @@ def _trigger_pr_fix_conflicts(
     pr_number: int | None,
     no_squash: bool,
     model: str | None,
+    no_wait: bool,
 ) -> None:
     """Trigger pr-fix-conflicts workflow."""
     # Get PR details - either from explicit PR number or current branch
@@ -82,29 +128,29 @@ def _trigger_pr_fix_conflicts(
     user_output("")
 
     # Build workflow inputs
+    plan_id = ctx.plan_backend.resolve_plan_id_for_branch(repo.root, branch_name)
     inputs: dict[str, str] = {
         "branch_name": branch_name,
         "base_branch": pr.base_ref_name,
         "pr_number": str(pr_number),
         "squash": "false" if no_squash else "true",
+        "plan_number": plan_id if plan_id is not None else "",
     }
     if model is not None:
         inputs["model_name"] = model
 
     # Trigger workflow
     user_output("Triggering pr-fix-conflicts workflow...")
-    run_id = ctx.github.trigger_workflow(
-        repo_root=repo.root,
-        workflow=_get_workflow_file("pr-fix-conflicts"),
+    _dispatch_or_trigger_workflow(
+        ctx,
+        repo,
+        workflow_name="pr-fix-conflicts",
         inputs=inputs,
+        branch_name=branch_name,
+        pr_owner=pr.owner,
+        pr_repo=pr.repo,
+        no_wait=no_wait,
     )
-    user_output(click.style("\u2713", fg="green") + " Workflow triggered")
-
-    maybe_update_plan_dispatch_metadata(ctx, repo, branch_name, run_id)
-
-    user_output("")
-    run_url = f"https://github.com/{pr.owner}/{pr.repo}/actions/runs/{run_id}"
-    user_output(f"Run URL: {click.style(run_url, fg='cyan')}")
 
 
 def _trigger_pr_address(
@@ -113,6 +159,7 @@ def _trigger_pr_address(
     *,
     pr_number: int,
     model: str | None,
+    no_wait: bool,
 ) -> None:
     """Trigger pr-address workflow."""
     user_output("Checking PR status...")
@@ -133,26 +180,26 @@ def _trigger_pr_address(
     user_output("")
 
     # Build workflow inputs
+    plan_id = ctx.plan_backend.resolve_plan_id_for_branch(repo.root, branch_name)
     inputs: dict[str, str] = {
         "pr_number": str(pr_number),
+        "plan_number": plan_id if plan_id is not None else "",
     }
     if model is not None:
         inputs["model_name"] = model
 
     # Trigger workflow
     user_output("Triggering pr-address workflow...")
-    run_id = ctx.github.trigger_workflow(
-        repo_root=repo.root,
-        workflow=_get_workflow_file("pr-address"),
+    _dispatch_or_trigger_workflow(
+        ctx,
+        repo,
+        workflow_name="pr-address",
         inputs=inputs,
+        branch_name=branch_name,
+        pr_owner=pr.owner,
+        pr_repo=pr.repo,
+        no_wait=no_wait,
     )
-    user_output(click.style("\u2713", fg="green") + " Workflow triggered")
-
-    maybe_update_plan_dispatch_metadata(ctx, repo, branch_name, run_id)
-
-    user_output("")
-    run_url = f"https://github.com/{pr.owner}/{pr.repo}/actions/runs/{run_id}"
-    user_output(f"Run URL: {click.style(run_url, fg='cyan')}")
 
 
 def _trigger_learn(
@@ -172,6 +219,7 @@ def _trigger_learn(
         repo_root=repo.root,
         workflow=_get_workflow_file("learn"),
         inputs=inputs,
+        ref=None,
     )
     user_output(click.style("\u2713", fg="green") + " Workflow triggered")
 
@@ -229,6 +277,11 @@ def _trigger_plan_implement(
     type=str,
     help="Claude model to use (for workflows that support it)",
 )
+@click.option(
+    "--no-wait",
+    is_flag=True,
+    help="Fire-and-forget: dispatch workflow without polling for run ID",
+)
 @click.pass_obj
 def launch(
     ctx: ErkContext,
@@ -238,6 +291,7 @@ def launch(
     issue_number: int | None,
     no_squash: bool,
     model: str | None,
+    no_wait: bool,
 ) -> None:
     """Trigger a GitHub Actions workflow.
 
@@ -292,6 +346,7 @@ def launch(
             pr_number=pr_number,
             no_squash=no_squash,
             model=model,
+            no_wait=no_wait,
         )
     elif workflow_name == "pr-address":
         Ensure.invariant(
@@ -299,7 +354,7 @@ def launch(
             "--pr is required for pr-address workflow",
         )
         assert pr_number is not None
-        _trigger_pr_address(ctx, repo, pr_number=pr_number, model=model)
+        _trigger_pr_address(ctx, repo, pr_number=pr_number, model=model, no_wait=no_wait)
     elif workflow_name == "learn":
         Ensure.invariant(
             issue_number is not None,

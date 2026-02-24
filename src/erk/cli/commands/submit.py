@@ -483,6 +483,7 @@ def _submit_draft_pr_plan(
         repo_root=repo.root,
         workflow=DISPATCH_WORKFLOW_NAME,
         inputs=inputs,
+        ref=None,
     )
     user_output(click.style("✓", fg="green") + " Workflow triggered.")
 
@@ -1023,6 +1024,7 @@ def _submit_single_issue(
         repo_root=repo.root,
         workflow=DISPATCH_WORKFLOW_NAME,
         inputs=inputs,
+        ref=None,
     )
     user_output(click.style("✓", fg="green") + " Workflow triggered.")
 
