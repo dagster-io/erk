@@ -1,5 +1,6 @@
 """Tests for ErkDashApp using Textual Pilot."""
 
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -929,6 +930,66 @@ class TestExecutePaletteCommandFixConflictsRemote:
 
             # Should not have pushed a new screen
             assert len(app.screen_stack) == initial_stack_len
+
+    @pytest.mark.asyncio
+    async def test_execute_palette_command_fix_conflicts_remote_pushes_screen_and_runs_command(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """Execute palette command fix_conflicts_remote pushes screen and runs correct command."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        # Capture the command passed to run_streaming_command
+        captured_command = None
+
+        def mock_run_streaming_command(
+            self: PlanDetailScreen,
+            command: list[str],
+            cwd: Path,
+            title: str,
+            *,
+            timeout: float = 30.0,
+            on_success: Callable[[], None] | None = None,
+        ) -> None:
+            nonlocal captured_command
+            captured_command = command
+
+        # Patch run_streaming_command to capture the command
+        monkeypatch.setattr(
+            PlanDetailScreen,
+            "run_streaming_command",
+            mock_run_streaming_command,
+        )
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            initial_stack_len = len(app.screen_stack)
+
+            # Execute fix_conflicts_remote command
+            app.execute_palette_command("fix_conflicts_remote")
+            await pilot.pause()
+
+            # Should have pushed a new screen
+            assert len(app.screen_stack) == initial_stack_len + 1
+
+            detail_screen = app.screen_stack[-1]
+            assert isinstance(detail_screen, PlanDetailScreen)
+
+            # Verify correct command was prepared
+            assert captured_command is not None
+            assert captured_command == [
+                "erk",
+                "launch",
+                "pr-fix-conflicts",
+                "--pr",
+                "456",
+            ]
 
 
 class TestStreamingCommandTimeout:
@@ -2073,41 +2134,8 @@ class TestActionLaunch:
 class TestAddressRemoteAsync:
     """Tests for _address_remote_async subprocess behavior.
 
-    Verifies that address_remote dispatches without --no-wait (so the CLI
-    polls for real run_id) and triggers a data refresh on success.
+    Verifies that address_remote triggers a data refresh on success.
     """
-
-    @pytest.mark.asyncio
-    async def test_address_remote_does_not_pass_no_wait(
-        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-    ) -> None:
-        """_address_remote_async should NOT pass --no-wait to subprocess."""
-        import subprocess
-
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
-            repo_root=tmp_path,
-        )
-        filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
-
-        captured_args: list[str] = []
-
-        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
-            captured_args.extend(args)
-            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
-
-        monkeypatch.setattr(subprocess, "run", fake_run)
-
-        async with app.run_test() as pilot:
-            await pilot.pause()
-            await pilot.pause()
-
-            app._address_remote_async(456)
-            await pilot.pause(0.3)
-
-            assert captured_args == ["erk", "launch", "pr-address", "--pr", "456"]
-            assert "--no-wait" not in captured_args
 
     @pytest.mark.asyncio
     async def test_address_remote_triggers_refresh_on_success(

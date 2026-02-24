@@ -236,12 +236,6 @@ class FakeGitHub(GitHub):
             return MergeResult(pr_number=pr_number)
         return MergeError(pr_number=pr_number, message="Merge failed (configured to fail in test)")
 
-    def dispatch_workflow(
-        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None
-    ) -> None:
-        """Record workflow dispatch in mutation tracking list (fire-and-forget)."""
-        self._triggered_workflows.append((workflow, inputs))
-
     def trigger_workflow(
         self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None
     ) -> str:

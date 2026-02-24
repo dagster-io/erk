@@ -114,16 +114,6 @@ class PrintingGitHub(PrintingBase, GitHub):
         input_args = " ".join(f"-f {key}={value}" for key, value in inputs.items())
         return f"gh workflow run {workflow} {ref_arg}{input_args}"
 
-    def dispatch_workflow(
-        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None
-    ) -> None:
-        """Dispatch workflow with printed output (fire-and-forget)."""
-        cmd = self._format_workflow_run_command(workflow=workflow, inputs=inputs, ref=ref)
-        self._emit(self._format_command(cmd))
-        self._wrapped.dispatch_workflow(
-            repo_root=repo_root, workflow=workflow, inputs=inputs, ref=ref
-        )
-
     def trigger_workflow(
         self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None
     ) -> str:

@@ -313,9 +313,9 @@ class RealGitHub(GitHub):
     ) -> str:
         """Dispatch a GitHub Actions workflow and return the distinct_id.
 
-        Shared implementation for trigger_workflow() and dispatch_workflow().
+        Internal implementation used by trigger_workflow().
         Generates a unique distinct_id, passes it to the workflow, and returns
-        the distinct_id for optional polling.
+        the distinct_id for polling.
 
         Args:
             repo_root: Repository root path
@@ -354,22 +354,6 @@ class RealGitHub(GitHub):
         )
         debug_log("_dispatch_workflow_impl: workflow dispatched successfully")
         return distinct_id
-
-    def dispatch_workflow(
-        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None
-    ) -> None:
-        """Dispatch a GitHub Actions workflow without waiting for run ID.
-
-        Fire-and-forget variant of trigger_workflow(). Dispatches the workflow
-        but does not poll for the run ID.
-
-        Args:
-            repo_root: Repository root path
-            workflow: Workflow file name (e.g., "implement-plan.yml")
-            inputs: Workflow inputs as key-value pairs
-            ref: Branch or tag to run workflow from (default: repository default branch)
-        """
-        self._dispatch_workflow_impl(repo_root=repo_root, workflow=workflow, inputs=inputs, ref=ref)
 
     def trigger_workflow(
         self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None
