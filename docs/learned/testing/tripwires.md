@@ -66,8 +66,6 @@ Rules triggered by matching actions in code.
 
 **flagging `import X as X` or `from .mod import Y as Y` as a violation** → Read [Import Alias vs Re-Export Detection](alias-verification-pattern.md) first. The `X as X` form is an explicit re-export marker, not an alias. Only flag when the alias differs from the original name.
 
-**forgetting to await background tasks created by asyncio.create_task** → Read [Bolt Async Dispatch Testing Pattern](bolt-async-dispatch-testing.md) first. Capture and await background tasks before asserting mock server state.
-
 **implementing interactive prompts with ctx.console.confirm()** → Read [Erk Test Reference](testing.md) first. Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. Array length must match prompt count exactly — too few causes IndexError, too many indicates a removed prompt. See tests/commands/submit/test_existing_branch_detection.py for examples.
 
 **importing FakePromptExecutor from erk_shared.gateway.prompt_executor.fake** → Read [FakePromptExecutor API Migration - Gateway to Core](fake-api-migration-pattern.md) first. This module was deleted in the consolidation. Import from tests.fakes.prompt_executor or erk_shared.core.fakes instead.
@@ -117,6 +115,8 @@ Rules triggered by matching actions in code.
 **tracking only the primary argument in a mutation tuple, omitting flags or options** → Read [Frozen Dataclass Test Doubles](frozen-dataclass-test-doubles.md) first. Track ALL call parameters in tuples (e.g., (branch, force) not just branch). Lost context leads to undertested behavior.
 
 **using Path.home() directly in production code** [pattern: `Path\.home\(\)`] → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Use gateway abstractions instead. For ~/.claude/ paths use ClaudeInstallation, for ~/.erk/ paths use ErkInstallation. Direct Path.home() access bypasses testability (fakes) and creates parallel test flakiness.
+
+**using asyncio.sleep() to wait for Bolt handler completion** → Read [Bolt Async Dispatch Testing Pattern](bolt-async-dispatch-testing.md) first. Use dispatch_and_settle() from conftest — it awaits all background tasks deterministically.
 
 **using hardcoded port numbers for mock server** → Read [Bolt Async Dispatch Testing Pattern](bolt-async-dispatch-testing.md) first. Use port=0 for auto-assigned port to avoid CI conflicts.
 
