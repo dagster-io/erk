@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of f089a0abe -->
+<!-- As of 36e6f5d54 -->
 
 ### Major Changes
 
@@ -25,6 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bundle missing capability workflows (one-shot, pr-address, pr-fix-conflicts) for external dispatch (509290e)
 - Add local review marker to skip CI reviews when local code review passes (2bbcbfc)
 - Add stacked PR emoji indicator to dashboard for PRs targeting non-master branches (ddd6360)
+- Add `erk plan duplicate-check` for semantic duplicate detection using LLM inference (d3fa221)
+- Add "blockers" column to TUI Objectives dashboard with clickable plan numbers (1ce603c)
+- Add `-d` and `-u` short aliases for `--down` and `--up` flags in `erk land` (152083a)
+- Add diagnostics for dispatch metadata failures with improved TUI feedback (9d8266b)
 
 ### Changed
 
@@ -42,6 +46,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Consolidate PR validation into `--stage=impl` flag on `erk pr check` (e2bd53d)
 - Convert submit pipeline to git plumbing, eliminating race conditions in shared worktrees (ea4a853)
 - Increase workflow dispatch polling timeout to ~62 seconds for `erk plan submit` reliability (368a707)
+- Convert TUI dispatch commands from blocking modals to non-blocking toast+worker pattern (fd8a03c)
+- Remove backend label from statusline output (bc4f326)
+- Remove non-slot worktree after landing instead of leaving detached HEAD state (a637089)
 
 ### Fixed
 
@@ -52,12 +59,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Clear error when trigger_workflow finds skipped/cancelled run (2a49eb3)
 - Fix plan-save branches incorrectly stacking on current branch instead of trunk (93df692)
 - Fix `impl-signal started` to include lifecycle_stage transition, preventing stuck "planned" status (ed266b8)
+- Fix objective update after landing for `plnd/` branches (36e6f5d)
+- Fix `erk br co --for-plan` stacking plan branches on current branch instead of trunk (febff7a)
+- Fix `erk land` crash when run from root worktree (8c1acc0)
+- Fix session discovery for draft-PR plans by using header_fields (ae2d5dc)
+- Fix `erk plan check` for draft-PR plan format and simplify branch force-update logic (d315ce4)
+- Fix rocket emoji appearing on draft PRs in lifecycle display (7104464, 45a550f)
 
 ### Removed
 
 - Remove GitHub repository variables feature and related infrastructure (a4ba14e)
 - Remove run_url gate from land PR command (9fc1dab)
 - Remove `get_plan_backend()` and `PlanBackendType`, hardcoding draft PR as the only plan backend (4ccfbb0)
+- Remove `plan_backend` parameter and collapse dead github-backend code branches (3acaff2)
 
 ## [0.8.1] - 2026-02-22 08:14 PT
 
