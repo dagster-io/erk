@@ -1,35 +1,11 @@
 """Tests for PlanDetailScreen.execute_command."""
 
-from collections.abc import Callable
 from datetime import UTC, datetime
-from pathlib import Path
 
 from erk.tui.data.types import PlanRowData
 from erk.tui.screens.plan_detail_screen import PlanDetailScreen
 from erk_shared.gateway.command_executor.fake import FakeCommandExecutor
 from erk_shared.gateway.plan_data_provider.fake import make_plan_row
-
-
-class _CapturingPlanDetailScreen(PlanDetailScreen):
-    """Subclass that captures on_success callback instead of running a subprocess."""
-
-    def __init__(self, **kwargs: object) -> None:
-        super().__init__(**kwargs)  # type: ignore[arg-type]
-        self.captured_on_success: Callable[[], None] | None = None
-        self.streaming_commands: list[tuple[list[str], str]] = []
-
-    def run_streaming_command(
-        self,
-        command: list[str],
-        cwd: Path,
-        title: str,
-        *,
-        timeout: float = 30.0,
-        on_success: Callable[[], None] | None = None,
-    ) -> None:
-        """Capture on_success and track streaming commands."""
-        self.captured_on_success = on_success
-        self.streaming_commands.append((command, title))
 
 
 class TestExecuteCommandBrowserCommands:
@@ -224,20 +200,10 @@ class TestExecuteCommandClosePlan:
 class TestExecuteCommandSubmitToQueue:
     """Tests for submit_to_queue command.
 
-    Note: submit_to_queue now uses a non-blocking toast + background worker pattern
-    (like close_plan and land_pr). These tests verify the guard conditions. The
-    async worker behavior is tested in test_app.py.
+    Note: submit_to_queue uses dismiss-and-delegate to the app's background worker.
+    These tests verify the guard conditions. The async worker behavior is tested
+    in test_app.py.
     """
-
-    def test_submit_to_queue_does_nothing_without_repo_root(self) -> None:
-        """submit_to_queue does nothing if repo_root is not provided."""
-        row = make_plan_row(123, "Test", plan_url="https://github.com/test/repo/issues/123")
-        executor = FakeCommandExecutor()
-        # repo_root not provided - streaming command should not execute
-        screen = PlanDetailScreen(row=row, executor=executor)
-        screen.execute_command("submit_to_queue")
-        # No executor methods should be called (streaming is independent)
-        assert executor.refresh_count == 0
 
     def test_submit_to_queue_does_nothing_without_issue_url(self) -> None:
         """submit_to_queue does nothing if no issue URL."""
@@ -304,128 +270,33 @@ class TestExecuteCommandSubmitToQueue:
 class TestExecuteCommandLandPR:
     """Tests for land_pr command.
 
-    Note: land_pr dismisses the detail screen and delegates to the app's
-    non-blocking _land_pr_async worker. These tests verify the guard conditions.
+    Note: land_pr uses dismiss-and-delegate to the app's background worker.
+    These tests verify the guard conditions. The async worker behavior
+    (including objective update chaining) is tested in test_app.py.
     """
-
-    def test_land_pr_does_nothing_without_repo_root(self) -> None:
-        """land_pr does nothing if repo_root is not provided."""
-        row = make_plan_row(123, "Test", pr_number=456)
-        executor = FakeCommandExecutor()
-        # repo_root not provided - streaming command should not execute
-        screen = PlanDetailScreen(row=row, executor=executor)
-        screen.execute_command("land_pr")
-        # No executor methods should be called (streaming is independent)
-        assert executor.refresh_count == 0
 
     def test_land_pr_does_nothing_without_pr_number(self) -> None:
         """land_pr does nothing if no PR is associated with the plan."""
         row = make_plan_row(123, "Test")  # No pr_number
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row=row, executor=executor, repo_root=Path("/some/path"))
+        screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("land_pr")
         assert executor.refresh_count == 0
-
-    def test_land_pr_on_success_calls_refresh(self) -> None:
-        """_on_land_success calls executor.refresh_data()."""
-        row = make_plan_row(
-            123,
-            "Test",
-            pr_number=456,
-            pr_head_branch="P123-test-branch",
-        )
-        executor = FakeCommandExecutor()
-        screen = _CapturingPlanDetailScreen(
-            row=row,
-            executor=executor,
-            repo_root=Path("/some/path"),
-        )
-        screen.execute_command("land_pr")
-        assert screen.captured_on_success is not None
-        screen.captured_on_success()
-        assert executor.refresh_count == 1
-
-    def test_land_pr_on_success_streams_objective_update(self) -> None:
-        """_on_land_success chains a streaming objective update command when objective exists."""
-        row = make_plan_row(
-            123,
-            "Test",
-            pr_number=456,
-            pr_head_branch="P123-test-branch",
-            objective_issue=789,
-        )
-        executor = FakeCommandExecutor()
-        screen = _CapturingPlanDetailScreen(
-            row=row,
-            executor=executor,
-            repo_root=Path("/some/path"),
-        )
-        screen.execute_command("land_pr")
-        assert screen.captured_on_success is not None
-        # First streaming command is the land-execute itself
-        assert len(screen.streaming_commands) == 1
-        screen.captured_on_success()
-        assert executor.refresh_count == 1
-        # Second streaming command is the objective update
-        assert len(screen.streaming_commands) == 2
-        cmd, title = screen.streaming_commands[1]
-        assert cmd == [
-            "erk",
-            "exec",
-            "objective-update-after-land",
-            "--objective=789",
-            "--pr=456",
-            "--branch=P123-test-branch",
-        ]
-        assert title == "Update Objective #789"
-
-    def test_land_pr_on_success_skips_update_without_objective(self) -> None:
-        """_on_land_success does NOT chain objective update without objective."""
-        row = make_plan_row(
-            123,
-            "Test",
-            pr_number=456,
-            pr_head_branch="P123-test-branch",
-        )
-        executor = FakeCommandExecutor()
-        screen = _CapturingPlanDetailScreen(
-            row=row,
-            executor=executor,
-            repo_root=Path("/some/path"),
-        )
-        screen.execute_command("land_pr")
-        assert screen.captured_on_success is not None
-        # First streaming command is the land-execute itself
-        assert len(screen.streaming_commands) == 1
-        screen.captured_on_success()
-        assert executor.refresh_count == 1
-        # No additional streaming command for objective update
-        assert len(screen.streaming_commands) == 1
 
 
 class TestExecuteCommandFixConflictsRemote:
     """Tests for fix_conflicts_remote command.
 
-    Note: fix_conflicts_remote uses streaming output via subprocess when repo_root
-    is provided and pr_number exists. These tests verify the guard conditions but
-    actual streaming behavior is tested via integration tests.
+    Note: fix_conflicts_remote uses dismiss-and-delegate to the app's background worker.
+    These tests verify the guard conditions. The async worker behavior is tested
+    in test_app.py.
     """
-
-    def test_fix_conflicts_remote_does_nothing_without_repo_root(self) -> None:
-        """fix_conflicts_remote does nothing if repo_root is not provided."""
-        row = make_plan_row(123, "Test", pr_number=456)
-        executor = FakeCommandExecutor()
-        # repo_root not provided - streaming command should not execute
-        screen = PlanDetailScreen(row=row, executor=executor)
-        screen.execute_command("fix_conflicts_remote")
-        # No executor methods should be called (streaming is independent)
-        assert executor.refresh_count == 0
 
     def test_fix_conflicts_remote_does_nothing_without_pr_number(self) -> None:
         """fix_conflicts_remote does nothing if no PR is associated with the plan."""
         row = make_plan_row(123, "Test")  # No pr_number
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row=row, executor=executor, repo_root=Path("/some/path"))
+        screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("fix_conflicts_remote")
         assert executor.refresh_count == 0
 
