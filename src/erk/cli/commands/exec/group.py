@@ -91,6 +91,9 @@ from erk.cli.commands.exec.scripts.migrate_objective_schema import (
 from erk.cli.commands.exec.scripts.normalize_tripwire_candidates import (
     normalize_tripwire_candidates,
 )
+from erk.cli.commands.exec.scripts.objective_apply_landed_update import (
+    objective_apply_landed_update,
+)
 from erk.cli.commands.exec.scripts.objective_fetch_context import (
     objective_fetch_context,
 )
@@ -242,6 +245,7 @@ exec_group.add_command(migrate_objective_schema, name="migrate-objective-schema"
 exec_group.add_command(normalize_tripwire_candidates, name="normalize-tripwire-candidates")
 exec_group.add_command(objective_render_roadmap, name="objective-render-roadmap")
 exec_group.add_command(objective_save_to_issue, name="objective-save-to-issue")
+exec_group.add_command(objective_apply_landed_update, name="objective-apply-landed-update")
 exec_group.add_command(objective_fetch_context, name="objective-fetch-context")
 exec_group.add_command(objective_update_after_land, name="objective-update-after-land")
 exec_group.add_command(objective_post_action_comment, name="objective-post-action-comment")

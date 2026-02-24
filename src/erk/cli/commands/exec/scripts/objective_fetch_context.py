@@ -144,6 +144,13 @@ def _fetch_objective_content(issue_body: str, issues: GitHubIssues, repo_root: P
     default=None,
     help="Branch name (auto-discovered if omitted)",
 )
+@click.option(
+    "--plan",
+    "plan_number",
+    type=int,
+    default=None,
+    help="Plan number (direct lookup, skips branch-based discovery)",
+)
 @click.pass_context
 def objective_fetch_context(
     ctx: click.Context,
@@ -151,6 +158,7 @@ def objective_fetch_context(
     pr_number: int | None,
     objective_number: int | None,
     branch_name: str | None,
+    plan_number: int | None,
 ) -> None:
     """Fetch all context for objective update in a single call."""
     issues = require_issues(ctx)
@@ -158,22 +166,29 @@ def objective_fetch_context(
     repo_root = require_repo_root(ctx)
     plan_backend = require_plan_backend(ctx)
 
-    # Discovery: auto-fill branch from git state
-    if branch_name is None:
-        git = require_git(ctx)
-        cwd = require_cwd(ctx)
-        branch_name = git.branch.get_current_branch(cwd)
-        if branch_name is None:
-            click.echo(_error_json("Could not determine current branch (detached HEAD?)"))
+    # When --plan is provided, do direct plan lookup (skip branch-based discovery)
+    if plan_number is not None:
+        plan_result = plan_backend.get_plan(repo_root, str(plan_number))
+        if isinstance(plan_result, PlanNotFound):
+            click.echo(_error_json(f"Plan #{plan_number} not found"))
             raise SystemExit(1)
+        plan_id = plan_result.plan_identifier
+    else:
+        # Discovery: auto-fill branch from git state
+        if branch_name is None:
+            git = require_git(ctx)
+            cwd = require_cwd(ctx)
+            branch_name = git.branch.get_current_branch(cwd)
+            if branch_name is None:
+                click.echo(_error_json("Could not determine current branch (detached HEAD?)"))
+                raise SystemExit(1)
 
-    # Resolve plan from branch via backend (works for both P<number>- and plan-... branches)
-    plan_result = plan_backend.get_plan_for_branch(repo_root, branch_name)
-    if isinstance(plan_result, PlanNotFound):
-        click.echo(_error_json(f"No plan found for branch '{branch_name}'"))
-        raise SystemExit(1)
-
-    plan_id = plan_result.plan_identifier
+        # Resolve plan from branch via backend (works for both P<number>- and plan-... branches)
+        plan_result = plan_backend.get_plan_for_branch(repo_root, branch_name)
+        if isinstance(plan_result, PlanNotFound):
+            click.echo(_error_json(f"No plan found for branch '{branch_name}'"))
+            raise SystemExit(1)
+        plan_id = plan_result.plan_identifier
 
     # Discovery: auto-fill objective from plan metadata
     if objective_number is None:
@@ -185,6 +200,9 @@ def objective_fetch_context(
 
     # Discovery: auto-fill PR from branch
     if pr_number is None:
+        if branch_name is None:
+            click.echo(_error_json("Cannot auto-discover PR without --branch or --pr"))
+            raise SystemExit(1)
         pr_result = github.get_pr_for_branch(repo_root, branch_name)
         if isinstance(pr_result, PRNotFound):
             click.echo(_error_json(f"No PR found for branch '{branch_name}'"))

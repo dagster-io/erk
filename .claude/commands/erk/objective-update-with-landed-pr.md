@@ -19,10 +19,10 @@ Run after landing a PR:
 ## Agent Instructions
 
 > **Design note:** All steps run inline in the caller's context (no subagent delegation).
-> This is deliberate — Step 3 (prose reconciliation) requires judgment that benefits from
-> the caller's model quality, and Step 7 (closing prompt) requires direct user interaction.
+> Step 2 (prose reconciliation) requires LLM judgment, and Step 3 (closing prompt)
+> requires direct user interaction.
 
-### Step 1: Fetch All Context
+### Step 1: Apply Mechanical Updates
 
 Check `$ARGUMENTS` for optional overrides:
 
@@ -31,42 +31,26 @@ Check `$ARGUMENTS` for optional overrides:
 - `--branch <name>`: Original branch name
 - `--auto-close`: If set and all nodes are complete, close objective without asking
 
-Run a single command to fetch and parse everything (all options are auto-discovered if omitted):
+Run a single command that fetches context, updates roadmap nodes to done, and posts an action comment:
 
 ```bash
-erk exec objective-fetch-context [--pr <number>] [--objective <number>] [--branch <name>]
+erk exec objective-apply-landed-update [--pr <number>] [--objective <number>] [--branch <name>]
 ```
 
 This returns JSON with:
 
-- `objective`: Issue body, title, labels, URL
+- `objective`: Issue body, title, labels, URL, `objective_content` (prose from first comment)
 - `plan`: Plan issue body and title
 - `pr`: PR title, body, URL
-- `roadmap.matched_steps`: Node IDs where `plan == #<plan_number>` (deterministic match)
-- `roadmap.phases`: Serialized roadmap phases
-- `roadmap.summary`: Node counts (done, pending, etc.)
-- `roadmap.next_step`: First pending node or null
-- `roadmap.all_complete`: True if every node is done or skipped
+- `roadmap`: Parsed roadmap with `matched_steps`, `summary`, `next_node`, `all_complete`
+- `node_updates`: List of nodes updated to done (with `previous_plan`, `previous_pr`)
+- `action_comment_id`: ID of the posted action comment
 
 If this returns `success: false`, display the error and stop.
 
-### Step 2: Update Roadmap Nodes
+### Step 2: Prose Reconciliation
 
-Read `matched_steps` from the context blob. These are the nodes this plan completed — no analysis needed. If `matched_steps` is empty, the plan may not have been linked to specific nodes; fall back to comparing the plan body against the roadmap to identify which nodes were completed.
-
-**CRITICAL: Pass ALL completed nodes as multiple `--node` flags in ONE command. Do NOT run separate commands per node — sequential calls cause race conditions and duplicate API calls.**
-
-Before running update-objective-node, extract the existing plan reference for each completed node from the objective roadmap YAML (available in the context blob). Pass `--plan "#<plan-number>"` to preserve it, or `--plan ""` if the node had no plan.
-
-```bash
-erk exec update-objective-node <objective-number> --node <node-id-1> --node <node-id-2> ... --pr "#<pr-number>" --plan "#<plan-number>" --status done --include-body
-```
-
-Preserve the existing plan reference for each node (available in `roadmap.phases`). The `--include-body` flag returns the fully-mutated body as `updated_body` — use this for prose reconciliation (do NOT re-fetch via `gh issue view`).
-
-### Step 3: Perform Prose Reconciliation
-
-Compare `objective.objective_content` (the prose from the first comment's `objective-body` block) against what the PR actually did. Note: `updated_body` from Step 2 contains only metadata (roadmap); prose lives in `objective_content`.
+Compare `objective.objective_content` (the prose from the first comment's `objective-body` block) against what the PR actually did.
 
 If `objective_content` is null, skip prose reconciliation entirely (objective has no prose comment).
 
@@ -83,44 +67,15 @@ If `objective_content` is null, skip prose reconciliation entirely (objective ha
 | **Constraint invalidation** | Requirement listed is no longer valid                        | Implementation Context                        |
 | **New discovery**           | PR revealed a caching bug affecting future nodes             | Implementation Context or new Design Decision |
 
-### Step 4: Post Action Comment
-
-Post the action comment via the exec script. Provide structured JSON on stdin:
+**If prose reconciliation found stale sections**, update the objective's first comment. Parse `objective_comment_id` from `objective.body`'s `objective-header` metadata block, then update:
 
 ```bash
-echo '{"issue_number": <N>, "date": "YYYY-MM-DD", "pr_number": <N>, "phase_step": "X.Y, X.Z", "title": "Brief title", "what_was_done": ["..."], "lessons_learned": ["..."], "roadmap_updates": ["Node X.Y: status -> done"], "body_reconciliation": [{"section": "...", "change": "..."}]}' | erk exec objective-post-action-comment
-```
-
-**Inferring content (DO NOT ask the user):**
-
-- **What Was Done:** Infer from PR title, description, and plan body.
-- **Lessons Learned:** Infer from implementation patterns. If straightforward, note what worked well.
-- **Body Reconciliation:** Only include if prose sections needed updating. Omit entirely if nothing is stale.
-
-### Step 5: Update Objective Prose (First Comment)
-
-**Only if prose reconciliation found stale sections**, update the objective's first comment (where prose lives). Use `extract_objective_header_comment_id` from the objective body to get the comment ID, then update the comment with reconciled prose wrapped in the `objective-body` metadata block.
-
-To get the comment ID, parse it from `objective.body`'s `objective-header` metadata block (the `objective_comment_id` field).
-
-```bash
-# Update the first comment (not the issue body) with reconciled prose
 gh api repos/{owner}/{repo}/issues/comments/{comment_id} -X PATCH -f body="<updated comment body>"
 ```
 
-If nothing is stale, skip this step entirely. The issue body (`updated_body`) contains only metadata and should NOT be the target of prose updates.
+### Step 3: Closing Triggers
 
-### Step 6: Validate Objective
-
-```bash
-erk objective check <issue-number> --json-output
-```
-
-If checks fail, report failures and attempt to fix. The JSON output now includes `all_complete`.
-
-### Step 7: Check Closing Triggers
-
-Use `all_complete` from the validation output to determine next action.
+Use `roadmap.all_complete` from Step 1 output to determine next action.
 
 **If `all_complete` is `true`:**
 
@@ -136,14 +91,14 @@ Use `all_complete` from the validation output to determine next action.
 
 **If `all_complete` is `false`:**
 
-- Report the update is complete. Use `roadmap.next_step` to describe next focus.
+- Report the update is complete. Use `roadmap.next_node` to describe next focus.
 
 ---
 
 ## Output Format
 
 - **Start:** "Updating objective #<number> after landing PR #<pr-number>"
-- **After writes:** "Posted action comment and updated objective body for #<number>"
+- **After writes:** "Applied mechanical updates and posted action comment for #<number>"
 - **End:** Either "Objective #<number> closed" or "Objective updated. Next focus: [next action]"
 - **Always:** Display the objective URL
 
@@ -151,8 +106,8 @@ Use `all_complete` from the validation output to determine next action.
 
 ## Error Cases
 
-| Scenario                           | Action                                       |
-| ---------------------------------- | -------------------------------------------- |
-| `objective-fetch-context` fails    | Display error from JSON and stop             |
-| Issue not found                    | Report error and exit                        |
-| Issue has no `erk-objective` label | Warn user this may not be an objective issue |
+| Scenario                              | Action                                       |
+| ------------------------------------- | -------------------------------------------- |
+| `objective-apply-landed-update` fails | Display error from JSON and stop             |
+| Issue not found                       | Report error and exit                        |
+| Issue has no `erk-objective` label    | Warn user this may not be an objective issue |

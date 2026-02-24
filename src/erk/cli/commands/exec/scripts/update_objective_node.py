@@ -130,6 +130,10 @@ def _replace_table_in_text(
     else:
         resolved_pr = "-"
 
+    # Status inference: when no explicit status is given, PR or plan presence
+    # defaults to "in-progress" (not "done"). Callers who know the PR is merged
+    # must pass explicit_status="done". This is by design — the command cannot
+    # know merge state from a reference string alone.
     if explicit_status is not None:
         display_status = explicit_status.replace("_", "-")
     elif resolved_pr != "-" and resolved_pr:
