@@ -25,19 +25,20 @@ Error: Issue number required.
 Usage: /local:objective-reevaluate <issue_number>
 ```
 
-Fetch the full objective context:
+Fetch the objective issue:
+
+**Do NOT use `objective-fetch-context`** — it requires plan/branch/PR context and fails on master.
 
 ```bash
-erk exec objective-fetch-context --objective <NUMBER>
+erk exec get-issue-body <NUMBER>
 ```
 
 Parse the JSON output to get:
 
-- `objective.body`: Full issue body text
-- `objective.title`: Issue title
-- `objective.state`: OPEN or CLOSED
-- `objective.labels`: Labels list
-- `roadmap.phases`: Serialized roadmap phases with node statuses, descriptions, and metadata
+- `body`: Full issue body text
+- `title`: Issue title
+- `state`: OPEN or CLOSED
+- `labels`: Labels list
 
 Verify the issue has the `erk-objective` label. If not:
 
@@ -55,7 +56,7 @@ Warning: Objective #<number> is CLOSED. Proceeding with audit anyway.
 
 Systematically extract concrete references from the objective body that can be verified against the codebase. Build a checklist of items to audit.
 
-**From roadmap node descriptions:**
+**From roadmap node descriptions** (parsed directly from the issue body markdown tables and YAML metadata blocks, not from a pre-parsed field):
 
 - File paths (e.g., `src/erk/foo.py`, `tests/test_bar.py`)
 - Command names (e.g., `erk inspect`, `/local:some-command`, `erk exec script-name`)
@@ -287,4 +288,4 @@ View objective: <objective URL>
 - Never auto-mutate. Always present findings and get user approval before making changes.
 - Updates both the issue body (prose/metadata) AND node statuses (via exec scripts).
 - For `pr_number` in the action comment: use `null` or `0` when the reevaluation is not tied to a specific PR.
-- Reuses existing exec scripts: `objective-fetch-context`, `update-objective-node`, `update-issue-body`, `get-issue-body`, `objective-post-action-comment`.
+- Reuses existing exec scripts: `get-issue-body`, `update-objective-node`, `update-issue-body`, `objective-post-action-comment`.
