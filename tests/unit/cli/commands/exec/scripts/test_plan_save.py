@@ -396,3 +396,34 @@ def test_draft_pr_rejects_untitled_plan_display(
 
     assert result.exit_code == 2
     assert "Invalid plan title" in result.output
+
+
+def test_draft_pr_branch_slug_provided(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """When --branch-slug is provided, branch name incorporates that slug."""
+    ctx = _draft_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_save,
+        ["--format", "json", "--branch-slug", "my-custom-slug"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert "my-custom-slug" in output["branch_name"]
+
+
+def test_draft_pr_branch_slug_fallback(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """When --branch-slug is not provided, branch name falls back to sanitize_worktree_name(title)."""
+    ctx = _draft_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
+    runner = CliRunner()
+
+    result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    # Plan title is "Feature Plan" → sanitize_worktree_name → "feature-plan"
+    assert "feature-plan" in output["branch_name"]

@@ -73,15 +73,7 @@ slug = branch_slug if branch_slug else sanitize_worktree_name(title)
 branch_name = generate_draft_pr_branch_name(slug, now)
 ```
 
-The `--branch-slug` Click option:
-
-```python
-@click.option(
-    "--branch-slug",
-    default=None,
-    help="Pre-generated branch slug (skips LLM call when provided)",
-)
-```
+The `--branch-slug` Click option is defined identically on all three updated scripts — see `src/erk/cli/commands/exec/scripts/plan_save.py` for the canonical decorator.
 
 ### The skill step that generates BRANCH_SLUG
 
@@ -107,11 +99,7 @@ Claude generates the slug using its reasoning about the plan title. The exec scr
 
 ## Deterministic Fallbacks
 
-When `--branch-slug` is not provided (e.g., direct CLI invocation outside a skill context), exec scripts fall back to `sanitize_worktree_name()` from `erk_shared.naming`:
-
-```python
-slug = branch_slug if branch_slug else sanitize_worktree_name(title)
-```
+When `--branch-slug` is not provided (e.g., direct CLI invocation outside a skill context), exec scripts fall back to `sanitize_worktree_name()` from `erk_shared.naming` — the same fallback pattern shown in the Before/After example above.
 
 `sanitize_worktree_name()` is a pure function — no I/O, no LLM, always produces a valid result. It strips special characters and normalizes whitespace into a filesystem-safe slug.
 
@@ -132,9 +120,9 @@ If you find an LLM call inside an exec script, follow these steps:
 
 **Scripts updated in the inference hoisting PR:**
 
-- `src/erk/cli/commands/exec/scripts/plan_save.py` — line: `slug = branch_slug if branch_slug else sanitize_worktree_name(title)`
-- `src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py` — line: `slug = branch_slug if branch_slug else sanitize_worktree_name(plan.title)`
-- `src/erk/cli/commands/exec/scripts/plan_migrate_to_draft_pr.py` — line: `slug = branch_slug if branch_slug else sanitize_worktree_name(plan.title)`
+- `src/erk/cli/commands/exec/scripts/plan_save.py`
+- `src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py`
+- `src/erk/cli/commands/exec/scripts/plan_migrate_to_draft_pr.py`
 
 **Skills with generation steps:**
 
