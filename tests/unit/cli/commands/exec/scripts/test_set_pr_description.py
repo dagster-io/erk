@@ -119,16 +119,15 @@ def test_updates_pr_title_and_body() -> None:
 
 
 def test_preserves_header_and_footer() -> None:
-    """Existing header and footer metadata are preserved."""
+    """Existing footer metadata is preserved (no header in planned-PR backend)."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        header = "**Plan:** #123"
         footer_content = build_pr_body_footer(
             42,
-            issue_number=123,
+            issue_number=None,
             plans_repo=None,
         )
-        existing_body = f"{header}\n\nOld content\n\n---\n{footer_content.lstrip()}"
+        existing_body = f"Old content\n\n---\n{footer_content.lstrip()}"
 
         git, graphite, github = _make_standard_fakes(env, pr_body=existing_body)
 
@@ -143,7 +142,6 @@ def test_preserves_header_and_footer() -> None:
         assert result.exit_code == 0
 
         _, updated_body = github.updated_pr_bodies[0]
-        assert "**Plan:** #123" in updated_body
         assert "erk pr checkout" in updated_body
 
 

@@ -28,26 +28,16 @@ from erk_shared.context.helpers import (
     require_cwd,
     require_git,
     require_github,
-    require_plan_backend,
     require_repo_root,
-    require_time,
 )
 from erk_shared.gateway.branch_manager.abc import BranchManager
 from erk_shared.gateway.git.abc import Git
-from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.gateway.git.remote_ops.types import PullRebaseError
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.metadata.schemas import OBJECTIVE_ISSUE
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.impl_folder import create_impl_folder, read_plan_ref, save_plan_ref
-from erk_shared.naming import (
-    InvalidWorktreeName,
-    generate_issue_branch_name,
-    sanitize_worktree_name,
-    validate_worktree_name,
-)
 from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR, extract_plan_content
-from erk_shared.plan_store.types import PlanNotFound
 
 
 def _get_current_branch(git: Git, cwd: Path) -> str:
@@ -249,134 +239,6 @@ def _setup_planned_pr_plan(
     }
 
 
-def _setup_issue_plan(
-    ctx: click.Context,
-    *,
-    plan_number: int,
-    no_impl: bool,
-    branch_slug: str | None,
-) -> dict[str, str | int | bool | None]:
-    """Set up implementation from an issue-based plan.
-
-    Uses plan_backend.get_plan() to fetch plan content from a GitHub issue.
-
-    Args:
-        ctx: Click context
-        plan_number: Issue number for the plan
-        no_impl: Skip .impl/ folder creation
-        branch_slug: Pre-generated branch slug (skips LLM call when provided)
-
-    Returns:
-        Success output dict
-    """
-    cwd = require_cwd(ctx)
-    repo_root = require_repo_root(ctx)
-    git = require_git(ctx)
-    plan_backend = require_plan_backend(ctx)
-    time = require_time(ctx)
-
-    # Fetch plan from GitHub issue
-    result = plan_backend.get_plan(repo_root, str(plan_number))
-    if isinstance(result, PlanNotFound):
-        error_output = {
-            "success": False,
-            "error": "plan_not_found",
-            "message": f"Could not fetch plan for issue #{plan_number}: Issue not found. "
-            f"Ensure issue has erk-plan label and plan content.",
-        }
-        click.echo(json.dumps(error_output), err=True)
-        raise SystemExit(1)
-    plan = result
-
-    current_branch = _get_current_branch(git, cwd)
-    branch_manager = require_branch_manager(ctx)
-
-    # Issue-based plan: generate P{issue}-... branch name
-    # Check if already on a branch for this issue - reuse it
-    expected_prefix = f"P{plan_number}-"
-    if current_branch.startswith(expected_prefix):
-        # Already on correct branch (e.g., remote workflow re-running with issue arg)
-        click.echo(f"Already on branch for issue #{plan_number}: {current_branch}", err=True)
-        branch_name = current_branch
-    else:
-        if not branch_slug:
-            click.echo(
-                "Error: --branch-slug is required. "
-                "Generate a slug in the calling skill "
-                "and pass it via --branch-slug.",
-                err=True,
-            )
-            raise SystemExit(1)
-        slug = branch_slug
-        timestamp = time.now()
-        branch_name = generate_issue_branch_name(
-            plan_number, slug, timestamp, objective_id=plan.objective_id
-        )
-
-        # Validate worktree name derived from branch — agent-facing backpressure gate
-        wt_validation = validate_worktree_name(sanitize_worktree_name(branch_name))
-        if isinstance(wt_validation, InvalidWorktreeName):
-            error_output = {
-                "success": False,
-                "error": "invalid_worktree_name",
-                "message": f"Generated worktree name failed validation.\n"
-                f"{wt_validation.format_message()}",
-            }
-            click.echo(json.dumps(error_output), err=True)
-            raise SystemExit(1)
-
-        # Check if branch already exists
-        local_branches = git.branch.list_local_branches(repo_root)
-
-        if branch_name in local_branches:
-            # Branch exists - just check it out
-            click.echo(f"Branch '{branch_name}' already exists, checking out...", err=True)
-            branch_manager.checkout_branch(cwd, branch_name)
-        else:
-            base_branch = current_branch
-
-            # Create branch using BranchManager (handles Graphite tracking automatically)
-            create_result = branch_manager.create_branch(repo_root, branch_name, base_branch)
-            if isinstance(create_result, BranchAlreadyExists):
-                click.echo(f"Error: {create_result.message}", err=True)
-                raise SystemExit(1) from None
-            click.echo(f"Created branch '{branch_name}' from '{base_branch}'", err=True)
-
-            branch_manager.checkout_branch(cwd, branch_name)
-
-    # Create .impl/ folder with plan content (unless --no-impl)
-    impl_path_str: str | None = None
-
-    if not no_impl:
-        impl_path = cwd / ".impl"
-        impl_path_str = str(impl_path)
-
-        create_impl_folder(
-            worktree_path=cwd,
-            plan_content=plan.body,
-            overwrite=True,
-        )
-
-        save_plan_ref(
-            impl_path,
-            provider="github",
-            plan_id=str(plan_number),
-            url=plan.url,
-            labels=(),
-            objective_id=plan.objective_id,
-        )
-
-    return {
-        "success": True,
-        "impl_path": impl_path_str,
-        "plan_number": plan_number,
-        "plan_url": plan.url,
-        "branch": branch_name,
-        "plan_title": plan.title,
-        "no_impl": no_impl,
-    }
-
-
 @click.command(name="setup-impl-from-issue")
 @click.argument("plan_number", type=int)
 @click.option(
@@ -416,14 +278,7 @@ def setup_impl_from_issue(
     4. Creates .impl/ folder with plan content
     5. Saves issue reference for PR linking
     """
-    plan_backend = require_plan_backend(ctx)
-
-    # Dispatch based on plan backend
-    if plan_backend.get_provider_name() == "github-draft-pr":
-        output = _setup_planned_pr_plan(ctx, plan_number=plan_number, no_impl=no_impl)
-    else:
-        output = _setup_issue_plan(
-            ctx, plan_number=plan_number, no_impl=no_impl, branch_slug=branch_slug
-        )
+    # Always use planned-PR setup path
+    output = _setup_planned_pr_plan(ctx, plan_number=plan_number, no_impl=no_impl)
 
     click.echo(json.dumps(output))

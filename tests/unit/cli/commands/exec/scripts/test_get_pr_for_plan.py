@@ -1,70 +1,21 @@
 """Unit tests for get_pr_for_plan exec command.
 
-Tests GitHub issue plan-header metadata extraction and PR lookup by branch.
-Uses FakeGitHub and FakeGitHubIssues for fast, reliable testing.
+Tests PR lookup by plan_id (PR number) for the draft-PR backend.
+Uses FakeGitHub for fast, reliable testing.
 """
 
 import json
-from datetime import UTC, datetime
-from pathlib import Path
 
 from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.get_pr_for_plan import get_pr_for_plan
 from erk_shared.context.context import ErkContext
 from erk_shared.context.testing import context_for_test
-from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-from erk_shared.gateway.github.issues.types import IssueInfo
-from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
-
-
-def make_plan_header_body(
-    *,
-    branch_name: str | None = "P5103-feature-branch",
-) -> str:
-    """Create a test issue body with plan-header metadata block."""
-    branch_line = f"branch_name: {branch_name}" if branch_name is not None else "branch_name: null"
-
-    return f"""<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
-<!-- erk:metadata-block:plan-header -->
-<details>
-<summary><code>plan-header</code></summary>
-
-```yaml
-
-schema_version: '2'
-created_at: '2025-11-25T14:37:43.513418+00:00'
-created_by: testuser
-worktree_name: test-worktree
-{branch_line}
-last_dispatched_run_id: null
-last_dispatched_at: null
-
-```
-
-</details>
-<!-- /erk:metadata-block:plan-header -->"""
-
-
-def make_issue_info(number: int, body: str) -> IssueInfo:
-    """Create test IssueInfo with given number and body."""
-    now = datetime.now(UTC)
-    return IssueInfo(
-        number=number,
-        title="Test Issue",
-        body=body,
-        state="OPEN",
-        url=f"https://github.com/test-owner/test-repo/issues/{number}",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-        author="test-user",
-    )
 
 
 def make_pr_details(
@@ -90,53 +41,33 @@ def make_pr_details(
     )
 
 
-def make_pr_info(
-    *,
-    number: int,
-    head_branch: str,
-) -> PullRequestInfo:
-    """Create test PullRequestInfo."""
-    return PullRequestInfo(
-        number=number,
-        state="OPEN",
-        url=f"https://github.com/test-owner/test-repo/pull/{number}",
-        is_draft=False,
-        title=f"PR #{number}",
-        checks_passing=True,
-        owner="test-owner",
-        repo="test-repo",
-        head_branch=head_branch,
-    )
-
-
 # ============================================================================
 # Success Cases
 # ============================================================================
 
 
 def test_get_pr_for_plan_success() -> None:
-    """Test successful PR lookup for plan branch."""
-    branch_name = "P5103-feature-branch"
-    body = make_plan_header_body(branch_name=branch_name)
-    fake_issues = FakeGitHubIssues(issues={5103: make_issue_info(5103, body)})
+    """Test successful PR lookup by plan_id (which IS the PR number in draft-PR backend)."""
+    pr_number = 5104
+    branch_name = "P5104-feature-branch"
+    fake_issues = FakeGitHubIssues()
     fake_gh = FakeGitHub(
         issues_gateway=fake_issues,
-        prs={branch_name: make_pr_info(number=5104, head_branch=branch_name)},
-        pr_details={5104: make_pr_details(number=5104, head_ref_name=branch_name)},
+        pr_details={pr_number: make_pr_details(number=pr_number, head_ref_name=branch_name)},
     )
     runner = CliRunner()
 
     result = runner.invoke(
         get_pr_for_plan,
-        ["5103"],
+        [str(pr_number)],
         obj=ErkContext.for_test(github=fake_gh, github_issues=fake_issues),
     )
 
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["pr"]["number"] == 5104
-    assert output["pr"]["title"] == "PR #5104"
+    assert output["pr"]["number"] == pr_number
+    assert output["pr"]["title"] == f"PR #{pr_number}"
     assert output["pr"]["state"] == "OPEN"
     assert output["pr"]["head_ref_name"] == branch_name
     assert output["pr"]["base_ref_name"] == "master"
@@ -147,51 +78,8 @@ def test_get_pr_for_plan_success() -> None:
 # ============================================================================
 
 
-def test_get_pr_for_plan_no_branch_in_metadata() -> None:
-    """Test error when plan-header has no branch_name field."""
-    # Create body with branch_name set to null
-    body = make_plan_header_body(branch_name=None)
-    fake_issues = FakeGitHubIssues(issues={5103: make_issue_info(5103, body)})
-    fake_gh = FakeGitHub(issues_gateway=fake_issues)
-    runner = CliRunner()
-
-    result = runner.invoke(
-        get_pr_for_plan,
-        ["5103"],
-        obj=ErkContext.for_test(github=fake_gh, github_issues=fake_issues),
-    )
-
-    assert result.exit_code == 1
-    output = json.loads(result.output)
-    assert output["success"] is False
-    assert output["error"] == "no-branch-in-plan"
-    assert "branch_name" in output["message"]
-
-
-def test_get_pr_for_plan_no_pr_for_branch() -> None:
-    """Test error when branch exists but no PR for it."""
-    branch_name = "P5103-feature-branch"
-    body = make_plan_header_body(branch_name=branch_name)
-    fake_issues = FakeGitHubIssues(issues={5103: make_issue_info(5103, body)})
-    # No PRs configured
-    fake_gh = FakeGitHub(issues_gateway=fake_issues, prs={}, pr_details={})
-    runner = CliRunner()
-
-    result = runner.invoke(
-        get_pr_for_plan,
-        ["5103"],
-        obj=ErkContext.for_test(github=fake_gh, github_issues=fake_issues),
-    )
-
-    assert result.exit_code == 1
-    output = json.loads(result.output)
-    assert output["success"] is False
-    assert output["error"] == "no-pr-for-branch"
-    assert branch_name in output["message"]
-
-
-def test_get_pr_for_plan_issue_not_found() -> None:
-    """Test error when plan issue doesn't exist."""
+def test_get_pr_for_plan_pr_not_found() -> None:
+    """Test error when PR doesn't exist."""
     fake_issues = FakeGitHubIssues()
     fake_gh = FakeGitHub(issues_gateway=fake_issues)
     runner = CliRunner()
@@ -205,31 +93,8 @@ def test_get_pr_for_plan_issue_not_found() -> None:
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert output["error"] == "plan-not-found"
+    assert output["error"] == "no-pr-for-branch"
     assert "#9999" in output["message"]
-
-
-def test_get_pr_for_plan_no_plan_header_block() -> None:
-    """Test error when issue has no plan-header block."""
-    body = """# Old Format Issue
-
-This is an issue without plan-header metadata.
-"""
-    fake_issues = FakeGitHubIssues(issues={100: make_issue_info(100, body)})
-    fake_gh = FakeGitHub(issues_gateway=fake_issues)
-    runner = CliRunner()
-
-    result = runner.invoke(
-        get_pr_for_plan,
-        ["100"],
-        obj=ErkContext.for_test(github=fake_gh, github_issues=fake_issues),
-    )
-
-    assert result.exit_code == 1
-    output = json.loads(result.output)
-    assert output["success"] is False
-    assert output["error"] == "no-branch-in-plan"
-    assert "plan-header" in output["message"]
 
 
 # ============================================================================
@@ -239,19 +104,18 @@ This is an issue without plan-header metadata.
 
 def test_json_output_structure_success() -> None:
     """Test JSON output structure on success."""
-    branch_name = "P5103-feature-branch"
-    body = make_plan_header_body(branch_name=branch_name)
-    fake_issues = FakeGitHubIssues(issues={5103: make_issue_info(5103, body)})
+    pr_number = 5104
+    branch_name = "P5104-feature-branch"
+    fake_issues = FakeGitHubIssues()
     fake_gh = FakeGitHub(
         issues_gateway=fake_issues,
-        prs={branch_name: make_pr_info(number=5104, head_branch=branch_name)},
-        pr_details={5104: make_pr_details(number=5104, head_ref_name=branch_name)},
+        pr_details={pr_number: make_pr_details(number=pr_number, head_ref_name=branch_name)},
     )
     runner = CliRunner()
 
     result = runner.invoke(
         get_pr_for_plan,
-        ["5103"],
+        [str(pr_number)],
         obj=ErkContext.for_test(github=fake_gh, github_issues=fake_issues),
     )
 
@@ -306,60 +170,6 @@ def test_json_output_structure_error() -> None:
 
     # Verify values
     assert output["success"] is False
-
-
-def test_get_pr_for_plan_branch_inference_when_no_branch_name(tmp_path: Path) -> None:
-    """Test branch inference when plan-header has no branch_name but current git branch matches."""
-    branch_name = "P5103-feature-branch"
-    # Create body with branch_name set to null
-    body = make_plan_header_body(branch_name=None)
-    fake_issues = FakeGitHubIssues(issues={5103: make_issue_info(5103, body)})
-    fake_gh = FakeGitHub(
-        issues_gateway=fake_issues,
-        prs={branch_name: make_pr_info(number=5104, head_branch=branch_name)},
-        pr_details={5104: make_pr_details(number=5104, head_ref_name=branch_name)},
-    )
-    fake_git = FakeGit(current_branches={tmp_path: branch_name})
-    runner = CliRunner()
-
-    result = runner.invoke(
-        get_pr_for_plan,
-        ["5103"],
-        obj=ErkContext.for_test(
-            github=fake_gh, github_issues=fake_issues, git=fake_git, repo_root=tmp_path
-        ),
-    )
-
-    # Should succeed with inferred branch
-    assert result.exit_code == 0, result.output
-    output = json.loads(result.output)
-    assert output["success"] is True
-    assert output["pr"]["number"] == 5104
-    assert output["pr"]["head_ref_name"] == branch_name
-
-
-def test_get_pr_for_plan_branch_inference_fails_wrong_pattern(tmp_path: Path) -> None:
-    """Test branch inference fails when current git branch doesn't match P{issue}- pattern."""
-    # Create body with branch_name set to null
-    body = make_plan_header_body(branch_name=None)
-    fake_issues = FakeGitHubIssues(issues={5103: make_issue_info(5103, body)})
-    fake_gh = FakeGitHub(issues_gateway=fake_issues)
-    fake_git = FakeGit(current_branches={tmp_path: "main"})
-    runner = CliRunner()
-
-    result = runner.invoke(
-        get_pr_for_plan,
-        ["5103"],
-        obj=ErkContext.for_test(
-            github=fake_gh, github_issues=fake_issues, git=fake_git, repo_root=tmp_path
-        ),
-    )
-
-    # Should fail with error
-    assert result.exit_code == 1
-    output = json.loads(result.output)
-    assert output["success"] is False
-    assert output["error"] == "no-branch-in-plan"
 
 
 # ============================================================================

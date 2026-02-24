@@ -1,7 +1,10 @@
 """Shared fixtures and helpers for submit command tests."""
 
+from __future__ import annotations
+
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from erk.cli.commands.submit import ERK_PLAN_LABEL
 from erk.core.context import context_for_test
@@ -11,6 +14,10 @@ from erk_shared.gateway.github.metadata.types import MetadataBlock
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.plan_helpers import create_plan_store
+
+if TYPE_CHECKING:
+    from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    from erk_shared.gateway.github.types import PRDetails
 
 
 def make_plan_body(content: str = "Implementation details...") -> str:
@@ -65,6 +72,41 @@ def create_plan(
     )
 
 
+def create_pr_details_for_plan(
+    plan: Plan,
+    branch_name: str,
+    base_branch: str = "main",
+) -> PRDetails:
+    """Create PRDetails for a planned-PR plan.
+
+    Args:
+        plan: The Plan object
+        branch_name: The branch name for the PR
+        base_branch: The base branch for the PR
+
+    Returns:
+        PRDetails with plan body and erk-plan label
+    """
+    from erk_shared.gateway.github.types import PRDetails
+
+    return PRDetails(
+        number=int(plan.plan_identifier),
+        url=plan.url,
+        title=plan.title,
+        body=plan.body,
+        state="OPEN",
+        is_draft=True,
+        base_ref_name=base_branch,
+        head_ref_name=branch_name,
+        is_cross_repository=False,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        owner="test-owner",
+        repo="test-repo",
+        labels=tuple(plan.labels),
+    )
+
+
 def setup_submit_context(
     tmp_path: Path,
     plans: dict[str, Plan],
@@ -76,7 +118,9 @@ def setup_submit_context(
     use_graphite: bool = False,
     confirm_responses: list[bool] | None = None,
     remote_branch_refs: list[str] | None = None,
-    backend: str = "github",
+    backend: str = "planned_pr",
+    pr_details_map: dict[int, PRDetails] | None = None,
+    issues: FakeGitHubIssues | None = None,
 ):
     """Setup common context for submit tests.
 
@@ -87,10 +131,15 @@ def setup_submit_context(
                           If None, uses default FakeConsole with no responses configured.
         remote_branch_refs: List of remote branch refs (e.g., ["origin/branch", "origin/master"]).
                            These are passed to FakeGit's remote_branches keyed by repo_root.
-        backend: Plan store backend type - "github" or "draft_pr".
+        backend: Plan store backend type - "github" or "planned_pr" (default: "planned_pr").
+        pr_details_map: For planned_pr backend, mapping of PR number -> PRDetails.
+                       If None, PRDetails are auto-generated from plans using plnd/ branch naming.
+        issues: Optional pre-built FakeGitHubIssues for ctx.issues. Useful when the
+                submit flow needs issue data (e.g., learn plan detection) even with
+                planned_pr backend.
 
     Returns (ctx, fake_git, fake_github, fake_backing, fake_graphite, repo_root)
-        where fake_backing is FakeGitHubIssues (github) or FakeGitHub (draft_pr).
+        where fake_backing is FakeGitHubIssues (github) or FakeGitHub (planned_pr).
     """
     from erk_shared.context.types import GlobalConfig
     from erk_shared.gateway.console.fake import FakeConsole
@@ -109,11 +158,39 @@ def setup_submit_context(
         git_kwargs["current_branches"] = {repo_root: "main"}
     if "trunk_branches" not in git_kwargs:
         git_kwargs["trunk_branches"] = {repo_root: "master"}
-    if remote_branch_refs is not None:
+
+    # Auto-add remote branch refs for planned_pr branches
+    if (
+        backend == "planned_pr"
+        and remote_branch_refs is None
+        and "remote_branches" not in git_kwargs
+    ):
+        refs = ["origin/main"]
+        # Add remote refs for each plan's branch
+        for plan_id, plan in plans.items():
+            branch_name = f"plnd/{plan_id}-{plan.title.lower().replace(' ', '-')}"
+            refs.append(f"origin/{branch_name}")
+        git_kwargs["remote_branches"] = {repo_root: refs}
+    elif remote_branch_refs is not None:
         git_kwargs["remote_branches"] = {repo_root: remote_branch_refs}
 
     fake_git = FakeGit(**git_kwargs)
-    fake_github = FakeGitHub(**(github_kwargs or {}))
+
+    # For planned_pr backend, set up PRDetails in FakeGitHub
+    github_kwargs = github_kwargs or {}
+    if backend == "planned_pr" and "pr_details" not in github_kwargs:
+        # Auto-generate PRDetails for each plan
+        pr_details_dict = pr_details_map or {}
+        if not pr_details_dict:
+            for plan_id, plan in plans.items():
+                # Generate plnd/ prefixed branch name
+                branch_name = f"plnd/{plan_id}-{plan.title.lower().replace(' ', '-')}"
+                pr_details_dict[int(plan_id)] = create_pr_details_for_plan(
+                    plan, branch_name, "main"
+                )
+        github_kwargs["pr_details"] = pr_details_dict
+
+    fake_github = FakeGitHub(**github_kwargs)
     # When use_graphite=False, use GraphiteDisabled sentinel to match production behavior
     if use_graphite:
         fake_graphite = FakeGraphite(**(graphite_kwargs or {}))
@@ -150,9 +227,14 @@ def setup_submit_context(
         confirm_responses=confirm_responses,
     )
 
-    # Wire up issues gateway: for github backend, use the fake backing;
-    # for planned_pr backend, let context_for_test create a default FakeGitHubIssues
-    fake_issues = fake_backing if isinstance(fake_backing, FakeGitHubIssues) else None
+    # Wire up issues gateway: use explicit issues if provided, otherwise
+    # for github backend use the fake backing, for planned_pr let context_for_test create default
+    if issues is not None:
+        fake_issues = issues
+    elif isinstance(fake_backing, FakeGitHubIssues):
+        fake_issues = fake_backing
+    else:
+        fake_issues = None
 
     # Configure FakePromptExecutor to simulate failure so that
     # generate_slug_or_fallback falls back to the raw title.

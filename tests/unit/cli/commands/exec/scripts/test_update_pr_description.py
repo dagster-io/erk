@@ -255,15 +255,13 @@ def test_success_updates_pr() -> None:
 
 
 def test_preserves_header_and_footer() -> None:
-    """Test that existing header and footer metadata are preserved."""
+    """Test that existing footer metadata is preserved (no header in planned-PR backend)."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        # Header at bottom (above footer), matching convention
+        # Footer only (no header in planned-PR backend)
         existing_body = (
             "Old content\n\n"
-            "**Plan:** #123\n\n"
             "---\n\n"
-            "Closes #123\n\n"
             "To checkout this PR in a fresh worktree and environment locally, run:\n\n"
             "```\n"
             'source "$(erk pr checkout 42 --script)" && erk pr sync --dangerous\n'
@@ -280,9 +278,8 @@ def test_preserves_header_and_footer() -> None:
 
         assert result.exit_code == 0
 
-        # Verify header and footer are preserved in updated body
+        # Verify footer is preserved in updated body
         _, updated_body = github.updated_pr_bodies[0]
-        assert "**Plan:** #123" in updated_body
         assert "erk pr checkout" in updated_body
 
 

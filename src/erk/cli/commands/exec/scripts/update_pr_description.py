@@ -22,11 +22,9 @@ from pathlib import Path
 import click
 
 from erk.cli.commands.pr.shared import (
-    IssueLinkageMismatch,
     assemble_pr_body,
     cleanup_diff_file,
     discover_branch_context,
-    discover_issue_for_footer,
     echo_plan_context_status,
     require_claude_available,
     run_commit_message_generation,
@@ -36,7 +34,6 @@ from erk.core.commit_message_generator import CommitMessageGenerator
 from erk.core.context import ErkContext
 from erk.core.plan_context_provider import PlanContextProvider
 from erk_shared.context.helpers import require_context
-from erk_shared.gateway.github.pr_footer import extract_header_from_body
 from erk_shared.gateway.github.types import BodyText, PRNotFound
 from erk_shared.plan_store.planned_pr_lifecycle import extract_metadata_prefix
 
@@ -144,32 +141,11 @@ def _execute_update_description(ctx: ErkContext, *, debug: bool, session_id: str
     pr_title = msg_result.title or "Update"
     pr_body = msg_result.body or ""
 
-    # Discover issue number and assemble PR body (shared with rewrite command)
-    impl_dir = cwd / ".impl"
-    plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
-
-    # Detect planned-PR backend and extract metadata prefix
-    metadata_prefix = ""
-    if ctx.plan_backend.get_provider_name() == "github-draft-pr":
-        metadata_prefix = extract_metadata_prefix(existing_body)
-
-    if metadata_prefix:
-        # Draft PR IS the plan — no self-closing reference
-        issue_number: int | None = None
-        effective_plans_repo: str | None = None
-        header = ""
-    else:
-        issue_discovery = discover_issue_for_footer(
-            impl_dir=impl_dir,
-            branch_name=discovery.current_branch,
-            existing_pr_body=existing_body,
-            plans_repo=plans_repo,
-        )
-        if isinstance(issue_discovery, IssueLinkageMismatch):
-            raise click.ClickException(issue_discovery.message)
-        issue_number = issue_discovery.issue_number
-        effective_plans_repo = issue_discovery.plans_repo
-        header = extract_header_from_body(existing_body)
+    # Extract metadata prefix (draft PR IS the plan — no self-closing reference)
+    metadata_prefix = extract_metadata_prefix(existing_body)
+    issue_number: int | None = None
+    effective_plans_repo: str | None = None
+    header = ""
 
     final_body = assemble_pr_body(
         body=pr_body,

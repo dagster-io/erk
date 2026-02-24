@@ -29,10 +29,7 @@ from erk.core.plan_context_provider import PlanContext, PlanContextProvider
 from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
 from erk_shared.gateway.github.parsing import parse_git_remote_url
 from erk_shared.gateway.github.pr_footer import (
-    ClosingReference,
     build_pr_body_footer,
-    extract_closing_reference,
-    extract_footer_from_body,
 )
 from erk_shared.gateway.github.types import BodyText, GitHubRepoId, PRNotFound
 from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_LEARN_LABEL, is_learn_plan
@@ -691,27 +688,16 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
 
     pr_body = state.body or ""
     pr_title = state.title or "Update"
-    plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
 
-    # Detect planned-PR backend and extract metadata prefix
+    # Extract metadata prefix from existing PR (draft PR IS the plan)
     metadata_prefix = ""
-    issue_number = state.issue_number
-    effective_plans_repo = plans_repo
-
-    if ctx.plan_backend.get_provider_name() == "github-draft-pr" and state.pr_number is not None:
+    if state.pr_number is not None:
         existing_pr = ctx.github.get_pr(state.repo_root, state.pr_number)
         if not isinstance(existing_pr, PRNotFound):
             metadata_prefix = extract_metadata_prefix(existing_pr.body)
-        # Don't self-close: draft PR IS the plan
-        issue_number = None
-        effective_plans_repo = None
-    else:
-        # Fallback: preserve existing closing reference from PR body
-        if issue_number is None:
-            closing_ref = _extract_closing_ref_from_pr(ctx, state.cwd, state.pr_number)
-            if closing_ref is not None:
-                issue_number = closing_ref.issue_number
-                effective_plans_repo = closing_ref.plans_repo
+    # Don't self-close: draft PR IS the plan
+    issue_number: int | None = None
+    effective_plans_repo: str | None = None
 
     # Add plnd/ prefix for plan-linked PRs
     if issue_number is not None:
@@ -808,22 +794,6 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
 # ---------------------------------------------------------------------------
 # Helper
 # ---------------------------------------------------------------------------
-
-
-def _extract_closing_ref_from_pr(
-    ctx: ErkContext,
-    cwd: Path,
-    pr_number: int,
-) -> ClosingReference | None:
-    """Extract closing reference from an existing PR's footer."""
-    repo_root = ctx.git.repo.get_repository_root(cwd)
-    current_pr = ctx.github.get_pr(repo_root, pr_number)
-    if isinstance(current_pr, PRNotFound) or not current_pr.body:
-        return None
-    existing_footer = extract_footer_from_body(current_pr.body)
-    if existing_footer is None:
-        return None
-    return extract_closing_reference(existing_footer)
 
 
 # ---------------------------------------------------------------------------

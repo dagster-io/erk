@@ -1,19 +1,41 @@
 """Tests for learn plan handling in submit."""
 
+from datetime import UTC, datetime
 from pathlib import Path
 
 from click.testing import CliRunner
 
 from erk.cli.commands.submit import get_learn_plan_parent_branch, is_issue_learn_plan, submit_cmd
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import render_metadata_block
 from erk_shared.gateway.github.metadata.types import MetadataBlock
-from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_LEARN_LABEL
+from erk_shared.plan_store.types import Plan
 from tests.commands.submit.conftest import (
     create_plan,
-    make_learn_plan_body,
     make_plan_body,
     setup_submit_context,
 )
+
+
+def _plans_to_issues(plans: dict[str, Plan]) -> FakeGitHubIssues:
+    """Convert plans to FakeGitHubIssues for learn plan detection in submit."""
+    now = datetime.now(UTC)
+    issues: dict[int, IssueInfo] = {}
+    for plan_id, plan in plans.items():
+        issues[int(plan_id)] = IssueInfo(
+            number=int(plan_id),
+            title=plan.title,
+            body=plan.body,
+            state="OPEN",
+            url=plan.url,
+            labels=plan.labels,
+            assignees=[],
+            created_at=now,
+            updated_at=now,
+            author="test-user",
+        )
+    return FakeGitHubIssues(issues=issues)
 
 
 def test_is_issue_learn_plan_returns_true_when_erk_learn_label_present() -> None:
@@ -37,39 +59,8 @@ def test_is_issue_learn_plan_returns_false_for_empty_labels() -> None:
     assert result is False
 
 
-def test_submit_learn_plan_adds_skip_learn_label(tmp_path: Path) -> None:
-    """Test submit adds erk-skip-learn label to PR for learn plans."""
-    # Plan with erk-learn label
-    learn_body = make_learn_plan_body()
-    plan = create_plan(
-        "123",
-        "Extract documentation from session X",
-        body=learn_body,
-        labels=["erk-plan", "erk-learn"],
-    )
-    ctx, _, fake_github, _, _, _ = setup_submit_context(tmp_path, {"123": plan})
-
-    runner = CliRunner()
-    result = runner.invoke(submit_cmd, ["123"], obj=ctx)
-
-    assert result.exit_code == 0, result.output
-
-    # Verify erk-skip-learn label was added to PR
-    assert len(fake_github.added_labels) == 1
-    pr_number, label = fake_github.added_labels[0]
-    assert pr_number == 999  # FakeGitHub returns 999 for created PRs
-    assert label == ERK_SKIP_LEARN_LABEL
-
-    # Verify PR body was updated: first with checkout footer, then with workflow run link
-    assert len(fake_github.updated_pr_bodies) == 2
-    _, updated_body = fake_github.updated_pr_bodies[0]
-    assert "erk pr checkout" in updated_body
-    _, workflow_body = fake_github.updated_pr_bodies[1]
-    assert "Workflow run:" in workflow_body
-
-
 def test_submit_standard_plan_does_not_add_skip_learn_label(tmp_path: Path) -> None:
-    """Test submit does NOT add erk-skip-learn label for standard plans."""
+    """Test submit does NOT add labels for standard plans."""
     # Standard plan (no erk-learn label)
     standard_body = make_plan_body()
     plan = create_plan("456", "Implement feature Y", body=standard_body, labels=["erk-plan"])
@@ -83,11 +74,9 @@ def test_submit_standard_plan_does_not_add_skip_learn_label(tmp_path: Path) -> N
     # Verify NO label was added (standard plan, not learn)
     assert len(fake_github.added_labels) == 0
 
-    # Verify PR body was updated: first with checkout footer, then with workflow run link
-    assert len(fake_github.updated_pr_bodies) == 2
-    _, updated_body = fake_github.updated_pr_bodies[0]
-    assert "erk pr checkout" in updated_body
-    _, workflow_body = fake_github.updated_pr_bodies[1]
+    # Verify PR body was updated with workflow run link
+    assert len(fake_github.updated_pr_bodies) >= 1
+    _, workflow_body = fake_github.updated_pr_bodies[-1]
     assert "Workflow run:" in workflow_body
 
 
@@ -193,10 +182,13 @@ def test_submit_learn_plan_uses_parent_branch_when_available(tmp_path: Path) -> 
         "5652", "Extract documentation", body=learn_body, labels=["erk-plan", "erk-learn"]
     )
 
+    plans = {"5637": parent_plan, "5652": learn_plan}
+
     ctx, fake_git, _, _, _, repo_root = setup_submit_context(
         tmp_path,
-        {"5637": parent_plan, "5652": learn_plan},
+        plans,
         remote_branch_refs=["origin/P5637-add-feature-01-23-0433", "origin/master"],
+        issues=_plans_to_issues(plans),
     )
 
     runner = CliRunner()
@@ -219,10 +211,13 @@ def test_submit_learn_plan_falls_back_when_parent_branch_not_on_remote(tmp_path:
         "5652", "Extract documentation", body=learn_body, labels=["erk-plan", "erk-learn"]
     )
 
+    plans = {"5637": parent_plan, "5652": learn_plan}
+
     ctx, fake_git, _, _, _, repo_root = setup_submit_context(
         tmp_path,
-        {"5637": parent_plan, "5652": learn_plan},
+        plans,
         remote_branch_refs=["origin/master"],
+        issues=_plans_to_issues(plans),
     )
 
     runner = CliRunner()
@@ -244,14 +239,17 @@ def test_submit_skips_parent_detection_when_base_explicitly_provided(tmp_path: P
         "5652", "Extract documentation", body=learn_body, labels=["erk-plan", "erk-learn"]
     )
 
+    plans = {"5637": parent_plan, "5652": learn_plan}
+
     ctx, fake_git, _, _, _, repo_root = setup_submit_context(
         tmp_path,
-        {"5637": parent_plan, "5652": learn_plan},
+        plans,
         remote_branch_refs=[
             "origin/P5637-add-feature-01-23-0433",
             "origin/master",
             "origin/custom-base",
         ],
+        issues=_plans_to_issues(plans),
     )
 
     runner = CliRunner()

@@ -62,5 +62,4 @@ When displaying plan information to users, use backend-appropriate terminology:
 
 ## Related Topics
 
-- [Backend-Aware TUI Commands](../tui/backend-aware-commands.md) — TUI-specific command filtering by backend
 - [Planned PR Backend](../planning/planned-pr-backend.md) — Backend architecture and selection
