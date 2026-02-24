@@ -44,6 +44,7 @@ from erk.cli.commands.slot.common import (
 )
 from erk.cli.commands.slot.unassign_cmd import execute_unassign
 from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
+from erk.cli.commands.wt.delete_cmd import _prune_worktrees_safe
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.cli.ensure_ideal import EnsureIdeal
@@ -236,8 +237,10 @@ def _gather_cleanup_confirmation(
                 default=True,
             )
         case CleanupType.NON_SLOT:
+            assert target.worktree_path is not None
             proceed = ctx.console.confirm(
-                f"After landing, delete branch '{target.branch}'? (worktree preserved)",
+                f"After landing, delete branch '{target.branch}'"
+                f" and remove worktree '{target.worktree_path.name}'?",
                 default=True,
             )
         case _:
@@ -803,7 +806,7 @@ def _cleanup_slot_without_assignment(
 
 
 def _cleanup_non_slot_worktree(cleanup: CleanupContext) -> None:
-    """Handle cleanup for non-slot worktree: checkout detached HEAD, delete branch."""
+    """Handle cleanup for non-slot worktree: delete branch and remove worktree."""
     # worktree_path is guaranteed non-None since we're in a non-slot worktree
     assert cleanup.worktree_path is not None
 
@@ -831,25 +834,21 @@ def _cleanup_non_slot_worktree(cleanup: CleanupContext) -> None:
     )
     cleanup.ctx.branch_manager.delete_branch(cleanup.main_repo_root, cleanup.branch)
 
-    # Try to checkout trunk branch after deletion to exit detached HEAD state.
-    # Only possible if trunk is not already checked out in another worktree.
-    trunk_worktree = cleanup.ctx.git.worktree.find_worktree_for_branch(
-        cleanup.main_repo_root, trunk_branch
+    # Escape process cwd out of worktree before removal
+    # (git worktree remove fails if cwd is inside the target)
+    cleanup.ctx.git.worktree.safe_chdir(cleanup.main_repo_root)
+
+    # Remove the worktree directory — non-slot worktrees have no useful state
+    # after branch deletion (unlike slot worktrees which have placeholder branches)
+    worktree_name = cleanup.worktree_path.name
+    cleanup.ctx.git.worktree.remove_worktree(
+        cleanup.main_repo_root, cleanup.worktree_path, force=True
     )
-    if trunk_worktree is None:
-        # Trunk is not checked out elsewhere - safe to checkout
-        cleanup.ctx.branch_manager.checkout_branch(cleanup.worktree_path, trunk_branch)
-        user_output(
-            click.style("✓", fg="green")
-            + f" Deleted branch (worktree '{cleanup.worktree_path.name}' on '{trunk_branch}')"
-        )
-    else:
-        # Trunk is checked out in another worktree - must stay detached
-        worktree_name = cleanup.worktree_path.name
-        user_output(
-            click.style("✓", fg="green")
-            + f" Deleted branch (worktree '{worktree_name}' detached at '{trunk_branch}')"
-        )
+    _prune_worktrees_safe(cleanup.ctx.git, cleanup.main_repo_root)
+
+    user_output(
+        click.style("✓", fg="green") + f" Deleted branch and removed worktree '{worktree_name}'"
+    )
 
 
 def _navigate_or_exit(cleanup: CleanupContext) -> None:
@@ -1343,10 +1342,16 @@ def _execute_land_directly(
             branch=branch,
         )
 
-    # In script mode, output no-op script path for shell wrapper compatibility
+    # Determine navigation target — if worktree was removed, navigate to root repo
+    nav_target = ctx.cwd
+    if target.worktree_path is not None and target.is_current_branch:
+        if not ctx.git.worktree.path_exists(target.worktree_path):
+            nav_target = main_repo_root
+
+    # In script mode, output script path for shell wrapper compatibility
     if script:
         script_content = render_activation_script(
-            worktree_path=ctx.cwd,
+            worktree_path=nav_target,
             target_subpath=None,
             post_cd_commands=None,
             final_message='echo "Land complete"',
