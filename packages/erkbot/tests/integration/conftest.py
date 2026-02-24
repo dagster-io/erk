@@ -9,6 +9,7 @@ from typing import Any
 
 import pytest
 import pytest_asyncio
+from erk_shared.gateway.time.fake import FakeTime
 from erkbot.config import Settings
 from erkbot.slack_handlers import register_handlers
 from slack_bolt.async_app import AsyncApp
@@ -104,7 +105,7 @@ async def app(
         client=web_client,
         signing_secret=signing_secret,
     )
-    register_handlers(bolt_app, settings=settings)
+    register_handlers(bolt_app, settings=settings, bot=None, time=FakeTime())
     return bolt_app
 
 

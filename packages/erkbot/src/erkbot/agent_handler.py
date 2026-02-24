@@ -79,7 +79,7 @@ async def run_agent_background(
                         channel=channel, text=chunk, thread_ts=reply_thread_ts
                     )
                 except SlackApiError:
-                    pass
+                    pass  # Best-effort response post; failure is non-fatal
         else:
             try:
                 await client.chat_postMessage(
@@ -88,7 +88,7 @@ async def run_agent_background(
                     thread_ts=reply_thread_ts,
                 )
             except SlackApiError:
-                pass
+                pass  # Best-effort fallback message; failure is non-fatal
 
         success = True
     except Exception:
@@ -99,7 +99,7 @@ async def run_agent_background(
                 thread_ts=reply_thread_ts,
             )
         except SlackApiError:
-            pass
+            pass  # Best-effort error report; failure is non-fatal
     finally:
         await remove_eyes_emoji(client, channel=channel, timestamp=source_ts)
         await add_result_emoji(client, channel=channel, timestamp=source_ts, success=success)
