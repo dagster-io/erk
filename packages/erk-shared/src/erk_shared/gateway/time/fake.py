@@ -77,6 +77,6 @@ class FakeTime(Time):
         Returns:
             The next float from the configured sequence.
         """
-        value = self._monotonic_values[min(self._monotonic_index, len(self._monotonic_values) - 1)]
+        idx = self._monotonic_index if self._monotonic_index < len(self._monotonic_values) else -1
         self._monotonic_index += 1
-        return value
+        return self._monotonic_values[idx]
