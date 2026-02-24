@@ -36,6 +36,8 @@ Rules triggered by matching actions in code.
 
 **calling get_bundled_claude_dir() inside a testable function** → Read [Bundled Path Parameter Injection for Testability](parameter-injection-pattern.md) first. Accept bundled_claude_dir as a parameter instead. Production callers pass get_bundled_claude_dir(), tests pass tmp_path / 'bundled'. Read this doc.
 
+**calling handler functions directly with AsyncMock say/client** → Read [Bolt Async Dispatch Testing Pattern](bolt-async-dispatch-testing.md) first. Dispatch through AsyncApp via AsyncBoltRequest for integration tests.
+
 **changing cleanup or deletion behavior without updating test assertions** → Read [Erk Test Reference](testing.md) first. When behavior changes from 'delete X' to 'preserve X', update test assertions to verify the new behavior (e.g., assert file persists instead of asserting it was deleted). Stale assertions silently validate the old behavior.
 
 **choosing between monkeypatch and fakes for a test** → Read [Monkeypatch vs Fakes Decision Guide](monkeypatch-vs-fakes-decision.md) first. Read monkeypatch-vs-fakes-decision.md first. Default to gateway fakes. Monkeypatch is only appropriate for process-level globals like Path.home() in exec scripts.
@@ -64,11 +66,15 @@ Rules triggered by matching actions in code.
 
 **flagging `import X as X` or `from .mod import Y as Y` as a violation** → Read [Import Alias vs Re-Export Detection](alias-verification-pattern.md) first. The `X as X` form is an explicit re-export marker, not an alias. Only flag when the alias differs from the original name.
 
+**forgetting to await background tasks created by asyncio.create_task** → Read [Bolt Async Dispatch Testing Pattern](bolt-async-dispatch-testing.md) first. Capture and await background tasks before asserting mock server state.
+
 **implementing interactive prompts with ctx.console.confirm()** → Read [Erk Test Reference](testing.md) first. Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. Array length must match prompt count exactly — too few causes IndexError, too many indicates a removed prompt. See tests/commands/submit/test_existing_branch_detection.py for examples.
 
 **importing FakePromptExecutor from erk_shared.gateway.prompt_executor.fake** → Read [FakePromptExecutor API Migration - Gateway to Core](fake-api-migration-pattern.md) first. This module was deleted in the consolidation. Import from tests.fakes.prompt_executor or erk_shared.core.fakes instead.
 
 **importing or monkeypatching a module with 'exec' in its path** → Read [Exec Script Testing Patterns](exec-script-testing.md) first. `exec` is a Python keyword that blocks direct import and string-path monkeypatch. Use `importlib.import_module()` + object-form `setattr` instead.
+
+**mock chat.postMessage response missing ts field** → Read [Bolt Async Dispatch Testing Pattern](bolt-async-dispatch-testing.md) first. Always include ts in response - extract_slack_message_ts depends on it.
 
 **mocking a browser API in an individual test file** → Read [jsdom DOM API Stubs for Vitest](vitest-jsdom-stubs.md) first. Environment-level API stubs belong in setup.ts (runs before all tests), not in individual test files. Only mock behavior-specific values (like IPC responses) per-test.
 
@@ -111,6 +117,8 @@ Rules triggered by matching actions in code.
 **tracking only the primary argument in a mutation tuple, omitting flags or options** → Read [Frozen Dataclass Test Doubles](frozen-dataclass-test-doubles.md) first. Track ALL call parameters in tuples (e.g., (branch, force) not just branch). Lost context leads to undertested behavior.
 
 **using Path.home() directly in production code** [pattern: `Path\.home\(\)`] → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Use gateway abstractions instead. For ~/.claude/ paths use ClaudeInstallation, for ~/.erk/ paths use ErkInstallation. Direct Path.home() access bypasses testability (fakes) and creates parallel test flakiness.
+
+**using hardcoded port numbers for mock server** → Read [Bolt Async Dispatch Testing Pattern](bolt-async-dispatch-testing.md) first. Use port=0 for auto-assigned port to avoid CI conflicts.
 
 **using isinstance() to detect plan backend type in application code** → Read [Dual Backend Testing](dual-backend-testing.md) first. Use plan_backend.get_provider_name() for backend-conditional logic (returns 'github-draft-pr' or 'github'). isinstance checks couple to implementation classes. The provider name string is the stable API.
 

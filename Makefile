@@ -1,4 +1,4 @@
-.PHONY: format format-check lint prettier prettier-check ty upgrade-ty test py-fast-ci fast-ci all-ci md-check docs-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve docs-deploy exec-reference-check erkdesk-install erkdesk-start erkdesk-package erkdesk-make erkdesk-test erkdesk-test-watch slackbot
+.PHONY: format format-check lint prettier prettier-check ty upgrade-ty test test-erkbot py-fast-ci fast-ci all-ci md-check docs-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve docs-deploy exec-reference-check erkdesk-install erkdesk-start erkdesk-package erkdesk-make erkdesk-test erkdesk-test-watch slackbot
 
 prettier:
 	prettier --write '**/*.md' --ignore-path .gitignore
@@ -25,6 +25,9 @@ upgrade-ty:
 	uv remove ty --group dev && uv add --dev ty
 
 # === Package-specific test targets ===
+
+test-erkbot:
+	cd packages/erkbot && uv run pytest tests/ -x -q
 
 test-erk-dev:
 	cd packages/erk-dev && uv run pytest -n auto

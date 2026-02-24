@@ -1,6 +1,6 @@
 ERK_LOCAL_PATH ?= $(HOME)/src/erk
 
-.PHONY: dev erk-version prettier ruff ty
+.PHONY: dev erk-version prettier ruff ty test test-integration
 
 dev:
 	@if [ -d "$(ERK_LOCAL_PATH)" ]; then \
@@ -28,3 +28,9 @@ ruff:
 
 ty:
 	uv run ty check .
+
+test:
+	uv run pytest tests/ -x -q
+
+test-integration:
+	uv run pytest tests/integration/ -x -q
