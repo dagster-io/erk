@@ -150,16 +150,25 @@ def _parse_response(
     # Strip markdown code fences if present
     stripped = output.strip()
     if stripped.startswith("```"):
-        # Remove first and last lines (code fence markers)
         fence_lines = stripped.splitlines()
-        stripped = "\n".join(fence_lines[1:-1]).strip()
+        # Find explicit closing fence instead of assuming last line
+        close_idx = None
+        for i in range(1, len(fence_lines)):
+            if fence_lines[i].strip() == "```":
+                close_idx = i
+                break
+        if close_idx is not None:
+            stripped = "\n".join(fence_lines[1:close_idx]).strip()
+        else:
+            # No closing fence, remove just the opening line
+            stripped = "\n".join(fence_lines[1:]).strip()
 
     parsed = _safe_json_parse(stripped)
     if parsed is None:
         return DuplicateCheckResult(
             has_duplicates=False,
             matches=[],
-            error=f"Malformed LLM response: {output[:200]}",
+            error=f"Malformed LLM response: {output[:500]}",
         )
 
     raw_duplicates = parsed.get("duplicates")

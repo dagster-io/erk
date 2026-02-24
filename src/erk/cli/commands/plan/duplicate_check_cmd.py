@@ -82,16 +82,18 @@ def duplicate_check_plan(
     if not existing_plans:
         user_output("No existing open plans to compare against.")
     else:
-        user_output(f"Checking against {len(existing_plans)} open plan(s)...")
+        user_output(f"Checking against {len(existing_plans)} open plan(s):")
+        for plan in existing_plans:
+            user_output(f"  #{plan.number}: {plan.title}")
         user_output("")
+        user_output("Analyzing for semantic duplicates...")
 
         checker = PlanDuplicateChecker(ctx.prompt_executor)
         dup_result = checker.check(content, existing_plans)
 
         if dup_result.error is not None:
-            user_output(
-                click.style("Error: ", fg="red") + f"Duplicate check failed: {dup_result.error}"
-            )
+            user_output(click.style("Error: ", fg="red") + "Duplicate check failed:")
+            user_output(f"  {dup_result.error}")
             has_problems = True
 
         if dup_result.has_duplicates:

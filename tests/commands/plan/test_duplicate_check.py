@@ -99,6 +99,9 @@ def test_no_duplicates_found() -> None:
 
         assert result.exit_code == 0
         assert "No duplicates found" in result.output
+        assert "Checking against 1 open plan(s):" in result.output
+        assert "#100: Refactor auth" in result.output
+        assert "Analyzing for semantic duplicates..." in result.output
 
 
 def test_duplicate_detected() -> None:
