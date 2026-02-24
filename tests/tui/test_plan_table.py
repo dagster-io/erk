@@ -339,7 +339,7 @@ class TestObjectivesViewRowConversion:
     """Tests for row conversion in Objectives view."""
 
     def test_objectives_view_has_enriched_columns(self) -> None:
-        """Objectives view produces plan, slug, progress, state, deps, updated, author."""
+        """Objectives view produces enriched columns including deps-state."""
         filters = PlanFilters.default()
         table = PlanDataTable(filters, plan_backend="github")
         table._view_mode = ViewMode.OBJECTIVES
@@ -347,15 +347,17 @@ class TestObjectivesViewRowConversion:
 
         values = table._row_to_values(row)
 
-        # Objectives view: plan, slug, progress, state, deps, updated, author
-        assert len(values) == 7
+        # Objectives view: plan, slug, progress, state, deps-state, deps, next, updated, author
+        assert len(values) == 9
         assert _text_to_str(values[0]) == "#42"
         assert values[1] == "-"  # slug_display
         assert values[2] == "-"  # progress_display
         assert _text_to_str(values[3]) == "-"  # state_display
-        assert values[4] == "-"  # deps_display
-        assert values[5] == "-"  # updated_display
-        assert values[6] == "test-user"  # author
+        assert values[4] == "-"  # deps-state display
+        assert values[5] == "-"  # deps (no deps plans)
+        assert values[6] == "-"  # next node display
+        assert values[7] == "-"  # updated_display
+        assert values[8] == "test-user"  # author
 
     def test_objectives_view_shows_slug_and_sparkline(self) -> None:
         """Objectives view shows slug and state sparkline from row data."""
@@ -378,8 +380,113 @@ class TestObjectivesViewRowConversion:
         assert values[1] == "build-feature"  # slug
         assert values[2] == "3/7"  # progress
         assert _text_to_str(values[3]) == "✓✓✓▶▶○○"  # state sparkline
-        assert values[4] == "-"  # deps_display
-        assert values[5] == "2h ago"  # updated
+        assert values[4] == "-"  # deps-state display
+        assert values[5] == "-"  # deps (no deps plans)
+        assert values[6] == "-"  # next node display
+        assert values[7] == "2h ago"  # updated
+
+
+class TestObjectivesViewDepsColumn:
+    """Tests for deps column rendering in Objectives view."""
+
+    def test_deps_empty_shows_dash(self) -> None:
+        """No blocking deps shows '-'."""
+        filters = PlanFilters.default()
+        table = PlanDataTable(filters, plan_backend="github")
+        table._view_mode = ViewMode.OBJECTIVES
+        row = make_plan_row(42, "Obj Plan", objective_deps_plans=())
+
+        values = table._row_to_values(row)
+
+        assert values[5] == "-"
+
+    def test_deps_single_plan(self) -> None:
+        """Single blocking plan shows linkified plan number."""
+        filters = PlanFilters.default()
+        table = PlanDataTable(filters, plan_backend="github")
+        table._view_mode = ViewMode.OBJECTIVES
+        row = make_plan_row(
+            42,
+            "Obj Plan",
+            objective_deps_plans=(("#100", "https://github.com/test/repo/issues/100"),),
+        )
+
+        values = table._row_to_values(row)
+
+        assert _text_to_str(values[5]) == "#100"
+
+    def test_deps_three_plans(self) -> None:
+        """Three blocking plans shows all three linkified."""
+        filters = PlanFilters.default()
+        table = PlanDataTable(filters, plan_backend="github")
+        table._view_mode = ViewMode.OBJECTIVES
+        row = make_plan_row(
+            42,
+            "Obj Plan",
+            objective_deps_plans=(
+                ("#100", "https://github.com/test/repo/issues/100"),
+                ("#200", "https://github.com/test/repo/issues/200"),
+                ("#300", "https://github.com/test/repo/issues/300"),
+            ),
+        )
+
+        values = table._row_to_values(row)
+
+        plain = _text_to_str(values[5])
+        assert "#100" in plain
+        assert "#200" in plain
+        assert "#300" in plain
+        assert "\u2026" not in plain  # No ellipsis for exactly 3
+
+    def test_deps_four_plans_truncates_with_ellipsis(self) -> None:
+        """Four+ blocking plans shows first two plus ellipsis."""
+        filters = PlanFilters.default()
+        table = PlanDataTable(filters, plan_backend="github")
+        table._view_mode = ViewMode.OBJECTIVES
+        row = make_plan_row(
+            42,
+            "Obj Plan",
+            objective_deps_plans=(
+                ("#100", "https://github.com/test/repo/issues/100"),
+                ("#200", "https://github.com/test/repo/issues/200"),
+                ("#300", "https://github.com/test/repo/issues/300"),
+                ("#400", "https://github.com/test/repo/issues/400"),
+            ),
+        )
+
+        values = table._row_to_values(row)
+
+        plain = _text_to_str(values[5])
+        assert "#100" in plain
+        assert "#200" in plain
+        assert "#300" not in plain  # Truncated
+        assert "\u2026" in plain  # Ellipsis present
+
+
+class TestObjectivesViewNextColumn:
+    """Tests for next column rendering in Objectives view."""
+
+    def test_next_default_shows_dash(self) -> None:
+        """Default next node display shows '-'."""
+        filters = PlanFilters.default()
+        table = PlanDataTable(filters, plan_backend="github")
+        table._view_mode = ViewMode.OBJECTIVES
+        row = make_plan_row(42, "Obj Plan")
+
+        values = table._row_to_values(row)
+
+        assert values[6] == "-"
+
+    def test_next_shows_node_id(self) -> None:
+        """Next column shows node ID when populated."""
+        filters = PlanFilters.default()
+        table = PlanDataTable(filters, plan_backend="github")
+        table._view_mode = ViewMode.OBJECTIVES
+        row = make_plan_row(42, "Obj Plan", objective_next_node_display="1.1")
+
+        values = table._row_to_values(row)
+
+        assert values[6] == "1.1"
 
 
 class TestShowPrColumnFalse:

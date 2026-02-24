@@ -680,6 +680,8 @@ class RealPlanDataProvider(PlanDataProvider):
         objective_progress_display = "-"
         objective_state_display = "-"
         objective_deps_display = "-"
+        objective_next_node_display = "-"
+        objective_deps_plans: list[tuple[str, str]] = []
         if plan.body:
             phases, _errors = parse_roadmap(plan.body)
             if phases:
@@ -691,11 +693,25 @@ class RealPlanDataProvider(PlanDataProvider):
                 objective_state_display = build_state_sparkline(graph.nodes)
                 next_node = find_graph_next_node(graph, phases)
                 if next_node is not None:
+                    objective_next_node_display = next_node["id"]
                     min_status = graph.min_dep_status(next_node["id"])
                     if min_status is None or min_status in _TERMINAL_STATUSES:
                         objective_deps_display = "ready"
                     else:
                         objective_deps_display = min_status.replace("_", " ")
+
+                    # Collect blocking dep plan numbers for the next node
+                    target = next((n for n in graph.nodes if n.id == next_node["id"]), None)
+                    if target is not None and target.depends_on:
+                        node_map = {n.id: n for n in graph.nodes}
+                        for dep_id in target.depends_on:
+                            if dep_id in node_map:
+                                dep = node_map[dep_id]
+                                if dep.status not in _TERMINAL_STATUSES and dep.plan is not None:
+                                    num = dep.plan.lstrip("#")
+                                    repo_id = self._location.repo_id
+                                    url = f"https://github.com/{repo_id.owner}/{repo_id.repo}/issues/{num}"
+                                    objective_deps_plans.append((dep.plan, url))
 
         # Format updated_at display
         updated_display = format_relative_time(plan.updated_at.isoformat()) or "-"
@@ -767,6 +783,8 @@ class RealPlanDataProvider(PlanDataProvider):
             objective_slug_display=objective_slug_display,
             objective_state_display=objective_state_display,
             objective_deps_display=objective_deps_display,
+            objective_deps_plans=tuple(objective_deps_plans),
+            objective_next_node_display=objective_next_node_display,
             updated_at=plan.updated_at,
             updated_display=updated_display,
             created_at=plan.created_at,

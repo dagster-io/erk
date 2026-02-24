@@ -1389,3 +1389,258 @@ class TestLearnStatusDisplay:
         assert row.learn_plan_issue_closed is False
         assert row.learn_display == "📋 #456"
         assert row.learn_display_icon == "📋 #456"
+
+
+def _make_roadmap_body(steps_yaml: str) -> str:
+    """Build a plan body with an objective-roadmap metadata block."""
+    return (
+        "# Objective: Test\n\n"
+        "## Roadmap\n\n"
+        "### Phase 1: Work\n\n"
+        "<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->\n"
+        "<!-- erk:metadata-block:objective-roadmap -->\n"
+        "<details>\n"
+        "<summary><code>objective-roadmap</code></summary>\n\n"
+        "```yaml\n"
+        "schema_version: '2'\n"
+        "steps:\n"
+        f"{steps_yaml}"
+        "```\n\n"
+        "</details>\n"
+        "<!-- /erk:metadata-block:objective-roadmap -->\n"
+    )
+
+
+class TestBlockingDepsPlans:
+    """Tests for blocking dependency plan collection in _build_row_data."""
+
+    def _make_provider(self, tmp_path: Path) -> RealPlanDataProvider:
+        """Create a minimal RealPlanDataProvider for testing."""
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir()
+
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=repo_root, branch="main", is_root=True),
+                ]
+            },
+            git_common_dirs={repo_root: repo_root / ".git"},
+        )
+
+        ctx = create_test_context(
+            git=git,
+            github=FakeGitHub(pr_issue_linkages={}),
+            cwd=repo_root,
+            repo=_make_repo_context(repo_root, tmp_path),
+        )
+
+        location = GitHubRepoLocation(
+            root=repo_root,
+            repo_id=GitHubRepoId(owner="test", repo="repo"),
+        )
+        return RealPlanDataProvider(
+            ctx=ctx,
+            location=location,
+            clipboard=FakeClipboard(),
+            browser=FakeBrowserLauncher(),
+            http_client=FakeHttpClient(),
+        )
+
+    def test_no_blocking_deps_returns_empty(self, tmp_path: Path) -> None:
+        """When next node has no non-terminal deps with plans, objective_deps_plans is empty."""
+        provider = self._make_provider(tmp_path)
+
+        # Node 1.1 is done, node 1.2 is pending and depends on 1.1 (terminal)
+        body = _make_roadmap_body(
+            "- id: '1.1'\n"
+            "  description: First step\n"
+            "  status: done\n"
+            "  plan: '#100'\n"
+            "  pr: null\n"
+            "  depends_on: []\n"
+            "- id: '1.2'\n"
+            "  description: Second step\n"
+            "  status: pending\n"
+            "  plan: null\n"
+            "  pr: null\n"
+            "  depends_on: ['1.1']\n"
+        )
+
+        plan = Plan(
+            plan_identifier="42",
+            title="Objective: Test",
+            body=body,
+            state=PlanState.OPEN,
+            url="https://github.com/test/repo/issues/42",
+            labels=[],
+            assignees=[],
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+            metadata={},
+            objective_id=None,
+        )
+
+        row = provider._build_row_data(
+            plan=plan,
+            plan_id=42,
+            pr_linkages={},
+            workflow_run=None,
+            worktree_by_plan_id={},
+            use_graphite=False,
+            learn_issue_states={},
+        )
+
+        assert row.objective_deps_plans == ()
+
+    def test_blocking_dep_with_plan_collected(self, tmp_path: Path) -> None:
+        """When next node has a non-terminal dep with a plan, it appears in objective_deps_plans."""
+        provider = self._make_provider(tmp_path)
+
+        # Node 1.1 is in_progress with a plan, node 1.2 depends on it and is pending
+        body = _make_roadmap_body(
+            "- id: '1.1'\n"
+            "  description: First step\n"
+            "  status: in_progress\n"
+            "  plan: '#100'\n"
+            "  pr: null\n"
+            "  depends_on: []\n"
+            "- id: '1.2'\n"
+            "  description: Second step\n"
+            "  status: pending\n"
+            "  plan: null\n"
+            "  pr: null\n"
+            "  depends_on: ['1.1']\n"
+        )
+
+        plan = Plan(
+            plan_identifier="42",
+            title="Objective: Test",
+            body=body,
+            state=PlanState.OPEN,
+            url="https://github.com/test/repo/issues/42",
+            labels=[],
+            assignees=[],
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+            metadata={},
+            objective_id=None,
+        )
+
+        row = provider._build_row_data(
+            plan=plan,
+            plan_id=42,
+            pr_linkages={},
+            workflow_run=None,
+            worktree_by_plan_id={},
+            use_graphite=False,
+            learn_issue_states={},
+        )
+
+        assert len(row.objective_deps_plans) == 1
+        display, url = row.objective_deps_plans[0]
+        assert display == "#100"
+        assert url == "https://github.com/test/repo/issues/100"
+
+    def test_blocking_dep_without_plan_not_collected(self, tmp_path: Path) -> None:
+        """When next node has a non-terminal dep without a plan, it is not collected."""
+        provider = self._make_provider(tmp_path)
+
+        # Node 1.1 is in_progress but has no plan
+        body = _make_roadmap_body(
+            "- id: '1.1'\n"
+            "  description: First step\n"
+            "  status: in_progress\n"
+            "  plan: null\n"
+            "  pr: null\n"
+            "  depends_on: []\n"
+            "- id: '1.2'\n"
+            "  description: Second step\n"
+            "  status: pending\n"
+            "  plan: null\n"
+            "  pr: null\n"
+            "  depends_on: ['1.1']\n"
+        )
+
+        plan = Plan(
+            plan_identifier="42",
+            title="Objective: Test",
+            body=body,
+            state=PlanState.OPEN,
+            url="https://github.com/test/repo/issues/42",
+            labels=[],
+            assignees=[],
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+            metadata={},
+            objective_id=None,
+        )
+
+        row = provider._build_row_data(
+            plan=plan,
+            plan_id=42,
+            pr_linkages={},
+            workflow_run=None,
+            worktree_by_plan_id={},
+            use_graphite=False,
+            learn_issue_states={},
+        )
+
+        assert row.objective_deps_plans == ()
+
+    def test_multiple_blocking_deps_collected(self, tmp_path: Path) -> None:
+        """Multiple non-terminal deps with plans are all collected."""
+        provider = self._make_provider(tmp_path)
+
+        # Nodes 1.1 and 1.2 are in_progress with plans, node 1.3 depends on both
+        body = _make_roadmap_body(
+            "- id: '1.1'\n"
+            "  description: First step\n"
+            "  status: in_progress\n"
+            "  plan: '#100'\n"
+            "  pr: null\n"
+            "  depends_on: []\n"
+            "- id: '1.2'\n"
+            "  description: Second step\n"
+            "  status: in_progress\n"
+            "  plan: '#200'\n"
+            "  pr: null\n"
+            "  depends_on: []\n"
+            "- id: '1.3'\n"
+            "  description: Third step\n"
+            "  status: pending\n"
+            "  plan: null\n"
+            "  pr: null\n"
+            "  depends_on: ['1.1', '1.2']\n"
+        )
+
+        plan = Plan(
+            plan_identifier="42",
+            title="Objective: Test",
+            body=body,
+            state=PlanState.OPEN,
+            url="https://github.com/test/repo/issues/42",
+            labels=[],
+            assignees=[],
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+            metadata={},
+            objective_id=None,
+        )
+
+        row = provider._build_row_data(
+            plan=plan,
+            plan_id=42,
+            pr_linkages={},
+            workflow_run=None,
+            worktree_by_plan_id={},
+            use_graphite=False,
+            learn_issue_states={},
+        )
+
+        assert len(row.objective_deps_plans) == 2
+        displays = [d for d, _url in row.objective_deps_plans]
+        assert "#100" in displays
+        assert "#200" in displays
