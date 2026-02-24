@@ -339,7 +339,7 @@ class TestObjectivesViewRowConversion:
     """Tests for row conversion in Objectives view."""
 
     def test_objectives_view_has_enriched_columns(self) -> None:
-        """Objectives view produces plan, slug, progress, state, deps-state, deps, next, updated, author."""
+        """Objectives view produces enriched columns including deps-state."""
         filters = PlanFilters.default()
         table = PlanDataTable(filters, plan_backend="github")
         table._view_mode = ViewMode.OBJECTIVES

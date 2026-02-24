@@ -288,10 +288,8 @@ class PlanDataTable(DataTable):
         if self._view_mode == ViewMode.OBJECTIVES:
             # Build linkified deps cell (show up to 3, truncate with ... if more)
             if row.objective_deps_plans:
-                if len(row.objective_deps_plans) <= 3:
-                    show = row.objective_deps_plans[:3]
-                else:
-                    show = row.objective_deps_plans[:2]
+                limit = 3 if len(row.objective_deps_plans) <= 3 else 2
+                show = row.objective_deps_plans[:limit]
                 parts = [f"[link={url}]{display}[/link]" for display, url in show]
                 if len(row.objective_deps_plans) > 3:
                     parts.append("\u2026")

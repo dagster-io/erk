@@ -705,15 +705,13 @@ class RealPlanDataProvider(PlanDataProvider):
                     if target is not None and target.depends_on:
                         node_map = {n.id: n for n in graph.nodes}
                         for dep_id in target.depends_on:
-                            dep = node_map.get(dep_id)
-                            if (
-                                dep is not None
-                                and dep.status not in _TERMINAL_STATUSES
-                                and dep.plan is not None
-                            ):
-                                num = dep.plan.lstrip("#")
-                                url = f"https://github.com/{self._location.repo_id.owner}/{self._location.repo_id.repo}/issues/{num}"
-                                objective_deps_plans.append((dep.plan, url))
+                            if dep_id in node_map:
+                                dep = node_map[dep_id]
+                                if dep.status not in _TERMINAL_STATUSES and dep.plan is not None:
+                                    num = dep.plan.lstrip("#")
+                                    repo_id = self._location.repo_id
+                                    url = f"https://github.com/{repo_id.owner}/{repo_id.repo}/issues/{num}"
+                                    objective_deps_plans.append((dep.plan, url))
 
         # Format updated_at display
         updated_display = format_relative_time(plan.updated_at.isoformat()) or "-"
