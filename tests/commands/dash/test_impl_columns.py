@@ -77,7 +77,7 @@ last_dispatched_node_id: 'WFR_all_flag'
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Run columns always shown now
-        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0

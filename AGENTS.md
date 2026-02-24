@@ -111,7 +111,7 @@ Load the `erk-planning` skill (`$erk-planning`) for detailed workflow guidance.
 
 ### All Backends
 
-- `erk plan list` — view open plans
+- `erk pr list` — view open plans
 - `erk implement <issue>` — implement a plan in a worktree
 - `erk plan submit <issue>` — submit for remote implementation
 

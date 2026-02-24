@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 from click.testing import CliRunner
 
-from erk.cli.commands.plan.list_cmd import dash
+from erk.cli.commands.pr.list_cmd import dash
 from erk.cli.commands.pr.view_cmd import pr_view
 from erk.core.services.plan_list_service import RealPlanListService
 from erk_shared.gateway.github.fake import FakeGitHub
@@ -92,8 +92,8 @@ def test_plan_issue_list_uses_repo_root_not_metadata_dir() -> None:
                     captured_provider.fetch_plans(captured_filters)
 
         with (
-            patch("erk.cli.commands.plan.list_cmd.ErkDashApp", MockApp),
-            patch("erk.cli.commands.plan.list_cmd.fetch_github_token", return_value="fake-token"),
+            patch("erk.cli.commands.pr.list_cmd.ErkDashApp", MockApp),
+            patch("erk.cli.commands.pr.list_cmd.fetch_github_token", return_value="fake-token"),
         ):
             result = runner.invoke(dash, obj=ctx)
 

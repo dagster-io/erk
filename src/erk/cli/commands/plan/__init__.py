@@ -8,7 +8,6 @@ from erk.cli.capability_check import is_learned_docs_available
 from erk.cli.commands.plan.check_cmd import check_plan
 from erk.cli.commands.plan.checkout_cmd import checkout_plan
 from erk.cli.commands.plan.duplicate_check_cmd import duplicate_check_plan
-from erk.cli.commands.plan.list_cmd import list_plans
 from erk.cli.commands.submit import submit_cmd
 from erk_shared.gateway.git.repo_ops.real import RealGitRepoOps
 
@@ -28,5 +27,4 @@ if is_learned_docs_available(repo_ops=RealGitRepoOps(), cwd=Path.cwd()):
 
     plan_group.add_command(docs_group)
     plan_group.add_command(learn_group)
-plan_group.add_command(list_plans, name="list")
 plan_group.add_command(submit_cmd, name="submit")

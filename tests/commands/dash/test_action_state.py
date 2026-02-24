@@ -40,7 +40,7 @@ def test_plan_list_shows_action_state_with_no_queue_label() -> None:
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
-        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -71,7 +71,7 @@ def test_plan_list_shows_pending_action_state() -> None:
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
-        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -119,7 +119,7 @@ issue_number: 1003
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
-        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -166,7 +166,7 @@ timestamp: "2024-11-23T12:00:00Z"
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
-        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -213,7 +213,7 @@ timestamp: "2024-11-23T12:00:00Z"
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
-        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0

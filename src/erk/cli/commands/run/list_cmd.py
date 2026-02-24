@@ -4,7 +4,7 @@ import click
 from rich.console import Console
 from rich.table import Table
 
-from erk.cli.commands.plan.list_cmd import format_pr_cell
+from erk.cli.commands.pr.list_cmd import format_pr_cell
 from erk.cli.commands.run.shared import extract_issue_number
 from erk.cli.constants import DISPATCH_WORKFLOW_NAME
 from erk.cli.core import discover_repo_context

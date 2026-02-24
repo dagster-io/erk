@@ -1,4 +1,4 @@
-"""Tests for erk plan list command."""
+"""Tests for erk pr list command."""
 
 from datetime import UTC, datetime
 
@@ -64,7 +64,7 @@ def test_plan_list_no_filters() -> None:
         github = FakeGitHub(issues_data=[plan_to_issue(plan1), plan_to_issue(plan2)])
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
-        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Found 2 plan(s)" in result.output
@@ -109,7 +109,7 @@ def test_plan_list_filter_by_state() -> None:
         github = FakeGitHub(issues_data=[plan_to_issue(open_plan), plan_to_issue(closed_plan)])
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
-        result = runner.invoke(cli, ["plan", "list", "--state", "open"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list", "--state", "open"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Found 1 plan(s)" in result.output
@@ -158,7 +158,7 @@ def test_plan_list_filter_by_labels() -> None:
 
         result = runner.invoke(
             cli,
-            ["plan", "list", "--label", "erk-plan", "--label", "erk-queue"],
+            ["pr", "list", "--label", "erk-plan", "--label", "erk-queue"],
             obj=ctx,
         )
 
@@ -196,7 +196,7 @@ def test_plan_list_with_limit() -> None:
         github = FakeGitHub(issues_data=issues_list)
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
-        result = runner.invoke(cli, ["plan", "list", "--limit", "2"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list", "--limit", "2"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Found 2 plan(s)" in result.output
@@ -224,7 +224,7 @@ def test_plan_list_empty_results() -> None:
         github = FakeGitHub(issues_data=[plan_to_issue(plan)])
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
-        result = runner.invoke(cli, ["plan", "list", "--state", "closed"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list", "--state", "closed"], obj=ctx)
 
         assert result.exit_code == 0
         assert "No plans found matching the criteria" in result.output
@@ -277,7 +277,7 @@ last_dispatched_node_id: 'WFR_all_flag'
         )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
-        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list"], obj=ctx)
 
         assert result.exit_code == 0
         assert "#200" in result.output
@@ -319,7 +319,7 @@ def test_plan_list_sort_issue_default() -> None:
         github = FakeGitHub(issues_data=[plan_to_issue(plan1), plan_to_issue(plan2)])
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
-        result = runner.invoke(cli, ["plan", "list", "--sort", "issue"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list", "--sort", "issue"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Found 2 plan(s)" in result.output
@@ -409,7 +409,7 @@ def test_plan_list_sort_activity_with_local_branch() -> None:
         github = FakeGitHub(issues_data=[plan_to_issue(plan1), plan_to_issue(plan2)])
         ctx = build_workspace_test_context(env, git=git, issues=issues, github=github)
 
-        result = runner.invoke(cli, ["plan", "list", "--sort", "activity"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list", "--sort", "activity"], obj=ctx)
 
         assert result.exit_code == 0, result.output
         assert "Found 2 plan(s)" in result.output
@@ -524,7 +524,7 @@ def test_plan_list_sort_activity_orders_by_recency() -> None:
         github = FakeGitHub(issues_data=[plan_to_issue(plan1), plan_to_issue(plan2)])
         ctx = build_workspace_test_context(env, git=git, issues=issues, github=github)
 
-        result = runner.invoke(cli, ["plan", "list", "--sort", "activity"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list", "--sort", "activity"], obj=ctx)
 
         assert result.exit_code == 0, result.output
         assert "Found 2 plan(s)" in result.output
@@ -539,3 +539,66 @@ def test_plan_list_sort_activity_orders_by_recency() -> None:
         assert first_with_2 < first_with_1, (
             f"Plan #2 (newer commit) should appear first. output={result.output}"
         )
+
+
+def _make_plan_body_with_stage(stage: str) -> str:
+    """Create a plan body with lifecycle_stage in plan-header metadata."""
+    return (
+        "<!-- erk:metadata-block:plan-header -->\n"
+        "<details>\n"
+        "<summary><code>plan-header</code></summary>\n\n"
+        "```yaml\n"
+        "schema_version: '2'\n"
+        f"lifecycle_stage: '{stage}'\n"
+        "```\n"
+        "</details>\n"
+        "<!-- /erk:metadata-block:plan-header -->"
+    )
+
+
+def test_pr_list_stage_filter() -> None:
+    """Test that --stage filters plans by lifecycle stage."""
+    # Plan 1: lifecycle_stage=planned via plan-header metadata
+    planned_plan = Plan(
+        plan_identifier="1",
+        title="Planned Issue",
+        body=_make_plan_body_with_stage("planned"),
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/1",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+        metadata={},
+        objective_id=None,
+    )
+    # Plan 2: lifecycle_stage=impl via plan-header metadata → lifecycle_display resolves to "impl"
+    impl_plan = Plan(
+        plan_identifier="2",
+        title="Impl Issue",
+        body=_make_plan_body_with_stage("impl"),
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/2",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 2, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        metadata={},
+        objective_id=None,
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        issues = FakeGitHubIssues(
+            issues={1: plan_to_issue(planned_plan), 2: plan_to_issue(impl_plan)}
+        )
+        github = FakeGitHub(issues_data=[plan_to_issue(planned_plan), plan_to_issue(impl_plan)])
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
+
+        # Filter to only "planned" stage
+        result = runner.invoke(cli, ["pr", "list", "--stage", "planned"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Found 1 plan(s)" in result.output
+        assert "#1" in result.output
+        assert "#2" not in result.output

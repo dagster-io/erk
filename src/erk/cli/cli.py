@@ -27,8 +27,8 @@ from erk.cli.commands.md.group import md_group
 from erk.cli.commands.objective import objective_group
 from erk.cli.commands.one_shot import one_shot
 from erk.cli.commands.plan import plan_group
-from erk.cli.commands.plan.list_cmd import dash
 from erk.cli.commands.pr import pr_group
+from erk.cli.commands.pr.list_cmd import dash
 from erk.cli.commands.prepare_cwd_recovery import prepare_cwd_recovery_cmd
 from erk.cli.commands.project import project_group
 from erk.cli.commands.run import run_group
