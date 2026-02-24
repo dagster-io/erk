@@ -1045,8 +1045,6 @@ def test_pr_check_stage_impl_all_checks_pass(tmp_path: Path) -> None:
         impl_dir = env.cwd / ".impl"
         impl_dir.mkdir()
         plan_ref_json = impl_dir / "plan-ref.json"
-        import json
-
         plan_ref_json.write_text(
             json.dumps(
                 {
