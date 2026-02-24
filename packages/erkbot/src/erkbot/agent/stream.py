@@ -3,8 +3,6 @@ from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import Any
 
-logger = logging.getLogger(__name__)
-
 from claude_agent_sdk.types import (
     AssistantMessage,
     Message,
@@ -22,6 +20,8 @@ from erkbot.agent.events import (
     TurnEnd,
     TurnStart,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -64,7 +64,9 @@ async def stream_agent_events(*, messages: AsyncIterator[Message]) -> AsyncItera
 
             elif event_type == "content_block_stop":
                 if active_tool is not None:
-                    logger.info("Tool ended: %s (id=%s)", active_tool.tool_name, active_tool.tool_use_id)
+                    logger.info(
+                        "Tool ended: %s (id=%s)", active_tool.tool_name, active_tool.tool_use_id
+                    )
                     yield ToolEnd(
                         tool_name=active_tool.tool_name,
                         tool_use_id=active_tool.tool_use_id,

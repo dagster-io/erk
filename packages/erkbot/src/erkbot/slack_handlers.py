@@ -5,8 +5,6 @@ import logging
 from collections import deque
 from typing import TYPE_CHECKING, Any
 
-logger = logging.getLogger(__name__)
-
 from slack_sdk.errors import SlackApiError
 
 from erk_shared.gateway.time.abc import Time
@@ -29,6 +27,8 @@ from erkbot.utils import (
     load_quote_text,
     tail_output_lines,
 )
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from erkbot.agent.bot import ErkBot
@@ -98,7 +98,12 @@ def register_handlers(app, *, settings: Settings, bot: ErkBot | None, time: Time
                     lines=list(all_lines), running=running, settings=settings
                 )
                 try:
-                    logger.debug("slack_update: channel=%s ts=%s text=%s", channel, status_ts, progress_text[:200])
+                    logger.debug(
+                        "slack_update: channel=%s ts=%s text=%s",
+                        channel,
+                        status_ts,
+                        progress_text[:200],
+                    )
                     await client.chat_update(channel=channel, ts=status_ts, text=progress_text)
                     last_update = now
                     return
@@ -218,7 +223,9 @@ def register_handlers(app, *, settings: Settings, bot: ErkBot | None, time: Time
                 if result.exit_code == 0
                 else f"`erk plan list` failed (exit {result.exit_code}):"
             )
-            logger.info("reply: channel=%s command=plan-list exit_code=%d", channel, result.exit_code)
+            logger.info(
+                "reply: channel=%s command=plan-list exit_code=%d", channel, result.exit_code
+            )
             await say(status_line, thread_ts=reply_thread_ts)
             for chunk in chunk_for_slack(
                 result.output, max_chars=settings.max_slack_code_block_chars
@@ -264,7 +271,11 @@ def register_handlers(app, *, settings: Settings, bot: ErkBot | None, time: Time
 
         if isinstance(command, OneShotCommand):
             if len(command.message) > settings.max_one_shot_message_chars:
-                logger.warning("reply: channel=%s command=one-shot rejected=too_long len=%d", channel, len(command.message))
+                logger.warning(
+                    "reply: channel=%s command=one-shot rejected=too_long len=%d",
+                    channel,
+                    len(command.message),
+                )
                 await say(
                     (
                         "One-shot message is too long "
