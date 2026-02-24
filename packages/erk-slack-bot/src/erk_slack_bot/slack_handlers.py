@@ -1,6 +1,6 @@
+import asyncio
 import time
 from collections import deque
-from threading import Thread
 from typing import Any
 
 from slack_sdk.errors import SlackApiError
@@ -27,30 +27,32 @@ SUPPORTED_COMMANDS_TEXT = "Supported commands: `@erk plan list`, `@erk one-shot 
 
 
 def register_handlers(app, *, settings: Settings) -> None:  # type: ignore[no-untyped-def]
-    def add_read_ack(client: Any, channel: str, timestamp: str) -> None:
+    async def add_read_ack(client: Any, channel: str, timestamp: str) -> None:
         try:
-            client.reactions_add(channel=channel, timestamp=timestamp, name="eyes")
+            await client.reactions_add(channel=channel, timestamp=timestamp, name="eyes")
         except SlackApiError as exc:
             ignored_errors = {"already_reacted", "missing_scope", "not_reactable"}
             if exc.response.get("error") not in ignored_errors:
                 raise
 
-    def post_message(
+    async def post_message(
         client: Any, *, channel: str, thread_ts: str | None, text: str
     ) -> object | None:
         try:
-            return client.chat_postMessage(channel=channel, text=text, thread_ts=thread_ts)
+            return await client.chat_postMessage(channel=channel, text=text, thread_ts=thread_ts)
         except SlackApiError:
             return None
 
-    def post_chunked_code(client: Any, *, channel: str, thread_ts: str | None, text: str) -> None:
+    async def post_chunked_code(
+        client: Any, *, channel: str, thread_ts: str | None, text: str
+    ) -> None:
         for chunk in chunk_for_slack(text, max_chars=settings.max_slack_code_block_chars):
-            post_message(client, channel=channel, thread_ts=thread_ts, text=f"```{chunk}```")
+            await post_message(client, channel=channel, thread_ts=thread_ts, text=f"```{chunk}```")
 
-    def run_one_shot_async(
+    async def run_one_shot_background(
         *, client: Any, channel: str, reply_thread_ts: str | None, message: str
     ) -> None:
-        status = post_message(
+        status = await post_message(
             client,
             channel=channel,
             thread_ts=reply_thread_ts,
@@ -63,7 +65,7 @@ def register_handlers(app, *, settings: Settings) -> None:  # type: ignore[no-un
         pending_lines: list[str] = []
         last_update = 0.0
 
-        def push_progress_update(*, force: bool, running: bool) -> None:
+        async def push_progress_update(*, force: bool, running: bool) -> None:
             nonlocal can_update_status, posted_update_fallback_notice, last_update
             if not pending_lines and not force:
                 return
@@ -81,14 +83,14 @@ def register_handlers(app, *, settings: Settings) -> None:  # type: ignore[no-un
                     lines=list(all_lines), running=running, settings=settings
                 )
                 try:
-                    client.chat_update(channel=channel, ts=status_ts, text=progress_text)
+                    await client.chat_update(channel=channel, ts=status_ts, text=progress_text)
                     last_update = now
                     return
                 except SlackApiError as exc:
                     can_update_status = False
                     if not posted_update_fallback_notice:
                         error_code = exc.response.get("error") if exc.response else "unknown_error"
-                        post_message(
+                        await post_message(
                             client,
                             channel=channel,
                             thread_ts=reply_thread_ts,
@@ -100,7 +102,7 @@ def register_handlers(app, *, settings: Settings) -> None:  # type: ignore[no-un
                         posted_update_fallback_notice = True
 
             if not posted_update_fallback_notice and not can_update_status:
-                post_message(
+                await post_message(
                     client,
                     channel=channel,
                     thread_ts=reply_thread_ts,
@@ -113,26 +115,26 @@ def register_handlers(app, *, settings: Settings) -> None:  # type: ignore[no-un
 
             new_output = "\n".join(new_lines).strip()
             if new_output:
-                post_chunked_code(
+                await post_chunked_code(
                     client, channel=channel, thread_ts=reply_thread_ts, text=new_output
                 )
                 can_update_status = False
             last_update = now
 
-        def on_line(line: str) -> None:
+        async def on_line(line: str) -> None:
             clean_line = line.rstrip()
             if not clean_line:
                 return
             all_lines.append(clean_line)
             pending_lines.append(clean_line)
-            push_progress_update(force=False, running=True)
+            await push_progress_update(force=False, running=True)
 
-        result = stream_erk_one_shot(
+        result = await stream_erk_one_shot(
             message,
             timeout_seconds=settings.one_shot_timeout_seconds,
             on_line=on_line,
         )
-        push_progress_update(force=True, running=False)
+        await push_progress_update(force=True, running=False)
 
         pr_url, run_url = extract_one_shot_links(result.output)
         if result.exit_code == 0:
@@ -142,7 +144,7 @@ def register_handlers(app, *, settings: Settings) -> None:  # type: ignore[no-un
             if run_url is not None:
                 summary_lines.append(f"Run: {run_url}")
             if summary_lines:
-                post_message(
+                await post_message(
                     client,
                     channel=channel,
                     thread_ts=reply_thread_ts,
@@ -151,7 +153,7 @@ def register_handlers(app, *, settings: Settings) -> None:  # type: ignore[no-un
             return
 
         timeout_suffix = " (timed out)." if result.timed_out else "."
-        post_message(
+        await post_message(
             client,
             channel=channel,
             thread_ts=reply_thread_ts,
@@ -163,49 +165,49 @@ def register_handlers(app, *, settings: Settings) -> None:  # type: ignore[no-un
                 max_lines=settings.one_shot_failure_tail_lines,
             )
             if tail_output:
-                post_chunked_code(
+                await post_chunked_code(
                     client, channel=channel, thread_ts=reply_thread_ts, text=tail_output
                 )
 
     @app.event("app_mention")
-    def handle_app_mention(event, say, client) -> None:  # type: ignore[no-untyped-def]
+    async def handle_app_mention(event, say, client) -> None:  # type: ignore[no-untyped-def]
         user = event.get("user", "there")
         channel = event.get("channel")
         source_ts = event.get("ts")
         if channel and source_ts:
-            add_read_ack(client, channel, source_ts)
+            await add_read_ack(client, channel, source_ts)
 
         reply_thread_ts = event.get("thread_ts") or source_ts
         command = parse_erk_command(event.get("text", ""))
 
         if isinstance(command, PlanListCommand):
-            say("Running `erk plan list`...", thread_ts=reply_thread_ts)
-            result = run_erk_plan_list()
+            await say("Running `erk plan list`...", thread_ts=reply_thread_ts)
+            result = await run_erk_plan_list()
             status_line = (
                 "Result from `erk plan list`:"
                 if result.exit_code == 0
                 else f"`erk plan list` failed (exit {result.exit_code}):"
             )
-            say(status_line, thread_ts=reply_thread_ts)
+            await say(status_line, thread_ts=reply_thread_ts)
             for chunk in chunk_for_slack(
                 result.output, max_chars=settings.max_slack_code_block_chars
             ):
-                say(f"```{chunk}```", thread_ts=reply_thread_ts)
+                await say(f"```{chunk}```", thread_ts=reply_thread_ts)
             return
 
         if isinstance(command, QuoteCommand):
             quote = load_quote_text()
             for chunk in chunk_for_slack(quote, max_chars=settings.max_slack_code_block_chars):
-                say(chunk, thread_ts=reply_thread_ts)
+                await say(chunk, thread_ts=reply_thread_ts)
             return
 
         if isinstance(command, OneShotMissingMessageCommand):
-            say("Usage: `@erk one-shot <message>`", thread_ts=reply_thread_ts)
+            await say("Usage: `@erk one-shot <message>`", thread_ts=reply_thread_ts)
             return
 
         if isinstance(command, OneShotCommand):
             if len(command.message) > settings.max_one_shot_message_chars:
-                say(
+                await say(
                     (
                         "One-shot message is too long "
                         f"({len(command.message)} chars, "
@@ -215,29 +217,28 @@ def register_handlers(app, *, settings: Settings) -> None:  # type: ignore[no-un
                 )
                 return
             if not channel:
-                say("Could not determine channel for this mention.", thread_ts=reply_thread_ts)
+                await say(
+                    "Could not determine channel for this mention.", thread_ts=reply_thread_ts
+                )
                 return
-            worker = Thread(
-                target=run_one_shot_async,
-                kwargs={
-                    "client": client,
-                    "channel": channel,
-                    "reply_thread_ts": reply_thread_ts,
-                    "message": command.message,
-                },
-                daemon=True,
+            asyncio.create_task(
+                run_one_shot_background(
+                    client=client,
+                    channel=channel,
+                    reply_thread_ts=reply_thread_ts,
+                    message=command.message,
+                )
             )
-            worker.start()
             return
 
-        say(f"Hi <@{user}>. {SUPPORTED_COMMANDS_TEXT}", thread_ts=reply_thread_ts)
+        await say(f"Hi <@{user}>. {SUPPORTED_COMMANDS_TEXT}", thread_ts=reply_thread_ts)
 
     @app.message("ping")
-    def handle_ping(message, say, client) -> None:  # type: ignore[no-untyped-def]
+    async def handle_ping(message, say, client) -> None:  # type: ignore[no-untyped-def]
         channel = message.get("channel")
         source_ts = message.get("ts")
         if channel and source_ts:
-            add_read_ack(client, channel, source_ts)
+            await add_read_ack(client, channel, source_ts)
 
         reply_thread_ts = message.get("thread_ts") or source_ts
-        say("Pong!", thread_ts=reply_thread_ts)
+        await say("Pong!", thread_ts=reply_thread_ts)

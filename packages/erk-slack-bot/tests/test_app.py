@@ -9,7 +9,7 @@ from erk_slack_bot.config import Settings
 
 class TestCreateApp(unittest.TestCase):
     @patch("erk_slack_bot.app.register_handlers")
-    @patch("erk_slack_bot.app.App")
+    @patch("erk_slack_bot.app.AsyncApp")
     def test_create_app_returns_app_with_handlers(
         self, mock_app_cls: MagicMock, mock_register: MagicMock
     ) -> None:
