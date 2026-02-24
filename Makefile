@@ -1,4 +1,4 @@
-.PHONY: format format-check lint prettier prettier-check ty upgrade-ty test py-fast-ci fast-ci all-ci md-check docs-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve docs-deploy exec-reference-check erkdesk-install erkdesk-start erkdesk-package erkdesk-make erkdesk-test erkdesk-test-watch
+.PHONY: format format-check lint prettier prettier-check ty upgrade-ty test py-fast-ci fast-ci all-ci md-check docs-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve docs-deploy exec-reference-check erkdesk-install erkdesk-start erkdesk-package erkdesk-make erkdesk-test erkdesk-test-watch slackbot
 
 prettier:
 	prettier --write '**/*.md' --ignore-path .gitignore
@@ -179,6 +179,11 @@ erkdesk-test:
 
 erkdesk-test-watch:
 	cd erkdesk && pnpm run test:watch
+
+# === Slackbot ===
+
+slackbot:
+	cd packages/erkbot && make dev
 
 pull_master:
 	git -C /Users/schrockn/code/erk pull origin master
