@@ -22,14 +22,7 @@ The codebase uses three approaches to detect the active backend, each suited to 
 
 <!-- Source: src/erk/cli/commands/learn/learn_cmd.py -->
 
-Commands that operate on plan metadata should use the `plan_backend` abstract interface without checking the type. Both backends implement the same methods:
-
-```python
-# learn_cmd.py — no backend branching needed
-plan_id = ctx.plan_backend.resolve_plan_id_for_branch(ctx.cwd, branch_name)
-sessions = ctx.plan_backend.find_sessions_for_plan(repo_root, plan_id)
-value = ctx.plan_backend.get_metadata_field(repo_root, plan_id, "learn_materials_branch")
-```
+Commands that operate on plan metadata should use the `plan_backend` abstract interface without checking the type. Both backends implement the same methods. See `src/erk/cli/commands/learn/learn_cmd.py` for an example of interface delegation without backend branching.
 
 Use this when the operation is the same regardless of backend — the abstraction handles routing internally.
 

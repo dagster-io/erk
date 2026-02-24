@@ -21,15 +21,10 @@ Previously, setting `ERK_PLAN_BACKEND=planned_pr` in the shell environment cause
 
 ### Root Cause
 
-`context_for_test()` in `packages/erk-shared/src/erk_shared/context/testing.py` creates a test `ErkContext`. After PR #7971, the plan backend selection is now a tautological comparison:
+`context_for_test()` in `packages/erk-shared/src/erk_shared/context/testing.py` creates a test `ErkContext`. After PR #7971, the plan backend selection uses a tautological comparison that always takes the planned-PR path, regardless of environment variables. Tests that set `ERK_PLAN_BACKEND` are now exercising dead code paths. Monkeypatching this variable has no behavioral effect.
 
-```python
-# From testing.py:192 (approximately) — after PR #7971
-elif "planned_pr" == "planned_pr" and not issues_explicitly_passed:
-    # Always takes the PlannedPRBackend path
-```
-
-The planned-PR path is always taken regardless of environment variables. Tests that set `ERK_PLAN_BACKEND` are now exercising dead code paths. Monkeypatching this variable has no behavioral effect.
+<!-- Source: packages/erk-shared/src/erk_shared/context/testing.py, context_for_test -->
+See `context_for_test()` in `packages/erk-shared/src/erk_shared/context/testing.py`.
 
 ## Two `context_for_test()` Implementations
 
