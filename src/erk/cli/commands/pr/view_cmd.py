@@ -4,6 +4,8 @@ from datetime import datetime
 
 import click
 
+from erk.cli.commands.plan.ir_types import build_plan_view_output
+from erk.cli.commands.plan.renderers import render_plan_view_json
 from erk.cli.core import discover_repo_context
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext
@@ -222,8 +224,11 @@ def _format_header_section(header_info: dict[str, object], *, plan_url: str | No
 @click.command("view")
 @click.argument("identifier", type=str, required=False, default=None)
 @click.option("--full", "-f", is_flag=True, help="Show full plan body")
+@click.option(
+    "--json-output", "json_mode", is_flag=True, help="Output structured JSON (for programmatic use)"
+)
 @click.pass_obj
-def pr_view(ctx: ErkContext, identifier: str | None, *, full: bool) -> None:
+def pr_view(ctx: ErkContext, identifier: str | None, *, full: bool, json_mode: bool) -> None:
     """Fetch and display a plan by identifier.
 
     IDENTIFIER can be a plain number (e.g., "42") or a GitHub issue URL
@@ -234,6 +239,8 @@ def pr_view(ctx: ErkContext, identifier: str | None, *, full: bool) -> None:
 
     By default, shows only header information. Use --full to display
     the complete plan body.
+
+    Use --json-output for structured JSON output (for programmatic use).
     """
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)  # Ensure erk metadata directories exist
@@ -280,6 +287,17 @@ def pr_view(ctx: ErkContext, identifier: str | None, *, full: bool) -> None:
         header_info: dict[str, object] = {}
     else:
         header_info = all_meta
+
+    # JSON output path
+    if json_mode:
+        view_output = build_plan_view_output(
+            plan=plan,
+            plan_id=plan_id,
+            header_info=header_info,
+            include_body=full,
+        )
+        render_plan_view_json(view_output)
+        return
 
     # Display plan details with consistent formatting
     user_output("")

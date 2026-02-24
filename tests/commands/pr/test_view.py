@@ -1,5 +1,6 @@
 """Tests for plan view command."""
 
+import json
 from datetime import UTC, datetime
 
 from click.testing import CliRunner
@@ -732,3 +733,151 @@ learn_status: pending
         assert "Status:" in result.output
         assert "in progress" in result.output
         assert "Workflow:" not in result.output
+
+
+# --- JSON output tests ---
+
+
+def test_view_plan_json_output(plan_backend_type: str) -> None:
+    """Test that --json-output produces valid JSON with expected fields."""
+    plan_issue = Plan(
+        plan_identifier="42",
+        title="JSON Test Issue",
+        body="This is a test body",
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/42",
+        labels=["erk-plan", "bug"],
+        assignees=["alice"],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        metadata={},
+        objective_id=None,
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        ctx = build_workspace_test_context(env, plan_store=store)
+
+        result = runner.invoke(cli, ["plan", "view", "42", "--json-output"], obj=ctx)
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["plan_id"] == "42"
+        assert data["title"] == "JSON Test Issue"
+        assert data["state"] == "OPEN"
+        assert data["url"] == "https://github.com/owner/repo/issues/42"
+        assert "erk-plan" in data["labels"]
+        assert "bug" in data["labels"]
+        assert "created_at" in data
+        assert "updated_at" in data
+        # Body should be null without --full
+        assert data["body"] is None
+
+
+def test_view_plan_json_with_full_flag(plan_backend_type: str) -> None:
+    """Test --json-output --full includes the body field."""
+    plan_issue = Plan(
+        plan_identifier="42",
+        title="JSON Full Test",
+        body="Full body content here",
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/42",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        metadata={},
+        objective_id=None,
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        ctx = build_workspace_test_context(env, plan_store=store)
+
+        result = runner.invoke(cli, ["plan", "view", "42", "--full", "--json-output"], obj=ctx)
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["body"] == "Full body content here"
+
+
+def test_view_plan_json_without_full_has_null_body(plan_backend_type: str) -> None:
+    """Test --json-output without --full has body=null."""
+    plan_issue = Plan(
+        plan_identifier="42",
+        title="JSON No Body Test",
+        body="Some body content",
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/42",
+        labels=[],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        metadata={},
+        objective_id=None,
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        ctx = build_workspace_test_context(env, plan_store=store)
+
+        result = runner.invoke(cli, ["plan", "view", "42", "--json-output"], obj=ctx)
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["body"] is None
+
+
+def test_view_plan_json_with_header(plan_backend_type: str) -> None:
+    """Test --json-output includes header metadata when present."""
+    issue_body = """<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+
+created_by: schrockn
+schema_version: 2
+worktree_name: test-worktree
+source_repo: dagster-io/erk
+objective_issue: 100
+
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->
+
+Some other content here.
+"""
+
+    plan_issue = Plan(
+        plan_identifier="42",
+        title="Plan with Header JSON",
+        body=issue_body,
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/42",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        metadata={},
+        objective_id=None,
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        store, _ = create_plan_store({"42": plan_issue}, backend=plan_backend_type)
+        ctx = build_workspace_test_context(env, plan_store=store)
+
+        result = runner.invoke(cli, ["plan", "view", "42", "--json-output"], obj=ctx)
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["header"] is not None
+        assert data["header"]["created_by"] == "schrockn"
+        assert data["header"]["source_repo"] == "dagster-io/erk"
+        assert data["header"]["objective_issue"] == 100
