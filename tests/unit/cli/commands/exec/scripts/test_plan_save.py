@@ -311,7 +311,7 @@ def test_draft_pr_branch_not_stacked_on_current_branch(
     )
     runner = CliRunner()
 
-    result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
+    result = runner.invoke(plan_save, ["--format", "json", "--branch-slug", "test-slug"], obj=ctx)
 
     assert result.exit_code == 0, f"Failed: {result.output}"
 
