@@ -841,7 +841,14 @@ def _cleanup_non_slot_worktree(cleanup: CleanupContext) -> None:
     # Remove the worktree directory — non-slot worktrees have no useful state
     # after branch deletion (unlike slot worktrees which have placeholder branches)
     worktree_name = cleanup.worktree_path.name
-    user_output(f"Removing worktree '{worktree_name}'...")
+    if not cleanup.force:
+        proceed = cleanup.ctx.console.confirm(
+            f"Remove worktree directory '{worktree_name}'?",
+            default=True,
+        )
+        if not proceed:
+            user_output(f"Worktree '{worktree_name}' preserved (branch already deleted).")
+            return
     cleanup.ctx.git.worktree.remove_worktree(
         cleanup.main_repo_root, cleanup.worktree_path, force=True
     )
