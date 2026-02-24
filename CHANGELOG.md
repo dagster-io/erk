@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of 104f87771 -->
+<!-- As of f089a0abe -->
 
 ### Major Changes
 
@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `copy_land` command to TUI command palette (9338f36)
 - Add `--plan-only` flag to `erk one-shot` for generating plans without implementation (23575c8)
 - Add `-d` short flag for `--delete-current` option in `erk up`/`erk down` commands (1fb2d1e)
+- Bundle missing capability workflows (one-shot, pr-address, pr-fix-conflicts) for external dispatch (509290e)
+- Add local review marker to skip CI reviews when local code review passes (2bbcbfc)
+- Add stacked PR emoji indicator to dashboard for PRs targeting non-master branches (ddd6360)
 
 ### Changed
 
@@ -33,6 +36,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Redesign objectives TUI with sparkline progress indicators (7207a79)
 - Move plan-header metadata block to bottom of PR descriptions (0c3e672)
 - Wrap review comment details in collapsible blocks (bf5c49e)
+- Fire-and-forget workflow dispatch — TUI remote operations return immediately instead of blocking until workflow completes (4317d95)
+- Replace `gh pr/issue view --web` commands with clickable URLs in next-steps output (c3969c8)
+- Strip `.erk/impl-context/` before restack in `erk pr sync` to avoid merge conflicts (e3720af)
+- Consolidate PR validation into `--stage=impl` flag on `erk pr check` (e2bd53d)
+- Convert submit pipeline to git plumbing, eliminating race conditions in shared worktrees (ea4a853)
+- Increase workflow dispatch polling timeout to ~62 seconds for `erk plan submit` reliability (368a707)
 
 ### Fixed
 
@@ -41,11 +50,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix branch checkout in stack-in-place path (705bac8)
 - Fix WARNING comment accumulation on metadata block updates (60c75f5)
 - Clear error when trigger_workflow finds skipped/cancelled run (2a49eb3)
+- Fix plan-save branches incorrectly stacking on current branch instead of trunk (93df692)
+- Fix `impl-signal started` to include lifecycle_stage transition, preventing stuck "planned" status (ed266b8)
 
 ### Removed
 
 - Remove GitHub repository variables feature and related infrastructure (a4ba14e)
 - Remove run_url gate from land PR command (9fc1dab)
+- Remove `get_plan_backend()` and `PlanBackendType`, hardcoding draft PR as the only plan backend (4ccfbb0)
 
 ## [0.8.1] - 2026-02-22 08:14 PT
 
