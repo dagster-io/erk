@@ -1119,6 +1119,17 @@ class ErkDashApp(App):
                     run_id = row.run_url.rsplit("/", 1)[-1]
                     self._status_bar.set_message(f"Opened run {run_id}")
 
+    @on(PlanDataTable.DepsClicked)
+    def on_deps_clicked(self, event: PlanDataTable.DepsClicked) -> None:
+        """Handle click on deps cell - open first blocking dep plan in browser."""
+        if event.row_index < len(self._rows):
+            row = self._rows[event.row_index]
+            if row.objective_deps_plans:
+                display, url = row.objective_deps_plans[0]
+                self._provider.browser.launch(url)
+                if self._status_bar is not None:
+                    self._status_bar.set_message(f"Opened issue {display}")
+
     @on(PlanDataTable.ObjectiveClicked)
     def on_objective_clicked(self, event: PlanDataTable.ObjectiveClicked) -> None:
         """Handle click on objective cell - open objective issue in browser."""
