@@ -101,6 +101,7 @@ class RealGitHub(GitHub):
         self._time = time
         self._repo_info = repo_info
         self._issues = issues
+        self._default_branch_cache: dict[Path, str] = {}
 
     @classmethod
     def for_test(
@@ -291,18 +292,21 @@ class RealGitHub(GitHub):
         return "".join(secrets.choice(base36_chars) for _ in range(6))
 
     def _get_default_branch(self, repo_root: Path) -> str:
-        """Resolve the default branch for the repository via REST API.
+        """Get the repository's default branch via REST API.
 
-        Args:
-            repo_root: Repository root path
-
-        Returns:
-            Default branch name (e.g., 'main' or 'master')
+        Uses REST quota instead of the implicit GraphQL call that
+        gh workflow run makes when ref is not specified.
+        Results are cached per repo_root since the default branch
+        does not change within a session.
         """
-        # GH-API-AUDIT: REST - GET repos/{owner}/{repo}
+        if repo_root in self._default_branch_cache:
+            return self._default_branch_cache[repo_root]
+        # GH-API-AUDIT: REST - GET repos/{owner}/{repo} (.default_branch)
         cmd = ["gh", "api", "repos/{owner}/{repo}", "--jq", ".default_branch"]
         stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
-        return stdout.strip()
+        branch = stdout.strip()
+        self._default_branch_cache[repo_root] = branch
+        return branch
 
     def _dispatch_workflow_impl(
         self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None
@@ -956,16 +960,8 @@ query {{
             ]
 
             try:
-                runs_result = run_subprocess_with_context(
-                    cmd=runs_cmd,
-                    operation_context=(
-                        f"poll for workflow run (workflow: {workflow}, branch: {branch_name})"
-                    ),
-                    cwd=repo_root,
-                )
-
-                # Parse JSON output
-                runs_data = json.loads(runs_result.stdout)
+                runs_stdout = execute_gh_command_with_retry(runs_cmd, repo_root, self._time)
+                runs_data = json.loads(runs_stdout)
             except (RuntimeError, FileNotFoundError, json.JSONDecodeError) as e:
                 # Transient API error - retry
                 return RetryRequested(reason=f"API error: {e}")
