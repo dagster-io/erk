@@ -439,7 +439,12 @@ def branch_checkout(
             ctx.git.remote.fetch_branch(repo.root, "origin", branch)
             ctx.branch_manager.create_tracking_branch(repo.root, branch, f"origin/{branch}")
             user_output(f"Created tracking branch: {branch}")
-        ctx.branch_manager.track_branch(repo.root, branch, trunk)
+        current_branch = ctx.git.branch.get_current_branch(repo.root)
+        if current_branch and current_branch != trunk:
+            parent_branch = current_branch
+        else:
+            parent_branch = trunk
+        ctx.branch_manager.track_branch(repo.root, branch, parent_branch)
 
     # Get all worktrees
     worktrees = ctx.git.worktree.list_worktrees(repo.root)
