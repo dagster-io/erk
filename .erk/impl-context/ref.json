@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Replace brittle fence-stripping with raw_decode JSON extraction"
+}
