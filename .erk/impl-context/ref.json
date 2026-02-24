@@ -1,5 +1,9 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Objective #7911 Nodes 2.1 + 2.2 \u2014 Migrate plan test helpers to PlannedPRBackend",
+  "plan_id": "8107",
+  "url": "https://github.com/dagster-io/erk/pull/8107",
+  "created_at": "2026-02-24T22:23:47.872804",
+  "synced_at": "2026-02-24T22:23:47.872804",
+  "labels": [],
   "objective_id": 7911
 }
