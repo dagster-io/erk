@@ -340,10 +340,10 @@ erk exec impl-signal submitted 2>/dev/null || true
 Then validate PR completion invariants:
 
 ```bash
-erk exec pr-check-complete
+erk pr check --stage=impl
 ```
 
-This checks all `erk pr check` invariants plus implementation-specific checks
+This validates PR submission readiness including implementation-specific checks
 (e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
 
 ### Step 14: Output Format
