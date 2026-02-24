@@ -272,7 +272,7 @@ class PlanBackend(PlanStore):
         Returns None if the branch is not associated with a plan.
 
         For GitHubPlanBackend this is a zero-cost regex operation.
-        Future backends (e.g., DraftPRPlanBackend) may require an API call.
+        Future backends (e.g., PlannedPRBackend) may require an API call.
 
         Args:
             repo_root: Repository root directory

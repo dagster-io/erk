@@ -15,9 +15,9 @@ tripwires:
 
 ## The `ERK_PLAN_BACKEND` Contamination Pattern
 
-> **Note:** After PR #7971 (objective #7911 node 1.1), the `get_plan_backend()` function was deleted and the plan backend is hardcoded to `"draft_pr"`. The `ERK_PLAN_BACKEND` environment variable is no longer read by application code. The contamination pattern described below is historical but the mitigations remain relevant until vestigial code paths are fully cleaned up in later nodes of objective #7911.
+> **Note:** After PR #7971 (objective #7911 node 1.1), the `get_plan_backend()` function was deleted and the plan backend is hardcoded to `"planned_pr"`. The `ERK_PLAN_BACKEND` environment variable is no longer read by application code. The contamination pattern described below is historical but the mitigations remain relevant until vestigial code paths are fully cleaned up in later nodes of objective #7911.
 
-Previously, setting `ERK_PLAN_BACKEND=draft_pr` in the shell environment caused **125+ test failures** when running the full test suite.
+Previously, setting `ERK_PLAN_BACKEND=planned_pr` in the shell environment caused **125+ test failures** when running the full test suite.
 
 ### Root Cause
 
@@ -25,11 +25,11 @@ Previously, setting `ERK_PLAN_BACKEND=draft_pr` in the shell environment caused 
 
 ```python
 # From testing.py:192 (approximately) — after PR #7971
-elif "draft_pr" == "draft_pr" and not issues_explicitly_passed:
-    # Always takes the DraftPRPlanBackend path
+elif "planned_pr" == "planned_pr" and not issues_explicitly_passed:
+    # Always takes the PlannedPRBackend path
 ```
 
-The draft-PR path is always taken regardless of environment variables. Tests that set `ERK_PLAN_BACKEND` are now exercising dead code paths. Monkeypatching this variable has no behavioral effect.
+The planned-PR path is always taken regardless of environment variables. Tests that set `ERK_PLAN_BACKEND` are now exercising dead code paths. Monkeypatching this variable has no behavioral effect.
 
 ## Two `context_for_test()` Implementations
 
@@ -73,12 +73,12 @@ Some test infrastructure supports `env_overrides={"ERK_PLAN_BACKEND": "github"}`
 
 If you see 100+ unexpected failures:
 
-1. Check `echo $ERK_PLAN_BACKEND` — if it's `draft_pr`, that's the cause
+1. Check `echo $ERK_PLAN_BACKEND` — if it's `planned_pr`, that's the cause
 2. Unset it: `unset ERK_PLAN_BACKEND`
 3. Re-run the failing tests to confirm they pass
 4. Add a fixture to isolate tests from the env var going forward
 
 ## Related Documentation
 
-- [Draft PR Plan Backend](../planning/draft-pr-plan-backend.md) — What draft-PR backend does
+- [Planned PR Backend](../planning/planned-pr-backend.md) — What planned-PR backend does
 - [Fake-Driven Testing](../../.claude/skills/fake-driven-testing/) — Testing patterns

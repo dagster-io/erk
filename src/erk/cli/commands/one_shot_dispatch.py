@@ -29,12 +29,12 @@ from erk_shared.gateway.github.pr_footer import build_pr_body_footer
 from erk_shared.gateway.time.abc import Time
 from erk_shared.naming import (
     format_branch_timestamp_suffix,
-    generate_draft_pr_branch_name,
     generate_issue_branch_name,
+    generate_planned_pr_branch_name,
     sanitize_worktree_name,
 )
 from erk_shared.output.output import format_duration, user_output
-from erk_shared.plan_store.draft_pr_lifecycle import build_plan_stage_body
+from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
 
 logger = logging.getLogger(__name__)
 
@@ -191,13 +191,13 @@ def dispatch_one_shot(
         objective_issue_str = params.extra_workflow_inputs.get("objective_issue")
         objective_id = int(objective_issue_str) if objective_issue_str else None
 
-        is_draft_pr = backend_name == "github-draft-pr"
+        is_planned_pr = backend_name == "github-draft-pr"
 
         # --- Backend-conditional entity creation ---
         # github backend: create skeleton issue first for P<N>- branch naming
-        # draft_pr backend: skip skeleton issue, use plnd/ branch naming, PR is the plan
+        # planned_pr backend: skip skeleton issue, use plnd/ branch naming, PR is the plan
         plan_issue_number: int | None = None
-        if not is_draft_pr:
+        if not is_planned_pr:
             current_step = "Creating skeleton plan issue"
             user_output("Creating skeleton plan issue...")
             skeleton_plan_content = (
@@ -235,9 +235,9 @@ def dispatch_one_shot(
         slug_elapsed = time.monotonic() - slug_start
         slug_msg = f"  \u2713 Slug: {slug} ({format_duration(slug_elapsed)})"
         user_output(click.style(slug_msg, dim=True))
-        if is_draft_pr:
-            # draft_pr: plnd/ prefix (no issue number needed)
-            branch_name = generate_draft_pr_branch_name(
+        if is_planned_pr:
+            # planned_pr: plnd/ prefix (no issue number needed)
+            branch_name = generate_planned_pr_branch_name(
                 slug,
                 ctx.time.now(),
                 objective_id=objective_id,
@@ -296,8 +296,8 @@ def dispatch_one_shot(
         # --- Create draft PR ---
         current_step = "Creating draft PR"
         user_output("Creating draft PR...")
-        if is_draft_pr:
-            # draft_pr: create PR with plan-header metadata block
+        if is_planned_pr:
+            # planned_pr: create PR with plan-header metadata block
             _, username_for_header, _ = ctx.github.check_auth_status()
             created_at = ctx.time.now().replace(tzinfo=UTC).isoformat()
             metadata_body = format_plan_header_body(
@@ -383,7 +383,7 @@ def dispatch_one_shot(
             "branch_name": branch_name,
             "pr_number": str(pr_number),
             "submitted_by": submitted_by,
-            "plan_backend": "draft_pr" if is_draft_pr else "github",
+            "plan_backend": "planned_pr" if is_planned_pr else "github",
         }
         if params.model is not None:
             inputs["model_name"] = params.model
@@ -412,9 +412,9 @@ def dispatch_one_shot(
 
         # Update PR body with workflow run link (best-effort)
         # For github backend: rewrite with prompt + run link + closing ref
-        # For draft_pr backend: skip — metadata block body should not be overwritten
+        # For planned_pr backend: skip — metadata block body should not be overwritten
         current_step = "Updating PR body"
-        if not is_draft_pr and run_url is not None:
+        if not is_planned_pr and run_url is not None:
             try:
                 closing_ref = ""
                 if plan_issue_number is not None:
@@ -436,7 +436,7 @@ def dispatch_one_shot(
         # Write dispatch metadata and post queued comment (best-effort)
         current_step = "Writing dispatch metadata"
         if plan_issue_number is not None:
-            # Write dispatch metadata to plan entity (issue for github, PR for draft_pr)
+            # Write dispatch metadata to plan entity (issue for github, PR for planned_pr)
             try:
                 write_dispatch_metadata(
                     plan_backend=ctx.plan_backend,

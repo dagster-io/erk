@@ -15,7 +15,7 @@ from tests.test_utils.env_helpers import erk_inmem_env
 from tests.test_utils.plan_helpers import create_plan_store, create_plan_store_with_plans
 
 
-@pytest.fixture(params=["github", "draft_pr"])
+@pytest.fixture(params=["github", "planned_pr"])
 def plan_backend_type(request: pytest.FixtureRequest) -> str:
     return request.param
 

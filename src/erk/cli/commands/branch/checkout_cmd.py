@@ -409,7 +409,7 @@ def branch_checkout(
             raise click.ClickException(f"Issue #{issue_number} not found")
         plan = result
 
-        plan_backend = "draft_pr"
+        plan_backend = "planned_pr"
         plan_result = prepare_plan_for_worktree(
             plan, ctx.time.now(), plan_backend=plan_backend, warn_non_open=True
         )
@@ -436,8 +436,8 @@ def branch_checkout(
         local_branches = ctx.git.branch.list_local_branches(repo.root)
         branch_exists_locally = branch in local_branches
 
-        if plan_backend == "draft_pr":
-            # Draft PR backend: branch was created by plan-save
+        if plan_backend == "planned_pr":
+            # Planned PR backend: branch was created by plan-save
             if branch_exists_locally:
                 user_output(f"Using existing branch: {branch}")
             else:

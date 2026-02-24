@@ -15,7 +15,7 @@ from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
 
 
 def _make_issue_info(number: int) -> IssueInfo:
@@ -62,10 +62,10 @@ def test_add_plan_label_success() -> None:
     assert "erk-consolidated" in issue.labels
 
 
-def test_add_plan_label_draft_pr_backend() -> None:
+def test_add_plan_label_planned_pr_backend() -> None:
     """Test label addition via draft PR backend."""
     fake_github = FakeGitHub()
-    backend = DraftPRPlanBackend(fake_github, fake_github.issues, time=FakeTime())
+    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
 
     create_result = backend.create_plan(
         repo_root=Path("/repo"),

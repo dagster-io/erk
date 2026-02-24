@@ -1,10 +1,10 @@
 """Tests for next_steps formatting functions."""
 
 from erk_shared.output.next_steps import (
-    DraftPRNextSteps,
     IssueNextSteps,
-    format_draft_pr_next_steps_plain,
+    PlannedPRNextSteps,
     format_next_steps_plain,
+    format_planned_pr_next_steps_plain,
 )
 
 
@@ -34,9 +34,9 @@ class TestIssueNextSteps:
         )
 
 
-class TestDraftPRNextSteps:
+class TestPlannedPRNextSteps:
     def test_construction(self) -> None:
-        steps = DraftPRNextSteps(
+        steps = PlannedPRNextSteps(
             pr_number=42,
             branch_name="plan-my-feature-02-20",
             url="https://github.com/org/repo/pull/42",
@@ -45,7 +45,7 @@ class TestDraftPRNextSteps:
         assert steps.branch_name == "plan-my-feature-02-20"
 
     def test_view_returns_url(self) -> None:
-        steps = DraftPRNextSteps(
+        steps = PlannedPRNextSteps(
             pr_number=42,
             branch_name="plan-my-feature-02-20",
             url="https://github.com/org/repo/pull/42",
@@ -53,7 +53,7 @@ class TestDraftPRNextSteps:
         assert steps.view == "https://github.com/org/repo/pull/42"
 
     def test_submit_uses_pr_number(self) -> None:
-        steps = DraftPRNextSteps(
+        steps = PlannedPRNextSteps(
             pr_number=42,
             branch_name="plan-my-feature-02-20",
             url="https://github.com/org/repo/pull/42",
@@ -61,7 +61,7 @@ class TestDraftPRNextSteps:
         assert steps.submit == "erk plan submit 42"
 
     def test_checkout_branch_and_implement_uses_branch_name(self) -> None:
-        steps = DraftPRNextSteps(
+        steps = PlannedPRNextSteps(
             pr_number=42,
             branch_name="plan-my-feature-02-20",
             url="https://github.com/org/repo/pull/42",
@@ -71,7 +71,7 @@ class TestDraftPRNextSteps:
         )
 
     def test_checkout_uses_pr_number(self) -> None:
-        steps = DraftPRNextSteps(
+        steps = PlannedPRNextSteps(
             pr_number=42,
             branch_name="plan-my-feature-02-20",
             url="https://github.com/org/repo/pull/42",
@@ -79,7 +79,7 @@ class TestDraftPRNextSteps:
         assert steps.checkout == "erk br co --for-plan 42"
 
     def test_checkout_and_implement_uses_pr_number(self) -> None:
-        steps = DraftPRNextSteps(
+        steps = PlannedPRNextSteps(
             pr_number=42,
             branch_name="plan-my-feature-02-20",
             url="https://github.com/org/repo/pull/42",
@@ -89,7 +89,7 @@ class TestDraftPRNextSteps:
         )
 
     def test_checkout_new_slot(self) -> None:
-        steps = DraftPRNextSteps(
+        steps = PlannedPRNextSteps(
             pr_number=42,
             branch_name="plan-my-feature-02-20",
             url="https://github.com/org/repo/pull/42",
@@ -97,7 +97,7 @@ class TestDraftPRNextSteps:
         assert steps.checkout_new_slot == "erk br co --new-slot --for-plan 42"
 
     def test_checkout_new_slot_and_implement(self) -> None:
-        steps = DraftPRNextSteps(
+        steps = PlannedPRNextSteps(
             pr_number=42,
             branch_name="plan-my-feature-02-20",
             url="https://github.com/org/repo/pull/42",
@@ -125,21 +125,21 @@ class TestFormatNextStepsPlain:
         assert "https://github.com/org/repo/issues/99" in output
 
 
-class TestFormatDraftPRNextStepsPlain:
+class TestFormatPlannedPRNextStepsPlain:
     def test_contains_for_plan_command(self) -> None:
-        output = format_draft_pr_next_steps_plain(
+        output = format_planned_pr_next_steps_plain(
             42, branch_name="plan-my-feature-02-20", url="https://github.com/org/repo/pull/42"
         )
         assert "erk br co --for-plan 42" in output
 
     def test_contains_url_in_view(self) -> None:
-        output = format_draft_pr_next_steps_plain(
+        output = format_planned_pr_next_steps_plain(
             42, branch_name="plan-my-feature-02-20", url="https://github.com/org/repo/pull/42"
         )
         assert "https://github.com/org/repo/pull/42" in output
 
     def test_contains_implement_command(self) -> None:
-        output = format_draft_pr_next_steps_plain(
+        output = format_planned_pr_next_steps_plain(
             42, branch_name="plan-my-feature-02-20", url="https://github.com/org/repo/pull/42"
         )
         assert "erk implement --dangerous" in output

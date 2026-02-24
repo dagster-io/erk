@@ -454,11 +454,11 @@ class TestShowPrColumnFalse:
         assert _text_to_str(values[8]) == "#456"
 
 
-# --- Tests for stage column logic in draft_pr mode ---
+# --- Tests for stage column logic in planned_pr mode ---
 
 
-def test_row_to_values_draft_pr_includes_stage() -> None:
-    """draft_pr backend includes lifecycle_display stage value in output."""
+def test_row_to_values_planned_pr_includes_stage() -> None:
+    """planned_pr backend includes lifecycle_display stage value in output."""
     filters = PlanFilters(
         labels=("erk-plan",),
         state=None,
@@ -467,15 +467,15 @@ def test_row_to_values_draft_pr_includes_stage() -> None:
         show_prs=False,
         show_runs=False,
     )
-    table = PlanDataTable(filters, plan_backend="draft_pr")
+    table = PlanDataTable(filters, plan_backend="planned_pr")
     row = make_plan_row(123, "Test Plan", lifecycle_display="[cyan]review[/cyan]")
 
     values = table._row_to_values(row)
 
-    # draft_pr: plan, stage, sts, created, obj, loc, branch, run-id, run, author,
+    # planned_pr: plan, stage, sts, created, obj, loc, branch, run-id, run, author,
     # pr, chks, cmts, local-wt, local-impl, remote-impl
     assert len(values) == 16
-    # Stage at index 1 (right after plan in draft_pr mode) - markup stripped
+    # Stage at index 1 (right after plan in planned_pr mode) - markup stripped
     assert _text_to_str(values[1]) == "review"
 
 
@@ -499,7 +499,7 @@ def test_row_to_values_github_does_not_include_stage() -> None:
     assert len(values) == 14
 
 
-def test_stage_column_index_set_for_draft_pr() -> None:
+def test_stage_column_index_set_for_planned_pr() -> None:
     """_stage_column_index is set when plan_backend is draft_pr."""
     filters = PlanFilters(
         labels=("erk-plan",),
@@ -509,14 +509,14 @@ def test_stage_column_index_set_for_draft_pr() -> None:
         show_prs=False,
         show_runs=False,
     )
-    table = PlanDataTable(filters, plan_backend="draft_pr")
+    table = PlanDataTable(filters, plan_backend="planned_pr")
 
     # _stage_column_index is set during __init__ but columns aren't set up
     # until on_mount. Verify the initial value is None (pre-setup).
     assert table._stage_column_index is None
 
     # After __init__, _plan_backend should be set
-    assert table._plan_backend == "draft_pr"
+    assert table._plan_backend == "planned_pr"
 
 
 def test_stage_column_index_none_for_github() -> None:

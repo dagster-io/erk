@@ -20,7 +20,7 @@ from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
@@ -708,7 +708,7 @@ def test_option4_calls_preprocess_and_continues_landing(
     assert preprocess_calls[0] == (repo_root, issue_number)
 
 
-# Tests for _store_learn_materials_branch with draft-PR backend (Fix 2)
+# Tests for _store_learn_materials_branch with planned-PR backend (Fix 2)
 
 
 def test_store_learn_materials_branch_comment_fallback_on_missing_metadata(
@@ -741,7 +741,7 @@ def test_store_learn_materials_branch_comment_fallback_on_missing_metadata(
         issues_gateway=fake_issues,
         pr_details={issue_number: pr_details},
     )
-    draft_backend = DraftPRPlanBackend(fake_gh, fake_issues, time=FakeTime())
+    draft_backend = PlannedPRBackend(fake_gh, fake_issues, time=FakeTime())
 
     ctx = context_for_test(
         cwd=repo_root,
@@ -758,7 +758,7 @@ def test_store_learn_materials_branch_comment_fallback_on_missing_metadata(
     )
 
     # Verify a PR comment was added (fallback path) instead of metadata update
-    # DraftPRPlanBackend.add_comment delegates to github.create_pr_comment
+    # PlannedPRBackend.add_comment delegates to github.create_pr_comment
     assert len(fake_gh.pr_comments) == 1
     comment_pr, comment_body = fake_gh.pr_comments[0]
     assert comment_pr == issue_number

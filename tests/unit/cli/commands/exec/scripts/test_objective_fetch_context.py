@@ -15,7 +15,7 @@ from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
 
 
 def _make_issue(*, number: int, title: str, body: str) -> IssueInfo:
@@ -618,8 +618,8 @@ class TestDiscoveryMode:
         assert "No PR found" in data["error"]
 
 
-class TestDraftPRBackend:
-    def test_happy_path_draft_pr_plan(self, tmp_path: Path) -> None:
+class TestPlannedPRBackend:
+    def test_happy_path_planned_pr_plan(self, tmp_path: Path) -> None:
         """Draft PR branch with plan-header resolves plan and objective correctly."""
         objective = _make_issue(number=7419, title="My Objective", body=ROADMAP_BODY)
         draft_pr = _make_pr_details(
@@ -640,7 +640,7 @@ class TestDraftPRBackend:
             prs_by_branch={"plan-draft-pr-plan": draft_pr},
             pr_details={8002: pr},
         )
-        draft_pr_backend = DraftPRPlanBackend(fake_github, fake_issues, time=FakeTime())
+        planned_pr_backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
@@ -649,7 +649,7 @@ class TestDraftPRBackend:
             obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
-                plan_store=draft_pr_backend,
+                plan_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -663,7 +663,7 @@ class TestDraftPRBackend:
         assert data["plan"]["title"] == "Draft PR Plan"
         assert data["pr"]["number"] == 8002
 
-    def test_draft_pr_objective_discovery(self, tmp_path: Path) -> None:
+    def test_planned_pr_objective_discovery(self, tmp_path: Path) -> None:
         """Auto-discovers objective from draft PR plan's plan-header metadata."""
         objective = _make_issue(number=7419, title="My Objective", body=ROADMAP_BODY)
         draft_pr = _make_pr_details(
@@ -684,7 +684,7 @@ class TestDraftPRBackend:
             prs_by_branch={"plan-draft-pr-plan": draft_pr},
             pr_details={8002: pr},
         )
-        draft_pr_backend = DraftPRPlanBackend(fake_github, fake_issues, time=FakeTime())
+        planned_pr_backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
@@ -693,7 +693,7 @@ class TestDraftPRBackend:
             obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
-                plan_store=draft_pr_backend,
+                plan_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -704,11 +704,11 @@ class TestDraftPRBackend:
         assert data["success"] is True
         assert data["objective"]["number"] == 7419
 
-    def test_draft_pr_plan_not_found(self, tmp_path: Path) -> None:
+    def test_planned_pr_plan_not_found(self, tmp_path: Path) -> None:
         """Returns error when no PR exists for a plan-... branch."""
         fake_issues = FakeGitHubIssues()
         fake_github = FakeGitHub()
-        draft_pr_backend = DraftPRPlanBackend(fake_github, fake_issues, time=FakeTime())
+        planned_pr_backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
@@ -717,7 +717,7 @@ class TestDraftPRBackend:
             obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
-                plan_store=draft_pr_backend,
+                plan_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),

@@ -2106,12 +2106,12 @@ class TestActionViewComments:
 # --- Tests for _display_name_for_view ---
 
 
-def test_display_name_draft_pr_plans_view() -> None:
-    """draft_pr backend + PLANS view returns 'Planned PRs'."""
+def test_display_name_planned_pr_plans_view() -> None:
+    """planned_pr backend + PLANS view returns 'Planned PRs'."""
     provider = FakePlanDataProvider()
     filters = PlanFilters.default()
     app = ErkDashApp(
-        provider=provider, filters=filters, refresh_interval=0, plan_backend="draft_pr"
+        provider=provider, filters=filters, refresh_interval=0, plan_backend="planned_pr"
     )
     assert app._display_name_for_view(ViewMode.PLANS) == "Planned PRs"
 
@@ -2125,12 +2125,12 @@ def test_display_name_github_plans_view() -> None:
     assert app._display_name_for_view(ViewMode.PLANS) == expected
 
 
-def test_display_name_draft_pr_non_plans_view() -> None:
-    """draft_pr backend + non-PLANS mode returns default display name."""
+def test_display_name_planned_pr_non_plans_view() -> None:
+    """planned_pr backend + non-PLANS mode returns default display name."""
     provider = FakePlanDataProvider()
     filters = PlanFilters.default()
     app = ErkDashApp(
-        provider=provider, filters=filters, refresh_interval=0, plan_backend="draft_pr"
+        provider=provider, filters=filters, refresh_interval=0, plan_backend="planned_pr"
     )
     expected_learn = get_view_config(ViewMode.LEARN).display_name
     assert app._display_name_for_view(ViewMode.LEARN) == expected_learn

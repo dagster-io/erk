@@ -149,10 +149,10 @@ def test_prepare_plan_without_objective_id_has_none() -> None:
     assert result.objective_issue is None
 
 
-# Tests for prepare_plan_for_worktree — draft_pr backend
+# Tests for prepare_plan_for_worktree — planned_pr backend
 
 
-def test_draft_pr_backend_uses_existing_branch() -> None:
+def test_planned_pr_backend_uses_existing_branch() -> None:
     """Draft PR plan with branch_name in header_fields uses it directly."""
     plan = _make_plan(
         plan_identifier="456",
@@ -161,25 +161,29 @@ def test_draft_pr_backend_uses_existing_branch() -> None:
     )
     timestamp = datetime(2024, 3, 10, 9, 15)
 
-    result = prepare_plan_for_worktree(plan, timestamp, plan_backend="draft_pr", warn_non_open=True)
+    result = prepare_plan_for_worktree(
+        plan, timestamp, plan_backend="planned_pr", warn_non_open=True
+    )
 
     assert isinstance(result, IssueBranchSetup)
     assert result.branch_name == "plan-add-new-feature-01-15-1430"
     assert result.issue_number == 456
 
 
-def test_draft_pr_backend_missing_branch_returns_failure() -> None:
+def test_planned_pr_backend_missing_branch_returns_failure() -> None:
     """Draft PR plan without branch_name in header_fields returns failure."""
     plan = _make_plan(plan_identifier="456", title="Add New Feature")
     timestamp = datetime(2024, 3, 10, 9, 15)
 
-    result = prepare_plan_for_worktree(plan, timestamp, plan_backend="draft_pr", warn_non_open=True)
+    result = prepare_plan_for_worktree(
+        plan, timestamp, plan_backend="planned_pr", warn_non_open=True
+    )
 
     assert isinstance(result, IssueValidationFailed)
     assert "missing required branch_name" in result.message
 
 
-def test_draft_pr_backend_empty_branch_returns_failure() -> None:
+def test_planned_pr_backend_empty_branch_returns_failure() -> None:
     """Draft PR plan with empty branch_name in header_fields returns failure."""
     plan = _make_plan(
         plan_identifier="456",
@@ -188,7 +192,9 @@ def test_draft_pr_backend_empty_branch_returns_failure() -> None:
     )
     timestamp = datetime(2024, 3, 10, 9, 15)
 
-    result = prepare_plan_for_worktree(plan, timestamp, plan_backend="draft_pr", warn_non_open=True)
+    result = prepare_plan_for_worktree(
+        plan, timestamp, plan_backend="planned_pr", warn_non_open=True
+    )
 
     assert isinstance(result, IssueValidationFailed)
     assert "missing required branch_name" in result.message

@@ -22,7 +22,7 @@ from erk.core.prompt_executor import ClaudePromptExecutor
 from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
 from erk.core.script_writer import RealScriptWriter
 from erk.core.services.objective_list_service import RealObjectiveListService
-from erk.core.services.plan_list_service import DraftPRPlanListService, RealPlanListService
+from erk.core.services.plan_list_service import PlannedPRPlanListService, RealPlanListService
 from erk.core.shell import RealShell
 
 # Re-export ErkContext from erk_shared for isinstance() compatibility
@@ -78,8 +78,8 @@ from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
 from erk_shared.plan_store.github import GitHubPlanStore
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.store import PlanStore
 
 
@@ -605,12 +605,12 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     issues: GitHubIssues = RealGitHubIssues(target_repo=local_config.plans_repo, time=time)
     github: GitHub = RealGitHub(time, repo_info, issues=issues)
 
-    # PLAN_BACKEND_SPLIT: selects DraftPRPlanBackend or GitHubPlanStore based on ERK_PLAN_BACKEND
+    # PLAN_BACKEND_SPLIT: selects PlannedPRBackend or GitHubPlanStore based on ERK_PLAN_BACKEND
     plan_store: PlanStore
     plan_list_service: PlanListService
-    if "draft_pr" == "draft_pr":
-        plan_store = DraftPRPlanBackend(github, issues, time=RealTime())
-        plan_list_service = DraftPRPlanListService(github)
+    if "planned_pr" == "planned_pr":
+        plan_store = PlannedPRBackend(github, issues, time=RealTime())
+        plan_list_service = PlannedPRPlanListService(github)
     else:
         plan_store = GitHubPlanStore(issues)
         plan_list_service = RealPlanListService(github, issues)

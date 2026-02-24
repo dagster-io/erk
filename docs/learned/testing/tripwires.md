@@ -126,4 +126,4 @@ Rules triggered by matching actions in code.
 
 **writing React component tests with Vitest + jsdom** → Read [jsdom DOM API Stubs for Vitest](vitest-jsdom-stubs.md) first. jsdom doesn't implement several browser APIs (scrollIntoView, ResizeObserver). Check erkdesk/src/test/setup.ts for existing stubs before adding new ones.
 
-**writing plan storage tests that parametrize across both backends** → Read [Dual Backend Testing](dual-backend-testing.md) first. After PR #7971 (objective #7911 node 1.1), only the 'draft_pr' backend is active. New plan-related tests should use create_plan_store(backend='draft_pr') directly rather than parametrizing across both backends. The 'github' path is dead code pending removal.
+**writing plan storage tests that parametrize across both backends** → Read [Dual Backend Testing](dual-backend-testing.md) first. After PR #7971 (objective #7911 node 1.1), only the 'planned_pr' backend is active. New plan-related tests should use create_plan_store(backend='planned_pr') directly rather than parametrizing across both backends. The 'github' path is dead code pending removal.

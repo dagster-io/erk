@@ -162,7 +162,7 @@ GET_ISSUES_WITH_PR_LINKAGES_QUERY = """query(
 }"""
 
 # Query for draft plan PRs with rich details (checks, review threads, mergeability)
-# Used by DraftPRPlanListService for single-call data fetching.
+# Used by PlannedPRPlanListService for single-call data fetching.
 # Note: pullRequests connection does not support filterBy for creator or draft status,
 # so those filters must be applied client-side.
 GET_PLAN_PRS_WITH_DETAILS_QUERY = """query(

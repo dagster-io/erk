@@ -435,7 +435,7 @@ def test_closed_draft_false_no_prefix() -> None:
     assert result == "[dim red]closed[/dim red]"
 
 
-def test_plain_text_stage_with_draft_prefix() -> None:
+def test_plain_text_stage_with_planned_prefix() -> None:
     """Plain text stage (no Rich markup) prepends draft prefix."""
     result = _format_lifecycle(
         "review",

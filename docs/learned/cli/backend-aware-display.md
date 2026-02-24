@@ -1,12 +1,12 @@
 ---
 title: CLI Backend-Aware Display Patterns
 read_when:
-  - "adding CLI commands that behave differently for issue vs draft-PR plans"
+  - "adding CLI commands that behave differently for issue vs planned-PR plans"
   - "routing between gh issue and gh pr commands based on plan backend"
   - "understanding how plan_backend affects CLI output"
 tripwires:
   - action: "using gh issue view on a plan without checking plan backend type"
-    warning: "Draft-PR plan IDs are PR numbers, not issue numbers. Using gh issue view on a draft-PR plan produces a confusing 404. Route to gh pr view based on backend type."
+    warning: "Planned PR plan IDs are PR numbers, not issue numbers. Using gh issue view on a planned-PR plan produces a confusing 404. Route to gh pr view based on backend type."
     score: 7
 ---
 
@@ -51,23 +51,23 @@ The TUI command palette uses the `_is_github_backend()` predicate in [`registry.
 
 When displaying plan information to users, use backend-appropriate terminology:
 
-| Concept      | Issue Backend   | Draft-PR Backend |
-| ------------ | --------------- | ---------------- |
-| Plan storage | "issue"         | "draft PR"       |
-| Plan ID      | Issue number    | PR number        |
-| View command | `gh issue view` | `gh pr view`     |
-| Plan label   | `erk-plan`      | `erk-plan`       |
+| Concept      | Issue Backend   | Planned PR Backend |
+| ------------ | --------------- | ------------------ |
+| Plan storage | "issue"         | "planned PR"       |
+| Plan ID      | Issue number    | PR number          |
+| View command | `gh issue view` | `gh pr view`       |
+| Plan label   | `erk-plan`      | `erk-plan`         |
 
 ## When to Use Each Pattern
 
-| Scenario                                        | Pattern              |
-| ----------------------------------------------- | -------------------- |
-| Metadata reads/writes                           | Interface delegation |
-| Different GitHub CLI commands needed            | Provider name check  |
-| Command visibility filtering                    | Direct comparison    |
-| Output text differences ("issue" vs "draft PR") | Provider name check  |
+| Scenario                                          | Pattern              |
+| ------------------------------------------------- | -------------------- |
+| Metadata reads/writes                             | Interface delegation |
+| Different GitHub CLI commands needed              | Provider name check  |
+| Command visibility filtering                      | Direct comparison    |
+| Output text differences ("issue" vs "planned PR") | Provider name check  |
 
 ## Related Topics
 
 - [Backend-Aware TUI Commands](../tui/backend-aware-commands.md) — TUI-specific command filtering by backend
-- [Draft PR Plan Backend](../planning/draft-pr-plan-backend.md) — Backend architecture and selection
+- [Planned PR Backend](../planning/planned-pr-backend.md) — Backend architecture and selection

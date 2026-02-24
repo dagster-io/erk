@@ -15,11 +15,11 @@ tripwires:
 
 ## Pattern
 
-Located in `src/erk/cli/commands/exec/scripts/plan_save.py`, the `_save_as_draft_pr()` function:
+Located in `src/erk/cli/commands/exec/scripts/plan_save.py`, the `_save_as_planned_pr()` function:
 
-<!-- Source: src/erk/cli/commands/exec/scripts/plan_save.py, _save_as_draft_pr -->
+<!-- Source: src/erk/cli/commands/exec/scripts/plan_save.py, _save_as_planned_pr -->
 
-See `_save_as_draft_pr()` in `src/erk/cli/commands/exec/scripts/plan_save.py` — uses `git.commit.commit_files_to_branch()` to create a commit directly on the plan branch without modifying HEAD or the working tree.
+See `_save_as_planned_pr()` in `src/erk/cli/commands/exec/scripts/plan_save.py` — uses `git.commit.commit_files_to_branch()` to create a commit directly on the plan branch without modifying HEAD or the working tree.
 
 Key properties:
 
@@ -50,4 +50,4 @@ Tests in `tests/unit/cli/commands/exec/scripts/test_plan_save.py` verify that pl
 
 ## Related Topics
 
-- [Draft PR Plan Backend](../planning/draft-pr-plan-backend.md) - Backend that uses this pattern
+- [Planned PR Backend](../planning/planned-pr-backend.md) - Backend that uses this pattern

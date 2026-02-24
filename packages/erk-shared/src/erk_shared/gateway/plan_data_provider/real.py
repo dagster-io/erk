@@ -369,7 +369,7 @@ class RealPlanDataProvider(PlanDataProvider):
         fetch the specific comment containing the plan content.
 
         For draft PR plans: plan_body IS the plan content (already extracted from the
-        PR body by DraftPRPlanListService). No metadata block is present, so return
+        PR body by PlannedPRPlanListService). No metadata block is present, so return
         plan_body directly.
 
         Args:
@@ -447,7 +447,7 @@ class RealPlanDataProvider(PlanDataProvider):
         Uses PXXXX prefix matching on branch names to associate worktrees
         with issues. Branch names follow pattern: P{plan_id}-{slug}-{timestamp}
 
-        For draft-PR plan branches (plnd/{slug}-{timestamp}), falls back to
+        For planned-PR plan branches (plnd/{slug}-{timestamp}), falls back to
         reading .impl/plan-ref.json from the worktree to get the plan ID,
         since the PR number is not encoded in the branch name.
 
@@ -462,11 +462,11 @@ class RealPlanDataProvider(PlanDataProvider):
                 extract_leading_issue_number(worktree.branch) if worktree.branch else None
             )
 
-            # Fallback for draft-PR branches: read .impl/plan-ref.json
-            is_draft_pr_branch = worktree.branch and (
+            # Fallback for planned-PR branches: read .impl/plan-ref.json
+            is_planned_pr_branch = worktree.branch and (
                 worktree.branch.startswith("plnd/") or worktree.branch.startswith("planned/")
             )
-            if issue_number is None and is_draft_pr_branch:
+            if issue_number is None and is_planned_pr_branch:
                 impl_dir = worktree.path / ".impl"
                 plan_ref = read_plan_ref(impl_dir)
                 if plan_ref is not None and plan_ref.plan_id.isdigit():

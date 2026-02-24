@@ -139,7 +139,7 @@ class HookInput:
     pr_number: int | None  # PR number if exists for current branch
     plan_issue_number: int | None  # Issue number from .impl/issue.json
     editor: str | None  # Value of EDITOR env var for TUI detection
-    plan_backend: str  # "github" or "draft_pr"
+    plan_backend: str  # "github" or "planned_pr"
 
     @classmethod
     def for_test(
@@ -274,10 +274,10 @@ def build_blocking_message(
         pr_number: PR number if exists for current branch.
         plan_issue_number: Issue number from .impl/issue.json.
         editor: Value of EDITOR env var for TUI detection.
-        plan_backend: Plan backend type ("github" or "draft_pr").
+        plan_backend: Plan backend type ("github" or "planned_pr").
     """
     # PLAN_BACKEND_SPLIT: affects which save action is offered and which messages are shown
-    is_draft_pr = plan_backend == "draft_pr"
+    is_planned_pr = plan_backend == "planned_pr"
     # Build context lines for the question
     context_lines: list[str] = []
 
@@ -337,7 +337,7 @@ def build_blocking_message(
         ]
     )
 
-    if is_draft_pr:
+    if is_planned_pr:
         lines.extend(
             [
                 '  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan '
@@ -378,7 +378,7 @@ def build_blocking_message(
     else:
         save_cmd = "/erk:plan-save"
 
-    if is_draft_pr:
+    if is_planned_pr:
         lines.extend(
             [
                 "",
@@ -487,8 +487,8 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
     # IMPORTANT: Do NOT delete the marker - keep it so subsequent ExitPlanMode calls
     # continue to block with "session complete" instead of prompting again
     if hook_input.plan_saved_marker_exists:
-        # PLAN_BACKEND_SPLIT: "session complete" message differs between draft-PR and issue backends
-        if hook_input.plan_backend == "draft_pr":
+        # PLAN_BACKEND_SPLIT: message differs between planned-PR and issue backends
+        if hook_input.plan_backend == "planned_pr":
             saved_msg = "✅ Plan PR already created. Session complete - no further action needed."
         else:
             saved_msg = (
@@ -763,7 +763,7 @@ def _gather_inputs(
         pr_number=pr_number,
         plan_issue_number=plan_issue_number,
         editor=editor,
-        plan_backend="draft_pr",
+        plan_backend="planned_pr",
     )
 
 

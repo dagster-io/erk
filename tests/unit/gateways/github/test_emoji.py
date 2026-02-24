@@ -280,7 +280,7 @@ def test_get_checks_status_emoji_merged_pr_with_passing_checks() -> None:
     assert result == "✅"
 
 
-def test_get_checks_status_emoji_draft_pr_with_pending_checks() -> None:
+def test_get_checks_status_emoji_planned_pr_with_pending_checks() -> None:
     """Test checks emoji for draft PR with pending checks.
 
     Note: GitHub API returns state="OPEN" for draft PRs, with is_draft=True.

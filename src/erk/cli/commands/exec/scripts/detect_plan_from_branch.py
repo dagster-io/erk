@@ -2,7 +2,7 @@
 
 Replaces inline branch-detection bash logic in plan-implement.md Step 1b-branch.
 Uses extract_leading_issue_number() from erk_shared.naming for branch name parsing,
-with a fallback to github.get_pr_for_branch() for draft-PR branches.
+with a fallback to github.get_pr_for_branch() for planned-PR branches.
 
 Usage:
     erk exec detect-plan-from-branch

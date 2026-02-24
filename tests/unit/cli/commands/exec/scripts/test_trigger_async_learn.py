@@ -30,7 +30,7 @@ from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo, RepoInfo
 from erk_shared.gateway.github_admin.fake import FakeGitHubAdmin
 from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
 
 
 def _parse_json_output(output: str) -> dict[str, object]:
@@ -995,15 +995,15 @@ def test_trigger_async_learn_remote_session_download_failure(tmp_path: Path) -> 
 # ============================================================================
 
 
-def test_get_pr_for_plan_direct_draft_pr_backend(tmp_path: Path) -> None:
-    """Test that _get_pr_for_plan_direct returns PR directly for draft-PR backend."""
+def test_get_pr_for_plan_direct_planned_pr_backend(tmp_path: Path) -> None:
+    """Test that _get_pr_for_plan_direct returns PR directly for planned-PR backend."""
     fake_issues = FakeGitHubIssues()
     fake_gh = FakeGitHub(
         issues_gateway=fake_issues,
         pr_details={7618: _make_pr_details(number=7618, head_ref_name="plan-fix-something")},
     )
     fake_git = FakeGit()
-    draft_backend = DraftPRPlanBackend(fake_gh, fake_issues, time=FakeTime())
+    draft_backend = PlannedPRBackend(fake_gh, fake_issues, time=FakeTime())
 
     result = _get_pr_for_plan_direct(
         plan_backend=draft_backend,
@@ -1020,12 +1020,12 @@ def test_get_pr_for_plan_direct_draft_pr_backend(tmp_path: Path) -> None:
     assert result["pr"]["head_ref_name"] == "plan-fix-something"
 
 
-def test_get_pr_for_plan_direct_draft_pr_backend_not_found(tmp_path: Path) -> None:
-    """Test that _get_pr_for_plan_direct returns None when PR not found for draft-PR backend."""
+def test_get_pr_for_plan_direct_planned_pr_backend_not_found(tmp_path: Path) -> None:
+    """Test that _get_pr_for_plan_direct returns None when PR not found for planned-PR backend."""
     fake_issues = FakeGitHubIssues()
     fake_gh = FakeGitHub(issues_gateway=fake_issues)
     fake_git = FakeGit()
-    draft_backend = DraftPRPlanBackend(fake_gh, fake_issues, time=FakeTime())
+    draft_backend = PlannedPRBackend(fake_gh, fake_issues, time=FakeTime())
 
     result = _get_pr_for_plan_direct(
         plan_backend=draft_backend,

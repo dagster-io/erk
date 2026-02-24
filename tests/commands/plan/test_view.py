@@ -12,7 +12,7 @@ from tests.test_utils.env_helpers import erk_inmem_env
 from tests.test_utils.plan_helpers import create_plan_store, create_plan_store_with_plans
 
 
-@pytest.fixture(params=["github", "draft_pr"])
+@pytest.fixture(params=["github", "planned_pr"])
 def plan_backend_type(request: pytest.FixtureRequest) -> str:
     return request.param
 
@@ -49,7 +49,7 @@ def test_view_plan_displays_issue(plan_backend_type: str) -> None:
         assert "#42" in result.output
         assert "erk-plan" in result.output
         assert "bug" in result.output
-        # PLAN_BACKEND_SPLIT: PRDetails (draft_pr) has no assignees field; GitHubIssue does
+        # PLAN_BACKEND_SPLIT: PRDetails (planned_pr) has no assignees field; GitHubIssue does
         if plan_backend_type == "github":
             assert "alice" in result.output  # PRDetails has no assignees field
         # Body should NOT be displayed without --full
@@ -413,9 +413,9 @@ def test_view_plan_without_header_info(plan_backend_type: str) -> None:
         assert result.exit_code == 0
         assert "Plan without Header" in result.output
         # For github backend: plain body has no metadata → no header section
-        # For draft_pr backend: _plan_to_pr_details() synthesizes a plan-header
+        # For planned_pr backend: _plan_to_pr_details() synthesizes a plan-header
         # (with branch_name, created_at, created_by) so header section IS present
-        if plan_backend_type == "draft_pr":
+        if plan_backend_type == "planned_pr":
             assert "─── Header ───" in result.output
         else:
             assert "─── Header ───" not in result.output

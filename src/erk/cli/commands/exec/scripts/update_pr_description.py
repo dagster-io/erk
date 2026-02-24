@@ -38,7 +38,7 @@ from erk.core.plan_context_provider import PlanContextProvider
 from erk_shared.context.helpers import require_context
 from erk_shared.gateway.github.pr_footer import extract_header_from_body
 from erk_shared.gateway.github.types import BodyText, PRNotFound
-from erk_shared.plan_store.draft_pr_lifecycle import extract_metadata_prefix
+from erk_shared.plan_store.planned_pr_lifecycle import extract_metadata_prefix
 
 
 @click.command(name="update-pr-description")
@@ -148,7 +148,7 @@ def _execute_update_description(ctx: ErkContext, *, debug: bool, session_id: str
     impl_dir = cwd / ".impl"
     plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
 
-    # Detect draft-PR backend and extract metadata prefix
+    # Detect planned-PR backend and extract metadata prefix
     metadata_prefix = ""
     if ctx.plan_backend.get_provider_name() == "github-draft-pr":
         metadata_prefix = extract_metadata_prefix(existing_body)

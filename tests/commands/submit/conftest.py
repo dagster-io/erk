@@ -151,7 +151,7 @@ def setup_submit_context(
     )
 
     # Wire up issues gateway: for github backend, use the fake backing;
-    # for draft_pr backend, let context_for_test create a default FakeGitHubIssues
+    # for planned_pr backend, let context_for_test create a default FakeGitHubIssues
     fake_issues = fake_backing if isinstance(fake_backing, FakeGitHubIssues) else None
 
     # Configure FakePromptExecutor to simulate failure so that

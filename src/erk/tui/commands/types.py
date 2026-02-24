@@ -31,7 +31,7 @@ class CommandContext:
 
     row: PlanRowData
     view_mode: ViewMode
-    plan_backend: Literal["draft_pr"]
+    plan_backend: Literal["planned_pr"]
 
 
 @dataclass(frozen=True)

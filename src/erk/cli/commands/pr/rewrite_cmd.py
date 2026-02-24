@@ -34,7 +34,7 @@ from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_LEARN_LABEL, is_learn_plan
 from erk_shared.gateway.gt.operations.squash import execute_squash
 from erk_shared.gateway.gt.types import SquashError
-from erk_shared.plan_store.draft_pr_lifecycle import extract_metadata_prefix
+from erk_shared.plan_store.planned_pr_lifecycle import extract_metadata_prefix
 
 
 @click.command("rewrite")
@@ -162,7 +162,7 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
     impl_dir = cwd / ".impl"
     plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
 
-    # Detect draft-PR backend and extract metadata prefix
+    # Detect planned-PR backend and extract metadata prefix
     metadata_prefix = ""
     if ctx.plan_backend.get_provider_name() == "github-draft-pr":
         metadata_prefix = extract_metadata_prefix(pr_info.body)

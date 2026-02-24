@@ -18,7 +18,7 @@ _OBJECTIVE_LABEL = "erk-objective"
 class RealObjectiveListService(ObjectiveListService):
     """Fetches objectives via RealPlanListService with hardcoded objective label.
 
-    Always uses the issue-based RealPlanListService, not DraftPRPlanListService,
+    Always uses the issue-based RealPlanListService, not PlannedPRPlanListService,
     because objectives are GitHub issues regardless of the plan backend.
     """
 

@@ -1,4 +1,4 @@
-"""Issue and draft PR next steps formatting - single source of truth."""
+"""Issue and planned PR next steps formatting - single source of truth."""
 
 from dataclasses import dataclass
 
@@ -42,8 +42,8 @@ class IssueNextSteps:
 
 
 @dataclass(frozen=True)
-class DraftPRNextSteps:
-    """Canonical commands for draft PR operations."""
+class PlannedPRNextSteps:
+    """Canonical commands for planned PR operations."""
 
     pr_number: int
     branch_name: str
@@ -105,9 +105,9 @@ OR exit Claude Code first, then run one of:
   Submit to Queue: {s.submit}"""
 
 
-def format_draft_pr_next_steps_plain(pr_number: int, *, branch_name: str, url: str) -> str:
-    """Format for CLI output (plain text) for draft PR plans."""
-    s = DraftPRNextSteps(pr_number=pr_number, branch_name=branch_name, url=url)
+def format_planned_pr_next_steps_plain(pr_number: int, *, branch_name: str, url: str) -> str:
+    """Format for CLI output (plain text) for planned PR plans."""
+    s = PlannedPRNextSteps(pr_number=pr_number, branch_name=branch_name, url=url)
     return f"""Next steps:
 
 View PR: {s.view}

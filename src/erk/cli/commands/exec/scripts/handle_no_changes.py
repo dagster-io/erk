@@ -76,7 +76,7 @@ def _build_pr_body(
     base_branch: str,
     recent_commits: str | None,
     run_url: str | None,
-    is_draft_pr: bool,
+    is_planned_pr: bool,
 ) -> str:
     """Build PR body explaining why no changes were made.
 
@@ -86,7 +86,7 @@ def _build_pr_body(
         base_branch: Base branch name
         recent_commits: Recent commits on base branch (newline-separated)
         run_url: Optional workflow run URL
-        is_draft_pr: True if plan is a draft-PR plan (plan_id IS the PR)
+        is_planned_pr: True if plan is a planned-PR plan (plan_id IS the PR)
 
     Returns:
         Formatted PR body markdown
@@ -115,13 +115,13 @@ def _build_pr_body(
     parts.append("### Next Steps")
     parts.append("")
     parts.append("1. Review the recent commits above to check if the work is done")
-    if is_draft_pr:
+    if is_planned_pr:
         parts.append("2. If done: Close this PR")
     else:
         parts.append(f"2. If done: Close this PR and the linked plan #{plan_id}")
     parts.append("3. If not done: Investigate why no changes were produced")
 
-    if not is_draft_pr:
+    if not is_planned_pr:
         parts.append("")
         parts.append("---")
         parts.append("")
@@ -134,17 +134,17 @@ def _build_pr_body(
     return "\n".join(parts)
 
 
-def _build_issue_comment(*, pr_number: int, is_draft_pr: bool) -> str:
+def _build_issue_comment(*, pr_number: int, is_planned_pr: bool) -> str:
     """Build comment for the plan linking to the PR.
 
     Args:
         pr_number: PR number to link to
-        is_draft_pr: True if plan is a draft-PR plan (plan_id IS the PR)
+        is_planned_pr: True if plan is a planned-PR plan (plan_id IS the PR)
 
     Returns:
         Comment markdown
     """
-    if is_draft_pr:
+    if is_planned_pr:
         return (
             "Implementation produced no code changes. "
             "If the work is already complete, close this PR."
@@ -192,7 +192,7 @@ def handle_no_changes(
     github = require_github(ctx)
     backend = require_plan_backend(ctx)
     repo_root = require_repo_root(ctx)
-    is_draft_pr = backend.get_provider_name() == "github-draft-pr"
+    is_planned_pr = backend.get_provider_name() == "github-draft-pr"
 
     # Build PR title and body
     new_title = _build_no_changes_title(plan_id=plan_id, original_title=original_title)
@@ -202,7 +202,7 @@ def handle_no_changes(
         base_branch=base_branch,
         recent_commits=recent_commits,
         run_url=run_url,
-        is_draft_pr=is_draft_pr,
+        is_planned_pr=is_planned_pr,
     )
 
     # 1. Update PR title and body
@@ -270,7 +270,7 @@ def handle_no_changes(
 
     # 5. Add comment to plan via PlanBackend
     try:
-        comment = _build_issue_comment(pr_number=pr_number, is_draft_pr=is_draft_pr)
+        comment = _build_issue_comment(pr_number=pr_number, is_planned_pr=is_planned_pr)
         backend.add_comment(repo_root, str(plan_id), comment)
     except RuntimeError as e:
         result = HandleNoChangesError(

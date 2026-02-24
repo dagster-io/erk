@@ -10,8 +10,8 @@ from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
-from erk_shared.plan_store.draft_pr_lifecycle import build_plan_stage_body
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
@@ -194,7 +194,7 @@ def test_fails_when_no_pr() -> None:
         assert "No pull request found" in result.output
 
 
-def test_draft_pr_backend_preserves_metadata() -> None:
+def test_planned_pr_backend_preserves_metadata() -> None:
     """Metadata prefix is preserved for draft PR backend."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -213,7 +213,7 @@ def test_draft_pr_backend_preserves_metadata() -> None:
             git=git,
             graphite=graphite,
             github=github,
-            plan_store=DraftPRPlanBackend(github, github.issues, time=FakeTime()),
+            plan_store=PlannedPRBackend(github, github.issues, time=FakeTime()),
         )
 
         result = runner.invoke(

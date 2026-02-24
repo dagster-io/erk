@@ -48,7 +48,7 @@ from erk_shared.impl_context import (
 )
 from erk_shared.naming import generate_issue_branch_name
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.draft_pr_lifecycle import IMPL_CONTEXT_DIR
+from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 from erk_shared.plan_store.types import PlanNotFound
 
 logger = logging.getLogger(__name__)
@@ -315,7 +315,7 @@ def _close_orphaned_draft_prs(
 
 
 @dataclass(frozen=True)
-class ValidatedDraftPR:
+class ValidatedPlannedPR:
     """Draft PR that passed all validation checks."""
 
     number: int
@@ -324,12 +324,12 @@ class ValidatedDraftPR:
     branch_name: str
 
 
-def _validate_draft_pr_for_submit(
+def _validate_planned_pr_for_submit(
     ctx: ErkContext,
     repo: RepoContext,
     plan_number: int,
-) -> ValidatedDraftPR:
-    """Validate a draft PR plan for submission.
+) -> ValidatedPlannedPR:
+    """Validate a planned PR plan for submission.
 
     Fetches the PR, validates it has the erk-plan label and is OPEN.
 
@@ -363,7 +363,7 @@ def _validate_draft_pr_for_submit(
         )
         raise SystemExit(1)
 
-    return ValidatedDraftPR(
+    return ValidatedPlannedPR(
         number=plan_number,
         title=pr_result.title,
         url=pr_result.url,
@@ -371,27 +371,27 @@ def _validate_draft_pr_for_submit(
     )
 
 
-def _submit_draft_pr_plan(
+def _submit_planned_pr_plan(
     ctx: ErkContext,
     *,
     repo: RepoContext,
-    validated: ValidatedDraftPR,
+    validated: ValidatedPlannedPR,
     submitted_by: str,
     original_branch: str,
     base_branch: str,
 ) -> SubmitResult:
-    """Submit a validated draft-PR plan for implementation.
+    """Submit a validated planned-PR plan for implementation.
 
-    For draft-PR plans, the branch and PR already exist. This function:
+    For planned-PR plans, the branch and PR already exist. This function:
     - Fetches and checks out the existing plan branch
     - Creates .erk/impl-context/ with provider="github-draft-pr"
     - Commits and pushes .erk/impl-context/ to existing branch
-    - Triggers the workflow with plan_backend="draft_pr"
+    - Triggers the workflow with plan_backend="planned_pr"
 
     Args:
         ctx: ErkContext with git operations
         repo: Repository context
-        validated: Validated draft PR information
+        validated: Validated planned PR information
         submitted_by: GitHub username of submitter
         original_branch: Original branch name (to restore after)
         base_branch: Base branch for PR
@@ -433,7 +433,7 @@ def _submit_draft_pr_plan(
         user_output("Cleaning up previous .erk/impl-context/ folder...")
         remove_impl_context(repo.root)
 
-    # Create .erk/impl-context/ with draft-PR provider
+    # Create .erk/impl-context/ with planned-PR provider
     user_output("Creating .erk/impl-context/ folder...")
     create_impl_context(
         plan_content=plan.body,
@@ -464,7 +464,7 @@ def _submit_draft_pr_plan(
     # Load workflow-specific config
     workflow_config = load_workflow_config(repo.root, DISPATCH_WORKFLOW_NAME)
 
-    # Build inputs dict with plan_backend="draft_pr"
+    # Build inputs dict with plan_backend="planned_pr"
     user_output("")
     user_output(f"Triggering workflow: {click.style(DISPATCH_WORKFLOW_NAME, fg='cyan')}")
 
@@ -475,7 +475,7 @@ def _submit_draft_pr_plan(
         "branch_name": branch_name,
         "pr_number": str(plan_number),
         "base_branch": base_branch,
-        "plan_backend": "draft_pr",
+        "plan_backend": "planned_pr",
         **workflow_config,
     }
 
@@ -1218,39 +1218,39 @@ def submit_cmd(
     _, username, _ = ctx.github.check_auth_status()
     submitted_by = username or "unknown"
 
-    # Detect draft-PR backend
-    is_draft_pr = ctx.plan_backend.get_provider_name() == "github-draft-pr"
+    # Detect planned-PR backend
+    is_planned_pr = ctx.plan_backend.get_provider_name() == "github-draft-pr"
 
-    if is_draft_pr:
-        # Draft-PR path: branch and PR already exist, just validate and trigger workflow
-        user_output(f"Validating {len(issue_numbers)} draft-PR plan(s)...")
+    if is_planned_pr:
+        # Planned-PR path: branch and PR already exist, just validate and trigger workflow
+        user_output(f"Validating {len(issue_numbers)} planned-PR plan(s)...")
         user_output("")
 
-        validated_draft_prs: list[ValidatedDraftPR] = []
+        validated_planned_prs: list[ValidatedPlannedPR] = []
         for issue_number in issue_numbers:
             user_output(f"Validating PR #{issue_number}...")
-            validated_pr = _validate_draft_pr_for_submit(ctx, repo, issue_number)
-            validated_draft_prs.append(validated_pr)
+            validated_pr = _validate_planned_pr_for_submit(ctx, repo, issue_number)
+            validated_planned_prs.append(validated_pr)
 
         user_output("")
         user_output(
-            click.style("✓", fg="green") + f" All {len(validated_draft_prs)} plan(s) validated"
+            click.style("✓", fg="green") + f" All {len(validated_planned_prs)} plan(s) validated"
         )
         user_output("")
 
-        for v in validated_draft_prs:
+        for v in validated_planned_prs:
             user_output(f"  #{v.number}: {click.style(v.title, fg='yellow')}")
         user_output("")
 
         results: list[SubmitResult] = []
-        for i, v in enumerate(validated_draft_prs):
-            if len(validated_draft_prs) > 1:
-                count = len(validated_draft_prs)
+        for i, v in enumerate(validated_planned_prs):
+            if len(validated_planned_prs) > 1:
+                count = len(validated_planned_prs)
                 user_output(f"--- Submitting PR {i + 1}/{count}: #{v.number} ---")
             else:
                 user_output(f"Submitting PR #{v.number}...")
             user_output("")
-            result = _submit_draft_pr_plan(
+            result = _submit_planned_pr_plan(
                 ctx,
                 repo=repo,
                 validated=v,

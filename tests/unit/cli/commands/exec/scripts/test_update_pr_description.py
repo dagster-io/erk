@@ -19,8 +19,8 @@ from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
-from erk_shared.plan_store.draft_pr_lifecycle import build_plan_stage_body
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
 from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import ErkIsolatedFsEnv, erk_isolated_fs_env
@@ -401,7 +401,7 @@ def test_embeds_plan_context() -> None:
         assert "Issue #123" in updated_body
 
 
-def test_update_pr_description_draft_pr_backend_preserves_metadata() -> None:
+def test_update_pr_description_planned_pr_backend_preserves_metadata() -> None:
     """Test that update-pr-description preserves metadata prefix for draft PR backend."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -421,7 +421,7 @@ def test_update_pr_description_draft_pr_backend_preserves_metadata() -> None:
             graphite=graphite,
             github=github,
             prompt_executor=executor,
-            plan_store=DraftPRPlanBackend(github, github.issues, time=FakeTime()),
+            plan_store=PlannedPRBackend(github, github.issues, time=FakeTime()),
         )
 
         result = runner.invoke(update_pr_description, [], obj=ctx)

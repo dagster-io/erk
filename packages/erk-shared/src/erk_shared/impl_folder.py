@@ -303,7 +303,7 @@ def validate_plan_linkage(impl_dir: Path, branch_name: str) -> str | None:
       plan-ref.json is the sole source of truth
 
     For issue-based branches, if both the branch name and plan reference contain
-    an issue number, they MUST match. For draft-PR branches, ``branch_issue`` is
+    an issue number, they MUST match. For planned-PR branches, ``branch_issue`` is
     None, so the function falls through to returning ``plan_id`` from plan-ref.json.
 
     Args:

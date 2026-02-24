@@ -127,7 +127,7 @@ COLLECT_CASES = [
         },
     },
     {
-        "name": "draft_pr",
+        "name": "planned_pr",
         "branch": "needs-changes",
         "prs": {
             "needs-changes": make_pr(number=333, is_draft=True, checks_passing=True),

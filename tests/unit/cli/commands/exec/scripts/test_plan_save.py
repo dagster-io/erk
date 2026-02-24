@@ -13,7 +13,7 @@ from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.graphite.fake import FakeGraphite
-from erk_shared.plan_store.draft_pr_lifecycle import IMPL_CONTEXT_DIR
+from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 
 # Valid plan content that passes validation (100+ chars with structure)
 VALID_PLAN_CONTENT = """# Feature Plan
@@ -25,7 +25,7 @@ This plan describes the implementation of a new feature.
 - Step 3: Add tests and documentation"""
 
 
-def _draft_pr_context(
+def _planned_pr_context(
     *,
     tmp_path: Path,
     fake_github: FakeGitHub | None = None,
@@ -33,7 +33,7 @@ def _draft_pr_context(
     fake_claude: FakeClaudeInstallation | None = None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> ErkContext:
-    """Build an ErkContext configured for draft-PR plan backend."""
+    """Build an ErkContext configured for planned-PR plan backend."""
     if fake_git is None:
         fake_git = FakeGit(current_branches={tmp_path: "main"})
     if fake_github is None:
@@ -41,7 +41,7 @@ def _draft_pr_context(
     if fake_claude is None:
         fake_claude = FakeClaudeInstallation.for_test(plans={"plan": VALID_PLAN_CONTENT})
 
-    monkeypatch.setenv("ERK_PLAN_BACKEND", "draft_pr")
+    monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
     return context_for_test(
         github=fake_github,
         git=fake_git,
@@ -51,9 +51,9 @@ def _draft_pr_context(
     )
 
 
-def test_draft_pr_success_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_planned_pr_success_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Happy path: exit 0, JSON output has success/issue_number/branch_name."""
-    ctx = _draft_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
+    ctx = _planned_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
     runner = CliRunner()
 
     result = runner.invoke(plan_save, ["--format", "json", "--branch-slug", "test-slug"], obj=ctx)
@@ -64,12 +64,12 @@ def test_draft_pr_success_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     assert "plan_number" in output
     assert "branch_name" in output
     assert output["branch_name"].startswith("plnd/")
-    assert output["plan_backend"] == "draft_pr"
+    assert output["plan_backend"] == "planned_pr"
 
 
-def test_draft_pr_success_display(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Display format: output contains 'Plan saved as draft PR'."""
-    ctx = _draft_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
+def test_planned_pr_success_display(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Display format: output contains 'Plan saved as planned PR'."""
+    ctx = _planned_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
     runner = CliRunner()
 
     result = runner.invoke(
@@ -77,16 +77,16 @@ def test_draft_pr_success_display(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
-    assert "Plan saved as draft PR" in result.output
+    assert "Plan saved as planned PR" in result.output
     assert "Title: [erk-plan] Feature Plan" in result.output
     assert "Branch: plnd/" in result.output
     assert "erk br co" in result.output
     assert "plnd/" in result.output  # branch name appears in checkout command
 
 
-def test_draft_pr_no_plan_found(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_planned_pr_no_plan_found(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Empty claude_installation: exit code 1."""
-    ctx = _draft_pr_context(
+    ctx = _planned_pr_context(
         tmp_path=tmp_path,
         fake_claude=FakeClaudeInstallation.for_test(),
         monkeypatch=monkeypatch,
@@ -101,10 +101,10 @@ def test_draft_pr_no_plan_found(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
     assert "No plan found" in output["error"]
 
 
-def test_draft_pr_validation_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_planned_pr_validation_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Short plan: exit code 2, error_type='validation_failed'."""
     short_plan = "# Short\n\n- Step"
-    ctx = _draft_pr_context(
+    ctx = _planned_pr_context(
         tmp_path=tmp_path,
         fake_claude=FakeClaudeInstallation.for_test(plans={"short": short_plan}),
         monkeypatch=monkeypatch,
@@ -119,9 +119,9 @@ def test_draft_pr_validation_failure(tmp_path: Path, monkeypatch: pytest.MonkeyP
     assert output["error_type"] == "validation_failed"
 
 
-def test_draft_pr_session_deduplication(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_planned_pr_session_deduplication(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Second call with same session_id: skipped_duplicate=True."""
-    ctx = _draft_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
+    ctx = _planned_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
     runner = CliRunner()
     session_id = "dedup-session"
 
@@ -146,13 +146,13 @@ def test_draft_pr_session_deduplication(tmp_path: Path, monkeypatch: pytest.Monk
     output2 = json.loads(result2.output)
     assert output2["success"] is True
     assert output2["skipped_duplicate"] is True
-    assert output2["plan_backend"] == "draft_pr"
+    assert output2["plan_backend"] == "planned_pr"
     # branch_name should be included from the branch marker saved during first call
     assert "branch_name" in output2
     assert output2["branch_name"] == output1["branch_name"]
 
 
-def test_draft_pr_plan_file_priority(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_planned_pr_plan_file_priority(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """--plan-file takes priority over claude_installation."""
     plan_file = tmp_path / "custom-plan.md"
     plan_file.write_text(
@@ -160,7 +160,7 @@ def test_draft_pr_plan_file_priority(tmp_path: Path, monkeypatch: pytest.MonkeyP
         "- Step 1: Custom step\n- Step 2: Another custom step",
         encoding="utf-8",
     )
-    ctx = _draft_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
+    ctx = _planned_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
     runner = CliRunner()
 
     result = runner.invoke(
@@ -175,10 +175,12 @@ def test_draft_pr_plan_file_priority(tmp_path: Path, monkeypatch: pytest.MonkeyP
     assert output["title"] == "[erk-plan] Custom Plan"
 
 
-def test_draft_pr_objective_issue_metadata(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_planned_pr_objective_issue_metadata(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """--objective-issue 123 includes in branch name, metadata, and ref.json."""
     fake_git = FakeGit(current_branches={tmp_path: "main"})
-    ctx = _draft_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
     runner = CliRunner()
 
     result = runner.invoke(
@@ -198,10 +200,12 @@ def test_draft_pr_objective_issue_metadata(tmp_path: Path, monkeypatch: pytest.M
     assert ref_json["objective_id"] == 123
 
 
-def test_draft_pr_does_not_checkout_branch(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_planned_pr_does_not_checkout_branch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """plan-save uses git plumbing to commit without checking out the plan branch."""
     fake_git = FakeGit(current_branches={tmp_path: "feature-branch"})
-    ctx = _draft_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
     runner = CliRunner()
 
     result = runner.invoke(plan_save, ["--format", "json", "--branch-slug", "test-slug"], obj=ctx)
@@ -212,10 +216,10 @@ def test_draft_pr_does_not_checkout_branch(tmp_path: Path, monkeypatch: pytest.M
     assert len(fake_git.checked_out_branches) == 0
 
 
-def test_draft_pr_commits_plan_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_planned_pr_commits_plan_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """plan-save commits plan.md to the plan branch via git plumbing."""
     fake_git = FakeGit(current_branches={tmp_path: "main"})
-    ctx = _draft_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
     runner = CliRunner()
 
     result = runner.invoke(plan_save, ["--format", "json", "--branch-slug", "test-slug"], obj=ctx)
@@ -239,13 +243,13 @@ def test_draft_pr_commits_plan_file(tmp_path: Path, monkeypatch: pytest.MonkeyPa
     assert len(fake_git.commits) == 0
 
 
-def test_draft_pr_trunk_branch_passes_through_to_pr_base(
+def test_planned_pr_trunk_branch_passes_through_to_pr_base(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """trunk_branch detected by detect_trunk_branch flows through metadata to PR base."""
     fake_git = FakeGit(current_branches={tmp_path: "main"}, trunk_branches={tmp_path: "master"})
     fake_github = FakeGitHub()
-    ctx = _draft_pr_context(
+    ctx = _planned_pr_context(
         tmp_path=tmp_path,
         fake_git=fake_git,
         fake_github=fake_github,
@@ -260,13 +264,13 @@ def test_draft_pr_trunk_branch_passes_through_to_pr_base(
     assert fake_github.created_prs[0][3] == "master"
 
 
-def test_draft_pr_tracks_branch_with_graphite(
+def test_planned_pr_tracks_branch_with_graphite(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Plan branch is tracked with Graphite so it can be used as a stack parent."""
     fake_git = FakeGit(current_branches={tmp_path: "main"}, trunk_branches={tmp_path: "master"})
     fake_graphite = FakeGraphite()
-    monkeypatch.setenv("ERK_PLAN_BACKEND", "draft_pr")
+    monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
     ctx = context_for_test(
         git=fake_git,
         graphite=fake_graphite,
@@ -291,7 +295,7 @@ def test_draft_pr_tracks_branch_with_graphite(
     assert tracked_call[2] == "master"  # parent_branch (trunk used as base)
 
 
-def test_draft_pr_branch_not_stacked_on_current_branch(
+def test_planned_pr_branch_not_stacked_on_current_branch(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Plan branch is created from trunk, not current feature branch."""
@@ -301,7 +305,7 @@ def test_draft_pr_branch_not_stacked_on_current_branch(
         trunk_branches={tmp_path: "master"},
     )
     fake_graphite = FakeGraphite()
-    monkeypatch.setenv("ERK_PLAN_BACKEND", "draft_pr")
+    monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
     ctx = context_for_test(
         git=fake_git,
         graphite=fake_graphite,
@@ -324,7 +328,7 @@ def test_draft_pr_branch_not_stacked_on_current_branch(
     assert ("origin", "master") in fake_git.fetched_branches
 
 
-# --- Title validation rejection tests (draft-PR path) ---
+# --- Title validation rejection tests (planned-PR path) ---
 
 # Plan content with no H1 heading → extract_title_from_plan returns "Untitled Plan"
 _UNTITLED_PLAN_CONTENT = (
@@ -346,11 +350,11 @@ This plan has an emoji-only title which should fail validation.
 - Step 3: Add tests and documentation"""
 
 
-def test_draft_pr_rejects_untitled_plan_json(
+def test_planned_pr_rejects_untitled_plan_json(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Draft-PR save rejects plan with fallback title 'Untitled Plan'."""
-    ctx = _draft_pr_context(
+    """Planned-PR save rejects plan with fallback title 'Untitled Plan'."""
+    ctx = _planned_pr_context(
         tmp_path=tmp_path,
         fake_claude=FakeClaudeInstallation.for_test(plans={"untitled": _UNTITLED_PLAN_CONTENT}),
         monkeypatch=monkeypatch,
@@ -366,9 +370,11 @@ def test_draft_pr_rejects_untitled_plan_json(
     assert "agent_guidance" in output
 
 
-def test_draft_pr_rejects_emoji_only_title(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Draft-PR save rejects plan with emoji-only title."""
-    ctx = _draft_pr_context(
+def test_planned_pr_rejects_emoji_only_title(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Planned-PR save rejects plan with emoji-only title."""
+    ctx = _planned_pr_context(
         tmp_path=tmp_path,
         fake_claude=FakeClaudeInstallation.for_test(plans={"emoji": _EMOJI_ONLY_TITLE_PLAN}),
         monkeypatch=monkeypatch,
@@ -383,11 +389,11 @@ def test_draft_pr_rejects_emoji_only_title(tmp_path: Path, monkeypatch: pytest.M
     assert output["error_type"] == "validation_failed"
 
 
-def test_draft_pr_rejects_untitled_plan_display(
+def test_planned_pr_rejects_untitled_plan_display(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Draft-PR save shows error message for invalid title in display format."""
-    ctx = _draft_pr_context(
+    """Planned-PR save shows error message for invalid title in display format."""
+    ctx = _planned_pr_context(
         tmp_path=tmp_path,
         fake_claude=FakeClaudeInstallation.for_test(plans={"untitled": _UNTITLED_PLAN_CONTENT}),
         monkeypatch=monkeypatch,
@@ -400,9 +406,9 @@ def test_draft_pr_rejects_untitled_plan_display(
     assert "Invalid plan title" in result.output
 
 
-def test_draft_pr_branch_slug_provided(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_planned_pr_branch_slug_provided(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """When --branch-slug is provided, branch name incorporates that slug."""
-    ctx = _draft_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
+    ctx = _planned_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
     runner = CliRunner()
 
     result = runner.invoke(
@@ -417,11 +423,11 @@ def test_draft_pr_branch_slug_provided(tmp_path: Path, monkeypatch: pytest.Monke
     assert "my-custom-slug" in output["branch_name"]
 
 
-def test_draft_pr_branch_slug_missing_errors(
+def test_planned_pr_branch_slug_missing_errors(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """When --branch-slug is not provided, exits with error and remediation message."""
-    ctx = _draft_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
+    ctx = _planned_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
     runner = CliRunner()
 
     result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)

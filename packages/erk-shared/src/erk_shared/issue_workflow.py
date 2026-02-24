@@ -63,7 +63,7 @@ def prepare_plan_for_worktree(
     plan: Plan,
     timestamp: datetime,
     *,
-    plan_backend: Literal["draft_pr", "github"],
+    plan_backend: Literal["planned_pr", "github"],
     warn_non_open: bool,
 ) -> PrepareIssueResult:
     """Prepare and validate plan data for worktree creation.
@@ -102,12 +102,12 @@ def prepare_plan_for_worktree(
             f"Issue #{plan.plan_identifier} is {plan.state.value}. Proceeding anyway..."
         )
 
-    # PLAN_BACKEND_SPLIT: draft-PR backend reuses plan-header branch;
+    # PLAN_BACKEND_SPLIT: planned-PR backend reuses plan-header branch;
     # issue backend generates fresh branch
     # Two code paths based on backend:
-    # - Draft PR backend: branch always exists in plan-header (set by plan_save)
+    # - Planned PR backend: branch always exists in plan-header (set by plan_save)
     # - Issue backend: branch is always generated fresh
-    if plan_backend == "draft_pr":
+    if plan_backend == "planned_pr":
         existing_branch = plan.header_fields.get(BRANCH_NAME)
         if not isinstance(existing_branch, str) or len(existing_branch) == 0:
             return IssueValidationFailed(

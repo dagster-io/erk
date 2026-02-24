@@ -140,7 +140,7 @@ def branch_create(
             raise click.ClickException(f"Issue #{issue_number} not found")
         plan = result
 
-        plan_backend = "draft_pr"
+        plan_backend = "planned_pr"
         result = prepare_plan_for_worktree(
             plan, ctx.time.now(), plan_backend=plan_backend, warn_non_open=True
         )
@@ -168,10 +168,10 @@ def branch_create(
     local_branches = ctx.git.branch.list_local_branches(repo.root)
     branch_exists_locally = branch_name in local_branches
 
-    # PLAN_BACKEND_SPLIT: draft-PR backend tracks existing remote branch;
+    # PLAN_BACKEND_SPLIT: planned-PR backend tracks existing remote branch;
     # github backend creates new branch
-    if setup is not None and plan_backend == "draft_pr":
-        # Draft PR backend: branch was created by plan-save, so it's expected to exist
+    if setup is not None and plan_backend == "planned_pr":
+        # Planned PR backend: branch was created by plan-save, so it's expected to exist
         if branch_exists_locally:
             user_output(f"Using existing branch: {branch_name}")
         else:

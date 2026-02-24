@@ -1,6 +1,6 @@
 """Tests for draft PR lifecycle build/parse functions."""
 
-from erk_shared.plan_store.draft_pr_lifecycle import (
+from erk_shared.plan_store.planned_pr_lifecycle import (
     _LEGACY_DETAILS_OPEN,
     DETAILS_CLOSE,
     DETAILS_OPEN,

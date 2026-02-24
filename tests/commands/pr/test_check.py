@@ -712,13 +712,13 @@ erk pr checkout 123
         assert "All checks passed" in result.output
 
 
-def test_pr_check_passes_for_draft_pr_plan(tmp_path: Path) -> None:
-    """Test PR check passes for draft-PR plans without closing reference."""
+def test_pr_check_passes_for_planned_pr_plan(tmp_path: Path) -> None:
+    """Test PR check passes for planned-PR plans without closing reference."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
-        # Create .impl/plan-ref.json with draft-PR provider
+        # Create .impl/plan-ref.json with planned-PR provider
         impl_dir = env.cwd / ".impl"
         impl_dir.mkdir()
         plan_ref_json = impl_dir / "plan-ref.json"

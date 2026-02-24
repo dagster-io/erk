@@ -15,7 +15,7 @@ from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import CreateIssueResult, IssueNotFound
 from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.draft_pr import DraftPRPlanBackend
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -323,7 +323,7 @@ def test_dispatch_writes_metadata_to_plan_issue() -> None:
         assert "last_dispatched_at:" in issue_info.body
 
 
-def test_dispatch_draft_pr_lifecycle() -> None:
+def test_dispatch_planned_pr_lifecycle() -> None:
     """Test full draft_pr dispatch: no skeleton issue, plnd/ branch, PR with metadata block.
 
     In draft_pr mode, the draft PR IS the plan entity. The dispatch should:
@@ -347,9 +347,9 @@ def test_dispatch_draft_pr_lifecycle() -> None:
         issues = FakeGitHubIssues()
         github = FakeGitHub(authenticated=True, issues_gateway=issues)
 
-        # Explicitly use DraftPRPlanBackend so ctx.plan_backend.get_provider_name()
+        # Explicitly use PlannedPRBackend so ctx.plan_backend.get_provider_name()
         # returns "github-draft-pr" and dispatch takes the draft_pr path.
-        plan_store = DraftPRPlanBackend(github, issues, time=FakeTime())
+        plan_store = PlannedPRBackend(github, issues, time=FakeTime())
 
         ctx = build_workspace_test_context(
             env, git=git, github=github, issues=issues, plan_store=plan_store
@@ -365,7 +365,7 @@ def test_dispatch_draft_pr_lifecycle() -> None:
 
         assert result is not None
 
-        # No skeleton issue created — draft_pr skips issue creation
+        # No skeleton issue created — planned_pr skips issue creation
         assert len(issues.created_issues) == 0
 
         # Branch uses plnd/ prefix (not P<N>-)
@@ -381,7 +381,7 @@ def test_dispatch_draft_pr_lifecycle() -> None:
         assert "lifecycle_stage: prompted" in pr_body
         assert "fix the import in config.py" in pr_body
 
-        # No Closes #N in PR body (self-referential for draft_pr)
+        # No Closes #N in PR body (self-referential for planned_pr)
         assert "Closes #" not in pr_body
 
         # erk-plan label added to PR
@@ -392,7 +392,7 @@ def test_dispatch_draft_pr_lifecycle() -> None:
         assert len(github.triggered_workflows) == 1
         _workflow, inputs = github.triggered_workflows[0]
         assert inputs["plan_issue_number"] == str(pr_number)
-        assert inputs["plan_backend"] == "draft_pr"
+        assert inputs["plan_backend"] == "planned_pr"
 
         # Dispatch metadata written to the PR (the plan entity).
         # The PR body is updated with footer, then dispatch metadata written

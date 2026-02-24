@@ -184,7 +184,7 @@ def test_format_pr_cell_with_pr_github_url() -> None:
     assert "https://github.com/owner/repo/pull/123" in result
 
 
-def test_format_pr_cell_with_draft_pr() -> None:
+def test_format_pr_cell_with_planned_pr() -> None:
     """Test formatting PR cell with draft PR."""
     pr = PullRequestInfo(
         number=456,

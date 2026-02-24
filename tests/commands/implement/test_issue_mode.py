@@ -18,7 +18,7 @@ from tests.test_utils.plan_helpers import (
 )
 
 
-@pytest.fixture(params=["github", "draft_pr"])
+@pytest.fixture(params=["github", "planned_pr"])
 def plan_backend_type(request: pytest.FixtureRequest) -> str:
     return request.param
 

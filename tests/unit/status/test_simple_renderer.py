@@ -323,7 +323,7 @@ def test_renderer_with_pr_status() -> None:
     # URL line was removed - PR number is now clickable with OSC 8
 
 
-def test_renderer_draft_pr() -> None:
+def test_renderer_planned_pr() -> None:
     """Test rendering with draft PR."""
     # Arrange
     worktree_info = WorktreeDisplayInfo.feature(Path("/tmp/test"), "feature", name="test-worktree")

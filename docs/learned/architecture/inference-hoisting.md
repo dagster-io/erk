@@ -26,7 +26,7 @@ Exec scripts are Python subprocesses that run to completion without Claude Code 
 
 The skill layer (`.claude/commands/*.md`) is the orchestration boundary. Skills run inside Claude Code with full reasoning capability. They can generate values through LLM inference before invoking exec scripts.
 
-**The original bug**: `plan_save.py`, `setup_impl_from_issue.py`, and `plan_migrate_to_draft_pr.py` called `generate_slug_or_fallback(executor, title)`, which invoked `PromptExecutor.execute_prompt()` to ask Claude for a branch slug. When these scripts ran inside a Claude Code session (via `/erk:plan-save`), the nested Claude subprocess locked up. The fix moved slug generation into the skill layer, passing the pre-generated slug via `--branch-slug`.
+**The original bug**: `plan_save.py` and `setup_impl_from_issue.py` called `generate_slug_or_fallback(executor, title)`, which invoked `PromptExecutor.execute_prompt()` to ask Claude for a branch slug. When these scripts ran inside a Claude Code session (via `/erk:plan-save`), the nested Claude subprocess locked up. The fix moved slug generation into the skill layer, passing the pre-generated slug via `--branch-slug`.
 
 ## The Rule
 
@@ -45,11 +45,10 @@ Exec script (src/erk/cli/commands/exec/scripts/*.py)
   5. Uses the pre-computed value; errors with remediation instructions if missing
 ```
 
-Three scripts were updated to follow this pattern:
+Two scripts were updated to follow this pattern:
 
 - `plan_save.py` — `--branch-slug` for draft PR branch naming
 - `setup_impl_from_issue.py` — `--branch-slug` for implementation branch naming
-- `plan_migrate_to_draft_pr.py` — `--branch-slug` for migration branch naming
 
 ## Before/After Example
 
@@ -59,7 +58,7 @@ Three scripts were updated to follow this pattern:
 # BROKEN: generate_slug_or_fallback calls PromptExecutor.execute_prompt()
 # This creates a nested LLM call when run inside Claude Code — deadlocks.
 slug = generate_slug_or_fallback(executor, title)
-branch_name = generate_draft_pr_branch_name(slug, now)
+branch_name = generate_planned_pr_branch_name(slug, now)
 ```
 
 The `generate_slug_or_fallback` function accepted a `PromptExecutor` and invoked it to ask Claude for a short, descriptive slug. This worked when running `erk exec plan-save` from a terminal, but locked up when called from a skill inside Claude Code.
@@ -105,13 +104,11 @@ If you find an LLM call inside an exec script, follow these steps:
 
 - `src/erk/cli/commands/exec/scripts/plan_save.py`
 - `src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py`
-- `src/erk/cli/commands/exec/scripts/plan_migrate_to_draft_pr.py`
 
 **Skills with generation steps:**
 
 - `.claude/commands/erk/plan-save.md` — Step 1.5 generates `BRANCH_SLUG` before calling `erk exec plan-save`
 - `.claude/commands/erk/plan-implement.md` — Generates `BRANCH_SLUG` before calling `erk exec setup-impl` and `erk exec plan-save`
-- `.claude/commands/erk/migrate-plan-to-draft-pr.md` — Step 2.5 generates `BRANCH_SLUG` before calling `erk exec plan-migrate-to-draft-pr`
 
 **Pre-existing correct implementation:**
 

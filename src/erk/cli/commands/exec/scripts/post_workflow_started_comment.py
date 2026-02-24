@@ -154,7 +154,7 @@ def post_workflow_started_comment(
         repository=repository,
     )
 
-    # Post comment via PlanBackend (handles both issue and draft-PR plans)
+    # Post comment via PlanBackend (handles both issue and planned-PR plans)
     try:
         backend.add_comment(repo_root, str(plan_id), comment_body)
         result = PostSuccess(success=True, plan_id=plan_id)
