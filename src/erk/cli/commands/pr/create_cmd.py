@@ -23,7 +23,7 @@ from erk_shared.output.output import user_output
 @click.option("--title", "-t", type=str, help="Issue title (default: extract from H1)")
 @click.option("--label", "-l", multiple=True, help="Additional labels")
 @click.pass_obj
-def create_plan(
+def pr_create(
     ctx: ErkContext,
     file: Path | None,
     title: str | None,
@@ -36,10 +36,10 @@ def create_plan(
     - Stdin: pipe content via shell (for Unix composability)
 
     Examples:
-        erk create --file plan.md
-        cat plan.md | erk create
-        erk create --file plan.md --title "Custom Title"
-        erk create --file plan.md --label bug --label urgent
+        erk pr create --file plan.md
+        cat plan.md | erk pr create
+        erk pr create --file plan.md --title "Custom Title"
+        erk pr create --file plan.md --label bug --label urgent
     """
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)
@@ -118,4 +118,4 @@ def create_plan(
     user_output("Next steps:")
     user_output(f"  View:       erk get {result.issue_number}")
     user_output(f"  Checkout:   erk br co --for-plan {result.issue_number}")
-    user_output(f"  Submit:     erk plan submit {result.issue_number}")
+    user_output(f"  Submit:     erk pr submit {result.issue_number}")

@@ -111,7 +111,7 @@ Spawn an erk-plan when:
 
 ```bash
 # Create an erk-plan for a specific objective node
-erk plan create \
+erk pr create \
   --title "[Node description]" \
   --body "$(cat <<'EOF'
 ## Context

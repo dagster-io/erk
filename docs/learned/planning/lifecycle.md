@@ -198,12 +198,12 @@ This workflow:
 3. Plan saved to `~/.claude/plans/*.md` on Exit Plan Mode
 4. `/erk:plan-save` creates GitHub Issue with `erk-plan` label
 
-### CLI Path: `erk plan create --file <path>`
+### CLI Path: `erk pr create --file <path>`
 
 Direct plan creation from a file:
 
 ```bash
-erk plan create --file my-plan.md
+erk pr create --file my-plan.md
 ```
 
 This creates a GitHub Issue directly from the plan file.

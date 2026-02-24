@@ -15,7 +15,7 @@ Plans can be created through multiple entry points, all routing to the planned-P
 | Entry Point                             | Backend Used                          | Creates            |
 | --------------------------------------- | ------------------------------------- | ------------------ |
 | `/erk:plan-save`                        | Planned PR (PlannedPRBackend)         | Draft pull request |
-| `erk plan create --file <path>`         | Issue-based (GitHubPlanStore, legacy) | GitHub issue       |
+| `erk pr create --file <path>`           | Issue-based (GitHubPlanStore, legacy) | GitHub issue       |
 | `erk exec plan-save-to-issue`           | Issue-based (GitHubPlanStore, legacy) | GitHub issue       |
 | One-shot dispatch (`one_shot_dispatch`) | Backend-aware (`ctx.plan_backend`)    | Draft PR or issue  |
 | `PlannedPRBackend.create_plan()`        | Planned PR                            | Draft pull request |

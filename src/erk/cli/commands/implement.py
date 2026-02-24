@@ -111,7 +111,7 @@ def _implement_from_issue(
         user_output(
             click.style("Error: ", fg="red")
             + f"Plan #{issue_number} does not have the 'erk-plan' label.\n"
-            "Create a plan using 'erk plan create' or add the label manually."
+            "Create a plan using 'erk pr create' or add the label manually."
         )
         raise SystemExit(1) from None
 

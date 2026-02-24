@@ -97,7 +97,7 @@ Without built-in plan mode, follow this explicit protocol:
 
 1. **Assess complexity**: For complex tasks (3+ files, unclear scope), create a plan first
 2. **Write the plan**: Create a markdown file with implementation steps
-3. **Save to GitHub**: Run `erk plan create --file <path-to-plan.md>` to create a tracked issue
+3. **Save to GitHub**: Run `erk pr create --file <path-to-plan.md>` to create a tracked issue
 4. **Implement**: Run `erk implement <issue-number>` to set up a worktree and execute
 5. **Submit**: Run `erk pr submit` after implementation to create the PR
 
