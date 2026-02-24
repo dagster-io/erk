@@ -1,3 +1,5 @@
+# NOTE: @patch usage is deliberate here. erk-slack-bot is a standalone package that
+# tests third-party Slack SDK wiring and does not use erk's gateway layer.
 import unittest
 from unittest.mock import MagicMock, patch
 
