@@ -16,31 +16,42 @@ from tests.commands.submit.conftest import make_plan_body
 
 
 def test_submit_missing_erk_plan_label(tmp_path: Path) -> None:
-    """Test submit rejects issue without erk-plan label."""
+    """Test submit rejects PR without erk-plan label."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
-    # Create issue WITHOUT erk-plan label
-    now = datetime.now(UTC)
-    issue = IssueInfo(
+    # Create PR WITHOUT erk-plan label
+    from erk_shared.gateway.github.types import PRDetails
+
+    pr = PRDetails(
         number=123,
-        title="Regular issue",
-        body="Not a plan issue",
+        url="https://github.com/test-owner/test-repo/pull/123",
+        title="Regular PR",
+        body="Not a plan PR",
         state="OPEN",
-        url="https://github.com/test-owner/test-repo/issues/123",
-        labels=["bug"],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-        author="test-user",
+        is_draft=True,
+        base_ref_name="main",
+        head_ref_name="plnd/123-regular-pr",
+        is_cross_repository=False,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        owner="test-owner",
+        repo="test-repo",
+        labels=("bug",),  # Missing erk-plan label
     )
 
-    fake_github_issues = FakeGitHubIssues(issues={123: issue})
     fake_git = FakeGit(
         current_branches={repo_root: "main"},
         trunk_branches={repo_root: "master"},
     )
-    fake_github = FakeGitHub()
+    fake_github = FakeGitHub(pr_details={123: pr})
+
+    # Need plan_store for the new backend
+    from tests.commands.submit.conftest import create_plan, make_plan_body
+    from tests.test_utils.plan_helpers import create_plan_store
+
+    plan = create_plan("123", "Regular PR", body=make_plan_body(), labels=["bug"])
+    fake_plan_store, _ = create_plan_store({"123": plan}, backend="planned_pr")
 
     repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
     repo = RepoContext(
@@ -54,7 +65,7 @@ def test_submit_missing_erk_plan_label(tmp_path: Path) -> None:
         cwd=repo_root,
         git=fake_git,
         github=fake_github,
-        issues=fake_github_issues,
+        plan_store=fake_plan_store,
         repo=repo,
     )
 
@@ -63,38 +74,49 @@ def test_submit_missing_erk_plan_label(tmp_path: Path) -> None:
 
     assert result.exit_code == 1
     assert "does not have erk-plan label" in result.output
-    assert "Cannot submit non-plan issues" in result.output
+    assert "Cannot submit non-plan PRs" in result.output
 
     # Verify workflow was NOT triggered
     assert len(fake_github.triggered_workflows) == 0
 
 
-def test_submit_closed_issue(tmp_path: Path) -> None:
-    """Test submit rejects closed issues."""
+def test_submit_closed_pr(tmp_path: Path) -> None:
+    """Test submit rejects closed PRs."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
-    # Create CLOSED issue with erk-plan label
-    now = datetime.now(UTC)
-    issue = IssueInfo(
+    # Create CLOSED PR with erk-plan label
+    from erk_shared.gateway.github.types import PRDetails
+
+    pr = PRDetails(
         number=123,
+        url="https://github.com/test-owner/test-repo/pull/123",
         title="Implement feature X",
         body=make_plan_body(),
         state="CLOSED",
-        url="https://github.com/test-owner/test-repo/issues/123",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-        author="test-user",
+        is_draft=True,
+        base_ref_name="main",
+        head_ref_name="plnd/123-implement-feature-x",
+        is_cross_repository=False,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        owner="test-owner",
+        repo="test-repo",
+        labels=(ERK_PLAN_LABEL,),
     )
 
-    fake_github_issues = FakeGitHubIssues(issues={123: issue})
     fake_git = FakeGit(
         current_branches={repo_root: "main"},
         trunk_branches={repo_root: "master"},
     )
-    fake_github = FakeGitHub()
+    fake_github = FakeGitHub(pr_details={123: pr})
+
+    # Need plan_store for the new backend
+    from tests.commands.submit.conftest import create_plan
+    from tests.test_utils.plan_helpers import create_plan_store
+
+    plan = create_plan("123", "Implement feature X", body=make_plan_body())
+    fake_plan_store, _ = create_plan_store({"123": plan}, backend="planned_pr")
 
     repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
     repo = RepoContext(
@@ -108,7 +130,7 @@ def test_submit_closed_issue(tmp_path: Path) -> None:
         cwd=repo_root,
         git=fake_git,
         github=fake_github,
-        issues=fake_github_issues,
+        plan_store=fake_plan_store,
         repo=repo,
     )
 
@@ -117,24 +139,28 @@ def test_submit_closed_issue(tmp_path: Path) -> None:
 
     assert result.exit_code == 1
     assert "is CLOSED" in result.output
-    assert "Cannot submit closed issues" in result.output
+    assert "Cannot submit closed PRs" in result.output
 
     # Verify workflow was NOT triggered
     assert len(fake_github.triggered_workflows) == 0
 
 
-def test_submit_issue_not_found(tmp_path: Path) -> None:
-    """Test submit handles missing issue gracefully."""
+def test_submit_pr_not_found(tmp_path: Path) -> None:
+    """Test submit handles missing PR gracefully."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
-    # Empty issues dict - issue 999 doesn't exist
-    fake_github_issues = FakeGitHubIssues(issues={})
+    # Empty pr_details dict - PR 999 doesn't exist
     fake_git = FakeGit(
         current_branches={repo_root: "main"},
         trunk_branches={repo_root: "master"},
     )
-    fake_github = FakeGitHub()
+    fake_github = FakeGitHub(pr_details={})  # Empty - no PRs
+
+    # Need plan_store for the new backend
+    from tests.test_utils.plan_helpers import create_plan_store
+
+    fake_plan_store, _ = create_plan_store({}, backend="planned_pr")
 
     repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
     repo = RepoContext(
@@ -148,16 +174,16 @@ def test_submit_issue_not_found(tmp_path: Path) -> None:
         cwd=repo_root,
         git=fake_git,
         github=fake_github,
-        issues=fake_github_issues,
+        plan_store=fake_plan_store,
         repo=repo,
     )
 
     runner = CliRunner()
     result = runner.invoke(submit_cmd, ["999"], obj=ctx)
 
-    # Should fail with RuntimeError from get_issue
-    assert result.exit_code != 0
-    assert "Issue #999 not found" in result.output
+    # Should fail with PR not found error
+    assert result.exit_code == 1
+    assert "PR #999 not found" in result.output
 
 
 def test_submit_requires_gh_authentication(tmp_path: Path) -> None:
@@ -165,25 +191,36 @@ def test_submit_requires_gh_authentication(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
-    # Create valid issue with erk-plan label
-    now = datetime.now(UTC)
-    issue = IssueInfo(
+    # Create valid PR with erk-plan label
+    from erk_shared.gateway.github.types import PRDetails
+
+    pr = PRDetails(
         number=123,
+        url="https://github.com/test-owner/test-repo/pull/123",
         title="Implement feature X",
         body=make_plan_body(),
         state="OPEN",
-        url="https://github.com/test-owner/test-repo/issues/123",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-        author="test-user",
+        is_draft=True,
+        base_ref_name="main",
+        head_ref_name="plnd/123-implement-feature-x",
+        is_cross_repository=False,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        owner="test-owner",
+        repo="test-repo",
+        labels=(ERK_PLAN_LABEL,),
     )
 
-    fake_github_issues = FakeGitHubIssues(issues={123: issue})
     fake_git = FakeGit()
     # Configure FakeGitHub to simulate unauthenticated state
-    fake_github = FakeGitHub(authenticated=False)
+    fake_github = FakeGitHub(authenticated=False, pr_details={123: pr})
+
+    # Need plan_store for the new backend
+    from tests.commands.submit.conftest import create_plan
+    from tests.test_utils.plan_helpers import create_plan_store
+
+    plan = create_plan("123", "Implement feature X", body=make_plan_body())
+    fake_plan_store, _ = create_plan_store({"123": plan}, backend="planned_pr")
 
     repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
     repo = RepoContext(
@@ -197,7 +234,7 @@ def test_submit_requires_gh_authentication(tmp_path: Path) -> None:
         cwd=repo_root,
         git=fake_git,
         github=fake_github,
-        issues=fake_github_issues,
+        plan_store=fake_plan_store,
         repo=repo,
     )
 

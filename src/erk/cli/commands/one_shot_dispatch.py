@@ -24,7 +24,6 @@ from erk_shared.gateway.github.metadata.core import (
 )
 from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
 from erk_shared.gateway.github.parsing import construct_workflow_run_url
-from erk_shared.gateway.github.plan_issues import create_plan_issue
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer
 from erk_shared.gateway.time.abc import Time
 from erk_shared.naming import (
@@ -181,8 +180,6 @@ def dispatch_one_shot(
     user_output(click.style(f"  Prompt: {prompt_preview}", dim=True))
     if params.model is not None:
         user_output(click.style(f"  Model: {params.model}", dim=True))
-    backend_name = ctx.plan_backend.get_provider_name()
-    user_output(click.style(f"  Backend: {backend_name}", dim=True))
     user_output("")
 
     start_monotonic = time.monotonic()
@@ -191,66 +188,22 @@ def dispatch_one_shot(
         objective_issue_str = params.extra_workflow_inputs.get("objective_issue")
         objective_id = int(objective_issue_str) if objective_issue_str else None
 
-        is_planned_pr = backend_name == "github-draft-pr"
-
-        # --- Backend-conditional entity creation ---
-        # github backend: create skeleton issue first for P<N>- branch naming
-        # planned_pr backend: skip skeleton issue, use plnd/ branch naming, PR is the plan
-        plan_issue_number: int | None = None
-        if not is_planned_pr:
-            current_step = "Creating skeleton plan issue"
-            user_output("Creating skeleton plan issue...")
-            skeleton_plan_content = (
-                f"_One-shot: plan content will be populated by one-shot workflow._\n\n"
-                f"**Prompt:** {params.prompt}"
-            )
-            skeleton_result = create_plan_issue(
-                github_issues=ctx.github.issues,
-                repo_root=repo.root,
-                plan_content=skeleton_plan_content,
-                title=f"One-shot: {params.prompt[:max_title_len]}{suffix}",
-                extra_labels=None,
-                title_tag=None,
-                source_repo=None,
-                objective_id=objective_id,
-                created_from_session=None,
-                created_from_workflow_run_url=None,
-                learned_from_issue=None,
-                lifecycle_stage="prompted",
-            )
-            if not skeleton_result.success:
-                error_msg = skeleton_result.error or "Unknown error creating skeleton plan issue"
-                user_output(click.style("Error: ", fg="red") + error_msg)
-                raise SystemExit(1)
-
-            plan_issue_number = skeleton_result.issue_number
-            user_output(click.style(f"  \u2192 Plan issue #{plan_issue_number}", dim=True))
-
-        # Generate branch name with LLM-generated slug
+        # Generate branch name with LLM-generated slug (planned-PR backend)
         current_step = "Generating branch name"
         user_output("Generating branch name...")
+
         user_output(click.style("  (calling haiku for slug generation...)", dim=True))
         slug_start = time.monotonic()
         slug = generate_slug_or_fallback(ctx.prompt_executor, params.prompt)
         slug_elapsed = time.monotonic() - slug_start
         slug_msg = f"  \u2713 Slug: {slug} ({format_duration(slug_elapsed)})"
         user_output(click.style(slug_msg, dim=True))
-        if is_planned_pr:
-            # planned_pr: plnd/ prefix (no issue number needed)
-            branch_name = generate_planned_pr_branch_name(
-                slug,
-                ctx.time.now(),
-                objective_id=objective_id,
-            )
-        else:
-            # github: P<N>- prefix using skeleton issue number
-            branch_name = generate_branch_name(
-                slug,
-                time=ctx.time,
-                plan_issue_number=plan_issue_number,
-                objective_id=objective_id,
-                prompt_executor=None,
-            )
+        # planned_pr: plnd/ prefix (no issue number needed)
+        branch_name = generate_planned_pr_branch_name(
+            slug,
+            ctx.time.now(),
+            objective_id=objective_id,
+        )
         user_output(click.style(f"  \u2192 Branch: {branch_name}", dim=True))
 
         # Guard against detached HEAD state
@@ -296,79 +249,60 @@ def dispatch_one_shot(
         # --- Create draft PR ---
         current_step = "Creating draft PR"
         user_output("Creating draft PR...")
-        if is_planned_pr:
-            # planned_pr: create PR with plan-header metadata block
-            _, username_for_header, _ = ctx.github.check_auth_status()
-            created_at = ctx.time.now().replace(tzinfo=UTC).isoformat()
-            metadata_body = format_plan_header_body(
-                created_at=created_at,
-                created_by=username_for_header or "unknown",
-                worktree_name=None,
-                branch_name=branch_name,
-                plan_comment_id=None,
-                last_dispatched_run_id=None,
-                last_dispatched_node_id=None,
-                last_dispatched_at=None,
-                last_local_impl_at=None,
-                last_local_impl_event=None,
-                last_local_impl_session=None,
-                last_local_impl_user=None,
-                last_remote_impl_at=None,
-                last_remote_impl_run_id=None,
-                last_remote_impl_session_id=None,
-                source_repo=None,
-                objective_issue=objective_id,
-                created_from_session=None,
-                created_from_workflow_run_url=None,
-                last_learn_session=None,
-                last_learn_at=None,
-                learn_status=None,
-                learn_plan_issue=None,
-                learn_plan_pr=None,
-                learned_from_issue=None,
-                lifecycle_stage="prompted",
-            )
-            placeholder_content = (
-                f"_One-shot: plan content will be populated by one-shot workflow._\n\n"
-                f"**Prompt:** {params.prompt}"
-            )
-            pr_body_initial = build_plan_stage_body(metadata_body, placeholder_content)
-            pr_number = ctx.github.create_pr(
-                repo.root,
-                branch_name,
-                pr_title,
-                pr_body_initial,
-                trunk,
-                draft=True,
-            )
-            # Add footer now that we have the PR number.
-            # No issue_number — draft PR IS the plan, Closes #N would be self-referential.
-            footer = build_pr_body_footer(pr_number, issue_number=None, plans_repo=None)
-            ctx.github.update_pr_body(repo.root, pr_number, pr_body_initial + footer)
-            # Add erk-plan label
-            ctx.github.add_label_to_pr(repo.root, pr_number, "erk-plan")
+        # Create PR with plan-header metadata block (always planned-PR)
+        _, username_for_header, _ = ctx.github.check_auth_status()
+        created_at = ctx.time.now().replace(tzinfo=UTC).isoformat()
+        metadata_body = format_plan_header_body(
+            created_at=created_at,
+            created_by=username_for_header or "unknown",
+            worktree_name=None,
+            branch_name=branch_name,
+            plan_comment_id=None,
+            last_dispatched_run_id=None,
+            last_dispatched_node_id=None,
+            last_dispatched_at=None,
+            last_local_impl_at=None,
+            last_local_impl_event=None,
+            last_local_impl_session=None,
+            last_local_impl_user=None,
+            last_remote_impl_at=None,
+            last_remote_impl_run_id=None,
+            last_remote_impl_session_id=None,
+            source_repo=None,
+            objective_issue=objective_id,
+            created_from_session=None,
+            created_from_workflow_run_url=None,
+            last_learn_session=None,
+            last_learn_at=None,
+            learn_status=None,
+            learn_plan_issue=None,
+            learn_plan_pr=None,
+            learned_from_issue=None,
+            lifecycle_stage="prompted",
+        )
+        placeholder_content = (
+            f"_One-shot: plan content will be populated by one-shot workflow._\n\n"
+            f"**Prompt:** {params.prompt}"
+        )
+        pr_body_initial = build_plan_stage_body(metadata_body, placeholder_content)
+        pr_number = ctx.github.create_pr(
+            repo.root,
+            branch_name,
+            pr_title,
+            pr_body_initial,
+            trunk,
+            draft=True,
+        )
+        # Add footer now that we have the PR number.
+        # No issue_number — draft PR IS the plan, Closes #N would be self-referential.
+        footer = build_pr_body_footer(pr_number, issue_number=None, plans_repo=None)
+        ctx.github.update_pr_body(repo.root, pr_number, pr_body_initial + footer)
+        # Add erk-plan label
+        ctx.github.add_label_to_pr(repo.root, pr_number, "erk-plan")
 
-            # Key: set plan_issue_number = pr_number so downstream code
-            # (workflow inputs, metadata writing, comments) targets the PR
-            plan_issue_number = pr_number
-        else:
-            # github: create plain draft PR with closing reference
-            closing_ref = ""
-            if plan_issue_number is not None:
-                plans_repo = ctx.local_config.plans_repo
-                closing_ref = (
-                    f"\n\nCloses {plans_repo}#{plan_issue_number}"
-                    if plans_repo
-                    else f"\n\nCloses #{plan_issue_number}"
-                )
-            pr_number = ctx.github.create_pr(
-                repo.root,
-                branch_name,
-                pr_title,
-                f"Autonomous one-shot execution.\n\n**Prompt:** {params.prompt}{closing_ref}",
-                trunk,
-                draft=True,
-            )
+        # Key: set plan_issue_number = pr_number so downstream code
+        # (workflow inputs, metadata writing, comments) targets the PR
+        plan_issue_number = pr_number
         user_output(click.style(f"  \u2192 PR #{pr_number}", dim=True))
 
         # Build workflow inputs
@@ -383,7 +317,7 @@ def dispatch_one_shot(
             "branch_name": branch_name,
             "pr_number": str(pr_number),
             "submitted_by": submitted_by,
-            "plan_backend": "planned_pr" if is_planned_pr else "github",
+            "plan_backend": "planned_pr",
         }
         if params.model is not None:
             inputs["model_name"] = params.model
@@ -397,10 +331,10 @@ def dispatch_one_shot(
         current_step = "Triggering one-shot workflow"
         user_output("Triggering one-shot workflow...")
         run_id = ctx.github.trigger_workflow(
-            repo_root=repo.root,
-            workflow=ONE_SHOT_WORKFLOW,
-            inputs=inputs,
-            ref=None,
+        repo_root=repo.root,
+        workflow=ONE_SHOT_WORKFLOW,
+        inputs=inputs,
+        ref=None,
         )
         user_output(click.style(f"  \u2192 Run ID: {run_id}", dim=True))
 
@@ -410,28 +344,8 @@ def dispatch_one_shot(
             run_url = construct_workflow_run_url(repo.github.owner, repo.github.repo, run_id)
         queued_at = ctx.time.now().replace(tzinfo=UTC).isoformat()
 
-        # Update PR body with workflow run link (best-effort)
-        # For github backend: rewrite with prompt + run link + closing ref
-        # For planned_pr backend: skip — metadata block body should not be overwritten
-        current_step = "Updating PR body"
-        if not is_planned_pr and run_url is not None:
-            try:
-                closing_ref = ""
-                if plan_issue_number is not None:
-                    plans_repo = ctx.local_config.plans_repo
-                    closing_ref = (
-                        f"\n\nCloses {plans_repo}#{plan_issue_number}"
-                        if plans_repo
-                        else f"\n\nCloses #{plan_issue_number}"
-                    )
-                pr_body = (
-                    f"Autonomous one-shot execution.\n\n"
-                    f"**Prompt:** {params.prompt}\n\n"
-                    f"**Workflow run:** {run_url}{closing_ref}"
-                )
-                ctx.github.update_pr_body(repo.root, pr_number, pr_body)
-            except Exception as e:
-                logger.warning("Failed to update stub PR body with workflow run link: %s", e)
+        # Note: For planned-PR backend, PR body already has metadata block
+        # No need to update with workflow run link
 
         # Write dispatch metadata and post queued comment (best-effort)
         current_step = "Writing dispatch metadata"
@@ -453,31 +367,31 @@ def dispatch_one_shot(
                     + f"Failed to update dispatch metadata: {e}"
                 )
 
-            # Post queued event comment to plan entity
-            current_step = "Posting queued event comment"
-            try:
-                metadata_block = create_submission_queued_block(
-                    queued_at=queued_at,
-                    submitted_by=submitted_by,
-                    issue_number=plan_issue_number,
-                    validation_results={"issue_is_open": True, "has_erk_plan_label": True},
-                    expected_workflow="one-shot",
-                )
-                comment_body = render_erk_issue_event(
-                    title="\U0001f504 One-Shot Dispatched",
-                    metadata=metadata_block,
-                    description=(
-                        f"One-shot submitted by **{submitted_by}** at {queued_at}.\n\n"
-                        f"**Workflow run:** {run_url or 'N/A'}\n\n"
-                        f"**Prompt:** {params.prompt}"
-                    ),
-                )
-                ctx.issues.add_comment(repo.root, plan_issue_number, comment_body)
-                user_output(click.style("\u2713", fg="green") + " Queued event comment posted")
-            except Exception as e:
-                user_output(
-                    click.style("Warning: ", fg="yellow") + f"Failed to post queued comment: {e}"
-                )
+        # Post queued event comment to plan entity
+        current_step = "Posting queued event comment"
+        try:
+            metadata_block = create_submission_queued_block(
+                queued_at=queued_at,
+                submitted_by=submitted_by,
+                issue_number=plan_issue_number,
+                validation_results={"issue_is_open": True, "has_erk_plan_label": True},
+                expected_workflow="one-shot",
+            )
+            comment_body = render_erk_issue_event(
+                title="\U0001f504 One-Shot Dispatched",
+                metadata=metadata_block,
+                description=(
+                    f"One-shot submitted by **{submitted_by}** at {queued_at}.\n\n"
+                    f"**Workflow run:** {run_url or 'N/A'}\n\n"
+                    f"**Prompt:** {params.prompt}"
+                ),
+            )
+            ctx.issues.add_comment(repo.root, plan_issue_number, comment_body)
+            user_output(click.style("\u2713", fg="green") + " Queued event comment posted")
+        except Exception as e:
+            user_output(
+                click.style("Warning: ", fg="yellow") + f"Failed to post queued comment: {e}"
+            )
 
     except SystemExit:
         raise

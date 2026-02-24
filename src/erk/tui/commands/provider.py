@@ -94,7 +94,6 @@ class MainListCommandProvider(Provider):
         return CommandContext(
             row=row,
             view_mode=self._app._view_mode,
-            plan_backend=self._app._plan_backend,
         )
 
     async def discover(self) -> Hits:
@@ -203,7 +202,6 @@ class PlanCommandProvider(Provider):
         return CommandContext(
             row=self._detail_screen._row,
             view_mode=ViewMode.PLANS,
-            plan_backend=self._app._plan_backend,
         )
 
     async def discover(self) -> Hits:

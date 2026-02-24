@@ -1,53 +1,27 @@
 """Tests for custom base branch handling in submit."""
 
-from datetime import UTC, datetime
 from pathlib import Path
 
 from click.testing import CliRunner
 
-from erk.cli.commands.submit import ERK_PLAN_LABEL, submit_cmd
-from erk.core.context import context_for_test
-from erk.core.repo_discovery import RepoContext
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-from erk_shared.gateway.github.issues.types import IssueInfo
-from tests.commands.submit.conftest import create_plan, make_plan_body
-from tests.test_utils.plan_helpers import create_plan_store, create_plan_store_with_plans
+from erk.cli.commands.submit import submit_cmd
+from tests.commands.submit.conftest import create_plan, setup_submit_context
 
 
 def test_submit_with_custom_base_branch(tmp_path: Path) -> None:
-    """Test submit creates PR with custom base branch when --base is specified."""
+    """Test submit passes custom base branch in workflow when --base is specified."""
     plan = create_plan("123", "Implement feature X")
 
     repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-
-    fake_plan_store, _ = create_plan_store({"123": plan}, backend="github")
-    _, fake_github_issues = create_plan_store_with_plans({"123": plan})
-    fake_git = FakeGit(
-        current_branches={repo_root: "main"},
-        trunk_branches={repo_root: "master"},
-        # Custom feature branch exists on remote
-        remote_branches={repo_root: ["origin/feature/parent-branch"]},
-    )
-    fake_github = FakeGitHub()
-
-    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
-    repo = RepoContext(
-        root=repo_root,
-        repo_name="test-repo",
-        repo_dir=repo_dir,
-        worktrees_dir=repo_dir / "worktrees",
-        pool_json_path=repo_dir / "pool.json",
-    )
-    ctx = context_for_test(
-        cwd=repo_root,
-        git=fake_git,
-        github=fake_github,
-        issues=fake_github_issues,
-        plan_store=fake_plan_store,
-        repo=repo,
+    # Custom feature branch exists on remote - add to remote_branch_refs
+    ctx, fake_git, fake_github, _, _, _ = setup_submit_context(
+        tmp_path,
+        {"123": plan},
+        remote_branch_refs=[
+            "origin/main",
+            "origin/feature/parent-branch",
+            "origin/plnd/123-implement-feature-x",
+        ],
     )
 
     runner = CliRunner()
@@ -56,62 +30,24 @@ def test_submit_with_custom_base_branch(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     assert "issue(s) submitted successfully!" in result.output
 
-    # Verify PR was created with custom base branch
-    assert len(fake_github.created_prs) == 1
-    branch_name, title, body, base, draft = fake_github.created_prs[0]
-    assert base == "feature/parent-branch"  # NOT "master"
+    # Verify workflow was triggered with custom base_branch in inputs
+    assert len(fake_github.triggered_workflows) == 1
+    workflow, inputs = fake_github.triggered_workflows[0]
+    assert inputs["base_branch"] == "feature/parent-branch"
 
-    # Verify branch was created via git (FakeGit tracks created branches)
-    # (tuple is cwd, branch_name, start_point, force)
-    assert len(fake_git.created_branches) == 1
-    created_repo, created_branch, created_base, _ = fake_git.created_branches[0]
-    assert created_repo == repo_root
-    assert created_base == "origin/feature/parent-branch"
+    # Note: In planned_pr backend, PR already exists with correct base.
+    # No PR creation or branch creation happens in submit.
 
 
 def test_submit_with_invalid_base_branch(tmp_path: Path) -> None:
     """Test submit fails early when --base branch doesn't exist on remote (LBYL)."""
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
+    plan = create_plan("123", "Implement feature X")
 
-    # Create issue (we won't get to validation because base branch check fails first)
-    now = datetime.now(UTC)
-    issue = IssueInfo(
-        number=123,
-        title="Implement feature X",
-        body=make_plan_body(),
-        state="OPEN",
-        url="https://github.com/test-owner/test-repo/issues/123",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-        author="test-user",
-    )
-
-    fake_github_issues = FakeGitHubIssues(issues={123: issue})
-    fake_git = FakeGit(
-        current_branches={repo_root: "main"},
-        trunk_branches={repo_root: "master"},
-        # "nonexistent-branch" does NOT exist on remote
-        remote_branches={repo_root: []},
-    )
-    fake_github = FakeGitHub()
-
-    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
-    repo = RepoContext(
-        root=repo_root,
-        repo_name="test-repo",
-        repo_dir=repo_dir,
-        worktrees_dir=repo_dir / "worktrees",
-        pool_json_path=repo_dir / "pool.json",
-    )
-    ctx = context_for_test(
-        cwd=repo_root,
-        git=fake_git,
-        github=fake_github,
-        issues=fake_github_issues,
-        repo=repo,
+    # "nonexistent-branch" does NOT exist on remote
+    ctx, fake_git, fake_github, _, _, _ = setup_submit_context(
+        tmp_path,
+        {"123": plan},
+        remote_branch_refs=[],  # Empty - no remote branches
     )
 
     runner = CliRunner()
@@ -134,33 +70,18 @@ def test_submit_passes_base_branch_in_workflow(tmp_path: Path) -> None:
     plan = create_plan("456", "Implement stacked feature")
 
     repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-
-    fake_plan_store, _ = create_plan_store({"456": plan}, backend="github")
-    _, fake_github_issues = create_plan_store_with_plans({"456": plan})
-    fake_git = FakeGit(
-        current_branches={repo_root: "feature-parent"},
-        trunk_branches={repo_root: "master"},
-        # Parent branch exists on remote
-        remote_branches={repo_root: ["origin/feature-parent"]},
-    )
-    fake_github = FakeGitHub()
-
-    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
-    repo = RepoContext(
-        root=repo_root,
-        repo_name="test-repo",
-        repo_dir=repo_dir,
-        worktrees_dir=repo_dir / "worktrees",
-        pool_json_path=repo_dir / "pool.json",
-    )
-    ctx = context_for_test(
-        cwd=repo_root,
-        git=fake_git,
-        github=fake_github,
-        issues=fake_github_issues,
-        plan_store=fake_plan_store,
-        repo=repo,
+    # Parent branch exists on remote
+    ctx, fake_git, fake_github, _, _, _ = setup_submit_context(
+        tmp_path,
+        {"456": plan},
+        git_kwargs={
+            "current_branches": {repo_root: "feature-parent"},
+            "trunk_branches": {repo_root: "master"},
+        },
+        remote_branch_refs=[
+            "origin/feature-parent",
+            "origin/plnd/456-implement-stacked-feature",
+        ],
     )
 
     runner = CliRunner()
@@ -184,33 +105,15 @@ def test_submit_custom_base_passes_in_workflow(tmp_path: Path) -> None:
     plan = create_plan("789", "Implement child feature")
 
     repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-
-    fake_plan_store, _ = create_plan_store({"789": plan}, backend="github")
-    _, fake_github_issues = create_plan_store_with_plans({"789": plan})
-    fake_git = FakeGit(
-        current_branches={repo_root: "main"},
-        trunk_branches={repo_root: "master"},
-        # Custom parent branch exists on remote
-        remote_branches={repo_root: ["origin/feature-parent"]},
-    )
-    fake_github = FakeGitHub()
-
-    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
-    repo = RepoContext(
-        root=repo_root,
-        repo_name="test-repo",
-        repo_dir=repo_dir,
-        worktrees_dir=repo_dir / "worktrees",
-        pool_json_path=repo_dir / "pool.json",
-    )
-    ctx = context_for_test(
-        cwd=repo_root,
-        git=fake_git,
-        github=fake_github,
-        issues=fake_github_issues,
-        plan_store=fake_plan_store,
-        repo=repo,
+    # Custom parent branch exists on remote
+    ctx, fake_git, fake_github, _, _, _ = setup_submit_context(
+        tmp_path,
+        {"789": plan},
+        remote_branch_refs=[
+            "origin/main",
+            "origin/feature-parent",
+            "origin/plnd/789-implement-child-feature",
+        ],
     )
 
     runner = CliRunner()

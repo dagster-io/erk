@@ -30,16 +30,10 @@ def test_submit_from_placeholder_branch_uses_trunk(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     assert "issue(s) submitted successfully!" in result.output
 
-    # Verify PR was created with trunk as base (not the placeholder branch)
-    assert len(fake_github.created_prs) == 1
-    _, _, _, base, _ = fake_github.created_prs[0]
-    assert base == "master"  # Should be trunk, NOT __erk-slot-02-br-stub__
-
-    # Verify branch was created from trunk
-    # (tuple is cwd, branch_name, start_point, force)
-    assert len(fake_git.created_branches) == 1
-    _, _, created_base, _ = fake_git.created_branches[0]
-    assert created_base == "origin/master"
+    # Verify workflow was triggered with trunk as base branch (not placeholder)
+    assert len(fake_github.triggered_workflows) == 1
+    _workflow, inputs = fake_github.triggered_workflows[0]
+    assert inputs["base_branch"] == "master"
 
 
 def test_submit_from_placeholder_branch_with_explicit_base(tmp_path: Path) -> None:
@@ -64,10 +58,10 @@ def test_submit_from_placeholder_branch_with_explicit_base(tmp_path: Path) -> No
 
     assert result.exit_code == 0, result.output
 
-    # Verify PR was created with explicit base (not trunk, not placeholder)
-    assert len(fake_github.created_prs) == 1
-    _, _, _, base, _ = fake_github.created_prs[0]
-    assert base == "feature/custom-base"
+    # Verify workflow was triggered with explicit base (not trunk, not placeholder)
+    assert len(fake_github.triggered_workflows) == 1
+    _workflow, inputs = fake_github.triggered_workflows[0]
+    assert inputs["base_branch"] == "feature/custom-base"
 
 
 def test_submit_from_non_placeholder_branch_uses_current(tmp_path: Path) -> None:
@@ -92,10 +86,10 @@ def test_submit_from_non_placeholder_branch_uses_current(tmp_path: Path) -> None
 
     assert result.exit_code == 0, result.output
 
-    # Verify PR was created with current branch as base
-    assert len(fake_github.created_prs) == 1
-    _, _, _, base, _ = fake_github.created_prs[0]
-    assert base == "feature/parent"  # Current branch, NOT trunk
+    # Verify workflow was triggered with current branch as base
+    assert len(fake_github.triggered_workflows) == 1
+    _workflow, inputs = fake_github.triggered_workflows[0]
+    assert inputs["base_branch"] == "feature/parent"
 
 
 def test_submit_from_unpushed_branch_uses_trunk(tmp_path: Path) -> None:
@@ -121,13 +115,7 @@ def test_submit_from_unpushed_branch_uses_trunk(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     assert "issue(s) submitted successfully!" in result.output
 
-    # Verify PR was created with trunk as base (not the unpushed branch)
-    assert len(fake_github.created_prs) == 1
-    _, _, _, base, _ = fake_github.created_prs[0]
-    assert base == "master"  # Should be trunk, NOT feature/local-only
-
-    # Verify branch was created from trunk
-    # (tuple is cwd, branch_name, start_point, force)
-    assert len(fake_git.created_branches) == 1
-    _, _, created_base, _ = fake_git.created_branches[0]
-    assert created_base == "origin/master"
+    # Verify workflow was triggered with trunk as base (not the unpushed branch)
+    assert len(fake_github.triggered_workflows) == 1
+    _workflow, inputs = fake_github.triggered_workflows[0]
+    assert inputs["base_branch"] == "master"

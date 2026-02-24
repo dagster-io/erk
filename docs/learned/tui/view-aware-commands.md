@@ -54,7 +54,7 @@ Plan and objective commands safely reuse the same keyboard shortcuts because the
 | `s`      | Submit to Queue      | Implement (One-Shot)    |
 | `5`      | Fix Conflicts Remote | Check Objective         |
 | `i`      | Open Issue           | Open Objective          |
-| `1`      | Copy Prepare         | Copy Implement          |
+| `1`      | Copy Implement       | Copy Implement          |
 | `3`      | Copy Submit          | Copy View               |
 
 A shortcut collision would only occur if both a plan and objective command with the same shortcut had overlapping view predicates. The `_is_plan_view` / `_is_objectives_view` split prevents this.
@@ -94,16 +94,6 @@ ACTION commands that run long-running subprocess operations (land, fix-conflicts
 2. Start the streaming command in the detail screen
 
 Without this helper, a streaming command started from the main list would have no visible output destination. The helper ensures the detail screen exists before streaming begins.
-
-## Backend as Third Dimension
-
-View mode and data availability are the first two filter dimensions. **Plan backend** is the third. Some commands only make sense for one backend:
-
-- `copy_prepare` and `copy_prepare_activate` are hidden when `plan_backend == "github-draft-pr"` because the "prepare" workflow uses issue numbers that don't apply to draft-PR plans.
-
-The `plan_backend` field is available on `CommandContext` (alongside `view_mode` and `row`). The `_is_github_backend(ctx)` predicate checks `ctx.plan_backend == "github"`.
-
-See [Backend-Aware Commands](backend-aware-commands.md) for the complete reference.
 
 ## Related Documentation
 

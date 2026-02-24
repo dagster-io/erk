@@ -9,8 +9,8 @@ from erk_shared.gateway.graphite.types import BranchMetadata
 from tests.commands.submit.conftest import create_plan, setup_submit_context
 
 
-def test_submit_creates_branch_and_planned_pr(tmp_path: Path) -> None:
-    """Test submit creates linked branch, pushes, creates draft PR, triggers workflow."""
+def test_submit_planned_pr_checkouts_fetches_and_pushes(tmp_path: Path) -> None:
+    """Test submit fetches existing PR branch, adds impl-context, and pushes."""
     plan = create_plan("123", "Implement feature X")
     repo_root = tmp_path / "repo"
     ctx, fake_git, fake_github, _, _, repo_root = setup_submit_context(
@@ -19,7 +19,6 @@ def test_submit_creates_branch_and_planned_pr(tmp_path: Path) -> None:
         git_kwargs={
             "current_branches": {repo_root: "main"},
             "trunk_branches": {repo_root: "master"},
-            "remote_branches": {repo_root: ["origin/main"]},
         },
     )
 
@@ -30,53 +29,44 @@ def test_submit_creates_branch_and_planned_pr(tmp_path: Path) -> None:
     assert "issue(s) submitted successfully!" in result.output
     assert "Workflow:" in result.output
 
-    # Branch name is sanitize_worktree_name(...) + timestamp suffix "-01-15-1430"
-    expected_branch = "P123-implement-feature-x-01-15-1430"
+    # Branch name is plnd/123-implement-feature-x (from PRDetails)
+    expected_branch = "plnd/123-implement-feature-x"
 
-    # Verify branch was created via git (from origin/<current_branch>)
-    # Note: submit defaults to current branch as base, not trunk_branch
-    # (tuple is cwd, branch_name, start_point, force)
-    assert len(fake_git.created_branches) == 1
-    created_repo, created_branch, created_base, created_force = fake_git.created_branches[0]
-    assert created_repo == repo_root
-    assert created_branch == expected_branch
-    assert created_base == "origin/main"  # Uses current branch as base
-    assert created_force is False
+    # Verify branch was fetched from remote
+    assert len(fake_git.fetched_branches) >= 1
+    fetched = [f for f in fake_git.fetched_branches if f[1] == expected_branch]
+    assert len(fetched) == 1
+    assert fetched[0] == ("origin", expected_branch)
 
-    # Verify branch was pushed
-    assert len(fake_git.pushed_branches) == 1
-    remote, branch, set_upstream, force = fake_git.pushed_branches[0]
+    # Verify branch was checked out
+    assert expected_branch in [b[1] for b in fake_git.checked_out_branches]
+
+    # Verify branch was pushed (with impl-context commit)
+    assert len(fake_git.pushed_branches) >= 1
+    pushed = [p for p in fake_git.pushed_branches if p[1] == expected_branch]
+    assert len(pushed) == 1
+    remote, branch, set_upstream, force = pushed[0]
     assert remote == "origin"
-    assert branch == expected_branch
-    assert set_upstream is True
+    assert set_upstream is False  # Branch already exists on remote
     assert force is False
 
-    # Verify draft PR was created
-    assert len(fake_github.created_prs) == 1
-    branch_name, title, body, base, draft = fake_github.created_prs[0]
-    assert branch_name == expected_branch
-    assert title == "plnd/Implement feature X"
-    assert draft is True
-    # PR body contains plan reference
-    assert "**Plan:** #123" in body
+    # Verify NO PR was created (PR already exists)
+    assert len(fake_github.created_prs) == 0
 
-    # Verify workflow was triggered
+    # Verify workflow was triggered with plan_backend="planned_pr"
     assert len(fake_github.triggered_workflows) == 1
     workflow, inputs = fake_github.triggered_workflows[0]
     assert workflow == "plan-implement.yml"
     assert inputs["plan_id"] == "123"
-
-    # Verify local branch is preserved (for Graphite lineage tracking)
-    assert len(fake_git._deleted_branches) == 0
+    assert inputs["plan_backend"] == "planned_pr"
 
 
-def test_submit_tracks_branch_with_graphite(tmp_path: Path) -> None:
-    """Test submit tracks the created branch with Graphite for proper PR stacking.
+def test_submit_planned_pr_does_not_track_existing_branch(tmp_path: Path) -> None:
+    """Test submit does NOT track branch with Graphite (branch already exists).
 
-    When branches are created via submit, they must be tracked with Graphite
-    so that `erk land` can find child PRs and update their base branches before
-    merging. Without tracking, child PRs get auto-closed by GitHub when their
-    base branch is deleted.
+    For planned-PR workflow, branches are created outside of submit and already
+    exist on remote. Submit just checks them out - no Graphite tracking is needed
+    since the branch already exists in Graphite's metadata.
     """
     plan = create_plan("123", "Implement feature X")
     repo_root = tmp_path / "repo"
@@ -86,7 +76,6 @@ def test_submit_tracks_branch_with_graphite(tmp_path: Path) -> None:
         git_kwargs={
             "current_branches": {repo_root: "main"},
             "trunk_branches": {repo_root: "master"},
-            "remote_branches": {repo_root: ["origin/main"]},
         },
         graphite_kwargs={
             # main must be tracked for stacking to work
@@ -102,17 +91,12 @@ def test_submit_tracks_branch_with_graphite(tmp_path: Path) -> None:
 
     assert result.exit_code == 0, result.output
 
-    # Branch name is sanitize_worktree_name(...) + timestamp suffix "-01-15-1430"
-    expected_branch = "P123-implement-feature-x-01-15-1430"
+    # Branch name is plnd/123-implement-feature-x (from PRDetails)
+    expected_branch = "plnd/123-implement-feature-x"
 
-    # Verify branch was tracked with Graphite (critical for child PR detection)
-    # BranchManager.create_branch() strips the origin/ prefix for Graphite tracking
-    # because gt track doesn't accept remote refs - it uses local branch names
-    assert len(fake_graphite.track_branch_calls) == 1
-    tracked_repo, tracked_branch, parent_branch = fake_graphite.track_branch_calls[0]
-    assert tracked_repo == repo_root
-    assert tracked_branch == expected_branch
-    assert parent_branch == "main"  # Local branch name (origin/ stripped by BranchManager)
+    # Verify branch was NOT tracked with Graphite (it already exists)
+    # Planned-PR branches are created elsewhere and already tracked
+    assert len(fake_graphite.track_branch_calls) == 0
 
 
 def test_submit_displays_workflow_run_url(tmp_path: Path) -> None:
@@ -130,8 +114,8 @@ def test_submit_displays_workflow_run_url(tmp_path: Path) -> None:
     assert expected_url in result.output
 
 
-def test_submit_single_issue_still_works(tmp_path: Path) -> None:
-    """Test backwards compatibility: single issue argument still works."""
+def test_submit_single_pr_still_works(tmp_path: Path) -> None:
+    """Test backwards compatibility: single PR argument still works."""
     plan = create_plan("123", "Implement feature X")
     ctx, fake_git, fake_github, _, _, _ = setup_submit_context(tmp_path, {"123": plan})
 
@@ -143,8 +127,9 @@ def test_submit_single_issue_still_works(tmp_path: Path) -> None:
     assert "1 issue(s) submitted successfully!" in result.output
     assert "Workflow:" in result.output
 
-    # Verify branch was created via git
-    assert len(fake_git.created_branches) == 1
+    # Verify branch was fetched and checked out (not created)
+    assert len(fake_git.fetched_branches) >= 1
+    assert len(fake_git.checked_out_branches) >= 1
 
     # Verify workflow was triggered
     assert len(fake_github.triggered_workflows) == 1
