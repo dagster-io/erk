@@ -4,8 +4,10 @@ from datetime import datetime
 
 import click
 
+from erk.cli.commands.plan.output_builders import build_plan_view_entry
 from erk.cli.core import discover_repo_context
 from erk.cli.github_parsing import parse_issue_identifier
+from erk.cli.output_framework.generic_renderer import render_json_detail
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk_shared.core.typing_utils import narrow_to_literal
@@ -222,8 +224,15 @@ def _format_header_section(header_info: dict[str, object], *, plan_url: str | No
 @click.command("view")
 @click.argument("identifier", type=str, required=False, default=None)
 @click.option("--full", "-f", is_flag=True, help="Show full plan body")
+@click.option(
+    "--json-output",
+    "json_mode",
+    is_flag=True,
+    default=False,
+    help="Output structured JSON for programmatic use",
+)
 @click.pass_obj
-def pr_view(ctx: ErkContext, identifier: str | None, *, full: bool) -> None:
+def pr_view(ctx: ErkContext, identifier: str | None, *, full: bool, json_mode: bool) -> None:
     """Fetch and display a plan by identifier.
 
     IDENTIFIER can be a plain number (e.g., "42") or a GitHub issue URL
@@ -280,6 +289,12 @@ def pr_view(ctx: ErkContext, identifier: str | None, *, full: bool) -> None:
         header_info: dict[str, object] = {}
     else:
         header_info = all_meta
+
+    # JSON output mode
+    if json_mode:
+        entry = build_plan_view_entry(plan, header_info=header_info, include_body=full)
+        click.echo(render_json_detail(entry))
+        return
 
     # Display plan details with consistent formatting
     user_output("")

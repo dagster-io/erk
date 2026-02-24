@@ -8,7 +8,9 @@ from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 
+from erk.cli.commands.plan.output_builders import build_plan_list_entry
 from erk.cli.core import discover_repo_context
+from erk.cli.output_framework.generic_renderer import render_json_list
 from erk.core.context import ErkContext
 from erk.core.display_utils import strip_rich_markup
 from erk.core.repo_discovery import ensure_erk_metadata_dir
@@ -243,6 +245,7 @@ def _pr_list_impl(
     limit: int | None,
     all_users: bool,
     sort: str,
+    json_mode: bool,
 ) -> None:
     """Implementation logic for listing plans with optional filters.
 
@@ -312,6 +315,12 @@ def _pr_list_impl(
         rows = sort_plans(rows, sort_key, activity_by_plan=activity_by_plan)
     else:
         rows = sort_plans(rows, sort_key)
+
+    # JSON output mode
+    if json_mode:
+        entries = [build_plan_list_entry(row) for row in rows]
+        click.echo(render_json_list(entries))
+        return
 
     # Build and display static table
     table = _build_static_table(
@@ -418,6 +427,13 @@ def _run_interactive_mode(
 
 @click.command("list")
 @pr_filter_options
+@click.option(
+    "--json-output",
+    "json_mode",
+    is_flag=True,
+    default=False,
+    help="Output structured JSON for programmatic use",
+)
 @click.pass_obj
 def pr_list(
     ctx: ErkContext,
@@ -429,6 +445,7 @@ def pr_list(
     limit: int | None,
     all_users: bool,
     sort: str,
+    json_mode: bool,
 ) -> None:
     """List plans as a static table.
 
@@ -445,6 +462,7 @@ def pr_list(
         erk pr list --run-state in_progress
         erk pr list --stage impl         # Filter by lifecycle stage
         erk pr list --sort activity      # Sort by recent branch activity
+        erk pr list --json-output        # JSON output for scripting
     """
     _pr_list_impl(
         ctx,
@@ -455,6 +473,7 @@ def pr_list(
         limit=limit,
         all_users=all_users,
         sort=sort,
+        json_mode=json_mode,
     )
 
 
