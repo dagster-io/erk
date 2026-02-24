@@ -14,7 +14,7 @@ from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.metadata.plan_header import extract_plan_from_comment
 from erk_shared.gateway.github.metadata.schemas import PlanHeaderSchema
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.draft_pr_lifecycle import extract_plan_content, has_original_plan_section
+from erk_shared.plan_store.planned_pr_lifecycle import extract_plan_content, has_original_plan_section
 
 
 @dataclass(frozen=True)
