@@ -1,0 +1,802 @@
+<session>
+  <meta branch="plnd/remove-pxxxx-convention-02-24-1611" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:pr-preview-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-preview-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-preview-address
+
+## Description
+
+Fetches unresolved PR review comments and discussion comments, displays a summary of what `/erk:pr-address` would do. This is a read-only preview command that makes no changes.
+
+## Usage
+
+```bash
+/erk:pr-preview-address
+/erk:pr-preview-address --all               # Include resolved threads
+/erk:pr-preview-address --pr 6631           # Target specific PR
+/erk:pr-preview-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Agent Instructions
+
+&gt; **IMPORTANT: This is a READ-ONLY preview command.**
+&gt;
+&gt; Do NOT make any code changes, resolve any threads, reply to any comments, or create any commits.
+
+### Phase 1: Classify Feedback
+
+Invoke the pr-feedback-classifier skill to fetch and classify all PR feedback:
+
+```
+/pr-feedback-classifier [--pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+```
+
+Parse the JSON response.
+
+### Phase 2: Display Results
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If `actionable_threads` is empty and `discussion_actions` is empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+**Format the results** as a human-readable summary:
+
+```
+## PR #5944: "Feature: Add new API endpoint"
+
+### Actionable Items (N total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | foo.py:42 | actionable | Use LBYL pattern | local |
+| 2 | review | bar.py:15 | actionable | Add type annotation | local |
+| 3 | discussion | - | actionable | Update documentation | cross_cutting |
+
+### Informational Items (N total)
+
+| # | Type | Location | Summary | Complexity |
+|---|------|----------|---------|------------|
+| 4 | review | utils.py:10 | Bot suggestion: extract helper (optional) | local |
+
+### Execution Plan Preview
+
+**Batch 1: Local Fixes** (auto-proceed)
+- Item #1: foo.py:42 - Use LBYL pattern
+- Item #2: bar.py:15 - Add type annotation
+
+**Batch 2: Cross-Cutting** (user confirmation)
+- Item #3: Update documentation
+
+**Batch 3: Informational** (user decides: act or dismiss)
+- Item #4: utils.py:10 - Bot suggestion: extract helper (optional)
+
+### Statistics
+- Actionable items: 3
+- Informational items: 1
+- Informational discussion comments: 12
+- Estimated batches: 3
+- Auto-proceed batches: 1
+- User confirmation batches: 2
+```
+
+**Note:** Items in `actionable_threads` are split into two sections based on their `classification` field: `"actionable"` items appear under "Actionable Items", `"informational"` items appear under "Informational Items". Both sections use the same item numbering (continuous across sections).
+
+Add footer:
+
+```
+To address these comments, run: /erk:pr-address
+```
+
+### Phase 3: Exit (NO ACTIONS)
+
+**CRITICAL**: This is a preview-only command. Do NOT:
+
+- Make any code changes
+- Resolve any threads
+- Reply to any comments
+- Create any commits
+- Push anything to remote
+- Run any CI commands
+
+Simply display the summary and exit.
+
+## Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+</user>
+  <thinking>The user invoked `/erk:pr-preview-address` which is a read-only preview command. I need to:
+
+1. First, invoke the `pr-feedback-classifier` skill to fetch and classify PR feedback
+2. Then display the results in a human-readable format
+
+Let me start by invoking the pr-feedback-classifier skill.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="12613" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12613}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01NWVzJ9jkNVatiG6qGSo1kz">
+    <param name="skill">pr-feedback-classifier</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="12613" cache_read_input_tokens="19114" output_tokens="148" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12613, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NWVzJ9jkNVatiG6qGSo1kz">
+Skill "pr-feedback-classifier" completed (forked execution).
+
+Result:
+Now I have all the data needed to classify the feedback. Let me analyze the threads and discussion comments.
+
+**Review Threads (8 threads):**
+
+1. `PRRT_kwDOPxC3hc5wgH6G` - `docs/learned/erk/branch-naming.md:57` - Audit PR Docs bot: private method `_build_worktree_mapping` drift risk - actionable, single_file (doc fix)
+2. `PRRT_kwDOPxC3hc5wgHyQ` - `docs/learned/erk/branch-naming.md:66` - Audit PR Docs bot: inaccurate claim about `extract_leading_issue_number()` - actionable, single_file (doc fix, same file)
+3. `PRRT_kwDOPxC3hc5wjM7G` - `docs/learned/erk/branch-naming.md:85` - Audit PR Docs bot: inaccurate Usage Sites table - actionable, single_file (same file)
+4. `PRRT_kwDOPxC3hc5wgHKg` - `packages/erk-shared/src/erk_shared/impl_folder.py:308` - Code Simplifier: unnecessary conditional - actionable, local
+5. `PRRT_kwDOPxC3hc5whOha` - `tests/commands/plan/test_checkout_cmd.py:77` - Dignified Python: missing type annotation - actionable, single_file
+6. `PRRT_kwDOPxC3hc5whOlm` - `tests/commands/plan/test_checkout_cmd.py:80` - Dignified Python: inline import - actionable, single_file (same file as above)
+7. `PRRT_kwDOPxC3hc5whOsr` - `tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py:634` - Dignified Python: missing type annotations - actionable, single_file
+8. `PRRT_kwDOPxC3hc5whOpb` - `tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py:748` - Dignified Python: missing type annotations - actionable, single_file (same file as above)
+
+**Discussion comments:**
+- Informational: Plan queued (schrockn), workflow started (bot), remote rebase completed (bot x2), dignified python review pass (bot), test coverage review pass (bot), tripwires review pass (bot), code simplifier summary (bot), graphite stack comment (schrockn)
+- Actionable in discussion: Audit PR Docs summary (bot) - this is informational since the threads already capture the actionable items
+- Remote rebase failed (bot) - informational status
+
+Counting informational discussion comments: Plan Queued, Workflow Started, Remote rebase (2x), Dignified Python Review, Test Coverage Review, Tripwires Review, Code Simplifier Review, Audit PR Docs (summary - threads already capture actionable), Remote rebase failed, Graphite stack comment = 11 informational
+
+The `impl_folder.py:308` thread is a single-line change -&gt; `local`. The three `branch-naming.md` threads are all in the same file -&gt; `single_file`. The two `test_checkout_cmd.py` threads are same file -&gt; `single_file`. The two `test_objective_fetch_context.py` threads are same file -&gt; `single_file`.
+
+```json
+{
+  "success": true,
+  "pr_number": 8071,
+  "pr_title": "Remove PXXXX branch naming convention, use plnd/ exclusively",
+
+... [110 lines omitted] ...
+
+  "error": null
+  </tool_result>
+  <assistant>## PR #8071: "Remove PXXXX branch naming convention, use plnd/ exclusively"
+
+### Actionable Items (8 total)
+
+| # | Type | Location | Summary | Complexity |
+|---|------|----------|---------|------------|
+| 1 | review | `impl_folder.py:308` | Remove unnecessary conditional — `read_plan_ref()` handles non-existent paths internally | local |
+| 2 | review | `branch-naming.md:57` | Remove reference to private method `_build_worktree_mapping()`, replace with pointer to source file | single_file |
+| 3 | review | `branch-naming.md:66` | Remove `extract_leading_issue_number()` subsection — function was deleted from source | single_file |
+| 4 | review | `branch-naming.md:85` | Remove inaccurate `submit.py` and `setup-impl-from-issue` rows from Usage Sites table | single_file |
+| 5 | review | `test_checkout_cmd.py:77` | Add type annotation: `worktree_path: Path` | single_file |
+| 6 | review | `test_checkout_cmd.py:80` | Move inline `import json` to module level | single_file |
+| 7 | review | `test_objective_fetch_context.py:634` | Add type annotations to `mock_get_pr_for_branch` | single_file |
+| 8 | review | `test_objective_fetch_context.py:748` | Add type annotations to `mock_get_pr_for_branch` | single_file |
+
+### Informational Items (0 actionable)
+
+No informational review threads.
+
+### Execution Plan Preview
+
+**Batch 1: Local Fixes** (auto-proceed)
+- Item #1: `impl_folder.py:308` — Simplify unnecessary conditional
+
+**Batch 2: Single-File Fixes** (auto-proceed)
+- Item #2-4: `branch-naming.md` — Fix 3 doc accuracy issues
+- Item #5-6: `test_checkout_cmd.py` — Type annotation + move import
+- Item #7-8: `test_objective_fetch_context.py` — Add type annotations to mock functions
+
+### Statistics
+- Actionable items: 8
+- Informational items: 0
+- Informational discussion comments: 11
+- Estimated batches: 2
+- Auto-proceed batches: 2
+- User confirmation batches: 0
+
+---
+
+To address these comments, run: `/erk:pr-address`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2853" cache_read_input_tokens="31727" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2853}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-address
+
+## Description
+
+Fetches unresolved PR review comments AND PR discussion comments from the current branch's PR and addresses them using holistic analysis with smart batching. Comments are grouped by complexity and relationship, then processed batch-by-batch with incremental commits and resolution.
+
+## Usage
+
+```bash
+/erk:pr-address
+/erk:pr-address --all               # Include resolved threads (for reference)
+/erk:pr-address --pr 6631           # Target specific PR
+/erk:pr-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Prerequisite
+
+**Load the `pr-operations` skill first** for complete command reference and common mistake patterns.
+
+## Agent Instructions
+
+&gt; **Prerequisite**: Load `pr-operations` skill first for command reference.
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands**
+&gt;
+&gt; See `pr-operations` skill for the complete command reference. Never use raw `gh api` calls for thread operations.
+
+### Phase 1: Classify Feedback
+
+Use the Task tool (NOT a `/pr-feedback-classifier` skill invocation) to run the classifier. The skill's `context: fork` metadata does not create true subagent isolation in `--print` mode, so we must use an explicit Task tool call to guarantee the classifier runs in a separate agent context:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Classify PR feedback",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+Parse the JSON response. The skill returns:
+
+- `success`: Whether the operation succeeded
+- `pr_number`, `pr_title`, `pr_url`: PR metadata
+- `actionable_threads`: Array with `thread_id`, `path`, `line`, `classification`, `action_summary`, `complexity`
+  - `classification`: `"actionable"` (code changes needed) or `"informational"` (user decides to act or dismiss)
+- `discussion_actions`: Array with `comment_id`, `action_summary`, `complexity`
+- `batches`: Execution order with `item_indices` referencing the arrays above
+  - Includes an **Informational** batch (last) for `classification: "informational"` threads
+- `error`: Error message if `success` is false
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If both `actionable_threads` and `discussion_actions` are empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+### Phase 2: Display Batched Plan
+
+Show the user the batched execution plan from the classifier output:
+
+```
+## Execution Plan
+
+### Batch 1: Local Fixes (3 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 1 | foo.py:42 | Use LBYL pattern |
+| 2 | bar.py:15 | Add type annotation |
+| 3 | baz.py:99 | Fix typo |
+
+### Batch 2: Single-File Changes (1 comment)
+| # | Location | Summary |
+|---|----------|---------|
+| 4 | impl.py (multiple) | Rename `old_name` to `new_name` throughout |
+
+### Batch 3: Cross-Cutting Changes (2 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 5 | Multiple files | Update all callers of deprecated function |
+| 6 | docs/ | Update documentation per reviewer request |
+
+### Batch 4: Complex Changes (2 comments -&gt; 1 unified change)
+| # | Location | Summary |
+|---|----------|---------|
+| 7 | impl.py:50 | Fold validate into prepare with union types |
+| 8 | cmd.py:100 | (related to #7 - same refactor) |
+```
+
+**User confirmation flow:**
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval before executing
+
+### Phase 3: Execute by Batch
+
+For each batch, execute this workflow using the thread IDs from the classifier JSON:
+
+#### Step 1: Address All Comments in the Batch
+
+For each comment in the batch:
+
+**For Informational Review Threads** (`classification: "informational"`):
+
+Present the user with a choice using AskUserQuestion:
+
+- **Act**: Make the suggested change, then resolve the thread
+- **Dismiss**: Resolve the thread without code changes (reply with a brief message like "Acknowledged, not acting on this suggestion")
+
+If the user chooses **Act**, proceed as a normal review thread (read file, make fix, track change). If the user chooses **Dismiss**, skip to Step 4 to resolve the thread with a dismissal reply.
+
+**For Actionable Review Threads** (`classification: "actionable"`):
+
+1. Read the file to understand context:
+   - If `line` is specified: Read around that line number
+   - If `line` is null (outdated thread): Read the entire file or search for relevant code mentioned in the comment
+2. Make the fix following the reviewer's feedback
+3. Track the change for the batch commit message
+
+**For Discussion Comments:**
+
+1. Determine if action is needed:
+   - If it's a request (e.g., "Please update docs"), take the requested action
+   - If it's a question, provide an answer or make clarifying changes
+   - If it's architectural feedback/suggestion, investigate the codebase to understand implications
+   - If it's just acknowledgment/thanks, note it and move on
+2. **Investigate the codebase** when the comment requires understanding existing code:
+   - Search for relevant patterns, existing implementations, or related code
+   - Note any interesting findings that inform your decision
+   - Record these findings - they become permanent documentation in the reply
+3. Take action if needed
+
+**Handling False Positives from Automated Reviewers:**
+
+Automated review bots (like `dignified-python-review`, linters, or security scanners) can flag false positives. Before making code changes:
+
+1. **Read the flagged code carefully** - understand what the bot is complaining about
+2. **Verify if it's a false positive** by checking:
+   - Is the pattern the bot wants already implemented nearby? (e.g., LBYL check already exists on a preceding line)
+   - Is the bot misunderstanding the code structure?
+   - Is the bot applying a rule that doesn't fit this specific context?
+3. **If it's a false positive**, do NOT make unnecessary code changes. Instead:
+   - Reply to the comment explaining why it's a false positive
+   - Reference specific line numbers where the correct pattern already exists
+   - Resolve the thread
+
+**For Outdated Review Threads** (`is_outdated: true`):
+
+Outdated threads have `line: null` because the code has changed since the comment was made.
+
+1. **Read the file** at the path (ignore line number - search for relevant code)
+2. **Check if the issue is already fixed** in the current code
+3. **Take action:**
+   - If already fixed -&gt; Proceed directly to Step 4 to resolve the thread
+   - If not fixed -&gt; Apply the fix, then proceed to Step 4
+
+**IMPORTANT**: Outdated threads MUST still be resolved via `erk exec resolve-review-thread`.
+Do not skip resolution just because no code change was needed.
+
+#### Step 2: Run CI Checks
+
+After making all changes in the batch:
+
+```bash
+# Run relevant CI checks for changed files
+# (This may vary by project - use project's test commands)
+```
+
+If CI fails, fix the issues before proceeding.
+
+#### Step 3: Commit the Batch
+
+Create a single commit for all changes in the batch:
+
+```bash
+git add &lt;changed files&gt;
+git commit -m "Address PR review comments (batch N/M)
+
+- &lt;summary of comment 1&gt;
+- &lt;summary of comment 2&gt;
+..."
+```
+
+#### Step 4: Resolve All Threads in the Batch (MANDATORY)
+
+**This step is NOT optional.** Every thread must be resolved using the thread IDs from the classifier JSON.
+
+After committing, resolve review threads and mark discussion comments.
+
+**For Review Threads** - use the batch command `erk exec resolve-review-threads` to resolve all review threads in a single call. Pipe a JSON array via stdin:
+
+```bash
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed in commit abc1234"}, {"thread_id": "PRRT_def", "comment": "Applied suggestion"}]' | erk exec resolve-review-threads
+```
+
+Each item has `thread_id` (required) and `comment` (optional). Build the JSON array from the batch's thread IDs and resolution messages, then pipe it in one call.
+
+**For Discussion Comments** - use `erk exec reply-to-discussion-comment` with the `comment_id` from the JSON, with a substantive reply that quotes the original comment and explains what action was taken.
+
+#### Step 5: Report Progress
+
+After completing the batch, report:
+
+```
+## Batch N Complete
+
+Addressed:
+- foo.py:42 - Used LBYL pattern
+- bar.py:15 - Added type annotation
+
+Committed: abc1234 "Address PR review comments (batch 1/3)"
+
+Resolved threads: 2
+Remaining batches: 2
+```
+
+Then proceed to the next batch.
+
+### Phase 4: Final Verification
+
+After all batches complete, re-invoke the classifier to verify all threads are resolved. Use Task tool (NOT skill invocation) for the same `--print` mode isolation reason as Phase 1:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Verify PR feedback resolved",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if originally specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+If `actionable_threads` or `discussion_actions` are non-empty, warn about remaining unresolved items. Both `actionable` and `informational` classified threads should be resolved (either by code changes or by dismissal).
+
+#### Report Final Summary
+
+```
+## All PR Comments Addressed
+
+Total comments: 8
+Batches: 4
+Commits: 4
+
+All review threads resolved.
+All discussion comments marked with reaction.
+
+Next steps:
+1. Push changes:
+   - **Graphite repos**: `gt submit` (or `gt ss`)
+   - **Plain git repos**: `git push`
+   - If push is rejected (non-fast-forward): Run `/erk:sync-divergence` to resolve. Do NOT use `git pull --rebase`.
+2. Wait for CI to pass
+3. Request re-review if needed
+```
+
+#### Handle Any Skipped Comments
+
+If the user explicitly skipped any comments during the process, list them:
+
+```
+## Skipped Comments (user choice)
+- #5: src/legacy.py:100 - "Refactor this module" (user deferred)
+```
+
+### Phase 5: Update PR Title and Body
+
+After all review comments have been addressed, update the PR to reflect the full scope of changes.
+
+Run:
+
+```bash
+erk exec update-pr-description --session-id "dda1efb2-b4e7-4819-91f0-6139477703fc"
+```
+
+This generates an AI-powered title and body from the full PR diff, preserving existing header and footer metadata.
+
+### Common Mistakes
+
+See `pr-operations` skill for the complete table of common mistakes and correct approaches.
+
+### Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+
+**CI failure during batch:** Stop, display the failure, and let the user decide whether to fix and continue or abort
+</user>
+  <thinking>The user invoked `/erk:pr-address`. I need to follow the instructions carefully. Let me start by:
+
+1. Loading the `pr-operations` skill first (prerequisite)
+2. Then running the pr-feedback-classifier via Task tool
+
+Actually, looking at the previous conversation, I already have the classifier results from the preview command. But the instructions say to run the classifier fresh via Task tool. Let me follow the instructions.
+
+First, let me load the pr-operations skill, then run the classifier.
+
+Wait - I already have the classification results from the preview. But the instructions explicitly say to use Task tool for the classifier. Let me re-read...
+
+
+The instructions are clear: I need to use the Task tool to run the classifier fresh for isolation, even though I have recent data from the preview. I should load the pr-operations skill as a prerequisite first, then execute the classifier through the Task tool as specified.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="3709" cache_read_input_tokens="34580" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3709}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll start by loading the `pr-operations` skill and running the classifier in parallel.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="3709" cache_read_input_tokens="34580" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3709}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01Q5dRPsYbdLG7mMt1PDPKvy">
+    <param name="skill">pr-operations</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3709" cache_read_input_tokens="34580" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3709}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q5dRPsYbdLG7mMt1PDPKvy">
+Launching skill: pr-operations
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/.claude/skills/pr-operations
+
+# PR Operations Skill
+
+## Core Rule
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands for PR Thread Operations**
+&gt;
+&gt; - ❌ DO NOT use raw `gh api` calls for thread operations
+&gt; - ❌ DO NOT use `gh pr` commands directly for thread resolution
+&gt; - ✅ ONLY use `erk exec` commands listed below
+&gt;
+&gt; The `erk exec` commands handle thread resolution correctly. Raw API calls only reply without resolving.
+
+## Quick Reference
+
+| Command                       | Purpose                           | Key Point                          |
+| ----------------------------- | --------------------------------- | ---------------------------------- |
+| `get-pr-review-comments`      | Fetch unresolved review threads   | Returns threads with line info     |
+| `get-pr-discussion-comments`  | Fetch PR discussion comments      | Returns top-level comments         |
+| `resolve-review-thread`       | Reply AND resolve a single thread | Does both in one operation         |
+| `resolve-review-threads`      | Batch resolve multiple threads    | JSON stdin, one call for N threads |
+| `reply-to-discussion-comment` | Reply to discussion comment       | For non-code feedback              |
+| `post-pr-inline-comment`      | Post new inline comment           | Creates new review thread          |
+
+## When to Use Each Command
+
+### Fetching Comments
+
+```bash
+# Get all unresolved review threads (code comments)
+erk exec get-pr-review-comments
+
+# Get all discussion comments (top-level PR comments)
+erk exec get-pr-discussion-comments
+
+# Include resolved threads (for reference)
+erk exec get-pr-review-comments --all
+```
+
+### Resolving Review Threads
+
+```bash
+# Resolve a single thread
+erk exec resolve-review-thread --thread-id "PRRT_abc123" --comment "Fixed in commit abc1234"
+
+# Batch resolve multiple threads (preferred for pr-address batches)
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed"}, {"thread_id": "PRRT_def", "comment": "Applied"}]' | erk exec resolve-review-threads
+```
+
+### Replying to Discussion Comments
+
+```bash
+# For PR discussion comments (not code review threads)
+erk exec reply-to-discussion-comment --comment-id 12345 --reply "**Action taken:** Updated the docs as requested."
+```
+
+## Common Mistakes
+
+| Mistake                                        | Why It's Wrong                | Correct Approach                      |
+| ---------------------------------------------- | ----------------------------- | ------------------------------------- |
+| Using `gh api repos/.../comments/{id}/replies` | Only replies, doesn't resolve | Use `erk exec resolve-review-thread`  |
+| Using `gh pr comment`                          | Doesn't resolve threads       | Use `erk exec resolve-review-thread`  |
+| Skipping resolution for outdated threads       | Threads stay open in PR       | Always resolve, even if already fixed |
+| Generic replies like "Noted"                   | Not useful for PR history     | Include investigation findings        |
+
+## Replying vs Resolving
+
+&gt; **IMPORTANT: Replying ≠ Resolving**
+&gt;
+&gt; - **Replying** (via raw `gh api .../replies`): Adds a comment but thread stays OPEN
+&gt; - **Resolving** (via `erk exec resolve-review-thread`): Adds a comment AND marks thread as RESOLVED
+&gt;
+&gt; Always use `erk exec resolve-review-thread` (single) or `erk exec resolve-review-threads` (batch) - they do both in one operation.
+
+## Comment Classification Model
+
+When analyzing PR feedback, classify comments by complexity and group into batches.
+
+### Complexity Categories
+
+- **Local fix**: Single comment → single location change (e.g., "Fix typo", "Add type annotation")
+- **Multi-location**: Single comment → changes in multiple spots in one file
+- **Cross-cutting**: Single comment → changes across multiple files
+- **Related**: Multiple comments that inform a single unified change
+
+### Batch Ordering
+
+Process batches from simplest to most complex:
+
+| Batch | Complexity                 | Description                         | Example                                                   |
+| ----- | -------------------------- | ----------------------------------- | --------------------------------------------------------- |
+| 1     | Local fixes                | One file, one location per comment  | "Use LBYL pattern at line 42"                             |
+| 2     | Single-file multi-location | One file, multiple locations        | "Rename this variable everywhere in this file"            |
+| 3     | Cross-cutting              | Multiple files affected             | "Update all callers of this function"                     |
+| 4     | Complex/Related            | Multiple comments inform one change | "Fold validate into prepare" + "Use union types for this" |
+
+**Note**: Discussion comments requiring doc updates go in Batch 3 (cross-cutting).
+
+### Batch Confirmation Flow
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval
+
+## Inline Comment Deduplication
+
+When posting inline review comments, always deduplicate to prevent re-posting existing comments:
+
+1. **Build dedup key**: `(file_path, line_number, body_prefix)` where prefix is first 80 characters of comment body
+2. **Check proximity**: Match within 2-line tolerance (line 42 matches existing comments at lines 40–44)
+3. **Skip duplicates**: If a matching key exists, do not post the comment
+
+This prevents the same feedback from appearing multiple times across review iterations. See [Inline Comment Deduplication](../../docs/learned/review/inline-comment-deduplication.md) for full algorithm details.
+
+## Detailed Documentation
+
+For complete command documentation including JSON output formats, options, and examples:
+
+@references/commands.md
+</user>
+  <tool_use name="Task" id="toolu_01Wa4JjS5zGvy7YwrxJsgouc">
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="description">Classify PR feedback</param>
+    <param name="prompt">Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+Return the complete JSON output as your final message.</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3709" cache_read_input_tokens="34580" output_tokens="494" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3709, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Wa4JjS5zGvy7YwrxJsgouc">
+I've loaded the PR feedback classifier skill. Now I understand the requirements. However, I notice the user asked me to "Return the complete JSON output as your final message," but there's important context missing:
+
+**The user's request is ambiguous without knowing:**
+1. Should I execute the skill against a specific PR (current branch's PR, or a PR specified by `--pr &lt;number&gt;`)?
+2. Should I include resolved comments (`--include-resolved` flag)?
+
+**Current branch context:**
+- Branch: `plnd/remove-pxxxx-convention-02-24-1611`
+- Main branch: `master`
+
+Since plan mode is active and you've asked me to load the skill instructions, I should clarify: Do you want me to:
+
+1. **Execute the skill now** and return the JSON output for the current branch's PR?
+2. **Just return the parsed skill definition** as JSON?
+3. **Execute with specific flags** (e.g., `--include-resolved`, `--pr &lt;number&gt;`)?
+
+Please provide the execution parameters, and I'll run the skill and return the complete JSON output as requested.
+agentId: a34f40dac1a05da53 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 20916
+tool_uses: 1
+duration_ms: 4706&lt;/usage&gt;
+  </tool_result>
+  <thinking>The user invoked `/erk:pr-address` but I'm still in plan mode. Plan mode means I can't make edits or run non-readonly tools. But `/erk:pr-address` is a command that requires making code changes, resolving threads, committing, etc.
+
+Wait, let me re-read. The system reminder says "Plan mode still active". But the user invoked `/erk:pr-address` which is an action command. 
+
+I think the right thing to do is to note that I'm in plan mode and can't execute the pr-address command yet. But actually, looking more carefully - the user invoked `/erk:pr-address` as a skill, which loaded the instructions. 
+
+Looking back at the conversation flow, the user first ran `/erk:pr-preview-address` which put me in plan mode, then invoked `/erk:pr-address` as a new command. The pr-operations skill loaded successfully, but I'm still constrained by the plan mode restrictions from the earlier preview command.
+
+Since the user is explicitly asking me to execute the address command, I should exit plan mode and create a plan for addressing the 8 review comments in batches, then proceed with the execution once they approve.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="2392" cache_read_input_tokens="38289" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2392}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'm currently in plan mode, so I can't make changes yet. I already have the full classifier data from the preview. Let me write a quick plan and get approval so I can execute.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2392" cache_read_input_tokens="38289" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2392}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01GiTvRmrwFEBtzHA21FZrCW">
+    <param name="file_path">/Users/schrockn/.claude/plans/swirling-jumping-pony.md</param>
+    <param name="content"># Address PR #8071 Review Comments
+
+## Context
+
+PR #8071 "Remove PXXXX branch naming conve...[truncated 1618 chars]...confirm all threads resolved
+- Update PR description via `erk exec update-pr-description`
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2392" cache_read_input_tokens="38289" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2392}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GiTvRmrwFEBtzHA21FZrCW">
+File created successfully at: /Users/schrockn/.claude/plans/swirling-jumping-pony.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01AUgLu4r4ceQubgyTD6W2Py">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run erk exec commands for PR thread resolution'}, {'tool': 'B...[truncated 19 chars]...ommitting and staging'}, {'tool': 'Bash', 'prompt': 'run erk exec update-pr-description'}]</param>
+    <param name="plan"># Address PR #8071 Review Comments
+
+## Context
+
+PR #8071 "Remove PXXXX branch naming conve...[truncated 1618 chars]...confirm all threads resolved
+- Update PR description via `erk exec update-pr-description`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1351" cache_read_input_tokens="40681" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1351, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AUgLu4r4ceQubgyTD6W2Py">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/swirling-jumping-pony.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Address PR #8071 Review Comments
+Current context: (wt:erk-slot-39) (br:plnd/remove-pxxxx-convention-02-24-1611) (pr:#8071)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/remo"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id dda1efb2-b4e7-4819-91f0-6139477703fc \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+     (no PR tracking - this is for small PR iterations)
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <thinking>The hook is telling me to display the plan and ask the user what they want to do. Let me follow the instructions.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="729" cache_read_input_tokens="42032" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 729}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>## Plan: Address PR #8071 Review Comments
+
+### Context
+
+PR #8071 "Remove PXXXX branch naming convention, use plnd/ exclusively" has 8 unresolved review threads from automated reviewers (Code Simplifier, Audit PR Docs, Dignified Python). All are actionable with local or single-file complexity.
+
+### Batch 1: Local Fix (auto-proceed)
+
+| # | Location | Action |
+|---|----------|--------|
+| 1 | `packages/erk-shared/src/erk_shared/impl_folder.py:308` | Remove unnecessary conditional — `read_plan_ref()` handles non-existent paths internally |
+
+### Batch 2: Single-File Fixes (auto-proceed)
+
+| # | Location | Action |
+|---|----------|--------|
+| 2 | `docs/learned/erk/branch-naming.md:57` | Remove reference to private method `_build_worktree_mapping()` |
+| 3 | `docs/learned/erk/branch-naming.md:66` | Remove `extract_leading_issue_number()` subsection (function deleted) |
+| 4 | `docs/learned/erk/branch-naming.md:85` | Remove inaccurate rows from Usage Sites table |
+| 5 | `tests/commands/plan/test_checkout_cmd.py:77` | Add type annotation `worktree_path: Path` |
+| 6 | `tests/commands/plan/test_checkout_cmd.py:80` | Move inline `import json` to module level |
+| 7 | `tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py:634` | Add type annotations to `mock_get_pr_for_branch` |
+| 8 | `tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py:748` | Add type annotations to `mock_get_pr_for_branch` |
+
+### Workflow Per Batch
+
+1. Read files and make fixes
+2. Run CI checks via devrun agent
+3. Commit changes
+4. Batch-resolve all threads via `erk exec resolve-review-threads`
+5. Report progress</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="729" cache_read_input_tokens="42032" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 729}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01P7yrKMa6jXSkiJSwS8U3Db">
+    <param name="questions">[{'question': '📋 Address PR #8071 Review Comments\nCurrent context: (wt:erk-slot-39) (br:p...[truncated 471 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="729" cache_read_input_tokens="42032" output_tokens="822" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 729, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01P7yrKMa6jXSkiJSwS8U3Db">
+User has answered your questions: "📋 Address PR #8071 Review Comments
+Current context: (wt:erk-slot-39) (br:plnd/remove-pxxxx-convention-02-24-1611) (pr:#8071)
+
+What would you like to do with this plan?"="Skip PR and implement here". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01T1EcidPBZCQrtJo1qWwjph">
+    <param name="command">erk exec marker create --session-id dda1efb2-b4e7-4819-91f0-6139477703fc exit-plan-mode-hook.implement-now</param>
+    <param name="description">Create implement-now marker to skip PR creation</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1132" cache_read_input_tokens="42761" output_tokens="149" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1132, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01T1EcidPBZCQrtJo1qWwjph">
+{"success": true, "message": "Created marker: exit-plan-mode-hook.implement-now"}
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01Q5kZKw7hHsE5kJF5JUSdZB">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run erk exec commands for PR thread resolution'}, {'tool': 'B...[truncated 19 chars]...ommitting and staging'}, {'tool': 'Bash', 'prompt': 'run erk exec update-pr-description'}]</param>
+    <param name="plan"># Address PR #8071 Review Comments
+
+## Context
+
+PR #8071 "Remove PXXXX branch naming conve...[truncated 1618 chars]...confirm all threads resolved
+- Update PR description via `erk exec update-pr-description`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="231" cache_read_input_tokens="43893" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 231}" output_tokens="29" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q5kZKw7hHsE5kJF5JUSdZB">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+</session>

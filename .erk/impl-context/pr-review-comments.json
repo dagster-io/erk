@@ -1,0 +1,163 @@
+{
+  "success": true,
+  "pr_number": 8071,
+  "threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5wgHyQ",
+      "path": "docs/learned/erk/branch-naming.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: `extract_leading_issue_number()` exists but \"Always returns `None`\"\nReality: This function has been completely removed from `packages/erk-shared/src/erk_shared/naming.py` \u2014 it does not exist in the codebase.\n\nSource: `packages/erk-shared/src/erk_shared/naming.py`\n\nSuggested fix: Remove the entire `extract_leading_issue_number()` subsection (lines 62\u201366), including the source pointer. The function no longer exists, so documenting it (even as deprecated) creates confusion about available symbols.",
+          "created_at": "2026-02-24T19:41:49Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Already fixed: the extract_leading_issue_number() subsection has been removed from branch-naming.md \u2014 the section no longer exists in the current version.\n\n_Addressed via `/erk:pr-address` at 2026-02-24 17:45 PST_",
+          "created_at": "2026-02-25T01:45:29Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wgH6G",
+      "path": "docs/learned/erk/branch-naming.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Drift risk \u2014 documents a private method name that will change.\n\nSource: `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py, _build_worktree_mapping`\n\nRisk: Private `_underscore` methods are the most volatile identifiers in a codebase. Per learned-docs-core.md, they must never appear in documentation \u2014 their behavior belongs in docstrings, not learned docs. Consider replacing the three-bullet list with a single sentence: \"Plan-to-branch mapping reads `.impl/plan-ref.json` from each worktree \u2014 see `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py`.\"",
+          "created_at": "2026-02-24T19:41:58Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Already fixed: the private method _build_worktree_mapping() reference has been replaced \u2014 no such reference exists in the current branch-naming.md.\n\n_Addressed via `/erk:pr-address` at 2026-02-24 17:45 PST_",
+          "created_at": "2026-02-25T01:45:30Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wjM7G",
+      "path": "docs/learned/erk/branch-naming.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: \"All branch creation codepaths use `generate_planned_pr_branch_name()`\" \u2014 table lists `submit.py` and `setup-impl-from-issue`\nReality: Neither file calls `generate_planned_pr_branch_name()`. `submit.py` uses an existing PR's branch (no branch generation). `setup_impl_from_issue.py` gets the branch via `pr_result.head_ref_name` at line 165.\n\nSource: `src/erk/cli/commands/submit.py`, `src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py:165`\n\nSuggested fix: Remove the `submit.py` and `setup-impl-from-issue` rows from the Usage Sites table. The only codepaths that actually call `generate_planned_pr_branch_name()` are `exec/scripts/plan_save.py` and `one_shot_dispatch.py`.",
+          "created_at": "2026-02-25T00:55:08Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Already fixed: submit.py and setup-impl-from-issue have been removed from the Usage Sites table \u2014 it now only contains plan_save.py and one_shot_dispatch.py.\n\n_Addressed via `/erk:pr-address` at 2026-02-24 17:45 PST_",
+          "created_at": "2026-02-25T01:45:32Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wjgvO",
+      "path": "docs/learned/planning/one-shot-workflow.md",
+      "line": 59,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: \"GitHubPlanStore (legacy)\" path exists where `create_plan_issue()` is called first, then a branch and PR are created.\nReality: `src/erk/cli/commands/one_shot_dispatch.py` has NO backend-conditional branching. It always uses the PlannedPRBackend path \u2014 `generate_planned_pr_branch_name()` is called unconditionally. There is no `create_plan_issue()` call in this file.\n\nSource: `src/erk/cli/commands/one_shot_dispatch.py:171-296`\n\nSuggested fix: Remove the \"GitHubPlanStore (legacy)\" subsection (lines 59-76). The dispatch function has a single code path. If the legacy path needs documentation for historical context, add a brief note that the GitHubPlanStore backend path was removed, but do not describe it as a still-present code path.",
+          "created_at": "2026-02-25T01:41:34Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wgHKg",
+      "path": "packages/erk-shared/src/erk_shared/impl_folder.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: Unnecessary conditional expression -  handles non-existent paths internally, so the ternary can be simplified to just . Reference: dignified-python LBYL pattern.",
+          "created_at": "2026-02-24T19:40:59Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Already fixed: the unnecessary conditional/ternary around read_plan_ref() in impl_folder.py has been simplified \u2014 no ternary exists in the current code.\n\n_Addressed via `/erk:pr-address` at 2026-02-24 17:45 PST_",
+          "created_at": "2026-02-25T01:45:34Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5whOha",
+      "path": "tests/commands/plan/test_checkout_cmd.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python**: Missing type annotation - Parameter worktree_path must have a type hint (Path).",
+          "created_at": "2026-02-24T21:12:46Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Already fixed: worktree_path now has a Path type annotation on line 79 of test_checkout_cmd.py.\n\n_Addressed via `/erk:pr-address` at 2026-02-24 17:45 PST_",
+          "created_at": "2026-02-25T01:45:36Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5whOlm",
+      "path": "tests/commands/plan/test_checkout_cmd.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python**: Inline import without justification - Move `import json` to module level (top of file). JSON is a stdlib module with negligible import cost.",
+          "created_at": "2026-02-24T21:12:52Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Already fixed: the json import is now at module level (line 3) in test_checkout_cmd.py, not inline.\n\n_Addressed via `/erk:pr-address` at 2026-02-24 17:45 PST_",
+          "created_at": "2026-02-25T01:45:38Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5whOpb",
+      "path": "tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python**: Missing type annotations - All function parameters must have type hints, including local mock functions. Expected: `def mock_get_pr_for_branch(repo_root: Path, branch: str) -> PR | PRNotFound:`",
+          "created_at": "2026-02-24T21:12:57Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Already fixed: the mock on line 634 of test_objective_fetch_context.py is now fully annotated with (repo_root: Path, branch: str) -> PRDetails | PRNotFound.\n\n_Addressed via `/erk:pr-address` at 2026-02-24 17:45 PST_",
+          "created_at": "2026-02-25T01:45:40Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5whOsr",
+      "path": "tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python**: Missing type annotations - All function parameters must have type hints, including local mock functions. Expected: `def mock_get_pr_for_branch(repo_root: Path, branch: str) -> PR | PRNotFound:`",
+          "created_at": "2026-02-24T21:13:02Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Already fixed: the mock on line 748 of test_objective_fetch_context.py is now fully annotated with (repo_root: Path, branch: str) -> PRDetails | PRNotFound.\n\n_Addressed via `/erk:pr-address` at 2026-02-24 17:45 PST_",
+          "created_at": "2026-02-25T01:45:42Z"
+        }
+      ]
+    }
+  ]
+}

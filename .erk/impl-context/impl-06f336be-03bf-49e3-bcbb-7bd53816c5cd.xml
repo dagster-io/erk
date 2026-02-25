@@ -1,0 +1,881 @@
+<session>
+  <meta branch="plnd/remove-pxxxx-convention-02-24-1611" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:pr-preview-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-preview-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-preview-address
+
+## Description
+
+Fetches unresolved PR review comments and discussion comments, displays a summary of what `/erk:pr-address` would do. This is a read-only preview command that makes no changes.
+
+## Usage
+
+```bash
+/erk:pr-preview-address
+/erk:pr-preview-address --all               # Include resolved threads
+/erk:pr-preview-address --pr 6631           # Target specific PR
+/erk:pr-preview-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Agent Instructions
+
+&gt; **IMPORTANT: This is a READ-ONLY preview command.**
+&gt;
+&gt; Do NOT make any code changes, resolve any threads, reply to any comments, or create any commits.
+
+### Phase 1: Classify Feedback
+
+Invoke the pr-feedback-classifier skill to fetch and classify all PR feedback:
+
+```
+/pr-feedback-classifier [--pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+```
+
+Parse the JSON response.
+
+### Phase 2: Display Results
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If `actionable_threads` is empty and `discussion_actions` is empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+**Format the results** as a human-readable summary:
+
+```
+## PR #5944: "Feature: Add new API endpoint"
+
+### Actionable Items (N total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | foo.py:42 | actionable | Use LBYL pattern | local |
+| 2 | review | bar.py:15 | actionable | Add type annotation | local |
+| 3 | discussion | - | actionable | Update documentation | cross_cutting |
+
+### Informational Items (N total)
+
+| # | Type | Location | Summary | Complexity |
+|---|------|----------|---------|------------|
+| 4 | review | utils.py:10 | Bot suggestion: extract helper (optional) | local |
+
+### Execution Plan Preview
+
+**Batch 1: Local Fixes** (auto-proceed)
+- Item #1: foo.py:42 - Use LBYL pattern
+- Item #2: bar.py:15 - Add type annotation
+
+**Batch 2: Cross-Cutting** (user confirmation)
+- Item #3: Update documentation
+
+**Batch 3: Informational** (user decides: act or dismiss)
+- Item #4: utils.py:10 - Bot suggestion: extract helper (optional)
+
+### Statistics
+- Actionable items: 3
+- Informational items: 1
+- Informational discussion comments: 12
+- Estimated batches: 3
+- Auto-proceed batches: 1
+- User confirmation batches: 2
+```
+
+**Note:** Items in `actionable_threads` are split into two sections based on their `classification` field: `"actionable"` items appear under "Actionable Items", `"informational"` items appear under "Informational Items". Both sections use the same item numbering (continuous across sections).
+
+Add footer:
+
+```
+To address these comments, run: /erk:pr-address
+```
+
+### Phase 3: Exit (NO ACTIONS)
+
+**CRITICAL**: This is a preview-only command. Do NOT:
+
+- Make any code changes
+- Resolve any threads
+- Reply to any comments
+- Create any commits
+- Push anything to remote
+- Run any CI commands
+
+Simply display the summary and exit.
+
+## Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+</user>
+  <thinking>The user invoked `/erk:pr-preview-address` which is a read-only preview command. I need to:
+
+1. First, invoke the `pr-feedback-classifier` skill to fetch and classify PR feedback
+2. Then display the results in the specified format
+
+Let me start by invoking the pr-feedback-classifier skill. I need to figure out which PR to target. The current branch is `plnd/remove-pxxxx-convention-02-24-1611`. Let me invoke the skill.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="12642" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12642}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01Ft4Aqkw6BziTrDAZcFMaxx">
+    <param name="skill">pr-feedback-classifier</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="12642" cache_read_input_tokens="19114" output_tokens="185" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12642, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ft4Aqkw6BziTrDAZcFMaxx">
+Skill "pr-feedback-classifier" completed (forked execution).
+
+Result:
+Based on the fetched data, here is the classified output:
+
+```json
+{
+  "success": true,
+  "pr_number": 8071,
+  "pr_title": "Remove plan ID encoding from branch names, migrate to plan-ref.json",
+  "pr_url": "https://github.com/dagster-io/erk/pull/8071",
+  "actionable_threads": [
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5wgHyQ",
+      "type": "review",
+      "path": "docs/learned/erk/branch-naming.md",
+      "line": null,
+      "is_outdated": true,
+      "classification": "actionable",
+      "action_summary": "Remove the entire extract_leading_issue_number() subsection (lines 62-66) — function no longer exists in codebase",
+      "complexity": "local",
+      "original_comment": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: `extract_leading_issue_number()` exists but \"Always returns `None`\"\nReality: This function has been completely removed from `packages/erk-shared/src/erk_shared/naming.py` — it does not exist in the"
+    },
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5wgH6G",
+      "type": "review",
+      "path": "docs/learned/erk/branch-naming.md",
+      "line": null,
+      "is_outdated": true,
+      "classification": "actionable",
+
+... [95 lines omitted] ...
+
+  "error": null
+  </tool_result>
+  <assistant>## PR #8071: "Remove plan ID encoding from branch names, migrate to plan-ref.json"
+
+### Actionable Items (8 total)
+
+| # | Type | Location | Summary | Complexity |
+|---|------|----------|---------|------------|
+| 1 | review | docs/learned/erk/branch-naming.md | Remove extract_leading_issue_number() subsection — function no longer exists | local |
+| 2 | review | docs/learned/erk/branch-naming.md | Replace private method reference with file path instead of _build_worktree_mapping() | local |
+| 3 | review | docs/learned/erk/branch-naming.md | Remove submit.py and setup-impl-from-issue rows from Usage Sites table | local |
+| 4 | review | packages/erk-shared/src/erk_shared/impl_folder.py | Simplify unnecessary conditional — read_plan_ref() handles non-existent paths internally | local |
+| 5 | review | tests/commands/plan/test_checkout_cmd.py | Add type annotation `Path` to `worktree_path` parameter | local |
+| 6 | review | tests/commands/plan/test_checkout_cmd.py | Move inline `import json` to module level | local |
+| 7 | review | tests/unit/.../test_objective_fetch_context.py | Add type annotations to first `mock_get_pr_for_branch` function | local |
+| 8 | review | tests/unit/.../test_objective_fetch_context.py | Add type annotations to second `mock_get_pr_for_branch` function | local |
+
+### Informational Items
+
+- 10 informational discussion comments (CI status, rebase notifications, bot summaries, Graphite stack)
+
+### Execution Plan Preview
+
+**Batch 1: Local Fixes** (auto-proceed)
+- Item #1: branch-naming.md - Remove deleted function reference
+- Item #2: branch-naming.md - Replace private method name with file path
+- Item #3: branch-naming.md - Remove incorrect Usage Sites rows
+- Item #4: impl_folder.py - Simplify unnecessary conditional expression
+- Item #5: test_checkout_cmd.py - Add type annotation to parameter
+- Item #6: test_checkout_cmd.py - Move import to module level
+- Item #7: test_objective_fetch_context.py - Add type annotations to mock
+- Item #8: test_objective_fetch_context.py - Add type annotations to mock
+
+### Statistics
+- Actionable items: 8
+- Informational items: 0
+- Informational discussion comments: 10
+- Estimated batches: 1
+- Auto-proceed batches: 1
+- User confirmation batches: 0
+
+---
+
+All 8 items are local fixes across 4 files (3 doc fixes, 1 code simplification, 4 type annotation additions). All review threads are outdated (from earlier commits).
+
+To address these comments, run: `/erk:pr-address`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2292" cache_read_input_tokens="31756" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2292}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-address
+
+## Description
+
+Fetches unresolved PR review comments AND PR discussion comments from the current branch's PR and addresses them using holistic analysis with smart batching. Comments are grouped by complexity and relationship, then processed batch-by-batch with incremental commits and resolution.
+
+## Usage
+
+```bash
+/erk:pr-address
+/erk:pr-address --all               # Include resolved threads (for reference)
+/erk:pr-address --pr 6631           # Target specific PR
+/erk:pr-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Prerequisite
+
+**Load the `pr-operations` skill first** for complete command reference and common mistake patterns.
+
+## Agent Instructions
+
+&gt; **Prerequisite**: Load `pr-operations` skill first for command reference.
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands**
+&gt;
+&gt; See `pr-operations` skill for the complete command reference. Never use raw `gh api` calls for thread operations.
+
+### Phase 1: Classify Feedback
+
+Use the Task tool (NOT a `/pr-feedback-classifier` skill invocation) to run the classifier. The skill's `context: fork` metadata does not create true subagent isolation in `--print` mode, so we must use an explicit Task tool call to guarantee the classifier runs in a separate agent context:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Classify PR feedback",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+Parse the JSON response. The skill returns:
+
+- `success`: Whether the operation succeeded
+- `pr_number`, `pr_title`, `pr_url`: PR metadata
+- `actionable_threads`: Array with `thread_id`, `path`, `line`, `classification`, `action_summary`, `complexity`
+  - `classification`: `"actionable"` (code changes needed) or `"informational"` (user decides to act or dismiss)
+- `discussion_actions`: Array with `comment_id`, `action_summary`, `complexity`
+- `batches`: Execution order with `item_indices` referencing the arrays above
+  - Includes an **Informational** batch (last) for `classification: "informational"` threads
+- `error`: Error message if `success` is false
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If both `actionable_threads` and `discussion_actions` are empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+### Phase 2: Display Batched Plan
+
+Show the user the batched execution plan from the classifier output:
+
+```
+## Execution Plan
+
+### Batch 1: Local Fixes (3 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 1 | foo.py:42 | Use LBYL pattern |
+| 2 | bar.py:15 | Add type annotation |
+| 3 | baz.py:99 | Fix typo |
+
+### Batch 2: Single-File Changes (1 comment)
+| # | Location | Summary |
+|---|----------|---------|
+| 4 | impl.py (multiple) | Rename `old_name` to `new_name` throughout |
+
+### Batch 3: Cross-Cutting Changes (2 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 5 | Multiple files | Update all callers of deprecated function |
+| 6 | docs/ | Update documentation per reviewer request |
+
+### Batch 4: Complex Changes (2 comments -&gt; 1 unified change)
+| # | Location | Summary |
+|---|----------|---------|
+| 7 | impl.py:50 | Fold validate into prepare with union types |
+| 8 | cmd.py:100 | (related to #7 - same refactor) |
+```
+
+**User confirmation flow:**
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval before executing
+
+### Phase 3: Execute by Batch
+
+For each batch, execute this workflow using the thread IDs from the classifier JSON:
+
+#### Step 1: Address All Comments in the Batch
+
+For each comment in the batch:
+
+**For Informational Review Threads** (`classification: "informational"`):
+
+Present the user with a choice using AskUserQuestion:
+
+- **Act**: Make the suggested change, then resolve the thread
+- **Dismiss**: Resolve the thread without code changes (reply with a brief message like "Acknowledged, not acting on this suggestion")
+
+If the user chooses **Act**, proceed as a normal review thread (read file, make fix, track change). If the user chooses **Dismiss**, skip to Step 4 to resolve the thread with a dismissal reply.
+
+**For Actionable Review Threads** (`classification: "actionable"`):
+
+1. Read the file to understand context:
+   - If `line` is specified: Read around that line number
+   - If `line` is null (outdated thread): Read the entire file or search for relevant code mentioned in the comment
+2. Make the fix following the reviewer's feedback
+3. Track the change for the batch commit message
+
+**For Discussion Comments:**
+
+1. Determine if action is needed:
+   - If it's a request (e.g., "Please update docs"), take the requested action
+   - If it's a question, provide an answer or make clarifying changes
+   - If it's architectural feedback/suggestion, investigate the codebase to understand implications
+   - If it's just acknowledgment/thanks, note it and move on
+2. **Investigate the codebase** when the comment requires understanding existing code:
+   - Search for relevant patterns, existing implementations, or related code
+   - Note any interesting findings that inform your decision
+   - Record these findings - they become permanent documentation in the reply
+3. Take action if needed
+
+**Handling False Positives from Automated Reviewers:**
+
+Automated review bots (like `dignified-python-review`, linters, or security scanners) can flag false positives. Before making code changes:
+
+1. **Read the flagged code carefully** - understand what the bot is complaining about
+2. **Verify if it's a false positive** by checking:
+   - Is the pattern the bot wants already implemented nearby? (e.g., LBYL check already exists on a preceding line)
+   - Is the bot misunderstanding the code structure?
+   - Is the bot applying a rule that doesn't fit this specific context?
+3. **If it's a false positive**, do NOT make unnecessary code changes. Instead:
+   - Reply to the comment explaining why it's a false positive
+   - Reference specific line numbers where the correct pattern already exists
+   - Resolve the thread
+
+**For Outdated Review Threads** (`is_outdated: true`):
+
+Outdated threads have `line: null` because the code has changed since the comment was made.
+
+1. **Read the file** at the path (ignore line number - search for relevant code)
+2. **Check if the issue is already fixed** in the current code
+3. **Take action:**
+   - If already fixed -&gt; Proceed directly to Step 4 to resolve the thread
+   - If not fixed -&gt; Apply the fix, then proceed to Step 4
+
+**IMPORTANT**: Outdated threads MUST still be resolved via `erk exec resolve-review-thread`.
+Do not skip resolution just because no code change was needed.
+
+#### Step 2: Run CI Checks
+
+After making all changes in the batch:
+
+```bash
+# Run relevant CI checks for changed files
+# (This may vary by project - use project's test commands)
+```
+
+If CI fails, fix the issues before proceeding.
+
+#### Step 3: Commit the Batch
+
+Create a single commit for all changes in the batch:
+
+```bash
+git add &lt;changed files&gt;
+git commit -m "Address PR review comments (batch N/M)
+
+- &lt;summary of comment 1&gt;
+- &lt;summary of comment 2&gt;
+..."
+```
+
+#### Step 4: Resolve All Threads in the Batch (MANDATORY)
+
+**This step is NOT optional.** Every thread must be resolved using the thread IDs from the classifier JSON.
+
+After committing, resolve review threads and mark discussion comments.
+
+**For Review Threads** - use the batch command `erk exec resolve-review-threads` to resolve all review threads in a single call. Pipe a JSON array via stdin:
+
+```bash
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed in commit abc1234"}, {"thread_id": "PRRT_def", "comment": "Applied suggestion"}]' | erk exec resolve-review-threads
+```
+
+Each item has `thread_id` (required) and `comment` (optional). Build the JSON array from the batch's thread IDs and resolution messages, then pipe it in one call.
+
+**For Discussion Comments** - use `erk exec reply-to-discussion-comment` with the `comment_id` from the JSON, with a substantive reply that quotes the original comment and explains what action was taken.
+
+#### Step 5: Report Progress
+
+After completing the batch, report:
+
+```
+## Batch N Complete
+
+Addressed:
+- foo.py:42 - Used LBYL pattern
+- bar.py:15 - Added type annotation
+
+Committed: abc1234 "Address PR review comments (batch 1/3)"
+
+Resolved threads: 2
+Remaining batches: 2
+```
+
+Then proceed to the next batch.
+
+### Phase 4: Final Verification
+
+After all batches complete, re-invoke the classifier to verify all threads are resolved. Use Task tool (NOT skill invocation) for the same `--print` mode isolation reason as Phase 1:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Verify PR feedback resolved",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if originally specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+If `actionable_threads` or `discussion_actions` are non-empty, warn about remaining unresolved items. Both `actionable` and `informational` classified threads should be resolved (either by code changes or by dismissal).
+
+#### Report Final Summary
+
+```
+## All PR Comments Addressed
+
+Total comments: 8
+Batches: 4
+Commits: 4
+
+All review threads resolved.
+All discussion comments marked with reaction.
+
+Next steps:
+1. Push changes:
+   - **Graphite repos**: `gt submit` (or `gt ss`)
+   - **Plain git repos**: `git push`
+   - If push is rejected (non-fast-forward): Run `/erk:sync-divergence` to resolve. Do NOT use `git pull --rebase`.
+2. Wait for CI to pass
+3. Request re-review if needed
+```
+
+#### Handle Any Skipped Comments
+
+If the user explicitly skipped any comments during the process, list them:
+
+```
+## Skipped Comments (user choice)
+- #5: src/legacy.py:100 - "Refactor this module" (user deferred)
+```
+
+### Phase 5: Update PR Title and Body
+
+After all review comments have been addressed, update the PR to reflect the full scope of changes.
+
+Run:
+
+```bash
+erk exec update-pr-description --session-id "06f336be-03bf-49e3-bcbb-7bd53816c5cd"
+```
+
+This generates an AI-powered title and body from the full PR diff, preserving existing header and footer metadata.
+
+### Common Mistakes
+
+See `pr-operations` skill for the complete table of common mistakes and correct approaches.
+
+### Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+
+**CI failure during batch:** Stop, display the failure, and let the user decide whether to fix and continue or abort
+</user>
+  <thinking>The user wants me to address PR review comments. Let me follow the instructions:
+
+1. First, I need to load the `pr-operations` skill as a prerequisite
+2. Then classify feedback using a Task tool (not skill invocation)
+
+But wait - I'm in plan mode! The system reminder says plan mode is active and I must not make any edits or run non-readonly tools. But the user invoked `/erk:pr-address` which is an action command that makes changes.
+
+Actually, looking more carefully at the system reminder, it says "Plan mode is active" and I "MUST NOT make any edits". But the user explicitly invoked `/erk:pr-address` which is a command that addresses PR comments. 
+
+There's a conflict here - the user ran a preview command first, saw the results, and now wants to execute, but plan mode is still active and blocking edits. I should clarify whether they want to exit plan mode before proceeding with the actual changes.
+
+Actually, I already have all the classified feedback from the preview, so I can write out a plan for addressing these comments and then exit plan mode to let the user approve it before we execute. and I need to add a type annotation to the `worktree_path` parameter. I'll also need to move the json import to the module level in that same test file, then handle the two similar type annotation updates in the objective fetch context test file. Let me start by examining these files to understand the exact changes needed before writing out the full plan.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="3088" cache_read_input_tokens="34766" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3088}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>I have the classified feedback from the preview. Let me read the files that need changes to plan the exact fixes.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="3088" cache_read_input_tokens="34766" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3088}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TJDiHEujxh5HaTz7cte7Vr">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/docs/learned/erk/branch-naming.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3088" cache_read_input_tokens="34766" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3088}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TJDiHEujxh5HaTz7cte7Vr">
+     1→---
+     2→title: Branch Naming Conventions
+     3→read_when:
+     4→  - "creating or modifying branch name generation"
+     5→  - "extracting issue or objective numbers from branch names"
+     6→  - "working with generate_planned_pr_branch_name(), or extract functions"
+     7→tripwires:
+     8→  - action: "constructing branch names manually"
+     9→    warning: "Use generate_planned_pr_branch_name() for consistent objective ID encoding."
+    10→  - action: "trying to extract plan issue number from branch name"
+    11→    warning: "Plan issue numbers are NOT encoded in branch names. Use plan-ref.json as the sole source of truth."
+    12→last_audited: "2026-02-24 00:00 PT"
+    13→audit_result: clean
+    14→---
+    15→
+    16→# Branch Naming Conventions
+    17→
+    18→All erk-managed plan branches use the `plnd/` prefix. Plan issue numbers are **not** encoded in branch names — `.impl/plan-ref.json` is the sole source of truth for plan-to-branch mapping.
+    19→
+    20→## Canonical Function
+    21→
+    22→&lt;!-- Source: packages/erk-shared/src/erk_shared/naming.py, generate_planned_pr_branch_name --&gt;
+    23→
+    24→See `generate_planned_pr_branch_name()` in `packages/erk-shared/src/erk_shared/naming.py`. Accepts `title`, `timestamp`, and optional `objective_id` keyword argument.
+    25→
+    26→## Branch Format
+    27→
+    28→**Without objective:**
+    29→
+    30→```
+
+... [54 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01JdaHYGmZkfZ29bUx6XzjwA">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/packages/erk-shared/src/erk_shared/impl_folder.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3088" cache_read_input_tokens="34766" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3088}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JdaHYGmZkfZ29bUx6XzjwA">
+     1→"""Implementation folder utilities for erk and erk-kits.
+     2→
+     3→This module provides shared utilities for managing .impl/ folder structures:
+     4→- plan.md: Immutable implementation plan
+     5→- plan-ref.json: Provider-agnostic plan reference (optional, replaces legacy issue.json)
+     6→
+     7→These utilities are used by both erk (for local operations) and erk-kits
+     8→(for kit CLI commands).
+     9→"""
+    10→
+    11→from __future__ import annotations
+    12→
+    13→import json
+    14→import shutil
+    15→from dataclasses import dataclass
+    16→from datetime import UTC, datetime
+    17→from pathlib import Path
+    18→from typing import Literal
+    19→
+    20→from erk_shared.gateway.github.metadata.core import (
+    21→    create_worktree_creation_block,
+    22→    render_erk_issue_event,
+    23→)
+    24→from erk_shared.gateway.github.metadata.schemas import CREATED_BY, LAST_DISPATCHED_RUN_ID
+    25→
+    26→_REQUIRED_REF_FIELDS = ("provider", "plan_id", "url", "created_at", "synced_at")
+    27→"""Fields required in plan-ref.json and ref.json for valid PlanRef construction."""
+    28→
+    29→
+    30→def create_impl_folder(
+
+... [502 lines omitted] ...
+
+    42→                   If False, raise FileExistsError when .impl/ already exists.
+    48→        FileExistsError: If .impl/ directory already exists and overwrite is False
+    56→            raise FileExistsError(f"Implementation folder already exists at {impl_folder}")
+   184→        FileNotFoundError: If impl_dir doesn't exist
+   188→        raise FileNotFoundError(msg)
+   208→    except json.JSONDecodeError:
+   258→    except json.JSONDecodeError:
+   328→    # Gracefully handle JSON parsing errors (third-party API exception handling)
+   331→    except json.JSONDecodeError:
+   426→        RuntimeError: If gh CLI fails or issue not found
+   473→    # Gracefully handle JSON parsing errors (third-party API exception handling)
+   476→    except json.JSONDecodeError:
+   511→        FileNotFoundError: If impl_dir doesn't exist
+   512→        ValueError: If last_event is not "started" or "ended"
+   516→        raise FileNotFoundError(msg)
+   520→        raise ValueError(msg)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01TNmJC2S4buL2MhWmqoyiPJ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/plan/test_checkout_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3088" cache_read_input_tokens="34766" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3088}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TNmJC2S4buL2MhWmqoyiPJ">
+     1→"""Tests for erk plan co command."""
+     2→
+     3→import json
+     4→import os
+     5→from pathlib import Path
+     6→from unittest.mock import patch
+     7→
+     8→from click.testing import CliRunner
+     9→
+    10→from erk.cli.cli import cli
+    11→from erk.cli.github_parsing import parse_issue_identifier
+    12→from erk_shared.gateway.git.abc import WorktreeInfo
+    13→from erk_shared.gateway.git.fake import FakeGit
+    14→from erk_shared.gateway.github.fake import FakeGitHub
+    15→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    16→from erk_shared.gateway.github.issues.types import PRReference
+    17→from erk_shared.gateway.github.types import PRDetails
+    18→from tests.test_utils.context_builders import build_workspace_test_context
+    19→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    20→
+    21→# ============================================================================
+    22→# Tests for parse_issue_identifier P-prefix support
+    23→# ============================================================================
+    24→
+    25→
+    26→def test_parse_issue_identifier_p_prefix_uppercase() -&gt; None:
+    27→    """Test parsing P-prefixed identifier with uppercase P."""
+    28→    result = parse_issue_identifier("P123")
+    29→    assert result == 123
+    30→
+
+... [429 lines omitted] ...
+
+   371→    """Test checkout with invalid identifier shows error."""
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GnX4JAKicAMtqogXZvBjMd">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3088" cache_read_input_tokens="34766" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3088}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GnX4JAKicAMtqogXZvBjMd">
+     1→"""Tests for erk exec objective-fetch-context."""
+     2→
+     3→import json
+     4→import textwrap
+     5→from datetime import UTC, datetime
+     6→from pathlib import Path
+     7→
+     8→from click.testing import CliRunner
+     9→
+    10→from erk.cli.commands.exec.scripts.objective_fetch_context import objective_fetch_context
+    11→from erk_shared.context.testing import context_for_test
+    12→from erk_shared.gateway.git.fake import FakeGit
+    13→from erk_shared.gateway.github.fake import FakeGitHub
+    14→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    15→from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
+    16→from erk_shared.gateway.github.types import PRDetails, PRNotFound
+    17→from erk_shared.gateway.time.fake import FakeTime
+    18→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    19→
+    20→
+    21→def _make_issue(*, number: int, title: str, body: str) -&gt; IssueInfo:
+    22→    return IssueInfo(
+    23→        number=number,
+    24→        title=title,
+    25→        body=body,
+    26→        state="OPEN",
+    27→        url=f"https://github.com/owner/repo/issues/{number}",
+    28→        labels=["erk-objective"],
+    29→        assignees=[],
+    30→        created_at=datetime(2026, 1, 1, tzinfo=UTC),
+
+... [1028 lines omitted] ...
+
+   168→    &lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   369→        """Returns error JSON when objective issue not found."""
+   401→        assert "9999" in data["error"]
+   404→        """Returns error JSON when PR not found."""
+   436→        assert "9999" in data["error"]
+   439→        """Returns error JSON when branch doesn't match any plan pattern."""
+   458→        assert "No plan found for branch" in data["error"]
+   459→        assert "feature-branch" in data["error"]
+   462→        """Returns error JSON when plan issue not found."""
+   486→        assert "No plan found for branch" in data["error"]
+   669→    def test_discover_branch_detached_head_error(self, tmp_path: Path) -&gt; None:
+   670→        """Returns error when branch discovery finds detached HEAD."""
+   691→        assert "detached HEAD" in data["error"]
+   693→    def test_discover_objective_no_metadata_error(self, tmp_path: Path) -&gt; None:
+   694→        """Returns error when plan has no objective_issue in metadata."""
+   725→        assert "objective_issue" in data["error"]
+   727→    def test_discover_pr_not_found_error(self, tmp_path: Path) -&gt; None:
+   728→        """Returns error when no PR found for the branch."""
+   773→        fail_msg = f"Unexpected exit code. Output: {result.output}, Exception: {result.exception}"
+   775→        assert result.output, f"Empty output. Exception: {result.exception}"
+   778→        assert "No PR found" in data["error"]
+   868→        """Returns error when no PR exists for a plan-... branch."""
+   889→        assert "No plan found for branch" in data["error"]
+   921→        """Returns error when --plan references a non-existent plan."""
+   940→        assert "9999" in data["error"]
+   942→    def test_plan_flag_without_pr_and_branch_errors(self, tmp_path: Path) -&gt; None:
+   943→        """Returns error when --plan used without --pr and --branch (can't auto-discover PR)."""
+   949→        # No branch set, no PR provided - should error
+   968→        assert "Cannot auto-discover PR" in data["error"]
+  </tool_result>
+  <thinking>Now I have all the files I need. Let me also check the specific area of impl_folder.py that was flagged. The review comment #4 says to simplify an unnecessary conditional expression where `read_plan_ref()` handles non-existent paths internally. Let me look at `validate_plan_linkage` at line 295-311:
+
+```python
+def validate_plan_linkage(impl_dir: Path, branch_name: str) -&gt; str | None:
+    plan_ref = read_plan_ref(impl_dir)
+    if plan_ref is not None:
+        return plan_ref.plan_id
+    return None
+```
+
+This is already pretty straightforward. Let me re-read the original comment more carefully—it mentions an unnecessary ternary that checks for path existence before calling `read_plan_ref()`, but the current code doesn't show that pattern. It's possible this was already fixed in a later commit, or the review thread is outdated.
+
+Looking at `validate_plan_linkage` on lines 295-311, I see it calls `read_plan_ref(impl_dir)` directly and then checks if the result is not None before returning the plan_id. This function could be simplified since `read_plan_ref()` already handles non-existent paths internally.
+
+Since all 8 items are marked as outdated, I need to verify whether each issue has already been resolved in the current codebase. For the docs file, I'm checking if the `extract_leading_issue_number()` subsection still exists or if it's already been removed.
+
+Looking at the current `branch-naming.md` file, I don't see the `extract_leading_issue_number()` section anymore—it appears to have been addressed already. The same goes for the private method reference to `_build_worktree_mapping()`, which I can't find in the current version. The Usage Sites table also no longer contains the submit.py or setup-impl-from-issue rows that were flagged for removal.
+
+Now I'm checking the `impl_folder.py` file for the fourth item about simplifying unnecessary... Looking at the remaining function signatures, they all have proper type annotations already in place. It seems all eight issues from the review threads have been resolved in the current code, so I should mark each thread as resolved and note that the fixes were already applied.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="36850" cache_read_input_tokens="37854" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 36850}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have all the context. Let me check — all 8 threads are marked `is_outdated: true`, and looking at the current code, it appears all issues have already been addressed:
+
+1. **branch-naming.md**: No `extract_leading_issue_number()` section exists — already removed
+2. **branch-naming.md**: No `_build_worktree_mapping()` reference — already replaced
+3. **branch-naming.md**: Usage Sites table has only plan_save.py and one_shot_dispatch.py — already cleaned
+4. **impl_folder.py**: No unnecessary ternary around `read_plan_ref()` — already simplified
+5. **test_checkout_cmd.py:79**: `_write_plan_ref(worktree_path: Path, plan_id: str)` — already has type annotation
+6. **test_checkout_cmd.py:3**: `import json` is at module level — already correct
+7. **test_objective_fetch_context.py:634**: `mock_get_pr_for_branch(repo_root: Path, branch: str) -&gt; PRDetails | PRNotFound` — already annotated
+8. **test_objective_fetch_context.py:748**: Same — already annotated
+
+All 8 issues are already fixed in the current code. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="36850" cache_read_input_tokens="37854" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 36850}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_012VunRLsLseFtzDfPukw6nJ">
+    <param name="file_path">/Users/schrockn/.claude/plans/dynamic-hopping-whisper.md</param>
+    <param name="content"># Plan: Resolve Outdated PR Review Threads on #8071
+
+## Context
+
+PR #8071 ("Remove plan ID...[truncated 1992 chars]...
+### Verification
+
+- Re-run pr-feedback-classifier to confirm 0 actionable threads remain
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="36850" cache_read_input_tokens="37854" output_tokens="2444" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 36850, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012VunRLsLseFtzDfPukw6nJ">
+File created successfully at: /Users/schrockn/.claude/plans/dynamic-hopping-whisper.md
+  </tool_result>
+  <assistant>All 8 review comments are on outdated code and have already been addressed. The plan is simply to resolve all threads via `erk exec resolve-review-threads` with no code changes needed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2468" cache_read_input_tokens="74704" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2468}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01EhfwqW2p3HzjjtgtNUMuQY">
+    <param name="plan"># Plan: Resolve Outdated PR Review Threads on #8071
+
+## Context
+
+PR #8071 ("Remove plan ID...[truncated 1992 chars]...
+### Verification
+
+- Re-run pr-feedback-classifier to confirm 0 actionable threads remain
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2468" cache_read_input_tokens="74704" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2468}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EhfwqW2p3HzjjtgtNUMuQY">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/dynamic-hopping-whisper.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Resolve Outdated PR Review Threads on #8071
+Current context: (wt:erk-slot-39) (br:plnd/remove-pxxxx-convention-02-24-1611) (pr:#8071)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/remo"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 06f336be-03bf-49e3-bcbb-7bd53816c5cd \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+     (no PR tracking - this is for small PR iterations)
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_012sn3sJ5FY3ozFD6TMucJiH">
+    <param name="file_path">/Users/schrockn/.claude/plans/dynamic-hopping-whisper.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="800" cache_read_input_tokens="77172" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 800}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012sn3sJ5FY3ozFD6TMucJiH">
+     1→# Plan: Resolve Outdated PR Review Threads on #8071
+     2→
+     3→## Context
+     4→
+     5→PR #8071 ("Remove plan ID encoding from branch names, migrate to plan-ref.json") has 8 unresolved review threads, all marked as outdated. After reading the current code, **all 8 issues have already been fixed** in the current codebase. The threads just need to be resolved with brief explanations.
+     6→
+     7→## Execution
+     8→
+     9→### Single Batch: Resolve All 8 Outdated Threads (no code changes needed)
+    10→
+    11→All threads are already addressed in the current code. Resolve each with a reply explaining the fix:
+    12→
+    13→| # | Thread ID | File | Issue | Status |
+    14→|---|-----------|------|-------|--------|
+    15→| 1 | PRRT_kwDOPxC3hc5wgHyQ | branch-naming.md | extract_leading_issue_number() subsection | Already removed — section doesn't exist |
+    16→| 2 | PRRT_kwDOPxC3hc5wgH6G | branch-naming.md | Private method _build_worktree_mapping() reference | Already replaced — no such reference exists |
+    17→| 3 | PRRT_kwDOPxC3hc5wjM7G | branch-naming.md | submit.py/setup-impl-from-issue in Usage Sites | Already removed — table has only plan_save.py and one_shot_dispatch.py |
+    18→| 4 | PRRT_kwDOPxC3hc5wgHKg | impl_folder.py | Unnecessary conditional around read_plan_ref() | Already simplified — no ternary exists |
+    19→| 5 | PRRT_kwDOPxC3hc5whOha | test_checkout_cmd.py | Missing Path type on worktree_path | Already annotated: `worktree_path: Path` on line 79 |
+    20→| 6 | PRRT_kwDOPxC3hc5whOlm | test_checkout_cmd.py | Inline import json | Already at module level on line 3 |
+    21→| 7 | PRRT_kwDOPxC3hc5whOpb | test_objective_fetch_context.py | Missing annotations on mock (line 634) | Already annotated: `(repo_root: Path, branch: str) -&gt; PRDetails \| PRNotFound` |
+    22→| 8 | PRRT_kwDOPxC3hc5whOsr | test_objective_fetch_context.py | Missing annotations on mock (line 748) | Already annotated: same signature |
+    23→
+    24→### Steps
+    25→
+    26→1. **Resolve all 8 threads** using `erk exec resolve-review-threads` batch command with JSON stdin — each reply states "Already fixed in current code" with specifics
+    27→2. **No commit needed** — no code changes required
+    28→3. **No push needed** — only resolving threads via GitHub API
+    29→
+    30→### Verification
+
+... [3 lines omitted] ...
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01XMU3v9PRgKYhHcvbfkFNeG">
+    <param name="questions">[{'question': '📋 Plan: Resolve Outdated PR Review Threads on #8071\nCurrent context: (wt:e...[truncated 635 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="911" cache_read_input_tokens="77972" output_tokens="295" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 911, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XMU3v9PRgKYhHcvbfkFNeG">
+User has answered your questions: "📋 Plan: Resolve Outdated PR Review Threads on #8071
+Current context: (wt:erk-slot-39) (br:plnd/remove-pxxxx-convention-02-24-1611) (pr:#8071)
+
+All 8 review threads are on outdated code that has already been fixed. The plan is to resolve all threads via GitHub API with no code changes.
+
+What would you like to do with this plan?"="Skip PR and implement here". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01BDQLcBKvQQE8SnriLi33tK">
+    <param name="command">erk exec marker create --session-id 06f336be-03bf-49e3-bcbb-7bd53816c5cd exit-plan-mode-hook.implement-now</param>
+    <param name="description">Create implement-now marker for plan mode exit</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="436" cache_read_input_tokens="78883" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 436}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BDQLcBKvQQE8SnriLi33tK">
+{"success": true, "message": "Created marker: exit-plan-mode-hook.implement-now"}
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_012iVSvV6JZWNHgMHj5qZ51s">
+    <param name="plan"># Plan: Resolve Outdated PR Review Threads on #8071
+
+## Context
+
+PR #8071 ("Remove plan ID...[truncated 1992 chars]...
+### Verification
+
+- Re-run pr-feedback-classifier to confirm 0 actionable threads remain
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="155" cache_read_input_tokens="79319" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 155}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012iVSvV6JZWNHgMHj5qZ51s">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+</session>
