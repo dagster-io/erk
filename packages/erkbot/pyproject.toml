@@ -16,6 +16,8 @@ dependencies = [
     "pydantic-settings>=2.4.0",
     "python-dotenv>=1.0.1",
     "slack-bolt>=1.21.2",
+    "starlette>=0.41.0",
+    "uvicorn[standard]>=0.32.0",
 ]
 
 [project.scripts]
@@ -31,6 +33,7 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+    "httpx>=0.27.0",
     "pytest>=8.0",
     "pytest-asyncio>=1.0",
     "ruff>=0.15.0",

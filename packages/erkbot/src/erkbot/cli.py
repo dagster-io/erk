@@ -1,6 +1,8 @@
 import asyncio
 import logging
+from collections.abc import Coroutine
 from pathlib import Path
+from typing import Any
 
 from dotenv import load_dotenv
 from slack_bolt.adapter.socket_mode.async_handler import AsyncSocketModeHandler
@@ -10,6 +12,7 @@ from erkbot.agent.bot import ErkBot
 from erkbot.app import create_app
 from erkbot.config import Settings
 from erkbot.prompts import get_erk_system_prompt
+from erkbot.webhook import create_webhook_app, create_webhook_server
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +56,20 @@ async def _run() -> None:
 
     app = create_app(settings=settings, bot=bot, time=time)
     handler = AsyncSocketModeHandler(app, settings.slack_app_token)
-    await handler.start_async()
+
+    coros: list[Coroutine[Any, Any, None]] = [handler.start_async()]
+    if settings.webhook_enabled:
+        webhook_app = create_webhook_app()
+        server = create_webhook_server(
+            app=webhook_app, host=settings.webhook_host, port=settings.webhook_port
+        )
+        coros.append(server.serve())
+        logger.info(
+            "startup: webhook_server=enabled host=%s port=%d",
+            settings.webhook_host,
+            settings.webhook_port,
+        )
+    await asyncio.gather(*coros)
 
 
 def main() -> None:

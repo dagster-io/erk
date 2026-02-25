@@ -92,3 +92,26 @@ class TestSettings(unittest.TestCase):
         with patch.dict(os.environ, clear=True):
             with self.assertRaises(ValidationError):
                 Settings(_env_file=None)
+
+    # --- Node 2.1: Webhook config tests ---
+
+    @patch.dict(os.environ, {}, clear=True)
+    def test_webhook_defaults(self) -> None:
+        settings = Settings(SLACK_BOT_TOKEN="x", SLACK_APP_TOKEN="y", _env_file=None)
+        self.assertFalse(settings.webhook_enabled)
+        self.assertEqual(settings.webhook_host, "0.0.0.0")
+        self.assertEqual(settings.webhook_port, 8080)
+
+    @patch.dict(os.environ, {}, clear=True)
+    def test_webhook_from_env_vars(self) -> None:
+        settings = Settings(
+            SLACK_BOT_TOKEN="x",
+            SLACK_APP_TOKEN="y",
+            ERK_WEBHOOK_ENABLED="true",
+            ERK_WEBHOOK_HOST="127.0.0.1",
+            ERK_WEBHOOK_PORT="9090",
+            _env_file=None,
+        )
+        self.assertTrue(settings.webhook_enabled)
+        self.assertEqual(settings.webhook_host, "127.0.0.1")
+        self.assertEqual(settings.webhook_port, 9090)

@@ -14,6 +14,9 @@ def _make_settings_mock(
     erk_repo_path: str | None,
     erk_model: str,
     max_turns: int,
+    webhook_enabled: bool = False,
+    webhook_host: str = "0.0.0.0",
+    webhook_port: int = 8080,
 ) -> MagicMock:
     mock = MagicMock()
     mock.anthropic_api_key = anthropic_api_key
@@ -21,6 +24,9 @@ def _make_settings_mock(
     mock.erk_model = erk_model
     mock.max_turns = max_turns
     mock.slack_app_token = "xapp-token"
+    mock.webhook_enabled = webhook_enabled
+    mock.webhook_host = webhook_host
+    mock.webhook_port = webhook_port
     return mock
 
 
@@ -278,3 +284,74 @@ class TestMain(unittest.TestCase):
         mock_create_app.assert_called_once_with(
             settings=mock_settings_cls.return_value, bot=None, time=ANY
         )
+
+    # --- Node 2.1: Webhook server tests ---
+
+    @patch("erkbot.cli.asyncio.gather", new_callable=AsyncMock)
+    @patch("erkbot.cli.AsyncSocketModeHandler")
+    @patch("erkbot.cli.create_app")
+    @patch("erkbot.cli.Settings")
+    @patch("erkbot.cli.load_dotenv")
+    def test_run_gather_one_coro_when_webhook_disabled(
+        self,
+        _mock_load_dotenv: MagicMock,
+        mock_settings_cls: MagicMock,
+        _mock_create_app: MagicMock,
+        mock_handler_cls: MagicMock,
+        mock_gather: AsyncMock,
+    ) -> None:
+        mock_settings_cls.return_value = _make_settings_mock(
+            anthropic_api_key=None,
+            erk_repo_path=None,
+            erk_model="claude-sonnet-4-20250514",
+            max_turns=10,
+            webhook_enabled=False,
+        )
+        mock_handler_cls.return_value.start_async = AsyncMock()
+
+        asyncio.run(_run())
+
+        mock_gather.assert_awaited_once()
+        args = mock_gather.call_args[0]
+        self.assertEqual(len(args), 1)
+
+    @patch("erkbot.cli.create_webhook_server")
+    @patch("erkbot.cli.create_webhook_app")
+    @patch("erkbot.cli.asyncio.gather", new_callable=AsyncMock)
+    @patch("erkbot.cli.AsyncSocketModeHandler")
+    @patch("erkbot.cli.create_app")
+    @patch("erkbot.cli.Settings")
+    @patch("erkbot.cli.load_dotenv")
+    def test_run_gather_two_coros_when_webhook_enabled(
+        self,
+        _mock_load_dotenv: MagicMock,
+        mock_settings_cls: MagicMock,
+        _mock_create_app: MagicMock,
+        mock_handler_cls: MagicMock,
+        mock_gather: AsyncMock,
+        mock_create_webhook_app: MagicMock,
+        mock_create_webhook_server: MagicMock,
+    ) -> None:
+        mock_settings_cls.return_value = _make_settings_mock(
+            anthropic_api_key=None,
+            erk_repo_path=None,
+            erk_model="claude-sonnet-4-20250514",
+            max_turns=10,
+            webhook_enabled=True,
+            webhook_host="127.0.0.1",
+            webhook_port=9090,
+        )
+        mock_handler_cls.return_value.start_async = AsyncMock()
+        mock_create_webhook_server.return_value.serve = AsyncMock()
+
+        asyncio.run(_run())
+
+        mock_create_webhook_app.assert_called_once()
+        mock_create_webhook_server.assert_called_once_with(
+            app=mock_create_webhook_app.return_value,
+            host="127.0.0.1",
+            port=9090,
+        )
+        mock_gather.assert_awaited_once()
+        args = mock_gather.call_args[0]
+        self.assertEqual(len(args), 2)
