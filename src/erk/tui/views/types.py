@@ -31,7 +31,7 @@ class ViewConfig:
     display_name: str
     labels: tuple[str, ...]
     key_hint: str
-    exclude_labels: tuple[str, ...] = ()
+    exclude_labels: tuple[str, ...]
 
 
 PLANS_VIEW = ViewConfig(
@@ -47,6 +47,7 @@ LEARN_VIEW = ViewConfig(
     display_name="Learn",
     labels=("erk-plan", "erk-learn"),
     key_hint="2",
+    exclude_labels=(),
 )
 
 OBJECTIVES_VIEW = ViewConfig(
@@ -54,6 +55,7 @@ OBJECTIVES_VIEW = ViewConfig(
     display_name="Objectives",
     labels=("erk-objective",),
     key_hint="3",
+    exclude_labels=(),
 )
 
 VIEW_CONFIGS: tuple[ViewConfig, ...] = (PLANS_VIEW, LEARN_VIEW, OBJECTIVES_VIEW)
