@@ -124,6 +124,18 @@ class PlanDataProvider(ABC):
         ...
 
     @abstractmethod
+    def fetch_plans_by_ids(self, plan_ids: set[int]) -> list[PlanRowData]:
+        """Fetch specific plans by their issue numbers.
+
+        Args:
+            plan_ids: Set of plan issue numbers to fetch
+
+        Returns:
+            List of PlanRowData objects for the specified plans, sorted by plan_id
+        """
+        ...
+
+    @abstractmethod
     def fetch_plans_for_objective(self, objective_issue: int) -> list[PlanRowData]:
         """Fetch plans associated with a specific objective.
 

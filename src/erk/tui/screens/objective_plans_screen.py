@@ -8,7 +8,31 @@ from textual.screen import ModalScreen
 from textual.widgets import Label
 
 from erk.tui.data.types import PlanRowData
+from erk_shared.gateway.github.metadata.roadmap import parse_roadmap
 from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
+
+
+def _extract_plan_ids_from_roadmap(body: str) -> set[int]:
+    """Extract plan IDs from roadmap nodes in the objective body.
+
+    Parses the roadmap frontmatter and collects PR references (e.g., "#8070")
+    from each node, converting them to integer plan IDs.
+
+    Args:
+        body: The objective issue body containing roadmap metadata
+
+    Returns:
+        Set of plan issue numbers referenced in the roadmap
+    """
+    phases, _errors = parse_roadmap(body)
+    plan_ids: set[int] = set()
+    for phase in phases:
+        for node in phase.nodes:
+            if node.pr is not None:
+                pr_str = node.pr.lstrip("#")
+                if pr_str.isdigit():
+                    plan_ids.add(int(pr_str))
+    return plan_ids
 
 
 def _format_plan_rows(plans: list[PlanRowData]) -> list[str]:
@@ -112,6 +136,7 @@ class ObjectivePlansScreen(ModalScreen):
         objective_id: int,
         objective_title: str,
         progress_display: str,
+        objective_body: str,
     ) -> None:
         """Initialize with objective metadata and provider for async loading.
 
@@ -120,12 +145,14 @@ class ObjectivePlansScreen(ModalScreen):
             objective_id: The objective issue number
             objective_title: The objective title for display
             progress_display: Progress display string (e.g., "3/7")
+            objective_body: The raw objective issue body (for roadmap extraction)
         """
         super().__init__()
         self._provider = provider
         self._objective_id = objective_id
         self._objective_title = objective_title
         self._progress_display = progress_display
+        self._objective_body = objective_body
 
     def compose(self) -> ComposeResult:
         """Create the objective plans dialog content."""
@@ -161,7 +188,11 @@ class ObjectivePlansScreen(ModalScreen):
         # Error boundary: catch all exceptions from API operations to display
         # them in the UI rather than crashing the TUI.
         try:
-            plans = self._provider.fetch_plans_for_objective(self._objective_id)
+            roadmap_plan_ids = _extract_plan_ids_from_roadmap(self._objective_body)
+            if roadmap_plan_ids:
+                plans = self._provider.fetch_plans_by_ids(roadmap_plan_ids)
+            else:
+                plans = self._provider.fetch_plans_for_objective(self._objective_id)
         except Exception as e:
             error = str(e)
 

@@ -844,6 +844,7 @@ class ErkDashApp(App):
                 objective_id=row.plan_id,
                 objective_title=row.full_title,
                 progress_display=row.objective_progress_display,
+                objective_body=row.plan_body,
             )
         )
 

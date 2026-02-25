@@ -374,6 +374,17 @@ class PrintingGitHub(PrintingBase, GitHub):
         """Download artifact (read-only, no printing)."""
         return self._wrapped.download_run_artifact(repo_root, run_id, artifact_name, destination)
 
+    def get_issues_by_numbers_with_pr_linkages(
+        self,
+        *,
+        location: GitHubRepoLocation,
+        issue_numbers: list[int],
+    ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+        """Get issues by numbers with PR linkages (read-only, no printing)."""
+        return self._wrapped.get_issues_by_numbers_with_pr_linkages(
+            location=location, issue_numbers=issue_numbers
+        )
+
     def create_commit_status(
         self,
         *,

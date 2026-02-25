@@ -186,6 +186,22 @@ class FakePlanDataProvider(PlanDataProvider):
         """
         self._objective_content_by_plan_id[plan_id] = content
 
+    def fetch_plans_by_ids(self, plan_ids: set[int]) -> list[PlanRowData]:
+        """Fake plans-by-ids fetch implementation.
+
+        Filters the stored plans list by plan_id.
+
+        Args:
+            plan_ids: Set of plan issue numbers to fetch
+
+        Returns:
+            List of PlanRowData matching the given plan IDs, sorted by plan_id
+        """
+        return sorted(
+            [p for p in self._plans if p.plan_id in plan_ids],
+            key=lambda r: r.plan_id,
+        )
+
     def fetch_plans_for_objective(self, objective_issue: int) -> list[PlanRowData]:
         """Fake plans-for-objective fetch implementation.
 
