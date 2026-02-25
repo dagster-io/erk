@@ -10,6 +10,7 @@ from erk_shared.gateway.clipboard.fake import FakeClipboard
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.types import (
     GitHubRepoId,
@@ -1647,3 +1648,125 @@ class TestBlockingDepsPlans:
         displays = [d for d, _url in row.objective_head_plans]
         assert "#100" in displays
         assert "#200" in displays
+
+
+class TestFetchPlansByIds:
+    """Tests for fetch_plans_by_ids method."""
+
+    @staticmethod
+    def _make_provider(
+        tmp_path: Path,
+        *,
+        issues_data: list[IssueInfo] | None = None,
+        pr_linkages: dict[int, list[PullRequestInfo]] | None = None,
+    ) -> RealPlanDataProvider:
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir(exist_ok=True)
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir(exist_ok=True)
+
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=repo_root, branch="main", is_root=True),
+                ]
+            },
+            git_common_dirs={repo_root: repo_root / ".git"},
+        )
+        github = FakeGitHub(
+            pr_issue_linkages=pr_linkages or {},
+            issues_data=issues_data or [],
+        )
+        ctx = create_test_context(
+            git=git,
+            github=github,
+            cwd=repo_root,
+            repo=_make_repo_context(repo_root, tmp_path),
+        )
+        location = GitHubRepoLocation(
+            root=repo_root,
+            repo_id=GitHubRepoId(owner="test", repo="repo"),
+        )
+        return RealPlanDataProvider(
+            ctx=ctx,
+            location=location,
+            clipboard=FakeClipboard(),
+            browser=FakeBrowserLauncher(),
+            http_client=FakeHttpClient(),
+        )
+
+    def test_empty_plan_ids_returns_empty(self, tmp_path: Path) -> None:
+        """Empty plan_ids set returns empty list without API calls."""
+        provider = self._make_provider(tmp_path)
+        result = provider.fetch_plans_by_ids(set())
+        assert result == []
+
+    def test_fetches_matching_issues(self, tmp_path: Path) -> None:
+        """Returns PlanRowData for each matching issue."""
+        body = format_plan_header_body_for_test()
+        issues = [
+            IssueInfo(
+                number=100,
+                title="Plan: First",
+                body=body,
+                state="OPEN",
+                url="https://github.com/test/repo/issues/100",
+                labels=["erk-plan"],
+                assignees=[],
+                created_at=datetime(2025, 1, 1, tzinfo=UTC),
+                updated_at=datetime(2025, 1, 2, tzinfo=UTC),
+                author="testuser",
+            ),
+            IssueInfo(
+                number=200,
+                title="Plan: Second",
+                body=body,
+                state="CLOSED",
+                url="https://github.com/test/repo/issues/200",
+                labels=["erk-plan"],
+                assignees=[],
+                created_at=datetime(2025, 1, 1, tzinfo=UTC),
+                updated_at=datetime(2025, 1, 2, tzinfo=UTC),
+                author="testuser",
+            ),
+        ]
+        provider = self._make_provider(tmp_path, issues_data=issues)
+        result = provider.fetch_plans_by_ids({100, 200})
+
+        assert len(result) == 2
+        plan_ids = {r.plan_id for r in result}
+        assert plan_ids == {100, 200}
+
+    def test_results_sorted_by_plan_id(self, tmp_path: Path) -> None:
+        """Results are sorted by plan_id ascending."""
+        body = format_plan_header_body_for_test()
+        issues = [
+            IssueInfo(
+                number=300,
+                title="Plan: Third",
+                body=body,
+                state="OPEN",
+                url="https://github.com/test/repo/issues/300",
+                labels=["erk-plan"],
+                assignees=[],
+                created_at=datetime(2025, 1, 1, tzinfo=UTC),
+                updated_at=datetime(2025, 1, 2, tzinfo=UTC),
+                author="testuser",
+            ),
+            IssueInfo(
+                number=100,
+                title="Plan: First",
+                body=body,
+                state="OPEN",
+                url="https://github.com/test/repo/issues/100",
+                labels=["erk-plan"],
+                assignees=[],
+                created_at=datetime(2025, 1, 1, tzinfo=UTC),
+                updated_at=datetime(2025, 1, 2, tzinfo=UTC),
+                author="testuser",
+            ),
+        ]
+        provider = self._make_provider(tmp_path, issues_data=issues)
+        result = provider.fetch_plans_by_ids({100, 300})
+
+        assert [r.plan_id for r in result] == [100, 300]

@@ -63,6 +63,7 @@ from erk_shared.plan_store.conversion import (
     header_datetime,
     header_int,
     header_str,
+    issue_info_to_plan,
 )
 from erk_shared.plan_store.types import Plan
 
@@ -427,10 +428,63 @@ class RealPlanDataProvider(PlanDataProvider):
 
         return extract_objective_from_comment(comment_body)
 
+    def fetch_plans_by_ids(self, plan_ids: set[int]) -> list[PlanRowData]:
+        """Fetch specific plans by their issue numbers.
+
+        Uses get_issues_by_numbers_with_pr_linkages for targeted fetching
+        instead of listing all plans and filtering.
+
+        Args:
+            plan_ids: Set of plan issue numbers to fetch
+
+        Returns:
+            List of PlanRowData objects sorted by plan_id
+        """
+        if not plan_ids:
+            return []
+
+        issues, pr_linkages = self._ctx.github.get_issues_by_numbers_with_pr_linkages(
+            location=self._location,
+            issue_numbers=list(plan_ids),
+        )
+
+        # Convert IssueInfo -> Plan
+        plans = [issue_info_to_plan(issue) for issue in issues]
+
+        # Build worktree mapping
+        worktree_by_plan_id = self._build_worktree_mapping()
+
+        # Batch fetch learn issue states
+        learn_issue_numbers: set[int] = set()
+        for plan in plans:
+            learn_plan_issue = header_int(plan.header_fields, LEARN_PLAN_ISSUE)
+            if learn_plan_issue is not None:
+                learn_issue_numbers.add(learn_plan_issue)
+        learn_issue_states = self._fetch_learn_issue_states(learn_issue_numbers)
+
+        # Build row data
+        use_graphite = self._ctx.global_config.use_graphite if self._ctx.global_config else False
+        rows: list[PlanRowData] = []
+        for plan in plans:
+            plan_id = int(plan.plan_identifier)
+            row = self._build_row_data(
+                plan=plan,
+                plan_id=plan_id,
+                pr_linkages=pr_linkages,
+                workflow_run=None,
+                worktree_by_plan_id=worktree_by_plan_id,
+                use_graphite=use_graphite,
+                learn_issue_states=learn_issue_states,
+            )
+            rows.append(row)
+
+        rows.sort(key=lambda r: r.plan_id)
+        return rows
+
     def fetch_plans_for_objective(self, objective_issue: int) -> list[PlanRowData]:
         """Fetch plans associated with a specific objective.
 
-        Fetches all open erk-plan issues and filters client-side by objective_issue.
+        Fetches all erk-plan issues (any state) and filters client-side by objective_issue.
 
         Args:
             objective_issue: The objective issue number to filter by
@@ -440,7 +494,7 @@ class RealPlanDataProvider(PlanDataProvider):
         """
         filters = PlanFilters(
             labels=("erk-plan",),
-            state="open",
+            state=None,
             run_state=None,
             limit=100,
             show_prs=True,

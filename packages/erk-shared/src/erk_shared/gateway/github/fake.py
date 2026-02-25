@@ -1112,6 +1112,34 @@ class FakeGitHub(GitHub):
         """
         return self._downloaded_artifacts
 
+    def get_issues_by_numbers_with_pr_linkages(
+        self,
+        *,
+        location: GitHubRepoLocation,
+        issue_numbers: list[int],
+    ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+        """Filter pre-configured issues by number, returning matching PR linkages.
+
+        Args:
+            location: GitHub repository location (ignored in fake)
+            issue_numbers: List of issue numbers to fetch
+
+        Returns:
+            Tuple of (filtered_issues, pr_linkages for those issues)
+        """
+        if not issue_numbers:
+            return ([], {})
+
+        number_set = set(issue_numbers)
+        filtered_issues = [issue for issue in self._issues_data if issue.number in number_set]
+
+        pr_linkages: dict[int, list[PullRequestInfo]] = {}
+        for issue in filtered_issues:
+            if issue.number in self._pr_issue_linkages:
+                pr_linkages[issue.number] = self._pr_issue_linkages[issue.number]
+
+        return (filtered_issues, pr_linkages)
+
     def create_commit_status(
         self,
         *,
