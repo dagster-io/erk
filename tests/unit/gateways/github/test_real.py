@@ -324,7 +324,7 @@ def test_build_issues_by_numbers_query_single_issue() -> None:
 
     query = github._build_issues_by_numbers_query([100], repo_id)
 
-    assert 'issue_100: issueOrPullRequest(number: 100)' in query
+    assert "issue_100: issueOrPullRequest(number: 100)" in query
     assert 'repository(owner: "acme", name: "widgets")' in query
 
 
@@ -335,9 +335,9 @@ def test_build_issues_by_numbers_query_multiple_issues() -> None:
 
     query = github._build_issues_by_numbers_query([100, 200, 300], repo_id)
 
-    assert 'issue_100: issueOrPullRequest(number: 100)' in query
-    assert 'issue_200: issueOrPullRequest(number: 200)' in query
-    assert 'issue_300: issueOrPullRequest(number: 300)' in query
+    assert "issue_100: issueOrPullRequest(number: 100)" in query
+    assert "issue_200: issueOrPullRequest(number: 200)" in query
+    assert "issue_300: issueOrPullRequest(number: 300)" in query
 
 
 # --- Tests for _parse_issues_by_numbers_response ---
