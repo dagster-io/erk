@@ -16,13 +16,13 @@ from erk_shared.plan_store.types import PlanNotFound
 def _close_linked_prs(
     ctx: ErkContext,
     repo_root: Path,
-    issue_number: int,
+    plan_number: int,
 ) -> list[int]:
     """Close all OPEN PRs linked to an issue.
 
     Returns list of PR numbers that were closed.
     """
-    linked_prs = ctx.issues.get_prs_referencing_issue(repo_root, issue_number)
+    linked_prs = ctx.issues.get_prs_referencing_issue(repo_root, plan_number)
 
     closed_prs: list[int] = []
     for pr in linked_prs:

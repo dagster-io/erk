@@ -31,7 +31,7 @@ def extract_docs(ctx: ErkContext, identifier: str) -> None:
     repo_root = repo.root
 
     # Parse issue number
-    issue_number = parse_issue_identifier(identifier)
+    plan_number = parse_issue_identifier(identifier)
 
     # Ensure label exists in repo (create if needed)
     try:
@@ -46,8 +46,8 @@ def extract_docs(ctx: ErkContext, identifier: str) -> None:
 
     # Add label to issue (idempotent)
     try:
-        ctx.issues.ensure_label_on_issue(repo_root, issue_number, DOCS_EXTRACTED_LABEL)
+        ctx.issues.ensure_label_on_issue(repo_root, plan_number, DOCS_EXTRACTED_LABEL)
     except RuntimeError as e:
-        raise click.ClickException(f"Failed to add label to issue #{issue_number}: {e}") from e
+        raise click.ClickException(f"Failed to add label to issue #{plan_number}: {e}") from e
 
-    user_output(f"Marked plan #{issue_number} as docs-extracted")
+    user_output(f"Marked plan #{plan_number} as docs-extracted")

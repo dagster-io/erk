@@ -30,7 +30,7 @@ class PlanCreatedMetadata(TypedDict, total=False):
     """Metadata for plan_created event."""
 
     worktree_name: str
-    issue_number: int
+    plan_number: int
 
 
 class SubmissionQueuedMetadata(TypedDict, total=False):
@@ -147,10 +147,10 @@ def pr_log(ctx: ErkContext, identifier: str, output_json: bool) -> None:
             )
             raise SystemExit(1)
 
-        issue_number = int(plan.plan_identifier)
+        plan_number = int(plan.plan_identifier)
 
         # Fetch all comments for the plan issue
-        comment_bodies = ctx.issues.get_issue_comments(repo_root, issue_number)
+        comment_bodies = ctx.issues.get_issue_comments(repo_root, plan_number)
 
         # Extract events from all comments
         events = _extract_events_from_comments(comment_bodies)
@@ -162,7 +162,7 @@ def pr_log(ctx: ErkContext, identifier: str, output_json: bool) -> None:
         if output_json:
             _output_json(events)
         else:
-            _output_timeline(events, issue_number)
+            _output_timeline(events, plan_number)
 
     except (RuntimeError, ValueError) as e:
         user_output(click.style("Error: ", fg="red") + str(e))
@@ -228,7 +228,7 @@ def _extract_plan_created_event(data: dict) -> Event | None:
     if "worktree_name" in data:
         metadata["worktree_name"] = data["worktree_name"]
     if "issue_number" in data:
-        metadata["issue_number"] = data["issue_number"]
+        metadata["plan_number"] = data["issue_number"]
 
     return Event(
         timestamp=timestamp,
@@ -351,18 +351,18 @@ def _output_json(events: list[Event]) -> None:
     user_output(json.dumps(events, indent=2))
 
 
-def _output_timeline(events: list[Event], issue_number: int) -> None:
+def _output_timeline(events: list[Event], plan_number: int) -> None:
     """Output events as human-readable timeline.
 
     Args:
         events: List of Event objects sorted chronologically
-        issue_number: GitHub issue number for the plan
+        plan_number: GitHub issue number for the plan
     """
     if not events:
-        user_output(f"No events found for plan #{issue_number}")
+        user_output(f"No events found for plan #{plan_number}")
         return
 
-    user_output(f"Plan #{issue_number} Event Timeline\n")
+    user_output(f"Plan #{plan_number} Event Timeline\n")
 
     for event in events:
         # Format timestamp as human-readable

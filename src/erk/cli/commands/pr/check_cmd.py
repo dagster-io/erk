@@ -68,7 +68,7 @@ PlanValidationResult = PlanValidationSuccess | PlanValidationError
 def validate_plan_format(
     github_issues: GitHubIssues,
     repo_root: Path,
-    issue_number: int,
+    plan_number: int,
 ) -> PlanValidationResult:
     """Validate plan format programmatically.
 
@@ -83,7 +83,7 @@ def validate_plan_format(
     Args:
         github_issues: GitHub issues interface
         repo_root: Repository root path
-        issue_number: GitHub issue number to validate
+        plan_number: GitHub issue number to validate
 
     Returns:
         PlanValidationSuccess if validation completed (may have passed or failed checks)
@@ -93,9 +93,9 @@ def validate_plan_format(
     checks: list[tuple[bool, str]] = []
 
     # Fetch issue from GitHub
-    issue = github_issues.get_issue(repo_root, issue_number)
+    issue = github_issues.get_issue(repo_root, plan_number)
     if isinstance(issue, IssueNotFound):
-        return PlanValidationError(error=f"Issue #{issue_number} not found")
+        return PlanValidationError(error=f"Issue #{plan_number} not found")
 
     issue_body = issue.body if issue.body else ""
 
@@ -128,7 +128,7 @@ def validate_plan_format(
         # Issue-based format: plan content is in first comment
         # Check 3: First comment exists
         try:
-            comments = github_issues.get_issue_comments(repo_root, issue_number)
+            comments = github_issues.get_issue_comments(repo_root, plan_number)
         except RuntimeError as e:
             return PlanValidationError(error=str(e))
 
@@ -206,12 +206,12 @@ def _check_plan_format(ctx: ErkContext, identifier: str) -> None:
         raise SystemExit(1)
     repo_root = ctx.repo.root
 
-    issue_number = parse_issue_identifier(identifier)
+    plan_number = parse_issue_identifier(identifier)
 
-    user_output(f"Validating plan #{issue_number}...")
+    user_output(f"Validating plan #{plan_number}...")
     user_output("")
 
-    result = validate_plan_format(ctx.issues, repo_root, issue_number)
+    result = validate_plan_format(ctx.issues, repo_root, plan_number)
 
     if isinstance(result, PlanValidationError):
         user_output(click.style("Error: ", fg="red") + f"Failed to validate plan: {result.error}")
@@ -286,15 +286,15 @@ def _check_pr_body(ctx: ErkContext, stage: str | None) -> None:
             )
 
     # Check 0: Plan reference exists
-    issue_number: int | None = None
+    expected_plan_number: int | None = None
     plan_ref = read_plan_ref(impl_dir) if impl_dir.exists() else None
 
     if plan_ref is not None:
-        issue_number = int(plan_ref.plan_id)
+        expected_plan_number = int(plan_ref.plan_id)
         checks.append(
             PrCheck(
                 passed=True,
-                description=f"Plan reference found (#{issue_number})",
+                description=f"Plan reference found (#{expected_plan_number})",
             )
         )
 
@@ -306,24 +306,24 @@ def _check_pr_body(ctx: ErkContext, stage: str | None) -> None:
                 PrCheck(passed=True, description="Draft PR plan — no closing reference needed")
             )
         else:
-            expected_issue_number = int(plan_ref.plan_id)
+            expected_plan_number_for_ref = int(plan_ref.plan_id)
             plans_repo: str | None
             if ctx.local_config is not None:
                 plans_repo = ctx.local_config.plans_repo
             else:
                 plans_repo = None
-            if has_issue_closing_reference(pr_body, expected_issue_number, plans_repo):
+            if has_issue_closing_reference(pr_body, expected_plan_number_for_ref, plans_repo):
                 if plans_repo is None:
-                    ref_display = f"#{expected_issue_number}"
+                    ref_display = f"#{expected_plan_number_for_ref}"
                 else:
-                    ref_display = f"{plans_repo}#{expected_issue_number}"
+                    ref_display = f"{plans_repo}#{expected_plan_number_for_ref}"
                 msg = f"PR body contains issue closing reference (Closes {ref_display})"
                 checks.append(PrCheck(passed=True, description=msg))
             else:
                 if plans_repo is None:
-                    expected = f"Closes #{expected_issue_number}"
+                    expected = f"Closes #{expected_plan_number_for_ref}"
                 else:
-                    expected = f"Closes {plans_repo}#{expected_issue_number}"
+                    expected = f"Closes {plans_repo}#{expected_plan_number_for_ref}"
                 msg = f"PR body missing issue closing reference (expected: {expected})"
                 checks.append(PrCheck(passed=False, description=msg))
 
