@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: Learn PRs closed immediately due to ephemeral base branch"
+}
