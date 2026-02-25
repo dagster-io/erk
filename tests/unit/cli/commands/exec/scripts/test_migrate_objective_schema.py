@@ -7,6 +7,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.migrate_objective_schema import migrate_objective_schema
 from erk_shared.context.context import ErkContext
+from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 
@@ -132,7 +133,7 @@ def test_migrate_v2_to_v4() -> None:
     result = runner.invoke(
         migrate_objective_schema,
         ["7391"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -162,7 +163,7 @@ def test_migrate_v3_to_v4() -> None:
     result = runner.invoke(
         migrate_objective_schema,
         ["7391"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -188,7 +189,7 @@ def test_already_v4_no_op() -> None:
     result = runner.invoke(
         migrate_objective_schema,
         ["7391"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -210,7 +211,7 @@ def test_no_roadmap_block() -> None:
     result = runner.invoke(
         migrate_objective_schema,
         ["7391"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -228,7 +229,7 @@ def test_dry_run_no_update() -> None:
     result = runner.invoke(
         migrate_objective_schema,
         ["7391", "--dry-run"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -251,7 +252,7 @@ def test_issue_not_found() -> None:
     result = runner.invoke(
         migrate_objective_schema,
         ["999"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0

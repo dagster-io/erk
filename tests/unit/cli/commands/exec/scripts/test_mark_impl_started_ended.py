@@ -13,9 +13,11 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.mark_impl_ended import mark_impl_ended
 from erk.cli.commands.exec.scripts.mark_impl_started import mark_impl_started
 from erk_shared.context.context import ErkContext
+from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import find_metadata_block
+from erk_shared.plan_store.github import GitHubPlanStore
 
 
 def make_plan_header_body(
@@ -113,7 +115,12 @@ def test_mark_impl_started_local_updates_metadata(tmp_path: Path, monkeypatch) -
     result = runner.invoke(
         mark_impl_started,
         ["--session-id", "test-session-id"],
-        obj=ErkContext.for_test(cwd=tmp_path, github_issues=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(
+            cwd=tmp_path,
+            github=FakeGitHub(issues_gateway=fake_gh),
+            plan_store=GitHubPlanStore(fake_gh),
+            repo_root=repo_root,
+        ),
     )
 
     assert result.exit_code == 0
@@ -178,7 +185,12 @@ def test_mark_impl_started_remote_updates_metadata(tmp_path: Path, monkeypatch) 
     # Execute
     result = runner.invoke(
         mark_impl_started,
-        obj=ErkContext.for_test(cwd=tmp_path, github_issues=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(
+            cwd=tmp_path,
+            github=FakeGitHub(issues_gateway=fake_gh),
+            plan_store=GitHubPlanStore(fake_gh),
+            repo_root=repo_root,
+        ),
     )
 
     assert result.exit_code == 0
@@ -205,7 +217,11 @@ def test_mark_impl_started_no_plan_ref(tmp_path: Path) -> None:
     # No .impl/ folder created
     result = runner.invoke(
         mark_impl_started,
-        obj=ErkContext.for_test(cwd=tmp_path, github_issues=fake_gh),
+        obj=ErkContext.for_test(
+            cwd=tmp_path,
+            github=FakeGitHub(issues_gateway=fake_gh),
+            plan_store=GitHubPlanStore(fake_gh),
+        ),
     )
 
     assert result.exit_code == 0  # Graceful degradation
@@ -256,7 +272,12 @@ def test_mark_impl_ended_local_updates_metadata(tmp_path: Path, monkeypatch) -> 
     result = runner.invoke(
         mark_impl_ended,
         ["--session-id", "test-session-id-2"],
-        obj=ErkContext.for_test(cwd=tmp_path, github_issues=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(
+            cwd=tmp_path,
+            github=FakeGitHub(issues_gateway=fake_gh),
+            plan_store=GitHubPlanStore(fake_gh),
+            repo_root=repo_root,
+        ),
     )
 
     assert result.exit_code == 0
@@ -319,7 +340,12 @@ def test_mark_impl_ended_remote_updates_metadata(tmp_path: Path, monkeypatch) ->
     # Execute
     result = runner.invoke(
         mark_impl_ended,
-        obj=ErkContext.for_test(cwd=tmp_path, github_issues=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(
+            cwd=tmp_path,
+            github=FakeGitHub(issues_gateway=fake_gh),
+            plan_store=GitHubPlanStore(fake_gh),
+            repo_root=repo_root,
+        ),
     )
 
     assert result.exit_code == 0
@@ -344,7 +370,11 @@ def test_mark_impl_ended_no_plan_ref(tmp_path: Path) -> None:
     # No .impl/ folder created
     result = runner.invoke(
         mark_impl_ended,
-        obj=ErkContext.for_test(cwd=tmp_path, github_issues=fake_gh),
+        obj=ErkContext.for_test(
+            cwd=tmp_path,
+            github=FakeGitHub(issues_gateway=fake_gh),
+            plan_store=GitHubPlanStore(fake_gh),
+        ),
     )
 
     assert result.exit_code == 0  # Graceful degradation

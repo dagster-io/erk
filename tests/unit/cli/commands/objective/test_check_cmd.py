@@ -13,6 +13,7 @@ from erk.cli.commands.objective.check_cmd import (
     validate_objective,
 )
 from erk_shared.context.context import ErkContext
+from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 
@@ -102,7 +103,7 @@ def test_valid_objective_passes_all_checks() -> None:
     result = runner.invoke(
         check_objective,
         ["100"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -119,7 +120,7 @@ def test_valid_objective_json_output() -> None:
     result = runner.invoke(
         check_objective,
         ["100", "--json-output"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -152,7 +153,7 @@ def test_missing_objective_label_fails() -> None:
     result = runner.invoke(
         check_objective,
         ["200"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 1
@@ -173,7 +174,7 @@ This objective has no roadmap tables.
     result = runner.invoke(
         check_objective,
         ["300"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 1
@@ -219,7 +220,7 @@ steps:
     result = runner.invoke(
         check_objective,
         ["400"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -234,7 +235,7 @@ def test_issue_not_found_fails() -> None:
     result = runner.invoke(
         check_objective,
         ["999"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 1
@@ -249,7 +250,7 @@ def test_issue_not_found_json() -> None:
     result = runner.invoke(
         check_objective,
         ["999", "--json-output"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 1
@@ -298,7 +299,7 @@ steps:
     result = runner.invoke(
         check_objective,
         ["500"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -345,7 +346,7 @@ steps:
     result = runner.invoke(
         check_objective,
         ["600"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -399,7 +400,7 @@ steps:
     result = runner.invoke(
         check_objective,
         ["900"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -468,7 +469,7 @@ steps:
     result = runner.invoke(
         check_objective,
         ["800", "--json-output"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -569,7 +570,7 @@ def test_v2_valid_header_passes_check_6() -> None:
     result = runner.invoke(
         check_objective,
         ["1200"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -586,7 +587,7 @@ def test_v2_missing_comment_id_fails_check_6() -> None:
     result = runner.invoke(
         check_objective,
         ["1300"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 1
@@ -631,7 +632,7 @@ steps:
     result = runner.invoke(
         check_objective,
         ["1700"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 1
@@ -672,7 +673,7 @@ steps:
     result = runner.invoke(
         check_objective,
         ["1800"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 1
@@ -713,7 +714,7 @@ steps:
     result = runner.invoke(
         check_objective,
         ["2000"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -730,7 +731,7 @@ def test_valid_hash_prefix_refs_pass() -> None:
     result = runner.invoke(
         check_objective,
         ["1900"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -801,7 +802,7 @@ def test_fan_out_fan_in_passes_validation() -> None:
     result = runner.invoke(
         check_objective,
         ["2100"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -817,7 +818,7 @@ def test_fan_out_fan_in_json_output() -> None:
     result = runner.invoke(
         check_objective,
         ["2200", "--json-output"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"

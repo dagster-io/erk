@@ -11,6 +11,7 @@ from erk.cli.commands.exec.scripts.objective_post_action_comment import (
     objective_post_action_comment,
 )
 from erk_shared.context.context import ErkContext
+from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 
@@ -121,7 +122,7 @@ class TestObjectivePostActionComment:
             [],
             input=input_data,
             obj=ErkContext.for_test(
-                github_issues=fake_issues,
+                github=FakeGitHub(issues_gateway=fake_issues),
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -151,7 +152,7 @@ class TestObjectivePostActionComment:
             [],
             input=input_data,
             obj=ErkContext.for_test(
-                github_issues=fake_issues,
+                github=FakeGitHub(issues_gateway=fake_issues),
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -172,7 +173,7 @@ class TestObjectivePostActionComment:
             [],
             input="",
             obj=ErkContext.for_test(
-                github_issues=fake_issues,
+                github=FakeGitHub(issues_gateway=fake_issues),
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -208,7 +209,7 @@ class TestObjectivePostActionComment:
             [],
             input=input_data,
             obj=ErkContext.for_test(
-                github_issues=fake_issues,
+                github=FakeGitHub(issues_gateway=fake_issues),
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),

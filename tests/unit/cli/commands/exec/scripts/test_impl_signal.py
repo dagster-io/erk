@@ -14,8 +14,10 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.impl_signal import impl_signal
 from erk_shared.context.context import ErkContext
+from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.plan_store.github import GitHubPlanStore
 
 
 def _is_on_git_branch() -> bool:
@@ -265,7 +267,11 @@ def test_started_posts_comment_and_updates_metadata(tmp_path: Path) -> None:
     result = runner.invoke(
         impl_signal,
         ["started", "--session-id", "test-session-123"],
-        obj=ErkContext.for_test(cwd=tmp_path, github_issues=fake_issues),
+        obj=ErkContext.for_test(
+            cwd=tmp_path,
+            github=FakeGitHub(issues_gateway=fake_issues),
+            plan_store=GitHubPlanStore(fake_issues),
+        ),
     )
 
     assert result.exit_code == 0
@@ -297,7 +303,11 @@ def test_ended_updates_metadata(tmp_path: Path) -> None:
     result = runner.invoke(
         impl_signal,
         ["ended", "--session-id", "test-session-456"],
-        obj=ErkContext.for_test(cwd=tmp_path, github_issues=fake_issues),
+        obj=ErkContext.for_test(
+            cwd=tmp_path,
+            github=FakeGitHub(issues_gateway=fake_issues),
+            plan_store=GitHubPlanStore(fake_issues),
+        ),
     )
 
     assert result.exit_code == 0
@@ -327,7 +337,11 @@ def test_started_sets_lifecycle_stage_impl(tmp_path: Path) -> None:
     result = runner.invoke(
         impl_signal,
         ["started", "--session-id", "test-session-321"],
-        obj=ErkContext.for_test(cwd=tmp_path, github_issues=fake_issues),
+        obj=ErkContext.for_test(
+            cwd=tmp_path,
+            github=FakeGitHub(issues_gateway=fake_issues),
+            plan_store=GitHubPlanStore(fake_issues),
+        ),
     )
 
     assert result.exit_code == 0
@@ -351,7 +365,11 @@ def test_started_writes_local_run_state(tmp_path: Path) -> None:
     result = runner.invoke(
         impl_signal,
         ["started", "--session-id", "test-session-789"],
-        obj=ErkContext.for_test(cwd=tmp_path, github_issues=fake_issues),
+        obj=ErkContext.for_test(
+            cwd=tmp_path,
+            github=FakeGitHub(issues_gateway=fake_issues),
+            plan_store=GitHubPlanStore(fake_issues),
+        ),
     )
 
     assert result.exit_code == 0
@@ -379,7 +397,11 @@ def test_submitted_updates_lifecycle_stage(tmp_path: Path) -> None:
     result = runner.invoke(
         impl_signal,
         ["submitted"],
-        obj=ErkContext.for_test(cwd=tmp_path, github_issues=fake_issues),
+        obj=ErkContext.for_test(
+            cwd=tmp_path,
+            github=FakeGitHub(issues_gateway=fake_issues),
+            plan_store=GitHubPlanStore(fake_issues),
+        ),
     )
 
     assert result.exit_code == 0
@@ -428,7 +450,11 @@ def test_submitted_no_session_id_ok(tmp_path: Path) -> None:
     result = runner.invoke(
         impl_signal,
         ["submitted"],
-        obj=ErkContext.for_test(cwd=tmp_path, github_issues=fake_issues),
+        obj=ErkContext.for_test(
+            cwd=tmp_path,
+            github=FakeGitHub(issues_gateway=fake_issues),
+            plan_store=GitHubPlanStore(fake_issues),
+        ),
     )
 
     assert result.exit_code == 0
@@ -447,7 +473,11 @@ def test_submitted_issue_not_found(tmp_path: Path) -> None:
     result = runner.invoke(
         impl_signal,
         ["submitted"],
-        obj=ErkContext.for_test(cwd=tmp_path, github_issues=fake_issues),
+        obj=ErkContext.for_test(
+            cwd=tmp_path,
+            github=FakeGitHub(issues_gateway=fake_issues),
+            plan_store=GitHubPlanStore(fake_issues),
+        ),
     )
 
     assert result.exit_code == 0

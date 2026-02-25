@@ -16,6 +16,7 @@ from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 from erk_shared.gateway.github.types import PRDetails
+from erk_shared.plan_store.github import GitHubPlanStore
 
 
 def _make_issue(*, number: int, title: str, body: str) -> IssueInfo:
@@ -154,7 +155,7 @@ class TestApplyLandedUpdateHappyPath:
             issues={6423: objective, 6513: plan},
             comments_with_urls={6423: [comment]},
         )
-        fake_github = FakeGitHub(pr_details={6517: pr})
+        fake_github = FakeGitHub(issues_gateway=fake_issues, pr_details={6517: pr})
 
         runner = CliRunner()
         result = runner.invoke(
@@ -170,8 +171,8 @@ class TestApplyLandedUpdateHappyPath:
                 "6513",
             ],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
+                plan_store=GitHubPlanStore(fake_issues),
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -221,7 +222,7 @@ class TestApplyLandedUpdateHappyPath:
             issues={6423: objective, 6513: plan},
             comments_with_urls={6423: [comment]},
         )
-        fake_github = FakeGitHub(pr_details={6517: pr})
+        fake_github = FakeGitHub(issues_gateway=fake_issues, pr_details={6517: pr})
 
         runner = CliRunner()
         result = runner.invoke(
@@ -237,8 +238,8 @@ class TestApplyLandedUpdateHappyPath:
                 "6513",
             ],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
+                plan_store=GitHubPlanStore(fake_issues),
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -279,7 +280,7 @@ class TestApplyLandedUpdateNoMatchedSteps:
         pr = _make_pr_details(number=6517, title="PR Title", body="pr body")
 
         fake_issues = FakeGitHubIssues(issues={6423: objective, 6513: plan})
-        fake_github = FakeGitHub(pr_details={6517: pr})
+        fake_github = FakeGitHub(issues_gateway=fake_issues, pr_details={6517: pr})
 
         runner = CliRunner()
         result = runner.invoke(
@@ -295,8 +296,8 @@ class TestApplyLandedUpdateNoMatchedSteps:
                 "6513",
             ],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
+                plan_store=GitHubPlanStore(fake_issues),
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -321,7 +322,7 @@ class TestApplyLandedUpdateErrors:
         pr = _make_pr_details(number=6517, title="PR Title", body="pr body")
 
         fake_issues = FakeGitHubIssues(issues={6513: plan})
-        fake_github = FakeGitHub(pr_details={6517: pr})
+        fake_github = FakeGitHub(issues_gateway=fake_issues, pr_details={6517: pr})
 
         runner = CliRunner()
         result = runner.invoke(
@@ -337,8 +338,8 @@ class TestApplyLandedUpdateErrors:
                 "6513",
             ],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
+                plan_store=GitHubPlanStore(fake_issues),
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -355,7 +356,7 @@ class TestApplyLandedUpdateErrors:
         plan = _make_issue(number=6513, title="My Plan", body="plan body")
 
         fake_issues = FakeGitHubIssues(issues={6423: objective, 6513: plan})
-        fake_github = FakeGitHub()
+        fake_github = FakeGitHub(issues_gateway=fake_issues)
 
         runner = CliRunner()
         result = runner.invoke(
@@ -371,8 +372,8 @@ class TestApplyLandedUpdateErrors:
                 "6513",
             ],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
+                plan_store=GitHubPlanStore(fake_issues),
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -386,15 +387,15 @@ class TestApplyLandedUpdateErrors:
     def test_bad_branch_no_plan(self, tmp_path: Path) -> None:
         """Returns error when branch doesn't match any plan pattern."""
         fake_issues = FakeGitHubIssues()
-        fake_github = FakeGitHub()
+        fake_github = FakeGitHub(issues_gateway=fake_issues)
 
         runner = CliRunner()
         result = runner.invoke(
             objective_apply_landed_update,
             ["--pr", "6517", "--objective", "6423", "--branch", "feature-branch"],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
+                plan_store=GitHubPlanStore(fake_issues),
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -423,7 +424,7 @@ class TestApplyLandedUpdateDiscovery:
             issues={6423: objective, 6513: plan},
             comments_with_urls={6423: [comment]},
         )
-        fake_github = FakeGitHub(pr_details={6517: pr})
+        fake_github = FakeGitHub(issues_gateway=fake_issues, pr_details={6517: pr})
         fake_git = FakeGit(current_branches={tmp_path: "plnd/some-branch"})
 
         runner = CliRunner()
@@ -431,8 +432,8 @@ class TestApplyLandedUpdateDiscovery:
             objective_apply_landed_update,
             ["--pr", "6517", "--objective", "6423", "--plan", "6513"],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
+                plan_store=GitHubPlanStore(fake_issues),
                 git=fake_git,
                 repo_root=tmp_path,
                 cwd=tmp_path,
@@ -460,7 +461,7 @@ class TestApplyLandedUpdateDiscovery:
             issues={6423: objective, 6513: plan},
             comments_with_urls={6423: [comment]},
         )
-        fake_github = FakeGitHub(pr_details={6517: pr})
+        fake_github = FakeGitHub(issues_gateway=fake_issues, pr_details={6517: pr})
 
         runner = CliRunner()
         # Use a branch name that does NOT encode the plan number —
@@ -478,8 +479,8 @@ class TestApplyLandedUpdateDiscovery:
                 "6513",
             ],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
+                plan_store=GitHubPlanStore(fake_issues),
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -493,7 +494,7 @@ class TestApplyLandedUpdateDiscovery:
     def test_plan_direct_lookup_not_found(self, tmp_path: Path) -> None:
         """--plan returns error when the specified plan doesn't exist."""
         fake_issues = FakeGitHubIssues()
-        fake_github = FakeGitHub()
+        fake_github = FakeGitHub(issues_gateway=fake_issues)
 
         runner = CliRunner()
         result = runner.invoke(
@@ -509,8 +510,8 @@ class TestApplyLandedUpdateDiscovery:
                 "9999",
             ],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
+                plan_store=GitHubPlanStore(fake_issues),
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),

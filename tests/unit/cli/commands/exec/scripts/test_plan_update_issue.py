@@ -8,8 +8,10 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.plan_update_issue import plan_update_issue
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
+from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
+from erk_shared.plan_store.github import GitHubPlanStore
 
 
 def _make_issue(
@@ -62,7 +64,8 @@ def test_plan_update_issue_success() -> None:
         plan_update_issue,
         ["--plan-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
+            plan_store=GitHubPlanStore(fake_gh),
             claude_installation=fake_store,
         ),
     )
@@ -104,7 +107,8 @@ def test_plan_update_issue_display_format() -> None:
         plan_update_issue,
         ["--plan-number", "99", "--format", "display"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
+            plan_store=GitHubPlanStore(fake_gh),
             claude_installation=fake_store,
         ),
     )
@@ -131,7 +135,8 @@ def test_plan_update_issue_no_plan_found() -> None:
         plan_update_issue,
         ["--plan-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
+            plan_store=GitHubPlanStore(fake_gh),
             claude_installation=fake_store,
         ),
     )
@@ -156,7 +161,8 @@ def test_plan_update_issue_issue_not_found() -> None:
         plan_update_issue,
         ["--plan-number", "999", "--format", "json"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
+            plan_store=GitHubPlanStore(fake_gh),
             claude_installation=fake_store,
         ),
     )
@@ -185,7 +191,8 @@ def test_plan_update_issue_formats_plan_content() -> None:
         plan_update_issue,
         ["--plan-number", "42"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
+            plan_store=GitHubPlanStore(fake_gh),
             claude_installation=fake_store,
         ),
     )
@@ -217,7 +224,8 @@ def test_plan_update_issue_updates_title_from_plan() -> None:
         plan_update_issue,
         ["--plan-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
+            plan_store=GitHubPlanStore(fake_gh),
             claude_installation=fake_store,
         ),
     )
@@ -261,7 +269,8 @@ def test_plan_update_issue_learn_plan_gets_learn_tag() -> None:
         plan_update_issue,
         ["--plan-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
+            plan_store=GitHubPlanStore(fake_gh),
             claude_installation=fake_store,
         ),
     )
@@ -291,7 +300,8 @@ def test_plan_update_issue_strips_plan_prefix_from_title() -> None:
         plan_update_issue,
         ["--plan-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
+            plan_store=GitHubPlanStore(fake_gh),
             claude_installation=fake_store,
         ),
     )
@@ -319,7 +329,8 @@ def test_plan_update_issue_display_format_shows_new_title() -> None:
         plan_update_issue,
         ["--plan-number", "42", "--format", "display"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
+            plan_store=GitHubPlanStore(fake_gh),
             claude_installation=fake_store,
         ),
     )

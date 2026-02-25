@@ -400,7 +400,6 @@ def test_no_plan_context_after_pxxxx_removal() -> None:
             graphite=graphite,
             github=github,
             prompt_executor=executor,
-            issues=fake_github_issues,
             plan_store=GitHubPlanStore(fake_github_issues),
         )
 

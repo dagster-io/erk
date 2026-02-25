@@ -112,23 +112,14 @@ def context_for_test(
     from erk_shared.gateway.time.fake import FakeTime
 
     # Resolve defaults - create issues first since it's composed into github
-    # Track whether issues was explicitly passed (for composition logic below)
-    issues_explicitly_passed = github_issues is not None
-
     resolved_issues: GitHubIssues = (
         github_issues if github_issues is not None else FakeGitHubIssues()
     )
     resolved_git: Git = git if git is not None else FakeGit()
     # Compose github with issues
-    # If github is provided without issues_gateway, use github as-is (it has its own issues)
-    # Only inject issues if caller explicitly passed BOTH github and github_issues
+    # If github is provided, use it as-is (caller wires issues via FakeGitHub constructor)
     if github is None:
         resolved_github: GitHub = FakeGitHub(issues_gateway=resolved_issues)
-    elif isinstance(github, FakeGitHub) and issues_explicitly_passed:
-        # Caller passed both github and github_issues separately - inject issues
-        # into the existing FakeGitHub instance to preserve test references
-        github._issues_gateway = resolved_issues
-        resolved_github = github
     else:
         resolved_github = github
     resolved_graphite: Graphite = graphite if graphite is not None else FakeGraphite()
@@ -181,16 +172,10 @@ def context_for_test(
 
     resolved_local_config = local_config if local_config is not None else LoadedConfig.test()
 
-    # Resolve plan_store: explicit > issue-aware default > PlannedPRBackend
+    # Resolve plan_store: explicit > PlannedPRBackend default
     resolved_plan_store: PlanStore
     if plan_store is not None:
         resolved_plan_store = plan_store
-    elif issues_explicitly_passed:
-        # Caller seeded issue data — use GitHubPlanStore so plan lookups
-        # go through the issues gateway the caller configured.
-        from erk_shared.plan_store.github import GitHubPlanStore
-
-        resolved_plan_store = GitHubPlanStore(resolved_issues, FakeTime())
     else:
         resolved_plan_store = PlannedPRBackend(resolved_github, resolved_issues, time=FakeTime())
 

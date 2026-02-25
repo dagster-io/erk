@@ -16,6 +16,7 @@ from erk_shared.gateway.claude_installation.fake import (
     FakeSessionData,
 )
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 
 # Valid plan content that passes validation (100+ chars with structure)
@@ -44,7 +45,7 @@ This is a comprehensive feature plan that includes all the necessary details.
         plan_save_to_issue,
         ["--format", "json"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             claude_installation=fake_store,
         ),
     )
@@ -68,7 +69,7 @@ def test_plan_save_to_issue_no_plan() -> None:
         plan_save_to_issue,
         ["--format", "json"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             claude_installation=fake_store,
         ),
     )
@@ -91,7 +92,7 @@ def test_plan_save_to_issue_format() -> None:
         plan_save_to_issue,
         [],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             git=fake_git,
             claude_installation=fake_store,
         ),
@@ -128,7 +129,7 @@ This is a comprehensive test feature that covers the implementation.
         plan_save_to_issue,
         ["--format", "display"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             claude_installation=fake_store,
         ),
     )
@@ -165,7 +166,7 @@ This feature adds a new capability to the system with comprehensive testing.
         plan_save_to_issue,
         [],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             claude_installation=fake_store,
         ),
     )
@@ -216,7 +217,7 @@ def test_plan_save_to_issue_session_context_removed(tmp_path: Path) -> None:
         plan_save_to_issue,
         ["--format", "json", "--session-id", "test-session-id"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             git=fake_git,
             claude_installation=fake_store,
             cwd=tmp_path,
@@ -256,7 +257,7 @@ def test_plan_save_to_issue_no_session_exchanges_without_session_id() -> None:
         plan_save_to_issue,
         ["--format", "json"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             git=fake_git,
             claude_installation=fake_store,
         ),
@@ -286,7 +287,7 @@ def test_plan_save_to_issue_json_output_no_session_metadata() -> None:
         plan_save_to_issue,
         ["--format", "json"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             git=fake_git,
             claude_installation=fake_store,
         ),
@@ -327,7 +328,7 @@ def test_plan_save_to_issue_session_id_still_creates_marker(
             plan_save_to_issue,
             ["--format", "json", "--session-id", test_session_id],
             obj=ErkContext.for_test(
-                github_issues=fake_gh,
+                github=FakeGitHub(issues_gateway=fake_gh),
                 git=fake_git,
                 claude_installation=fake_store,
                 cwd=Path(td),
@@ -386,7 +387,7 @@ def test_plan_save_to_issue_display_format_no_session_context_shown(tmp_path: Pa
         plan_save_to_issue,
         ["--format", "display", "--session-id", "test-session-id"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             git=fake_git,
             claude_installation=fake_store,
             cwd=tmp_path,
@@ -432,7 +433,7 @@ def test_plan_save_to_issue_no_session_exchanges_without_flag(tmp_path: Path) ->
         plan_save_to_issue,
         ["--format", "json"],  # No --session-id flag
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             git=fake_git,
             claude_installation=fake_store,
             cwd=tmp_path,
@@ -487,7 +488,7 @@ def test_plan_save_to_issue_session_id_posts_exchanges_comment(tmp_path: Path) -
         plan_save_to_issue,
         ["--format", "json", "--session-id", flag_session_id],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             git=fake_git,
             claude_installation=fake_store,
             cwd=tmp_path,
@@ -517,7 +518,7 @@ def test_plan_save_to_issue_creates_marker_file(tmp_path: Path) -> None:
             plan_save_to_issue,
             ["--format", "json", "--session-id", test_session_id],
             obj=ErkContext.for_test(
-                github_issues=fake_gh,
+                github=FakeGitHub(issues_gateway=fake_gh),
                 git=fake_git,
                 claude_installation=fake_store,
                 repo_root=Path(td),
@@ -559,7 +560,9 @@ def test_plan_save_to_issue_no_marker_without_session_id(tmp_path: Path) -> None
             plan_save_to_issue,
             ["--format", "json"],  # No --session-id, and store has None
             obj=ErkContext.for_test(
-                github_issues=fake_gh, git=fake_git, claude_installation=fake_store
+                github=FakeGitHub(issues_gateway=fake_gh),
+                git=fake_git,
+                claude_installation=fake_store,
             ),
         )
 
@@ -609,7 +612,7 @@ def test_plan_save_to_issue_preserves_plan_file_after_save(
             plan_save_to_issue,
             ["--format", "json", "--session-id", test_session_id],
             obj=ErkContext.for_test(
-                github_issues=fake_gh,
+                github=FakeGitHub(issues_gateway=fake_gh),
                 claude_installation=fake_store,
                 cwd=Path(td),
                 repo_root=Path(td),
@@ -641,7 +644,7 @@ This plan documents the learnings and insights from the implementation session.
         plan_save_to_issue,
         ["--format", "json", "--plan-type", "learn", "--learned-from-issue", "123"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             claude_installation=fake_store,
         ),
     )
@@ -674,7 +677,7 @@ def test_plan_save_to_issue_rejects_empty_plan() -> None:
         plan_save_to_issue,
         ["--format", "json"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             claude_installation=fake_store,
         ),
     )
@@ -702,7 +705,7 @@ def test_plan_save_to_issue_rejects_too_short_plan() -> None:
         plan_save_to_issue,
         ["--format", "json"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             claude_installation=fake_store,
         ),
     )
@@ -732,7 +735,7 @@ So it should fail the structure validation check."""
         plan_save_to_issue,
         ["--format", "json"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             claude_installation=fake_store,
         ),
     )
@@ -760,7 +763,7 @@ def test_plan_save_to_issue_rejects_whitespace_plan_display_format() -> None:
         plan_save_to_issue,
         ["--format", "display"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             claude_installation=fake_store,
         ),
     )
@@ -784,7 +787,7 @@ def test_plan_save_to_issue_skips_duplicate_json_format(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as td:
         ctx = ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             claude_installation=fake_store,
             repo_root=Path(td),
         )
@@ -828,7 +831,7 @@ def test_plan_save_to_issue_skips_duplicate_display_format(tmp_path: Path) -> No
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as td:
         ctx = ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             claude_installation=fake_store,
             repo_root=Path(td),
         )
@@ -865,7 +868,7 @@ def test_plan_save_to_issue_no_dedup_without_session_id(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as td:
         ctx = ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             claude_installation=fake_store,
             repo_root=Path(td),
         )
@@ -939,7 +942,7 @@ This plan is from Claude plans directory and should NOT be used.
             plan_save_to_issue,
             ["--format", "json", "--session-id", test_session_id],
             obj=ErkContext.for_test(
-                github_issues=fake_gh,
+                github=FakeGitHub(issues_gateway=fake_gh),
                 git=fake_git,
                 claude_installation=fake_store,
                 cwd=Path(td),
@@ -994,7 +997,7 @@ This plan is from Claude plans directory as fallback.
             plan_save_to_issue,
             ["--format", "json", "--session-id", test_session_id],
             obj=ErkContext.for_test(
-                github_issues=fake_gh,
+                github=FakeGitHub(issues_gateway=fake_gh),
                 git=fake_git,
                 claude_installation=fake_store,
                 cwd=Path(td),
@@ -1031,7 +1034,7 @@ def test_plan_save_links_objective_from_marker(tmp_path: Path) -> None:
             plan_save_to_issue,
             ["--format", "json", "--session-id", test_session_id],
             obj=ErkContext.for_test(
-                github_issues=fake_gh,
+                github=FakeGitHub(issues_gateway=fake_gh),
                 claude_installation=fake_store,
                 repo_root=Path(td),
                 cwd=Path(td),
@@ -1070,7 +1073,7 @@ def test_plan_save_no_marker_no_objective(tmp_path: Path) -> None:
             plan_save_to_issue,
             ["--format", "json", "--session-id", test_session_id],
             obj=ErkContext.for_test(
-                github_issues=fake_gh,
+                github=FakeGitHub(issues_gateway=fake_gh),
                 claude_installation=fake_store,
                 repo_root=Path(td),
                 cwd=Path(td),
@@ -1109,7 +1112,7 @@ This plan is found without session ID.
         plan_save_to_issue,
         ["--format", "json"],  # No --session-id
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             claude_installation=fake_store,
         ),
     )
@@ -1153,7 +1156,7 @@ def test_plan_save_to_issue_rejects_fallback_title_json() -> None:
         plan_save_to_issue,
         ["--format", "json"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             claude_installation=fake_store,
         ),
     )
@@ -1177,7 +1180,7 @@ def test_plan_save_to_issue_rejects_emoji_only_title() -> None:
         plan_save_to_issue,
         ["--format", "json"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             claude_installation=fake_store,
         ),
     )
@@ -1201,7 +1204,7 @@ def test_plan_save_to_issue_rejects_fallback_title_display() -> None:
         plan_save_to_issue,
         ["--format", "display"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             claude_installation=fake_store,
         ),
     )
