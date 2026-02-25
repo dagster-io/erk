@@ -363,13 +363,9 @@ class PlannedPRBackend(PlanBackend):
         footer = build_pr_body_footer(pr_number, issue_number=None, plans_repo=None)
         self._github.update_pr_body(repo_root, pr_number, pr_body + footer)
 
-        # Add erk-plan label
-        self._github.add_label_to_pr(repo_root, pr_number, _PLAN_LABEL)
-
-        # Add any extra labels
+        # Add all labels provided by caller
         for label in labels:
-            if label != _PLAN_LABEL:
-                self._github.add_label_to_pr(repo_root, pr_number, label)
+            self._github.add_label_to_pr(repo_root, pr_number, label)
 
         # Get the PR URL from the created PR
         pr_result = self._github.get_pr(repo_root, pr_number)

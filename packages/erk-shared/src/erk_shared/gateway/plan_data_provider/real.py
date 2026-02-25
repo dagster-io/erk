@@ -148,6 +148,7 @@ class RealPlanDataProvider(PlanDataProvider):
                 limit=filters.limit,
                 skip_workflow_runs=not needs_workflow_runs,
                 creator=filters.creator,
+                exclude_labels=list(filters.exclude_labels) if filters.exclude_labels else None,
             )
 
         # Build local worktree mapping
