@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: Replace N `git rev-parse` calls with single `git for-each-ref` in Graphite branch cache"
+}
