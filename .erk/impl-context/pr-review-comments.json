@@ -1,0 +1,312 @@
+{
+  "success": true,
+  "pr_number": 8168,
+  "threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5wsRmO",
+      "path": "packages/erk-shared/src/erk_shared/gateway/github/abc.py",
+      "line": 421,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: Default parameter value on exclude_labels - Dignified Python forbids default parameter values. Use keyword-only argument with *. - See dignified-python-core.md",
+          "created_at": "2026-02-25T14:34:03Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Already addressed in commit 3b2679b8c (remove default value from exclude_labels fields).\n\n_Addressed via `/erk:pr-address` at 2026-02-25 11:09 PST_",
+          "created_at": "2026-02-25T19:09:50Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wsUtF",
+      "path": "packages/erk-shared/src/erk_shared/gateway/github/abc.py",
+      "line": 421,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python Review**: No default parameter values - exclude_labels has default None. Move to keyword-only args with * separator. - See dignified-python-core.md",
+          "created_at": "2026-02-25T14:37:12Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Already addressed in commit 3b2679b8c (remove default value from exclude_labels fields).\n\n_Addressed via `/erk:pr-address` at 2026-02-25 11:09 PST_",
+          "created_at": "2026-02-25T19:09:52Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wsRpL",
+      "path": "packages/erk-shared/src/erk_shared/gateway/github/dry_run.py",
+      "line": 211,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: Default parameter value on exclude_labels - Dignified Python forbids default parameter values. Use keyword-only argument with *. - See dignified-python-core.md",
+          "created_at": "2026-02-25T14:34:06Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Already addressed in commit 3b2679b8c (remove default value from exclude_labels fields).\n\n_Addressed via `/erk:pr-address` at 2026-02-25 11:09 PST_",
+          "created_at": "2026-02-25T19:09:54Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wsUv-",
+      "path": "packages/erk-shared/src/erk_shared/gateway/github/dry_run.py",
+      "line": 211,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python Review**: No default parameter values - exclude_labels has default None. Move to keyword-only args with * separator. - See dignified-python-core.md",
+          "created_at": "2026-02-25T14:37:16Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Already addressed in commit 3b2679b8c (remove default value from exclude_labels fields).\n\n_Addressed via `/erk:pr-address` at 2026-02-25 11:09 PST_",
+          "created_at": "2026-02-25T19:09:56Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wsRsk",
+      "path": "packages/erk-shared/src/erk_shared/gateway/github/fake.py",
+      "line": 731,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: Default parameter value on exclude_labels - Dignified Python forbids default parameter values. Use keyword-only argument with *. - See dignified-python-core.md",
+          "created_at": "2026-02-25T14:34:09Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Already addressed in commit 3b2679b8c (remove default value from exclude_labels fields).\n\n_Addressed via `/erk:pr-address` at 2026-02-25 11:09 PST_",
+          "created_at": "2026-02-25T19:09:59Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wsUz1",
+      "path": "packages/erk-shared/src/erk_shared/gateway/github/fake.py",
+      "line": 731,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python Review**: No default parameter values - exclude_labels has default None. Move to keyword-only args with * separator. - See dignified-python-core.md",
+          "created_at": "2026-02-25T14:37:19Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Already addressed in commit 3b2679b8c (remove default value from exclude_labels fields).\n\n_Addressed via `/erk:pr-address` at 2026-02-25 11:10 PST_",
+          "created_at": "2026-02-25T19:10:01Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wsRvn",
+      "path": "packages/erk-shared/src/erk_shared/gateway/github/printing.py",
+      "line": 229,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: Default parameter value on exclude_labels - Dignified Python forbids default parameter values. Use keyword-only argument with *. - See dignified-python-core.md",
+          "created_at": "2026-02-25T14:34:13Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Already addressed in commit 3b2679b8c (remove default value from exclude_labels fields).\n\n_Addressed via `/erk:pr-address` at 2026-02-25 11:10 PST_",
+          "created_at": "2026-02-25T19:10:03Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wsU27",
+      "path": "packages/erk-shared/src/erk_shared/gateway/github/printing.py",
+      "line": 229,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python Review**: No default parameter values - exclude_labels has default None. Move to keyword-only args with * separator. - See dignified-python-core.md",
+          "created_at": "2026-02-25T14:37:23Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Already addressed in commit 3b2679b8c (remove default value from exclude_labels fields).\n\n_Addressed via `/erk:pr-address` at 2026-02-25 11:10 PST_",
+          "created_at": "2026-02-25T19:10:05Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wsRzH",
+      "path": "packages/erk-shared/src/erk_shared/gateway/github/real.py",
+      "line": 1627,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: Default parameter value on exclude_labels - Dignified Python forbids default parameter values. Use keyword-only argument with *. - See dignified-python-core.md",
+          "created_at": "2026-02-25T14:34:16Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Already addressed in commit 3b2679b8c (remove default value from exclude_labels fields).\n\n_Addressed via `/erk:pr-address` at 2026-02-25 11:10 PST_",
+          "created_at": "2026-02-25T19:10:08Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wsU76",
+      "path": "packages/erk-shared/src/erk_shared/gateway/github/real.py",
+      "line": 1627,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python Review**: No default parameter values - exclude_labels has default None. Move to keyword-only args with * separator. - See dignified-python-core.md",
+          "created_at": "2026-02-25T14:37:26Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Already addressed in commit 3b2679b8c (remove default value from exclude_labels fields).\n\n_Addressed via `/erk:pr-address` at 2026-02-25 11:10 PST_",
+          "created_at": "2026-02-25T19:10:10Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wrrat",
+      "path": "packages/erk-shared/src/erk_shared/gateway/github/real.py",
+      "line": 1779,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Test Coverage**: New private method `_enrich_prs_via_graphql()` lacks corresponding tests. This method contains significant GraphQL query building and response parsing logic that should be covered by unit tests.",
+          "created_at": "2026-02-25T13:57:23Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Added 5 tests in test_real_github_pr_enrichment.py covering _enrich_prs_via_graphql: single PR, multiple PRs, command failure, empty list, partial response (6b32037)\n\n_Addressed via `/erk:pr-address` at 2026-02-25 06:29 PST_",
+          "created_at": "2026-02-25T14:29:59Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wrreZ",
+      "path": "packages/erk-shared/src/erk_shared/gateway/github/real.py",
+      "line": 1857,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Test Coverage**: New private method `_merge_rest_graphql_pr_data()` lacks corresponding tests. This method performs critical data transformation between REST and GraphQL responses and should be covered by unit tests.",
+          "created_at": "2026-02-25T13:57:27Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Added 7 tests in test_real_github_pr_enrichment.py covering _merge_rest_graphql_pr_data: single PR, missing enrichment, multiple PRs, labels, timestamps, review threads, empty items (6b32037)\n\n_Addressed via `/erk:pr-address` at 2026-02-25 06:30 PST_",
+          "created_at": "2026-02-25T14:30:01Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wsR2o",
+      "path": "src/erk/core/services/plan_list_service.py",
+      "line": 54,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: Default parameter value on exclude_labels - Dignified Python forbids default parameter values. Use keyword-only argument with *. - See dignified-python-core.md",
+          "created_at": "2026-02-25T14:34:19Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Already addressed in commit 3b2679b8c (remove default value from exclude_labels fields).\n\n_Addressed via `/erk:pr-address` at 2026-02-25 11:10 PST_",
+          "created_at": "2026-02-25T19:10:13Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wsU_R",
+      "path": "src/erk/core/services/plan_list_service.py",
+      "line": 54,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python Review**: No default parameter values - exclude_labels has default None. Move to keyword-only args with * separator. - See dignified-python-core.md",
+          "created_at": "2026-02-25T14:37:30Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Already addressed in commit 3b2679b8c (remove default value from exclude_labels fields).\n\n_Addressed via `/erk:pr-address` at 2026-02-25 11:10 PST_",
+          "created_at": "2026-02-25T19:10:15Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wsR6u",
+      "path": "src/erk/core/services/plan_list_service.py",
+      "line": 149,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: Default parameter value on exclude_labels - Dignified Python forbids default parameter values. Use keyword-only argument with *. - See dignified-python-core.md",
+          "created_at": "2026-02-25T14:34:23Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Already addressed in commit 3b2679b8c (remove default value from exclude_labels fields).\n\n_Addressed via `/erk:pr-address` at 2026-02-25 11:10 PST_",
+          "created_at": "2026-02-25T19:10:17Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wrrmq",
+      "path": "src/erk/tui/data/types.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python**: No default parameter values - dataclass field should not have default. Use factory methods or remove default.",
+          "created_at": "2026-02-25T13:57:36Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed in 58b6428 - removed default value from `exclude_labels` in PlanFilters, moved field before defaulted fields, updated all callers\n\n_Addressed via `/erk:pr-address` at 2026-02-25 06:26 PST_",
+          "created_at": "2026-02-25T14:26:07Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wrrpW",
+      "path": "src/erk/tui/views/types.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python**: No default parameter values - dataclass field should not have default. Use factory methods or remove default.",
+          "created_at": "2026-02-25T13:57:39Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed in 58b6428 - removed default value from `exclude_labels` in ViewConfig, updated all callers\n\n_Addressed via `/erk:pr-address` at 2026-02-25 06:26 PST_",
+          "created_at": "2026-02-25T14:26:10Z"
+        }
+      ]
+    }
+  ]
+}

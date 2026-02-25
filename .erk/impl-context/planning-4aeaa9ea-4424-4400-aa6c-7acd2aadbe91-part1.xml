@@ -1,0 +1,1324 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>▐▛███▜▌   Claude Code v2.1.56
+▝▜█████▛▘  Opus 4.6 · Claude Max
+  ▘▘ ▝▝    /workspaces/erk
+
+❯ ▐▛███▜▌   Claude Code v2.1.56
+  ▝▜█████▛▘  Opus 4.6 · Claude Max
+    ▘▘ ▝▝    ~/code/erk
+
+  ❯
+
+    this interaction seems to take a long time. is it overfetching and filtering clentside or something
+    ⎿  [Image #1]
+
+  ∴ Thinking…
+
+    The user is asking about a slow "Loading planned prs..." interaction in erk dash. They want to understand if it's overfetching data and filtering
+    client-side. Let me explore the codebase to understand the dashboard's data loading for the "Planned PRs" tab.
+
+  ⏺ Let me investigate the dashboard's planned PRs loading to understand the performance issue.
+
+  ⏺ Explore(Explore dash planned PRs loading)
+    ⎿  Done (30 tool uses · 79.3k tokens · 1m 28s)
+    (ctrl+o to expand)
+
+  ∴ Thinking…
+
+    Good, I have a thorough analysis. Now let me read the key files to verify the findings and understand the specifics better before writing a plan.
+
+  ⏺ Good analysis. Let me verify the key bottleneck areas directly.
+
+  ⏺ Read(packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py)
+    ⎿  Read 40 lines
+
+  ⏺ Read(packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py)
+    ⎿  Read 80 lines
+
+  ⏺ Read(src/erk/core/services/plan_list_service.py)
+    ⎿  Read 50 lines
+
+  ⏺ Search(pattern: "get_issue", path: "packages/erk-shared/src/erk_shared/gateway/github")
+    ⎿  Found 11 files (ctrl+o to expand)
+
+  ⏺ Search(pattern: "def get_issue", path: "packages/erk-shared/src/erk_shared/gateway/github/issues/real.py")
+    ⎿  Found 65 lines (ctrl+o to expand)
+
+  ⏺ Search(pattern: "def get_issue", path: "packages/erk-shared/src/erk_shared/gateway/github/issues/abc.py")
+    ⎿  Found 35 lines (ctrl+o to expand)
+
+  ∴ Thinking…
+
+    Now I have a clear picture. Let me also check how many learn issues a typical user might have, and look at execute_gh_command_with_retry to
+  understand the
+    subprocess overhead.
+
+  ⏺ Now let me check the subprocess overhead and whether there's a GraphQL batch alternative already available.
+
+  ⏺ Search(pattern: "def execute_gh_command_with_retry", path: "packages/erk-shared/src/erk_shared/gateway/github")
+    ⎿  Found 26 lines (ctrl+o to expand)
+
+  ⏺ Search(pattern: "LEARN_PLAN_ISSUE", path: "~/code/erk")
+    ⎿  Found 20 lines (ctrl+o to expand)
+
+  ⏺ Search(pattern: "get_workflow_runs_by_node_ids", path: "packages/erk-shared/src/erk_shared/gateway/github/real.py")
+    ⎿  Found 31 lines (ctrl+o to expand)
+
+  ⏺ Search(pattern: "def list_plan_prs_with_details", path: "packages/erk-shared/src/erk_shared/gateway/github/real.py")
+    ⎿  Found 6 lines (ctrl+o to expand)
+
+  ∴ Thinking…
+
+    Now let me understand the full picture. The main bottleneck is:
+
+    1. _fetch_learn_issue_states() makes N sequential REST API calls, each spawning a gh api subprocess
+    2. Each subprocess call has overhead: ~200-400ms for network + subprocess spawn
+
+    Let me also check if there's a GraphQL approach already used elsewhere that could batch these issue state lookups. Let me look at the
+    get_issues_with_pr_linkages query to see if it already fetches issue states.
+
+    Actually, let me also check how many learn issues a typical user has. And whether the GraphQL batch approach already exists for similar patterns
+  (like the
+    workflow runs batch fetch).
+
+  ⏺ Now I have a clear picture. Let me also check whether learn issue numbers could instead be fetched via the existing GraphQL query, since we only
+  need the
+    state field.
+
+  ⏺ Search(pattern: "GET_PLAN_PRS_WITH_DETAILS_QUERY", path: "packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py")
+    ⎿  Found 6 lines (ctrl+o to expand)
+
+  ⏺ Search(pattern: "GET_ISSUES_BY_NUMBERS", path: "packages/erk-shared/src/erk_shared/gateway/github")
+    ⎿  Found 0 lines
+
+  ⏺ Search(pattern: "GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY", path: "packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py")
+    ⎿  Found 21 lines (ctrl+o to expand)
+
+  ⏺ Now I see the pattern. The nodes(ids: [...]) GraphQL query is already used for workflow runs. The same approach could batch-fetch issue states. But
+  issues
+    are identified by number, not node ID. Let me check if there's a way to batch-fetch issues by number.
+
+  ⏺ Search(pattern: "nodes\(ids:", path: "packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py")
+    ⎿  Found 13 lines (ctrl+o to expand)
+
+  ⏺ Search(pattern: "def _build_worktree_mapping", path: "packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py")
+    ⎿  Found 31 lines (ctrl+o to expand)
+
+  ∴ Thinking…
+
+    For issues by number, we can't use the nodes(ids:) approach directly since we have issue numbers, not node IDs. But we could use a
+  dynamically-constructed
+    GraphQL query that fetches multiple issues using aliases, like:
+
+    query($owner: String!, $repo: String!) {
+      repository(owner: $owner, name: $repo) {
+        issue123: issue(number: 123) { state }
+        issue456: issue(number: 456) { state }
+      }
+    }
+
+    Or we could use the REST API but batch it. Actually, the simplest approach might be to use the GitHub REST API's batch issues endpoint, but that
+  doesn't
+    exist directly.
+
+    The dynamic GraphQL approach with aliases seems cleanest—one API call to fetch all issue states at once. Since we're only checking whether issues
+  are open
+    or closed, making sequential REST calls for each one would be wasteful, so I should look for existing patterns in the codebase that do this kind of
+  aliased
+     query construction.
+
+    I should also investigate what _build_worktree_mapping does, as that might be another performance bottleneck worth addressing.
+
+  ⏺ Good. Now I have the full picture. Let me also quickly check the _load_data method in the TUI app to see if there's additional overhead there.
+
+  ⏺ Search(pattern: "def _load_data", path: "src/erk/tui/app.py")
+    ⎿  Found 51 lines (ctrl+o to expand)
+
+  ⏺ Now I have the full picture. Let me write the plan.
+
+  ⏺ Updated plan
+    ⎿  Wrote 84 lines to /Users/schrockn/.claude/plans/reactive-stirring-moonbeam.md
+         1 # Fix: Batch learn issue state fetching in `erk dash` Planned PRs
+         2
+         3 ## Context
+         4
+         5 The "Planned PRs" tab in `erk dash` is slow because `_fetch_learn_issue_states()` makes **N sequential REST API calls** (one `gh api` subproc
+           ess per learn issue). Each call spawns a subprocess and does a network round-trip (~250-400ms). With 10 learn issues, this adds 2.5-4 seconds
+            to load time on top of the ~600ms GraphQL query.
+         6
+         7 The codebase already has a batch pattern for this exact problem: `get_workflow_runs_by_node_ids()` uses a single GraphQL `nodes(ids: [...])`
+           query to fetch N workflow runs in one call. We should do the same for learn issue states.
+         8
+         9 ## Approach
+        10
+        11 Replace the sequential REST loop with a **single dynamically-constructed GraphQL query using aliases**:
+        12
+        13 ```graphql
+        14 query($owner: String!, $repo: String!) {
+        15   repository(owner: $owner, name: $repo) {
+        16     issue_123: issue(number: 123) { number state }
+        17     issue_456: issue(number: 456) { number state }
+        18   }
+        19 }
+        20 ```
+        21
+        22 This fetches all learn issue states in one API call regardless of count.
+        23
+        24 ## Files to modify
+        25
+        26 ### 1. `packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py`
+        27 - No static query needed — the query is dynamically constructed from issue numbers
+        28
+        29 ### 2. `packages/erk-shared/src/erk_shared/gateway/github/issues/abc.py`
+        30 - Add abstract method: `get_issue_states(repo_root, numbers) -&gt; dict[int, str]`
+        31
+        32 ### 3. `packages/erk-shared/src/erk_shared/gateway/github/issues/real.py`
+        33 - Implement `get_issue_states()`:
+        34   - Build dynamic GraphQL query with aliases: `issue_{n}: issue(number: {n}) { number state }`
+        35   - Execute single `gh api graphql` call
+        36   - Parse response, mapping issue numbers to state strings
+        37   - Handle missing issues (issue not found in repo) gracefully
+        38   - Early-return empty dict for empty input
+        39
+        40 ### 4. `packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py`
+        41 - Implement `get_issue_states()` using existing fake issue store
+        42
+        43 ### 5. `packages/erk-shared/src/erk_shared/gateway/github/issues/dry_run.py`
+        44 - Implement `get_issue_states()` (delegate to inner or return empty)
+        45
+        46 ### 6. `packages/erk-shared/src/erk_shared/gateway/github/issues/printing.py` (if exists)
+        47 - Implement `get_issue_states()`
+        48
+        49 ### 7. `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py`
+        50 - Update `_fetch_learn_issue_states()` (line 197-217):
+        51   - Replace the sequential `for issue_number in issue_numbers: get_issue(...)` loop
+        52   - Call new `self._ctx.github.issues.get_issue_states(repo_root, issue_numbers)` instead
+        53   - Map returned states to `is_closed` booleans
+        54
+        55 ## Implementation details
+        56
+        57 The dynamic query construction pattern:
+        58
+        59 ```python
+        60 def get_issue_states(self, repo_root: Path, numbers: set[int]) -&gt; dict[int, str]:
+        61     if not numbers:
+        62         return {}
+        63
+        64     # Build aliased query fragments
+        65     fragments = []
+        66     for n in sorted(numbers):
+        67         fragments.append(f"issue_{n}: issue(number: {n}) {{ number state }}")
+        68
+        69     query = (
+        70         "query($owner: String!, $repo: String!) {\n"
+        71         f"  repository(owner: $owner, name: $repo) {{\n"
+        72         + "\n".join(f"    {f}" for f in fragments)
+        73         + "\n  }\n}"
+        74     )
+        75
+        76     cmd = ["gh", "api", "graphql", "-f", f"query={query}"]
+        77     # ... execute, parse response
+        78 ```
+        79
+        80 ## Verification
+        81
+        82 1. Run existing tests for the plan data provider and issues gateway
+        83 2. Run `erk dash` and confirm "Planned PRs" loads noticeably faster
+        84 3. Verify learn issue closed/open states still display correctly in the table
+
+  ⏺ Yes, you're right — it's overfetching in the sense that it makes N sequential subprocess calls to fetch a single field (state) per learn issue. The
+  main
+    bottleneck is _fetch_learn_issue_states() at real.py:210:
+
+    for issue_number in issue_numbers:
+        issue_info = self._ctx.github.issues.get_issue(self._location.root, issue_number)
+
+    Each iteration spawns a gh api subprocess + network round-trip (~250-400ms). With 10 learn issues that's 2.5-4 seconds of sequential blocking.
+
+    The fix is to batch these into a single GraphQL query using aliases (same pattern the codebase already uses for get_workflow_runs_by_node_ids). This
+    collapses N API calls into 1.
+
+  ⏺ Here's the plan:
+
+    ---
+    Fix: Batch learn issue state fetching in erk dash Planned PRs
+
+    Context
+
+    The "Planned PRs" tab in erk dash is slow because _fetch_learn_issue_states() makes N sequential REST API calls (one gh api subprocess per learn
+  issue).
+    Each call spawns a subprocess and does a network round-trip (~250-400ms). With 10 learn issues, this adds 2.5-4 seconds to load time on top of the
+  ~600ms
+    GraphQL query.
+
+    The codebase already has a batch pattern for this exact problem: get_workflow_runs_by_node_ids() uses a single GraphQL nodes(ids: [...]) query to
+  fetch N
+    workflow runs in one call. We should do the same for learn issue states.
+
+    Approach
+
+    Replace the sequential REST loop with a single dynamically-constructed GraphQL query using aliases:
+
+    query($owner: String!, $repo: String!) {
+      repository(owner: $owner, name: $repo) {
+        issue_123: issue(number: 123) { number state }
+        issue_456: issue(number: 456) { number state }
+      }
+    }
+
+    This fetches all learn issue states in one API call regardless of count.
+
+    Files to modify
+
+    1. packages/erk-shared/src/erk_shared/gateway/github/issues/abc.py — Add abstract method get_issue_states()
+    2. packages/erk-shared/src/erk_shared/gateway/github/issues/real.py — Implement with dynamic GraphQL query
+    3. packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py — Implement using fake store
+    4. packages/erk-shared/src/erk_shared/gateway/github/issues/dry_run.py — Implement stub
+    5. packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py — Replace sequential loop in _fetch_learn_issue_states() with single batch
+  call
+
+    Verification
+
+    - Run existing tests for plan data provider and issues gateway
+    - Run erk dash and confirm faster loading
+    - Verify learn issue states still display correctly
+
+    ---
+
+  ⏺ User answered Claude's questions:
+    ⎿  · 📋 Fix: Batch learn issue state fetching in `erk dash` Planned PRs
+       Current context: (wt:erk) (br:master) (plan:#7977)
+
+       What would you like to do with this plan? → what about the main planned pr screen?
+
+
+
+  ∴ Thinking…
+
+    The user is asking about the main planned PR screen specifically - they want to know if there are other bottlenecks beyond the learn issue fetching,
+   or if
+    the main GraphQL query itself (list_plan_prs_with_details) is also slow. Let me look more carefully at what happens for the Planned PRs tab
+  specifically.
+
+    The flow for "Planned PRs" (tab 1):
+    1. get_plan_list_data() → list_plan_prs_with_details() - 1 GraphQL call
+    2. _build_worktree_mapping() - local git worktree scan
+
+    3. _fetch_learn_issue_states() - N sequential REST calls (the bottleneck I identified)
+
+    Now I'm wondering if the GraphQL query itself might be overfetching data or if there's something inefficient about what fields it's requesting for
+  the PRs.
+
+  ⏺ Good question. Let me look at the main GraphQL query for the Planned PRs tab to see if the primary query itself is also overfetching.
+
+  ⏺ Read(packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py)
+    ⎿  Read 48 lines
+
+  ⏺ Search(pattern: "def list_plan_prs_with_details", path: "packages/erk-shared/src/erk_shared/gateway/github/real.py")
+    ⎿  Found 81 lines (ctrl+o to expand)
+
+  ∴ Thinking…
+
+    Now I see something interesting. There's client-side author filtering happening at line 1696:
+    if author is not None and pr_author != author:
+        continue
+
+    But wait - author is passed as a parameter to list_plan_prs_with_details. Let me check if the GraphQL API supports filtering by author directly.
+  Looking at
+     the query, it only uses labels, states, and first as filters. There's no author parameter in the GraphQL query.
+
+    Actually, GitHub's GraphQL API for pullRequests doesn't support direct author filtering. So client-side filtering for author is necessary.
+
+    The main bottleneck seems to be the GraphQL query itself, which fetches the full body content for all PRs to extract header fields, though that's
+  probably
+    unavoidable. The real performance hit comes from the subsequent issue state lookups that run sequentially for each PR.
+
+    But wait—the user might be asking about the primary "Planned PRs" tab itself rather than just the learn issues component. Let me reconsider whether
+  all
+    planned PRs even have associated learn issues, since those only exist for plans that went through the learn workflow. The question "what about the
+  main
+    planned pr screen?" suggests they want me to look at the broader performance picture of that primary view, not just one specific feature.
+
+    Looking at what could actually be slow on that screen: the GraphQL query fetches the full body for all PRs, which can be substantial since it
+  contains the
+    entire plan content. With 30 PRs, that's a lot of data moving around. Then there's the parsing overhead to extract plan details from those bodies,
+  plus the
+     subprocess spawning for the gh CLI—and that Go binary startup cost adds up, especially if there's only one main query call happening.
+
+    But I'm realizing the user might be asking something more fundamental: are they questioning whether the Planned PRs tab even has a learn issue
+  problem in
+    the first place? Their original concern was about overfetching and client-side filtering. Let me reconsider what's actually happening with the data
+  flow.
+
+    The main bottleneck is probably the single GraphQL query fetching full plan bodies for up to 30 PRs—each body could be several kilobytes, totaling
+  over
+    100KB of data transfer. While that's still more efficient than 30 separate REST calls, it's worth examining whether we really need all that body
+  content
+    just to display the list view, especially since the header metadata like plan type and dispatch info are embedded within those bodies. The body is
+    essential because the plan metadata—learn issue numbers, dispatch status, and other fields—are embedded as HTML comments within it, so we can't
+  avoid
+    fetching the full content for each PR. The real bottleneck isn't overfetching fields, but rather the sequential calls to fetch learn issue state.
+  Let me
+    reconsider whether the total number of planned PRs or the query itself might be the actual performance concern here. I'm realizing that author
+  filtering
+    can't be pushed server-side since GitHub's GraphQL API doesn't support it directly, and run_state filtering depends on separately fetched workflow
+  data
+    anyway, so client-side filtering is the right approach here. Let me focus on answering what the user actually asked about the Planned PRs screen.
+
+  ⏺ Good question - let me look at the full picture for the Planned PRs tab specifically. The learn issue batching is one issue, but let me check what
+  the main
+     query is doing and whether it's also overfetching.
+
+    For the Planned PRs tab (tab 1), the data flow is:
+
+    1. One GraphQL query (list_plan_prs_with_details) — fetches up to 30 PRs with full body (entire plan content), reviewThreads(first: 100),
+    statusCheckRollup, labels, etc. This is a single call but it's fetching full PR bodies for every PR. Plan bodies can be several KB each.
+    2. Client-side author filtering (real.py:1696) — the GraphQL pullRequests API doesn't support author filtering, so all PRs are fetched and then
+  filtered
+    client-side. If you have 30 erk-plan PRs but filter to 1 author, you still download all 30 bodies.
+    3. Client-side run_state filtering (real.py:177-181) — similarly, all PRs fetched, then filtered.
+    4. Worktree scan — local, fast.
+    5. Learn issue states — N sequential subprocess+REST calls (the bottleneck I identified).
+
+    So the sequential learn issue calls are likely the biggest single bottleneck. But the question is: how many learn issues do your planned PRs
+  typically
+    have? If most don't have learn issues, the learn issue fix won't help much, and the slowness is coming from the main GraphQL query payload size
+  (full
+    bodies × 30 PRs) or something else entirely.
+
+  ⏺ User answered Claude's questions:
+    ⎿  · To scope the fix correctly: is the slowness specific to a tab, or is 'Planned PRs' (tab 1) the one that feels slow? And roughly how many open
+       erk-plan PRs do you have right now? → learn and planned prs. check them both
+
+  ∴ Thinking…
+
+    The user wants me to investigate both the Planned PRs and Learn tabs. Let me look at the Learn tab data path, and also look at what the Planned PRs
+  tab
+    actually does. Let me trace both more carefully.
+
+    For Learn, I need to see how it fetches data and what API calls are made. Let me look at the view config to understand which labels each tab uses,
+  and then
+     trace the Learn tab flow.
+
+  ⏺ Let me trace both paths more carefully - the Learn tab likely has a different (and potentially slower) fetch path.
+
+  ⏺ Search(pattern: "ViewMode|get_view_config|PLANS|LEARN", path: "src/erk/tui")
+    ⎿  Found 7 files (ctrl+o to expand)
+
+  ⏺ Search(pattern: "class.*PlanListService|get_plan_list_data|get_objective_list_data", path: "src/erk/core/services")
+    ⎿  Found 47 lines (ctrl+o to expand)
+
+  ⏺ Read(src/erk/tui/views/types.py)
+    ⎿  Read 102 lines
+
+  ⏺ Read(src/erk/core/services/plan_list_service.py)
+    ⎿  Read 85 lines
+    ⎿  Loaded src/erk/tui/CLAUDE.md
+    ⎿  Loaded src/erk/tui/AGENTS.md
+    ⎿  Interrupted · What should Claude do instead?
+
+  ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ───────
+  ❯ continue.
+  ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ───────
+    ➜  (git:erk) (wt:root) (br:master) | (gh:no-pr) │ (O)                                                                                        59692
+  tokens
+    ⏸ plan mode on (shift+tab to cycle)                                                                                      current: 2.1.56 · latest:
+  2.1.56
+
+  saw this note about client-side filtering of authoring. thi sis going to be problem in big codebases. how can we fix
+
+● Good catch. Let me look at the current query and filtering to understand the fix options.
+
+● Searched for 2 patterns, read 1 file (ctrl+o to expand)
+
+● Now let me check the Learn tab's data path too.
+
+● Searched for 1 pattern, read 1 file (ctrl+o to expand)
+
+● Now let me look at the Learn tab's service and the planned PR service to understand both data paths.
+
+● Searched for 3 patterns, read 1 file (ctrl+o to expand)
+
+● Let me check how the Learn tab is configured and what path it takes.
+
+● Searched for 2 patterns, read 1 file (ctrl+o to expand)
+  ⎿  Loaded src/erk/tui/CLAUDE.md
+  ⎿  Loaded src/erk/tui/AGENTS.md
+
+● The Learn tab uses the same ("erk-plan",) labels as Plans! Let me check how it differentiates.
+
+● Searched for 2 patterns, read 1 file (ctrl+o to expand)
+
+● There it is. Let me see the full filtering logic.
+
+● Read 1 file (ctrl+o to expand)
+
+● Now I have the complete picture. Let me also check the list_plan_prs_with_details method to see the client-side author filtering.
+
+● Read 1 file (ctrl+o to expand)
+
+● Now I see the full picture. Here's what's happening across both tabs:
+
+  Both Plans and Learn tabs make the exact same API call — they fetch ALL erk-plan PRs, then filter client-side:
+  - Plans tab: keeps rows where is_learn_plan is False (line 329)
+  - Learn tab: keeps rows where is_learn_plan is True (line 327)
+
+  So the performance problems are:
+
+  1. Author filtering is client-side (line 1696) — GitHub's pullRequests GraphQL connection doesn't support author filtering, so all PRs are fetched and
+  filtered after download. In a big codebase with 10 contributors, you download 10x the data you need.
+  2. Plans/Learn split is client-side — Both tabs download the same full dataset, then discard half. Learn plans have the erk-learn label, but the query only
+   filters on erk-plan.
+  3. Learn issue states are sequential — N subprocess+REST calls (the issue I already identified).
+
+  The fix for author filtering (and the learn split) is to switch from the pullRequests connection to GitHub's search query, which supports the full GitHub
+  search syntax server-side:
+
+  # Plans tab
+  search(query: "repo:owner/repo is:pr is:open label:erk-plan -label:erk-learn author:username", type: ISSUE, first: 30)
+
+  # Learn tab
+  search(query: "repo:owner/repo is:pr is:open label:erk-plan label:erk-learn author:username", type: ISSUE, first: 30)
+
+  This pushes author filtering, learn/non-learn split, and label filtering all server-side. Want me to update the plan to include this search-based approach
+  alongside the learn issue batching fix?
+
+✻ Baked for 1m 24s
+
+❯ research deeply. there has to be another way to filter authors
+
+● Good call — let me research GitHub's GraphQL API more thoroughly before committing to the search approach, which has its own tradeoffs (rate limits,
+  different pagination model).
+
+● Task(Research GitHub GraphQL author filtering)
+  ⎿  Done (43 tool uses · 43.7k tokens · 5m 10s)
+  (ctrl+o to expand)
+
+❯ also look at rest api
+
+● Great research. The answer is thorough and covers REST too (which the user also asked about). Here's the summary:
+
+  There's no silver bullet — search is the only option for server-side author filtering
+
+  The research confirmed via actual GraphQL schema introspection that:
+
+  ┌───────────────────────────┬────────────────┬────────────────┬─────────────────────────────────┬───────────┐
+  │         Approach          │ Author Filter? │  Repo Scope?   │         Rich PR Fields?         │   Limit   │
+  ├───────────────────────────┼────────────────┼────────────────┼─────────────────────────────────┼───────────┤
+  │ repository.pullRequests   │ NO             │ Yes            │ Yes                             │ Unlimited │
+  ├───────────────────────────┼────────────────┼────────────────┼─────────────────────────────────┼───────────┤
+  │ search(type: ISSUE)       │ YES (author:)  │ Yes (repo:)    │ Yes (via ... on PullRequest)    │ 1,000 max │
+  ├───────────────────────────┼────────────────┼────────────────┼─────────────────────────────────┼───────────┤
+  │ user.pullRequests         │ YES (inherent) │ NO (all repos) │ Yes                             │ Unlimited │
+  ├───────────────────────────┼────────────────┼────────────────┼─────────────────────────────────┼───────────┤
+  │ REST GET /repos/.../pulls │ NO             │ Yes            │ Partial                         │ Unlimited │
+  ├───────────────────────────┼────────────────┼────────────────┼─────────────────────────────────┼───────────┤
+  │ REST GET /search/issues   │ YES (author:)  │ Yes (repo:)    │ Partial (no reviewThreads etc.) │ 1,000 max │
+  └───────────────────────────┴────────────────┴────────────────┴─────────────────────────────────┴───────────┘
+
+  Key findings:
+
+  1. repository.pullRequests has NO author parameter — confirmed exhaustively. This is a known gap; there's a
+  https://github.com/orgs/community/discussions/24323 that was never implemented. Notably, repository.issues does have filterBy: {createdBy: "..."}, but this
+   was never added to the PR connection.
+  2. search query is the only viable path — it supports author:USERNAME, label:X, -label:Y (negative!), draft:true/false, repo:owner/name, AND label logic.
+  All PR fields (reviewThreads, statusCheckRollup, mergeable, body, etc.) are available via ... on PullRequest fragments. Same rate-limit cost (1 point).
+  Same cursor pagination.
+  3. user.pullRequests — inherently author-scoped but has no repository filter, so it returns PRs across all repos. Useless for our case.
+  4. REST GET /repos/.../pulls — no author parameter either. REST search (GET /search/issues) supports it but returns less-rich data (no reviewThreads, no
+  statusCheckRollup), so you'd need a second enrichment call — strictly worse than GraphQL search.
+  5. The 1,000 result cap on search is the only real tradeoff, but when filtering by author + label + state within one repo, you'd never hit it.
+
+  The search approach also solves the Plans/Learn split for free:
+  - Plans: repo:owner/name is:pr is:open label:erk-plan -label:erk-learn author:X
+  - Learn: repo:owner/name is:pr is:open label:erk-plan label:erk-learn author:X
+
+  Want me to update the plan with the search-based approach?
+
+✻ Crunched for 4m 9s
+
+❯ can you query for this using issues? i think issues are prs in some parts of the github api
+
+✶ Channeling… (thinking)
+
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ bypass permissions on (shift+tab to cycle) · esc to interrupt
+
+look at this research 
+
+I want you to confirm these findings by looking at 
+
+➜  cli git:(trunk) pwd
+/Users/schrockn/code/githubs/cli
+➜  cli git:(trunk)
+
+see if there are any codepaths that filter prs to a specific set of authors</user>
+  <thinking>The user wants me to look at the GitHub CLI source code at `/Users/schrockn/code/githubs/cli` to confirm whether there are any codepaths that filter PRs by author. This is the actual `gh` CLI source code, which would show us what API calls GitHub's own CLI makes when filtering PRs by author.
+
+Let me explore that codebase to find PR listing/filtering code paths.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="19142" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 19142}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01VMta5crrMc7rinjneNLbNQ">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore gh CLI PR author filtering</param>
+    <param name="prompt">Explore the GitHub CLI source code at /Users/schrockn/code/githubs/cli to find how it filt...[truncated 604 chars]...ders
+
+Be thorough - check the actual GraphQL query templates and how author gets injected.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19142" cache_read_input_tokens="19114" output_tokens="405" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 19142, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VMta5crrMc7rinjneNLbNQ">
+Now I have a comprehensive understanding. Let me create a detailed summary of my findings.
+
+## Summary of Findings: GitHub CLI PR List Author Filtering
+
+Based on my thorough exploration of the GitHub CLI source code, here's how `gh pr list --author` works:
+
+### 1. **CLI Flag Parsing** (`/Users/schrockn/code/githubs/cli/pkg/cmd/pr/list/list.go`)
+
+- The `--author` flag is defined at line 118: `cmd.Flags().StringVarP(&amp;opts.Author, "author", "A", "", "Filter by author")`
+- The author value is stored in `ListOptions.Author` (line 38)
+- There's also support for `--app` flag (line 119) which is converted to `app/&lt;name&gt;` format (lines 101-103)
+
+### 2. **Conditional Routing to Search API** (`/Users/schrockn/code/githubs/cli/pkg/cmd/pr/list/http.go`)
+
+The code uses **conditional routing** based on the presence of certain filters:
+
+- Line 13-15: `shouldUseSearch()` function returns `true` if any of these are set:
+  - `filters.Draft != nil`
+  - `filters.Author != ""` ← Author filter triggers search API
+  - `filters.Assignee != ""`
+  - `filters.Search != ""`
+  - `len(filters.Labels) &gt; 0`
+
+- **If `shouldUseSearch()` is true** → Uses **GitHub Search API** (line 19)
+- **Otherwise** → Uses direct **GraphQL `pullRequests` connection** (line 22-29)
+
+### 3. **Two Distinct Code Paths**
+
+#### Path A: Direct GraphQL (no author filter)
+**GraphQL Query** (uses `repository.pullRequests` connection):
+
+... [103 lines omitted] ...
+  </tool_result>
+  <assistant>This confirms it definitively. The `gh` CLI itself uses the exact same approach:
+
+**`gh pr list` has two code paths** (`pkg/cmd/pr/list/http.go`):
+
+1. **No author filter** → uses `repository.pullRequests` GraphQL connection (no author param available)
+2. **With `--author`** → switches to `search(type: ISSUE)` GraphQL API with `author:monalisa repo:OWNER/REPO state:open type:pr`
+
+The routing logic is explicit (`http.go:13-15`):
+```go
+func shouldUseSearch(filters FilterOptions) bool {
+    return filters.Draft != nil || filters.Author != "" || 
+           filters.Assignee != "" || filters.Search != "" || 
+           len(filters.Labels) &gt; 0
+}
+```
+
+So the GitHub CLI team hit the exact same wall — `repository.pullRequests` has no author filter — and their solution is the same one we should use: **switch to the `search` query when author filtering is needed**.
+
+Key details from their implementation:
+- All filtering is **server-side** — no client-side filtering
+- They also use `ISSUE_ADVANCED` search type when the server supports it (newer feature)
+- PR fields are still fully available via `... on PullRequest` fragments in the search results
+- 1,000 result cap applies but is irrelevant for our per-repo, per-author, per-label queries
+
+This validates the plan's approach. Let me update the plan to incorporate this.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2040" cache_read_input_tokens="38256" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2040}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Mtx4LNRsT2FogiB8QTbiBE">
+    <param name="file_path">/Users/schrockn/.claude/plans/streamed-leaping-floyd.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2040" cache_read_input_tokens="38256" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2040}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Mtx4LNRsT2FogiB8QTbiBE">
+File does not exist. Note: your current working directory is /Users/schrockn/code/erk.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UL1u2PW7duQdN7QiQUG8kt">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2040" cache_read_input_tokens="38256" output_tokens="504" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2040, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UL1u2PW7duQdN7QiQUG8kt">
+&lt;tool_use_error&gt;Sibling tool call errored&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Read" id="toolu_01HN3SUW1NE2juHzFzFnNYRw">
+    <param name="file_path">/Users/schrockn/.claude/plans/reactive-stirring-moonbeam.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="606" cache_read_input_tokens="40296" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 606}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HN3SUW1NE2juHzFzFnNYRw">
+     1→# Fix: Batch learn issue state fetching in `erk dash`
+     2→
+     3→## Context
+     4→
+     5→Both the **Planned PRs** (tab 1) and **Learn** (tab 2) tabs in `erk dash` are slow to load. Both tabs use `labels=("erk-plan",)` and route through the exact same code path:
+     6→
+     7→```
+     8→ErkDashApp._load_data()
+     9→  → RealPlanDataProvider.fetch_plans()
+    10→    → PlannedPRPlanListService.get_plan_list_data()  [1 GraphQL call - fast]
+    11→    → _build_worktree_mapping()                       [local git - fast]
+    12→    → _fetch_learn_issue_states()                     [N sequential REST calls - SLOW]
+    13→```
+    14→
+    15→The bottleneck is `_fetch_learn_issue_states()` (`real.py:197-217`) which makes **N sequential subprocess+REST calls** — one `gh api repos/{owner}/{repo}/issues/{number}` per learn issue. Each call spawns a `gh` subprocess and does a network round-trip (~250-400ms each). With 10 learn issues, this adds 2.5-4 seconds on top of the ~600ms main GraphQL query.
+    16→
+    17→The codebase already has a batch pattern: `get_workflow_runs_by_node_ids()` uses a single GraphQL `nodes(ids: [...])` query. We should batch learn issue states similarly using a single aliased GraphQL query.
+    18→
+    19→## Approach
+    20→
+    21→Replace the sequential REST loop with a **single dynamically-constructed GraphQL query**:
+    22→
+    23→```graphql
+    24→query($owner: String!, $repo: String!) {
+    25→  repository(owner: $owner, name: $repo) {
+    26→    issue_123: issue(number: 123) { number state }
+    27→    issue_456: issue(number: 456) { number state }
+    28→  }
+    29→}
+    30→```
+
+... [34 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BsNwfqXSah6SXj28Z79QE2">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="606" cache_read_input_tokens="40296" output_tokens="146" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 606, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BsNwfqXSah6SXj28Z79QE2">
+     1→"""GraphQL queries and mutations for GitHub API.
+     2→
+     3→These are stored in a separate file to keep the implementation code clean
+     4→and make the queries easier to read and maintain.
+     5→"""
+     6→
+     7→# Query to fetch PR review threads with comments
+     8→GET_PR_REVIEW_THREADS_QUERY = """query($owner: String!, $repo: String!, $number: Int!) {
+     9→  repository(owner: $owner, name: $repo) {
+    10→    pullRequest(number: $number) {
+    11→      reviewThreads(first: 100) {
+    12→        nodes {
+    13→          id
+    14→          isResolved
+    15→          isOutdated
+    16→          path
+    17→          line
+    18→          comments(first: 20) {
+    19→            nodes {
+    20→              databaseId
+    21→              body
+    22→              author { login }
+    23→              path
+    24→              line: originalLine
+    25→              createdAt
+    26→            }
+    27→          }
+    28→        }
+    29→      }
+    30→    }
+
+... [185 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have the full picture. Let me also look at the existing `list_plan_prs_with_details` method to understand how it currently works and what needs to change.
+
+The current code at line 166-167 even has a comment:
+```
+# Note: pullRequests connection does not support filterBy for creator or draft status,
+# so those filters must be applied client-side.
+```
+
+So they already knew about this limitation. The fix is to switch to the `search` API approach, just like `gh` CLI does.
+
+Let me now look at the `list_plan_prs_with_details` method more carefully to understand what fields it uses, and then I can write a comprehensive plan that:
+
+
+1. Switches to GraphQL `search` for author filtering (the big win)
+2. Batches learn issue state fetching (the existing plan)
+
+I should also check how the Learn tab differentiates from the Plans tab - I recall from earlier that they both fetch the same data and filter client-side.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3629" cache_read_input_tokens="40902" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3629}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me look at the actual `list_plan_prs_with_details` method and how it's called, to understand the full refactoring scope.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3629" cache_read_input_tokens="40902" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3629}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014tGHZRzKhL1kZpsbQRf5Ym">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">1650</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3629" cache_read_input_tokens="40902" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3629}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014tGHZRzKhL1kZpsbQRf5Ym">
+  1650→            f"repo={repo_id.repo}",
+  1651→            "-F",
+  1652→            f"first={effective_limit}",
+  1653→        ]
+  1654→
+  1655→        for label in labels:
+  1656→            cmd.extend(["-f", f"labels[]={label}"])
+  1657→
+  1658→        for state_val in states:
+  1659→            cmd.extend(["-f", f"states[]={state_val}"])
+  1660→
+  1661→        try:
+  1662→            stdout = execute_gh_command_with_retry(cmd, location.root, self._time)
+  1663→        except RuntimeError:
+  1664→            return ([], {})
+  1665→
+  1666→        response = json.loads(stdout)
+  1667→        return self._parse_plan_prs_with_details(response, repo_id, author=author)
+  1668→
+  1669→    def _parse_plan_prs_with_details(
+  1670→        self,
+  1671→        response: dict[str, Any],
+  1672→        repo_id: GitHubRepoId,
+  1673→        *,
+  1674→        author: str | None,
+  1675→    ) -&gt; tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
+  1676→        """Parse GraphQL response for plan PRs into PRDetails and PullRequestInfo."""
+  1677→        pr_details_list: list[PRDetails] = []
+  1678→        pr_linkages: dict[int, list[PullRequestInfo]] = {}
+  1679→
+
+... [70 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KKKAwfTCCY4sMg3dodCuwL">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">1</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3629" cache_read_input_tokens="40902" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3629}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KKKAwfTCCY4sMg3dodCuwL">
+     1→"""Production implementation of GitHub operations.
+     2→
+     3→Error Handling Philosophy:
+     4→    gh CLI invocations should let exceptions bubble by default. Callers are
+     5→    responsible for handling failures appropriately. Don't swallow exceptions
+     6→    and return None/False/default values - this masks real errors and makes
+     7→    debugging difficult.
+     8→
+     9→    Legitimate "not found" cases (e.g., no PR exists for a branch) are handled
+    10→    by checking the response data, not by catching exceptions.
+    11→"""
+    12→
+    13→import json
+    14→import secrets
+    15→import string
+    16→from datetime import UTC, datetime, timedelta
+    17→from pathlib import Path
+    18→from typing import Any
+    19→
+    20→from erk_shared.debug import debug_log
+    21→from erk_shared.gateway.github.abc import GitHub
+    22→from erk_shared.gateway.github.graphql_queries import (
+    23→    ADD_REVIEW_THREAD_REPLY_MUTATION,
+    24→    GET_ISSUES_WITH_PR_LINKAGES_QUERY,
+    25→    GET_PLAN_PRS_WITH_DETAILS_QUERY,
+    26→    GET_PR_REVIEW_THREADS_QUERY,
+    27→    GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY,
+    28→    ISSUE_PR_LINKAGE_FRAGMENT,
+    29→    RESOLVE_REVIEW_THREAD_MUTATION,
+    30→)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01FzhJPkE5etDDf6reHj1oe7">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">1600</param>
+    <param name="limit">55</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2443" cache_read_input_tokens="44531" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2443}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FzhJPkE5etDDf6reHj1oe7">
+  1600→                pr_state = "OPEN"
+  1601→
+  1602→            branch = pr_data["head"]["ref"]
+  1603→            result[branch] = PullRequestInfo(
+  1604→                number=pr_data["number"],
+  1605→                state=pr_state,
+  1606→                url=pr_data["html_url"],
+  1607→                is_draft=pr_is_draft,
+  1608→                title=pr_data.get("title"),
+  1609→                checks_passing=None,  # Not fetched in batch API
+  1610→                owner=self._repo_info.owner,
+  1611→                repo=self._repo_info.name,
+  1612→                has_conflicts=None,  # Not fetched in batch API
+  1613→                checks_counts=None,
+  1614→                will_close_target=False,
+  1615→                base_ref_name=pr_data.get("base", {}).get("ref"),
+  1616→            )
+  1617→
+  1618→        return result
+  1619→
+  1620→    def list_plan_prs_with_details(
+  1621→        self,
+  1622→        location: GitHubRepoLocation,
+  1623→        *,
+  1624→        labels: list[str],
+  1625→        state: str | None,
+  1626→        limit: int | None,
+  1627→        author: str | None,
+  1628→    ) -&gt; tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
+  1629→        """List plan PRs with rich details via single GraphQL query.
+
+... [25 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have the full picture. The `list_plan_prs_with_details` method uses `GET_PLAN_PRS_WITH_DETAILS_QUERY` which uses `repository.pullRequests` - no author filter available. Author filtering happens client-side at line 1696.
+
+The fix is to switch to the `search` GraphQL API when author is specified, just like `gh` CLI does. This would:
+1. Push author filtering server-side
+2. Allow us to also push the learn/non-learn split server-side (via `-label:erk-learn` or `label:erk-learn`)
+
+
+3. Reduce payload size since fewer PRs get returned
+
+Combined with the learn issue state batching, these changes should significantly improve performance for both tabs. Let me check the ABC to see the full method signature.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="972" cache_read_input_tokens="46974" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 972}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check the ABC and the plan data provider to see how this all connects.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="972" cache_read_input_tokens="46974" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 972}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01SEXu8dmhuuCMkAnkK24nZX">
+    <param name="pattern">def list_plan_prs_with_details</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="972" cache_read_input_tokens="46974" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 972}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SEXu8dmhuuCMkAnkK24nZX">
+413:    def list_plan_prs_with_details(
+414-        self,
+415-        location: GitHubRepoLocation,
+416-        *,
+417-        labels: list[str],
+418-        state: str | None,
+419-        limit: int | None,
+420-        author: str | None,
+421-    ) -&gt; tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
+422-        """List plan PRs with rich details via GraphQL.
+423-
+424-        Returns PRDetails for plan content extraction and PullRequestInfo
+425-        with checks, review threads, and merge status for display.
+426-        Filters by labels and state server-side; draft and author filters
+427-        are applied client-side (GraphQL pullRequests doesn't support them).
+428-
+  </tool_result>
+  <tool_use name="Read" id="toolu_01V8kNumdizGzT5ETLcDggWP">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="972" cache_read_input_tokens="46974" output_tokens="451" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 972, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01V8kNumdizGzT5ETLcDggWP">
+     1→"""Real implementation of PlanDataProvider for production use."""
+     2→
+     3→import logging
+     4→import subprocess
+     5→from datetime import datetime
+     6→from pathlib import Path
+     7→
+     8→from erk.core.context import ErkContext
+     9→from erk.core.display_utils import (
+    10→    format_relative_time,
+    11→    format_workflow_outcome,
+    12→    format_workflow_run_id,
+    13→    get_workflow_run_state,
+    14→)
+    15→from erk.core.pr_utils import select_display_pr
+    16→from erk.core.repo_discovery import NoRepoSentinel, RepoContext, ensure_erk_metadata_dir
+    17→from erk.tui.data.types import PlanFilters, PlanRowData
+    18→from erk.tui.sorting.types import BranchActivity
+    19→from erk_shared.gateway.browser.abc import BrowserLauncher
+    20→from erk_shared.gateway.clipboard.abc import Clipboard
+    21→from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+    22→from erk_shared.gateway.github.issues.types import IssueNotFound
+    23→from erk_shared.gateway.github.metadata.core import (
+    24→    extract_objective_from_comment,
+    25→    extract_objective_header_comment_id,
+    26→    extract_objective_slug,
+    27→    find_metadata_block,
+    28→)
+    29→from erk_shared.gateway.github.metadata.dependency_graph import (
+    30→    _TERMINAL_STATUSES,
+
+... [877 lines omitted] ...
+
+   693→            phases, _errors = parse_roadmap(plan.body)
+  </tool_result>
+  <thinking>Now let me look at how `PlannedPRPlanListService.get_plan_list_data` calls `list_plan_prs_with_details` - specifically what labels it passes for the Plans vs Learn tabs.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="13500" cache_read_input_tokens="47946" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13500}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check the plan list service to see how the Learn vs Plans split works.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="13500" cache_read_input_tokens="47946" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13500}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Qx6tq2B6Sg54EcYUx5R4jT">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/core/services/plan_list_service.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="13500" cache_read_input_tokens="47946" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13500}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Qx6tq2B6Sg54EcYUx5R4jT">
+     1→"""Service for efficiently fetching plan list data via batched API calls.
+     2→
+     3→Uses GraphQL nodes(ids: [...]) for O(1) batch lookup of workflow runs (~200ms for any N).
+     4→All plan issues store last_dispatched_node_id in the plan-header metadata block.
+     5→
+     6→Performance optimization: When PR linkages are needed, uses unified GraphQL query via
+     7→get_issues_with_pr_linkages() to fetch issues + PR linkages in a single API call (~600ms),
+     8→instead of separate calls for issues (~500ms) and PR linkages (~1500ms).
+     9→"""
+    10→
+    11→import logging
+    12→
+    13→from erk_shared.core.plan_list_service import PlanListData as PlanListData
+    14→from erk_shared.core.plan_list_service import PlanListService
+    15→from erk_shared.gateway.github.abc import GitHub
+    16→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    17→from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_dispatch_info
+    18→from erk_shared.gateway.github.types import (
+    19→    GitHubRepoLocation,
+    20→    WorkflowRun,
+    21→)
+    22→from erk_shared.plan_store.conversion import issue_info_to_plan, pr_details_to_plan
+    23→from erk_shared.plan_store.planned_pr_lifecycle import (
+    24→    extract_plan_content,
+    25→    has_original_plan_section,
+    26→)
+    27→
+    28→
+    29→class PlannedPRPlanListService(PlanListService):
+    30→    """Plan list service for planned-PR-backed plans.
+
+... [175 lines omitted] ...
+
+   111→            except Exception as e:
+   112→                logging.warning("Failed to fetch workflow runs: %s", e)
+   195→                except Exception as e:
+   196→                    # Network/API failure - continue without workflow run data
+   198→                    logging.warning("Failed to fetch workflow runs: %s", e)
+  </tool_result>
+  <thinking>Now I have the complete picture. Let me also check how the tabs are configured - what labels each uses, and how the learn/plans split works.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2999" cache_read_input_tokens="61446" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2999}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check the view configuration to see how tabs pass labels.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2999" cache_read_input_tokens="61446" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2999}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01CkpG7GGzPLkSnyymDTATpS">
+    <param name="pattern">erk-learn|erk-plan|ViewConfig|view_config|LEARN|PLANS</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/tui/views/types.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2999" cache_read_input_tokens="61446" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2999}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CkpG7GGzPLkSnyymDTATpS">
+12:    PLANS = auto()
+13:    LEARN = auto()
+18:class ViewConfig:
+34:PLANS_VIEW = ViewConfig(
+35:    mode=ViewMode.PLANS,
+37:    labels=("erk-plan",),
+41:LEARN_VIEW = ViewConfig(
+42:    mode=ViewMode.LEARN,
+44:    labels=("erk-plan",),
+48:OBJECTIVES_VIEW = ViewConfig(
+55:VIEW_CONFIGS: tuple[ViewConfig, ...] = (PLANS_VIEW, LEARN_VIEW, OBJECTIVES_VIEW)
+57:_VIEW_CONFIG_BY_MODE: dict[ViewMode, ViewConfig] = {config.mode: config for config in VIEW_CONFIGS}
+60:def get_view_config(mode: ViewMode) -&gt; ViewConfig:
+61:    """Look up the ViewConfig for a given mode.
+67:        The corresponding ViewConfig
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01M5RbVznwJct9hnp8mRSRFv">
+    <param name="pattern">is_learn_plan|erk-learn</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/tui/</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2999" cache_read_input_tokens="61446" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2999}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01M5RbVznwJct9hnp8mRSRFv">
+src/erk/tui/app.py:327:            return [r for r in rows if r.is_learn_plan]
+src/erk/tui/app.py:329:            return [r for r in rows if not r.is_learn_plan]
+src/erk/tui/data/types.py:88:        is_learn_plan: Whether this is a learn plan (has [erk-learn] prefix).
+src/erk/tui/data/types.py:144:    is_learn_plan: bool
+  </tool_result>
+  <tool_use name="Read" id="toolu_017XYLA7K5VjpweeMoe9ESww">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/views/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="815" cache_read_input_tokens="64445" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 815, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017XYLA7K5VjpweeMoe9ESww">
+     1→"""View mode types for TUI dashboard."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from dataclasses import dataclass
+     6→from enum import Enum, auto
+     7→
+     8→
+     9→class ViewMode(Enum):
+    10→    """Available view modes for the dashboard."""
+    11→
+    12→    PLANS = auto()
+    13→    LEARN = auto()
+    14→    OBJECTIVES = auto()
+    15→
+    16→
+    17→@dataclass(frozen=True)
+    18→class ViewConfig:
+    19→    """Configuration for a specific view mode.
+    20→
+    21→    Attributes:
+    22→        mode: The view mode this config describes
+    23→        display_name: Human-readable name for the view
+    24→        labels: GitHub labels to use when fetching data
+    25→        key_hint: Key binding hint (e.g., "1", "2", "3")
+    26→    """
+    27→
+    28→    mode: ViewMode
+    29→    display_name: str
+    30→    labels: tuple[str, ...]
+
+... [72 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have the full picture. Let me also look at the client-side filtering that happens in app.py around lines 327-329.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3013" cache_read_input_tokens="65260" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3013}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HYXrTwN2BZYmWB2xtJibac">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/app.py</param>
+    <param name="offset">315</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3013" cache_read_input_tokens="65260" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3013}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HYXrTwN2BZYmWB2xtJibac">
+   315→        """Filter rows based on view mode.
+   316→
+   317→        Plans view excludes learn plans; Learn view includes only learn plans.
+   318→
+   319→        Args:
+   320→            rows: Raw rows to filter
+   321→            mode: The active view mode
+   322→
+   323→        Returns:
+   324→            Filtered rows for the given view
+   325→        """
+   326→        if mode == ViewMode.LEARN:
+   327→            return [r for r in rows if r.is_learn_plan]
+   328→        if mode == ViewMode.PLANS:
+   329→            return [r for r in rows if not r.is_learn_plan]
+   330→        return rows
+   331→
+   332→    def _notify_with_severity(self, message: str, severity: str | None) -&gt; None:
+   333→        """Wrapper for notify that handles optional severity.
+   334→
+   335→        Args:
+   336→            message: The notification message
+   337→            severity: Optional severity level, uses default if None
+   338→        """
+   339→        if severity is None:
+   340→            self.notify(message)
+   341→        else:
+   342→            # Ensure severity is one of the valid values expected by Textual
+   343→            from textual.app import SeverityLevel
+   344→
+  </tool_result>
+  <assistant>Now I have the complete picture. Let me also check the ABC for `list_plan_prs_with_details` and the existing fake/dry_run implementations.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="607" cache_read_input_tokens="68273" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 607}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01KKHZ9xwc1Ndm4TSN1AHd3R">
+    <param name="pattern">def list_plan_prs_with_details</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="607" cache_read_input_tokens="68273" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 607}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KKHZ9xwc1Ndm4TSN1AHd3R">
+packages/erk-shared/src/erk_shared/gateway/github/printing.py:221:    def list_plan_prs_with_details(
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:413:    def list_plan_prs_with_details(
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1620:    def list_plan_prs_with_details(
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:723:    def list_plan_prs_with_details(
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:203:    def list_plan_prs_with_details(
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01RY8coQP2pFi5FhzbuhFb3G">
+    <param name="pattern">class.*GitHub\b.*ABC|class RealGitHub|class FakeGitHub|class DryRunGitHub|class PrintingGitHub</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="607" cache_read_input_tokens="68273" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 607}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RY8coQP2pFi5FhzbuhFb3G">
+packages/erk-shared/src/erk_shared/gateway/github/printing.py:29:class PrintingGitHub(PrintingBase, GitHub):
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:27:class GitHub(ABC):
+packages/erk-shared/src/erk_shared/gateway/github/issues/real.py:25:class RealGitHubIssues(GitHubIssues):
+packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py:18:class FakeGitHubIssues(GitHubIssues):
+packages/erk-shared/src/erk_shared/gateway/github/issues/dry_run.py:16:class DryRunGitHubIssues(GitHubIssues):
+packages/erk-shared/src/erk_shared/gateway/github/real.py:81:class RealGitHub(GitHub):
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:35:class FakeGitHub(GitHub):
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:22:class DryRunGitHub(GitHub):
+  </tool_result>
+  <assistant>Good. Now I have everything needed. Let me write the comprehensive plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="960" cache_read_input_tokens="68880" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 960}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01EmQ3DviK7vSUa5qSaGNnmM">
+    <param name="file_path">/Users/schrockn/.claude/plans/streamed-leaping-floyd.md</param>
+    <param name="content"># Fix: Speed up `erk dash` Plans and Learn tabs
+
+## Context
+
+Both the **Plans** and **Lear...[truncated 5713 chars]... plans, Learn tab shows only learn plans
+5. Verify author filtering still works correctly
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="960" cache_read_input_tokens="68880" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 960}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EmQ3DviK7vSUa5qSaGNnmM">
+File created successfully at: /Users/schrockn/.claude/plans/streamed-leaping-floyd.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01MnrrmSaK8wcBRZ34sGK679">
+    <param name="plan"># Fix: Speed up `erk dash` Plans and Learn tabs
+
+## Context
+
+Both the **Plans** and **Lear...[truncated 5713 chars]... plans, Learn tab shows only learn plans
+5. Verify author filtering still works correctly
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2053" cache_read_input_tokens="69840" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2053}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MnrrmSaK8wcBRZ34sGK679">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/streamed-leaping-floyd.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix: Speed up `erk dash` Plans and Learn tabs
+Current context: (wt:erk) (br:master) (plan:#7977)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 4aeaa9ea-4424-4400-aa6c-7acd2aadbe91 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Fix: Speed up `erk dash` Plans and Learn tabs
+
+## Context
+
+Both the **Plans** and **Learn** tabs in `erk dash` are slow. Two independent bottlenecks:
+
+1. **Author filtering is client-side** — `GET_PLAN_PRS_WITH_DETAILS_QUERY` uses `repository.pullRequests`, which has no `author` parameter (confirmed by GitHub GraphQL schema AND the `gh` CLI source at `/Users/schrockn/code/githubs/cli`). All PRs are fetched, then filtered at `real.py:1696`. In a repo with 30 erk-plan PRs across 3 authors, you download 30 PRs but display 10.
+
+2. **Learn issue states are fetched sequentially** — `_fetch_learn_issue_states()` (`plan_data_provider/real.py:210`) makes N sequential `gh api` subprocess+REST calls, each ~250-400ms. With 10 learn issues = 2.5-4 seconds.
+
+Additionally, **both tabs fetch identical data** — Plans and Learn both query `labels=("erk-plan",)` and split client-side at `app.py:327-329` based on `is_learn_plan`. This means the Learn tab downloads all non-learn plans and discards them, and vice versa.
+
+## Approach
+
+### Fix 1: Switch to GraphQL `search` for server-side author + label filtering
+
+The `gh` CLI itself uses this exact approach (`pkg/cmd/pr/list/http.go:13-15`): when author filtering is needed, it switches from `repository.pullRequests` to `search(type: ISSUE)`. We do the same.
+
+The search query pushes author, learn/non-learn split, AND label filtering server-side:
+- **Plans tab**: `repo:owner/name is:pr is:open label:erk-plan -label:erk-learn author:X`
+- **Learn tab**: `repo:owner/name is:pr is:open label:erk-plan label:erk-learn author:X`
+- **No author filter**: `repo:owner/name is:pr is:open label:erk-plan -label:erk-learn` (still eliminates cross-tab waste)
+
+All PR fields (`reviewThreads`, `statusCheckRollup`, `mergeable`, `body`, etc.) remain available via `... on PullRequest` fragment. Same rate-limit cost (1 point). 1,000 result cap is irrelevant for per-author, per-label queries.
+
+### Fix 2: Batch learn issue state fetching via aliased GraphQL query
+
+Replace N sequential REST calls with one dynamically-constructed GraphQL query:
+```graphql
+query($owner: String!, $repo: String!) {
+  repository(owner: $owner, name: $repo) {
+    issue_123: issue(number: 123) { number state }
+    issue_456: issue(number: 456) { number state }
+  }
+}
+```
+
+## Files to modify (14 files)
+
+**Search-based query (Fix 1):** `graphql_queries.py`, `abc.py`, `real.py`, `fake.py`, `dry_run.py`, `printing.py`, `views/types.py`, `plan_list_service.py`, `app.py`
+
+**Learn issue batching (Fix 2):** `issues/abc.py`, `issues/real.py`, `issues/fake.py`, `issues/dry_run.py`, `plan_data_provider/real.py`
+
+## Implementation order
+
+1. **Fix 2 first** (learn issue batching) — smaller, isolated, easy to verify
+2. **Fix 1 second** (search-based query) — larger, touches more files, higher impact
+
+## Verification
+
+1. Run existing tests for plan data provider, issues gateway, and GitHub gateway
+2. Run `erk dash` — both tabs should load noticeably faster
+3. Verify learn issue states still display correctly
+4. Verify Plans tab shows only non-learn plans, Learn tab shows only learn plans
+5. Verify author filtering still works correctly
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="665" cache_read_input_tokens="71893" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 665}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01LLExq1Yje3hXRQwS63aYjP">
+    <param name="questions">[{'question': '📋 Fix: Speed up `erk dash` Plans and Learn tabs\nCurrent context: (wt:erk) ...[truncated 442 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="665" cache_read_input_tokens="71893" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 665}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LLExq1Yje3hXRQwS63aYjP">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+  <user>more context:
+
+  ⎿  Received 962.2KB (200 OK)
+
+● There it is. You're exactly right.
+
+  REST GET /repos/{owner}/{repo}/issues has a creator parameter AND returns PRs (GitHub treats every PR as an issue). PRs are identified by having a
+  pull_request key in the response.
+
+  So there are actually three viable approaches now:
+
+  Option A: GraphQL search (1 API call)
+
+  Server-side author + label + negative label filtering. Returns full PR fields via ... on PullRequest fragment.
+
+  Option B: REST issues endpoint (1-2 API calls)
+
+  GET /repos/{owner}/{repo}/issues?creator=username&amp;labels=erk-plan&amp;state=open
+  - Has creator param — server-side author filtering
+  - Has labels param — server-side label filtering
+  - Returns PRs too (identified by pull_request key)
+  - But: response is flat — no reviewThreads, no statusCheckRollup, no mergeable
+  - Would need a second GraphQL call to enrich with rich PR fields
+
+  Option C: REST issues list → GraphQL enrichment (2 API calls)
+
+  1. REST: get filtered PR numbers (fast, small payload)
+  2. GraphQL: aliased pullRequest(number: N) queries for rich data
+
+  The comparison:
+
+  ┌────────────────────────┬───────────┬──────────────────┬──────────────┬────────────────┬───────────────────────┬────────────────────┐
+  │        Approach        │ API Calls │  Author Filter   │ Label Filter │ Negative Label │      Rich Fields      │     Complexity     │
+  ├────────────────────────┼───────────┼──────────────────┼──────────────┼────────────────┼───────────────────────┼────────────────────┤
+  │ Current (pullRequests) │ 1         │ No (client-side) │ Yes          │ No             │ Yes                   │ Low                │
+  ├────────────────────────┼───────────┼──────────────────┼──────────────┼────────────────┼───────────────────────┼────────────────────┤
+  │ search                 │ 1         │ Yes              │ Yes          │ Yes (-label:)  │ Yes                   │ Medium (new query) │
+  ├────────────────────────┼───────────┼──────────────────┼──────────────┼────────────────┼───────────────────────┼────────────────────┤
+  │ REST issues            │ 1         │ Yes              │ Yes          │ No             │ No (needs enrichment) │ Medium             │
+  ├────────────────────────┼───────────┼──────────────────┼──────────────┼────────────────┼───────────────────────┼────────────────────┤
+  │ REST → GraphQL         │ 2         │ Yes              │ Yes          │ No             │ Yes                   │ High               │
+  └────────────────────────┴───────────┴──────────────────┴──────────────┴────────────────┴───────────────────────┴────────────────────┘
+
+  search wins — it's 1 call, full rich fields, supports negative labels (for the Plans/Learn split), and same rate-limit cost. The REST issues approach is
+  viable but requires either a second call for enrichment or giving up on rich fields like reviewThreads and statusCheckRollup.
+
+  Shall I update the plan with the search-based approach?
+
+edit plan to do option C</user>
+  <assistant>
+
+Let me re-read the plan file and update it.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3559" cache_read_input_tokens="72558" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3559}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XhfsJamBbuJq9t7uqWEMQb">
+    <param name="file_path">/Users/schrockn/.claude/plans/streamed-leaping-floyd.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3559" cache_read_input_tokens="72558" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3559}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+</session>

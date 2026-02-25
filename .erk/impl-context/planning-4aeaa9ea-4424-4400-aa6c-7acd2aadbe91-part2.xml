@@ -1,0 +1,748 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01XhfsJamBbuJq9t7uqWEMQb">
+     1→# Fix: Speed up `erk dash` Plans and Learn tabs
+     2→
+     3→## Context
+     4→
+     5→Both the **Plans** and **Learn** tabs in `erk dash` are slow. Two independent bottlenecks:
+     6→
+     7→1. **Author filtering is client-side** — `GET_PLAN_PRS_WITH_DETAILS_QUERY` uses `repository.pullRequests`, which has no `author` parameter (confirmed by GitHub GraphQL schema AND the `gh` CLI source at `/Users/schrockn/code/githubs/cli`). All PRs are fetched, then filtered at `real.py:1696`. In a repo with 30 erk-plan PRs across 3 authors, you download 30 PRs but display 10.
+     8→
+     9→2. **Learn issue states are fetched sequentially** — `_fetch_learn_issue_states()` (`plan_data_provider/real.py:210`) makes N sequential `gh api` subprocess+REST calls, each ~250-400ms. With 10 learn issues = 2.5-4 seconds.
+    10→
+    11→Additionally, **both tabs fetch identical data** — Plans and Learn both query `labels=("erk-plan",)` and split client-side at `app.py:327-329` based on `is_learn_plan`. This means the Learn tab downloads all non-learn plans and discards them, and vice versa.
+    12→
+    13→## Approach
+    14→
+    15→### Fix 1: Switch to GraphQL `search` for server-side author + label filtering
+    16→
+    17→The `gh` CLI itself uses this exact approach (`pkg/cmd/pr/list/http.go:13-15`): when author filtering is needed, it switches from `repository.pullRequests` to `search(type: ISSUE)`. We do the same.
+    18→
+    19→The search query pushes author, learn/non-learn split, AND label filtering server-side:
+    20→- **Plans tab**: `repo:owner/name is:pr is:open label:erk-plan -label:erk-learn author:X`
+    21→- **Learn tab**: `repo:owner/name is:pr is:open label:erk-plan label:erk-learn author:X`
+    22→- **No author filter**: `repo:owner/name is:pr is:open label:erk-plan -label:erk-learn` (still eliminates cross-tab waste)
+    23→
+    24→All PR fields (`reviewThreads`, `statusCheckRollup`, `mergeable`, `body`, etc.) remain available via `... on PullRequest` fragment. Same rate-limit cost (1 point). 1,000 result cap is irrelevant for per-author, per-label queries.
+    25→
+    26→### Fix 2: Batch learn issue state fetching via aliased GraphQL query
+    27→
+    28→Replace N sequential REST calls with one dynamically-constructed GraphQL query:
+    29→```graphql
+    30→query($owner: String!, $repo: String!) {
+
+... [72 lines omitted] ...
+  </tool_result>
+  <thinking>The user wants Option C: REST issues list → GraphQL enrichment (2 API calls). Let me understand the approach:
+
+1. Step 1: REST `GET /repos/{owner}/{repo}/issues?creator=username&amp;labels=erk-plan&amp;state=open` — this returns issues+PRs filtered server-side by author and labels. PRs are identified by having a `pull_request` key.
+2. Step 2: GraphQL aliased `pullRequest(number: N)` queries for rich data (reviewThreads, statusCheckRollup, mergeable, etc.)
+
+This avoids the `search` API entirely and uses the REST issues endpoint for filtering, then enriches with GraphQL.
+
+
+Now I'm thinking through how to split between learn and non-learn tabs. The REST endpoint supports AND logic with multiple labels, so I can query `labels=erk-plan,erk-learn` for the learn tab directly. For the plans tab, I'd need to either query just `erk-plan` and filter out `erk-learn` client-side, or make a separate call. Since PRs are returned as a subtype of issues in the REST endpoint, the erk-plan PRs (which are drafts) will show up in the results.
+
+The real advantage here is using the `creator` parameter for author filtering server-side, which reduces the data I need to handle. Once I have the filtered results, I'll need to enrich them with review thread counts and status check information from the GraphQL API.
+
+Looking at what the REST endpoint actually provides, I'm missing several fields that matter for the UI: draft status, mergeability, merge state, cross-repository info, status checks, and review threads. So I'll need to batch those GraphQL queries using aliases to fetch all the enrichment data efficiently.
+
+Writing GraphQL enrichment queries... Now I'm mapping out what the REST endpoint gives us versus what we need to fetch separately through GraphQL. The REST issues endpoint covers the basic PR metadata like number, title, body, and state, but for the merge-related details—draft status, mergeability, review threads, and status checks—we'll need to make targeted GraphQL queries to fill in those gaps.
+
+I should also account for pagination since REST returns results in pages, and I need to decide whether to use the Link headers or just request a larger batch upfront. Looking at the existing code, there's already a `get_issue` method for single issues, so I might be able to build on that pattern for listing. For the Plans and Learn tabs, I can use label filtering on the REST side—fetch `erk-plan` for Plans and filter out `erk-learn` client-side, while the Learn tab can request both labels at once for cleaner server-side filtering.
+
+The real efficiency gain here is doing author filtering server-side and then filtering by label before the GraphQL enrichment step, so I'm only enriching the PRs that actually belong in each tab. Since REST already returns labels, I can filter those out immediately without waiting for the enrichment call. I've decided to go with the REST issues endpoint filtered for PRs client-side—it's the cleanest approach since we can just check for the `pull_request` key and discard anything that doesn't have it. Now I'm writing out the implementation plan.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2458" cache_read_input_tokens="76117" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2458}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me look at the existing REST issues usage to understand the patterns already in place.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2458" cache_read_input_tokens="76117" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2458}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_012K1tmhwkEc6nFrJgoCkqYa">
+    <param name="pattern">repos/.*issues\?|/repos/.*issues.*labels|list_issues|get_issues</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2458" cache_read_input_tokens="76117" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2458}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012K1tmhwkEc6nFrJgoCkqYa">
+packages/erk-shared/src/erk_shared/gateway/github/printing.py:266:    def get_issues_with_pr_linkages(
+packages/erk-shared/src/erk_shared/gateway/github/printing.py:276:        return self._wrapped.get_issues_with_pr_linkages(
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:323:    def get_issues_with_pr_linkages(
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:167:    def get_issues_with_pr_linkages(
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:177:        return self._wrapped.get_issues_with_pr_linkages(
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:94:            issues_data: List of IssueInfo objects for get_issues_with_pr_linkages()
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:592:    def get_issues_with_pr_linkages(
+packages/erk-shared/src/erk_shared/gateway/github/issues/abc.py:109:    def list_issues(
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1159:    def get_issues_with_pr_linkages(
+packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py:272:    def list_issues(
+packages/erk-shared/src/erk_shared/gateway/github/issues/dry_run.py:64:    def list_issues(
+packages/erk-shared/src/erk_shared/gateway/github/issues/dry_run.py:73:        return self._wrapped.list_issues(
+packages/erk-shared/src/erk_shared/gateway/github/issues/real.py:256:    def list_issues(
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01PuTqHSQo5cgFYc8DmkbaoL">
+    <param name="pattern">HttpClient|http_client</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/http/abc.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2458" cache_read_input_tokens="76117" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2458}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PuTqHSQo5cgFYc8DmkbaoL">
+12:class HttpClient(ABC):
+  </tool_result>
+  <tool_use name="Read" id="toolu_01438nvZsQirc2ji247Qwzzj">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/http/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2673" cache_read_input_tokens="78575" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2673}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01438nvZsQirc2ji247Qwzzj">
+     1→"""HTTP client abstraction for dependency injection.
+     2→
+     3→This module provides an ABC for HTTP client operations to enable
+     4→testing without actual network calls and to improve TUI responsiveness
+     5→by avoiding subprocess overhead.
+     6→"""
+     7→
+     8→from abc import ABC, abstractmethod
+     9→from typing import Any
+    10→
+    11→
+    12→class HttpClient(ABC):
+    13→    """Abstract HTTP client for dependency injection.
+    14→
+    15→    This is a minimal interface designed for TUI operations that need
+    16→    fast HTTP calls without subprocess overhead. It focuses on JSON APIs.
+    17→    """
+    18→
+    19→    @abstractmethod
+    20→    def patch(
+    21→        self,
+    22→        endpoint: str,
+    23→        *,
+    24→        data: dict[str, Any],
+    25→    ) -&gt; dict[str, Any]:
+    26→        """Send a PATCH request to the API.
+    27→
+    28→        Args:
+    29→            endpoint: API endpoint path (e.g., "repos/owner/repo/issues/123")
+    30→            data: JSON body to send
+
+... [70 lines omitted] ...
+
+    36→            HttpError: If the request fails
+    57→            HttpError: If the request fails
+    75→            HttpError: If the request fails
+    80→class HttpError(Exception):
+    81→    """Exception raised when an HTTP request fails."""
+    90→        """Create an HttpError.
+    94→            message: Error message
+  </tool_result>
+  <tool_use name="Read" id="toolu_014LRpTZGDFMYUijYApgFP6h">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/real.py</param>
+    <param name="offset">256</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2673" cache_read_input_tokens="78575" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2673}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014LRpTZGDFMYUijYApgFP6h">
+   256→    def list_issues(
+   257→        self,
+   258→        *,
+   259→        repo_root: Path,
+   260→        labels: list[str] | None = None,
+   261→        state: str | None = None,
+   262→        limit: int | None = None,
+   263→    ) -&gt; list[IssueInfo]:
+   264→        """Query issues using gh CLI REST API.
+   265→
+   266→        Uses REST API instead of GraphQL to avoid hitting GraphQL rate limits.
+   267→        The {owner}/{repo} placeholders are auto-substituted by gh CLI.
+   268→
+   269→        Note: Uses gh's native error handling - gh CLI raises RuntimeError
+   270→        on failures (not installed, not authenticated).
+   271→        """
+   272→        # Build REST API endpoint with query parameters
+   273→        endpoint = "repos/{owner}/{repo}/issues"
+   274→        params: list[str] = []
+   275→
+   276→        if labels:
+   277→            # REST API accepts comma-separated labels
+   278→            params.append(f"labels={','.join(labels)}")
+   279→
+   280→        if state:
+   281→            params.append(f"state={state}")
+   282→
+   283→        if limit is not None:
+   284→            params.append(f"per_page={limit}")
+   285→
+
+... [30 lines omitted] ...
+  </tool_result>
+  <thinking>Now I see the existing `list_issues` method already does REST issues fetching with labels and state filtering. It doesn't have a `creator` parameter yet, but that's easy to add. It also doesn't filter out PRs (items with `pull_request` key).
+
+For Option C, the approach is:
+1. Add `creator` parameter to `list_issues` REST call 
+2. Use that to get filtered PR numbers (the REST issues endpoint returns PRs too since GitHub treats PRs as issues)
+3. GraphQL aliased `pullRequest(number: N)` to enrich with rich PR fields
+
+Wait, but the existing `list_issues` returns `IssueInfo` objects, and we need `PRDetails`. 
+
+So I'd need to modify `list_issues` to accept a `creator` parameter and filter for items with the `pull_request` key, then use a dynamic GraphQL query with aliased `pullRequest` fields to fetch the full PR details and map them into `PRDetails` and `PullRequestInfo` objects.
+
+I'm considering whether to use the existing `HttpClient` directly instead of the `gh api` subprocess for the initial filtering step, but since `list_issues` already lives in the `GitHubIssues` gateway and uses `gh api`, it makes sense to keep that pattern consistent rather than mixing HTTP clients. The flow would be: `PlannedPRPlanListService.get_plan_list_data()` calls into the GitHub service to fetch the filtered PRs with full details.
+
+For the implementation, I think the cleanest approach is to add a new method on the `GitHub` gateway that handles the entire flow internally—first calling the REST issues endpoint with creator and label filters, then enriching those results with a dynamic GraphQL query to get the full PR details. This keeps everything cohesive in one place rather than splitting the logic across multiple gateways.
+
+On the learn versus non-learn split, the REST API supports AND filtering with multiple labels, so the learn tab can use `labels=erk-plan,erk-learn` directly. For the plans tab, I can request just `labels=erk-plan` and then filter out any items with the erk-learn label on the client side—or better yet, do that filtering before the GraphQL enrichment step to avoid wasting calls on learn PRs. The existing `list_issues` method doesn't currently filter out issues, so I'll need to handle that distinction in the new implementation.
+
+I'm also considering whether to use `HttpClient` instead of `gh api` for the REST call, but `gh api` is fine for a single call. The real performance gains come from server-side author filtering, potentially server-side label filtering for the learn tab, and batching the GraphQL enrichment queries instead of running them individually.
+
+The tradeoff is that Option C (REST + GraphQL) only wins over the current single GraphQL call if author filtering significantly reduces the dataset—say from 30 PRs down to 10. Without that filtering, two calls might be slower than one. So maybe I should conditionally use Option C only when author filtering is active, and stick with the current approach otherwise. Though in practice, users almost always filter by their own username in erk, and even without filtering, the REST call is fast and the GraphQL step only needs to enrich the actual PRs returned.
+
+I'll go ahead with Option C as requested. The main implementation detail is that `HttpClient.get()` returns `dict[str, Any]`, which can't represent a JSON array from the REST issues endpoint. I could either use `gh api` directly (which handles arrays fine and is consistent with the existing `list_issues` method) or extend `HttpClient` with a `get_list` method. Using `gh api` is simpler.
+
+Now let me write out the plan.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1990" cache_read_input_tokens="81248" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1990}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, the existing `list_issues` in `issues/real.py:256` already does REST issues with labels/state filtering — it just lacks a `creator` parameter. Now let me update the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1990" cache_read_input_tokens="81248" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1990}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01VjaSV4ttsbYexTR4nGt7EB">
+    <param name="file_path">/Users/schrockn/.claude/plans/streamed-leaping-floyd.md</param>
+    <param name="content"># Fix: Speed up `erk dash` Plans and Learn tabs
+
+## Context
+
+Both the **Plans** and **Lear...[truncated 6261 chars]... non-learn plans, Learn tab shows only learn plans
+5. Verify author filtering still works
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1990" cache_read_input_tokens="81248" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1990}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VjaSV4ttsbYexTR4nGt7EB">
+The file /Users/schrockn/.claude/plans/streamed-leaping-floyd.md has been updated successfully.
+  </tool_result>
+  <assistant>Plan updated to Option C (REST issues list → GraphQL enrichment). The key insight is that `list_issues` in `issues/real.py:256` already does REST issues with labels/state — we just need to add the `creator` parameter. Then a second batched GraphQL call enriches the filtered results with rich PR fields (`reviewThreads`, `statusCheckRollup`, `mergeable`, etc.) that REST doesn't return.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3755" cache_read_input_tokens="83238" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3755}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01QbH7hJs9rzcz8qjgdyAV9B">
+    <param name="plan"># Fix: Speed up `erk dash` Plans and Learn tabs
+
+## Context
+
+Both the **Plans** and **Lear...[truncated 6261 chars]... non-learn plans, Learn tab shows only learn plans
+5. Verify author filtering still works
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3755" cache_read_input_tokens="83238" output_tokens="135" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3755, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QbH7hJs9rzcz8qjgdyAV9B">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/streamed-leaping-floyd.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix: Speed up `erk dash` Plans and Learn tabs
+Current context: (wt:erk) (br:master) (plan:#7977)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 4aeaa9ea-4424-4400-aa6c-7acd2aadbe91 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01PrtpkUbXUQPso734N9DcKL">
+    <param name="questions">[{'question': '📋 Fix: Speed up `erk dash` Plans and Learn tabs\nCurrent context: (wt:erk) ...[truncated 442 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="857" cache_read_input_tokens="86993" output_tokens="235" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 857, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PrtpkUbXUQPso734N9DcKL">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+  <user>✻ Worked for 55s
+
+❯ do we even need the learn states? i thought we dropped that from this display
+
+⏺ Good question. Let me check what the TUI actually displays.
+
+⏺ Searched for 16 patterns (ctrl+o to expand)
+
+⏺ You're right to question this. learn_display_icon is not rendered in any table column in the TUI. It's only used in:
+
+  1. Plan detail modal (plan_detail_screen.py:788-805) — distinguishes ✅ (closed) vs 📋 (open) for learn plan issues
+  2. erkweb/erkdesk — desktop/web views
+
+  The _fetch_learn_issue_states() call only determines whether learn_plan_issue_closed is True vs False, which controls ✅ vs 📋 icon. If we skip it
+  entirely, learn_plan_issue_closed would be None and it'd always show 📋.
+
+  So the options are:
+
+  1. Drop it entirely — remove _fetch_learn_issue_states(), always show 📋 (simplest, eliminates all N API calls)
+  2. Batch it — replace N calls with 1 GraphQL call (current plan)
+  3. Lazy-load it — only fetch when the detail modal opens (deferred cost)
+
+  Which direction do you want to go?
+
+we don't need the learn states. drop them in the plan</user>
+  <tool_use name="Read" id="toolu_01XrGBHpHtNgdnHVpTUrfWXY">
+    <param name="file_path">/Users/schrockn/.claude/plans/streamed-leaping-floyd.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="927" cache_read_input_tokens="87850" output_tokens="74" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 927, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XrGBHpHtNgdnHVpTUrfWXY">
+     1→# Fix: Speed up `erk dash` Plans and Learn tabs
+     2→
+     3→## Context
+     4→
+     5→Both the **Plans** and **Learn** tabs in `erk dash` are slow. Two independent bottlenecks:
+     6→
+     7→1. **Author filtering is client-side** — `GET_PLAN_PRS_WITH_DETAILS_QUERY` uses `repository.pullRequests`, which has no `author` parameter (confirmed by GitHub GraphQL schema AND the `gh` CLI source). All PRs are fetched then filtered at `real.py:1696`. In a repo with 30 erk-plan PRs across 3 authors, you download 30 bodies but display 10.
+     8→
+     9→2. **Learn issue states are fetched sequentially** — `_fetch_learn_issue_states()` (`plan_data_provider/real.py:210`) makes N sequential `gh api` subprocess+REST calls, each ~250-400ms.
+    10→
+    11→Additionally, **both tabs fetch identical data** — Plans and Learn both query `labels=("erk-plan",)` and split client-side at `app.py:327-329` based on `is_learn_plan`.
+    12→
+    13→## Approach: REST issues list → GraphQL enrichment (Option C)
+    14→
+    15→Two-step approach that leverages the REST issues endpoint's `creator` parameter for server-side author filtering, then enriches only the matching PRs with a batched GraphQL query.
+    16→
+    17→### Step 1: REST issues list (server-side filtering)
+    18→
+    19→`GET /repos/{owner}/{repo}/issues?creator=X&amp;labels=erk-plan&amp;state=open`
+    20→
+    21→The REST issues endpoint supports `creator` for server-side author filtering AND returns PRs (GitHub treats PRs as issues — items with `pull_request` key). This filters author server-side, reducing the result set before any heavy data fetching.
+    22→
+    23→- **Plans tab**: `labels=erk-plan`, then client-side filter out items with `erk-learn` label (before enrichment step)
+    24→- **Learn tab**: `labels=erk-plan,erk-learn` — perfect server-side (REST labels param is AND)
+    25→- REST response includes labels, so learn/non-learn filtering happens before the expensive GraphQL call
+    26→
+    27→### Step 2: GraphQL enrichment (batched)
+    28→
+    29→For the N PR numbers from step 1, build a single aliased GraphQL query:
+    30→```graphql
+
+... [94 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Ed7MRFZpy6bYTY7NGksrVf">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/streamed-leaping-floyd.md</param>
+    <param name="old_string">2. **Learn issue states are fetched sequentially** — `_fetch_learn_issue_states()` (`plan_...[truncated 155 chars]...`labels=("erk-plan",)` and split client-side at `app.py:327-329` based on `is_learn_plan`.</param>
+    <param name="new_string">2. **Learn issue states are fetched but unused** — `_fetch_learn_issue_states()` (`plan_da...[truncated 248 chars]...`labels=("erk-plan",)` and split client-side at `app.py:327-329` based on `is_learn_plan`.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2526" cache_read_input_tokens="88777" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2526}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ed7MRFZpy6bYTY7NGksrVf">
+The file /Users/schrockn/.claude/plans/streamed-leaping-floyd.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01EKY65jfBW8DtssKCkPAayd">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/streamed-leaping-floyd.md</param>
+    <param name="old_string">### Fix 2: Batch learn issue state fetching
+
+Same as before — replace N sequential REST calls with one aliased GraphQL query for issue states.</param>
+    <param name="new_string">### Fix 2: Drop learn issue state fetching entirely
+
+Remove `_fetch_learn_issue_states()` ...[truncated 165 chars]...osed` is always `None` and learn display falls back to 📋 (open icon), which is acceptable.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="408" cache_read_input_tokens="91303" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 408}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EKY65jfBW8DtssKCkPAayd">
+The file /Users/schrockn/.claude/plans/streamed-leaping-floyd.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_013G4pNjBy155eYHuFCa5733">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/streamed-leaping-floyd.md</param>
+    <param name="old_string">### Fix 2: Learn issue batching
+
+#### 11. `packages/erk-shared/src/erk_shared/gateway/gith...[truncated 645 chars]...date `_fetch_learn_issue_states()` to call `get_issue_states()` instead of sequential loop</param>
+    <param name="new_string">### Fix 2: Drop learn issue state fetching
+
+#### 11. `packages/erk-shared/src/erk_shared/g...[truncated 232 chars]...uild_row_data` (or remove the parameter)
+- Remove `IssueNotFound` import if no longer used</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="297" cache_read_input_tokens="91711" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 297}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013G4pNjBy155eYHuFCa5733">
+The file /Users/schrockn/.claude/plans/streamed-leaping-floyd.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01TU7nKtcihbhYMUJJZY88Pp">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/streamed-leaping-floyd.md</param>
+    <param name="old_string">## Implementation order
+
+1. **Fix 2 first** (learn issue batching) — smaller, isolated, ea...[truncated 307 chars]...y non-learn plans, Learn tab shows only learn plans
+5. Verify author filtering still works</param>
+    <param name="new_string">## Implementation order
+
+1. **Fix 2 first** (drop learn issue states) — pure deletion, imm...[truncated 245 chars]...y non-learn plans, Learn tab shows only learn plans
+4. Verify author filtering still works</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="698" cache_read_input_tokens="92008" output_tokens="371" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 698, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TU7nKtcihbhYMUJJZY88Pp">
+The file /Users/schrockn/.claude/plans/streamed-leaping-floyd.md has been updated successfully.
+  </tool_result>
+  <assistant>Done. Fix 2 is now a pure deletion — remove `_fetch_learn_issue_states()` and all the collection/passing of learn issue states. No new gateway methods, no batching complexity. Just delete the N sequential API calls.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="410" cache_read_input_tokens="92706" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 410}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01L3FEoAasxLzCZB7Awfzs8Y">
+    <param name="plan"># Fix: Speed up `erk dash` Plans and Learn tabs
+
+## Context
+
+Both the **Plans** and **Lear...[truncated 6102 chars]... non-learn plans, Learn tab shows only learn plans
+4. Verify author filtering still works
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="410" cache_read_input_tokens="92706" output_tokens="92" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 410, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01L3FEoAasxLzCZB7Awfzs8Y">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/streamed-leaping-floyd.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix: Speed up `erk dash` Plans and Learn tabs
+Current context: (wt:erk) (br:master) (plan:#7977)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 4aeaa9ea-4424-4400-aa6c-7acd2aadbe91 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01YQ3vU3GDZEWGLExetGxjQM">
+    <param name="questions">[{'question': '📋 Fix: Speed up `erk dash` Plans and Learn tabs\nCurrent context: (wt:erk) ...[truncated 442 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="719" cache_read_input_tokens="93116" output_tokens="235" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 719, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YQ3vU3GDZEWGLExetGxjQM">
+User has answered your questions: "📋 Fix: Speed up `erk dash` Plans and Learn tabs
+Current context: (wt:erk) (br:master) (plan:#7977)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01RjsaN3ZS8kdmqSqPbRRQ8S">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="324" cache_read_input_tokens="93835" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 324, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RjsaN3ZS8kdmqSqPbRRQ8S">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+```
+
+Objective linking is automatic: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command.
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+- **Issue backend** (`PLAN_BACKEND = "github"`): Creates a GitHub issue. Metadata in the issue body, plan content in the first comment.
+
+The JSON output contract is the same for both backends (`plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`).
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` flag:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+```
+
+### Step 1.5: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 2: Run Save Command
+
+Run this command with the session ID, branch slug, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="4aeaa9ea-4424-4400-aa6c-7acd2aadbe91" --branch-slug="${BRANCH_SLUG}" ${PLAN_TYPE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 3.
+
+If the command fails, display the error and stop.
+
+### Step 3: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 2.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close &lt;"draft PR" if plan_backend=="draft_pr", else "issue"&gt; #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 3.5: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "4aeaa9ea-4424-4400-aa6c-7acd2aadbe91" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "" --status in_progress
+```
+
+This atomically fetches the issue body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 4: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below (using the `plan_backend` field to choose the correct format).
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 3, 3.5 above if not already executed).
+
+**Otherwise, on success**, display based on `plan_backend` from JSON output:
+
+**Header (both backends):**
+
+```
+Plan "&lt;title&gt;" saved as &lt;"draft PR" if plan_backend=="draft_pr", else "issue"&gt; #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block (used by both backends below):**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**If `plan_backend` is `"draft_pr"`:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**If `plan_backend` is `"github"` (or absent):**
+
+```
+Next steps:
+
+View Issue: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+  Plan review: /erk:plan-review — Submit plan as PR for human review before implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+## Session Tracking
+
+After successfully saving a plan, the issue number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved issue number:**
+
+```bash
+erk exec marker read --session-id "4aeaa9ea-4424-4400-aa6c-7acd2aadbe91" plan-saved-issue
+```
+
+This returns the issue number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <thinking>The user chose to create a plan PR. I need to follow the plan-save skill instructions. Let me:
+
+1. Parse arguments - no special flags
+2. Generate a branch slug from the plan title
+3. Run the save command
+4. Display results
+
+The plan title is "Fix: Speed up `erk dash` Plans and Learn tabs". Let me generate a slug: "speedup-dash-loading" or "fix-dash-pr-loading" - something like that.
+
+Let me follow the steps.
+
+Step 1: No --plan-type flag, so PLAN_TYPE_FLAG is empty.
+
+Step 1.5: The plan title is "Fix: Speed up `erk dash` Plans and Learn tabs". 
+
+I'll go with "speedup-dash-loading" as the branch slug, then execute the save command.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="2419" cache_read_input_tokens="94159" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2419}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <assistant>Running the plan save command.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2419" cache_read_input_tokens="94159" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2419}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BH9JwyaJUKy9BYshnJLCcL">
+    <param name="command">erk exec plan-save --format json --session-id="4aeaa9ea-4424-4400-aa6c-7acd2aadbe91" --branch-slug="speedup-dash-loading"</param>
+    <param name="description">Save plan to GitHub as draft PR</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2419" cache_read_input_tokens="94159" output_tokens="378" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2419, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BH9JwyaJUKy9BYshnJLCcL">
+{"success": true, "plan_number": 8168, "plan_url": "https://github.com/dagster-io/erk/pull/8168", "title": "[erk-plan] Fix: Speed up `erk dash` Plans and Learn tabs", "branch_name": "plnd/speedup-dash-loading-02-25-0543", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/4aeaa9ea-4424-4400-aa6c-7acd2aadbe91/plan_snapshots/000001-4544fce6"}
+  </tool_result>
+  <assistant>Plan "Fix: Speed up `erk dash` Plans and Learn tabs" saved as draft PR #8168
+URL: https://github.com/dagster-io/erk/pull/8168
+
+**Next steps:**
+
+View PR: https://github.com/dagster-io/erk/pull/8168
+
+In Claude Code:
+  Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: `erk br co --new-slot --for-plan 8168`
+    Implement: `source "$(erk br co --new-slot --for-plan 8168 --script)" &amp;&amp; erk implement --dangerous`
+
+  Same slot:
+    Local: `erk br co --for-plan 8168`
+    Implement: `source "$(erk br co --for-plan 8168 --script)" &amp;&amp; erk implement --dangerous`
+
+  Dispatch to Queue: `erk pr dispatch 8168`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="659" cache_read_input_tokens="96578" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 659}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;See ya!&lt;/local-command-stdout&gt;</user>
+</session>
