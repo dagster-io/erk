@@ -112,6 +112,7 @@ def duplicate_check_plan(
         labels=["erk-planned-pr", "erk-plan"],
         state="open",
         skip_workflow_runs=True,
+        http_client=None,
     )
     existing_plans = plan_data.plans
 

@@ -37,26 +37,30 @@ class RealHttpClient(HttpClient):
             "X-GitHub-Api-Version": "2022-11-28",
         }
 
-    def patch(
+    def _make_request(
         self,
+        method: str,
         endpoint: str,
         *,
-        data: dict[str, Any],
-    ) -> dict[str, Any]:
-        """Send a PATCH request to the API.
+        json_data: dict[str, Any] | None,
+    ) -> httpx.Response:
+        """Send an HTTP request and raise on error.
 
         Args:
+            method: HTTP method (GET, POST, PATCH)
             endpoint: API endpoint path
-            data: JSON body to send
+            json_data: Optional JSON body to send
 
         Returns:
-            Response JSON as a dictionary
+            httpx Response object
 
         Raises:
-            HttpError: If the request fails
+            HttpError: If the response status code is >= 400
         """
         url = f"{self._base_url}/{endpoint.lstrip('/')}"
-        response = httpx.patch(url, json=data, headers=self._build_headers(), timeout=30.0)
+        response = httpx.request(
+            method, url, json=json_data, headers=self._build_headers(), timeout=30.0
+        )
 
         if response.status_code >= 400:
             raise HttpError(
@@ -65,7 +69,16 @@ class RealHttpClient(HttpClient):
                 endpoint=endpoint,
             )
 
-        return response.json()
+        return response
+
+    def patch(
+        self,
+        endpoint: str,
+        *,
+        data: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Send a PATCH request to the API."""
+        return self._make_request("PATCH", endpoint, json_data=data).json()
 
     def post(
         self,
@@ -73,53 +86,34 @@ class RealHttpClient(HttpClient):
         *,
         data: dict[str, Any],
     ) -> dict[str, Any]:
-        """Send a POST request to the API.
-
-        Args:
-            endpoint: API endpoint path
-            data: JSON body to send
-
-        Returns:
-            Response JSON as a dictionary
-
-        Raises:
-            HttpError: If the request fails
-        """
-        url = f"{self._base_url}/{endpoint.lstrip('/')}"
-        response = httpx.post(url, json=data, headers=self._build_headers(), timeout=30.0)
-
-        if response.status_code >= 400:
-            raise HttpError(
-                status_code=response.status_code,
-                message=response.text,
-                endpoint=endpoint,
-            )
-
-        return response.json()
+        """Send a POST request to the API."""
+        return self._make_request("POST", endpoint, json_data=data).json()
 
     def get(
         self,
         endpoint: str,
     ) -> dict[str, Any]:
-        """Send a GET request to the API.
+        """Send a GET request to the API."""
+        return self._make_request("GET", endpoint, json_data=None).json()
 
-        Args:
-            endpoint: API endpoint path
+    def get_list(
+        self,
+        endpoint: str,
+    ) -> list[dict[str, Any]]:
+        """Send a GET request expecting a JSON array response."""
+        return self._make_request("GET", endpoint, json_data=None).json()
 
-        Returns:
-            Response JSON as a dictionary
+    def graphql(
+        self,
+        *,
+        query: str,
+        variables: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Execute a GraphQL query via POST /graphql."""
+        payload = {"query": query, "variables": variables}
+        return self._make_request("POST", "graphql", json_data=payload).json()
 
-        Raises:
-            HttpError: If the request fails
-        """
-        url = f"{self._base_url}/{endpoint.lstrip('/')}"
-        response = httpx.get(url, headers=self._build_headers(), timeout=30.0)
-
-        if response.status_code >= 400:
-            raise HttpError(
-                status_code=response.status_code,
-                message=response.text,
-                endpoint=endpoint,
-            )
-
-        return response.json()
+    @property
+    def supports_direct_api(self) -> bool:
+        """RealHttpClient can make real API calls."""
+        return True

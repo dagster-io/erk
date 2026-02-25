@@ -3,9 +3,16 @@
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal, TypedDict
 
 PRState = Literal["OPEN", "MERGED", "CLOSED"]
+
+MergeableStatus = Literal["MERGEABLE", "CONFLICTING", "UNKNOWN"]
+
+
+class StatusCheckRollupData(TypedDict, total=False):
+    state: str
+    contexts: dict[str, Any]
 
 
 def _epoch_sentinel() -> datetime:
@@ -130,7 +137,7 @@ class PRDetails:
     is_cross_repository: bool
 
     # Mergeability
-    mergeable: str  # "MERGEABLE", "CONFLICTING", "UNKNOWN"
+    mergeable: MergeableStatus
     merge_state_status: str  # "CLEAN", "BLOCKED", "UNSTABLE", "DIRTY"
 
     # Metadata
