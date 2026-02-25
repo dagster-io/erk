@@ -48,8 +48,8 @@ class TestSlackHandlers(unittest.IsolatedAsyncioTestCase):
 
         await handler(event, say, client)
 
-        say.assert_any_call("Running `erk plan list`...", thread_ts="1.23")
-        say.assert_any_call("Result from `erk plan list`:", thread_ts="1.23")
+        say.assert_any_call("Running `erk pr list`...", thread_ts="1.23")
+        say.assert_any_call("Result from `erk pr list`:", thread_ts="1.23")
 
     async def test_one_shot_missing_message(self) -> None:
         handler = self.app.event_handlers["app_mention"]

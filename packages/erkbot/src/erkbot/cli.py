@@ -9,6 +9,7 @@ from erk_shared.gateway.time.real import RealTime
 from erkbot.agent.bot import ErkBot
 from erkbot.app import create_app
 from erkbot.config import Settings
+from erkbot.prompts import get_erk_system_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ async def _run() -> None:
                 model=settings.erk_model,
                 max_turns=settings.max_turns,
                 cwd=repo_path,
-                system_prompt="You are erk-bot, an AI assistant for the erk project.",
+                system_prompt=get_erk_system_prompt(repo_root=repo_path),
                 permission_mode="bypassPermissions",
             )
         else:

@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from erkbot.agent.bot import ErkBot
 
 SUPPORTED_COMMANDS_TEXT = (
-    "Supported commands: `@erk plan list`, `@erk chat <message>`, `@erk one-shot <message>`."
+    "Supported commands: `@erk pr list`, `@erk chat <message>`, `@erk one-shot <message>`."
 )
 
 
@@ -216,12 +216,12 @@ def register_handlers(app, *, settings: Settings, bot: ErkBot | None, time: Time
         command = parse_erk_command(text)
 
         if isinstance(command, PlanListCommand):
-            await say("Running `erk plan list`...", thread_ts=reply_thread_ts)
+            await say("Running `erk pr list`...", thread_ts=reply_thread_ts)
             result = await run_erk_plan_list()
             status_line = (
-                "Result from `erk plan list`:"
+                "Result from `erk pr list`:"
                 if result.exit_code == 0
-                else f"`erk plan list` failed (exit {result.exit_code}):"
+                else f"`erk pr list` failed (exit {result.exit_code}):"
             )
             logger.info(
                 "reply: channel=%s command=plan-list exit_code=%d", channel, result.exit_code
