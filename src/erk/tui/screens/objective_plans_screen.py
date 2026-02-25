@@ -1,13 +1,14 @@
 """Modal screen displaying plans associated with an objective."""
 
-from textual import work
+from textual import on, work
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Label
 
-from erk.tui.data.types import PlanRowData
+from erk.tui.data.types import PlanFilters, PlanRowData
+from erk.tui.widgets.plan_table import PlanDataTable
 from erk_shared.gateway.github.metadata.roadmap import parse_roadmap
 from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
 
@@ -24,32 +25,15 @@ def _extract_plan_ids_from_roadmap(body: str) -> set[int]:
     Returns:
         Set of plan issue numbers referenced in the roadmap
     """
-    phases, _errors = parse_roadmap(body)
+    phases, _ = parse_roadmap(body)
     plan_ids: set[int] = set()
     for phase in phases:
         for node in phase.nodes:
             if node.pr is not None:
-                pr_str = node.pr.lstrip("#")
+                pr_str = node.pr[1:] if node.pr.startswith("#") else node.pr
                 if pr_str.isdigit():
                     plan_ids.add(int(pr_str))
     return plan_ids
-
-
-def _format_plan_rows(plans: list[PlanRowData]) -> list[str]:
-    """Format plan rows as display strings.
-
-    Args:
-        plans: List of PlanRowData objects to format
-
-    Returns:
-        List of formatted strings, one per plan
-    """
-    lines: list[str] = []
-    for plan in plans:
-        pr_part = f"  PR {plan.pr_display}" if plan.pr_number is not None else ""
-        state_part = f"  {plan.pr_state}" if plan.pr_state is not None else ""
-        lines.append(f"#{plan.plan_id}  {plan.full_title}{pr_part}{state_part}")
-    return lines
 
 
 class ObjectivePlansScreen(ModalScreen):
@@ -59,6 +43,13 @@ class ObjectivePlansScreen(ModalScreen):
         Binding("escape", "dismiss", "Close"),
         Binding("q", "dismiss", "Close"),
         Binding("space", "dismiss", "Close"),
+        Binding("j", "cursor_down", "Down", show=False),
+        Binding("k", "cursor_up", "Up", show=False),
+        Binding("o", "open_issue", "Open issue", show=False),
+        Binding("enter", "open_issue", "Open issue", show=False),
+        Binding("p", "open_pr", "Open PR", show=False),
+        Binding("left", "noop", show=False),
+        Binding("right", "noop", show=False),
     ]
 
     DEFAULT_CSS = """
@@ -121,12 +112,6 @@ class ObjectivePlansScreen(ModalScreen):
         color: $error;
         text-style: italic;
     }
-
-    .obj-plan-row {
-        width: 100%;
-        height: auto;
-        padding: 0 1;
-    }
     """
 
     def __init__(
@@ -153,6 +138,7 @@ class ObjectivePlansScreen(ModalScreen):
         self._objective_title = objective_title
         self._progress_display = progress_display
         self._objective_body = objective_body
+        self._rows: list[PlanRowData] = []
 
     def compose(self) -> ComposeResult:
         """Create the objective plans dialog content."""
@@ -172,11 +158,14 @@ class ObjectivePlansScreen(ModalScreen):
 
             with Container(id="obj-plans-content-container"):
                 yield Label("Loading plans...", id="obj-plans-loading")
+                yield PlanDataTable(PlanFilters.default())
 
             yield Label("Press Esc, q, or Space to close", id="obj-plans-footer")
 
     def on_mount(self) -> None:
         """Fetch plans when screen mounts."""
+        table = self.query_one(PlanDataTable)
+        table.display = False
         self._fetch_plans()
 
     @work(thread=True)
@@ -213,7 +202,93 @@ class ObjectivePlansScreen(ModalScreen):
         if error is not None:
             container.mount(Label(f"Error: {error}", id="obj-plans-error"))
         elif plans:
-            for line in _format_plan_rows(plans):
-                container.mount(Label(line, classes="obj-plan-row", markup=False))
+            self._rows = plans
+            table = self.query_one(PlanDataTable)
+            table.populate(plans)
+            table.display = True
+            table.focus()
         else:
             container.mount(Label("(No plans found for this objective)", id="obj-plans-empty"))
+
+    def action_noop(self) -> None:
+        """No-op action to intercept left/right arrows."""
+
+    def action_cursor_down(self) -> None:
+        """Move cursor down (vim j key)."""
+        table = self.query_one(PlanDataTable)
+        table.action_cursor_down()
+
+    def action_cursor_up(self) -> None:
+        """Move cursor up (vim k key)."""
+        table = self.query_one(PlanDataTable)
+        table.action_cursor_up()
+
+    def _get_selected_row(self) -> PlanRowData | None:
+        """Get the PlanRowData for the currently selected row.
+
+        Returns:
+            PlanRowData for selected row, or None if no selection
+        """
+        table = self.query_one(PlanDataTable)
+        return table.get_selected_row_data()
+
+    def action_open_issue(self) -> None:
+        """Open selected plan's issue in browser."""
+        row = self._get_selected_row()
+        if row is not None and row.plan_url:
+            self._provider.browser.launch(row.plan_url)
+
+    def action_open_pr(self) -> None:
+        """Open selected plan's PR in browser."""
+        row = self._get_selected_row()
+        if row is not None and row.pr_url:
+            self._provider.browser.launch(row.pr_url)
+
+    @on(PlanDataTable.PlanClicked)
+    def on_plan_clicked(self, event: PlanDataTable.PlanClicked) -> None:
+        """Handle click on plan cell - open issue in browser."""
+        if event.row_index < len(self._rows):
+            row = self._rows[event.row_index]
+            if row.plan_url:
+                self._provider.browser.launch(row.plan_url)
+
+    @on(PlanDataTable.PrClicked)
+    def on_pr_clicked(self, event: PlanDataTable.PrClicked) -> None:
+        """Handle click on pr cell - open PR in browser."""
+        if event.row_index < len(self._rows):
+            row = self._rows[event.row_index]
+            if row.pr_url:
+                self._provider.browser.launch(row.pr_url)
+
+    @on(PlanDataTable.RunIdClicked)
+    def on_run_id_clicked(self, event: PlanDataTable.RunIdClicked) -> None:
+        """Handle click on run-id cell - open run URL in browser."""
+        if event.row_index < len(self._rows):
+            row = self._rows[event.row_index]
+            if row.run_url:
+                self._provider.browser.launch(row.run_url)
+
+    @on(PlanDataTable.LocalWtClicked)
+    def on_local_wt_clicked(self, event: PlanDataTable.LocalWtClicked) -> None:
+        """Handle click on local-wt cell - copy worktree name to clipboard."""
+        if event.row_index < len(self._rows):
+            row = self._rows[event.row_index]
+            if row.worktree_name:
+                success = self._provider.clipboard.copy(row.worktree_name)
+                if success:
+                    self.notify(f"Copied: {row.worktree_name}", timeout=2)
+                else:
+                    self.notify("Clipboard unavailable", severity="error", timeout=2)
+
+    @on(PlanDataTable.BranchClicked)
+    def on_branch_clicked(self, event: PlanDataTable.BranchClicked) -> None:
+        """Handle click on branch cell - copy branch name to clipboard."""
+        if event.row_index < len(self._rows):
+            row = self._rows[event.row_index]
+            branch = row.pr_head_branch or row.worktree_branch
+            if branch:
+                success = self._provider.clipboard.copy(branch)
+                if success:
+                    self.notify(f"Copied: {branch}", timeout=2)
+                else:
+                    self.notify("Clipboard unavailable", severity="error", timeout=2)
