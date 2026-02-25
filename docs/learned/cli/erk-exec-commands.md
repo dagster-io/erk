@@ -145,7 +145,7 @@ erk exec setup-impl                           # Auto-detect from .impl/, branch,
 - `--file` - Local markdown file path
 - `--branch-slug` - Pre-computed branch slug (avoids LLM inference in exec layer)
 
-**Output:** JSON with `success`, `impl_path`, `plan_number`, `branch`, `has_plan_tracking`, `related_docs`
+**Output:** JSON with `success`, `source`, `plan_number`, `has_plan_tracking`, `impl_type`, `valid`, `related_docs`
 
 #### setup-impl-from-issue
 

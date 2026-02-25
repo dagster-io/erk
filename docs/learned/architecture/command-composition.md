@@ -49,8 +49,8 @@ See `_validate_impl_folder()` in `src/erk/cli/commands/exec/scripts/impl_init.py
 Orchestrator commands emit multiple JSON objects as they execute sub-commands. Each line is a complete JSON object. The calling agent parses them sequentially:
 
 ```json
-{"success": true, "impl_path": "/path/.impl", "plan_number": 123}
-{"cleaned": true, "reason": "impl-context removed"}
+{"success": true, "source": "issue", "plan_number": 123, "has_plan_tracking": true}
+{"cleaned": true}
 {"success": true, "source": "issue", "has_plan_tracking": true, "valid": true}
 ```
 
