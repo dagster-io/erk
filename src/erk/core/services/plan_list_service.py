@@ -284,6 +284,7 @@ class PlannedPRPlanListService(PlanListService):
 
         return (plans, node_id_to_plan)
 
+
 class RealPlanListService(PlanListService):
     """Service for efficiently fetching plan list data.
 

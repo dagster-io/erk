@@ -703,29 +703,36 @@ class TestPlannedPRPlanListService:
             response=[rest_item],
         )
         # Configure enrichment with specific review thread data
-        client.set_response("graphql", response={"data": {"repository": {
-            "pr_70": {
-                "isDraft": True,
-                "mergeable": "MERGEABLE",
-                "mergeStateStatus": "CLEAN",
-                "isCrossRepository": False,
-                "baseRefName": "main",
-                "headRefName": "plan-branch",
-                "statusCheckRollup": {
-                    "state": "SUCCESS",
-                    "contexts": {
-                        "totalCount": 3,
-                        "checkRunCountsByState": [{"state": "SUCCESS", "count": 3}],
-                        "statusContextCountsByState": [],
-                    },
-                },
-                "reviewThreads": {
-                    "totalCount": 2,
-                    "nodes": [{"isResolved": True}, {"isResolved": False}],
-                },
-                "reviewDecision": "APPROVED",
+        client.set_response(
+            "graphql",
+            response={
+                "data": {
+                    "repository": {
+                        "pr_70": {
+                            "isDraft": True,
+                            "mergeable": "MERGEABLE",
+                            "mergeStateStatus": "CLEAN",
+                            "isCrossRepository": False,
+                            "baseRefName": "main",
+                            "headRefName": "plan-branch",
+                            "statusCheckRollup": {
+                                "state": "SUCCESS",
+                                "contexts": {
+                                    "totalCount": 3,
+                                    "checkRunCountsByState": [{"state": "SUCCESS", "count": 3}],
+                                    "statusContextCountsByState": [],
+                                },
+                            },
+                            "reviewThreads": {
+                                "totalCount": 2,
+                                "nodes": [{"isResolved": True}, {"isResolved": False}],
+                            },
+                            "reviewDecision": "APPROVED",
+                        },
+                    }
+                }
             },
-        }}})
+        )
         service = PlannedPRPlanListService(FakeGitHub(), time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
