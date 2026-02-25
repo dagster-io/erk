@@ -1,5 +1,9 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Delete GitHubPlanStore and PlanStore ABC (Objective #7911, Node 3.1)",
+  "plan_id": "8141",
+  "url": "https://github.com/dagster-io/erk/pull/8141",
+  "created_at": "2026-02-25T05:28:50.525943",
+  "synced_at": "2026-02-25T05:28:50.525943",
+  "labels": [],
   "objective_id": 7911
 }
