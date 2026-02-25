@@ -53,9 +53,9 @@ def duplicate_check_plan(
         1: Duplicates found, already implemented, or error
 
     Examples:
-        erk plan duplicate-check --plan 200
-        erk plan duplicate-check --file plan.md
-        cat plan.md | erk plan duplicate-check
+        erk pr duplicate-check --plan 200
+        erk pr duplicate-check --file plan.md
+        cat plan.md | erk pr duplicate-check
     """
     # Validate mutual exclusivity of --plan and --file
     if plan is not None and file is not None:

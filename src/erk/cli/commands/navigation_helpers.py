@@ -32,7 +32,7 @@ def check_pending_learn_marker(worktree_path: Path, force: bool) -> None:
 
     This provides friction before worktree deletion to ensure insights are
     extracted from the session logs. The marker is created by `erk pr land`
-    and deleted by `erk plan learn raw`.
+    and deleted by `erk learn`.
 
     Args:
         worktree_path: Path to the worktree being deleted
@@ -52,7 +52,7 @@ def check_pending_learn_marker(worktree_path: Path, force: bool) -> None:
 
     user_output(
         click.style("Error: ", fg="red") + "Worktree has pending learn.\n"
-        "Run: erk plan learn raw\n"
+        "Run: erk learn\n"
         "Or use --force to skip learn."
     )
     raise SystemExit(1)
