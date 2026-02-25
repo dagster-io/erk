@@ -3,10 +3,14 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
+import pytest
+
 from erk.cli.commands.pr.metadata_helpers import maybe_update_plan_dispatch_metadata
 from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.metadata.core import render_metadata_block
+from erk_shared.gateway.github.metadata.types import MetadataBlock
 from erk_shared.gateway.time.fake import FakeTime
 from tests.commands.dispatch.conftest import create_plan, make_plan_body
 from tests.test_utils.plan_helpers import create_plan_store_with_plans
@@ -94,3 +98,29 @@ def test_update_successful_writes_metadata(tmp_path: Path) -> None:
     assert "last_dispatched_run_id: run-42" in updated_body
     assert "last_dispatched_node_id: WFR_fake_node_id_run-42" in updated_body
     assert "2024-06-15T12:00:00+00:00" in updated_body
+
+
+def _make_incomplete_plan_body() -> str:
+    """Create a plan body with incomplete plan-header (only schema_version)."""
+    incomplete_data = {"schema_version": "2"}
+    header_block = render_metadata_block(MetadataBlock("plan-header", incomplete_data))
+    return f"{header_block}\n\n# Plan\n\nImplementation details..."
+
+
+def test_update_incomplete_metadata_skips_update(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Plan-header with schema_version but missing created_at/created_by skips update."""
+    repo = _make_repo(tmp_path)
+    plan = create_plan("789", "Test plan", body=_make_incomplete_plan_body())
+    plan_store, fake_github = create_plan_store_with_plans({"789": plan})
+    _register_branch_alias(fake_github, "789", "P789-fix-bug")
+    ctx = context_for_test(cwd=repo.root, plan_store=plan_store, repo=repo)
+
+    maybe_update_plan_dispatch_metadata(ctx, repo, "P789-fix-bug", "run-99")
+
+    assert fake_github.updated_pr_bodies == []
+    captured = capsys.readouterr()
+    assert "incomplete plan-header" in captured.err
+    assert "created_at" in captured.err
+    assert "created_by" in captured.err
