@@ -469,11 +469,12 @@ def test_erk_impl_workflow_artifacts() -> None:
     cap = ErkImplWorkflowCapability()
     artifacts = cap.artifacts
 
-    assert len(artifacts) == 3
+    assert len(artifacts) == 4
     paths = [a.path for a in artifacts]
     assert ".github/workflows/plan-implement.yml" in paths
     assert ".github/actions/setup-claude-code/" in paths
     assert ".github/actions/setup-claude-erk/" in paths
+    assert ".github/actions/erk-remote-setup/" in paths
 
 
 def test_erk_impl_workflow_is_installed(tmp_path: Path) -> None:
@@ -1843,12 +1844,13 @@ def test_workflow_capability_managed_artifacts() -> None:
     cap = ErkImplWorkflowCapability()
     managed = cap.managed_artifacts
 
-    # Workflow + 2 actions
-    assert len(managed) == 3
+    # Workflow + 3 actions
+    assert len(managed) == 4
     names = {(a.name, a.artifact_type) for a in managed}
     assert ("plan-implement", "workflow") in names
     assert ("setup-claude-code", "action") in names
     assert ("setup-claude-erk", "action") in names
+    assert ("erk-remote-setup", "action") in names
 
 
 def test_hooks_capability_managed_artifacts() -> None:
