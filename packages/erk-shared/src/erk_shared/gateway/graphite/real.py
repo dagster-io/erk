@@ -163,10 +163,11 @@ class RealGraphite(Graphite):
         # Get all branch heads from git in a single call for enrichment
         all_heads = git_ops.branch.get_all_branch_heads(repo_root)
         branches_data = data.get("branches", [])
-        git_branch_heads = {}
-        for branch_name, _ in branches_data:
-            if isinstance(branch_name, str) and branch_name in all_heads:
-                git_branch_heads[branch_name] = all_heads[branch_name]
+        git_branch_heads = {
+            branch_name: all_heads[branch_name]
+            for branch_name, _ in branches_data
+            if isinstance(branch_name, str) and branch_name in all_heads
+        }
 
         # parse_graphite_cache expects JSON string, so convert back
         self._branches_cache = parse_graphite_cache(json.dumps(data), git_branch_heads)

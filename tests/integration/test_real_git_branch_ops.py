@@ -200,3 +200,55 @@ def test_delete_branch_idempotent_when_branch_missing(
 
     # Assert: No error was raised, operation succeeded
     # (If we got here, the test passed)
+
+
+def test_get_all_branch_heads_returns_all_branches(
+    git_branch_ops: GitBranchOpsSetup,
+) -> None:
+    """Test that get_all_branch_heads returns SHAs for all local branches."""
+    branch_ops, git, repo = git_branch_ops
+
+    # Arrange: Create two feature branches with commits
+    subprocess.run(["git", "checkout", "-b", "feature-a"], cwd=repo, check=True)
+    (repo / "a.txt").write_text("feature a", encoding="utf-8")
+    subprocess.run(["git", "add", "a.txt"], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-m", "Feature A commit"], cwd=repo, check=True)
+
+    subprocess.run(["git", "checkout", "-b", "feature-b"], cwd=repo, check=True)
+    (repo / "b.txt").write_text("feature b", encoding="utf-8")
+    subprocess.run(["git", "add", "b.txt"], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-m", "Feature B commit"], cwd=repo, check=True)
+
+    subprocess.run(["git", "checkout", "main"], cwd=repo, check=True)
+
+    # Act
+    heads = branch_ops.get_all_branch_heads(repo)
+
+    # Assert: All three branches are present
+    assert "main" in heads
+    assert "feature-a" in heads
+    assert "feature-b" in heads
+
+    # Assert: SHAs match git rev-parse --short
+    for branch_name in ["main", "feature-a", "feature-b"]:
+        expected = subprocess.run(
+            ["git", "rev-parse", "--short", branch_name],
+            cwd=repo,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        assert heads[branch_name] == expected.stdout.strip()
+
+
+def test_get_all_branch_heads_returns_empty_on_non_repo(tmp_path: Path) -> None:
+    """Test that get_all_branch_heads returns empty dict for non-repo directory."""
+    branch_ops = RealGitBranchOps()
+    not_a_repo = tmp_path / "not-a-repo"
+    not_a_repo.mkdir()
+
+    # Act: Call on a directory that is not a git repo (git will fail with non-zero exit)
+    heads = branch_ops.get_all_branch_heads(not_a_repo)
+
+    # Assert: Graceful degradation returns empty dict
+    assert heads == {}
