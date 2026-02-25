@@ -1,0 +1,42 @@
+{
+  "success": true,
+  "pr_number": 8150,
+  "threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5wq9Vj",
+      "path": "src/erk/cli/commands/exec/scripts/ci_update_pr_body.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplification**: Intermediate variable `metadata_block` is created and used much later (line 294). This violates the 'Declare Variables Close to Use' principle. Consider simplifying:\n\n```python\n# Current\nmetadata_block = plan_header_block_raw\nif metadata_block.endswith(PLAN_CONTENT_SEPARATOR):\n    metadata_block = metadata_block[: -len(PLAN_CONTENT_SEPARATOR)]\n# ... lines later ...\npr_body = summary_body + original_plan_section + \"\\n\\n\" + metadata_block\n\n# Simplified\nstripped = plan_header_block_raw\nif stripped.endswith(PLAN_CONTENT_SEPARATOR):\n    stripped = stripped[: -len(PLAN_CONTENT_SEPARATOR)]\npr_body = summary_body + original_plan_section + \"\\n\\n\" + stripped\n``` \n\nThis moves the declaration and use closer together. - [Dignified Python: Declare Variables Close to Use](docs/learned/conventions.md#declare-variables-close-to-use)",
+          "created_at": "2026-02-25T13:08:26Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed in 3beeb93: moved `metadata_block` declaration closer to use and replaced manual endswith/slice with `removesuffix()`.\n\n_Addressed via `/erk:pr-address` at 2026-02-25 05:54 PST_",
+          "created_at": "2026-02-25T13:54:03Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wq9ar",
+      "path": "src/erk/cli/commands/pr/shared.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplification**: Intermediate variable `stripped` is created and used on the next line within the same conditional block. Consider using the ternary operator to compute the value inline:\n\n```python\n# Current\nif plan_header_block:\n    stripped = plan_header_block\n    if stripped.endswith(PLAN_CONTENT_SEPARATOR):\n        stripped = stripped[: -len(PLAN_CONTENT_SEPARATOR)]\n    suffix = \"\\n\\n\" + stripped\n\n# Simplified  \nif plan_header_block:\n    header_block = (\n        plan_header_block[: -len(PLAN_CONTENT_SEPARATOR)]\n        if plan_header_block.endswith(PLAN_CONTENT_SEPARATOR)\n        else plan_header_block\n    )\n    suffix = \"\\n\\n\" + header_block\n```\n\nThis eliminates the intermediate variable by computing the value where it's needed. - [Dignified Python: Declare Variables Close to Use](docs/learned/conventions.md#declare-variables-close-to-use)",
+          "created_at": "2026-02-25T13:08:32Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed in 3beeb93: eliminated `stripped` variable by inlining `removesuffix()` directly into the suffix assignment.\n\n_Addressed via `/erk:pr-address` at 2026-02-25 05:54 PST_",
+          "created_at": "2026-02-25T13:54:05Z"
+        }
+      ]
+    }
+  ]
+}
