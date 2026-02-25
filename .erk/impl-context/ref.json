@@ -1,4 +1,9 @@
 {
   "provider": "github-draft-pr",
-  "title": "Fix: Objective #7978 Display Shows All Dashes Due to `status: '-'`"
+  "plan_id": "8225",
+  "url": "https://github.com/dagster-io/erk/pull/8225",
+  "created_at": "2026-02-25T14:31:02.140293",
+  "synced_at": "2026-02-25T14:31:02.140293",
+  "labels": [],
+  "objective_id": null
 }
