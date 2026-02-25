@@ -30,7 +30,7 @@ Rules triggered by matching actions in code.
 
 **adding an ACTION command that executes instantly** → Read [TUI Command Architecture](action-inventory.md) first. ACTION category implies mutative operations. Instant operations belong in OPEN or COPY categories.
 
-**adding emoji with Unicode variation selector (\ufe0f) to status indicators** → Read [TUI Status Indicators](status-indicators.md) first. Variation selector forces double-wide rendering in terminals, breaking column alignment. Current safe emoji: 🚧 👀 💥 ✔ ❌ 🚀. Test any new emoji in terminal before adding.
+**adding emoji with Unicode variation selector (\ufe0f) to status indicators** → Read [TUI Status Indicators](status-indicators.md) first. Variation selector forces double-wide rendering in terminals, breaking column alignment. Current safe emoji: 🥞 🚧 👀 💥 ✔ ❌ 🚀. Test any new emoji in terminal before adding.
 
 **adding or reordering PlanDataTable columns** → Read [Column Addition Pattern](column-addition-pattern.md) first. TUI column index cascade: adding or reordering columns invalidates ALL test assertions using column indices. Run a systematic grep for column-index assertions (e.g., row[N]) before and after the change. Update every affected test file.
 
