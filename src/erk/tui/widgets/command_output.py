@@ -15,7 +15,7 @@ class CommandOutputPanel(Static):
     DEFAULT_CSS = """
     CommandOutputPanel {
         height: auto;
-        max-height: 15;
+        max-height: 25;
         background: $surface-darken-1;
         border-top: solid $primary;
         padding: 0 1;
@@ -29,7 +29,7 @@ class CommandOutputPanel(Static):
 
     CommandOutputPanel #output-log {
         height: auto;
-        max-height: 10;
+        max-height: 20;
         scrollbar-gutter: stable;
     }
 
