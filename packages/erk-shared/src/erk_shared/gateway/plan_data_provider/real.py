@@ -19,7 +19,6 @@ from erk.tui.sorting.types import BranchActivity
 from erk_shared.gateway.browser.abc import BrowserLauncher
 from erk_shared.gateway.clipboard.abc import Clipboard
 from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
-from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
     extract_objective_from_comment,
     extract_objective_header_comment_id,
@@ -136,6 +135,7 @@ class RealPlanDataProvider(PlanDataProvider):
                 limit=filters.limit,
                 skip_workflow_runs=not needs_workflow_runs,
                 creator=filters.creator,
+                exclude_labels=list(filters.exclude_labels) if filters.exclude_labels else None,
             )
         else:
             # Objectives use a dedicated service that always fetches via issues,
@@ -153,16 +153,6 @@ class RealPlanDataProvider(PlanDataProvider):
 
         # Use pre-converted Plan objects from PlanListData
         plans = plan_data.plans
-
-        # First pass: collect learn_plan_issue numbers for batch fetch
-        learn_issue_numbers: set[int] = set()
-        for plan in plans:
-            learn_plan_issue = header_int(plan.header_fields, LEARN_PLAN_ISSUE)
-            if learn_plan_issue is not None:
-                learn_issue_numbers.add(learn_plan_issue)
-
-        # Batch fetch learn issue states
-        learn_issue_states = self._fetch_learn_issue_states(learn_issue_numbers)
 
         # Transform to PlanRowData
         rows: list[PlanRowData] = []
@@ -189,33 +179,10 @@ class RealPlanDataProvider(PlanDataProvider):
                 workflow_run=workflow_run,
                 worktree_by_plan_id=worktree_by_plan_id,
                 use_graphite=use_graphite,
-                learn_issue_states=learn_issue_states,
             )
             rows.append(row)
 
         return rows
-
-    def _fetch_learn_issue_states(
-        self,
-        issue_numbers: set[int],
-    ) -> dict[int, bool]:
-        """Batch fetch issue closed states for learn plan issues.
-
-        Args:
-            issue_numbers: Set of issue numbers to fetch
-
-        Returns:
-            Mapping of issue number to is_closed (True if closed, False if open)
-        """
-        result: dict[int, bool] = {}
-        for issue_number in issue_numbers:
-            issue_info = self._ctx.github.issues.get_issue(self._location.root, issue_number)
-            if isinstance(issue_info, IssueNotFound):
-                # Issue not found - log and skip
-                logger.debug("Could not fetch learn issue %d: issue not found", issue_number)
-                continue
-            result[issue_number] = issue_info.state == "CLOSED"
-        return result
 
     def close_plan(self, plan_id: int, plan_url: str) -> list[int]:
         """Close a plan and its linked PRs using direct HTTP calls.
@@ -454,14 +421,6 @@ class RealPlanDataProvider(PlanDataProvider):
         # Build worktree mapping
         worktree_by_plan_id = self._build_worktree_mapping()
 
-        # Batch fetch learn issue states
-        learn_issue_numbers: set[int] = set()
-        for plan in plans:
-            learn_plan_issue = header_int(plan.header_fields, LEARN_PLAN_ISSUE)
-            if learn_plan_issue is not None:
-                learn_issue_numbers.add(learn_plan_issue)
-        learn_issue_states = self._fetch_learn_issue_states(learn_issue_numbers)
-
         # Build row data
         use_graphite = self._ctx.global_config.use_graphite if self._ctx.global_config else False
         rows: list[PlanRowData] = []
@@ -474,7 +433,6 @@ class RealPlanDataProvider(PlanDataProvider):
                 workflow_run=None,
                 worktree_by_plan_id=worktree_by_plan_id,
                 use_graphite=use_graphite,
-                learn_issue_states=learn_issue_states,
             )
             rows.append(row)
 
@@ -499,6 +457,7 @@ class RealPlanDataProvider(PlanDataProvider):
             limit=100,
             show_prs=True,
             show_runs=False,
+            exclude_labels=(),
             creator=None,
         )
         all_plans = self.fetch_plans(filters)
@@ -550,7 +509,6 @@ class RealPlanDataProvider(PlanDataProvider):
         workflow_run: WorkflowRun | None,
         worktree_by_plan_id: dict[int, tuple[str, str | None]],
         use_graphite: bool,
-        learn_issue_states: dict[int, bool],
     ) -> PlanRowData:
         """Build a single PlanRowData from plan and related data."""
         full_title = plan.title
@@ -585,10 +543,9 @@ class RealPlanDataProvider(PlanDataProvider):
         # Extract objective_issue from pre-parsed header fields
         objective_issue = header_int(plan.header_fields, OBJECTIVE_ISSUE)
 
-        # Look up learn plan issue closed state
+        # Learn plan issue closed state is not fetched (too slow for N sequential calls).
+        # Falls back to open icon (📋) which is acceptable.
         learn_plan_issue_closed: bool | None = None
-        if learn_plan_issue is not None and learn_plan_issue in learn_issue_states:
-            learn_plan_issue_closed = learn_issue_states[learn_plan_issue]
 
         # Format learn display (full text for detail modal, icon-only for table)
         learn_display = _format_learn_display(
