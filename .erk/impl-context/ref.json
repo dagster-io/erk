@@ -1,4 +1,9 @@
 {
   "provider": "github-draft-pr",
-  "title": "Objective Plans Modal Screen"
+  "plan_id": "8144",
+  "url": "https://github.com/dagster-io/erk/pull/8144",
+  "created_at": "2026-02-25T01:58:27.761522",
+  "synced_at": "2026-02-25T01:58:27.761522",
+  "labels": [],
+  "objective_id": null
 }
