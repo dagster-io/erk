@@ -26,7 +26,6 @@ from erk.cli.commands.log_cmd import log_cmd
 from erk.cli.commands.md.group import md_group
 from erk.cli.commands.objective import objective_group
 from erk.cli.commands.one_shot import one_shot
-from erk.cli.commands.plan import plan_group
 from erk.cli.commands.pr import pr_group
 from erk.cli.commands.pr.list_cmd import dash
 from erk.cli.commands.prepare_cwd_recovery import prepare_cwd_recovery_cmd
@@ -198,7 +197,6 @@ if is_learned_docs_available(repo_ops=RealGitRepoOps(), cwd=Path.cwd()):
     cli.add_command(learn_cmd)
 admin_group.add_command(log_cmd)
 cli.add_command(dash)
-cli.add_command(plan_group)
 cli.add_command(pr_group)
 cli.add_command(info_group)
 cli.add_command(objective_group)

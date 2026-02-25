@@ -74,7 +74,7 @@ def test_no_duplicates_found() -> None:
 
         result = runner.invoke(
             cli,
-            ["plan", "duplicate-check"],
+            ["pr", "duplicate-check"],
             input="# New Plan\n\nAdd dark mode toggle",
             obj=ctx,
         )
@@ -106,7 +106,7 @@ def test_duplicate_detected() -> None:
 
         result = runner.invoke(
             cli,
-            ["plan", "duplicate-check"],
+            ["pr", "duplicate-check"],
             input="# New Plan\n\nAdd dark mode",
             obj=ctx,
         )
@@ -134,7 +134,7 @@ def test_no_existing_plans() -> None:
 
         result = runner.invoke(
             cli,
-            ["plan", "duplicate-check"],
+            ["pr", "duplicate-check"],
             input="# New Plan\n\nSome plan",
             obj=ctx,
         )
@@ -165,7 +165,7 @@ def test_llm_error_graceful_degradation() -> None:
 
         result = runner.invoke(
             cli,
-            ["plan", "duplicate-check"],
+            ["pr", "duplicate-check"],
             input="# New Plan\n\nSome plan",
             obj=ctx,
         )
@@ -182,7 +182,7 @@ def test_no_input_shows_error() -> None:
 
         result = runner.invoke(
             cli,
-            ["plan", "duplicate-check"],
+            ["pr", "duplicate-check"],
             obj=ctx,
         )
 
@@ -212,7 +212,7 @@ def test_plan_flag_fetches_and_excludes_self() -> None:
 
         result = runner.invoke(
             cli,
-            ["plan", "duplicate-check", "--plan", "200"],
+            ["pr", "duplicate-check", "--plan", "200"],
             obj=ctx,
         )
 
@@ -250,7 +250,7 @@ def test_progress_reporting_lists_plans() -> None:
 
         result = runner.invoke(
             cli,
-            ["plan", "duplicate-check"],
+            ["pr", "duplicate-check"],
             input="# New Plan\n\nSome plan",
             obj=ctx,
         )
@@ -277,7 +277,7 @@ def test_plan_flag_not_found() -> None:
 
         result = runner.invoke(
             cli,
-            ["plan", "duplicate-check", "--plan", "999"],
+            ["pr", "duplicate-check", "--plan", "999"],
             obj=ctx,
         )
 
@@ -300,7 +300,7 @@ def test_plan_and_file_mutually_exclusive() -> None:
 
         result = runner.invoke(
             cli,
-            ["plan", "duplicate-check", "--plan", "100", "--file", temp_path],
+            ["pr", "duplicate-check", "--plan", "100", "--file", temp_path],
             obj=ctx,
         )
 
