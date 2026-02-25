@@ -1,7 +1,7 @@
 """Tests for setup-impl consolidated exec command.
 
-Tests the auto-detection paths: --file setup and no-plan-found error.
-Issue-based setup is tested via test_setup_impl_from_issue.py.
+Tests the auto-detection paths: --file setup, no-plan-found error,
+and issue-based setup via _handle_issue_setup.
 """
 
 import json
@@ -11,8 +11,12 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.setup_impl import setup_impl
 from erk_shared.context.context import ErkContext
+from erk_shared.context.testing import context_for_test
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.graphite.fake import FakeGraphite
+from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
 
 
 def test_file_setup_creates_impl(tmp_path: Path) -> None:
@@ -86,3 +90,50 @@ def test_branch_detection_p_prefix(tmp_path: Path) -> None:
     # Should fail with no_plan_found since branch doesn't resolve
     assert result.exit_code == 1
     assert "no_plan_found" in result.output
+
+
+def test_issue_setup_invokes_setup_impl_from_issue(tmp_path: Path) -> None:
+    """--issue delegates to setup_impl_from_issue without TypeError.
+
+    Regression test: setup_impl previously passed branch_slug= to
+    setup_impl_from_issue which doesn't accept that parameter.
+    """
+    plan_branch = "plan-fix-branch-slug-02-24"
+    fake_github = FakeGitHub()
+    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
+    plan_result = backend.create_plan(
+        repo_root=tmp_path,
+        title="Fix branch slug",
+        content="# Fix\n\nRemove dead branch_slug parameter.",
+        labels=("erk-plan",),
+        metadata={"branch_name": plan_branch},
+    )
+    pr_number = int(plan_result.plan_id)
+
+    fake_git = FakeGit(
+        current_branches={tmp_path: plan_branch},
+    )
+
+    ctx = context_for_test(
+        github=fake_github,
+        git=fake_git,
+        graphite=FakeGraphite(),
+        cwd=tmp_path,
+        repo_root=tmp_path,
+        plan_store=backend,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        setup_impl,
+        ["--issue", str(pr_number)],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, f"Command failed: {result.output}"
+    output_lines = result.output.strip().split("\n")
+    json_lines = [line for line in reversed(output_lines) if line.startswith("{")]
+    assert json_lines, "Expected JSON output"
+    output = json.loads(json_lines[0])
+    assert output["success"] is True
+    assert output["plan_number"] == pr_number
