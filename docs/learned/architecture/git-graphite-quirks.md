@@ -29,6 +29,9 @@ tripwires:
     warning: "Force-push silently overwrites intermediate commits from earlier workflow steps. Always `git pull --rebase` before pushing in multi-step workflows."
   - action: "using git merge on a Graphite-managed branch"
     warning: "Merge commits break Graphite's linear stack model. Use git pull --rebase or gt sync. Merge commits cause gt squash divergence errors and broken parent tracking."
+  - action: "force-updating a branch that might be currently checked out"
+    warning: "Git refuses to force-update the checked-out branch. Use LBYL check: compare target branch with current branch before force-update. See _ensure_local_matches_remote() in graphite.py."
+    score: 6
 ---
 
 # Git and Graphite Edge Cases Catalog
@@ -389,6 +392,23 @@ if ctx.graphite.is_branch_diverged_from_tracking(ctx.git, repo_root, branch_name
 - Sync auto-fix: `src/erk/cli/commands/pr/sync_cmd.py:250,315`
 - Branch creation auto-fix: `packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py`
 - Fix commit: `8b8b06b5` (PR #6052)
+
+## Force-Update Limitation on Checked-Out Branches
+
+**Surprising Behavior**: `_ensure_local_matches_remote()` in `graphite.py` silently skips force-updating a branch if it's currently checked out. Instead of failing or switching branches, it returns early and relies on `retrack_branch()` to handle any tracking divergence.
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py, _ensure_local_matches_remote -->
+
+**Why It's Surprising**: Git refuses to force-update the currently checked-out branch (it would make the working tree inconsistent). Rather than switching away and back, the code takes the defensive approach: skip the update and let retracking handle divergence.
+
+**Detection Pattern**: The method performs an LBYL check comparing the target branch against the currently checked-out branch. If they match, it returns early rather than attempting a force-update that git would reject.
+
+**When This Happens**:
+
+- Creating a branch from `origin/parent` when `parent` is checked out locally
+- Parent branch diverged from remote but user is currently on it
+
+**Location in Codebase**: `packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py` — `_ensure_local_matches_remote()` method
 
 ## Adding New Quirks
 

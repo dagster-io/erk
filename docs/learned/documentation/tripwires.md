@@ -58,6 +58,8 @@ Rules triggered by matching actions in code.
 
 **using line numbers in source pointers** → Read [Source Pointers](source-pointers.md) first. Prefer name-based identifiers (ClassName.method) over line numbers. Names survive refactoring; line numbers go stale silently.
 
+**using line numbers in source pointers for Python code with named symbols** → Read [Source Pointer Best Practices](source-pointer-best-practices.md) first. Prefer function/class name anchors over line numbers. Names survive refactoring; line numbers go stale silently. See source-pointer-best-practices.md.
+
 **writing a decision doc with only prose 'use X when...' bullets** → Read [Two-Option Decision Documentation](two-option-template.md) first. Add a decision matrix table. Tables let agents scan trade-offs at a glance without parsing paragraphs. See two-option-template.md.
 
 **writing a decision doc without concrete examples** → Read [Two-Option Decision Documentation](two-option-template.md) first. Include at least one situation→decision→reasoning example. Abstract criteria are hard to apply without concrete illustrations.

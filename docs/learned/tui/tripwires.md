@@ -44,6 +44,8 @@ Rules triggered by matching actions in code.
 
 **calling widget methods from @work(thread=True) without call_from_thread()** → Read [TUI Modal Screen Pattern](modal-screen-pattern.md) first. Background thread widget mutations cause silent UI corruption. Use self.app.call_from_thread(callback, ...).
 
+**completing a background worker thread without calling action_refresh** → Read [Async Action Refresh Pattern](async-action-refresh-pattern.md) first. Always call_from_thread(self.action_refresh) after successful background work to update the TUI display.
+
 **constructing PlanFilters without copying all fields from existing filters** → Read [TUI Data Contract](data-contract.md) first. All fields must be explicitly copied in \_load_data() PlanFilters construction. Missing fields (like creator) cause silent filtering failures.
 
 **creating a ModalScreen without CSS for dismiss behavior** → Read [TUI Modal Screen Pattern](modal-screen-pattern.md) first. ModalScreen requires explicit CSS for the overlay. Without it, clicking outside the modal does nothing.
@@ -63,6 +65,8 @@ Rules triggered by matching actions in code.
 **generating TUI commands that depend on optional PlanRowData fields** → Read [Adding Commands to TUI](adding-commands.md) first. Implement three-layer validation: registry predicate, handler guard, app-level helper. Never rely on registry predicate alone.
 
 **modifying how plan titles are displayed in TUI** → Read [TUI Plan Title Rendering Pipeline](plan-title-rendering-pipeline.md) first. Ensure `[erk-learn]` prefix is added BEFORE any filtering/sorting stages.
+
+**passing --no-wait in worker thread subprocess calls** → Read [Async Action Refresh Pattern](async-action-refresh-pattern.md) first. Never pass --no-wait in worker threads — it defeats the polling purpose. The thread exists to wait for the operation to complete before refreshing.
 
 **pushing PlanBodyScreen without explicit content_type** → Read [TUI View Switching](view-switching.md) first. Content type must come from view_mode at push time, not derived inside the screen.
 

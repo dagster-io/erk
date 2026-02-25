@@ -30,6 +30,7 @@
 - **[convergence-points.md](convergence-points.md)** — refactoring a command with multiple setup paths that share cleanup, adding a new entry path to an existing multi-path command, debugging cleanup that runs for some paths but not others
 - **[defense-in-depth-enforcement.md](defense-in-depth-enforcement.md)** — designing multi-layer validation or enforcement systems, implementing critical rules across multiple components, understanding why erk uses redundant enforcement mechanisms
 - **[derived-flags.md](derived-flags.md)** — combining a user-provided flag with automatic detection, adding auto-behavior that should be transparent to the user, implementing --force auto-detection for plan implementations
+- **[direct-condition-vs-derived-output.md](direct-condition-vs-derived-output.md)** — implementing logic that depends on display state, deciding whether to scan UI output or check raw conditions, working with indicator or status classification logic
 - **[discriminated-union-error-handling.md](discriminated-union-error-handling.md)** — designing return types for operations that may fail, implementing T | ErrorType patterns, handling errors without exceptions
 - **[erk-architecture.md](erk-architecture.md)** — understanding erk architecture, implementing dry-run patterns, regenerating context after os.chdir, detecting root worktree, detecting worktree location, adding composing template methods to ABC
 - **[erk-shared-package.md](erk-shared-package.md)** — deciding where to put new utilities, moving code between packages

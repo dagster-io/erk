@@ -34,4 +34,8 @@ Rules triggered by matching actions in code.
 
 **using ClaudePermissionMode directly in new commands** → Read [Interactive Agent Configuration](interactive-claude-config.md) first. New code should use PermissionMode ('safe', 'edits', 'plan', 'dangerous'). The Claude-specific modes are an internal mapping detail.
 
+**using regex to extract JSON from LLM output** → Read [LLM JSON Parsing](llm-json-parsing.md) first. Use extract_json_dict() which uses JSONDecoder.raw_decode() — more robust than regex for nested JSON structures.
+
 **writing implementation-focused changelog entries** → Read [Changelog Standards and Format](changelog-standards.md) first. Entries must describe user-visible behavior, not internal implementation. Ask: 'Does an erk user see different behavior?'
+
+**writing manual fence-stripping code to extract JSON from LLM output** → Read [LLM JSON Parsing](llm-json-parsing.md) first. Use extract_json_dict() from erk.core.llm_json instead. It handles fences, preamble, and trailing text via raw_decode().

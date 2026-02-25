@@ -41,7 +41,7 @@ PlannedPRBackend uses **composition** — it wraps the top-level GitHub gateway,
 Key design decisions:
 
 - **Lightweight init**: No I/O in `__init__`, dependencies injected (`github`, `time`)
-- **Provider name**: `"github-draft-pr"` (used for conditional dispatch elsewhere)
+- **Provider name**: `"github-draft-pr"` (preserved from pre-rename `DraftPRPlanBackend` for backward compatibility — existing plan metadata in GitHub PR bodies uses this string, so changing it would break metadata deserialization)
 - **Immutable metadata fields**: `schema_version`, `created_at`, `created_by` are protected from updates
 
 ## PR Body Format

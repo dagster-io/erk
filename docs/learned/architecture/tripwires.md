@@ -174,6 +174,8 @@ Rules triggered by matching actions in code.
 
 **expecting status to auto-update after manual PR edits** → Read [Roadmap Mutation Semantics](roadmap-mutation-semantics.md) first. Only the update-objective-node command writes computed status. Manual GitHub edits or direct body mutations leave status at its current value — you must explicitly set status to '-' to enable inference on next parse.
 
+**force-updating a branch that might be currently checked out** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Git refuses to force-update the checked-out branch. Use LBYL check: compare target branch with current branch before force-update. See \_ensure_local_matches_remote() in graphite.py.
+
 **hand-constructing frozen dataclass instances with selective field copying** → Read [Optional Field Propagation](optional-field-propagation.md) first. Always use dataclasses.replace() to preserve all fields. Hand-construction with partial field copying silently drops optional fields (learn_status, learn_plan_issue, objective_issue, etc.).
 
 **implementing CLI flags that affect post-mutation behavior** → Read [Erk Architecture Patterns](erk-architecture.md) first. Validate flag preconditions BEFORE any mutations. Example: `--up` in `erk land` checks for child branches before merging PR. This prevents partial state (PR merged, worktree deleted, but no valid navigation target).
@@ -237,6 +239,8 @@ Rules triggered by matching actions in code.
 **running tests immediately after rebase without checking for old symbols** → Read [Rebase Conflict Patterns](rebase-conflict-patterns.md) first. Hidden regressions can exist in non-conflicted files. Grep for old symbols that should have been renamed before running tests.
 
 **running tsc --noEmit from root in multi-config TypeScript project** → Read [TypeScript Multi-Config Project Checking](typescript-multi-config.md) first. tsc --noEmit from root breaks subdirectory configs. Use tsc -p <path> --noEmit for each tsconfig.json separately.
+
+**scanning derived display output (emoji lists, formatted strings) to determine state** → Read [Direct Condition vs Derived Output](direct-condition-vs-derived-output.md) first. Check original boolean conditions directly instead. Scanning derived output couples decision logic to display formatting. See direct-condition-vs-derived-output.md.
 
 **setting PR reference without providing --plan** → Read [Roadmap Mutation Semantics](roadmap-mutation-semantics.md) first. The CLI requires --plan when --pr is set (error: plan_required_with_pr). Use --plan '#NNN' to preserve or --plan '' to explicitly clear. Read roadmap-mutation-semantics.md for the None/empty/value semantics.
 
