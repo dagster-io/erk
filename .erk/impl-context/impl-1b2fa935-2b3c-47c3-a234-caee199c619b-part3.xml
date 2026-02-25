@@ -1,0 +1,984 @@
+<session>
+  <meta branch="plnd/eliminate-objective-issue-02-24-1747" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Grep" id="toolu_01RncrLnBuMJGqX23S3cE3Cj">
+    <param name="pattern">--objective-issue</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/scratch/session_markers.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="154131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RncrLnBuMJGqX23S3cE3Cj">
+56:    --objective-issue is not explicitly provided.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01PvqyktA6Vgub5Yeo4ETgKa">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/docs/learned/hooks/erk.md</param>
+    <param name="old_string">| `objective-context.marker`                 | `/erk:objective-plan`          | One-time  | Suggests `--objective-issue` |</param>
+    <param name="new_string">| `objective-context.marker`                 | `/erk:objective-plan`          | One-time  | Read by plan-save to link objective |</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="558" cache_read_input_tokens="154329" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 558}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PvqyktA6Vgub5Yeo4ETgKa">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Ud9FhaC2udjHuSbrAVSmyg">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/docs/learned/planning/session-deduplication.md</param>
+    <param name="old_string">| `objective-context`                 | `/erk:objective-plan`              | Suggests `--objective-issue` | One-time  |</param>
+    <param name="new_string">| `objective-context`                 | `/erk:objective-plan`              | Read by plan-save to link objective | One-time  |</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="558" cache_read_input_tokens="154329" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 558}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ud9FhaC2udjHuSbrAVSmyg">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01VmvtLjJ7cti42jY1PWNBTN">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/docs/learned/planning/tripwires.md</param>
+    <param name="old_string">**saving a plan with --objective-issue flag** → Read [Plan Lifecycle](lifecycle.md) first....[truncated 56 chars]... &lt;issue&gt; objective_issue`. Silent failures can leave plans unlinked from their objectives.</param>
+    <param name="new_string">**saving a plan linked to an objective** → Read [Plan Lifecycle](lifecycle.md) first. Obje...[truncated 124 chars]... &lt;issue&gt; objective_issue`. Silent failures can leave plans unlinked from their objectives.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="558" cache_read_input_tokens="154329" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 558}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VmvtLjJ7cti42jY1PWNBTN">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0178rGnf6QrvpQyeMNYUkh36">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/docs/learned/planning/lifecycle.md</param>
+    <param name="old_string">  - action: "saving a plan with --objective-issue flag"</param>
+    <param name="new_string">  - action: "saving a plan linked to an objective"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="558" cache_read_input_tokens="154329" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 558}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0178rGnf6QrvpQyeMNYUkh36">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01SC3B2Gk7tJg7Er9XZqgBtw">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/scratch/session_markers.py</param>
+    <param name="old_string">    --objective-issue is not explicitly provided.</param>
+    <param name="new_string">    the plan-save commands read this marker as the sole mechanism for objective linking.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="558" cache_read_input_tokens="154329" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 558}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SC3B2Gk7tJg7Er9XZqgBtw">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>Need to read the files first.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1242" cache_read_input_tokens="154887" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1242}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FtbXBNwTF7J1N7M3GcZrDb">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/docs/learned/hooks/erk.md</param>
+    <param name="offset">110</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1242" cache_read_input_tokens="154887" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1242}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FtbXBNwTF7J1N7M3GcZrDb">
+   110→| ------------------------------------------ | ------------------------------ | --------- | ---------------------------- |
+   111→| `exit-plan-mode-hook.plan-saved.marker`    | `plan-save-to-issue`           | Reusable  | Block exit, show "complete"  |
+   112→| `exit-plan-mode-hook.implement-now.marker` | Agent (`erk exec marker`)      | One-time  | Allow exit                   |
+   113→| `objective-context.marker`                 | `/erk:objective-plan`          | One-time  | Suggests `--objective-issue` |
+   114→| `incremental-plan.marker`                  | `/local:incremental-plan-mode` | One-time  | Allow exit, skip save        |
+   115→
+   116→**Lifecycle semantics:**
+   117→
+   118→- **Reusable markers** persist across hook invocations (not deleted when read)
+   119→- **One-time markers** are consumed (deleted) after being processed
+  </tool_result>
+  <tool_use name="Read" id="toolu_018DtnAyr4hvRLqdqMQMN8HC">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/docs/learned/planning/session-deduplication.md</param>
+    <param name="offset">37</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1242" cache_read_input_tokens="154887" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1242}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018DtnAyr4hvRLqdqMQMN8HC">
+    37→| ----------------------------------- | ---------------------------------- | ---------------------------- | --------- |
+    38→| `exit-plan-mode-hook.plan-saved`    | `plan-save-to-issue`               | Block exit, msg shown        | Reusable  |
+    39→| `exit-plan-mode-hook.implement-now` | Agent via `erk exec marker create` | Allow exit                   | One-time  |
+    40→| `objective-context`                 | `/erk:objective-plan`              | Suggests `--objective-issue` | One-time  |
+    41→
+    42→**Reusable markers** persist across hook invocations (not deleted when read).
+    43→**One-time markers** are consumed (deleted) after being processed.
+    44→
+    45→### Layer 2: Command-Level Deduplication
+    46→
+  </tool_result>
+  <tool_use name="Read" id="toolu_01LgLufF7cFKCatEgFofNswn">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/docs/learned/planning/tripwires.md</param>
+    <param name="offset">192</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1242" cache_read_input_tokens="154887" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1242}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LgLufF7cFKCatEgFofNswn">
+   192→
+   193→**running sequential analysis that could be parallelized** → Read [Multi-Tier Agent Orchestration](agent-orchestration.md) first. If agents analyze independent data sources, run them in parallel. Only use sequential execution when one agent's output is another's input.
+   194→
+   195→**saving a plan with --objective-issue flag** → Read [Plan Lifecycle](lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata &lt;issue&gt; objective_issue`. Silent failures can leave plans unlinked from their objectives.
+   196→
+   197→**staging .erk/impl-context/ deletion without an immediate commit** → Read [.erk/impl-context/ vs .impl/ Cleanup Discipline](worktree-cleanup.md) first. A downstream `git reset --hard` will silently discard staged-only deletions. Always commit+push cleanup atomically. See reliability-patterns.md.
+   198→
+   199→**staging git changes (git add/git rm) without an immediate commit before a git reset --hard** → Read [Workflow Reliability Patterns](reliability-patterns.md) first. git reset --hard silently discards staged changes. Commit and push cleanup BEFORE any reset step.
+   200→
+   201→**treating missing PR as an error in the learn pipeline** → Read [Learn Without PR Context](learn-without-pr-context.md) first. No-PR is a valid workflow state, not an error. The learn pipeline must degrade gracefully — sessions alone provide sufficient material for insight extraction.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01F2Di1T6L891C4Wua7PQR8E">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/docs/learned/planning/lifecycle.md</param>
+    <param name="offset">9</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1242" cache_read_input_tokens="154887" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1242}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01F2Di1T6L891C4Wua7PQR8E">
+     9→tripwires:
+    10→  - action: "manually creating an erk-plan issue with gh issue create"
+    11→    warning: "Use `erk exec plan-save-to-issue --plan-file &lt;path&gt;` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section)."
+    12→  - action: "saving a plan with --objective-issue flag"
+    13→    warning: "Always verify the link was saved correctly with `erk exec get-plan-metadata &lt;issue&gt; objective_issue`. Silent failures can leave plans unlinked from their objectives."
+    14→  - action: "implementing custom PR/plan relevance assessment logic"
+    15→    warning: "Reference `/local:check-relevance` verdict classification system first. Use SUPERSEDED (80%+ overlap), PARTIALLY_IMPLEMENTED (30-80% overlap), DIFFERENT_APPROACH, STILL_RELEVANT, NEEDS_REVIEW categories for consistency."
+    16→  - action: "after plan-implement execution completes"
+    17→    warning: "Always clean .erk/impl-context/ with `git rm -rf .erk/impl-context/` and commit. Transient artifacts cause CI formatter failures (Prettier)."
+    18→  - action: "implementing PR body generation with checkout footers"
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BzTFUdEgHzNVwwu1N6Hbsv">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/scratch/session_markers.py</param>
+    <param name="offset">50</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1242" cache_read_input_tokens="154887" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1242}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BzTFUdEgHzNVwwu1N6Hbsv">
+    50→
+    51→def read_objective_context_marker(session_id: str, repo_root: Path) -&gt; int | None:
+    52→    """Read objective issue number from session's objective-context marker.
+    53→
+    54→    This reads the marker created by /erk:objective-plan to determine which
+    55→    objective a plan is associated with. Used as a fallback in plan-save when
+    56→    --objective-issue is not explicitly provided.
+    57→
+    58→    Args:
+    59→        session_id: The session ID for the scratch directory.
+    60→        repo_root: The repository root path.
+    61→
+    62→    Returns:
+    63→        The objective issue number if marker exists and is valid, None otherwise.
+    64→    """
+  </tool_result>
+  <assistant>Now I can make the edits:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2296" cache_read_input_tokens="156129" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2296}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01XpgPreB25vH4SFA6qV4Juj">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/docs/learned/hooks/erk.md</param>
+    <param name="old_string">| `objective-context.marker`                 | `/erk:objective-plan`          | One-time  | Suggests `--objective-issue` |</param>
+    <param name="new_string">| `objective-context.marker`                 | `/erk:objective-plan`          | One-time  | Read by plan-save to link objective |</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2296" cache_read_input_tokens="156129" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2296}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XpgPreB25vH4SFA6qV4Juj">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/docs/learned/hooks/erk.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01UrxXxLrTNLk1wc3rLHW9Ns">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/docs/learned/planning/session-deduplication.md</param>
+    <param name="old_string">| `objective-context`                 | `/erk:objective-plan`              | Suggests `--objective-issue` | One-time  |</param>
+    <param name="new_string">| `objective-context`                 | `/erk:objective-plan`              | Read by plan-save to link objective | One-time  |</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2296" cache_read_input_tokens="156129" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2296}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UrxXxLrTNLk1wc3rLHW9Ns">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/docs/learned/planning/session-deduplication.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01MLjYNnN3ocJnV524pzGXrr">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/docs/learned/planning/tripwires.md</param>
+    <param name="old_string">**saving a plan with --objective-issue flag** → Read [Plan Lifecycle](lifecycle.md) first....[truncated 56 chars]... &lt;issue&gt; objective_issue`. Silent failures can leave plans unlinked from their objectives.</param>
+    <param name="new_string">**saving a plan linked to an objective** → Read [Plan Lifecycle](lifecycle.md) first. Obje...[truncated 124 chars]... &lt;issue&gt; objective_issue`. Silent failures can leave plans unlinked from their objectives.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2296" cache_read_input_tokens="156129" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2296}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MLjYNnN3ocJnV524pzGXrr">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/docs/learned/planning/tripwires.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_012yASRPWqiTKV4VcoboJgzZ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/docs/learned/planning/lifecycle.md</param>
+    <param name="old_string">  - action: "saving a plan with --objective-issue flag"</param>
+    <param name="new_string">  - action: "saving a plan linked to an objective"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2296" cache_read_input_tokens="156129" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2296}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012yASRPWqiTKV4VcoboJgzZ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/docs/learned/planning/lifecycle.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_018fzfJ6bLDkgTNgs7bwbWxf">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/scratch/session_markers.py</param>
+    <param name="old_string">    This reads the marker created by /erk:objective-plan to determine which
+    objective ...[truncated 3 chars]...th. Used as a fallback in plan-save when
+    --objective-issue is not explicitly provided.</param>
+    <param name="new_string">    This reads the marker created by /erk:objective-plan to determine which
+    objective ...[truncated 6 chars]... Both plan-save backends read this
+    marker as the sole mechanism for objective linking.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2296" cache_read_input_tokens="156129" output_tokens="1057" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2296, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018fzfJ6bLDkgTNgs7bwbWxf">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/scratch/session_markers.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me also check if there are any remaining `--objective-issue` references elsewhere in the codebase (outside of docs/learned and the already-updated files):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1414" cache_read_input_tokens="158425" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1414}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01AFMdVoZQC2ScroFX6yi9iu">
+    <param name="pattern">--objective-issue</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1414" cache_read_input_tokens="158425" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1414}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AFMdVoZQC2ScroFX6yi9iu">
+.claude/skills/erk-exec/reference.md:915:| `--objective-issue`               | INTEGER | No       | -       | Link plan to parent objective issue number                |
+.claude/skills/erk-exec/reference.md:934:| `--objective-issue`               | INTEGER | No       | -       | Link plan to parent objective issue number                                |
+.claude/commands/erk/plan-save.md:98:  /erk:plan-save --objective-issue=&lt;expected&gt;
+.claude/commands/erk/plan-save.md:223:**Note:** Slot objective updates are handled automatically by `plan-save` when `--objective-issue` is provided - no separate command call needed.
+.erk/impl-context/ref.json:3:  "title": "Eliminate `--objective-issue` flag from plan-save commands"
+.erk/impl-context/plan.md:1:# Eliminate `--objective-issue` flag from plan-save commands
+.erk/impl-context/plan.md:5:Objective association is broken for the draft PR backend (`plan_save.py`). The `obj` column in `erk dash` shows `-` for most plans because `plan_save.py` only gets the objective from the `--objective-issue` CLI flag, which Claude unreliably picks up from the exit-plan-mode hook's suggestion text.
+.erk/impl-context/plan.md:13:- Remove `--objective-issue` Click option (lines 411-415) and parameter from `plan_save()`, `_save_plan_via_planned_pr()`
+.erk/impl-context/plan.md:30:- Remove `--objective-issue` Click option (lines 77-82) and parameter
+.erk/impl-context/plan.md:43:- Remove `--objective-issue` from argument-hint, usage examples, Step 1 parsing
+.erk/impl-context/plan.md:50:- Replace `--objective-issue=&lt;N&gt;` with marker creation:
+.erk/impl-context/plan.md:57:- Replace `--objective-issue $OBJECTIVE_ISSUE` with marker creation before plan-save
+.erk/impl-context/plan.md:62:- Remove references to hook suggesting `--objective-issue`
+.erk/impl-context/plan.md:67:**`test_plan_save.py`**: Update `test_planned_pr_objective_issue_metadata` (~line 181) to create a marker file instead of passing `--objective-issue 123`. Add test for no-marker case.
+.erk/impl-context/plan.md:71:**`test_exit_plan_mode_hook.py`**: Update `test_save_command_includes_objective_issue_flag` to assert `--objective-issue` is NOT in output. Remove `objective_id=` from all `build_blocking_message()` calls (~28 sites, mechanical).
+.erk/impl-context/plan.md:75:Update references to `--objective-issue` in:
+.erk/impl-context/plan.md:87:2. Verify `erk exec plan-save --help` no longer shows `--objective-issue`
+.erk/impl-context/plan.md:88:3. Verify `erk exec plan-save-to-issue --help` no longer shows `--objective-issue`
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py:550:        """Save command never includes --objective-issue (flag removed)."""
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py:563:        assert "--objective-issue" not in message
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py:578:        # Should have /erk:plan-save but not --objective-issue
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py:580:        assert "--objective-issue" not in message
+  </tool_result>
+  <assistant>There are two remaining references in `plan-save.md` that I need to update, and the `reference.md` skill file (which the plan says is auto-generated). Let me fix the plan-save.md ones:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1099" cache_read_input_tokens="159839" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1099}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017VKcMZY76yAspT4qafjp8c">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.claude/commands/erk/plan-save.md</param>
+    <param name="offset">90</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1099" cache_read_input_tokens="159839" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1099}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017VKcMZY76yAspT4qafjp8c">
+    90→
+    91→```
+    92→ERROR: Objective link verification failed
+    93→Expected objective: #&lt;expected&gt;
+    94→Actual: &lt;actual-or-null&gt;
+    95→
+    96→The plan was saved but without the correct objective link.
+    97→Fix: Close &lt;"draft PR" if plan_backend=="draft_pr", else "issue"&gt; #&lt;plan_number&gt; and re-run:
+    98→  /erk:plan-save --objective-issue=&lt;expected&gt;
+    99→```
+   100→
+   101→Exit without creating the plan-saved marker. The session continues so the user can retry.
+   102→
+   103→### Step 3.5: Update Objective Roadmap (if objective linked)
+   104→
+   105→**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+   106→
+   107→Update the objective's roadmap table to show that a plan has been created for this node:
+   108→
+   109→1. **Read the roadmap node marker** to get the node ID:
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01YDK1NVkw7VijRuGZdjRUBn">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.claude/commands/erk/plan-save.md</param>
+    <param name="old_string">The plan was saved but without the correct objective link.
+Fix: Close &lt;"draft PR" if plan_backend=="draft_pr", else "issue"&gt; #&lt;plan_number&gt; and re-run:
+  /erk:plan-save --objective-issue=&lt;expected&gt;</param>
+    <param name="new_string">The plan was saved but without the correct objective link.
+Fix: Close &lt;"draft PR" if plan_...[truncated 11 chars]...e"&gt; #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="731" cache_read_input_tokens="160938" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 731}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YDK1NVkw7VijRuGZdjRUBn">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.claude/commands/erk/plan-save.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Read" id="toolu_012burjU1Nm8Yrodw2LtmLno">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.claude/commands/erk/plan-save.md</param>
+    <param name="offset">218</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="322" cache_read_input_tokens="161669" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 322}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012burjU1Nm8Yrodw2LtmLno">
+   218→
+   219→If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+   220→
+   221→If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+   222→
+   223→**Note:** Slot objective updates are handled automatically by `plan-save` when `--objective-issue` is provided - no separate command call needed.
+   224→
+   225→On failure, display the error message and suggest:
+   226→
+   227→- Checking that a plan exists (enter Plan mode and exit it first)
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01S7RtPizjvFmNeNy8tWZVfQ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.claude/commands/erk/plan-save.md</param>
+    <param name="old_string">**Note:** Slot objective updates are handled automatically by `plan-save` when `--objective-issue` is provided - no separate command call needed.</param>
+    <param name="new_string">**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3469" cache_read_input_tokens="161991" output_tokens="208" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3469, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01S7RtPizjvFmNeNy8tWZVfQ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.claude/commands/erk/plan-save.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_0176gF8nJdQAVfYBU9irGAs3">
+    <param name="taskId">7</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="265" cache_read_input_tokens="165460" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 265}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0176gF8nJdQAVfYBU9irGAs3">
+Updated task #7 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01SMWQr3DEskqeeyQAbKqXeF">
+    <param name="taskId">8</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="265" cache_read_input_tokens="165460" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 265}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>This session is being continued from a previous conversation that ran out of context. The summary below covers the earlier portion of the conversation.
+
+Analysis:
+Let me chronologically analyze the conversation:
+
+1. The user invoked `/erk:plan-implement` which loaded a detailed command template for implementing plans from GitHub issues.
+
+2. The system detected we're on branch `plnd/eliminate-objective-issue-02-24-1747` which is a plan branch.
+
+3. I attempted `erk exec setup-impl` which failed with a TypeError: `setup_impl_from_issue() got an unexpected keyword argument 'branch_slug'`. This was a bug in the setup-impl code itself.
+
+4. I found that `.impl/` already existed with `plan-ref.json` (pointing to PR #8117) and `plan.md`. So I proceeded to read the plan directly.
+
+5. The plan is to eliminate the `--objective-issue` CLI flag from plan-save commands, making both backends read from the objective-context session marker as the sole mechanism for objective association.
+
+6. I loaded the `dignified-python` skill and read the core standards.
+
+7. I created 8 task entries for tracking progress.
+
+8. I signaled GitHub started with `erk exec impl-signal started`.
+
+9. I read all source files needed:
+   - `plan_save.py` - draft PR backend
+   - `plan_save_to_issue.py` - issue backend
+   - `exit_plan_mode_hook.py` - hook that suggests save command
+   - Command files: `plan-save.md`, `replan.md`, `one-shot-plan.md`, `objective-plan.md`
+   - Test files: `test_plan_save.py`, `test_plan_save_to_issue.py`, `test_exit_plan_mode_hook.py`
+   - `session_markers.py` for the `read_objective_context_marker` function
+
+10. I implemented changes across all 9 areas specified in the plan:
+
+**Phase 1 (Task #1): plan_save.py**
+- Removed `--objective-issue` Click option and parameter
+- Added `read_objective_context_marker` import
+- Added marker reading in `_save_plan_via_planned_pr()` before dedup check
+- Added `"objective_issue": objective_issue` to JSON output
+- Updated module docstring
+
+**Phase 2 (Task #2): plan_save_to_issue.py**
+- Removed `--objective-issue` Click option and parameter
+- Simplified marker reading: removed `if objective_issue is None` guard, changed message from "Auto-linked" to "Linked"
+- Added `"objective_issue": objective_issue` to JSON output
+
+**Phase 3 (Task #3): exit_plan_mode_hook.py**
+- Removed `objective_id` param from `build_blocking_message()`
+- Changed save command to always be plain `/erk:plan-save`
+- Removed `objective_id=hook_input.objective_id` from call site
+- Updated docstring for `_get_objective_context_marker_path()`
+
+**Phase 4 (Task #4): plan-save.md**
+- Removed `--objective-issue` from argument-hint
+- Removed from usage examples
+- Removed OBJECTIVE_FLAG from Step 1 parsing
+- Removed from Step 2 command
+- Changed Step 3 trigger to `objective_issue` in JSON output
+- Changed Step 3.5 trigger similarly
+- Updated remediation text and slot note
+
+**Phase 5 (Task #5): replan.md, one-shot-plan.md, objective-plan.md**
+- replan.md: Replaced `--objective-issue=&lt;N&gt;` with marker creation command
+- one-shot-plan.md: Replaced `--objective-issue $OBJECTIVE_ISSUE` with marker creation + `--session-id`
+- objective-plan.md: Simplified Steps 8 and 9 to reference automatic marker reading
+
+**Phase 6 (Task #6): Tests**
+- Used libcst-refactor agent to remove all 26 `objective_id=` kwargs from `build_blocking_message()` calls in test_exit_plan_mode_hook.py
+- Updated `test_objective_issue_included_in_save_command` to assert `--objective-issue` is NOT in message
+- Updated test_plan_save.py: renamed test, changed from passing `--objective-issue` CLI flag to creating marker file
+- Added `test_planned_pr_no_objective_without_marker` test
+- Updated test_plan_save_to_issue.py: renamed tests, deleted `test_plan_save_explicit_flag_overrides_marker`, changed assertion messages from "Auto-linked" to "Linked"
+
+**Phase 7 (Task #7): Documentation**
+- Updated docs/learned/hooks/erk.md
+- Updated docs/learned/planning/session-deduplication.md
+- Updated docs/learned/planning/tripwires.md
+- Updated docs/learned/planning/lifecycle.md
+- Updated packages/erk-shared/src/erk_shared/scratch/session_markers.py docstring
+
+11. All 7 implementation tasks are completed. Task #8 (Run CI and submit PR) is in_progress.
+
+The user's only message was invoking the `/erk:plan-implement` command. Everything else was driven by the plan-implement workflow.
+
+The current state is: all implementation work is done, and the next step per the plan-implement workflow is to run CI (Step 12) and then submit PR (Step 13).
+
+Summary:
+1. Primary Request and Intent:
+   The user invoked `/erk:plan-implement` to implement plan #8117 (from PR https://github.com/dagster-io/erk/pull/8117) titled "Eliminate `--objective-issue` flag from plan-save commands". The goal is to remove the `--objective-issue` CLI flag from both plan-save backends and make both read from the objective-context session marker as the sole mechanism for objective association. The `obj` column in `erk dash` was showing `-` for most plans because the draft PR backend (`plan_save.py`) only got the objective from the CLI flag, which Claude unreliably picked up.
+
+2. Key Technical Concepts:
+   - Session markers: Files in `.erk/scratch/sessions/&lt;session-id&gt;/` that store state between hook invocations
+   - `objective-context.marker`: Created by `/erk:objective-plan`, stores the objective issue number
+   - `read_objective_context_marker()`: Shared function in `erk_shared.scratch.session_markers` that reads the marker
+   - Draft PR backend (`plan_save.py`): Creates a branch + draft PR for plans
+   - Issue backend (`plan_save_to_issue.py`): Creates a GitHub issue for plans
+   - Exit plan mode hook: PreToolUse hook that intercepts ExitPlanMode to suggest save/implement
+   - `build_blocking_message()`: Pure function that builds the hook's blocking message with AskUserQuestion
+   - Click context dependency injection pattern for CLI commands
+   - Pure logic extraction pattern (HookInput/HookOutput) for testability
+
+3. Files and Code Sections:
+
+   - **`src/erk/cli/commands/exec/scripts/plan_save.py`** — Draft PR plan-save backend
+     - Removed `--objective-issue` Click option and `objective_issue` parameter from `plan_save()` and `_save_plan_via_planned_pr()`
+     - Added `read_objective_context_marker` import
+     - Added marker reading at the top of `_save_plan_via_planned_pr()`:
+       ```python
+       objective_issue: int | None = None
+       if session_id is not None:
+           objective_issue = read_objective_context_marker(session_id, repo_root)
+           if objective_issue is not None:
+               click.echo(f"Linked to objective #{objective_issue} from session context", err=True)
+       ```
+     - Added `"objective_issue": objective_issue` to JSON output dict
+     - `_save_as_planned_pr()` keeps `objective_issue` as internal param (receives from caller)
+     - Updated module docstring to remove `--objective-issue` from Options and add note about automatic marker reading
+
+   - **`src/erk/cli/commands/exec/scripts/plan_save_to_issue.py`** — Issue-based plan-save backend
+     - Removed `--objective-issue` Click option and `objective_issue` parameter
+     - Simplified marker reading section (removed `if objective_issue is None` guard):
+       ```python
+       objective_issue: int | None = None
+       if effective_session_id is not None:
+           objective_issue = read_objective_context_marker(effective_session_id, repo_root)
+           if objective_issue is not None:
+               click.echo(f"Linked to objective #{objective_issue} from session context", err=True)
+       ```
+     - Added `"objective_issue": objective_issue` to JSON output dict
+
+   - **`src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py`** — Hook that prompts save/implement
+     - Removed `objective_id` param from `build_blocking_message()` signature and docstring
+     - Replaced conditional save command logic with plain `save_cmd = "/erk:plan-save"`
+     - Removed `objective_id=hook_input.objective_id` from `determine_exit_action()` call site
+     - Updated `_get_objective_context_marker_path()` docstring
+
+   - **`.claude/commands/erk/plan-save.md`** — Plan-save slash command
+     - Removed `--objective-issue` from argument-hint, usage examples
+     - Removed OBJECTIVE_FLAG/OBJECTIVE_ISSUE from Step 1 parsing
+     - Removed `${OBJECTIVE_FLAG}` from Step 2 command
+     - Changed Step 3 trigger from "if `--objective-issue` was provided" to "if `objective_issue` is non-null in JSON output"
+     - Changed Step 3.5 trigger similarly
+     - Updated remediation text and slot objective note
+
+   - **`.claude/commands/erk/replan.md`** — Replan slash command
+     - Replaced `--objective-issue=&lt;objective_number&gt;` with marker creation:
+       ```bash
+       erk exec marker create --session-id "${CLAUDE_SESSION_ID}" --associated-objective &lt;objective_number&gt; objective-context
+       ```
+
+   - **`.claude/commands/erk/one-shot-plan.md`** — One-shot plan command
+     - Replaced `--objective-issue $OBJECTIVE_ISSUE` with marker creation before plan-save
+     - Added `--session-id="${CLAUDE_SESSION_ID}"` to the plan-save call
+
+   - **`.claude/commands/erk/objective-plan.md`** — Objective plan command
+     - Simplified Steps 8 and 9 to explain marker is read automatically by `/erk:plan-save`
+
+   - **`tests/unit/cli/commands/exec/scripts/test_plan_save.py`** — Plan-save tests
+     - Renamed `test_planned_pr_objective_issue_metadata` to `test_planned_pr_objective_issue_from_marker`
+     - Changed test from passing `--objective-issue 123` CLI flag to creating marker file:
+       ```python
+       session_id = "marker-session"
+       marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+       marker_dir.mkdir(parents=True)
+       (marker_dir / "objective-context.marker").write_text("123", encoding="utf-8")
+       ```
+     - Added `test_planned_pr_no_objective_without_marker` test
+
+   - **`tests/unit/cli/commands/exec/scripts/test_plan_save_to_issue.py`** — Plan-save-to-issue tests
+     - Renamed `test_plan_save_auto_links_objective_from_marker` to `test_plan_save_links_objective_from_marker`
+     - Changed assertion from "Auto-linked" to "Linked to objective"
+     - Deleted `test_plan_save_explicit_flag_overrides_marker` (flag no longer exists)
+     - Renamed `test_plan_save_no_marker_no_flag` to `test_plan_save_no_marker_no_objective`
+
+   - **`tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py`** — Exit plan mode hook tests
+     - Removed `objective_id=` from all 26 `build_blocking_message()` calls
+     - Updated `test_objective_issue_included_in_save_command` to assert `--objective-issue` is NOT in message
+     - Left 3 `objective_id=` in `HookInput.for_test()` calls untouched (those are separate)
+
+   - **`docs/learned/hooks/erk.md`** — Updated marker description
+   - **`docs/learned/planning/session-deduplication.md`** — Updated marker description
+   - **`docs/learned/planning/tripwires.md`** — Updated tripwire text
+   - **`docs/learned/planning/lifecycle.md`** — Updated tripwire action text
+   - **`packages/erk-shared/src/erk_shared/scratch/session_markers.py`** — Updated docstring
+
+4. Errors and Fixes:
+   - **`erk exec setup-impl` failed with TypeError**: `setup_impl_from_issue() got an unexpected keyword argument 'branch_slug'` — This was a pre-existing bug in `setup_impl.py` where `_handle_issue_setup` passes `branch_slug` to `setup_impl_from_issue` which doesn't accept it. Workaround: since `.impl/` already existed with the plan, I read the plan directly and skipped the setup-impl step.
+   - **Edit tool required Read first**: When trying to edit docs files without reading them first, the Edit tool returned "File has not been read yet." Fixed by reading the relevant lines first, then editing.
+
+5. Problem Solving:
+   - Worked around the `setup-impl` bug by checking that `.impl/` already existed
+   - Used `libcst-refactor` agent to efficiently handle the mechanical removal of 26 `objective_id=` keyword arguments from test file
+   - Handled the `reference.md` auto-generated skill file by leaving it alone (plan notes it auto-regenerates from CLI definitions)
+
+6. All User Messages:
+   - The user's only explicit message was invoking `/erk:plan-implement` (with no arguments, which triggers auto-detection from the current branch)
+
+7. Pending Tasks:
+   - Task #8: Run CI and submit PR (status: in_progress)
+   - Per plan-implement workflow: Steps 8-14 remain:
+     - Step 8: Final Verification
+     - Step 9: Signal GitHub ended
+     - Step 10: Upload session for async learn
+     - Step 11: Verify .impl/ preserved
+     - Step 12: Run CI iteratively
+     - Step 13: Submit PR via `erk pr submit`
+     - Step 14: Output format summary
+
+8. Current Work:
+   All 7 implementation tasks (Tasks #1-#7) are completed. Task #8 "Run CI and submit PR" was just marked as in_progress. The last action was updating the final documentation reference in `plan-save.md` to remove the last `--objective-issue` mention. I had just finished Phase 7 (documentation updates) and was about to proceed to running CI checks (Step 12 of the plan-implement workflow).
+
+9. Optional Next Step:
+   Per the plan-implement workflow Step 12: "Run CI Iteratively" — Run the CI checks using the devrun agent pattern. The workflow states: "check CLAUDE.md/AGENTS.md for CI commands". This would involve running `make fast-ci` or similar via the devrun agent to verify all tests pass, then proceeding to Step 13 (Submit PR via `erk pr submit`).
+
+   From the plan-implement command: "Step 12: Run CI Iteratively - 1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions 2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands"
+
+   Before CI, Steps 8-11 should also be completed:
+   - Step 8: "Confirm all tasks executed, success criteria met"
+   - Step 9: `erk exec impl-signal ended --session-id="1b2fa935-2b3c-47c3-a234-caee199c619b"`
+   - Step 10: `erk exec upload-impl-session --session-id="1b2fa935-2b3c-47c3-a234-caee199c619b"`
+   - Step 11: `erk exec impl-verify`
+
+If you need specific details from before compaction (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-37/1b2fa935-2b3c-47c3-a234-caee199c619b.jsonl
+Please continue the conversation from where we left off without asking the user any further questions. Continue with the last task that you were asked to work on.</user>
+  <thinking>The conversation was implementing plan #8117 to eliminate the `--objective-issue` flag from plan-save commands. All 7 implementation tasks are complete. I need to continue with the plan-implement workflow steps 8-14:
+
+- Step 8: Final Verification
+- Step 9: Signal GitHub ended
+- Step 10: Upload session for async learn
+- Step 11: Verify .impl/ preserved
+- Step 12: Run CI iteratively
+- Step 13: Submit PR
+- Step 14: Output format
+
+Let me proceed with these steps. First, let me do Steps 8-11, then run CI.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="21585" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21585}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Continuing with the plan-implement workflow. All 7 implementation phases are complete. Proceeding with Steps 8-11 (verification and signals), then CI and PR submission.
+
+**Step 8: Final Verification** — All implementation tasks completed: removed `--objective-issue` from both backends, hook, 3 command files, updated tests, and documentation.
+
+Let me run Steps 9-11 in parallel, then check for the CI hook.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="21585" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21585}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01E3YzLaZp25ee1y2PYjZjYY">
+    <param name="command">erk exec impl-signal ended --session-id="1b2fa935-2b3c-47c3-a234-caee199c619b" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation ended</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="21585" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21585}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0197wdds5snfeqhEGskNK963">
+    <param name="command">erk exec upload-impl-session --session-id="1b2fa935-2b3c-47c3-a234-caee199c619b" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="21585" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21585}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01692AqoAEJ64W4Mo54sfLW6">
+    <param name="command">erk exec impl-verify</param>
+    <param name="description">Verify .impl/ folder preserved</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="21585" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21585}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01E3YzLaZp25ee1y2PYjZjYY">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8117
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_018GLsJoKCvMnLpjxVeHtuEf">
+    <param name="command">test -f /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.erk/prompt-hooks/post-plan-implement-ci.md &amp;&amp; echo "EXISTS" || echo "NOT_FOUND"</param>
+    <param name="description">Check for CI prompt hook</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="21585" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21585}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0197wdds5snfeqhEGskNK963">
+{"uploaded": true, "plan_id": 8117}
+  </tool_result>
+  <tool_result tool="toolu_01692AqoAEJ64W4Mo54sfLW6">
+{"valid": true, "impl_dir": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.impl"}
+  </tool_result>
+  <tool_result tool="toolu_018GLsJoKCvMnLpjxVeHtuEf">
+EXISTS
+  </tool_result>
+  <assistant>Steps 9-11 all passed. `.impl/` is preserved. CI hook exists — let me load it and follow its instructions.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4010" cache_read_input_tokens="40699" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4010}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BmdiWT6dq8yQ6zFxmrwqjk">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4010" cache_read_input_tokens="40699" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4010, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BmdiWT6dq8yQ6zFxmrwqjk">
+     1→# Post-Implementation CI
+     2→
+     3→Run CI validation after plan implementation using `make fast-ci`.
+     4→
+     5→Load the `ci-iteration` skill for the iterative fix workflow.
+     6→
+  </tool_result>
+  <assistant>Loading the CI iteration skill, then running fast-ci.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="193" cache_read_input_tokens="44709" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 193}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01Mrs8uqxCgweb8XodvDMCkU">
+    <param name="skill">ci-iteration</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="193" cache_read_input_tokens="44709" output_tokens="67" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 193, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Mrs8uqxCgweb8XodvDMCkU">
+Launching skill: ci-iteration
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.claude/skills/ci-iteration
+
+# CI Iteration
+
+## Overview
+
+Run the specified CI target and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**IMPORTANT**: All `make` commands must be run from the repository root directory. The Makefile is located at the root of the repository, not in subdirectories.
+
+## Sub-Agent Policy
+
+**CRITICAL**: When spawning sub-agents to run `make`, `pytest`, `ty`, `ruff`, `prettier`, or `gt` commands, you MUST use `devrun`:
+
+```
+Task tool with:
+- subagent_type: devrun  &lt;- MUST be devrun, NEVER general-purpose
+```
+
+**Why**: devrun has hard tool constraints (no Edit/Write) preventing destructive changes. The parent agent (you) processes reports and applies fixes - sub-agents only report.
+
+**FORBIDDEN**:
+
+- Spawning general-purpose or other sub-agents for make/pytest/ty/ruff/prettier/gt
+- Giving sub-agents prompts like "fix issues" or "iterate until passing"
+
+**REQUIRED**:
+
+- Sub-agents run ONE command and report results
+- Parent agent decides what to fix based on reports
+
+## Core Workflow
+
+### 1. Initial Run
+
+Use the devrun agent to run the specified make target from the repository root:
+
+```
+Task tool with:
+- subagent_type: devrun
+- description: "Run [make target] from repo root"
+- prompt: "Change to repository root and execute: [make target]"
+```
+
+### 2. Parse Failures
+
+Analyze the output to identify which check(s) failed:
+
+- **Ruff lint failures**: "ruff check" errors
+- **Format failures**: "ruff format --check" or files needing reformatting
+- **Prettier failures**: Markdown files needing formatting
+- **MD-check failures**: CLAUDE.md files not properly referencing AGENTS.md
+- **ty failures**: Type errors with file paths and line numbers
+- **Test failures**: pytest failures with test names and assertion errors
+
+### 3. Apply Targeted Fixes
+
+Based on failure type, apply appropriate fixes:
+
+| Failure Type | Fix Command                                 |
+| ------------ | ------------------------------------------- |
+| Ruff lint    | `make fix` via devrun                       |
+| Ruff format  | `make format` via devrun                    |
+| Prettier     | `make prettier` via devrun                  |
+| Sync-Kit     | `erk sync` directly                         |
+| MD-check     | Edit CLAUDE.md to contain only `@AGENTS.md` |
+| ty           | Edit files to fix type annotations          |
+| Tests        | Read and edit source/test files             |
+
+### 4. Verify and Repeat
+
+After applying fixes, run the make target again via devrun. Continue the cycle: run -&gt; identify failures -&gt; fix -&gt; verify.
+
+## Iteration Control
+
+**Safety Limits:**
+
+- **Maximum iterations**: 10 attempts
+- **Stuck detection**: If the same error appears 3 times in a row, stop
+- **Progress tracking**: Use TodoWrite to show iteration progress
+
+## Progress Reporting
+
+Use TodoWrite to track progress:
+
+```
+Iteration 1: Fixing lint errors
+Iteration 2: Fixing format errors
+Iteration 3: Fixing type errors in src/erk/cli/commands/switch.py
+Iteration 4: All checks passed
+```
+
+## When to Stop
+
+**SUCCESS**: Stop when the make target exits with code 0 (all checks passed)
+
+**STUCK**: Stop and report to user if:
+
+1. You've completed 10 iterations without success
+2. The same error persists after 3 fix attempts
+3. You encounter an error you cannot automatically fix
+
+## Reporting Formats
+
+### Success Format
+
+```markdown
+## Finalization Status: SUCCESS
+
+All CI checks passed after N iteration(s):
+
+(check) **Lint (ruff check)**: PASSED
+
+(check) **Format (ruff format --check)**: PASSED
+
+(check) **Prettier**: PASSED
+
+(check) **AGENTS.md Standard (md-check)**: PASSED
+
+(check) **ty**: PASSED
+
+(check) **Tests**: PASSED
+
+(check) **Sync-Kit (erk check)**: PASSED
+
+The code is ready for commit/PR.
+```
+
+**IMPORTANT**: Each check line MUST be separated by a blank line in the markdown output to render properly in the CLI.
+
+### Stuck Format
+
+```markdown
+## Finalization Status: STUCK
+
+I was unable to resolve the following issue after N attempts:
+
+**Check**: [lint/format/prettier/md-check/ty/test]
+
+**Error**:
+[Exact error message]
+
+**File**: [file path if applicable]
+
+**Attempted Fixes**:
+
+1. [What you tried first]
+2. [What you tried second]
+3. [What you tried third]
+
+**Next Steps**:
+[Suggest what needs to be done manually]
+```
+
+## Guidelines
+
+1. **Be systematic**: Fix one type of error at a time
+2. **Run full CI**: Always run the full make target, not individual checks
+3. **Use devrun agent**: Always use the Task tool with devrun agent for ALL make commands
+4. **Run from repo root**: Always ensure make commands execute from repository root
+5. **Track progress**: Use TodoWrite for every iteration
+6. **Don't guess**: Read files before making changes
+7. **Follow standards**: Adhere to AGENTS.md coding standards
+8. **Fail gracefully**: Report clearly when stuck
+9. **Be efficient**: Use targeted fixes (don't reformat everything for one lint error)
+
+## Example Flow
+
+```
+Iteration 1:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 5 lint errors, 2 files need formatting
+- Fix: Use Task tool with devrun agent to run make fix, then make format from repo root
+- Result: 3 lint errors remain
+
+Iteration 2:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 3 lint errors (imports)
+- Fix: Edit files to fix import issues
+- Result: All lint/format pass, 2 type errors
+
+Iteration 3:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 2 ty errors in switch.py:45 and switch.py:67
+- Fix: Add type annotations
+- Result: All checks pass
+
+SUCCESS
+```
+
+## Important Reminders
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <assistant>
+
+Running CI iteration 1 via devrun agent.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1712" cache_read_input_tokens="44902" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1712}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01JU6H3h2R8fGkvFmyLyLzxb">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run make fast-ci</param>
+    <param name="prompt">Change to repository root /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37 and execute: make fast-ci
+
+Report all output, especially any failures.</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1712" cache_read_input_tokens="44902" output_tokens="152" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1712, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JU6H3h2R8fGkvFmyLyLzxb">
+The `make fast-ci` command exited with code 2, indicating a failure. Here's a summary of the results:
+
+## Summary
+
+**Status**: FAILED
+
+### Passing Checks
+- Lint: All checks passed
+- Format check: 1560 files already formatted
+- Markdown check: PASSED
+- ty (type checking): All checks passed
+- Unit tests (erk): 110 passed with 3 warnings
+
+### Failing Checks
+
+1. **Prettier Check** - Code style issues found in 3 files:
+   - `.erk/impl-context/plan.md`
+   - `docs/learned/hooks/erk.md`
+   - `docs/learned/planning/session-deduplication.md`
+
+2. **Exec Reference Check** - FAILED:
+   - `.claude/skills/erk-exec/reference.md` is out of date
+   - Action needed: Run `erk-dev gen-exec-reference-docs` to regenerate it
+
+### Unit Test Warnings
+The 110 unit tests passed but generated 3 runtime warnings related to unawaited coroutines in `tests/test_slack_handlers.py`:
+- `test_chat_with_bot_starts_background_task`
+- `test_one_shot_missing_message`
+- `test_plan_list`
+
+
+... [9 lines omitted] ...
+
+These are warnings, not failures, but indicate potential issues with async test handling.
+**Root causes for failure:**
+  </tool_result>
+  <assistant>
+
+Two issues: prettier formatting and exec reference docs. Let me fix both.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="876" cache_read_input_tokens="46614" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 876}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01FFphh23YDAUWmyXKrQ1Wf2">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run make prettier</param>
+    <param name="prompt">Change to repository root /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37 and execute: make prettier
+
+Report all output.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="876" cache_read_input_tokens="46614" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 876}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Hd66abtY1e5ChkTJhvisvg">
+    <param name="command">erk-dev gen-exec-reference-docs</param>
+    <param name="description">Regenerate exec reference docs</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="876" cache_read_input_tokens="46614" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 876}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FFphh23YDAUWmyXKrQ1Wf2">
+prettier passed: All markdown files are properly formatted with Prettier.
+
+The command processed all `**/*.md` files (respecting `.gitignore`) and reported "(unchanged)" for each file, indicating all files already comply with the Prettier code style. No formatting changes were needed.
+agentId: ab2bf97e4a077db61 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 15339
+tool_uses: 2
+duration_ms: 9402&lt;/usage&gt;
+  </tool_result>
+  <tool_result tool="toolu_01Hd66abtY1e5ChkTJhvisvg">
+Generated .claude/skills/erk-exec/reference.md (formatted)
+  94 top-level commands documented
+  </tool_result>
+  <assistant>Prettier already formatted (the check may have flagged `.erk/impl-context/plan.md` which is a generated file), and exec reference regenerated. Let me run CI again.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="425" cache_read_input_tokens="47490" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 425}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01MAsq8p5LtcyE2b8WKj6tF3">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run make fast-ci iteration 2</param>
+    <param name="prompt">Change to repository root /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37 and execute: make fast-ci
+
+Report all output, especially any failures.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="425" cache_read_input_tokens="47490" output_tokens="184" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 425, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MAsq8p5LtcyE2b8WKj6tF3">
+All checks passed successfully. Here's a summary of the `make fast-ci` results:
+
+**Linting &amp; Code Quality:**
+- Lint: PASSED
+- Format check: 1560 files already formatted
+- Prettier check: PASSED
+- Markdown checks (CLAUDE.md/AGENTS.md): PASSED
+- Exec reference check: PASSED
+- Type checking (ty): PASSED
+
+**Test Results:**
+- Unit Tests (erk): **5406 passed** in 14.39s
+- Tests (erk-dev): **136 passed** in 3.29s
+- Tests (erk-statusline): **124 passed** in 0.89s
+- Tests (erkbot): **110 passed** in 1.01s (with 2 warnings about unawaited coroutines)
+
+**Overall Status:** All CI checks passed with no failures. There are 2 runtime warnings in the erkbot tests related to unawaited coroutines in background task handling, but these do not cause test failures.
+agentId: aa65aeec69c93c36e (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 17359
+tool_uses: 1
+duration_ms: 36921&lt;/usage&gt;
+  </tool_result>
+  <assistant>
+
+All CI checks passed (5406 + 136 + 124 + 110 tests, lint, format, prettier, ty all green). Now submitting the PR.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3667" cache_read_input_tokens="47915" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3667}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01P8MiDG3uETd2xPyMfKY64g">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk pr submit</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3667" cache_read_input_tokens="47915" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3667}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01P8MiDG3uETd2xPyMfKY64g">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_016WZDXRt9zZQ8CA6apQx2Ay">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="165" cache_read_input_tokens="51582" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 165}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01REYxnSFtyKRV8VrNX1CcU9">
+    <param name="command">erk pr check --stage=impl 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR completion invariants</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="165" cache_read_input_tokens="51582" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 165}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016WZDXRt9zZQ8CA6apQx2Ay">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 8117
+}
+  </tool_result>
+  <tool_result tool="toolu_01REYxnSFtyKRV8VrNX1CcU9">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Bj6C1N7hEenHo6DfxaN4yG">
+    <param name="command">gh pr view --json number,url,title -q '"\(.title) - #\(.number)\n\(.url)"'</param>
+    <param name="description">Get PR details</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="250" cache_read_input_tokens="51747" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 250}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Bj6C1N7hEenHo6DfxaN4yG">
+Eliminate `--objective-issue` flag from plan-save commands - #8117
+https://github.com/dagster-io/erk/pull/8117
+  </tool_result>
+</session>

@@ -1,0 +1,1241 @@
+<session>
+  <meta branch="plnd/eliminate-objective-issue-02-24-1747" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from a GitHub issue, a markdown file, an existing `.impl/` folder, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the `.impl/` folder (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - An issue number, URL, or file path argument
+  - An existing `.impl/` folder
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use .impl/, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement issue #2521
+/erk:plan-implement https://github.com/owner/repo/issues/2521  # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.impl/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub issue/PR (draft-PR or issue-based)
+- Setting up from a local markdown file
+- Auto-detecting from existing `.impl/` folder
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating `.impl/` folder with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title` (for draft-PR plans) or `gh issue view &lt;ISSUE_ARG&gt; --json title -q .title` (for issue plans). Try PR first, fall back to issue.
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the issue number:
+
+```bash
+erk exec plan-save --format json --session-id="1b2fa935-2b3c-47c3-a234-caee199c619b" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `issue_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;issue_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `.impl/plan.md` to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="1b2fa935-2b3c-47c3-a234-caee199c619b" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub issue
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `.impl/plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="1b2fa935-2b3c-47c3-a234-caee199c619b" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="1b2fa935-2b3c-47c3-a234-caee199c619b" 2&gt;/dev/null || true
+```
+
+This reads plan reference from `.impl/`, captures session info, and uploads for async learn processing.
+
+### Step 11: Verify .impl/ Preserved
+
+**CRITICAL GUARDRAIL**: Verify the .impl/ folder was NOT deleted.
+
+```bash
+erk exec impl-verify
+```
+
+If this fails, you have violated instructions. The .impl/ folder must be preserved for user review.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**CRITICAL**: Never delete `.impl/` - leave for user review (no auto-commit).
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan from issue #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing issue with current codebase state
+</user>
+  <assistant>
+
+## Step 1: Set Up Implementation
+
+The branch name `plnd/eliminate-objective-issue-02-24-1747` suggests this is a plan branch. Let me run setup-impl to detect and set up from it.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="12686" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12686}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012LpnDpMjpeEjGEXLHdU4Q7">
+    <param name="command">erk exec setup-impl 2&gt;&amp;1</param>
+    <param name="description">Auto-detect plan from branch and set up .impl/</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="12686" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12686}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012LpnDpMjpeEjGEXLHdU4Q7">
+Exit code 1
+Traceback (most recent call last):
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.venv/bin/erk", line 10, in &lt;module&gt;
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk/cli/cli.py", line 232, in main
+    cli()
+    ~~~^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.venv/lib/python3.13/site-packages/click/core.py", line 1485, in __call__
+    return self.main(*args, **kwargs)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.venv/lib/python3.13/site-packages/click/core.py", line 1406, in main
+    rv = self.invoke(ctx)
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.venv/lib/python3.13/site-packages/click/core.py", line 1873, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.venv/lib/python3.13/site-packages/click/core.py", line 1873, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.venv/lib/python3.13/site-packages/click/core.py", line 1269, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.venv/lib/python3.13/site-packages/click/core.py", line 824, in invoke
+    return callback(*args, **kwargs)
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.venv/lib/python3.13/site-packages/click/decorators.py", line 34, in new_func
+    return f(get_current_context(), *args, **kwargs)
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk/cli/commands/exec/scripts/setup_impl.py", line 212, in setup_impl
+    _handle_issue_setup(ctx, issue_number=plan_id, branch_slug=None)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk/cli/commands/exec/scripts/setup_impl.py", line 290, in _handle_issue_setup
+
+... [58 lines omitted] ...
+
+TypeError: setup_impl_from_issue() got an unexpected keyword argument 'branch_slug'
+TypeError: setup_impl_from_issue() got an unexpected keyword argument 'branch_slug'
+  </tool_result>
+  <thinking>There's an error in the setup-impl command - it's passing `branch_slug` to `setup_impl_from_issue` but that function doesn't accept that keyword argument. This is a bug in the setup_impl.py code.
+
+Let me check the plan issue first and also look at the source code to understand the bug. But first, let me check if there's already an `.impl/` folder and the plan file.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2269" cache_read_input_tokens="31800" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2269}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>There's a bug in `setup-impl` - it's passing `branch_slug` to a function that doesn't accept it. Let me check what we're working with and try to set up manually.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2269" cache_read_input_tokens="31800" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2269}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CWjiqafvhv7nAexDwUd44Q">
+    <param name="command">ls -la .impl/ 2&gt;/dev/null || echo "No .impl/ directory"</param>
+    <param name="description">Check for existing .impl/ directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2269" cache_read_input_tokens="31800" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2269}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CWjiqafvhv7nAexDwUd44Q">
+total 24
+drwxr-xr-x@  4 schrockn  staff   128 Feb 24 17:49 .
+drwxr-xr-x@ 38 schrockn  staff  1216 Feb 24 17:49 ..
+-rw-r--r--@  1 schrockn  staff   255 Feb 24 17:49 plan-ref.json
+-rw-r--r--@  1 schrockn  staff  4478 Feb 24 17:49 plan.md
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01EgPhskPwnMprp9wG2xZLnV">
+    <param name="command">cat .erk/scratch/plan-ref.json 2&gt;/dev/null || echo "No plan-ref.json"</param>
+    <param name="description">Check plan reference file</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2269" cache_read_input_tokens="31800" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2269}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EgPhskPwnMprp9wG2xZLnV">
+No plan-ref.json
+  </tool_result>
+  <tool_use name="Read" id="toolu_018M5jJbujHwyWp42eq4P748">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk/cli/commands/exec/scripts/setup_impl.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2269" cache_read_input_tokens="31800" output_tokens="409" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2269, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018M5jJbujHwyWp42eq4P748">
+     1→"""Consolidated implementation setup command for plan-implement.
+     2→
+     3→Replaces the entire Steps 0-2d decision tree in plan-implement.md with a
+     4→single command. Handles argument parsing, source detection, branch creation,
+     5→.impl/ setup, and impl-context cleanup.
+     6→
+     7→Usage:
+     8→    erk exec setup-impl                              # Auto-detect from .impl/ or branch
+     9→    erk exec setup-impl --issue 2521                 # Set up from issue #2521
+    10→    erk exec setup-impl --file ./my-plan.md          # Set up from local file
+    11→
+    12→Output:
+    13→    JSON with setup result including plan metadata and related docs.
+    14→
+    15→Exit Codes:
+    16→    0: Success
+    17→    1: Error (plan not found, git operation failed, etc.)
+    18→
+    19→Examples:
+    20→    $ erk exec setup-impl --issue 2521
+    21→    {"success": true, "plan_number": 2521, "source": "issue_arg", ...}
+    22→
+    23→    $ erk exec setup-impl
+    24→    {"success": true, "plan_number": 2521, "source": "branch_detection", ...}
+    25→
+    26→    $ erk exec setup-impl
+    27→    {"success": false, "error": "no_plan_found", ...}
+    28→"""
+    29→
+    30→import json
+
+... [298 lines omitted] ...
+
+   107→            "error": "file_not_found",
+   128→            "error": "detached_head",
+   264→                "error": "no_plan_found",
+   306→                    "error": "impl_init_failed",
+   307→                    "message": "Implementation setup succeeded but init validation failed.",
+  </tool_result>
+  <thinking>The `.impl/` folder already exists with a `plan-ref.json` and `plan.md`. The issue is that `_handle_issue_setup` passes `branch_slug` to `setup_impl_from_issue`, but that function doesn't accept it.
+
+Let me look at the `setup_impl_from_issue` function to see what parameters it actually accepts. But actually, since `.impl/` already exists with the plan, I can work around the setup-impl bug by just reading the plan directly and continuing with the implementation.
+
+Let me check the plan-ref.json and plan.md.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5472" cache_read_input_tokens="34069" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5472}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The `.impl/` folder already exists. The `setup-impl` bug is that `_handle_issue_setup` passes `branch_slug` to `setup_impl_from_issue` which doesn't accept it. Since `.impl/` is already set up, let me read the plan directly and proceed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5472" cache_read_input_tokens="34069" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5472}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QeG8PGBBKjxzkqkT2BfV2X">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.impl/plan-ref.json</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5472" cache_read_input_tokens="34069" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5472}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QeG8PGBBKjxzkqkT2BfV2X">
+     1→{
+     2→  "provider": "github-draft-pr",
+     3→  "plan_id": "8117",
+     4→  "url": "https://github.com/dagster-io/erk/pull/8117",
+     5→  "created_at": "2026-02-25T01:49:51.727434+00:00",
+     6→  "synced_at": "2026-02-25T01:49:51.727434+00:00",
+     7→  "labels": [],
+     8→  "objective_id": null
+     9→}
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Qo5i6zgE4Tdz8WSnSN4PQA">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.impl/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5472" cache_read_input_tokens="34069" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5472}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Qo5i6zgE4Tdz8WSnSN4PQA">
+     1→# Eliminate `--objective-issue` flag from plan-save commands
+     2→
+     3→## Context
+     4→
+     5→Objective association is broken for the draft PR backend (`plan_save.py`). The `obj` column in `erk dash` shows `-` for most plans because `plan_save.py` only gets the objective from the `--objective-issue` CLI flag, which Claude unreliably picks up from the exit-plan-mode hook's suggestion text.
+     6→
+     7→The `objective-context` session marker (created by `/erk:objective-plan`) is the real mechanism. `plan_save_to_issue.py` already reads it, but `plan_save.py` doesn't. Rather than adding a fallback, we eliminate the flag entirely and make both backends read from the marker as the sole mechanism.
+     8→
+     9→## Changes
+    10→
+    11→### 1. `src/erk/cli/commands/exec/scripts/plan_save.py`
+    12→
+    13→- Remove `--objective-issue` Click option (lines 411-415) and parameter from `plan_save()`, `_save_plan_via_planned_pr()`
+    14→- Add marker reading in `_save_plan_via_planned_pr()`:
+    15→  ```python
+    16→  from erk_shared.scratch.session_markers import read_objective_context_marker
+    17→
+    18→  objective_issue: int | None = None
+    19→  if session_id is not None:
+    20→      objective_issue = read_objective_context_marker(session_id, repo_root)
+    21→      if objective_issue is not None:
+    22→          click.echo(f"Linked to objective #{objective_issue} from session context", err=True)
+    23→  ```
+    24→- `_save_as_planned_pr()` keeps `objective_issue` as internal param (receives from caller)
+    25→- Add `"objective_issue": objective_issue` to JSON output (line ~287)
+    26→- Update module docstring
+    27→
+    28→### 2. `src/erk/cli/commands/exec/scripts/plan_save_to_issue.py`
+    29→
+    30→- Remove `--objective-issue` Click option (lines 77-82) and parameter
+
+... [59 lines omitted] ...
+  </tool_result>
+  <thinking>Good, I have the plan. Let me create task entries and then start implementing.
+
+The plan has 9 sections. Let me organize them into implementation phases:
+
+1. `plan_save.py` - Remove `--objective-issue`, add marker reading
+2. `plan_save_to_issue.py` - Remove `--objective-issue`, simplify marker reading
+3. `exit_plan_mode_hook.py` - Remove `objective_id` from `build_blocking_message()`
+4. `.claude/commands/erk/plan-save.md` - Remove flag references
+5. `.claude/commands/erk/replan.md` - Replace flag with marker creation
+
+
+6. `.claude/commands/erk/one-shot-plan.md` - Replace flag with marker creation
+7. `.claude/commands/erk/objective-plan.md` - Remove hook references
+8. Tests - Update all test files
+9. Docs - Update documentation references
+
+Now I'll load the relevant source files and documentation to understand the current implementation before making changes.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2255" cache_read_input_tokens="39541" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2255}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>## Step 2: Reading Plan and Loading Context
+
+The plan is to eliminate the `--objective-issue` flag from plan-save commands, making both backends read from the session marker as the sole mechanism for objective association. This involves changes across 9 areas.
+
+Let me load relevant skills and documentation, then start implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2255" cache_read_input_tokens="39541" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2255}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_016VjULhbB5DxngoGV4whgkN">
+    <param name="skill">dignified-python</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2255" cache_read_input_tokens="39541" output_tokens="396" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2255, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016VjULhbB5DxngoGV4whgkN">
+Launching skill: dignified-python
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.claude/skills/dignified-python
+
+# Dignified Python Coding Standards
+
+## Core Knowledge (ALWAYS Loaded)
+
+@dignified-python-core.md
+
+## Version Detection
+
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
+
+## Conditional Loading (Load Based on Task Patterns)
+
+Core files above cover 80%+ of Python code patterns. Only load these additional files when you detect specific patterns:
+
+Pattern detection examples:
+
+- If task mentions "click" or "CLI" -&gt; Load `cli-patterns.md`
+- If task mentions "subprocess" -&gt; Load `subprocess.md`
+
+## When to Read Each Reference Document
+
+The `references/` directory contains detailed guidance for specialized topics. Load these on-demand when you encounter relevant patterns:
+
+### `references/exception-handling.md`
+
+**Read when**:
+
+- Writing try/except blocks
+- Wrapping third-party APIs that may raise
+- Seeing or writing `from e` or `from None`
+- Unsure if LBYL alternative exists
+
+### `references/interfaces.md`
+
+**Read when**:
+
+- Creating ABC or Protocol classes
+- Writing @abstractmethod decorators
+- Designing gateway layer interfaces
+- Choosing between ABC and Protocol
+
+### `references/typing-advanced.md`
+
+**Read when**:
+
+- Using typing.cast()
+- Creating Literal type aliases
+- Narrowing types in conditional blocks
+
+### `references/module-design.md`
+
+**Read when**:
+
+- Creating new Python modules
+- Adding module-level code (beyond simple constants)
+- Using @cache decorator at module level
+- Seeing Path() or computation at module level
+- Considering inline imports
+
+### `references/api-design.md`
+
+**Read when**:
+
+- Adding default parameter values to functions
+- Defining functions with 5 or more parameters
+- Using ThreadPoolExecutor.submit()
+- Reviewing function signatures
+
+### `references/checklists.md`
+
+**Read when**:
+
+- Final review before committing Python code
+- Unsure if you've followed all rules
+- Need a quick lookup of requirements
+
+## How to Use This Skill
+
+1. **Core knowledge** is loaded automatically (LBYL, pathlib, basic imports, anti-patterns)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
+3. **Reference documents** are loaded on-demand based on the triggers above
+4. **Additional patterns** may require extra loading (CLI patterns, subprocess)
+5. **Each file is self-contained** with complete guidance for its domain
+</user>
+  <assistant>
+
+Now let me load the core rules and detect the Python version.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1337" cache_read_input_tokens="41796" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1337}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QGrP4fvgKeHjMhyk3qASYX">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.claude/skills/dignified-python/dignified-python-core.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1337" cache_read_input_tokens="41796" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1337}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QGrP4fvgKeHjMhyk3qASYX">
+     1→---
+     2→---
+     3→
+     4→# Dignified Python - Core Standards
+     5→
+     6→This document contains the core Python coding standards that apply to 80%+ of Python code. These principles are loaded with every skill invocation.
+     7→
+     8→For conditional loading of specialized patterns:
+     9→
+    10→- CLI development -&gt; Load `cli-patterns.md`
+    11→- Subprocess operations -&gt; Load `subprocess.md`
+    12→
+    13→For detailed reference material, see the "When to Read Each Reference" section in SKILL.md.
+    14→
+    15→---
+    16→
+    17→## The Cornerstone: LBYL Over EAFP
+    18→
+    19→**Look Before You Leap: Check conditions proactively, NEVER use exceptions for control flow.**
+    20→
+    21→This is the single most important rule in dignified Python. Every pattern below flows from this principle.
+    22→
+    23→```python
+    24→# CORRECT: Check first
+    25→if key in mapping:
+    26→    value = mapping[key]
+    27→    process(value)
+    28→
+    29→# WRONG: Exception as control flow
+    30→try:
+
+... [484 lines omitted] ...
+
+    33→except KeyError:
+    39→## Exception Handling Basics
+    45→LBYL means checking conditions before acting. EAFP (Easier to Ask for Forgiveness than Permission) means trying operations and catching exceptions. In dignified Python, we strongly prefer LBYL.
+    65→# WRONG: KeyError as control flow
+    68→except KeyError:
+    72→### When Exceptions ARE Acceptable
+    74→Exceptions are ONLY acceptable at:
+    76→1. **Error boundaries** (CLI/API level)
+    80→**Default: Let exceptions bubble up**
+    82→For detailed exception handling patterns including B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
+   101→The key distinction: if removing the assert would cause a runtime error, it's control flow (WRONG). If removing it would only lose type information, it's type narrowing (ACCEPTABLE).
+   113→- `.resolve()` raises `OSError` for non-existent paths
+   114→- `.is_relative_to()` raises `ValueError` for invalid comparisons
+   115→- Checking `.exists()` first avoids exceptions entirely (LBYL!)
+   130→# WRONG: Using exceptions for path validation
+   135→except (OSError, ValueError):
+   175→3. **Inline imports only for specific exceptions** (circular deps, TYPE_CHECKING, conditional features)
+   206→**The only acceptable exception:** Resolving genuine name collisions between two different modules that export identically-named symbols.
+   215→# CORRECT (rare exception): Resolving genuine collision
+   467→    log.warning("Non-numeric plan_id")
+   481→- **Raise exception**: When invalid data indicates a programming error or corrupt state
+   508→- **Exception chaining (B904)**: `references/exception-handling.md`
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0189qp4XtPBv81kWrT5UboMH">
+    <param name="command">grep -m1 'requires-python' /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/pyproject....[truncated 21 chars]...erk/repos/erk/worktrees/erk-slot-37/.python-version 2&gt;/dev/null || echo "No version found"</param>
+    <param name="description">Detect minimum Python version</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1337" cache_read_input_tokens="41796" output_tokens="259" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1337, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0189qp4XtPBv81kWrT5UboMH">
+requires-python = "&gt;=3.11"
+  </tool_result>
+  <thinking>Python 3.11. But looking at the `.python-version`, the actual runtime might be 3.13. The `requires-python` says `&gt;=3.11`. Let me continue.
+
+Now let me create task entries and start implementing. First, let me read the source files I'll need to modify.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5971" cache_read_input_tokens="43133" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5971}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good - Python 3.11+ project. Now let me create task entries and start reading the source files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5971" cache_read_input_tokens="43133" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5971}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01UVPMn9j7VaEmySJ8YdH6Wd">
+    <param name="subject">Remove --objective-issue from plan_save.py, add marker reading</param>
+    <param name="description">Remove --objective-issue Click option and parameter, add marker reading in _save_plan_via_planned_pr(), update JSON output</param>
+    <param name="activeForm">Updating plan_save.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5971" cache_read_input_tokens="43133" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5971}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UVPMn9j7VaEmySJ8YdH6Wd">
+Task #1 created successfully: Remove --objective-issue from plan_save.py, add marker reading
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01BvzoNU38Z1VPpYTh3ePUKL">
+    <param name="subject">Remove --objective-issue from plan_save_to_issue.py</param>
+    <param name="description">Remove --objective-issue Click option and parameter, simplify marker reading, update JSON output</param>
+    <param name="activeForm">Updating plan_save_to_issue.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="273" cache_read_input_tokens="49104" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 273}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BvzoNU38Z1VPpYTh3ePUKL">
+Task #2 created successfully: Remove --objective-issue from plan_save_to_issue.py
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01ETdDR2nwLbYXsJcbvhQuqA">
+    <param name="subject">Update exit_plan_mode_hook.py to remove objective_id from build_blocking_message</param>
+    <param name="description">Remove objective_id param from build_blocking_message(), always use plain save_cmd, remove objective_id from call site</param>
+    <param name="activeForm">Updating exit_plan_mode_hook.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="273" cache_read_input_tokens="49104" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 273}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ETdDR2nwLbYXsJcbvhQuqA">
+Task #3 created successfully: Update exit_plan_mode_hook.py to remove objective_id from build_blocking_message
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01S6kcmPwLay6mAjmyhL71gN">
+    <param name="subject">Update plan-save.md command</param>
+    <param name="description">Remove --objective-issue from argument-hint, usage examples, Step 1 parsing, Step 2 command. Update verification triggers.</param>
+    <param name="activeForm">Updating plan-save.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="273" cache_read_input_tokens="49104" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 273}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01S6kcmPwLay6mAjmyhL71gN">
+Task #4 created successfully: Update plan-save.md command
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01F1aQy7uWyKGmd5MP4UxN5V">
+    <param name="subject">Update replan.md, one-shot-plan.md, objective-plan.md commands</param>
+    <param name="description">Replace --objective-issue with marker creation in replan.md and one-shot-plan.md. Simplify objective-plan.md.</param>
+    <param name="activeForm">Updating command files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="273" cache_read_input_tokens="49104" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 273}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01F1aQy7uWyKGmd5MP4UxN5V">
+Task #5 created successfully: Update replan.md, one-shot-plan.md, objective-plan.md commands
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01APqqGJNiHgNS2pRVVtVvK2">
+    <param name="subject">Update tests for plan_save, plan_save_to_issue, exit_plan_mode_hook</param>
+    <param name="description">Update test_planned_pr_objective_issue_metadata, delete explicit flag tests, update build_blocking_message calls (~28 sites)</param>
+    <param name="activeForm">Updating test files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="273" cache_read_input_tokens="49104" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 273}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01APqqGJNiHgNS2pRVVtVvK2">
+Task #6 created successfully: Update tests for plan_save, plan_save_to_issue, exit_plan_mode_hook
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_0162868pLsCCXwWyW7wLxdvK">
+    <param name="subject">Update documentation references to --objective-issue</param>
+    <param name="description">Update session-deduplication.md, lifecycle.md, tripwires.md, hooks/erk.md, session_markers.py docstring</param>
+    <param name="activeForm">Updating documentation</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="273" cache_read_input_tokens="49104" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 273}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0162868pLsCCXwWyW7wLxdvK">
+Task #7 created successfully: Update documentation references to --objective-issue
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01Uf4HDffH1RXNhPoKtfDCKM">
+    <param name="subject">Run CI and submit PR</param>
+    <param name="description">Run CI checks iteratively, fix any issues, then submit PR via erk pr submit</param>
+    <param name="activeForm">Running CI and submitting</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="273" cache_read_input_tokens="49104" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 273}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Uf4HDffH1RXNhPoKtfDCKM">
+Task #8 created successfully: Run CI and submit PR
+  </tool_result>
+  <assistant>## Step 5: Signal GitHub Started</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1139" cache_read_input_tokens="49377" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1139}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Gyf82QY8hCWsZoNjQzqYm7">
+    <param name="command">erk exec impl-signal started --session-id="1b2fa935-2b3c-47c3-a234-caee199c619b" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1139" cache_read_input_tokens="49377" output_tokens="124" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1139, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Gyf82QY8hCWsZoNjQzqYm7">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8117
+}
+  </tool_result>
+  <assistant>Now let me read all the source files I need to modify in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="162" cache_read_input_tokens="50516" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 162}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Q2cnjA5p55FRsJSqUNiv7Y">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="162" cache_read_input_tokens="50516" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 162}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q2cnjA5p55FRsJSqUNiv7Y">
+     1→"""Plan save: creates a draft PR with the plan content.
+     2→
+     3→Usage:
+     4→    erk exec plan-save [OPTIONS]
+     5→
+     6→Options:
+     7→    --format json|display: Output format (default: json)
+     8→    --plan-file PATH: Use specific plan file (highest priority)
+     9→    --session-id ID: Session ID for scoped plan lookup
+    10→    --objective-issue INT: Link plan to parent objective
+    11→    --plan-type standard|learn: Plan type (default: standard)
+    12→    --learned-from-issue INT: Parent plan issue (for learn plans)
+    13→    --created-from-workflow-run-url URL: Workflow run URL
+    14→
+    15→Exit Codes:
+    16→    0: Success
+    17→    1: Error
+    18→    2: Validation failed
+    19→"""
+    20→
+    21→import json
+    22→from pathlib import Path
+    23→
+    24→import click
+    25→
+    26→from erk.cli.commands.exec.scripts.validate_plan_content import _validate_plan_content
+    27→from erk_shared.context.helpers import (
+    28→    get_repo_identifier,
+    29→    require_branch_manager,
+    30→    require_claude_installation,
+
+... [443 lines omitted] ...
+
+   147→            click.echo(f"Error: {title_validation.message}", err=True)
+   153→                        "error": f"Plan title validation failed: {title_validation.reason}",
+   154→                        "error_type": "validation_failed",
+   163→            "Error: --branch-slug is required. "
+   192→        click.echo(f"Error: {create_result.message}", err=True)
+   256→        raise RuntimeError(msg)
+   364→            click.echo("Error: No plan found in ~/.claude/plans/", err=True)
+   366→            click.echo(json.dumps({"success": False, "error": "No plan found in ~/.claude/plans/"}))
+   370→    valid, error, details = _validate_plan_content(plan)
+   373→            click.echo(f"Error: Plan validation failed: {error}", err=True)
+   379→                        "error": f"Plan validation failed: {error}",
+   380→                        "error_type": "validation_failed",
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WWoio61b8qcyCNedkikNod">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk/cli/commands/exec/scripts/plan_save_to_issue.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="162" cache_read_input_tokens="50516" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 162}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WWoio61b8qcyCNedkikNod">
+     1→"""Extract plan from ~/.claude/plans/ and create GitHub issue in one operation.
+     2→
+     3→Usage:
+     4→    erk exec plan-save-to-issue [OPTIONS]
+     5→
+     6→This command combines plan extraction and issue creation:
+     7→1. Extract plan from specified file, session-scoped lookup, or latest from ~/.claude/plans/
+     8→2. Validate plan content meets minimum requirements
+     9→3. Create GitHub issue with plan content
+    10→
+    11→Options:
+    12→    --plan-file PATH: Use specific plan file (highest priority)
+    13→    --session-id ID: Use session-scoped lookup to find plan by slug
+    14→    (neither): Fall back to most recent plan by modification time
+    15→
+    16→Output:
+    17→    --format json (default): {"success": true, "issue_number": N, ...}
+    18→    --format display: Formatted text ready for display
+    19→
+    20→Exit Codes:
+    21→    0: Success - plan extracted and issue created
+    22→    1: Error - no plan found, gh failure, etc.
+    23→    2: Validation failed - plan empty, too short, or lacks structure
+    24→"""
+    25→
+    26→import json
+    27→from pathlib import Path
+    28→
+    29→import click
+    30→
+
+... [321 lines omitted] ...
+
+   161→            click.echo("Error: No plan found in ~/.claude/plans/", err=True)
+   167→            click.echo(json.dumps({"success": False, "error": "No plan found in ~/.claude/plans/"}))
+   171→    valid, error, details = _validate_plan_content(plan)
+   174→            click.echo(f"Error: Plan validation failed: {error}", err=True)
+   180→                        "error": f"Plan validation failed: {error}",
+   181→                        "error_type": "validation_failed",
+   193→            click.echo(f"Error: {title_validation.message}", err=True)
+   199→                        "error": f"Plan title validation failed: {title_validation.reason}",
+   200→                        "error_type": "validation_failed",
+   248→            # Partial success - issue created but comment failed
+   250→                click.echo(f"Warning: {result.error}", err=True)
+   257→                            "error": result.error,
+   265→                click.echo(f"Error: {result.error}", err=True)
+   267→                click.echo(json.dumps({"success": False, "error": result.error}))
+   328→        raise RuntimeError("Unexpected: issue_number is None after successful create_plan_issue")
+   330→        raise RuntimeError("Unexpected: issue_url is None after successful create_plan_issue")
+  </tool_result>
+  <tool_use name="Read" id="toolu_011A75CAPp8f84JZ7uVoXozA">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="162" cache_read_input_tokens="50516" output_tokens="281" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 162, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011A75CAPp8f84JZ7uVoXozA">
+     1→#!/usr/bin/env python3
+     2→"""Exit Plan Mode Hook.
+     3→
+     4→Prompts user before exiting plan mode when a plan exists. This hook intercepts
+     5→the ExitPlanMode tool via PreToolUse lifecycle to ask whether to save to GitHub
+     6→or implement immediately.
+     7→
+     8→Exit codes:
+     9→    0: Success (allow exit - no plan, implement-now marker present, or no session)
+    10→    2: Block (plan exists, no implement-now marker - prompt user)
+    11→
+    12→This command is invoked via:
+    13→    erk exec exit-plan-mode-hook
+    14→
+    15→Marker File State Machine
+    16→=========================
+    17→
+    18→This hook uses marker files in .erk/scratch/sessions/&lt;session-id&gt;/ for state management.
+    19→Marker files are self-describing: their names indicate their purpose and their contents
+    20→explain their effect.
+    21→
+    22→Marker Files:
+    23→    exit-plan-mode-hook.implement-now.marker
+    24→        Created by: Agent (when user chooses "Implement now")
+    25→        Effect: Next ExitPlanMode call is ALLOWED (exit plan mode, proceed to implementation)
+    26→        Lifecycle: Deleted after being read by next hook invocation
+    27→
+    28→    exit-plan-mode-hook.plan-saved.marker
+    29→        Created by: /erk:plan-save command
+    30→        Effect: Next ExitPlanMode call is BLOCKED (remain in plan mode, session complete)
+
+... [763 lines omitted] ...
+
+   346→                f"⚠️  WARNING: Currently on '{current_branch}'. "
+  </tool_result>
+  <thinking>Now I have a good understanding of all three source files. Let me now read the command files and the test files I need to modify.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="21633" cache_read_input_tokens="50678" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21633}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the command files and the session markers module.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="21633" cache_read_input_tokens="50678" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21633}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RkDzaxSgg3iqxTXoYMvoqJ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.claude/commands/erk/plan-save.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="21633" cache_read_input_tokens="50678" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21633}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RkDzaxSgg3iqxTXoYMvoqJ">
+     1→---
+     2→description: Save the current session's plan to GitHub
+     3→argument-hint: "[--objective-issue=&lt;number&gt;] [--plan-type=learn]"
+     4→---
+     5→
+     6→# /erk:plan-save
+     7→
+     8→Save the current session's plan to GitHub with session context.
+     9→
+    10→## Usage
+    11→
+    12→```bash
+    13→/erk:plan-save                           # Standalone plan
+    14→/erk:plan-save --objective-issue=3679    # Plan linked to objective
+    15→/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+    16→```
+    17→
+    18→When creating a plan from an objective (via `/erk:objective-plan`), the exit-plan-mode hook will automatically suggest the command with the correct `--objective-issue` flag.
+    19→
+    20→## Plan Storage
+    21→
+    22→The plan is saved using the configured backend:
+    23→
+    24→- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+    25→- **Issue backend** (`PLAN_BACKEND = "github"`): Creates a GitHub issue. Metadata in the issue body, plan content in the first comment.
+    26→
+    27→The JSON output contract is the same for both backends (`plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`).
+    28→
+    29→## Agent Instructions
+    30→
+
+... [220 lines omitted] ...
+
+    74→If the command fails, display the error and stop.
+    89→- If `success: false` or value doesn't match: verification failed
+    95→**On verification failure:**
+    97→Display error and remediation steps:
+   100→ERROR: Objective link verification failed
+   137→**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+   233→On failure, display the error message and suggest:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01F1vc13FUucoRsVjD73snGj">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.claude/commands/erk/replan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="21633" cache_read_input_tokens="50678" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21633}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01F1vc13FUucoRsVjD73snGj">
+     1→---
+     2→description: Replan an existing erk-plan issue against current codebase state
+     3→argument-hint: &lt;issue-number-or-url&gt;
+     4→---
+     5→
+     6→# /erk:replan
+     7→
+     8→Recomputes existing erk-plan issue(s) against the current codebase state, creating a new plan and closing the original(s).
+     9→
+    10→Supports consolidating multiple plans into a single unified plan.
+    11→
+    12→## Usage
+    13→
+    14→```bash
+    15→/erk:replan 2521                          # Single plan replan
+    16→/erk:replan https://github.com/owner/repo/issues/2521
+    17→/erk:replan 123 456 789                   # Consolidate multiple plans
+    18→```
+    19→
+    20→---
+    21→
+    22→## Agent Instructions
+    23→
+    24→### Step 1: Parse Issue References
+    25→
+    26→Split `$ARGUMENTS` on whitespace. For each argument:
+    27→
+    28→- If numeric (e.g., `2521`), use directly as issue number
+    29→- If URL (e.g., `https://github.com/owner/repo/issues/2521`), extract the number from the path
+    30→
+
+... [439 lines omitted] ...
+
+    65→&gt; ERRORS:
+    66→&gt; &lt;only present if VALIDATION is FAIL, list each error&gt;
+    68→&gt; WARNINGS:
+    69→&gt; &lt;only present if any issues are closed, list each warning&gt;
+    82→&gt; - PASS otherwise (closed issues are warnings, not failures)
+    86→1. **If VALIDATION is FAIL**: Display each error and abort:
+    89→   Error: Issue #&lt;number&gt; is not an erk-plan issue (missing erk-plan label).
+    93→   Error: Issue #&lt;number&gt; not found.
+    96→2. **If WARNINGS present**: Display each warning but continue:
+    99→   Warning: Issue #&lt;number&gt; is already closed. Proceeding with replan anyway.
+   146→Return an error to the main agent:
+   149→Error: Plan #&lt;number&gt; not found.
+   449→## Error Cases
+   451→| Error                    | Message                                                                       |
+   453→| Issue not found          | `Error: Issue #&lt;number&gt; not found.`                                           |
+   454→| Not an erk-plan          | `Error: Issue #&lt;number&gt; is not an erk-plan issue (missing erk-plan label).`   |
+   455→| No plan content          | `Error: No plan content found in issue #&lt;number&gt;.`                            |
+   456→| GitHub CLI not available | `Error: GitHub CLI (gh) not available. Run: brew install gh &amp;&amp; gh auth login` |
+   457→| No network               | `Error: Unable to reach GitHub. Check network connectivity.`                  |
+  </tool_result>
+  <tool_use name="Read" id="toolu_01H44ZJcaXKnPt98EemD8bFg">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.claude/commands/erk/one-shot-plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="21633" cache_read_input_tokens="50678" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21633}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01H44ZJcaXKnPt98EemD8bFg">
+     1→---
+     2→description: Create a plan from a one-shot prompt, save it as a GitHub issue, and write results to .impl/ (used by CI workflow)
+     3→---
+     4→
+     5→# One-Shot Plan
+     6→
+     7→You are running autonomously in a CI workflow. Your job is to read a prompt, explore the codebase, create a detailed implementation plan, and save it as a GitHub issue.
+     8→
+     9→**Important:** You are ONLY planning, not implementing. The plan must be self-contained — a separate Claude session will implement it with no access to your exploration context.
+    10→
+    11→## Step 1: Read the Prompt
+    12→
+    13→Read `.impl/prompt.md` to understand what you need to do.
+    14→
+    15→## Step 2: Read Objective Context (if present)
+    16→
+    17→If the `$OBJECTIVE_ISSUE` environment variable is set (non-empty), this plan is for a specific node of an objective. Use `erk exec check-objective $OBJECTIVE_ISSUE` to fetch the full objective context (title, roadmap, progress). The `$NODE_ID` environment variable contains the specific roadmap node ID being planned. Incorporate the objective context into your planning — understand the broader goal and how this node fits into it.
+    18→
+    19→## Step 3: Load Context
+    20→
+    21→Read `AGENTS.md` to understand the project conventions. Follow its documentation-first discovery process: scan `docs/learned/index.md`, grep `docs/learned/` for relevant docs, and load skills as directed by AGENTS.md routing rules.
+    22→
+    23→## Step 4: Explore the Codebase
+    24→
+    25→Use Explore agents and Grep/Glob to understand the relevant areas of the codebase:
+    26→
+    27→- Search for files, patterns, and existing implementations related to the prompt
+    28→- Identify which files need to be created or modified
+    29→- Understand existing architecture and patterns
+    30→- Find relevant tests and test patterns
+
+... [57 lines omitted] ...
+
+    56→Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, use `$PLAN_ISSUE_NUMBER` as the `plan_number`. To get the `title`, extract the first `# ` heading from `.impl/plan.md`.
+    68→Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, extract `plan_number` and `title` from the output.
+  </tool_result>
+  <tool_use name="Read" id="toolu_014z2Hd4MFf3utVVZGdNaaqG">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.claude/commands/erk/objective-plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="21633" cache_read_input_tokens="50678" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21633}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014z2Hd4MFf3utVVZGdNaaqG">
+     1→---
+     2→description: Create an implementation plan from an objective node
+     3→argument-hint: "&lt;issue-number-or-url&gt; [--node &lt;node-id&gt;]"
+     4→allowed-tools: Bash, Task, Skill, AskUserQuestion, EnterPlanMode
+     5→---
+     6→
+     7→# /erk:objective-plan
+     8→
+     9→Create an implementation plan for a specific node in an objective's dependency graph.
+    10→
+    11→## Usage
+    12→
+    13→```bash
+    14→/erk:objective-plan 3679
+    15→/erk:objective-plan 3679 --node 2.1
+    16→/erk:objective-plan https://github.com/owner/repo/issues/3679
+    17→/erk:objective-plan  # prompts for issue reference
+    18→```
+    19→
+    20→---
+    21→
+    22→## Agent Instructions
+    23→
+    24→### Step 1: Parse Issue Reference
+    25→
+    26→Parse `$ARGUMENTS` to extract the issue reference:
+    27→
+    28→- If argument is a URL: extract issue number from path
+    29→- If argument is a number: use directly
+    30→- If no argument provided: try to get the default from current branch's plan (see below), then prompt if no default
+
+... [259 lines omitted] ...
+
+    94→   - If 'erk-plan' label instead: return error "This is an erk-plan issue, not an objective"
+    95→   - If neither label: include warning but proceed
+   116→WARNINGS: &lt;any warnings about labels, roadmap format, etc., or "none"&gt;
+   143→"ERROR: objective-context marker not created. Re-run the marker command manually:
+   270→## Error Cases
+   274→| Issue not found                         | Report error and exit                                            |
+  </tool_result>
+  <thinking>Now I have a good understanding of all the source files. Let me also check the `read_objective_context_marker` function in the session markers module, since plan_save.py will need to import it.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="14439" cache_read_input_tokens="72311" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14439}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good. Now let me check the session markers module and then start implementing. Let me also look at the test files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="14439" cache_read_input_tokens="72311" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14439}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_018xbKmyhgrzwY4YfnTL7PVR">
+    <param name="pattern">def read_objective_context_marker</param>
+    <param name="output_mode">content</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14439" cache_read_input_tokens="72311" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14439}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018xbKmyhgrzwY4YfnTL7PVR">
+packages/erk-shared/src/erk_shared/scratch/session_markers.py:51:def read_objective_context_marker(session_id: str, repo_root: Path) -&gt; int | None:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/scratch/session_markers.py-52-    """Read objective issue number from session's objective-context marker.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/scratch/session_markers.py-53-
+packages/erk-shared/src/erk_shared/scratch/session_markers.py-54-    This reads the marker created by /erk:objective-plan to determine which
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/scratch/session_markers.py-55-    objective a plan is associated with. Used as a fallback in plan-save when
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/scratch/session_markers.py-56-    --objective-issue is not explicitly provided.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/scratch/session_markers.py-57-
+packages/erk-shared/src/erk_shared/scratch/session_markers.py-58-    Args:
+packages/erk-shared/src/erk_shared/scratch/session_markers.py-59-        session_id: The session ID for the scratch directory.
+packages/erk-shared/src/erk_shared/scratch/session_markers.py-60-        repo_root: The repository root path.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/scratch/session_markers.py-61-
+packages/erk-shared/src/erk_shared/scratch/session_markers.py-62-    Returns:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/scratch/session_markers.py-63-        The objective issue number if marker exists and is valid, None otherwise.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/scratch/session_markers.py-64-    """
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/scratch/session_markers.py-65-    marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/scratch/session_markers.py-66-    marker_file = marker_dir / "objective-context.marker"
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01XAUaagxMiXkdqv2qUM19GD">
+    <param name="pattern">tests/**/test_plan_save.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14439" cache_read_input_tokens="72311" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14439}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01GHiQ9Py3Gtpghrx3HaWF7N">
+    <param name="pattern">tests/**/test_plan_save_to_issue.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14439" cache_read_input_tokens="72311" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14439}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XAUaagxMiXkdqv2qUM19GD">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/tests/unit/cli/commands/exec/scripts/test_plan_save.py
+  </tool_result>
+  <tool_result tool="toolu_01GHiQ9Py3Gtpghrx3HaWF7N">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/tests/unit/cli/commands/exec/scripts/test_plan_save_to_issue.py
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01GHGUVMC1V5CoWLKMHaR4Zj">
+    <param name="pattern">tests/**/test_exit_plan_mode_hook.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14439" cache_read_input_tokens="72311" output_tokens="321" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 14439, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GHGUVMC1V5CoWLKMHaR4Zj">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GJ6Eov4mhaJ6ohiTghhqJB">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1412" cache_read_input_tokens="86750" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1412}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GJ6Eov4mhaJ6ohiTghhqJB">
+     1→"""Unit tests for plan-save command (draft PR creation)."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→
+     6→import pytest
+     7→from click.testing import CliRunner
+     8→
+     9→from erk.cli.commands.exec.scripts.plan_save import plan_save
+    10→from erk_shared.context.context import ErkContext
+    11→from erk_shared.context.testing import context_for_test
+    12→from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
+    13→from erk_shared.gateway.git.fake import FakeGit
+    14→from erk_shared.gateway.github.fake import FakeGitHub
+    15→from erk_shared.gateway.graphite.fake import FakeGraphite
+    16→from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+    17→
+    18→# Valid plan content that passes validation (100+ chars with structure)
+    19→VALID_PLAN_CONTENT = """# Feature Plan
+    20→
+    21→This plan describes the implementation of a new feature.
+    22→
+    23→- Step 1: Set up the environment
+    24→- Step 2: Implement the core logic
+    25→- Step 3: Add tests and documentation"""
+    26→
+    27→
+    28→def _planned_pr_context(
+    29→    *,
+    30→    tmp_path: Path,
+
+... [433 lines omitted] ...
+
+    61→    assert result.exit_code == 0, f"Failed: {result.output}"
+    79→    assert result.exit_code == 0, f"Failed: {result.output}"
+   101→    assert "No plan found" in output["error"]
+   104→def test_planned_pr_validation_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+   105→    """Short plan: exit code 2, error_type='validation_failed'."""
+   119→    assert output["error_type"] == "validation_failed"
+   134→    assert result1.exit_code == 0, f"First call failed: {result1.output}"
+   145→    assert result2.exit_code == 0, f"Second call failed: {result2.output}"
+   172→    assert result.exit_code == 0, f"Failed: {result.output}"
+   192→    assert result.exit_code == 0, f"Failed: {result.output}"
+   213→    assert result.exit_code == 0, f"Failed: {result.output}"
+   227→    assert result.exit_code == 0, f"Failed: {result.output}"
+   262→    assert result.exit_code == 0, f"Failed: {result.output}"
+   285→    assert result.exit_code == 0, f"Failed: {result.output}"
+   319→    assert result.exit_code == 0, f"Failed: {result.output}"
+   351→    assert result.exit_code == 0, f"Failed: {result.output}"
+   395→    assert output["error_type"] == "validation_failed"
+   415→    assert output["error_type"] == "validation_failed"
+   421→    """Planned-PR save shows error message for invalid title in display format."""
+   446→    assert result.exit_code == 0, f"Failed: {result.output}"
+   452→def test_planned_pr_branch_slug_missing_errors(
+   455→    """When --branch-slug is not provided, exits with error and remediation message."""
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DjxM8KuFXQuPA2Msg9p7gS">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/tests/unit/cli/commands/exec/scripts/test_plan_save_to_issue.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1412" cache_read_input_tokens="86750" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1412}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DjxM8KuFXQuPA2Msg9p7gS">
+&lt;persisted-output&gt;
+Output too large (51.4KB). Full output saved to: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-37/1b2fa935-2b3c-47c3-a234-caee199c619b/tool-results/toolu_01DjxM8KuFXQuPA2Msg9p7gS.txt
+
+Preview (first 2KB):
+     1→"""Unit tests for plan-save-to-issue command."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→
+     6→import pytest
+     7→from click.testing import CliRunner
+     8→
+     9→from erk.cli.commands.exec.scripts.plan_save_to_issue import (
+    10→    plan_save_to_issue,
+    11→)
+    12→from erk_shared.context.context import ErkContext
+    13→from erk_shared.gateway.claude_installation.fake import (
+    14→    FakeClaudeInstallation,
+    15→    FakeProject,
+    16→    FakeSessionData,
+    17→)
+    18→from erk_shared.gateway.git.fake import FakeGit
+    19→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    20→
+    21→# Valid plan content that passes validation (100+ chars with structure)
+    22→VALID_PLAN_CONTENT = """# Feature Plan
+    23→
+    24→This plan describes the implementation of a new feature.
+    25→
+    26→- Step 1: Set up the environment
+
+... [30 lines omitted] ...
+
+    52→    assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BFVNFyK72uFWEUsP7d6WmL">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1412" cache_read_input_tokens="86750" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1412}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BFVNFyK72uFWEUsP7d6WmL">
+&lt;persisted-output&gt;
+Output too large (52.5KB). Full output saved to: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-37/1b2fa935-2b3c-47c3-a234-caee199c619b/tool-results/toolu_01BFVNFyK72uFWEUsP7d6WmL.txt
+
+Preview (first 2KB):
+     1→"""Unit tests for exit-plan-mode-hook command.
+     2→
+     3→This test file uses the pure logic extraction pattern. Most tests call the
+     4→`determine_exit_action()` pure function directly with no mocking required.
+     5→Only a few integration tests use CliRunner to verify the full hook works.
+     6→"""
+     7→
+     8→import json
+     9→from pathlib import Path
+    10→
+    11→from click.testing import CliRunner
+    12→
+    13→from erk.cli.commands.exec.scripts.exit_plan_mode_hook import (
+    14→    ExitAction,
+    15→    HookInput,
+    16→    abbreviate_for_header,
+    17→    build_blocking_message,
+    18→    determine_exit_action,
+    19→    exit_plan_mode_hook,
+    20→    extract_plan_title,
+    21→    is_terminal_editor,
+    22→)
+    23→from erk_shared.context.context import ErkContext
+    24→from erk_shared.context.testing import context_for_test
+    25→from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
+    26→from erk_shared.gateway.git.fake import FakeGit
+
+... [21 lines omitted] ...
+  </tool_result>
+  <thinking>Let me read the full test files that were truncated, especially the ones for plan_save_to_issue and exit_plan_mode_hook.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="13229" cache_read_input_tokens="88162" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13229}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the specific test sections I need to modify.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="13229" cache_read_input_tokens="88162" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13229}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_011HWNrFSXq6QMnxxS5m28VM">
+    <param name="pattern">objective_issue|objective-issue|objective_id</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/tests/unit/cli/commands/exec/scripts/test_plan_save_to_issue.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="13229" cache_read_input_tokens="88162" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13229}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+</session>

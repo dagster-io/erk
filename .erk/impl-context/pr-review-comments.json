@@ -1,0 +1,60 @@
+{
+  "success": true,
+  "pr_number": 8117,
+  "threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5wjskI",
+      "path": "docs/learned/planning/lifecycle.md",
+      "line": 12,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected (pre-existing issue surfaced by full-doc audit).\n\nClaim at line 645: \"`objective-context` marker: stores objective issue number (triggers exit-plan-mode hook to suggest correct save command)\"\nReality: This PR eliminates the `--objective-issue` flag. The hook no longer reads the marker to suggest a flag. Instead, `plan-save` reads the marker directly to link the objective. The hooks/erk.md and session-deduplication.md tables in this same PR correctly describe the new effect as \"Read by plan-save to link objective\".\n\nSource: `src/erk/cli/commands/exec/scripts/plan_save.py:331-336` (marker read by plan-save)\n\nSuggested fix: Line 645 \u2014 change to: ``objective-context` marker: stores objective issue number (read by plan-save to link the plan to its parent objective)`",
+          "created_at": "2026-02-25T02:06:14Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed in e6f6ac0: Updated description to accurately state that objective-context marker is read by plan-save to link the plan to its parent objective.\n\n_Addressed via `/erk:pr-address` at 2026-02-24 18:19 PST_",
+          "created_at": "2026-02-25T02:19:35Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wjrY_",
+      "path": "tests/unit/cli/commands/exec/scripts/test_plan_save.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier**: List comprehension with index [0] access - Consider using next() for clarity. Pattern like `[x for x in items if condition][0]` risks IndexError. Prefer: `next((line for line in result.output.strip().splitlines() if line.startswith(\"{\")), None)` for more explicit error handling.",
+          "created_at": "2026-02-25T02:03:28Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed in e6f6ac0: Replaced list comprehension [0] access with next() for clarity.\n\n_Addressed via `/erk:pr-address` at 2026-02-24 18:19 PST_",
+          "created_at": "2026-02-25T02:19:37Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wjrfA",
+      "path": "tests/unit/cli/commands/exec/scripts/test_plan_save_to_issue.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier**: List comprehension with index [0] access - Consider using next() for clarity. Pattern like `[x for x in items if condition][0]` risks IndexError. Prefer: `next((line for line in result.output.strip().splitlines() if line.startswith(\"{\")), None)` for more explicit error handling.",
+          "created_at": "2026-02-25T02:03:40Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed in e6f6ac0: Replaced list comprehension [0] access with next() for clarity.\n\n_Addressed via `/erk:pr-address` at 2026-02-24 18:19 PST_",
+          "created_at": "2026-02-25T02:19:38Z"
+        }
+      ]
+    }
+  ]
+}
