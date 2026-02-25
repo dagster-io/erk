@@ -385,7 +385,7 @@ def test_delete_blocks_when_pending_learn_marker_exists() -> None:
             result,
             1,
             "Worktree has pending learn",
-            "erk plan learn raw",
+            "erk learn",
         )
 
         # Verify worktree was NOT deleted
