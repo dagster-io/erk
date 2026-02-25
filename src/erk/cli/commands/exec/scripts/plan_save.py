@@ -182,7 +182,11 @@ def _save_as_planned_pr(
     trunk = git.branch.detect_trunk_branch(repo_root)
     current_branch = git.branch.get_current_branch(repo_root)
 
-    if current_branch is not None and current_branch != trunk and not current_branch.startswith("learn/"):
+    if (
+        current_branch is not None
+        and current_branch != trunk
+        and not current_branch.startswith("learn/")
+    ):
         # Stack plan branch on current feature branch for natural Graphite stacking
         base_branch = current_branch
         create_result = branch_manager.create_branch(repo_root, branch_name, current_branch)
