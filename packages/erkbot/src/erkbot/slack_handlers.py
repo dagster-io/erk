@@ -260,7 +260,6 @@ def register_handlers(app, *, settings: Settings, bot: ErkBot | None, time: Time
                     "Could not determine channel for this mention.", thread_ts=reply_thread_ts
                 )
                 return
-            reply_blocks = build_suggested_replies_blocks(replies=CHAT_SUGGESTED_REPLIES)
             asyncio.create_task(
                 run_agent_background(
                     client=client,
@@ -273,7 +272,9 @@ def register_handlers(app, *, settings: Settings, bot: ErkBot | None, time: Time
                     progress_update_interval_seconds=settings.one_shot_progress_update_interval_seconds,
                     max_slack_code_block_chars=settings.max_slack_code_block_chars,
                     enable_suggested_replies=settings.enable_suggested_replies,
-                    suggested_reply_blocks=reply_blocks,
+                    suggested_reply_blocks=build_suggested_replies_blocks(
+                        replies=CHAT_SUGGESTED_REPLIES
+                    ),
                 )
             )
             return
@@ -333,14 +334,13 @@ def register_handlers(app, *, settings: Settings, bot: ErkBot | None, time: Time
         )
 
         # Replace buttons with selection indicator
-        replacement_blocks = build_selected_reply_blocks(
-            selected_label=selected_label, user_id=user_id
-        )
         try:
             await client.chat_update(
                 channel=channel,
                 ts=message_ts,
-                blocks=replacement_blocks,
+                blocks=build_selected_reply_blocks(
+                    selected_label=selected_label, user_id=user_id
+                ),
                 text=f"<@{user_id}> selected: {selected_label}",
             )
         except SlackApiError:
@@ -368,21 +368,21 @@ def register_handlers(app, *, settings: Settings, bot: ErkBot | None, time: Time
             except SlackApiError:
                 pass  # Best-effort plan list response; failure is non-fatal
         elif isinstance(command, ChatCommand) and bot is not None:
-            source_ts_for_task = message_ts
-            reply_blocks = build_suggested_replies_blocks(replies=CHAT_SUGGESTED_REPLIES)
             asyncio.create_task(
                 run_agent_background(
                     client=client,
                     channel=channel,
                     reply_thread_ts=thread_ts,
-                    source_ts=source_ts_for_task,
+                    source_ts=message_ts,
                     prompt=command.message,
                     bot=bot,
                     time=time,
                     progress_update_interval_seconds=settings.one_shot_progress_update_interval_seconds,
                     max_slack_code_block_chars=settings.max_slack_code_block_chars,
                     enable_suggested_replies=settings.enable_suggested_replies,
-                    suggested_reply_blocks=reply_blocks,
+                    suggested_reply_blocks=build_suggested_replies_blocks(
+                        replies=CHAT_SUGGESTED_REPLIES
+                    ),
                 )
             )
 
