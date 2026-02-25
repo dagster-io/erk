@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Plan: Replace gh subprocess with HTTP for dash Plans tab"
-}
