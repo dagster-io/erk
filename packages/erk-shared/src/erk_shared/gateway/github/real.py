@@ -22,7 +22,6 @@ from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.graphql_queries import (
     ADD_REVIEW_THREAD_REPLY_MUTATION,
     GET_ISSUES_WITH_PR_LINKAGES_QUERY,
-    GET_PLAN_PRS_WITH_DETAILS_QUERY,
     GET_PR_REVIEW_THREADS_QUERY,
     GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY,
     ISSUE_PR_LINKAGE_FRAGMENT,
@@ -1625,46 +1624,67 @@ query {{
         state: str | None,
         limit: int | None,
         author: str | None,
+        exclude_labels: list[str] | None = None,
     ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
-        """List plan PRs with rich details via single GraphQL query.
+        """List plan PRs with rich details via REST+GraphQL two-step approach.
 
-        Returns PRDetails for plan content extraction and PullRequestInfo
-        with checks, review threads, and merge status for display.
+        Step 1: REST issues endpoint for server-side author/label filtering.
+        Step 2: Batched GraphQL enrichment for rich PR fields.
+
+        This is faster than the single GraphQL pullRequests query because:
+        - REST supports server-side creator filtering (GraphQL pullRequests doesn't)
+        - Only enriches the filtered set, not all PRs with the label
         """
         repo_id = location.repo_id
 
-        # Build states array - default to OPEN
-        states = [state.upper()] if state else ["OPEN"]
+        # Step 1: REST issues list with server-side filtering
+        rest_state = state.lower() if state else "open"
         effective_limit = limit if limit is not None else 30
 
-        # GH-API-AUDIT: GraphQL - pullRequests with rich details
-        cmd = [
-            "gh",
-            "api",
-            "graphql",
-            "-f",
-            f"query={GET_PLAN_PRS_WITH_DETAILS_QUERY}",
-            "-f",
-            f"owner={repo_id.owner}",
-            "-f",
-            f"repo={repo_id.repo}",
-            "-F",
-            f"first={effective_limit}",
+        endpoint = f"repos/{repo_id.owner}/{repo_id.repo}/issues"
+        params = [
+            f"labels={','.join(labels)}",
+            f"state={rest_state}",
+            f"per_page={effective_limit}",
+            "sort=updated",
+            "direction=desc",
         ]
+        if author is not None:
+            params.append(f"creator={author}")
 
-        for label in labels:
-            cmd.extend(["-f", f"labels[]={label}"])
+        endpoint += "?" + "&".join(params)
 
-        for state_val in states:
-            cmd.extend(["-f", f"states[]={state_val}"])
+        # GH-API-AUDIT: REST - GET issues (with creator + label filtering)
+        cmd = ["gh", "api", endpoint]
 
         try:
             stdout = execute_gh_command_with_retry(cmd, location.root, self._time)
         except RuntimeError:
             return ([], {})
 
-        response = json.loads(stdout)
-        return self._parse_plan_prs_with_details(response, repo_id, author=author)
+        issues_data = json.loads(stdout)
+
+        # Filter to PRs only (items with pull_request key)
+        pr_items = [item for item in issues_data if "pull_request" in item]
+
+        # Client-side exclude_labels filtering (cheap — labels are in REST response)
+        if exclude_labels:
+            exclude_set = set(exclude_labels)
+            pr_items = [
+                item
+                for item in pr_items
+                if not any(label["name"] in exclude_set for label in item.get("labels", []))
+            ]
+
+        if not pr_items:
+            return ([], {})
+
+        # Step 2: Batched GraphQL enrichment for rich PR fields
+        pr_numbers = [item["number"] for item in pr_items]
+        enrichment_data = self._enrich_prs_via_graphql(location, pr_numbers)
+
+        # Merge REST + GraphQL data into PRDetails and PullRequestInfo
+        return self._merge_rest_graphql_pr_data(pr_items, enrichment_data, repo_id)
 
     def _parse_plan_prs_with_details(
         self,
@@ -1751,6 +1771,180 @@ query {{
                 head_branch=node.get("headRefName"),
                 review_decision=review_decision,
                 base_ref_name=node.get("baseRefName"),
+            )
+            pr_linkages[pr_number] = [pr_info]
+
+        return (pr_details_list, pr_linkages)
+
+    def _enrich_prs_via_graphql(
+        self,
+        location: GitHubRepoLocation,
+        pr_numbers: list[int],
+    ) -> dict[int, dict[str, Any]]:
+        """Batch-fetch rich PR fields via a single aliased GraphQL query.
+
+        Builds a dynamic query with aliased pullRequest(number: N) fields
+        to fetch checks, review threads, merge status, etc. in one API call.
+
+        Args:
+            location: GitHub repository location
+            pr_numbers: List of PR numbers to enrich
+
+        Returns:
+            Mapping of pr_number -> GraphQL node data dict
+        """
+        repo_id = location.repo_id
+
+        # Build aliased pull request fields
+        pr_fields = """
+            isDraft
+            mergeable
+            mergeStateStatus
+            isCrossRepository
+            baseRefName
+            headRefName
+            statusCheckRollup {
+                state
+                contexts(last: 1) {
+                    totalCount
+                    checkRunCountsByState { state count }
+                    statusContextCountsByState { state count }
+                }
+            }
+            reviewThreads(first: 100) {
+                totalCount
+                nodes { isResolved }
+            }
+            reviewDecision
+        """
+
+        aliases = []
+        for pr_num in pr_numbers:
+            aliases.append(f"pr_{pr_num}: pullRequest(number: {pr_num}) {{ {pr_fields} }}")
+
+        query = (
+            "query($owner: String!, $repo: String!) {"
+            f"  repository(owner: $owner, name: $repo) {{ {' '.join(aliases)} }}"
+            "}"
+        )
+
+        # GH-API-AUDIT: GraphQL - batched pullRequest enrichment
+        cmd = [
+            "gh",
+            "api",
+            "graphql",
+            "-f",
+            f"query={query}",
+            "-f",
+            f"owner={repo_id.owner}",
+            "-f",
+            f"repo={repo_id.repo}",
+        ]
+
+        try:
+            stdout = execute_gh_command_with_retry(cmd, location.root, self._time)
+        except RuntimeError:
+            return {}
+
+        response = json.loads(stdout)
+        repo_data = response.get("data", {}).get("repository", {})
+
+        result: dict[int, dict[str, Any]] = {}
+        for pr_num in pr_numbers:
+            alias = f"pr_{pr_num}"
+            node = repo_data.get(alias)
+            if node is not None:
+                result[pr_num] = node
+
+        return result
+
+    def _merge_rest_graphql_pr_data(
+        self,
+        rest_items: list[dict[str, Any]],
+        enrichment: dict[int, dict[str, Any]],
+        repo_id: GitHubRepoId,
+    ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
+        """Merge REST issue data with GraphQL PR enrichment into PRDetails and PullRequestInfo.
+
+        Args:
+            rest_items: Raw REST API issue/PR items
+            enrichment: GraphQL enrichment data keyed by PR number
+            repo_id: GitHub repository identity
+
+        Returns:
+            Tuple of (pr_details_list, pr_linkages_by_pr_number)
+        """
+        pr_details_list: list[PRDetails] = []
+        pr_linkages: dict[int, list[PullRequestInfo]] = {}
+
+        for item in rest_items:
+            pr_number = item["number"]
+            gql = enrichment.get(pr_number, {})
+
+            # Parse timestamps from REST
+            created_at = datetime.fromisoformat(item["created_at"].replace("Z", "+00:00"))
+            updated_at = datetime.fromisoformat(item["updated_at"].replace("Z", "+00:00"))
+
+            # Parse labels from REST
+            label_names = tuple(label["name"] for label in item.get("labels", []))
+
+            # Author from REST
+            pr_author = item.get("user", {}).get("login", "")
+
+            # Draft and merge info from GraphQL enrichment
+            is_draft = gql.get("isDraft", False)
+            mergeable_raw = gql.get("mergeable", "UNKNOWN")
+            merge_state_status = gql.get("mergeStateStatus", "UNKNOWN")
+            is_cross_repository = gql.get("isCrossRepository", False)
+            base_ref_name = gql.get("baseRefName", "")
+            rest_head_ref = item.get("pull_request", {}).get("head", {}).get("ref", "")
+            head_ref_name = gql.get("headRefName", rest_head_ref)
+
+            # State from REST (normalize to upper)
+            pr_state = item.get("state", "open").upper()
+
+            pr_details = PRDetails(
+                number=pr_number,
+                url=item.get("html_url", ""),
+                title=item.get("title", ""),
+                body=item.get("body", "") or "",
+                state=pr_state,
+                is_draft=is_draft,
+                base_ref_name=base_ref_name,
+                head_ref_name=head_ref_name,
+                is_cross_repository=is_cross_repository,
+                mergeable=mergeable_raw,
+                merge_state_status=merge_state_status,
+                owner=repo_id.owner,
+                repo=repo_id.repo,
+                labels=label_names,
+                created_at=created_at,
+                updated_at=updated_at,
+                author=pr_author,
+            )
+            pr_details_list.append(pr_details)
+
+            # Build PullRequestInfo with rich GraphQL data
+            checks_passing, checks_counts = self._parse_status_rollup(gql.get("statusCheckRollup"))
+            has_conflicts = self._parse_mergeable_status(gql.get("mergeable"))
+            review_thread_counts = self._parse_review_thread_counts(gql.get("reviewThreads"))
+            review_decision = gql.get("reviewDecision")
+
+            pr_info = PullRequestInfo(
+                number=pr_number,
+                state=pr_state,
+                url=item.get("html_url", ""),
+                is_draft=is_draft,
+                title=item.get("title"),
+                checks_passing=checks_passing,
+                owner=repo_id.owner,
+                repo=repo_id.repo,
+                has_conflicts=has_conflicts,
+                checks_counts=checks_counts,
+                review_thread_counts=review_thread_counts,
+                head_branch=head_ref_name,
+                review_decision=review_decision,
+                base_ref_name=base_ref_name,
             )
             pr_linkages[pr_number] = [pr_info]
 

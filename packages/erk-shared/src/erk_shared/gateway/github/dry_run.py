@@ -208,10 +208,16 @@ class DryRunGitHub(GitHub):
         state: str | None,
         limit: int | None,
         author: str | None,
+        exclude_labels: list[str] | None = None,
     ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.list_plan_prs_with_details(
-            location, labels=labels, state=state, limit=limit, author=author
+            location,
+            labels=labels,
+            state=state,
+            limit=limit,
+            author=author,
+            exclude_labels=exclude_labels,
         )
 
     def update_pr_title_and_body(

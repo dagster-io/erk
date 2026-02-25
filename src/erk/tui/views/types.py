@@ -23,12 +23,15 @@ class ViewConfig:
         display_name: Human-readable name for the view
         labels: GitHub labels to use when fetching data
         key_hint: Key binding hint (e.g., "1", "2", "3")
+        exclude_labels: Labels to exclude from results (client-side filtering
+            applied before expensive enrichment). Empty tuple means no exclusion.
     """
 
     mode: ViewMode
     display_name: str
     labels: tuple[str, ...]
     key_hint: str
+    exclude_labels: tuple[str, ...] = ()
 
 
 PLANS_VIEW = ViewConfig(
@@ -36,12 +39,13 @@ PLANS_VIEW = ViewConfig(
     display_name="Plans",
     labels=("erk-plan",),
     key_hint="1",
+    exclude_labels=("erk-learn",),
 )
 
 LEARN_VIEW = ViewConfig(
     mode=ViewMode.LEARN,
     display_name="Learn",
-    labels=("erk-plan",),
+    labels=("erk-plan", "erk-learn"),
     key_hint="2",
 )
 
