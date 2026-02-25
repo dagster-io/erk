@@ -106,7 +106,7 @@ Quick reference for all `erk exec` subcommands.
 | `trigger-async-learn`             | Trigger async learn workflow for a plan.                                   |
 | `tripwires-reminder-hook`         | Output tripwires reminder for UserPromptSubmit hook.                       |
 | `update-issue-body`               | Update an issue's body using REST API (avoids GraphQL rate limits).        |
-| `update-objective-node`           | Update node plan/PR cells in an objective's roadmap table.                 |
+| `update-objective-node`           | Update node PR cells in an objective's roadmap table.                      |
 | `update-plan-header`              | Update plan-header metadata fields on a plan.                              |
 | `update-pr-description`           | Update PR title and body with AI-generated description.                    |
 | `upload-impl-session`             | Upload current implementation session for async learn.                     |
@@ -835,12 +835,13 @@ Apply mechanical updates to an objective after landing a PR.
 
 **Options:**
 
-| Flag          | Type    | Required | Default | Description                                               |
-| ------------- | ------- | -------- | ------- | --------------------------------------------------------- |
-| `--pr`        | INTEGER | No       | -       | PR number (auto-discovered if omitted)                    |
-| `--objective` | INTEGER | No       | -       | Objective issue (auto-discovered if omitted)              |
-| `--branch`    | TEXT    | No       | -       | Branch name (auto-discovered if omitted)                  |
-| `--plan`      | INTEGER | No       | -       | Plan number (direct lookup, skips branch-based discovery) |
+| Flag          | Type    | Required | Default        | Description                                               |
+| ------------- | ------- | -------- | -------------- | --------------------------------------------------------- |
+| `--pr`        | INTEGER | No       | -              | PR number (auto-discovered if omitted)                    |
+| `--objective` | INTEGER | No       | -              | Objective issue (auto-discovered if omitted)              |
+| `--branch`    | TEXT    | No       | -              | Branch name (auto-discovered if omitted)                  |
+| `--plan`      | INTEGER | No       | -              | Plan number (direct lookup, skips branch-based discovery) |
+| `--node`      | TEXT    | No       | Sentinel.UNSET | Node ID(s) to mark as done (e.g., --node 1.1 --node 1.2)  |
 
 ### objective-fetch-context
 
@@ -1306,7 +1307,7 @@ Update an issue's body using REST API (avoids GraphQL rate limits).
 
 ### update-objective-node
 
-Update node plan/PR cells in an objective's roadmap table.
+Update node PR cells in an objective's roadmap table.
 
 **Usage:** `erk exec update-objective-node` <issue_number>
 
@@ -1321,9 +1322,8 @@ Update node plan/PR cells in an objective's roadmap table.
 | Flag             | Type   | Required | Default        | Description                                                           |
 | ---------------- | ------ | -------- | -------------- | --------------------------------------------------------------------- |
 | `--node`         | TEXT   | Yes      | Sentinel.UNSET | Node ID(s) to update (e.g., '1.3')                                    |
-| `--plan`         | TEXT   | No       | Sentinel.UNSET | Plan issue reference (e.g., '#6464')                                  |
-| `--pr`           | TEXT   | No       | Sentinel.UNSET | PR reference (e.g., '#456', or '' to clear)                           |
-| `--status`       | CHOICE | No       | -              | Explicit status to set (default: infer from plan/PR value)            |
+| `--pr`           | TEXT   | Yes      | Sentinel.UNSET | PR reference (e.g., '#456', or '' to clear)                           |
+| `--status`       | CHOICE | No       | -              | Explicit status to set (default: infer from PR value)                 |
 | `--include-body` | FLAG   | No       | -              | Include the fully-mutated issue body in JSON output as 'updated_body' |
 
 ### update-plan-header
