@@ -6,7 +6,7 @@ read_when:
   - "modifying the sts column"
 tripwires:
   - action: "adding emoji with Unicode variation selector (\\ufe0f) to status indicators"
-    warning: "Variation selector forces double-wide rendering in terminals, breaking column alignment. Current safe emoji: 🚧 👀 💥 ✔ ❌ 🚀. Test any new emoji in terminal before adding."
+    warning: "Variation selector forces double-wide rendering in terminals, breaking column alignment. Current safe emoji: 🥞 🚧 👀 💥 ✔ ❌ 🚀. Test any new emoji in terminal before adding."
     score: 5
   - action: "extracting status indicators from the lifecycle display string"
     warning: "Indicators are computed from RAW PR state fields (is_draft, has_conflicts, review_decision), NOT extracted from lifecycle display. Use compute_status_indicators() for standalone display, format_lifecycle_with_status() for inline."
@@ -59,6 +59,7 @@ Both public functions delegate to a shared helper that returns a list of emoji s
 
 | Emoji | Meaning           | When Shown                                                               |
 | ----- | ----------------- | ------------------------------------------------------------------------ |
+| 🥞    | Stacked PR        | Any stage when `is_stacked=True` (base branch != master/main)            |
 | 🚧    | Draft PR          | Active stages (planned, implementing, review) when `is_draft=True`       |
 | 👀    | Published PR      | Active stages when `is_draft=False`                                      |
 | 💥    | Merge conflicts   | Implementing, implemented, or review when `has_conflicts=True`           |

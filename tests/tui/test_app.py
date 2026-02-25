@@ -2540,7 +2540,7 @@ class TestSubmitToQueueAsync:
             app._submit_to_queue_async(123)
             await pilot.pause(0.3)
 
-            assert captured_args == ["erk", "plan", "submit", "123", "-f"]
+            assert captured_args == ["erk", "pr", "dispatch", "123"]
 
     @pytest.mark.asyncio
     async def test_submit_to_queue_triggers_refresh_on_success(
