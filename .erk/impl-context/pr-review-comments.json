@@ -1,0 +1,96 @@
+{
+  "success": true,
+  "pr_number": 8113,
+  "threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5wisne",
+      "path": "docs/learned/integrations/github-review-decision.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: \"Line 715: `review_decision=pr_review_decision` \u2014 passed to `compute_status_indicators()`\" (doc line 66)\nReality: The actual line number in `real.py` is ~735, not 715. The line number has drifted.\n\nSource: `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py`\n\nSuggested fix: Replace the three specific line numbers (573, 599, 715) in the Wiring section with a name-based source pointer \u2014 line numbers go stale silently with every edit.",
+          "created_at": "2026-02-24T23:44:57Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed: Replaced all specific line numbers with name-based source pointers to prevent drift.\n\n_Addressed via `/erk:pr-address` at 2026-02-25 00:53 UTC_",
+          "created_at": "2026-02-25T00:53:14Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wissY",
+      "path": "docs/learned/integrations/github-review-decision.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Drift risk \u2014 documents specific line numbers that will change.\n\nSource: `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py`\n\nRisk: The \"Display Logic\" section cites lines 67-108 for `compute_status_indicators()`. The \"GraphQL Source\" section cites lines 76, 149, 198 for `graphql_queries.py`. The \"Wiring in real.py\" section cites lines 573, 599, 715. Any edit to these files silently invalidates these references. Consider replacing all line-number references with name-based source pointers (e.g., `See `compute_status_indicators()` in `lifecycle.py``).",
+          "created_at": "2026-02-24T23:45:05Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed: Replaced all line number references (573, 599, 715 in Wiring; 67-108 in Display Logic; 76, 149, 198 in GraphQL; 201 in types.py) with name-based source pointers.\n\n_Addressed via `/erk:pr-address` at 2026-02-25 00:53 UTC_",
+          "created_at": "2026-02-25T00:53:16Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wjNZj",
+      "path": "docs/learned/integrations/github-review-decision.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: \"`None` means the PR has no review state (e.g., no reviewers assigned, or `REVIEW_REQUIRED` maps to no indicator).\"\nReality: The parenthetical conflates two separate cases. `None` is the GraphQL null case (no reviewers assigned or review not configured). `REVIEW_REQUIRED` is a distinct string value that produces no display indicator \u2014 it does not 'map to' `None`. The phrasing implies `REVIEW_REQUIRED` results in a null field value, which is incorrect.\n\nSource: `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py` (see `_build_indicators()`) and `packages/erk-shared/src/erk_shared/gateway/github/types.py:201`\n\nSuggested fix: Split the explanation \u2014 e.g., \"`None` means the PR has no review state (e.g., no reviewers assigned). Both `None` and `REVIEW_REQUIRED` produce no display indicator.\"",
+          "created_at": "2026-02-25T00:56:10Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed in cfae8af7c: Clarified that None and REVIEW_REQUIRED are distinct cases \u2014 None means no review state (no reviewers assigned), while REVIEW_REQUIRED means reviewers are assigned but haven't completed review. Both produce no indicator but for different reasons.\n\n_Addressed via `/erk:pr-address` at 2026-02-25 01:07 UTC_",
+          "created_at": "2026-02-25T01:07:13Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wisFH",
+      "path": "packages/erkbot/src/erkbot/config.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python Review**: Default parameter values not allowed - Use keyword-only parameters instead. See references/api-design.md for details on parameter constraints.",
+          "created_at": "2026-02-24T23:43:54Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed: Used Field(10, alias=ERK_MAX_TURNS) instead of bare default. Updated test_config.py to pass via alias.\n\n_Addressed via `/erk:pr-address` at 2026-02-25 00:53 UTC_",
+          "created_at": "2026-02-25T00:53:12Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wjNMy",
+      "path": "packages/erkbot/tests/test_cli.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: Default parameter values - use keyword-only parameters instead - see dignified-python references/api-design.md",
+          "created_at": "2026-02-25T00:55:43Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed in cfae8af7c: Removed default parameter values from _make_settings_mock() and updated all call sites to pass explicit keyword-only arguments.\n\n_Addressed via `/erk:pr-address` at 2026-02-25 01:07 UTC_",
+          "created_at": "2026-02-25T01:07:11Z"
+        }
+      ]
+    }
+  ]
+}
