@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Fix get_diff_to_branch: two-dot to three-dot git diff"
-}
