@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix TUI \"submit\" command: rename to \"dispatch\" and fix broken execution"
+}
