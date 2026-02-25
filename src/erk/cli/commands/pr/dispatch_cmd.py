@@ -37,6 +37,7 @@ from erk_shared.impl_context import (
     impl_context_exists,
     remove_impl_context,
 )
+from erk_shared.impl_folder import read_plan_ref
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 from erk_shared.plan_store.types import PlanNotFound
@@ -414,8 +415,50 @@ def _dispatch_planned_pr_plan(
     )
 
 
+def _detect_plan_number_from_context(
+    ctx: ErkContext,
+    repo: RepoContext,
+    current_branch: str,
+) -> int | None:
+    """Detect plan PR number from local context when no argument given.
+
+    Fallback chain:
+    1. .impl/plan-ref.json (or ref.json, issue.json) — local impl folder
+    2. .erk/impl-context/ref.json — committed staging directory
+    3. PR lookup from current branch — GitHub API query
+
+    Args:
+        ctx: ErkContext with git/github operations
+        repo: Repository context
+        current_branch: Current git branch name
+
+    Returns:
+        Detected PR number, or None if nothing found.
+    """
+    # 1. Check .impl/ folder
+    impl_dir = repo.root / ".impl"
+    if impl_dir.exists():
+        plan_ref = read_plan_ref(impl_dir)
+        if plan_ref is not None and plan_ref.plan_id.isdigit():
+            return int(plan_ref.plan_id)
+
+    # 2. Check .erk/impl-context/
+    impl_context_dir = repo.root / IMPL_CONTEXT_DIR
+    if impl_context_dir.exists():
+        plan_ref = read_plan_ref(impl_context_dir)
+        if plan_ref is not None and plan_ref.plan_id.isdigit():
+            return int(plan_ref.plan_id)
+
+    # 3. PR lookup from branch
+    pr_result = ctx.github.get_pr_for_branch(repo.root, current_branch)
+    if not isinstance(pr_result, PRNotFound):
+        return pr_result.number
+
+    return None
+
+
 @click.command("dispatch")
-@click.argument("issue_numbers", type=int, nargs=-1, required=True)
+@click.argument("issue_numbers", type=int, nargs=-1, required=False)
 @click.option(
     "--base",
     type=str,
@@ -427,16 +470,18 @@ def pr_dispatch(ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | Non
     """Dispatch plans for remote AI implementation via GitHub Actions.
 
     Creates branch and draft PR locally (for correct commit attribution),
-    then triggers the dispatch-erk-queue.yml GitHub Actions workflow.
+    then triggers the plan-implement.yml GitHub Actions workflow.
 
     Arguments:
-        ISSUE_NUMBERS: One or more GitHub issue numbers to dispatch
+        ISSUE_NUMBERS: One or more GitHub issue numbers to dispatch.
+            If omitted, auto-detects from .impl/, .erk/impl-context/, or current branch.
 
     \b
     Example:
         erk pr dispatch 123
         erk pr dispatch 123 456 789
         erk pr dispatch 123 --base master
+        erk pr dispatch                     # auto-detect from context
 
     Requires:
         - All issues must have erk-plan label
@@ -465,6 +510,20 @@ def pr_dispatch(ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | Non
             + "Not on a branch (detached HEAD state). Cannot dispatch from here."
         )
         raise SystemExit(1)
+
+    # If no arguments given, try to auto-detect from context
+    if not issue_numbers:
+        detected = _detect_plan_number_from_context(ctx, repo, original_branch)
+        if detected is None:
+            user_output(
+                click.style("Error: ", fg="red")
+                + "No issue numbers provided and could not auto-detect from context.\n\n"
+                "Provide issue numbers explicitly: erk pr dispatch <number>\n"
+                "Or run from a plan branch with an associated PR."
+            )
+            raise SystemExit(1)
+        user_output(f"Auto-detected PR #{detected} from context")
+        issue_numbers = (detected,)
 
     # Validate base branch if provided, otherwise default to current branch (LBYL)
     if base is not None:

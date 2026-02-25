@@ -13,6 +13,7 @@ from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.impl_folder import build_plan_ref_json
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
 from tests.test_utils.context_builders import build_workspace_test_context
@@ -254,4 +255,288 @@ def test_dispatch_planned_pr_plan_cleans_up_stale_impl_context_folder() -> None:
         assert "Warning:" not in result.output
         assert "Dispatch metadata written" in result.output
 
+        assert "Traceback" not in result.output
+
+
+def _make_pr_42(*, plan_branch: str) -> PRDetails:
+    """Build a standard PRDetails for plan PR #42 used by auto-detection tests."""
+    plan_header = render_metadata_block(
+        MetadataBlock(
+            key="plan-header",
+            data={
+                "schema_version": "2",
+                "created_at": "2024-01-01T00:00:00+00:00",
+                "created_by": "testuser",
+                "branch_name": plan_branch,
+            },
+        )
+    )
+    pr_body = build_plan_stage_body(
+        plan_header,
+        "# Plan: Auto-detect Test\n\n- Step 1: Do something",
+    )
+    return PRDetails(
+        number=42,
+        url="https://github.com/test-owner/test-repo/pull/42",
+        title="[erk-plan] Auto-detect Test",
+        body=pr_body,
+        state="OPEN",
+        is_draft=True,
+        base_ref_name="main",
+        head_ref_name=plan_branch,
+        is_cross_repository=False,
+        mergeable="UNKNOWN",
+        merge_state_status="UNKNOWN",
+        owner="test-owner",
+        repo="test-repo",
+        labels=("erk-plan",),
+    )
+
+
+def test_dispatch_auto_detects_from_impl_folder() -> None:
+    """Test auto-detection from .impl/plan-ref.json when no arguments given."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        plan_branch = "plnd/auto-detect-impl"
+        pr_42 = _make_pr_42(plan_branch=plan_branch)
+
+        # Create .impl/plan-ref.json
+        impl_dir = env.cwd / ".impl"
+        impl_dir.mkdir()
+        plan_ref_content = build_plan_ref_json(
+            provider="github-draft-pr",
+            plan_id="42",
+            url="https://github.com/test-owner/test-repo/pull/42",
+            labels=("erk-plan",),
+            objective_id=None,
+        )
+        (impl_dir / "plan-ref.json").write_text(plan_ref_content, encoding="utf-8")
+
+        fake_gh = FakeGitHub(
+            authenticated=True,
+            polled_run_id="12345",
+            pr_details={42: pr_42},
+            prs_by_branch={plan_branch: pr_42},
+        )
+        fake_issues = FakeGitHubIssues()
+        fake_time = FakeTime()
+        planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=fake_time)
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+            remote_urls={(env.cwd, "origin"): "https://github.com/test-owner/test-repo.git"},
+            remote_branches={env.cwd: ["origin/main", f"origin/{plan_branch}"]},
+            repository_roots={env.cwd: env.cwd},
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "main": BranchMetadata(
+                    name="main", parent=None, children=[], is_trunk=True, commit_sha=None
+                ),
+            },
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            graphite=graphite,
+            github=fake_gh,
+            issues=fake_issues,
+            use_graphite=True,
+            plan_store=planned_pr_backend,
+        )
+
+        # Invoke WITHOUT issue number argument
+        result = runner.invoke(cli, ["pr", "dispatch", "--base", "main"], obj=ctx)
+
+        assert "Auto-detected PR #42 from context" in result.output
+        assert len(fake_gh.triggered_workflows) >= 1, (
+            f"Expected workflow trigger, got: {fake_gh.triggered_workflows}\n"
+            f"Output: {result.output}"
+        )
+        _workflow_name, inputs = fake_gh.triggered_workflows[0]
+        assert inputs["plan_id"] == "42"
+        assert "Traceback" not in result.output
+
+
+def test_dispatch_auto_detects_from_impl_context() -> None:
+    """Test auto-detection from .erk/impl-context/ref.json when no .impl/ exists."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        plan_branch = "plnd/auto-detect-context"
+        pr_42 = _make_pr_42(plan_branch=plan_branch)
+
+        # Create .erk/impl-context/ref.json (no .impl/)
+        impl_context_dir = env.cwd / ".erk" / "impl-context"
+        impl_context_dir.mkdir(parents=True)
+        plan_ref_content = build_plan_ref_json(
+            provider="github-draft-pr",
+            plan_id="42",
+            url="https://github.com/test-owner/test-repo/pull/42",
+            labels=("erk-plan",),
+            objective_id=None,
+        )
+        (impl_context_dir / "ref.json").write_text(plan_ref_content, encoding="utf-8")
+
+        fake_gh = FakeGitHub(
+            authenticated=True,
+            polled_run_id="12345",
+            pr_details={42: pr_42},
+            prs_by_branch={plan_branch: pr_42},
+        )
+        fake_issues = FakeGitHubIssues()
+        fake_time = FakeTime()
+        planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=fake_time)
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+            remote_urls={(env.cwd, "origin"): "https://github.com/test-owner/test-repo.git"},
+            remote_branches={env.cwd: ["origin/main", f"origin/{plan_branch}"]},
+            repository_roots={env.cwd: env.cwd},
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "main": BranchMetadata(
+                    name="main", parent=None, children=[], is_trunk=True, commit_sha=None
+                ),
+            },
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            graphite=graphite,
+            github=fake_gh,
+            issues=fake_issues,
+            use_graphite=True,
+            plan_store=planned_pr_backend,
+        )
+
+        result = runner.invoke(cli, ["pr", "dispatch", "--base", "main"], obj=ctx)
+
+        assert "Auto-detected PR #42 from context" in result.output
+        assert len(fake_gh.triggered_workflows) >= 1, (
+            f"Expected workflow trigger, got: {fake_gh.triggered_workflows}\n"
+            f"Output: {result.output}"
+        )
+        _workflow_name, inputs = fake_gh.triggered_workflows[0]
+        assert inputs["plan_id"] == "42"
+        assert "Traceback" not in result.output
+
+
+def test_dispatch_auto_detects_from_branch_pr() -> None:
+    """Test auto-detection from current branch's associated PR."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        plan_branch = "plnd/auto-detect-branch"
+        pr_42 = _make_pr_42(plan_branch=plan_branch)
+
+        # No .impl/ or .erk/impl-context/ — detection via branch PR lookup
+        fake_gh = FakeGitHub(
+            authenticated=True,
+            polled_run_id="12345",
+            pr_details={42: pr_42},
+            prs_by_branch={plan_branch: pr_42},
+        )
+        fake_issues = FakeGitHubIssues()
+        fake_time = FakeTime()
+        planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=fake_time)
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: plan_branch},
+            local_branches={env.cwd: ["main", plan_branch]},
+            default_branches={env.cwd: "main"},
+            remote_urls={(env.cwd, "origin"): "https://github.com/test-owner/test-repo.git"},
+            remote_branches={env.cwd: ["origin/main", f"origin/{plan_branch}"]},
+            repository_roots={env.cwd: env.cwd},
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "main": BranchMetadata(
+                    name="main", parent=None, children=[], is_trunk=True, commit_sha=None
+                ),
+            },
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            graphite=graphite,
+            github=fake_gh,
+            issues=fake_issues,
+            use_graphite=True,
+            plan_store=planned_pr_backend,
+        )
+
+        result = runner.invoke(cli, ["pr", "dispatch", "--base", "main"], obj=ctx)
+
+        assert "Auto-detected PR #42 from context" in result.output
+        assert len(fake_gh.triggered_workflows) >= 1, (
+            f"Expected workflow trigger, got: {fake_gh.triggered_workflows}\n"
+            f"Output: {result.output}"
+        )
+        _workflow_name, inputs = fake_gh.triggered_workflows[0]
+        assert inputs["plan_id"] == "42"
+        assert "Traceback" not in result.output
+
+
+def test_dispatch_no_args_no_context_fails() -> None:
+    """Test that dispatch with no arguments and no context gives helpful error."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        fake_gh = FakeGitHub(
+            authenticated=True,
+            # No PRs configured — branch lookup will return PRNotFound
+        )
+        fake_issues = FakeGitHubIssues()
+        fake_time = FakeTime()
+        planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=fake_time)
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "some-feature-branch"},
+            local_branches={env.cwd: ["main", "some-feature-branch"]},
+            default_branches={env.cwd: "main"},
+            remote_urls={(env.cwd, "origin"): "https://github.com/test-owner/test-repo.git"},
+            remote_branches={env.cwd: ["origin/main"]},
+            repository_roots={env.cwd: env.cwd},
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "main": BranchMetadata(
+                    name="main", parent=None, children=[], is_trunk=True, commit_sha=None
+                ),
+            },
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            graphite=graphite,
+            github=fake_gh,
+            issues=fake_issues,
+            use_graphite=True,
+            plan_store=planned_pr_backend,
+        )
+
+        result = runner.invoke(cli, ["pr", "dispatch"], obj=ctx)
+
+        assert result.exit_code != 0
+        assert "No issue numbers provided and could not auto-detect" in result.output
+        assert "erk pr dispatch <number>" in result.output
         assert "Traceback" not in result.output
