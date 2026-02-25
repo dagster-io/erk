@@ -284,6 +284,10 @@ class FakeGitBranchOps(GitBranchOps):
         """Get the commit SHA at the head of a branch."""
         return self._branch_heads.get(branch)
 
+    def get_all_branch_heads(self, repo_root: Path) -> dict[str, str]:
+        """Get commit SHAs for all local branches."""
+        return dict(self._branch_heads)
+
     def detect_trunk_branch(self, repo_root: Path) -> str:
         """Auto-detect the trunk branch name."""
         return self._trunk_branches.get(repo_root, "main")
