@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: Remove stale branch_slug forwarding in setup_impl that crashes `erk exec setup-impl --issue`"
+}
