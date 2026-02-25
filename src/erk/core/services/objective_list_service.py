@@ -44,4 +44,5 @@ class RealObjectiveListService(ObjectiveListService):
             skip_workflow_runs=skip_workflow_runs,
             creator=creator,
             exclude_labels=exclude_labels,
+            http_client=None,
         )

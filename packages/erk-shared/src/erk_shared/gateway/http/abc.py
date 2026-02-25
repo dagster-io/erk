@@ -76,6 +76,50 @@ class HttpClient(ABC):
         """
         ...
 
+    @abstractmethod
+    def get_list(
+        self,
+        endpoint: str,
+    ) -> list[dict[str, Any]]:
+        """Send a GET request expecting a JSON array response.
+
+        Args:
+            endpoint: API endpoint path (e.g., "repos/owner/repo/issues?labels=...")
+
+        Returns:
+            Response JSON as a list of dictionaries
+
+        Raises:
+            HttpError: If the request fails
+        """
+        ...
+
+    @abstractmethod
+    def graphql(
+        self,
+        *,
+        query: str,
+        variables: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Execute a GraphQL query via POST /graphql.
+
+        Args:
+            query: GraphQL query string
+            variables: Query variables
+
+        Returns:
+            Response JSON as a dictionary
+
+        Raises:
+            HttpError: If the request fails
+        """
+        ...
+
+    @property
+    def supports_direct_api(self) -> bool:
+        """Whether this client can make real API calls (vs test fake)."""
+        return False
+
 
 class HttpError(Exception):
     """Exception raised when an HTTP request fails."""

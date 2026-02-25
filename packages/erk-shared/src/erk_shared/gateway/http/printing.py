@@ -54,3 +54,21 @@ class PrintingHttpClient(PrintingBase, HttpClient):
         """GET request with printed output."""
         self._emit(self._format_command(f"HTTP GET {endpoint}"))
         return self._wrapped.get(endpoint)
+
+    def get_list(
+        self,
+        endpoint: str,
+    ) -> list[dict[str, Any]]:
+        """GET list request with printed output."""
+        self._emit(self._format_command(f"HTTP GET {endpoint}"))
+        return self._wrapped.get_list(endpoint)
+
+    def graphql(
+        self,
+        *,
+        query: str,
+        variables: dict[str, Any],
+    ) -> dict[str, Any]:
+        """GraphQL request with printed output."""
+        self._emit(self._format_command("HTTP POST graphql"))
+        return self._wrapped.graphql(query=query, variables=variables)

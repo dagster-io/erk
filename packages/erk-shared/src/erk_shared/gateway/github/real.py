@@ -35,10 +35,15 @@ from erk_shared.gateway.github.parsing import (
     parse_aggregated_check_counts,
     parse_gh_auth_status_output,
 )
+from erk_shared.gateway.github.pr_data_parsing import (
+    merge_rest_graphql_pr_data,
+    parse_mergeable_status,
+    parse_review_thread_counts,
+    parse_status_rollup,
+    parse_workflow_runs_nodes_response,
+)
 from erk_shared.gateway.github.retry import RetriesExhausted, RetryRequested, with_retries
 from erk_shared.gateway.github.types import (
-    BRANCH_NOT_AVAILABLE,
-    DISPLAY_TITLE_NOT_AVAILABLE,
     BodyContent,
     BodyFile,
     BodyText,
@@ -55,8 +60,6 @@ from erk_shared.gateway.github.types import (
     PullRequestInfo,
     RepoInfo,
     WorkflowRun,
-    WorkflowRunConclusion,
-    WorkflowRunStatus,
 )
 from erk_shared.gateway.time.abc import Time
 from erk_shared.output.output import user_output
@@ -1060,93 +1063,7 @@ query {{
         response = json.loads(stdout)
 
         # Parse response into WorkflowRun objects
-        return self._parse_workflow_runs_nodes_response(response, node_ids)
-
-    def _parse_workflow_runs_nodes_response(
-        self,
-        response: dict[str, Any],
-        node_ids: list[str],
-    ) -> dict[str, WorkflowRun | None]:
-        """Parse GraphQL nodes response into WorkflowRun objects.
-
-        Maps the GraphQL checkSuite status/conclusion to WorkflowRun fields.
-
-        Args:
-            response: GraphQL response data
-            node_ids: Original list of node IDs (for result ordering)
-
-        Returns:
-            Mapping of node_id -> WorkflowRun or None
-        """
-        result: dict[str, WorkflowRun | None] = {}
-        nodes = response.get("data", {}).get("nodes", [])
-
-        # Build mapping from id to parsed WorkflowRun
-        for node in nodes:
-            if node is None:
-                continue
-
-            node_id = node.get("id")
-            if node_id is None:
-                continue
-
-            # Extract checkSuite data
-            check_suite = node.get("checkSuite")
-            status: WorkflowRunStatus | None = None
-            conclusion: WorkflowRunConclusion | None = None
-            head_sha: str | None = None
-
-            if check_suite is not None:
-                # Map GitHub checkSuite status to workflow run status
-                cs_status = check_suite.get("status")
-                cs_conclusion = check_suite.get("conclusion")
-
-                # Map checkSuite.status to workflow run status
-                if cs_status == "COMPLETED":
-                    status = "completed"
-                elif cs_status == "IN_PROGRESS":
-                    status = "in_progress"
-                elif cs_status == "QUEUED":
-                    status = "queued"
-
-                # Map checkSuite.conclusion to workflow run conclusion
-                if cs_conclusion == "SUCCESS":
-                    conclusion = "success"
-                elif cs_conclusion == "FAILURE":
-                    conclusion = "failure"
-                elif cs_conclusion == "SKIPPED":
-                    conclusion = "skipped"
-                elif cs_conclusion == "CANCELLED":
-                    conclusion = "cancelled"
-
-                # Extract commit SHA
-                commit = check_suite.get("commit")
-                if commit is not None:
-                    head_sha = commit.get("oid")
-
-            # Parse created_at timestamp
-            created_at = None
-            created_at_str = node.get("createdAt")
-            if created_at_str:
-                created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
-
-            workflow_run = WorkflowRun(
-                run_id=str(node.get("databaseId", "")),
-                status=status or "unknown",  # Default for missing status
-                conclusion=conclusion,
-                branch=BRANCH_NOT_AVAILABLE,
-                head_sha=head_sha or "",  # Default for missing SHA
-                display_title=DISPLAY_TITLE_NOT_AVAILABLE,
-                created_at=created_at,
-            )
-            result[node_id] = workflow_run
-
-        # Ensure all requested node_ids are in result (with None for missing)
-        for node_id in node_ids:
-            if node_id not in result:
-                result[node_id] = None
-
-        return result
+        return parse_workflow_runs_nodes_response(response, node_ids)
 
     def get_workflow_run_node_id(self, repo_root: Path, run_id: str) -> str | None:
         """Get the GraphQL node ID for a workflow run via gh API.
@@ -1281,10 +1198,10 @@ query {{
         if pr_number is None or pr_state is None or pr_url is None or created_at_pr is None:
             return None
 
-        checks_passing, checks_counts = self._parse_status_rollup(source.get("statusCheckRollup"))
-        has_conflicts = self._parse_mergeable_status(source.get("mergeable"))
+        checks_passing, checks_counts = parse_status_rollup(source.get("statusCheckRollup"))
+        has_conflicts = parse_mergeable_status(source.get("mergeable"))
         will_close_target = event.get("willCloseTarget", False)
-        review_thread_counts = self._parse_review_thread_counts(source.get("reviewThreads"))
+        review_thread_counts = parse_review_thread_counts(source.get("reviewThreads"))
         head_ref_name = source.get("headRefName")
         review_decision = source.get("reviewDecision")
 
@@ -1306,64 +1223,6 @@ query {{
             base_ref_name=source.get("baseRefName"),
         )
         return (pr_info, created_at_pr)
-
-    def _parse_status_rollup(
-        self, status_rollup: dict[str, Any] | None
-    ) -> tuple[bool | None, tuple[int, int] | None]:
-        """Parse checks status and counts from statusCheckRollup.
-
-        Returns (checks_passing, checks_counts).
-        """
-        if status_rollup is None:
-            return (None, None)
-
-        rollup_state = status_rollup.get("state")
-        checks_passing = None
-        if rollup_state == "SUCCESS":
-            checks_passing = True
-        elif rollup_state in ("FAILURE", "ERROR"):
-            checks_passing = False
-
-        checks_counts = None
-        contexts = status_rollup.get("contexts")
-        if contexts is not None and isinstance(contexts, dict):
-            total = contexts.get("totalCount", 0)
-            if total > 0:
-                checks_counts = parse_aggregated_check_counts(
-                    contexts.get("checkRunCountsByState", []),
-                    contexts.get("statusContextCountsByState", []),
-                    total,
-                )
-
-        return (checks_passing, checks_counts)
-
-    def _parse_mergeable_status(self, mergeable: str | None) -> bool | None:
-        """Parse has_conflicts from mergeable field."""
-        if mergeable == "CONFLICTING":
-            return True
-        if mergeable == "MERGEABLE":
-            return False
-        return None
-
-    def _parse_review_thread_counts(
-        self, review_threads: dict[str, Any] | None
-    ) -> tuple[int, int] | None:
-        """Parse review thread counts from reviewThreads field.
-
-        Returns (resolved_count, total_count) or None if not available.
-        """
-        if review_threads is None:
-            return None
-
-        total_count = review_threads.get("totalCount", 0)
-        if total_count == 0:
-            return (0, 0)
-
-        # Count resolved threads from the nodes
-        nodes = review_threads.get("nodes", [])
-        resolved_count = sum(1 for node in nodes if node and node.get("isResolved", False))
-
-        return (resolved_count, total_count)
 
     def _parse_issues_with_pr_linkages(
         self,
@@ -1710,7 +1569,7 @@ query {{
         )
 
         # Merge REST + GraphQL data into PRDetails and PullRequestInfo
-        return self._merge_rest_graphql_pr_data(pr_items, enrichment_data, repo_id)
+        return merge_rest_graphql_pr_data(pr_items, enrichment_data, repo_id)
 
     def _parse_plan_prs_with_details(
         self,
@@ -1777,9 +1636,9 @@ query {{
             pr_details_list.append(pr_details)
 
             # Build PullRequestInfo with rich data
-            checks_passing, checks_counts = self._parse_status_rollup(node.get("statusCheckRollup"))
-            has_conflicts = self._parse_mergeable_status(node.get("mergeable"))
-            review_thread_counts = self._parse_review_thread_counts(node.get("reviewThreads"))
+            checks_passing, checks_counts = parse_status_rollup(node.get("statusCheckRollup"))
+            has_conflicts = parse_mergeable_status(node.get("mergeable"))
+            review_thread_counts = parse_review_thread_counts(node.get("reviewThreads"))
             review_decision = node.get("reviewDecision")
 
             pr_info = PullRequestInfo(
@@ -1883,98 +1742,6 @@ query {{
                 result[pr_num] = node
 
         return result
-
-    def _merge_rest_graphql_pr_data(
-        self,
-        rest_items: list[dict[str, Any]],
-        enrichment: dict[int, dict[str, Any]],
-        repo_id: GitHubRepoId,
-    ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
-        """Merge REST issue data with GraphQL PR enrichment into PRDetails and PullRequestInfo.
-
-        Args:
-            rest_items: Raw REST API issue/PR items
-            enrichment: GraphQL enrichment data keyed by PR number
-            repo_id: GitHub repository identity
-
-        Returns:
-            Tuple of (pr_details_list, pr_linkages_by_pr_number)
-        """
-        pr_details_list: list[PRDetails] = []
-        pr_linkages: dict[int, list[PullRequestInfo]] = {}
-
-        for item in rest_items:
-            pr_number = item["number"]
-            gql = enrichment.get(pr_number, {})
-
-            # Parse timestamps from REST
-            created_at = datetime.fromisoformat(item["created_at"].replace("Z", "+00:00"))
-            updated_at = datetime.fromisoformat(item["updated_at"].replace("Z", "+00:00"))
-
-            # Parse labels from REST
-            label_names = tuple(label["name"] for label in item.get("labels", []))
-
-            # Author from REST
-            pr_author = item.get("user", {}).get("login", "")
-
-            # Draft and merge info from GraphQL enrichment
-            is_draft = gql.get("isDraft", False)
-            mergeable_raw = gql.get("mergeable", "UNKNOWN")
-            merge_state_status = gql.get("mergeStateStatus", "UNKNOWN")
-            is_cross_repository = gql.get("isCrossRepository", False)
-            base_ref_name = gql.get("baseRefName", "")
-            rest_head_ref = item.get("pull_request", {}).get("head", {}).get("ref", "")
-            head_ref_name = gql.get("headRefName", rest_head_ref)
-
-            # State from REST (normalize to upper)
-            pr_state = item.get("state", "open").upper()
-
-            pr_details = PRDetails(
-                number=pr_number,
-                url=item.get("html_url", ""),
-                title=item.get("title", ""),
-                body=item.get("body", "") or "",
-                state=pr_state,
-                is_draft=is_draft,
-                base_ref_name=base_ref_name,
-                head_ref_name=head_ref_name,
-                is_cross_repository=is_cross_repository,
-                mergeable=mergeable_raw,
-                merge_state_status=merge_state_status,
-                owner=repo_id.owner,
-                repo=repo_id.repo,
-                labels=label_names,
-                created_at=created_at,
-                updated_at=updated_at,
-                author=pr_author,
-            )
-            pr_details_list.append(pr_details)
-
-            # Build PullRequestInfo with rich GraphQL data
-            checks_passing, checks_counts = self._parse_status_rollup(gql.get("statusCheckRollup"))
-            has_conflicts = self._parse_mergeable_status(gql.get("mergeable"))
-            review_thread_counts = self._parse_review_thread_counts(gql.get("reviewThreads"))
-            review_decision = gql.get("reviewDecision")
-
-            pr_info = PullRequestInfo(
-                number=pr_number,
-                state=pr_state,
-                url=item.get("html_url", ""),
-                is_draft=is_draft,
-                title=item.get("title"),
-                checks_passing=checks_passing,
-                owner=repo_id.owner,
-                repo=repo_id.repo,
-                has_conflicts=has_conflicts,
-                checks_counts=checks_counts,
-                review_thread_counts=review_thread_counts,
-                head_branch=head_ref_name,
-                review_decision=review_decision,
-                base_ref_name=base_ref_name,
-            )
-            pr_linkages[pr_number] = [pr_info]
-
-        return (pr_details_list, pr_linkages)
 
     def update_pr_title_and_body(
         self, *, repo_root: Path, pr_number: int, title: str, body: BodyContent
