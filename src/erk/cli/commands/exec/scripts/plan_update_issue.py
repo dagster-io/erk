@@ -30,9 +30,13 @@ import click
 from erk_shared.context.helpers import (
     require_claude_installation,
     require_cwd,
+    require_git,
     require_plan_backend,
     require_repo_root,
 )
+from erk_shared.gateway.git.remote_ops.types import PushError
+from erk_shared.gateway.github.metadata.schemas import BRANCH_NAME
+from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 from erk_shared.plan_store.types import PlanNotFound
 from erk_shared.plan_utils import extract_title_from_plan, get_title_tag_from_labels
 
@@ -124,11 +128,33 @@ def plan_update_issue(
     except RuntimeError as e:
         _handle_update_error(f"Failed to update title: {e}", cause=e)
 
-    # Step 5: Output success
+    # Step 5: Push updated plan to branch (best-effort)
+    branch_name: str | None = None
+    branch_updated = False
+    raw_branch = plan_result.header_fields.get(BRANCH_NAME)
+    if isinstance(raw_branch, str):
+        branch_name = raw_branch
+        git = require_git(ctx)
+        git.commit.commit_files_to_branch(
+            repo_root,
+            branch=branch_name,
+            files={f"{IMPL_CONTEXT_DIR}/plan.md": plan_content.strip()},
+            message=f"Update plan: {new_title}",
+        )
+        push_result = git.remote.push_to_remote(
+            cwd, "origin", branch_name, set_upstream=False, force=False
+        )
+        branch_updated = not isinstance(push_result, PushError)
+
+    # Step 6: Output success
     if output_format == "display":
         click.echo(f"Plan updated on issue #{plan_number}")
         click.echo(f"Title: {full_title}")
         click.echo(f"URL: {plan_result.url}")
+        if branch_updated:
+            click.echo(f"Branch {branch_name} synced")
+        elif branch_name is not None:
+            click.echo(f"Warning: branch push to {branch_name} failed")
     else:
         click.echo(
             json.dumps(
@@ -137,6 +163,8 @@ def plan_update_issue(
                     "plan_number": plan_number,
                     "plan_url": plan_result.url,
                     "title": full_title,
+                    "branch_name": branch_name,
+                    "branch_updated": branch_updated,
                 }
             )
         )
