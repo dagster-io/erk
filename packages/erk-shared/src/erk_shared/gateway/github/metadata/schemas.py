@@ -1,5 +1,6 @@
 """Schema implementations for metadata blocks."""
 
+import warnings
 from dataclasses import dataclass
 from typing import Any, Literal
 
@@ -553,7 +554,14 @@ class PlanHeaderSchema(MetadataBlockSchema):
         # Validate optional fields if present
         if LAST_DISPATCHED_RUN_ID in data:
             if data[LAST_DISPATCHED_RUN_ID] is not None:
-                if not isinstance(data[LAST_DISPATCHED_RUN_ID], str):
+                if isinstance(data[LAST_DISPATCHED_RUN_ID], int):
+                    warnings.warn(
+                        "last_dispatched_run_id was int, coercing to str"
+                        " (upstream should pass a string)",
+                        stacklevel=2,
+                    )
+                    data[LAST_DISPATCHED_RUN_ID] = str(data[LAST_DISPATCHED_RUN_ID])
+                elif not isinstance(data[LAST_DISPATCHED_RUN_ID], str):
                     raise ValueError("last_dispatched_run_id must be a string or null")
 
         if LAST_DISPATCHED_NODE_ID in data:
@@ -579,7 +587,14 @@ class PlanHeaderSchema(MetadataBlockSchema):
         # Validate last_remote_impl_run_id
         if LAST_REMOTE_IMPL_RUN_ID in data:
             if data[LAST_REMOTE_IMPL_RUN_ID] is not None:
-                if not isinstance(data[LAST_REMOTE_IMPL_RUN_ID], str):
+                if isinstance(data[LAST_REMOTE_IMPL_RUN_ID], int):
+                    warnings.warn(
+                        "last_remote_impl_run_id was int, coercing to str"
+                        " (upstream should pass a string)",
+                        stacklevel=2,
+                    )
+                    data[LAST_REMOTE_IMPL_RUN_ID] = str(data[LAST_REMOTE_IMPL_RUN_ID])
+                elif not isinstance(data[LAST_REMOTE_IMPL_RUN_ID], str):
                     raise ValueError("last_remote_impl_run_id must be a string or null")
 
         # Validate last_remote_impl_session_id
@@ -679,9 +694,15 @@ class PlanHeaderSchema(MetadataBlockSchema):
 
         # Validate optional learn_run_id field
         if LEARN_RUN_ID in data and data[LEARN_RUN_ID] is not None:
-            if not isinstance(data[LEARN_RUN_ID], str):
+            if isinstance(data[LEARN_RUN_ID], int):
+                warnings.warn(
+                    "learn_run_id was int, coercing to str (upstream should pass a string)",
+                    stacklevel=2,
+                )
+                data[LEARN_RUN_ID] = str(data[LEARN_RUN_ID])
+            elif not isinstance(data[LEARN_RUN_ID], str):
                 raise ValueError("learn_run_id must be a string or null")
-            if len(data[LEARN_RUN_ID]) == 0:
+            if isinstance(data[LEARN_RUN_ID], str) and len(data[LEARN_RUN_ID]) == 0:
                 raise ValueError("learn_run_id must not be empty when provided")
 
         # Validate optional last_session_branch field

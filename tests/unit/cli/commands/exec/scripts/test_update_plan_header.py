@@ -197,6 +197,84 @@ def test_int_coercion() -> None:
     assert isinstance(block.data["objective_issue"], int)
 
 
+def test_run_id_field_stays_string() -> None:
+    """update-plan-header keeps last_remote_impl_run_id as str, not int."""
+    issue = _make_issue_with_plan_header(103)
+    fake_gh = FakeGitHubIssues(issues={103: issue})
+    repo_root = Path("/fake/repo")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        update_plan_header,
+        ["103", "last_remote_impl_run_id=22397458206"],
+        obj=ErkContext.for_test(
+            github=FakeGitHub(issues_gateway=fake_gh),
+            repo_root=repo_root,
+            plan_store=GitHubPlanStore(fake_gh),
+        ),
+    )
+
+    assert result.exit_code == 0
+
+    updated_issue = fake_gh.get_issue(repo_root, 103)
+    block = find_metadata_block(updated_issue.body, "plan-header")
+    assert block is not None
+    assert block.data["last_remote_impl_run_id"] == "22397458206"
+    assert isinstance(block.data["last_remote_impl_run_id"], str)
+
+
+def test_dispatched_run_id_stays_string() -> None:
+    """update-plan-header keeps last_dispatched_run_id as str, not int."""
+    issue = _make_issue_with_plan_header(104)
+    fake_gh = FakeGitHubIssues(issues={104: issue})
+    repo_root = Path("/fake/repo")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        update_plan_header,
+        ["104", "last_dispatched_run_id=22397458206"],
+        obj=ErkContext.for_test(
+            github=FakeGitHub(issues_gateway=fake_gh),
+            repo_root=repo_root,
+            plan_store=GitHubPlanStore(fake_gh),
+        ),
+    )
+
+    assert result.exit_code == 0
+
+    updated_issue = fake_gh.get_issue(repo_root, 104)
+    block = find_metadata_block(updated_issue.body, "plan-header")
+    assert block is not None
+    assert block.data["last_dispatched_run_id"] == "22397458206"
+    assert isinstance(block.data["last_dispatched_run_id"], str)
+
+
+def test_non_string_field_still_coerced_to_int() -> None:
+    """update-plan-header still coerces objective_issue numeric strings to int."""
+    issue = _make_issue_with_plan_header(105)
+    fake_gh = FakeGitHubIssues(issues={105: issue})
+    repo_root = Path("/fake/repo")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        update_plan_header,
+        ["105", "objective_issue=7823"],
+        obj=ErkContext.for_test(
+            github=FakeGitHub(issues_gateway=fake_gh),
+            repo_root=repo_root,
+            plan_store=GitHubPlanStore(fake_gh),
+        ),
+    )
+
+    assert result.exit_code == 0
+
+    updated_issue = fake_gh.get_issue(repo_root, 105)
+    block = find_metadata_block(updated_issue.body, "plan-header")
+    assert block is not None
+    assert block.data["objective_issue"] == 7823
+    assert isinstance(block.data["objective_issue"], int)
+
+
 def test_string_preserved() -> None:
     """update-plan-header preserves string values as strings."""
     issue = _make_issue_with_plan_header(102)
