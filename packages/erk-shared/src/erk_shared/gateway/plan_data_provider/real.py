@@ -156,7 +156,8 @@ class RealPlanDataProvider(PlanDataProvider):
 
         # Transform to PlanRowData
         rows: list[PlanRowData] = []
-        use_graphite = self._ctx.global_config.use_graphite if self._ctx.global_config else False
+        global_config = self._ctx.global_config
+        use_graphite = global_config.use_graphite if global_config is not None else False
 
         for plan in plans:
             plan_id = int(plan.plan_identifier)
@@ -422,7 +423,8 @@ class RealPlanDataProvider(PlanDataProvider):
         worktree_by_plan_id = self._build_worktree_mapping()
 
         # Build row data
-        use_graphite = self._ctx.global_config.use_graphite if self._ctx.global_config else False
+        global_config = self._ctx.global_config
+        use_graphite = global_config.use_graphite if global_config is not None else False
         rows: list[PlanRowData] = []
         for plan in plans:
             plan_id = int(plan.plan_identifier)
