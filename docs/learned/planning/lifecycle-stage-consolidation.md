@@ -28,7 +28,7 @@ A single `impl` stage with backwards-compatible parsing.
 
 ### Write Discipline
 
-All write points use `"impl"` exclusively. There are four write locations:
+All write points use `"impl"` exclusively. There are five write locations:
 
 | Write Point                                | File                                                     | Context                                                        |
 | ------------------------------------------ | -------------------------------------------------------- | -------------------------------------------------------------- |
@@ -36,6 +36,7 @@ All write points use `"impl"` exclusively. There are four write locations:
 | `impl_signal.py` "submitted" handler       | `src/erk/cli/commands/exec/scripts/impl_signal.py`       | Sets `lifecycle_stage: "impl"` after PR submission             |
 | `mark_impl_started.py` GitHub Actions path | `src/erk/cli/commands/exec/scripts/mark_impl_started.py` | Sets `lifecycle_stage: "impl"` with `last_remote_impl_at`      |
 | `mark_impl_started.py` local path          | `src/erk/cli/commands/exec/scripts/mark_impl_started.py` | Sets `lifecycle_stage: "impl"` with `last_local_impl_*` fields |
+| `handle_no_changes.py`                     | `src/erk/cli/commands/exec/scripts/handle_no_changes.py` | Sets `lifecycle_stage: "impl"` when no changes detected        |
 
 ### Schema Validation
 

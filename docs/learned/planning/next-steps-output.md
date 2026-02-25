@@ -66,7 +66,7 @@ See [Shell Activation Pattern](../cli/shell-activation-pattern.md) for the full 
 
 Two slash command constants are defined for use in Claude Code context:
 
-- `SUBMIT_SLASH_COMMAND = "/erk:plan-submit"` — used in the plain-text formatters for the "In Claude Code:" section
+- `SUBMIT_SLASH_COMMAND = "/erk:pr-dispatch"` — used in the plain-text formatters for the "In Claude Code:" section
 - `CHECKOUT_SLASH_COMMAND = "/erk:prepare"` — defined but not currently used in any formatter
 
 ## Related Topics
