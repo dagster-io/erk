@@ -105,7 +105,7 @@ def dash_data(
         creator=creator,
     )
 
-    rows = provider.fetch_plans(filters)
+    rows, _timings = provider.fetch_plans(filters)
     plans = [_serialize_plan_row(row) for row in rows]
 
     click.echo(json.dumps({"success": True, "plans": plans, "count": len(plans)}))

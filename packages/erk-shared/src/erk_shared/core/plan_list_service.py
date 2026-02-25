@@ -19,11 +19,17 @@ class PlanListData:
         plans: List of Plan objects with enriched metadata
         pr_linkages: Mapping of issue_number -> list of PRs that close that issue
         workflow_runs: Mapping of issue_number -> most relevant WorkflowRun
+        api_ms: Milliseconds spent on REST+GraphQL API calls (issues/PRs fetch)
+        plan_parsing_ms: Milliseconds spent parsing plan bodies
+        workflow_runs_ms: Milliseconds spent fetching workflow runs
     """
 
     plans: list[Plan]
     pr_linkages: dict[int, list[PullRequestInfo]]
     workflow_runs: dict[int, WorkflowRun | None]
+    api_ms: float = 0.0
+    plan_parsing_ms: float = 0.0
+    workflow_runs_ms: float = 0.0
 
 
 class PlanListService(ABC):

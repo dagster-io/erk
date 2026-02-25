@@ -9,6 +9,7 @@ instead of separate calls for issues (~500ms) and PR linkages (~1500ms).
 """
 
 import logging
+import time
 
 from erk_shared.core.plan_list_service import PlanListData as PlanListData
 from erk_shared.core.plan_list_service import PlanListService
@@ -72,6 +73,7 @@ class PlannedPRPlanListService(PlanListService):
             PlanListData with plans from draft PRs
         """
         # REST+GraphQL two-step: server-side filtering then enrichment
+        t0 = time.monotonic()
         pr_details_list, pr_linkages = self._github.list_plan_prs_with_details(
             location,
             labels=labels,
@@ -80,6 +82,7 @@ class PlannedPRPlanListService(PlanListService):
             author=creator,
             exclude_labels=exclude_labels,
         )
+        t1 = time.monotonic()
 
         plans = []
         node_id_to_plan: dict[str, int] = {}
@@ -99,6 +102,7 @@ class PlannedPRPlanListService(PlanListService):
             _, node_id, _ = extract_plan_header_dispatch_info(pr_details.body)
             if node_id is not None:
                 node_id_to_plan[node_id] = pr_details.number
+        t2 = time.monotonic()
 
         workflow_runs: dict[int, WorkflowRun | None] = {}
         if not skip_workflow_runs and node_id_to_plan:
@@ -111,11 +115,19 @@ class PlannedPRPlanListService(PlanListService):
                     workflow_runs[node_id_to_plan[node_id]] = run
             except Exception as e:
                 logging.warning("Failed to fetch workflow runs: %s", e)
+        t3 = time.monotonic()
+
+        api_ms = (t1 - t0) * 1000
+        plan_parsing_ms = (t2 - t1) * 1000
+        workflow_runs_ms = (t3 - t2) * 1000
 
         return PlanListData(
             plans=plans,
             pr_linkages=pr_linkages,
             workflow_runs=workflow_runs,
+            api_ms=api_ms,
+            plan_parsing_ms=plan_parsing_ms,
+            workflow_runs_ms=workflow_runs_ms,
         )
 
 
@@ -165,6 +177,7 @@ class RealPlanListService(PlanListService):
             PlanListData containing plans, PR linkages, and workflow runs
         """
         # Always use unified path: issues + PR linkages in one API call (~600ms)
+        t0 = time.monotonic()
         issues, pr_linkages = self._github.get_issues_with_pr_linkages(
             location=location,
             labels=labels,
@@ -172,9 +185,11 @@ class RealPlanListService(PlanListService):
             limit=limit,
             creator=creator,
         )
+        t1 = time.monotonic()
 
         # Convert IssueInfo to Plan with enriched metadata
         plans = [issue_info_to_plan(issue) for issue in issues]
+        t2 = time.monotonic()
 
         # Conditionally fetch workflow runs (skip for performance when not needed)
         workflow_runs: dict[int, WorkflowRun | None] = {}
@@ -200,9 +215,17 @@ class RealPlanListService(PlanListService):
                     # Network/API failure - continue without workflow run data
                     # Dashboard will show "-" for run columns, which is acceptable
                     logging.warning("Failed to fetch workflow runs: %s", e)
+        t3 = time.monotonic()
+
+        api_ms = (t1 - t0) * 1000
+        plan_parsing_ms = (t2 - t1) * 1000
+        workflow_runs_ms = (t3 - t2) * 1000
 
         return PlanListData(
             plans=plans,
             pr_linkages=pr_linkages,
             workflow_runs=workflow_runs,
+            api_ms=api_ms,
+            plan_parsing_ms=plan_parsing_ms,
+            workflow_runs_ms=workflow_runs_ms,
         )

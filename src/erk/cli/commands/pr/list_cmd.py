@@ -296,7 +296,7 @@ def _pr_list_impl(
     )
 
     # Fetch data via provider
-    rows = provider.fetch_plans(filters)
+    rows, _timings = provider.fetch_plans(filters)
 
     # Apply --stage post-fetch filtering
     if stage is not None:
