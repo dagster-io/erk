@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: `setup_impl` passes unsupported `branch_slug` to `setup_impl_from_issue`"
+}
