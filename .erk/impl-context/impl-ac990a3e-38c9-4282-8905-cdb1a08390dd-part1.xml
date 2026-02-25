@@ -1,0 +1,1225 @@
+<session>
+  <meta branch="plnd/O7911-phase2-test-defaults-02-24-2325" />
+  <meta model="claude-opus-4-6" />
+  <user>▐▛███▜▌   Claude Code v2.1.52
+▝▜█████▛▘  Opus 4.6 · Claude Team
+  ▘▘ ▝▝    ~/.erk/repos/erk/worktrees/erk-slot-41
+
+❯ /erk:pr-preview-address
+
+∴ Thinking…
+
+  The user invoked /erk:pr-preview-address which is a read-only preview command. I need to:
+
+  1. First, invoke the pr-feedback-classifier skill to fetch and classify PR feedback
+  2. Then display the results in the specified format
+
+  Let me start by invoking the pr-feedback-classifier skill.
+
+⏺ Skill(pr-feedback-classifier)
+  ⎿  Done
+
+⏺ PR #8103: "Fix plan-save to base branch off current branch, not always trunk"
+
+  Actionable Items (1 total)
+
+  ┌─────┬────────┬──────────────────┬────────────────┬────────────────────────────────────────────────────────────────┬────────────┐
+  │  #  │  Type  │     Location     │ Classification │                            Summary                             │ Complexity │
+  ├─────┼────────┼──────────────────┼────────────────┼────────────────────────────────────────────────────────────────┼────────────┤
+  │     │        │                  │                │ Bot suggestion: rename metadata key from trunk_branch to       │            │
+  │ 1   │ review │ plan_save.py:218 │ actionable     │ base_ref_name to match how checkout_cmd.py and plan_helpers.py │ local      │
+  │     │        │                  │                │  read it                                                       │            │
+  └─────┴────────┴──────────────────┴────────────────┴────────────────────────────────────────────────────────────────┴────────────┘
+
+  Informational Items (0 total)
+
+  No informational review items.
+
+  Execution Plan Preview
+
+  Batch 1: Local Fixes (auto-proceed)
+  - Item #1: plan_save.py:218 - Rename metadata key from trunk_branch to base_ref_name for consistency
+
+  Statistics
+
+  - Actionable items: 1
+  - Informational items: 0
+  - Informational discussion comments: 6
+  - Estimated batches: 1
+  - Auto-proceed batches: 1
+  - User confirmation batches: 0
+
+  ---
+  To address these comments, run: /erk:pr-address
+
+✻ Sautéed for 32s
+
+❯ /erk:pr-address
+
+∴ Thinking…
+
+  The user invoked /erk:pr-address. I need to follow the instructions carefully. Let me start by:
+
+  1. Loading the pr-operations skill (prerequisite)
+  2. Running the pr-feedback-classifier via Task tool (Phase 1)
+
+  I already have the classifier results from the preview command, but the instructions say to use a Task tool for isolation. However,
+  I already have the results from the previous /erk:pr-preview-address invocation. The classifier results showed:
+
+  - 1 actionable review thread: plan_save.py:218 - rename metadata key from trunk_branch to base_ref_name
+
+  - 0 discussion actions
+  - 6 informational discussion comments
+
+  Now I'll load the pr-operations skill and run the classifier in parallel.
+
+⏺ I'll load the prerequisite skill and run the classifier in parallel.
+
+⏺ Skill(pr-operations)
+  ⎿  Successfully loaded skill
+
+⏺ Task(Classify PR feedback) Haiku 4.5
+  ⎿  Done (4 tool uses · 27.5k tokens · 18s)
+  (ctrl+o to expand)
+
+∴ Thinking…
+
+  Good, I have the classifier results and the pr-operations skill loaded. Let me parse the results:
+
+  - 1 actionable review thread: PRRT_kwDOPxC3hc5wiiAX at plan_save.py:218 - rename trunk_branch to base_ref_name
+  - 0 discussion actions
+  - 6 informational discussion comments
+  - 1 batch: Single-File (auto-proceed)
+
+  Now let me proceed with Phase 2: Display the batched plan, then Phase 3: Execute.
+
+  Since there's only 1 batch with 1 item and it's auto-proceed (single_file complexity), I can display the plan and proceed.
+
+  I need to examine the context around line 218 in plan_save.py and cross-reference the related files to confirm the correct variable
+  name to use.
+
+⏺ Execution Plan
+
+  Batch 1: Single-File Fix (1 comment) — auto-proceed
+
+  ┌─────┬──────────────────┬───────────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │  #  │     Location     │                                                Summary                                                │
+  ├─────┼──────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ 1   │ plan_save.py:218 │ Rename metadata key trunk_branch to base_ref_name for consistency with checkout_cmd.py and            │
+  │     │                  │ plan_helpers.py                                                                                       │
+  └─────┴──────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  Starting Batch 1. Let me read the relevant code first.
+
+⏺ Read(src/erk/cli/commands/exec/scripts/plan_save.py)
+  ⎿  Read 30 lines
+
+⏺ Search(pattern: "base_ref_name|trunk_branch", path: "src/erk")
+  ⎿  Found 169 lines (ctrl+o to expand)
+  ⎿  Loaded src/erk/cli/commands/exec/scripts/CLAUDE.md
+  ⎿  Loaded src/erk/cli/commands/exec/scripts/AGENTS.md
+
+∴ Thinking…
+
+  Now I can see the issue. At line 218 in plan_save.py, the metadata key is trunk_branch, but in checkout_cmd.py at line 445, it reads
+   base_ref_name. Let me verify these are referring to the same metadata being written/read.
+
+  The comment says:
+  - plan_save.py:218 stores trunk_branch
+  - checkout_cmd.py:445 reads base_ref_name
+  - plan_helpers.py also reads base_ref_name
+
+  I need to check if there are other places that read trunk_branch from metadata (not the variable name, but the dictionary key). Let
+  me also check plan_helpers.py.
+
+  So the metadata dictionary stores the key as trunk_branch, but the code is trying to read it as base_ref_name — the key names don't
+  match, which is definitely a bug. I should check plan_helpers.py to see if it has the same mismatch.
+
+  Now I need to search for all places where the trunk_branch key is being read from metadata to make sure I don't break anything when
+  I fix this inconsistency.
+
+⏺ Let me verify how plan_helpers.py reads this metadata and check if anything else reads the trunk_branch metadata key.
+
+⏺ Searc(pattern: "metadata.*get.*base_ref_name|metadata.*get.*trunk_branch|metadata\[.base_ref_name.\]|metadata\[.trunk_branch.\]",
+       path: "src/erk")
+  ⎿  Found 1 line (ctrl+o to expand)
+
+⏺ Search(pattern: "base_ref_name|trunk_branch", path: "src/erk/core/plan_helpers.py")
+
+⏺ Search(pattern: "base_ref_name|trunk_branch", path: "src/erk")
+  ⎿  Found 0 lines
+
+⏺ Search(pattern: ""trunk_branch"", path: "src/erk")
+  ⎿  Found 6 lines (ctrl+o to expand)
+
+∴ Thinking…
+
+  The only place that stores "trunk_branch" as a metadata key in plan metadata is plan_save.py:218. The other occurrences of
+  "trunk_branch" are:
+  - context.py:470 - pyproject.toml config setting (different context)
+  - detect_trunk_branch.py:32,38 - CLI output JSON (different context)
+  - list_sessions.py:24,315 - session listing output (different context)
+
+  The only consumer of the plan metadata key is checkout_cmd.py:445, which reads "base_ref_name". So the fix is clear: rename the key
+  in plan_save.py:218 from "trunk_branch" to "base_ref_name".
+
+  I should also update the comment on line 217 that describes this field, and then check if any tests are referencing this metadata
+  key.
+
+⏺ Good - the only place writing "trunk_branch" as a plan metadata key is plan_save.py:218, and the only consumer (checkout_cmd.py:445)
+   reads "base_ref_name". This is a genuine key mismatch. Let me also check tests.
+
+⏺ Search(pattern: ""trunk_branch"", path: "tests")
+  ⎿  Found 12 lines (ctrl+o to expand)
+
+∴ Thinking…
+
+  I see there are test files that reference "trunk_branch" as a metadata key:
+  - tests/unit/plan_store/test_planned_pr_backend.py:82 - metadata={"branch_name": "test-branch", "trunk_branch": "main"}
+  - tests/unit/plan_store/test_planned_pr_backend.py:114 - metadata={"branch_name": "test-branch", "trunk_branch": 42}
+
+  These tests set up plan metadata with "trunk_branch" key. I need to update these too.
+
+  The other test files reference trunk_branch in other contexts (detect_trunk_branch script output, list_sessions output, etc.) which
+  are unrelated to plan metadata.
+
+  Now I'm checking env_helpers.py to see how it handles trunk_branch and what context those references have.
+
+⏺ Let me check the test files that reference the plan metadata key.
+
+⏺ Read(tests/unit/plan_store/test_planned_pr_backend.py)
+  ⎿  Read 50 lines
+  ⎿  Loaded tests/CLAUDE.md
+  ⎿  Loaded tests/AGENTS.md
+  ⎿  Loaded tests/unit/CLAUDE.md
+  ⎿  Loaded tests/unit/AGENTS.md
+
+∴ Thinking…
+
+  I need to check the PlannedPRBackend.create_plan method to see how it reads the trunk_branch key, since the tests are testing that
+  behavior. Let me also find the PlannedPRBackend class.
+
+⏺ Let me check how PlannedPRBackend.create_plan reads the metadata key.
+
+⏺ Search(pattern: "trunk_branch|base_ref_name", path: "src/erk")
+  ⎿  Found 0 lines
+
+⏺ Search(pattern: "**/planned_pr_backend*")
+  ⎿  Found 0 files
+
+⏺ Search(pattern: "**/planned_pr*"")
+  ⎿  Found 0 files
+
+⏺ Search(pattern: "class PlannedPRBackend")
+  ⎿  Found 1 file (ctrl+o to expand)
+
+⏺ Search(pattern: "trunk_branch|base_ref_name", path: "packages/erk-shared/src/erk_shared/plan_store/planned_pr.py")
+  ⎿  Found 2 lines (ctrl+o to expand)
+
+⏺ Read(packages/erk-shared/src/erk_shared/plan_store/planned_pr.py)
+  ⎿  Read 20 lines
+
+∴ Thinking…
+
+  Now I see the full picture. There are three places that need to be updated:
+
+  1. Writer: plan_save.py:218 - writes "trunk_branch" → rename to "base_ref_name"
+  2. Reader 1: planned_pr.py:348 - reads "trunk_branch" → rename to "base_ref_name"
+  3. Reader 2: checkout_cmd.py:445 - already reads "base_ref_name" (this is the correct one)
+
+  Plus test files:
+  4. test_planned_pr_backend.py:82 - "trunk_branch" → "base_ref_name"
+
+  5. test_planned_pr_backend.py:114 - "trunk_branch" → "base_ref_name"
+  6. Test function names and docstrings that reference trunk_branch
+
+  The real issue is that plan_save.py writes the "trunk_branch" key while checkout_cmd.py expects "base_ref_name", so I need to update
+   the writer and the first reader to use the consistent key name.
+
+  Since the bot comment indicates this field can now hold feature branches rather than just trunk, renaming to base_ref_name makes
+  semantic sense. I'll need to update the key in plan_save.py, planned_pr.py, and the corresponding test file.
+
+⏺ Now I see the full picture. There are 3 code locations and 2 test locations using the "trunk_branch" metadata key:
+
+  1. Writer: plan_save.py:218 — writes "trunk_branch"
+  2. Reader: planned_pr.py:348 — reads "trunk_branch" (matches writer)
+  3. Reader: checkout_cmd.py:445 — reads "base_ref_name" (mismatched!)
+
+  The fix: rename "trunk_branch" to "base_ref_name" in the writer and the planned_pr reader, plus tests.
+
+⏺ Update(/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/src/erk/cli/commands/exec/scripts/plan_save.py)
+  ⎿  Added 2 lines, removed 2 lines
+      214      )
+      215      git.remote.push_to_remote(cwd, "origin", branch_name, set_upstream=True, force=False)
+      216
+      217 -    # Build metadata — trunk_branch sets the PR base ref
+      218 -    metadata: dict[str, object] = {"branch_name": branch_name, "trunk_branch": base_branch}
+      217 +    # Build metadata — base_ref_name sets the PR base ref
+      218 +    metadata: dict[str, object] = {"branch_name": branch_name, "base_ref_name": base_branch}
+      219
+      220      if config.plans_repo is not None:
+      221          metadata["source_repo"] = get_repo_identifier(ctx)
+
+
+
+
+
+
+
+⏺ Update(/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py)
+  ⎿  Added 2 lines, removed 2 lines
+      345
+      346          pr_body = build_plan_stage_body(metadata_body, content)
+      347
+      348 -        trunk_branch_raw = metadata.get("trunk_branch")
+      349 -        base = trunk_branch_raw if isinstance(trunk_branch_raw, str) else "master"
+      348 +        base_ref_raw = metadata.get("base_ref_name")
+      349 +        base = base_ref_raw if isinstance(base_ref_raw, str) else "master"
+      350
+      351          pr_number = self._github.create_pr(
+      352              repo_root,
+
+
+
+
+
+
+⏺ Update(/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/tests/unit/plan_store/test_planned_pr_backend.py)
+  ⎿  Added 3 lines, removed 3 lines
+      79          title="Test Plan",
+      80          content="# Plan content",
+      81          labels=("erk-plan",),
+      82 -        metadata={"branch_name": "test-branch", "trunk_branch": "main"},
+      82 +        metadata={"branch_name": "test-branch", "base_ref_name": "main"},
+      83      )
+      84
+      85      assert fake_github.created_prs[0][3] == "main"
+      86
+      87
+      88 -def test_create_plan_falls_back_to_master_when_trunk_branch_missing() -&gt; None:
+      89 -    """create_plan falls back to 'master' as PR base when trunk_branch is absent."""
+      88 +def test_create_plan_falls_back_to_master_when_base_ref_name_missing() -&gt; None:
+      89 +    """create_plan falls back to 'master' as PR base when base_ref_name is absent."""
+      90      fake_github = FakeGitHub()
+      91      backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
+      92
+
+
+
+
+
+
+
+
+⏺ Update(/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/tests/unit/plan_store/test_planned_pr_backend.py)
+  ⎿  Added 3 lines, removed 3 lines
+      101      assert fake_github.created_prs[0][3] == "master"
+      102
+      103
+      104 -def test_create_plan_falls_back_to_master_when_trunk_branch_not_string() -&gt; None:
+      105 -    """create_plan falls back to 'master' when trunk_branch is a non-string value."""
+      104 +def test_create_plan_falls_back_to_master_when_base_ref_name_not_string() -&gt; None:
+      105 +    """create_plan falls back to 'master' when base_ref_name is a non-string value."""
+      106      fake_github = FakeGitHub()
+      107      backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
+      108
+     ...
+      111          title="Test Plan",
+      112          content="# Plan content",
+      113          labels=("erk-plan",),
+      114 -        metadata={"branch_name": "test-branch", "trunk_branch": 42},
+      114 +        metadata={"branch_name": "test-branch", "base_ref_name": 42},
+      115      )
+      116
+      117      assert fake_github.created_prs[0][3] == "master"
+
+
+
+
+
+
+
+
+
+
+⏺ Now let me also check the test for the first function name — it likely has the old name too.
+
+⏺ Read(tests/unit/plan_store/test_planned_pr_backend.py)
+  ⎿  Read 10 lines
+
+⏺ Update(/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/tests/unit/plan_store/test_planned_pr_backend.py)
+  ⎿  Added 2 lines, removed 2 lines
+      69      assert pr.is_draft is True
+      70
+      71
+      72 -def test_create_plan_uses_trunk_branch_as_pr_base() -&gt; None:
+      73 -    """create_plan uses trunk_branch from metadata as the PR base branch."""
+      72 +def test_create_plan_uses_base_ref_name_as_pr_base() -&gt; None:
+      73 +    """create_plan uses base_ref_name from metadata as the PR base branch."""
+      74      fake_github = FakeGitHub()
+      75      backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
+      76
+
+
+
+
+
+
+⏺ Now let me run CI checks on the affected test files.
+
+⏺ devrun(Run affected tests)
+  ⎿  Done (1 tool use · 13.7k tokens · 3s)
+  (ctrl+o to expand)
+
+⏺ All 19 tests pass. Now let me commit and resolve the thread.
+
+⏺ Bash(git add src/erk/cli/commands/exec/scripts/plan_save.py packages/erk-shared/src/erk_shared/plan_store/planned_pr.py
+      tests/unit/plan_store/test_planned_pr_backend.py &amp;&amp; git commit -m "Address PR review: rename metadata key trunk_branch to
+      base_ref_name
+
+      Fixes semantic mismatch where plan_save.py wrote 'trunk_branch' but
+      checkout_cmd.py read 'base_ref_name'. Now all three locations use
+      'base_ref_name' consistently, which also better describes the value
+      since it can be a feature branch, not just trunk.
+
+      Co-Authored-By: Claude Opus 4.6 &lt;noreply@anthropic.com&gt;")
+  ⎿  [plnd/fix-plan-save-branch-base-02-24-1348 a0b289c36] Address PR review: rename metadata key trunk_branch to base_ref_name
+      3 files changed, 12 insertions(+), 12 deletions(-)
+
+
+
+⏺ Now resolve the review thread.
+
+⏺ Bash(echo '[{"thread_id": "PRRT_kwDOPxC3hc5wiiAX", "comment": "Fixed in a0b289c36 — renamed metadata key from `trunk_branch` to
+      `base_ref_name` in plan_save.py (writer), planned_pr.py (reader), and updated tests. Now consistent with checkout_cmd.py which
+      already read `base_ref_name`."}]' | erk exec resolve-review-threads)
+  ⎿  {
+       "success": true,
+       "results": [
+         {
+           "success": true,
+           "thread_id": "PRRT_kwDOPxC3hc5wiiAX",
+           "comment_added": true
+         }
+       ]
+     }
+
+⏺ Batch 1 Complete
+
+  Addressed:
+  - plan_save.py:218 — Renamed metadata key trunk_branch → base_ref_name
+  - planned_pr.py:348 — Updated reader to match new key name
+  - test_planned_pr_backend.py — Updated 3 test functions and metadata keys
+
+  Committed: a0b289c36 "Address PR review: rename metadata key trunk_branch to base_ref_name"
+
+  Resolved threads: 1
+  Remaining batches: 0
+
+  ---
+  Now let me verify all threads are resolved.
+
+⏺ Task(Verify PR feedback resolved) Haiku 4.5
+  ⎿  Done (4 tool uses · 27.2k tokens · 15s)
+  (ctrl+o to expand)
+
+∴ Thinking…
+
+  The verification shows that the review thread is resolved (it didn't come back in the actionable_threads). However, the classifier
+  picked up a discussion comment (the code simplifier review summary) as "actionable". But this is a discussion comment that reports
+  on the violation - the actual review thread PRRT_kwDOPxC3hc5wiiAX was resolved. The discussion comment itself is just a bot summary
+  that mentioned the same issue.
+
+  Since the review thread is resolved and the code change has been made, this discussion comment is effectively stale - it's just the
+  bot's summary of an issue we've already fixed. I should reply to it to acknowledge the fix was made, or I can note that this is just
+   the summary comment for the already-resolved review thread.
+
+  I'll respond to the discussion comment to close out this loop since the underlying issue has already been addressed.
+
+⏺ The review thread is resolved. The classifier flagged a discussion comment (the code simplifier's summary) that mentions the same
+  issue — but we already fixed the actual code and resolved the review thread. Let me reply to that discussion comment to close the
+  loop.
+
+⏺ Bash(erk exec reply-to-discussion-comment --comment-id 3955282537 --reply "**Addressed:** Renamed metadata key from \`trunk_branch\`
+       to \`base_ref_name\` in plan_save.py, planned_pr.py, and tests. The key is now consistent across all three locations (writer,
+      PlannedPRBackend reader, and checkout_cmd.py reader). Fixed in commit a0b289c36.")
+  ⎿  {
+       "success": true,
+       "comment_id": 3955282537,
+       "reply_id": 3955307673,
+       "pr_number": 8103
+     }
+
+⏺ Now let me update the PR description.
+
+⏺ Bash(erk exec update-pr-description --session-id "5453ca1b-69e7-4790-8d29-c39d52ae090a")
+  ⎿  (No output)
+  ⎿  (timeout 1m)
+
+⏺ All PR Comments Addressed
+
+  Total comments: 1 review thread + 1 discussion reply
+  Batches: 1
+  Commits: 1
+
+  All review threads resolved.
+  All discussion comments replied to.
+
+  Next steps:
+  1. Push changes:
+    - Graphite repos: gt submit (or gt ss)
+    - Plain git repos: git push
+    - If push is rejected (non-fast-forward): Run /erk:sync-divergence to resolve. Do NOT use git pull --rebase.
+  2. Wait for CI to pass
+  3. Request re-review if needed
+
+✻ Brewed for 3m 41s
+
+❯ /local:quick-submit
+
+⏺ Bash(erk exec quick-submit)
+  ⎿    Staging all changes...
+       Checking for staged changes...
+       Submitting to Graphite...
+       Getting PR URL...
+     {
+       "success": true,
+       "staged_changes": false,
+       "committed": false,
+       "message": "No new changes, submitted existing commits",
+       "pr_url": "https://github.com/dagster-io/erk/pull/8103"
+     }
+  ⎿  (timeout 1m)
+
+⏺ Submitted — no new changes to commit, existing commits pushed to PR: https://github.com/dagster-io/erk/pull/8103
+
+❯ /exit
+  ⎿  See ya!
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ➜  (git:erk) (wt:erk-slot-41) (br:plnd/fix-plan-save-branch-base-02-24-1348) | (gh:#8103 plan:#8103 st…               60868 tokens
+  ⏵⏵ bypass permissions on (shift+tab to cycle) · PR #8111                                                 current: 2.1.52 · latest…
+
+Resume this session with:
+claude --resume 5453ca1b-69e7-4790-8d29-c39d52ae090a
+(erk) ➜  erk-slot-41 git:(plnd/O7911-phase2-test-defaults-02-24-2325) make fast-ci
+=== Fast CI ===
+
+--- Lint ---
+All checks passed!
+
+--- Format Check ---
+1560 files already formatted
+
+--- Prettier Check ---
+Checking formatting...
+All matched files use Prettier code style!
+
+--- Markdown Check ---
+✓ AGENTS.md standard: PASSED
+
+All CLAUDE.md and AGENTS.md files properly paired.
+
+CLAUDE.md files checked: 19
+Violations: 0
+
+--- Exec Reference Check ---
+OK: .claude/skills/erk-exec/reference.md is up to date
+
+--- ty ---
+All checks passed!
+
+--- Unit Tests (erk) ---
+bringing up nodes...
+.............................................................................................................................. [  2%]
+.............................................................................................................................. [  4%]
+.............................................................................................................................. [  6%]
+.............................................................................................................................. [  9%]
+.............................................................................................................................. [ 11%]
+.............................................................................................................................. [ 13%]
+.............................................................................................................................. [ 16%]
+.............................................................................................................................. [ 18%]
+.............................................................................................................................. [ 20%]
+.............................................................................................................................. [ 23%]
+.............................................................................................................................. [ 25%]
+.............................................................................................................................. [ 27%]
+.............................................................................................................................. [ 30%]
+.............................................................................................................................. [ 32%]
+.............................................................................................................................. [ 34%]
+.............................................................................................................................. [ 37%]
+.............................................................................................................................. [ 39%]
+.............................................................................................................................. [ 41%]
+.............................................................................................................................. [ 44%]
+.............................................................................................................................. [ 46%]
+.............................................................................................................................. [ 48%]
+.............................................................................................................................. [ 51%]
+.............................................................................................................................. [ 53%]
+.............................................................................................................................. [ 55%]
+.............................................................................................................................. [ 58%]
+.............................................................................................................................. [ 60%]
+.............................................................................................................................. [ 62%]
+.............................................................................................................................. [ 65%]
+.............................................................................................................................. [ 67%]
+.............................................................................................................................. [ 69%]
+.............................................................................................................................. [ 72%]
+.............................................................................................................................. [ 74%]
+.............................................................................................................................. [ 76%]
+....................................................................................F......................................... [ 79%]
+.............................................................................................................................. [ 81%]
+.............................................................................................................................. [ 83%]
+.............................................................................................................................. [ 86%]
+.............................................................................................................................. [ 88%]
+.............................................................................................................................. [ 90%]
+.............................................................................................................................. [ 93%]
+.............................................................................................................................. [ 95%]
+.............................................................................................................................. [ 97%]
+....................................................................................................................           [100%]
+============================================================== FAILURES ==============================================================
+________________________________________________ test_pr_submit_shows_no_plan_message ________________________________________________
+[gw6] darwin -- Python 3.13.1 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/.venv/bin/python
+
+    def test_pr_submit_shows_no_plan_message() -&gt; None:
+        """Test that Phase 3 shows 'No linked plan found' for non-plan branches.
+
+        When a branch is not linked to an erk-plan issue (regular branch name),
+        the submit command should show a "No linked plan found" message.
+        """
+        runner = CliRunner()
+        with erk_isolated_fs_env(runner, env_overrides=None) as env:
+            pr_info = PullRequestInfo(
+                number=123,
+                state="OPEN",
+                url="https://github.com/owner/repo/pull/123",
+                is_draft=False,
+                title="Feature PR",
+                checks_passing=True,
+                owner="owner",
+                repo="repo",
+            )
+            pr_details = PRDetails(
+                number=123,
+                url="https://github.com/owner/repo/pull/123",
+                title="Feature PR",
+                body="",
+                state="OPEN",
+                is_draft=False,
+                base_ref_name="main",
+                head_ref_name="feature",
+                is_cross_repository=False,
+                mergeable="MERGEABLE",
+                merge_state_status="CLEAN",
+                owner="owner",
+                repo="repo",
+                labels=(),
+            )
+
+            git = FakeGit(
+                git_common_dirs={env.cwd: env.git_dir},
+                repository_roots={env.cwd: env.git_dir},
+                local_branches={env.cwd: ["main", "feature"]},
+                default_branches={env.cwd: "main"},
+                trunk_branches={env.git_dir: "main"},
+                current_branches={env.cwd: "feature"},
+                commits_ahead={(env.cwd, "main"): 1},
+                remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
+                diff_to_branch={(env.cwd, "main"): "diff --git a/file.py b/file.py\n+content"},
+            )
+
+            graphite = FakeGraphite(
+                authenticated=True,
+                branches={
+                    "feature": BranchMetadata(
+                        name="feature",
+                        parent="main",
+                        children=[],
+                        is_trunk=False,
+                        commit_sha=None,
+                    ),
+                    "main": BranchMetadata(
+                        name="main",
+                        parent=None,
+                        children=["feature"],
+                        is_trunk=True,
+                        commit_sha=None,
+                    ),
+                },
+                # PR info for cache polling - ensures polling finds PR immediately
+                pr_info={"feature": pr_info},
+            )
+
+            github = FakeGitHub(
+                authenticated=True,
+                prs={"feature": pr_info},
+                pr_details={123: pr_details},
+                pr_bases={123: "main"},
+            )
+
+            executor = FakePromptExecutor(
+                available=True,
+                simulated_prompt_output="Title\n\nBody",
+            )
+
+            ctx = build_workspace_test_context(
+                env,
+                git=git,
+                github=github,
+                graphite=graphite,
+                prompt_executor=executor,
+            )
+
+            result = runner.invoke(pr_group, ["submit"], obj=ctx)
+
+            assert result.exit_code == 0
+            # Verify Phase 3 shows no linked plan
+            assert "Phase 3: Fetching plan context" in result.output
+&gt;           assert "No linked plan found" in result.output
+E           AssertionError: assert 'No linked plan found' in '🚀 Submitting PR...\n\nPhase 1: Graphite Submit\n   Running gt submit...\n   Graphite submit completed\n\n   Getting P...tps://app.graphite.com/github/pr/owner/repo/123\x1b\\https://app.graphite.com/github/pr/owner/repo/123\x1b]8;;\x1b\\\n'
+E            +  where '🚀 Submitting PR...\n\nPhase 1: Graphite Submit\n   Running gt submit...\n   Graphite submit completed\n\n   Getting P...tps://app.graphite.com/github/pr/owner/repo/123\x1b\\https://app.graphite.com/github/pr/owner/repo/123\x1b]8;;\x1b\\\n' = &lt;Result okay&gt;.output
+
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/tests/commands/pr/test_submit.py:1684: AssertionError
+====================================================== short test summary info =======================================================
+FAILED tests/commands/pr/test_submit.py::test_pr_submit_shows_no_plan_message - AssertionError: assert 'No linked plan found' in '🚀 Submitting PR...\n\nPhase 1: Graphite Submit\n   Running gt submit...\n   Gr...
+1 failed, 5407 passed in 13.04s
+
+--- Tests (erk-dev) ---
+bringing up nodes...
+.............................................................................................................................. [ 92%]
+..........                                                                                                                     [100%]
+136 passed in 3.16s
+
+--- Tests (erk-statusline) ---
+bringing up nodes...
+............................................................................................................................   [100%]
+124 passed in 0.89s
+
+--- Tests (erkbot) ---
+      Built erkbot @ file:///Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/packages/erkbot
+Uninstalled 1 package in 1ms
+Installed 1 package in 2ms
+.................................................................................................                              [100%]
+========================================================== warnings summary ==========================================================
+tests/test_runner.py::TestStreamErkOneShot::test_stream_one_shot_timeout
+  /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/packages/erkbot/src/erkbot/runner.py:90: RuntimeWarning: coroutine 'AsyncMockMixin._execute_mock_call' was never awaited
+  Coroutine created at (most recent call last)
+    File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/asyncio/runners.py", line 118, in run
+      return self._loop.run_until_complete(task)
+    File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/asyncio/base_events.py", line 707, in run_until_complete
+      self.run_forever()
+    File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/asyncio/base_events.py", line 678, in run_forever
+      self._run_once()
+    File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/asyncio/base_events.py", line 2025, in _run_once
+      handle._run()
+    File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/asyncio/events.py", line 89, in _run
+      self._context.run(self._callback, *self._args)
+    File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1441, in patched
+      return await func(*newargs, **newkeywargs)
+    File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/packages/erkbot/tests/test_runner.py", line 130, in test_stream_one_shot_timeout
+      result = await stream_erk_one_shot("hello", timeout_seconds=0.01, on_line=None)
+    File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/packages/erkbot/src/erkbot/runner.py", line 90, in stream_erk_one_shot
+      process.terminate()
+    File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1167, in __call__
+      return self._mock_call(*args, **kwargs)
+    File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1171, in _mock_call
+      return self._execute_mock_call(*args, **kwargs)
+    process.terminate()
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+97 passed, 1 warning in 1.05s
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/.venv/lib/python3.13/site-packages/_pytest/unraisableexception.py:33: RuntimeWarning: coroutine 'register_handlers.&lt;locals&gt;.run_one_shot_background' was never awaited
+Coroutine created at (most recent call last)
+  File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/unittest/async_case.py", line 94, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+  File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/unittest/async_case.py", line 116, in _callMaybeAsync
+    return self._asyncioRunner.run(
+  File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/asyncio/base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/asyncio/base_events.py", line 678, in run_forever
+    self._run_once()
+  File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/asyncio/base_events.py", line 2025, in _run_once
+    handle._run()
+  File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/asyncio/events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+  File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1441, in patched
+    return await func(*newargs, **newkeywargs)
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/packages/erkbot/tests/test_slack_handlers.py", line 76, in test_one_shot_starts_background_task
+    await handler(event, say, client)
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/packages/erkbot/src/erkbot/slack_handlers.py", line 295, in handle_app_mention
+    run_one_shot_background(
+  gc.collect()
+RuntimeWarning: Enable tracemalloc to get the object allocation traceback
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/.venv/lib/python3.13/site-packages/_pytest/unraisableexception.py:33: RuntimeWarning: coroutine 'run_agent_background' was never awaited
+Coroutine created at (most recent call last)
+  File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/unittest/async_case.py", line 94, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+  File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/unittest/async_case.py", line 116, in _callMaybeAsync
+    return self._asyncioRunner.run(
+  File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/asyncio/base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/asyncio/base_events.py", line 678, in run_forever
+    self._run_once()
+  File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/asyncio/base_events.py", line 2025, in _run_once
+    handle._run()
+  File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/asyncio/events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+  File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 1441, in patched
+    return await func(*newargs, **newkeywargs)
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/packages/erkbot/tests/test_slack_handlers.py", line 111, in test_chat_with_bot_starts_background_task
+    await handler(event, say, client)
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/packages/erkbot/src/erkbot/slack_handlers.py", line 258, in handle_app_mention
+    run_agent_background(
+  gc.collect()
+RuntimeWarning: Enable tracemalloc to get the object allocation traceback
+make: *** [fast-ci] Error 1
+(erk) ➜  erk-slot-41 git:(plnd/O7911-phase2-test-defaults-02-24-2325)
+
+fix tests</user>
+  <assistant>
+
+Looking at the failing test, I need to understand what changed. The test `test_pr_submit_shows_no_plan_message` expects "No linked plan found" in the output but it's not appearing. Let me investigate.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="23392" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 23392}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01WEYwGHRMJhFFgSqWxfCrPY">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore PR submit plan context</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 800 chars]...figuration - the branch name suggests this is about changing test defaults for plan_store.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="23392" cache_read_input_tokens="19114" output_tokens="419" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 23392, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WEYwGHRMJhFFgSqWxfCrPY">
+Perfect! Now I see the issue clearly:
+
+**At lines 184-195, the plan_store resolution logic is:**
+- Line 186-187: If `plan_store` is explicitly passed, use it
+- Line 188-193: Else if `issues_explicitly_passed` (i.e., `github_issues is not None`), use `GitHubPlanStore`
+- Line 195: Else use `PlannedPRBackend`
+
+The test doesn't pass `github_issues`, so `issues_explicitly_passed=False`. Therefore, it gets `PlannedPRBackend`.
+
+But now, with `PlannedPRBackend`, the plan context provider calls `plan_backend.get_plan_for_branch()` which calls `github.get_pr_for_branch()`. The test sets up the GitHub state with:
+
+```python
+github = FakeGitHub(
+    authenticated=True,
+    prs={"feature": pr_info},
+    pr_details={123: pr_details},
+    pr_bases={123: "main"},
+)
+```
+
+The `prs={"feature": pr_info}` stores a PR for the "feature" branch! So when PlannedPRBackend looks up the plan for the "feature" branch, it FINDS a PR and treats it as a plan!
+
+**The real issue:** The test is storing a regular PR (not a draft PR for a plan) in the FakeGitHub state with `prs={"feature": pr_info}`. When PlannedPRBackend queries for a plan associated with the branch, it finds this regular PR and incorrectly treats it as a plan.
+
+Now I understand the failure. The test was written when the default plan_store was `GitHubPlanStore`, which looked for plans in GitHub Issues. Now it defaults to `PlannedPRBackend`, which looks for draft PRs. Since the test sets up a regular PR in the FakeGitHub state and doesn't set up any draft PRs, the PlannedPRBackend finds the regular PR and treats it as a plan!
+
+Let me verify this by checking if the plan actually exists:
+
+The output shows:
+```
+
+... [75 lines omitted] ...
+
+The test failure is caused by the recent commit `ff1863fdc` that **changed the default plan_store from `GitHubPlanStore` to `PlannedPRBackend`** in test contexts.
+  </tool_result>
+  <thinking>The investigation is clear. The test `test_pr_submit_shows_no_plan_message` was designed to test the case where there's no linked plan. But with the default plan_store changed from `GitHubPlanStore` to `PlannedPRBackend`, the FakeGitHub's `prs={"feature": pr_info}` now gets picked up as a "plan" by PlannedPRBackend.
+
+The fix: The test needs to ensure that PlannedPRBackend doesn't find a plan for the branch. I need to understand how PlannedPRBackend looks up plans to know what to change.
+
+
+Now I'm looking at the PlannedPRBackend implementation to see how it retrieves plans and what conditions need to be met for it to return nothing.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2006" cache_read_input_tokens="42506" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2006}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, the root cause is clear. The commit `ff1863fdc` changed the default plan_store from `GitHubPlanStore` to `PlannedPRBackend`. Now `PlannedPRBackend.get_plan_for_branch("feature")` finds the regular PR in `prs={"feature": pr_info}` and treats it as a plan.
+
+Let me read the relevant files to determine the right fix.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2006" cache_read_input_tokens="42506" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2006}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AQ2yWrtm8W9oaWP3AGF1ZE">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/tests/commands/pr/test_submit.py</param>
+    <param name="offset">1590</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2006" cache_read_input_tokens="42506" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2006}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AQ2yWrtm8W9oaWP3AGF1ZE">
+  1590→def test_pr_submit_shows_no_plan_message() -&gt; None:
+  1591→    """Test that Phase 3 shows 'No linked plan found' for non-plan branches.
+  1592→
+  1593→    When a branch is not linked to an erk-plan issue (regular branch name),
+  1594→    the submit command should show a "No linked plan found" message.
+  1595→    """
+  1596→    runner = CliRunner()
+  1597→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+  1598→        pr_info = PullRequestInfo(
+  1599→            number=123,
+  1600→            state="OPEN",
+  1601→            url="https://github.com/owner/repo/pull/123",
+  1602→            is_draft=False,
+  1603→            title="Feature PR",
+  1604→            checks_passing=True,
+  1605→            owner="owner",
+  1606→            repo="repo",
+  1607→        )
+  1608→        pr_details = PRDetails(
+  1609→            number=123,
+  1610→            url="https://github.com/owner/repo/pull/123",
+  1611→            title="Feature PR",
+  1612→            body="",
+  1613→            state="OPEN",
+  1614→            is_draft=False,
+  1615→            base_ref_name="main",
+  1616→            head_ref_name="feature",
+  1617→            is_cross_repository=False,
+  1618→            mergeable="MERGEABLE",
+  1619→            merge_state_status="CLEAN",
+
+... [70 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UmhstkCB75Vws9NygcLMvw">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="offset">130</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2006" cache_read_input_tokens="42506" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2006}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UmhstkCB75Vws9NygcLMvw">
+   130→        return str(result.number)
+   131→
+   132→    def get_plan_for_branch(self, repo_root: Path, branch_name: str) -&gt; Plan | PlanNotFound:
+   133→        """Look up the plan associated with a branch.
+   134→
+   135→        Queries for a draft PR on the branch and converts to Plan.
+   136→
+   137→        Args:
+   138→            repo_root: Repository root directory
+   139→            branch_name: Git branch name
+   140→
+   141→        Returns:
+   142→            Plan if found, PlanNotFound if no draft PR exists for the branch
+   143→        """
+   144→        result = self._github.get_pr_for_branch(repo_root, branch_name)
+   145→        if isinstance(result, PRNotFound):
+   146→            return PlanNotFound(plan_id=branch_name)
+   147→        return self._convert_to_plan(result)
+   148→
+   149→    def get_plan(self, repo_root: Path, plan_id: str) -&gt; Plan | PlanNotFound:
+   150→        """Fetch plan from a draft PR by PR number.
+   151→
+   152→        Args:
+   153→            repo_root: Repository root directory
+   154→            plan_id: PR number as string (e.g., "42")
+   155→
+   156→        Returns:
+   157→            Plan with converted data, or PlanNotFound if PR does not exist
+   158→        """
+   159→        pr_number = int(plan_id)
+  </tool_result>
+  <thinking>Now I understand the issue. The `PlannedPRBackend.get_plan_for_branch()` calls `self._github.get_pr_for_branch(repo_root, branch_name)` which finds the PR in `prs={"feature": pr_info}`. Since it's not a `PRNotFound`, it converts it to a plan.
+
+The fix is simple: the test needs to ensure that when PlannedPRBackend looks up a plan for the "feature" branch, it doesn't find one. The issue is that FakeGitHub stores the PR info in `prs` which is what `get_pr_for_branch` returns.
+
+
+But I'm realizing there's a deeper conflict here: the submit pipeline needs to find the PR through `get_pr_for_branch()` for phases 1 and 2 to work, but PlannedPRBackend also uses the same method to look up plans. So I need to figure out whether the submit pipeline and PlannedPRBackend are using different lookup paths, or if I need to provide a plan store that explicitly doesn't find plans for this branch.
+
+Let me trace through how `build_workspace_test_context` resolves the plan_store parameter to see if I can override it.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="7306" cache_read_input_tokens="44512" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7306}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the context factory to understand how to pass an explicit plan_store.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7306" cache_read_input_tokens="44512" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7306}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01NsQzyYDeWxcNih4MhTyVQY">
+    <param name="pattern">def build_workspace_test_context</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7306" cache_read_input_tokens="44512" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7306}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NsQzyYDeWxcNih4MhTyVQY">
+Found 1 file
+tests/test_utils/context_builders.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01EuNUt5cJMev1mHkGyWnG32">
+    <param name="pattern">plan_store</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/packages/erk-shared/src/erk_shared/context/testing.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7306" cache_read_input_tokens="44512" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7306}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EuNUt5cJMev1mHkGyWnG32">
+37:from erk_shared.plan_store.planned_pr import PlannedPRBackend
+38:from erk_shared.plan_store.store import PlanStore
+53:    plan_store: PlanStore | None = None,
+81:        plan_store: Optional PlanStore. If None, creates PlannedPRBackend.
+184:    # Resolve plan_store: explicit &gt; issue-aware default &gt; PlannedPRBackend
+185:    resolved_plan_store: PlanStore
+186:    if plan_store is not None:
+187:        resolved_plan_store = plan_store
+191:        from erk_shared.plan_store.github import GitHubPlanStore
+193:        resolved_plan_store = GitHubPlanStore(resolved_issues, FakeTime())
+195:        resolved_plan_store = PlannedPRBackend(resolved_github, resolved_issues, time=FakeTime())
+209:        plan_store=resolved_plan_store,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WwKTaJ8NHShSBLXKYm7NjV">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/tests/test_utils/context_builders.py</param>
+    <param name="offset">40</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="909" cache_read_input_tokens="51818" output_tokens="124" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 909, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WwKTaJ8NHShSBLXKYm7NjV">
+    40→    Example:
+    41→        &gt;&gt;&gt; with erk_inmem_env(runner) as env:
+    42→        ...     ctx = build_workspace_test_context(env, dry_run=True)
+    43→        ...     result = runner.invoke(cli, ["delete", "branch"], obj=ctx)
+    44→    """
+    45→    # Only create default git if not provided in kwargs
+    46→    if "git" not in kwargs:
+    47→        current_branches_dict = {env.cwd: current_branch} if current_branch else None
+    48→        git_ops = FakeGit(
+    49→            git_common_dirs={env.cwd: env.git_dir},
+    50→            remote_urls={(env.cwd, "origin"): "https://github.com/owner/repo.git"},
+    51→            current_branches=current_branches_dict,
+    52→        )
+    53→        if dry_run:
+    54→            git_ops = DryRunGit(git_ops)
+    55→        kwargs["git"] = git_ops
+    56→    else:
+    57→        # Ensure custom git has remote_urls configured for repo discovery
+    58→        git_ops = kwargs["git"]
+    59→        unwrapped = git_ops._wrapped if isinstance(git_ops, DryRunGit) else git_ops
+    60→        if hasattr(unwrapped, "_remote_urls"):
+    61→            # Add default remote URL if not already set for env.cwd
+    62→            if (env.cwd, "origin") not in unwrapped._remote_urls:
+    63→                unwrapped._remote_urls[(env.cwd, "origin")] = "https://github.com/owner/repo.git"
+    64→
+    65→    # Provide defaults for other integrations if not in kwargs
+    66→    if "github" not in kwargs:
+    67→        kwargs["github"] = FakeGitHub()
+    68→    # Note: Don't set graphite here - let env.build_context handle it
+    69→    # based on use_graphite flag (uses GraphiteDisabled when disabled)
+  </tool_result>
+  <thinking>Now I see. The `build_workspace_test_context` function accepts a `plan_store` parameter. And the current test doesn't pass one, so it defaults to `PlannedPRBackend`. The test needs to either:
+
+1. Pass an explicit `plan_store` that returns PlanNotFound
+2. Or somehow prevent PlannedPRBackend from finding the PR
+
+The simplest fix: the test should pass an explicit `GitHubPlanStore` (with no matching issues) so it doesn't find plans via PRs. Let me check the imports and patterns used in other tests.
+
+Actually wait - let me look more carefully at the test. 
+
+The real problem is that `PlannedPRBackend` treats every PR as a plan, so there's no way to distinguish a regular branch with a PR from an actual plan branch. The test is specifically checking the "no plan found" scenario, which only makes sense with `GitHubPlanStore` where plans and PRs are separate concepts. I need to pass an explicit `GitHubPlanStore` instance to the test context. Or pass a plan_store that will return PlanNotFound.
+
+Let me check if there's a simple way to create a GitHubPlanStore that returns no plans. The FakeGitHub with no issues should do it.
+
+Actually, looking at the context builder code again, if we pass `github_issues` explicitly (even as a fresh FakeGitHubIssues()), it would use GitHubPlanStore. But that might change other behavior.
+
+The cleanest approach would be to pass `plan_store=GitHubPlanStore(FakeGitHubIssues(), FakeTime())` explicitly to the test context. But wait—I need to think about what this test is actually validating. It's checking that Phase 3 of the submit pipeline shows "No linked plan found", but with PlannedPRBackend as the default, any branch with a PR already has a plan (the PR itself). So the meaning of "no linked plan" shifts. The real question is whether this test is even valid anymore if PlannedPRBackend is the default, since every PR branch would have a plan by definition.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="664" cache_read_input_tokens="52727" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 664}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me understand the submit pipeline's Phase 3 to determine the right fix.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="664" cache_read_input_tokens="52727" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 664}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_013cZAMBExxEMKnJpPaiZzCw">
+    <param name="pattern">Phase 3.*plan|No linked plan|Fetching plan context|Incorporating plan</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/src/erk/cli/commands/pr</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="664" cache_read_input_tokens="52727" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 664}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013cZAMBExxEMKnJpPaiZzCw">
+src/erk/cli/commands/pr/shared.py:120:                f"   Incorporating plan from issue #{plan_context.plan_id}",
+src/erk/cli/commands/pr/shared.py:127:        click.echo(click.style("   No linked plan found", dim=True))
+src/erk/cli/commands/pr/submit_pipeline.py:543:    click.echo(click.style("Phase 3: Fetching plan context", bold=True))
+  </tool_result>
+  <tool_use name="Read" id="toolu_01L8UJYppXMSM5ANtR1ybdg7">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/src/erk/cli/commands/pr/shared.py</param>
+    <param name="offset">105</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1382" cache_read_input_tokens="53391" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1382}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01L8UJYppXMSM5ANtR1ybdg7">
+   105→            result = event.result
+   106→
+   107→    return result
+   108→
+   109→
+   110→# ---------------------------------------------------------------------------
+   111→# Plan Context Display
+   112→# ---------------------------------------------------------------------------
+   113→
+   114→
+   115→def echo_plan_context_status(plan_context: PlanContext | None) -&gt; None:
+   116→    """Echo plan context status to the CLI."""
+   117→    if plan_context is not None:
+   118→        click.echo(
+   119→            click.style(
+   120→                f"   Incorporating plan from issue #{plan_context.plan_id}",
+   121→                fg="green",
+   122→            )
+   123→        )
+   124→        if plan_context.objective_summary is not None:
+   125→            click.echo(click.style(f"   Linked to {plan_context.objective_summary}", fg="green"))
+   126→    else:
+   127→        click.echo(click.style("   No linked plan found", dim=True))
+   128→    click.echo("")
+   129→
+   130→
+   131→# ---------------------------------------------------------------------------
+   132→# Lifecycle Stage
+   133→# ---------------------------------------------------------------------------
+   134→
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Cz2SDPynHGNDELFs3txW76">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="offset">535</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1382" cache_read_input_tokens="53391" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1382}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Cz2SDPynHGNDELFs3txW76">
+   535→
+   536→    return dataclasses.replace(state, diff_file=diff_file)
+   537→
+   538→
+   539→def fetch_plan_context(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   540→    """Fetch plan context from linked erk-plan issue."""
+   541→    if state.skip_description:
+   542→        return state
+   543→    click.echo(click.style("Phase 3: Fetching plan context", bold=True))
+   544→
+   545→    plan_provider = PlanContextProvider(
+   546→        plan_backend=ctx.plan_backend, github_issues=ctx.github_issues
+   547→    )
+   548→    plan_context = plan_provider.get_plan_context(
+   549→        repo_root=state.repo_root,
+   550→        branch_name=state.branch_name,
+   551→    )
+   552→
+   553→    echo_plan_context_status(plan_context)
+   554→
+   555→    return dataclasses.replace(state, plan_context=plan_context)
+   556→
+   557→
+   558→def generate_description(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   559→    """Generate AI PR title and body via CommitMessageGenerator."""
+   560→    if state.skip_description:
+   561→        return state
+   562→    click.echo(click.style("Phase 4: Generating PR description", bold=True))
+   563→
+   564→    if state.diff_file is None:
+  </tool_result>
+  <thinking>Now let me check PlanContextProvider to understand how it converts from plan backend result to PlanContext.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1056" cache_read_input_tokens="54773" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1056}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01TYB63pKJxc9AgYMcTw1i8M">
+    <param name="pattern">class PlanContextProvider</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1056" cache_read_input_tokens="54773" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1056}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TYB63pKJxc9AgYMcTw1i8M">
+Found 1 file
+src/erk/core/plan_context_provider.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01PRDGaxxhc3U1k9GkAVTL9Q">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/src/erk/core/plan_context_provider.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="125" cache_read_input_tokens="55829" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 125}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PRDGaxxhc3U1k9GkAVTL9Q">
+     1→"""Plan context provider for PR description generation.
+     2→
+     3→This module provides plan context for branches linked to erk-plan issues,
+     4→enabling more accurate PR descriptions that understand the "why" behind changes.
+     5→"""
+     6→
+     7→from dataclasses import dataclass
+     8→from pathlib import Path
+     9→
+    10→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    11→from erk_shared.gateway.github.issues.types import IssueNotFound
+    12→from erk_shared.plan_store.backend import PlanBackend
+    13→from erk_shared.plan_store.types import PlanNotFound
+    14→
+    15→
+    16→@dataclass(frozen=True)
+    17→class PlanContext:
+    18→    """Context from an erk-plan issue for PR generation.
+    19→
+    20→    Attributes:
+    21→        plan_id: The plan identifier (e.g., "123" for GitHub issue numbers)
+    22→        plan_content: The full plan markdown content
+    23→        objective_summary: Optional summary of the parent objective (e.g., "Objective #123: Title")
+    24→    """
+    25→
+    26→    plan_id: str
+    27→    plan_content: str
+    28→    objective_summary: str | None
+    29→
+    30→
+
+... [75 lines omitted] ...
+
+    58→        Returns None on any failure, allowing graceful degradation for
+  </tool_result>
+  <thinking>Now I have the full picture. The fix is straightforward. The test `test_pr_submit_shows_no_plan_message` needs to ensure `PlannedPRBackend.get_plan_for_branch()` returns `PlanNotFound`. But since the test stores the PR in `prs={"feature": pr_info}`, which is what `get_pr_for_branch` returns, PlannedPRBackend finds it and treats it as a plan.
+
+The simplest fix: explicitly pass a `plan_store` that won't find plans. I can use `GitHubPlanStore` with a `FakeGitHubIssues()` that has no matching issues. 
+
+Or maybe there's a `NullPlanStore` I could use instead. Let me check if I can just pass `plan_store` directly to `build_workspace_test_context` rather than creating a fake one.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1321" cache_read_input_tokens="55954" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1321}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KoQaqL3Yeaxg4sbofKrAE7">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/tests/test_utils/context_builders.py</param>
+    <param name="offset">1</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1321" cache_read_input_tokens="55954" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1321}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KoQaqL3Yeaxg4sbofKrAE7">
+     1→"""Shared context builders for test scenarios.
+     2→
+     3→This module provides reusable context builder functions to eliminate duplication
+     4→across test files. These builders encapsulate common patterns for setting up
+     5→ErkContext with appropriate fake implementations.
+     6→"""
+     7→
+     8→from erk.core.context import ErkContext
+     9→from erk_shared.gateway.git.dry_run import DryRunGit
+    10→from erk_shared.gateway.git.fake import FakeGit
+    11→from erk_shared.gateway.github.fake import FakeGitHub
+    12→from tests.fakes.shell import FakeShell
+    13→from tests.test_utils.env_helpers import ErkInMemEnv, ErkIsolatedFsEnv
+    14→
+    15→
+    16→def build_workspace_test_context(
+    17→    env: ErkInMemEnv | ErkIsolatedFsEnv,
+    18→    *,
+    19→    dry_run: bool = False,
+    20→    use_graphite: bool = False,
+    21→    current_branch: str | None = None,
+    22→    **kwargs,
+    23→) -&gt; ErkContext:
+    24→    """Build ErkContext for workspace command tests (create, split, consolidate, delete).
+    25→
+    26→    This builder provides a standard context configuration for workspace manipulation
+    27→    commands with sensible defaults and support for common testing scenarios.
+    28→
+    29→    Args:
+    30→        env: Pure or isolated erk environment fixture
+
+... [10 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me check how `env.build_context()` handles `plan_store` and what keyword args it accepts.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1009" cache_read_input_tokens="57275" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1009}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_012NdVoWxKE5HFTUf9Nf2Ras">
+    <param name="pattern">def build_context</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/tests/test_utils/env_helpers.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1009" cache_read_input_tokens="57275" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1009}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012NdVoWxKE5HFTUf9Nf2Ras">
+380:    def build_context(
+381-        self,
+382-        *,
+383-        current_branch: str | None = None,
+384-        trunk_branch: str = "main",
+385-        use_graphite: bool = False,
+--
+825:    def build_context(
+826-        self,
+827-        *,
+828-        current_branch: str | None = None,
+829-        trunk_branch: str = "main",
+830-        use_graphite: bool = False,
+  </tool_result>
+</session>

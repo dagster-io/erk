@@ -1,0 +1,599 @@
+<session>
+  <meta branch="plnd/O7911-phase2-test-defaults-02-24-2325" />
+  <meta model="claude-opus-4-6" />
+  <user>Implement the following plan:
+
+# Fix test_pr_submit_shows_no_plan_message
+
+## Context
+
+Commit `ff1863fdc` changed the default plan_store in test contexts from `GitHubPlanStore` to `PlannedPRBackend`. This broke `test_pr_submit_shows_no_plan_message` because:
+
+- The test sets up `FakeGitHub(prs={"feature": pr_info})` for the submit flow
+- `PlannedPRBackend.get_plan_for_branch("feature")` calls `github.get_pr_for_branch()`, finds the PR, and treats it as a plan
+- So Phase 3 shows "Incorporating plan from issue #123" instead of "No linked plan found"
+
+With `GitHubPlanStore`, this worked because it resolves plans by regex-matching branch names (e.g., `plnd/...`), and "feature" doesn't match.
+
+## Fix
+
+Pass `github_issues=FakeGitHubIssues()` explicitly to `build_workspace_test_context`. This triggers the `issues_explicitly_passed` path in `context_for_test` (line 188), which creates a `GitHubPlanStore` instead of `PlannedPRBackend`. `GitHubPlanStore` won't find a plan for branch "feature".
+
+### File: `tests/commands/pr/test_submit.py` (~line 1671)
+
+Add import for `FakeGitHubIssues` and pass it to the context builder:
+
+```python
+ctx = build_workspace_test_context(
+    env,
+    git=git,
+    github=github,
+    graphite=graphite,
+    prompt_executor=executor,
+    github_issues=FakeGitHubIssues(),  # Force GitHubPlanStore (no plan for "feature" branch)
+)
+```
+
+## Verification
+
+Run: `uv run pytest tests/commands/pr/test_submit.py::test_pr_submit_shows_no_plan_message -xvs`
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-41/ac990a3e-38c9-4282-8905-cdb1a08390dd.jsonl</user>
+  <thinking>Let me implement this fix. I need to:
+
+1. Read the test file to find the exact location
+2. Add the `FakeGitHubIssues` import if not already present
+3. Pass `github_issues=FakeGitHubIssues()` to the context builder
+
+Let me start by reading the relevant parts of the test file.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="7753" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7753}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SPAA5SrpwkgBuWuv2fEcm6">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/tests/commands/pr/test_submit.py</param>
+    <param name="offset">1</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7753" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7753}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SPAA5SrpwkgBuWuv2fEcm6">
+     1→"""Tests for erk pr submit command.
+     2→
+     3→These tests verify the CLI layer behavior of the submit command.
+     4→The command now uses Python orchestration (preflight -&gt; generate -&gt; finalize)
+     5→rather than delegating to a Claude slash command.
+     6→"""
+     7→
+     8→from pathlib import Path
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.pr import pr_group
+    13→from erk_shared.gateway.git.abc import BranchDivergence
+    14→from erk_shared.gateway.git.fake import FakeGit
+    15→from erk_shared.gateway.github.fake import FakeGitHub
+    16→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    17→from erk_shared.gateway.graphite.fake import FakeGraphite
+    18→from erk_shared.gateway.graphite.types import BranchMetadata
+    19→from tests.fakes.prompt_executor import FakePromptExecutor
+    20→from tests.test_utils.context_builders import build_workspace_test_context
+    21→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    22→
+    23→
+    24→def test_pr_submit_fails_when_claude_not_available() -&gt; None:
+    25→    """Test that command fails when Claude CLI is not available."""
+    26→    runner = CliRunner()
+    27→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    28→        git = FakeGit(
+    29→            git_common_dirs={env.cwd: env.git_dir},
+    30→            local_branches={env.cwd: ["main"]},
+  </tool_result>
+  <tool_use name="Grep" id="toolu_013MdAjZ678Vn96fz2auYepX">
+    <param name="pattern">test_pr_submit_shows_no_plan_message</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/tests/commands/pr/test_submit.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7753" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7753}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013MdAjZ678Vn96fz2auYepX">
+1590:def test_pr_submit_shows_no_plan_message() -&gt; None:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MYRCM4woJeH7r3du4Yidac">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/tests/commands/pr/test_submit.py</param>
+    <param name="offset">1585</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8960" cache_read_input_tokens="26867" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8960}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MYRCM4woJeH7r3du4Yidac">
+  1585→        assert "Phase 3: Fetching plan context" in result.output
+  1586→        assert "Incorporating plan from issue #5823" in result.output
+  1587→        assert "Linked to Objective #5000: Improve PR workflow" in result.output
+  1588→
+  1589→
+  1590→def test_pr_submit_shows_no_plan_message() -&gt; None:
+  1591→    """Test that Phase 3 shows 'No linked plan found' for non-plan branches.
+  1592→
+  1593→    When a branch is not linked to an erk-plan issue (regular branch name),
+  1594→    the submit command should show a "No linked plan found" message.
+  1595→    """
+  1596→    runner = CliRunner()
+  1597→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+  1598→        pr_info = PullRequestInfo(
+  1599→            number=123,
+  1600→            state="OPEN",
+  1601→            url="https://github.com/owner/repo/pull/123",
+  1602→            is_draft=False,
+  1603→            title="Feature PR",
+  1604→            checks_passing=True,
+  1605→            owner="owner",
+  1606→            repo="repo",
+  1607→        )
+  1608→        pr_details = PRDetails(
+  1609→            number=123,
+  1610→            url="https://github.com/owner/repo/pull/123",
+  1611→            title="Feature PR",
+  1612→            body="",
+  1613→            state="OPEN",
+  1614→            is_draft=False,
+
+... [70 lines omitted] ...
+  </tool_result>
+  <assistant>Now I need to check if `FakeGitHubIssues` is already imported and find its import path.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1488" cache_read_input_tokens="35827" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1488}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01H3uquZmN7Mk3nyVtr4nBT2">
+    <param name="pattern">class FakeGitHubIssues</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1488" cache_read_input_tokens="35827" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1488}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01H3uquZmN7Mk3nyVtr4nBT2">
+packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py:18:class FakeGitHubIssues(GitHubIssues):
+  </tool_result>
+  <assistant>Now I'll make both changes: add the import and pass the parameter.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="163" cache_read_input_tokens="37315" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 163}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Vn36xr6vPZq8Zd6FiXkxmM">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">from erk_shared.gateway.github.fake import FakeGitHub</param>
+    <param name="new_string">from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="163" cache_read_input_tokens="37315" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 163}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Vn36xr6vPZq8Zd6FiXkxmM">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/tests/commands/pr/test_submit.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01FY6caBPKSwR6bMs1kdE37J">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            github=github,
+            graphite=graphite,
+            prompt_executor=executor,
+        )</param>
+    <param name="new_string">        ctx = build_workspace_test_context(
+            env,
+            git=git,
+        ...[truncated 89 chars]...sues=FakeGitHubIssues(),  # Force GitHubPlanStore (no plan for "feature" branch)
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="275" cache_read_input_tokens="37478" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 275}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FY6caBPKSwR6bMs1kdE37J">
+&lt;tool_use_error&gt;Found 18 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:         ctx = build_workspace_test_context(
+            env,
+            git=git,
+            github=github,
+            graphite=graphite,
+            prompt_executor=executor,
+        )&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>Need more context to make it unique.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="401" cache_read_input_tokens="37753" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 401}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01DZSmaE2qcD9tKZTWXQk3kf">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">        executor = FakePromptExecutor(
+            available=True,
+            simulated_p...[truncated 385 chars]...hing plan context" in result.output
+        assert "No linked plan found" in result.output</param>
+    <param name="new_string">        executor = FakePromptExecutor(
+            available=True,
+            simulated_p...[truncated 487 chars]...hing plan context" in result.output
+        assert "No linked plan found" in result.output</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="401" cache_read_input_tokens="37753" output_tokens="500" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 401, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DZSmaE2qcD9tKZTWXQk3kf">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/tests/commands/pr/test_submit.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run the test to verify.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="667" cache_read_input_tokens="38154" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 667}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01UVwg1Ts6ybAvrKAZiuLn6r">
+    <param name="description">Run failing test to verify fix</param>
+    <param name="prompt">Run this command and report the results: uv run pytest tests/commands/pr/test_submit.py::test_pr_submit_shows_no_plan_message -xvs</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="667" cache_read_input_tokens="38154" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 667}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UVwg1Ts6ybAvrKAZiuLn6r">
+pytest failed: 1 issue found
+
+**Error:** `TypeError: context_for_test() got an unexpected keyword argument 'github_issues'`
+
+**Location:** tests/commands/pr/test_submit.py:1672 in test_pr_submit_shows_no_plan_message
+
+**Issue:** The test is passing `github_issues=FakeGitHubIssues()` to `build_workspace_test_context()`, but this function doesn't accept that parameter. The error occurs when `build_workspace_test_context` tries to pass `**kwargs` to `context_for_test()`, which also doesn't accept `github_issues`.
+
+**File:** /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/tests/commands/pr/test_submit.py (line 1672)
+agentId: a38a4bbdf27e25458 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 16503
+tool_uses: 1
+duration_ms: 5538&lt;/usage&gt;
+  </tool_result>
+  <thinking>The `build_workspace_test_context` doesn't accept `github_issues`. Let me check what parameters it accepts and how `context_for_test` works.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="410" cache_read_input_tokens="38821" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 410}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>The function doesn't accept `github_issues` yet. Let me check the context builders.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="410" cache_read_input_tokens="38821" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 410}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01UEvrggq2jCfkMacjp212cV">
+    <param name="pattern">def build_workspace_test_context</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="410" cache_read_input_tokens="38821" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 410}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UEvrggq2jCfkMacjp212cV">
+tests/test_utils/context_builders.py:16:def build_workspace_test_context(
+  </tool_result>
+  <tool_use name="Grep" id="toolu_019EYR5QkX431KyibktNqSAp">
+    <param name="pattern">def context_for_test</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="410" cache_read_input_tokens="38821" output_tokens="208" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 410, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019EYR5QkX431KyibktNqSAp">
+src/erk/core/context.py:190:def context_for_test(
+packages/erk-shared/src/erk_shared/context/testing.py:41:def context_for_test(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MW1Z4v3SkE7oqKRfhgH8wz">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/tests/test_utils/context_builders.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="342" cache_read_input_tokens="39231" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 342}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MW1Z4v3SkE7oqKRfhgH8wz">
+     1→"""Shared context builders for test scenarios.
+     2→
+     3→This module provides reusable context builder functions to eliminate duplication
+     4→across test files. These builders encapsulate common patterns for setting up
+     5→ErkContext with appropriate fake implementations.
+     6→"""
+     7→
+     8→from erk.core.context import ErkContext
+     9→from erk_shared.gateway.git.dry_run import DryRunGit
+    10→from erk_shared.gateway.git.fake import FakeGit
+    11→from erk_shared.gateway.github.fake import FakeGitHub
+    12→from tests.fakes.shell import FakeShell
+    13→from tests.test_utils.env_helpers import ErkInMemEnv, ErkIsolatedFsEnv
+    14→
+    15→
+    16→def build_workspace_test_context(
+    17→    env: ErkInMemEnv | ErkIsolatedFsEnv,
+    18→    *,
+    19→    dry_run: bool = False,
+    20→    use_graphite: bool = False,
+    21→    current_branch: str | None = None,
+    22→    **kwargs,
+    23→) -&gt; ErkContext:
+    24→    """Build ErkContext for workspace command tests (create, split, consolidate, delete).
+    25→
+    26→    This builder provides a standard context configuration for workspace manipulation
+    27→    commands with sensible defaults and support for common testing scenarios.
+    28→
+    29→    Args:
+    30→        env: Pure or isolated erk environment fixture
+
+... [96 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01B8JaKRy6HHYNGiZTrh95FZ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/src/erk/core/context.py</param>
+    <param name="offset">170</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="342" cache_read_input_tokens="39231" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 342}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01B8JaKRy6HHYNGiZTrh95FZ">
+   170→        agent_docs=FakeAgentDocs(files={}, has_docs_dir=True),
+   171→        completion=FakeCompletion(),
+   172→        time=fake_time,
+   173→        erk_installation=FakeErkInstallation(),
+   174→        script_writer=FakeScriptWriter(),
+   175→        plan_list_service=FakePlanListService(),
+   176→        objective_list_service=FakeObjectiveListService(data=None),
+   177→        codespace_registry=FakeCodespaceRegistry(),
+   178→        claude_installation=FakeClaudeInstallation.for_test(),
+   179→        prompt_executor=FakePromptExecutor(),
+   180→        cwd=cwd,
+   181→        global_config=None,
+   182→        local_config=LoadedConfig.test(),
+   183→        repo=NoRepoSentinel(),
+   184→        repo_info=None,
+   185→        dry_run=dry_run,
+   186→        debug=False,
+   187→    )
+   188→
+   189→
+   190→def context_for_test(
+   191→    *,
+   192→    git: Git | None = None,
+   193→    github: GitHub | None = None,
+   194→    github_admin: GitHubAdmin | None = None,
+   195→    issues: GitHubIssues | None = None,
+   196→    plan_store: PlanStore | None = None,
+   197→    graphite: Graphite | None = None,
+   198→    console: Console | None = None,
+   199→    shell: Shell | None = None,
+
+... [50 lines omitted] ...
+  </tool_result>
+  <thinking>I see - `context_for_test` accepts `issues` not `github_issues`. And `build_workspace_test_context` passes `**kwargs` through to `env.build_context()`. Let me check `env.build_context()` to see what it accepts.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3347" cache_read_input_tokens="39573" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3347}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I see — `context_for_test` accepts `issues` (not `github_issues`). Let me check what `env.build_context()` accepts.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3347" cache_read_input_tokens="39573" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3347}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01GBQT1HaXx6DF8iwfn3pFbj">
+    <param name="pattern">def build_context</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/tests/test_utils/env_helpers.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3347" cache_read_input_tokens="39573" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3347}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GBQT1HaXx6DF8iwfn3pFbj">
+380:    def build_context(
+825:    def build_context(
+  </tool_result>
+  <tool_use name="Read" id="toolu_018YrPEoLzj8PsZDaJbNMCFk">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/tests/test_utils/env_helpers.py</param>
+    <param name="offset">380</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="289" cache_read_input_tokens="42920" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 289}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018YrPEoLzj8PsZDaJbNMCFk">
+   380→    def build_context(
+   381→        self,
+   382→        *,
+   383→        current_branch: str | None = None,
+   384→        trunk_branch: str = "main",
+   385→        use_graphite: bool = False,
+   386→        git: Git | None = None,
+   387→        graphite: FakeGraphite | None = None,
+   388→        github: FakeGitHub | None = None,
+   389→        shell: FakeShell | None = None,
+   390→        repo: RepoContext | None = None,
+   391→        dry_run: bool = False,
+   392→        confirm_responses: list[bool] | None = None,
+   393→        console: FakeConsole | None = None,
+   394→        **kwargs,
+   395→    ) -&gt; ErkContext:
+   396→        """Build ErkContext with smart defaults for test scenarios.
+   397→
+   398→        This helper eliminates boilerplate by providing default ops and config
+   399→        for tests that don't need custom setup. Custom values can be provided
+   400→        via keyword arguments.
+   401→
+   402→        Args:
+   403→            current_branch: If provided, auto-configures FakeGit.current_branches
+   404→            trunk_branch: Default branch name (default: "main")
+   405→            use_graphite: Enable Graphite integration (default: False)
+   406→            git: Custom FakeGit instance (overrides smart defaults)
+   407→            graphite: Custom FakeGraphite instance
+   408→            github: Custom FakeGitHub instance
+   409→            shell: Custom FakeShell instance
+
+... [30 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_019wJc5hMi6T2oqp2ENmZM7S">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/tests/test_utils/env_helpers.py</param>
+    <param name="offset">825</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="289" cache_read_input_tokens="42920" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 289}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019wJc5hMi6T2oqp2ENmZM7S">
+   825→    def build_context(
+   826→        self,
+   827→        *,
+   828→        current_branch: str | None = None,
+   829→        trunk_branch: str = "main",
+   830→        use_graphite: bool = False,
+   831→        git: Git | None = None,
+   832→        graphite: FakeGraphite | None = None,
+   833→        github: FakeGitHub | None = None,
+   834→        shell: FakeShell | None = None,
+   835→        repo: RepoContext | None = None,
+   836→        existing_paths: set[Path] | None = None,
+   837→        file_contents: dict[Path, str] | None = None,
+   838→        dry_run: bool = False,
+   839→        confirm_responses: list[bool] | None = None,
+   840→        console: FakeConsole | None = None,
+   841→        **kwargs,
+   842→    ) -&gt; ErkContext:
+   843→        """Build ErkContext with smart defaults for test scenarios.
+   844→
+   845→        This helper eliminates boilerplate by providing default ops and config
+   846→        for tests that don't need custom setup. Custom values can be provided
+   847→        via keyword arguments.
+   848→
+   849→        Args:
+   850→            current_branch: If provided, auto-configures FakeGit.current_branches
+   851→            trunk_branch: Default branch name (default: "main")
+   852→            use_graphite: Enable Graphite integration (default: False)
+   853→            git: Custom FakeGit instance (overrides smart defaults)
+   854→            graphite: Custom FakeGraphite instance
+
+... [30 lines omitted] ...
+  </tool_result>
+  <assistant>Both `build_context` methods accept `**kwargs` which pass through to `context_for_test()`. And `context_for_test()` accepts `issues` (not `github_issues`). Let me also check line ~188 of context.py to see the `issues_explicitly_passed` logic mentioned in the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2027" cache_read_input_tokens="43209" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2027}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Lbmjdbem3LTDCZLPd7k2x7">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/src/erk/core/context.py</param>
+    <param name="offset">250</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2027" cache_read_input_tokens="43209" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2027}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Lbmjdbem3LTDCZLPd7k2x7">
+   250→
+   251→    Returns:
+   252→        ErkContext configured with provided values and test defaults
+   253→    """
+   254→    from tests.fakes.prompt_executor import FakePromptExecutor
+   255→    from tests.fakes.script_writer import FakeScriptWriter
+   256→    from tests.test_utils.paths import sentinel_path
+   257→
+   258→    from erk_shared.gateway.agent_launcher.fake import FakeAgentLauncher
+   259→    from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
+   260→    from erk_shared.gateway.codespace.fake import FakeCodespace
+   261→    from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
+   262→    from erk_shared.gateway.completion.fake import FakeCompletion
+   263→    from erk_shared.gateway.console.fake import FakeConsole
+   264→    from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
+   265→    from erk_shared.gateway.git.fake import FakeGit
+   266→    from erk_shared.gateway.github.fake import FakeGitHub
+   267→    from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+   268→    from erk_shared.gateway.github_admin.fake import FakeGitHubAdmin
+   269→    from erk_shared.gateway.graphite.branch_ops.dry_run import DryRunGraphiteBranchOps
+   270→    from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
+   271→    from erk_shared.gateway.graphite.dry_run import DryRunGraphite
+   272→    from erk_shared.gateway.graphite.fake import FakeGraphite
+   273→    from erk_shared.gateway.shell.fake import FakeShell
+   274→    from erk_shared.gateway.time.fake import FakeTime
+   275→
+   276→    if git is None:
+   277→        git = FakeGit()
+   278→
+   279→    # Track whether issues was explicitly passed (for composition logic below)
+
+... [50 lines omitted] ...
+  </tool_result>
+  <assistant>Now I see the logic. Passing `issues=FakeGitHubIssues()` will trigger `issues_explicitly_passed = True` at line 280, which causes `GitHubPlanStore` to be used at line 302-307. Let me fix the edit to use the correct parameter name `issues` instead of `github_issues`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1556" cache_read_input_tokens="45236" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1556}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_016wY2KtZwJ9PmU7gvrcNFpZ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">from erk_shared.gateway.github.issues.fake import FakeGitHubIssues</param>
+    <param name="new_string">from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1556" cache_read_input_tokens="45236" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1556}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016wY2KtZwJ9PmU7gvrcNFpZ">
+&lt;tool_use_error&gt;Found 3 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String: from erk_shared.gateway.github.issues.fake import FakeGitHubIssues&lt;/tool_use_error&gt;
+  </tool_result>
+  <thinking>It seems the import was already present in the file (or added multiple times). Let me check the current state of the imports.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="379" cache_read_input_tokens="46792" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 379}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01EdHoNJBFPVkXTW4gAP5XU3">
+    <param name="pattern">FakeGitHubIssues</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/tests/commands/pr/test_submit.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="379" cache_read_input_tokens="46792" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 379}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EdHoNJBFPVkXTW4gAP5XU3">
+16:from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+1285:    from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+1391:        github_issues = FakeGitHubIssues(
+1434:    from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+1555:        github_issues = FakeGitHubIssues(
+1678:            github_issues=FakeGitHubIssues(),  # Force GitHubPlanStore (no plan for "feature" branch)
+  </tool_result>
+  <assistant>The import already exists at line 16 (was already there before my edit added a duplicate). Now I just need to fix the kwarg name from `github_issues` to `issues` in the test.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="47171" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 359}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KZiK4fkwcgegJhnFACw6Nz">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/tests/commands/pr/test_submit.py</param>
+    <param name="offset">14</param>
+    <param name="limit">8</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="47171" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 359}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KZiK4fkwcgegJhnFACw6Nz">
+    14→from erk_shared.gateway.git.fake import FakeGit
+    15→from erk_shared.gateway.github.fake import FakeGitHub
+    16→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    17→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    18→from erk_shared.gateway.graphite.fake import FakeGraphite
+    19→from erk_shared.gateway.graphite.types import BranchMetadata
+    20→from tests.fakes.prompt_executor import FakePromptExecutor
+    21→from tests.test_utils.context_builders import build_workspace_test_context
+  </tool_result>
+  <assistant>Good — the import was already there. My earlier edit added a duplicate on line 16. Let me revert that duplicate import and fix the kwarg.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="356" cache_read_input_tokens="47530" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 356}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_019FKLhQPtDvGgrRVq6GLCth">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.issue...[truncated 58 chars]...rt FakeGitHubIssues
+from erk_shared.gateway.github.types import PRDetails, PullRequestInfo</param>
+    <param name="new_string">from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.types import PRDetails, PullRequestInfo</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="356" cache_read_input_tokens="47530" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 356}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019FKLhQPtDvGgrRVq6GLCth">
+&lt;tool_use_error&gt;String to replace not found in file.
+String: from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.types import PRDetails, PullRequestInfo&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BABUrQU7Q9AMNyJu3ymKoX">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/tests/commands/pr/test_submit.py</param>
+    <param name="offset">14</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="452" cache_read_input_tokens="47886" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 452}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BABUrQU7Q9AMNyJu3ymKoX">
+    14→from erk_shared.gateway.git.fake import FakeGit
+    15→from erk_shared.gateway.github.fake import FakeGitHub
+    16→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    17→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    18→from erk_shared.gateway.graphite.fake import FakeGraphite
+    19→from erk_shared.gateway.graphite.types import BranchMetadata
+    20→from tests.fakes.prompt_executor import FakePromptExecutor
+    21→from tests.test_utils.context_builders import build_workspace_test_context
+    22→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    23→
+  </tool_result>
+  <assistant>OK, the import looks clean — my first edit was a no-op since the import was already there. Now I just need to fix `github_issues=` to `issues=` in the test.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="447" cache_read_input_tokens="48338" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 447}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Qj4SkiyPQA32Ya9twrNRwS">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">        ctx = build_workspace_test_context(
+            env,
+            git=git,
+        ...[truncated 356 chars]...hing plan context" in result.output
+        assert "No linked plan found" in result.output</param>
+    <param name="new_string">        ctx = build_workspace_test_context(
+            env,
+            git=git,
+        ...[truncated 349 chars]...hing plan context" in result.output
+        assert "No linked plan found" in result.output</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="447" cache_read_input_tokens="48338" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 447}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Qj4SkiyPQA32Ya9twrNRwS">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/tests/commands/pr/test_submit.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run the test again.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="551" cache_read_input_tokens="48785" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 551}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01YEiPHSiVQ9v6pQDAcLG9w5">
+    <param name="description">Run test to verify fix</param>
+    <param name="prompt">Run this command and report the results: uv run pytest tests/commands/pr/test_submit.py::test_pr_submit_shows_no_plan_message -xvs</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="551" cache_read_input_tokens="48785" output_tokens="143" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 551, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YEiPHSiVQ9v6pQDAcLG9w5">
+pytest passed: 1 test passed in 0.52s
+
+The test `test_pr_submit_shows_no_plan_message` in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-41/tests/commands/pr/test_submit.py` executed successfully with no failures.
+agentId: a0375f92f5f6b1a74 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13736
+tool_uses: 1
+duration_ms: 3439&lt;/usage&gt;
+  </tool_result>
+  <assistant>Test passes. The fix was simpler than the plan anticipated — `FakeGitHubIssues` was already imported, and the kwarg name needed to be `issues` (matching `context_for_test`'s parameter) rather than `github_issues`.
+
+**Summary:** Changed line ~1678 in `tests/commands/pr/test_submit.py` to pass `issues=FakeGitHubIssues()` to `build_workspace_test_context`. This triggers the `issues_explicitly_passed` path in `context_for_test`, which creates a `GitHubPlanStore` instead of `PlannedPRBackend`, so the "feature" branch correctly shows "No linked plan found".</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="292" cache_read_input_tokens="49336" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 292}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
