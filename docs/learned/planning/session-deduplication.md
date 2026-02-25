@@ -33,11 +33,11 @@ Erk uses two complementary mechanisms:
 
 The `exit-plan-mode-hook` uses markers to track state:
 
-| Marker                              | Created By                         | Effect                       | Lifecycle |
-| ----------------------------------- | ---------------------------------- | ---------------------------- | --------- |
-| `exit-plan-mode-hook.plan-saved`    | `plan-save-to-issue`               | Block exit, msg shown        | Reusable  |
-| `exit-plan-mode-hook.implement-now` | Agent via `erk exec marker create` | Allow exit                   | One-time  |
-| `objective-context`                 | `/erk:objective-plan`              | Suggests `--objective-issue` | One-time  |
+| Marker                              | Created By                         | Effect                              | Lifecycle |
+| ----------------------------------- | ---------------------------------- | ----------------------------------- | --------- |
+| `exit-plan-mode-hook.plan-saved`    | `plan-save-to-issue`               | Block exit, msg shown               | Reusable  |
+| `exit-plan-mode-hook.implement-now` | Agent via `erk exec marker create` | Allow exit                          | One-time  |
+| `objective-context`                 | `/erk:objective-plan`              | Read by plan-save to link objective | One-time  |
 
 **Reusable markers** persist across hook invocations (not deleted when read).
 **One-time markers** are consumed (deleted) after being processed.

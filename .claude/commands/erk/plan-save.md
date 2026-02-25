@@ -1,6 +1,6 @@
 ---
 description: Save the current session's plan to GitHub
-argument-hint: "[--objective-issue=<number>] [--plan-type=learn]"
+argument-hint: "[--plan-type=learn]"
 ---
 
 # /erk:plan-save
@@ -11,11 +11,10 @@ Save the current session's plan to GitHub with session context.
 
 ```bash
 /erk:plan-save                           # Standalone plan
-/erk:plan-save --objective-issue=3679    # Plan linked to objective
 /erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
 ```
 
-When creating a plan from an objective (via `/erk:objective-plan`), the exit-plan-mode hook will automatically suggest the command with the correct `--objective-issue` flag.
+Objective linking is automatic: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command.
 
 ## Plan Storage
 
@@ -30,16 +29,9 @@ The JSON output contract is the same for both backends (`plan_number`, `plan_url
 
 ### Step 1: Parse Arguments
 
-Check `$ARGUMENTS` for the `--objective-issue` and `--plan-type` flags:
+Check `$ARGUMENTS` for the `--plan-type` flag:
 
 ```
-If $ARGUMENTS contains "--objective-issue=<number>":
-  - Extract the number
-  - Store as OBJECTIVE_ISSUE variable
-  - Set OBJECTIVE_FLAG to "--objective-issue=<number>"
-Else:
-  - Set OBJECTIVE_FLAG to empty string
-
 If $ARGUMENTS contains "--plan-type=<type>":
   - Extract the type (standard or learn)
   - Store as PLAN_TYPE variable
@@ -66,7 +58,7 @@ Store the result as `BRANCH_SLUG`.
 Run this command with the session ID, branch slug, and optional flags:
 
 ```bash
-erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}" ${OBJECTIVE_FLAG} ${PLAN_TYPE_FLAG}
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}" ${PLAN_TYPE_FLAG}
 ```
 
 Parse the JSON output to extract `plan_number` for verification in Step 3.
@@ -75,7 +67,7 @@ If the command fails, display the error and stop.
 
 ### Step 3: Verify Objective Link (if applicable)
 
-**Only run this step if `--objective-issue` was provided in arguments.**
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 2.**
 
 Verify the objective link was saved correctly:
 
@@ -102,15 +94,15 @@ Expected objective: #<expected>
 Actual: <actual-or-null>
 
 The plan was saved but without the correct objective link.
-Fix: Close <"draft PR" if plan_backend=="draft_pr", else "issue"> #<plan_number> and re-run:
-  /erk:plan-save --objective-issue=<expected>
+Fix: Close <"draft PR" if plan_backend=="draft_pr", else "issue"> #<plan_number>,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
 ```
 
 Exit without creating the plan-saved marker. The session continues so the user can retry.
 
 ### Step 3.5: Update Objective Roadmap (if objective linked)
 
-**Only run this step if `--objective-issue` was provided and verification passed.**
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
 
 Update the objective's roadmap table to show that a plan has been created for this node:
 
@@ -228,7 +220,7 @@ If objective was verified, also display: `Verified objective link: #<objective-n
 
 If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: <slot_name> → #<objective-number>`
 
-**Note:** Slot objective updates are handled automatically by `plan-save` when `--objective-issue` is provided - no separate command call needed.
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
 
 On failure, display the error message and suggest:
 

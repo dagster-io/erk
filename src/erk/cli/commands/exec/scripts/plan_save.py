@@ -7,10 +7,12 @@ Options:
     --format json|display: Output format (default: json)
     --plan-file PATH: Use specific plan file (highest priority)
     --session-id ID: Session ID for scoped plan lookup
-    --objective-issue INT: Link plan to parent objective
     --plan-type standard|learn: Plan type (default: standard)
     --learned-from-issue INT: Parent plan issue (for learn plans)
     --created-from-workflow-run-url URL: Workflow run URL
+
+Objective linking is automatic via the objective-context session marker
+(created by /erk:objective-plan). No CLI flag needed.
 
 Exit Codes:
     0: Success
@@ -56,6 +58,7 @@ from erk_shared.scratch.session_markers import (
     create_plan_saved_marker,
     get_existing_saved_branch,
     get_existing_saved_issue,
+    read_objective_context_marker,
 )
 
 
@@ -291,6 +294,7 @@ def _save_as_planned_pr(
             "title": prefixed_title,
             "branch_name": branch_name,
             "plan_backend": "planned_pr",
+            "objective_issue": objective_issue,
         }
         if snapshot_result is not None:
             output_data["archived_to"] = str(snapshot_result.snapshot_dir)
@@ -303,7 +307,6 @@ def _save_plan_via_planned_pr(
     output_format: str,
     plan_file: Path | None,
     session_id: str | None,
-    objective_issue: int | None,
     plan_type: str | None,
     learned_from_issue: int | None,
     created_from_workflow_run_url: str | None,
@@ -316,7 +319,6 @@ def _save_plan_via_planned_pr(
         output_format: Output format (json or display)
         plan_file: Explicit plan file path (highest priority)
         session_id: Session ID for dedup and markers
-        objective_issue: Optional objective issue number
         plan_type: Plan type (standard or learn)
         learned_from_issue: Parent plan issue number (for learn plans)
         created_from_workflow_run_url: GitHub Actions workflow run URL
@@ -325,6 +327,13 @@ def _save_plan_via_planned_pr(
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
     claude_installation = require_claude_installation(ctx)
+
+    # Read objective from session marker (created by /erk:objective-plan)
+    objective_issue: int | None = None
+    if session_id is not None:
+        objective_issue = read_objective_context_marker(session_id, repo_root)
+        if objective_issue is not None:
+            click.echo(f"Linked to objective #{objective_issue} from session context", err=True)
 
     # Session deduplication check
     if session_id is not None:
@@ -418,12 +427,6 @@ def _save_plan_via_planned_pr(
     help="Session ID for scoped plan lookup",
 )
 @click.option(
-    "--objective-issue",
-    type=int,
-    default=None,
-    help="Link plan to parent objective issue number",
-)
-@click.option(
     "--plan-type",
     type=click.Choice(["standard", "learn"]),
     default=None,
@@ -452,7 +455,6 @@ def plan_save(
     output_format: str,
     plan_file: Path | None,
     session_id: str | None,
-    objective_issue: int | None,
     plan_type: str | None,
     learned_from_issue: int | None,
     created_from_workflow_run_url: str | None,
@@ -464,7 +466,6 @@ def plan_save(
         output_format=output_format,
         plan_file=plan_file,
         session_id=session_id,
-        objective_issue=objective_issue,
         plan_type=plan_type,
         learned_from_issue=learned_from_issue,
         created_from_workflow_run_url=created_from_workflow_run_url,

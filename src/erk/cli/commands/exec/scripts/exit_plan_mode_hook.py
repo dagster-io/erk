@@ -248,7 +248,6 @@ def build_blocking_message(
     session_id: str,
     current_branch: str | None,
     plan_file_path: Path | None,
-    objective_id: int | None,
     plan_title: str | None,
     worktree_name: str | None,
     pr_number: int | None,
@@ -263,7 +262,6 @@ def build_blocking_message(
         session_id: Claude session ID for marker creation commands.
         current_branch: Current git branch name.
         plan_file_path: Path to the plan file, if it exists.
-        objective_id: Objective issue number, if this plan is part of an objective.
         plan_title: Title extracted from plan file, if available.
         worktree_name: Directory name of current worktree.
         pr_number: PR number if exists for current branch.
@@ -349,11 +347,7 @@ def build_blocking_message(
             ]
         )
 
-    # Build the save command with optional --objective-issue flag
-    if objective_id is not None:
-        save_cmd = f"/erk:plan-save --objective-issue={objective_id}"
-    else:
-        save_cmd = "/erk:plan-save"
+    save_cmd = "/erk:plan-save"
 
     lines.extend(
         [
@@ -459,7 +453,6 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
             session_id=hook_input.session_id,
             current_branch=hook_input.current_branch,
             plan_file_path=hook_input.plan_file_path,
-            objective_id=hook_input.objective_id,
             plan_title=hook_input.plan_title,
             worktree_name=hook_input.worktree_name,
             pr_number=hook_input.pr_number,
@@ -526,8 +519,8 @@ def _get_objective_context_marker_path(session_id: str, repo_root: Path) -> Path
     """Get objective-context marker path in .erk/scratch/sessions/<session_id>/.
 
     The objective-context marker stores the objective issue number when
-    a plan is created via /erk:objective-plan. This allows the hook
-    to suggest the correct --objective-issue flag in the save command.
+    a plan is created via /erk:objective-plan. The plan-save commands
+    read this marker to automatically link the plan to its objective.
 
     Args:
         session_id: The session ID to build the path for

@@ -75,12 +75,6 @@ from erk_shared.scratch.session_markers import (
     help="Session ID for scoped plan lookup (uses slug from session logs)",
 )
 @click.option(
-    "--objective-issue",
-    type=int,
-    default=None,
-    help="Link plan to parent objective issue number",
-)
-@click.option(
     "--plan-type",
     type=click.Choice(["standard", "learn"]),
     default=None,
@@ -104,7 +98,6 @@ def plan_save_to_issue(
     output_format: str,
     plan_file: Path | None,
     session_id: str | None,
-    objective_issue: int | None,
     plan_type: str | None,
     learned_from_issue: int | None,
     created_from_workflow_run_url: str | None,
@@ -204,13 +197,13 @@ def plan_save_to_issue(
             )
         raise SystemExit(2)
 
-    # Auto-link to objective from session context marker (fallback)
-    if objective_issue is None and effective_session_id is not None:
-        marker_value = read_objective_context_marker(effective_session_id, repo_root)
-        if marker_value is not None:
-            objective_issue = marker_value
+    # Read objective from session marker (created by /erk:objective-plan)
+    objective_issue: int | None = None
+    if effective_session_id is not None:
+        objective_issue = read_objective_context_marker(effective_session_id, repo_root)
+        if objective_issue is not None:
             click.echo(
-                f"Auto-linked to objective #{marker_value} from session context",
+                f"Linked to objective #{objective_issue} from session context",
                 err=True,
             )
 
@@ -344,6 +337,7 @@ def plan_save_to_issue(
             "plan_url": result.issue_url,
             "title": result.title,
             "plan_backend": "github",
+            "objective_issue": objective_issue,
         }
         if snapshot_result is not None:
             output_data["archived_to"] = str(snapshot_result.snapshot_dir)
