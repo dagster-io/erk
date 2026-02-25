@@ -272,7 +272,7 @@ def _pr_list_impl(
             creator = username
 
     # Build labels - default to ["erk-plan"]
-    labels = label if label else ("erk-plan",)
+    labels = label if label else ("erk-planned-pr", "erk-plan")
 
     # Construct RealPlanDataProvider
     # Only fetch_plans() and fetch_branch_activity() are used here;
@@ -381,7 +381,7 @@ def _run_interactive_mode(
             creator = username
 
     # Build labels - default to ["erk-plan"]
-    labels = label if label else ("erk-plan",)
+    labels = label if label else ("erk-planned-pr", "erk-plan")
 
     # Create data provider and filters
     location = GitHubRepoLocation(root=repo_root, repo_id=GitHubRepoId(owner, repo_name))

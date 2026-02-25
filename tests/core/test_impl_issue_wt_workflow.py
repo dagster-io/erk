@@ -113,7 +113,10 @@ Test the workflow.
     # Step 2: Create issue (simulates gh issue create)
     issues = FakeGitHubIssues(next_issue_number=123)
     result = issues.create_issue(
-        repo_root=sentinel_path(), title="Test Plan", body=plan_content, labels=["erk-plan"]
+        repo_root=sentinel_path(),
+        title="Test Plan",
+        body=plan_content,
+        labels=["erk-planned-pr", "erk-plan"],
     )
 
     assert result.number == 123
@@ -146,7 +149,7 @@ def test_workflow_issue_creation_tracks_erk_plan_label() -> None:
         repo_root=sentinel_path(),
         title="Implementation Plan",
         body="Plan content here",
-        labels=["erk-plan"],
+        labels=["erk-planned-pr", "erk-plan"],
     )
 
     # Verify issue was created with label
@@ -165,7 +168,10 @@ def test_workflow_get_issue_after_creation() -> None:
 
     # Create issue
     result = issues.create_issue(
-        repo_root=sentinel_path(), title="Test Issue", body="Body content", labels=["erk-plan"]
+        repo_root=sentinel_path(),
+        title="Test Issue",
+        body="Body content",
+        labels=["erk-planned-pr", "erk-plan"],
     )
 
     # Retrieve issue info

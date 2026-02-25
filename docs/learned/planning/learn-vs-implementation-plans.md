@@ -18,17 +18,17 @@ audit_result: clean
 
 # Learn Plans vs. Implementation Plans
 
-Erk has two plan types that share the same issue infrastructure (`erk-plan` label, plan-header metadata, same lifecycle phases) but serve fundamentally different purposes. Understanding when to use each — and how they connect — prevents workflow mistakes and ensures documentation is created alongside the code it documents.
+Erk has two plan types that share the same issue infrastructure (`erk-planned-pr` base label, plan-header metadata, same lifecycle phases) but serve fundamentally different purposes. Understanding when to use each — and how they connect — prevents workflow mistakes and ensures documentation is created alongside the code it documents.
 
 ## Decision Table
 
 **Ask: "Is the primary output code or documentation?"**
 
-| Signal                                    | Plan Type      | Label(s)                 | Typical Output              |
-| ----------------------------------------- | -------------- | ------------------------ | --------------------------- |
-| Adding features, fixing bugs, refactoring | Implementation | `erk-plan`               | Source code, tests, config  |
-| Extracting insights from completed work   | Learn          | `erk-plan` + `erk-learn` | Docs in `docs/learned/`     |
-| Consolidating learnings from multiple PRs | Learn          | `erk-plan` + `erk-learn` | Docs, tripwires, checklists |
+| Signal                                    | Plan Type      | Label(s)                       | Typical Output              |
+| ----------------------------------------- | -------------- | ------------------------------ | --------------------------- |
+| Adding features, fixing bugs, refactoring | Implementation | `erk-planned-pr` + `erk-plan`  | Source code, tests, config  |
+| Extracting insights from completed work   | Learn          | `erk-planned-pr` + `erk-learn` | Docs in `docs/learned/`     |
+| Consolidating learnings from multiple PRs | Learn          | `erk-planned-pr` + `erk-learn` | Docs, tripwires, checklists |
 
 ## Why Two Types Exist
 
@@ -56,9 +56,9 @@ This field drives three behaviors:
 
 3. **Cycle detection** — `/erk:learn` checks for `erk-learn` label before proceeding, preventing learn-on-learn chains.
 
-<!-- Source: src/erk/cli/commands/submit.py, get_learn_plan_parent_branch -->
+<!-- Source: src/erk/cli/commands/pr/dispatch_cmd.py, get_learn_plan_parent_branch -->
 
-See `get_learn_plan_parent_branch()` in `src/erk/cli/commands/submit.py` for the base branch resolution logic with its fallback to trunk.
+See `get_learn_plan_parent_branch()` in `src/erk/cli/commands/pr/dispatch_cmd.py` for the base branch resolution logic with its fallback to trunk.
 
 <!-- Source: src/erk/cli/commands/land_cmd.py, _update_parent_learn_status_if_learn_plan -->
 

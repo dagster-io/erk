@@ -127,10 +127,11 @@ class RealPlanDataProvider(PlanDataProvider):
         needs_workflow_runs = filters.show_runs or filters.run_state is not None
 
         # Route to the appropriate service based on the view's labels
-        if "erk-plan" in filters.labels:
-            plan_data = self._ctx.plan_list_service.get_plan_list_data(
+        # Objectives have their own dedicated service; all other queries
+        # (plans, learn plans, custom label combos) use the plan list service.
+        if "erk-objective" in filters.labels:
+            plan_data = self._ctx.objective_list_service.get_objective_list_data(
                 location=self._location,
-                labels=list(filters.labels),
                 state=filters.state,
                 limit=filters.limit,
                 skip_workflow_runs=not needs_workflow_runs,
@@ -138,10 +139,9 @@ class RealPlanDataProvider(PlanDataProvider):
                 exclude_labels=list(filters.exclude_labels) if filters.exclude_labels else None,
             )
         else:
-            # Objectives use a dedicated service that always fetches via issues,
-            # regardless of the configured plan backend (draft PR vs issue)
-            plan_data = self._ctx.objective_list_service.get_objective_list_data(
+            plan_data = self._ctx.plan_list_service.get_plan_list_data(
                 location=self._location,
+                labels=list(filters.labels),
                 state=filters.state,
                 limit=filters.limit,
                 skip_workflow_runs=not needs_workflow_runs,

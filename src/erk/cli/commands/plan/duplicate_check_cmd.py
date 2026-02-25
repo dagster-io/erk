@@ -109,14 +109,13 @@ def duplicate_check_plan(
     )
     plan_data = ctx.plan_list_service.get_plan_list_data(
         location=location,
-        labels=["erk-plan"],
+        labels=["erk-planned-pr", "erk-plan"],
         state="open",
         skip_workflow_runs=True,
     )
     existing_plans = plan_data.plans
 
-    # Filter out erk-learn plans (different category)
-    existing_plans = [p for p in existing_plans if "erk-learn" not in p.labels]
+    # Server-side label AND (erk-planned-pr + erk-plan) now excludes learn plans.
 
     # When checking an existing plan, exclude it from the comparison set
     if exclude_plan_id is not None:
