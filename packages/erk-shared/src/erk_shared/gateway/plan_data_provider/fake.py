@@ -186,6 +186,19 @@ class FakePlanDataProvider(PlanDataProvider):
         """
         self._objective_content_by_plan_id[plan_id] = content
 
+    def fetch_plans_for_objective(self, objective_issue: int) -> list[PlanRowData]:
+        """Fake plans-for-objective fetch implementation.
+
+        Filters the stored plans list by objective_issue field.
+
+        Args:
+            objective_issue: The objective issue number to filter by
+
+        Returns:
+            List of PlanRowData matching the given objective_issue
+        """
+        return [p for p in self._plans if p.objective_issue == objective_issue]
+
     def fetch_unresolved_comments(self, pr_number: int) -> list[PRReviewThread]:
         """Fake unresolved comments fetch implementation.
 

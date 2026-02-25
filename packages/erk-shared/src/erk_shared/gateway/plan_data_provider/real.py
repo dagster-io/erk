@@ -427,6 +427,29 @@ class RealPlanDataProvider(PlanDataProvider):
 
         return extract_objective_from_comment(comment_body)
 
+    def fetch_plans_for_objective(self, objective_issue: int) -> list[PlanRowData]:
+        """Fetch plans associated with a specific objective.
+
+        Fetches all open erk-plan issues and filters client-side by objective_issue.
+
+        Args:
+            objective_issue: The objective issue number to filter by
+
+        Returns:
+            List of PlanRowData objects for plans linked to this objective
+        """
+        filters = PlanFilters(
+            labels=("erk-plan",),
+            state="open",
+            run_state=None,
+            limit=100,
+            show_prs=True,
+            show_runs=False,
+            creator=None,
+        )
+        all_plans = self.fetch_plans(filters)
+        return [row for row in all_plans if row.objective_issue == objective_issue]
+
     def fetch_unresolved_comments(self, pr_number: int) -> list[PRReviewThread]:
         """Fetch unresolved review threads for a pull request.
 
