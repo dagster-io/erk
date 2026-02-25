@@ -1560,7 +1560,7 @@ class TestBlockingDepsPlans:
         )
 
     def test_no_blocking_deps_returns_empty(self, tmp_path: Path) -> None:
-        """When next node has no non-terminal deps with plans, objective_head_plans is empty."""
+        """When next node has no non-terminal deps with plans, objective_deps_plans is empty."""
         provider = self._make_provider(tmp_path)
 
         # Node 1.1 is done, node 1.2 is pending and depends on 1.1 (terminal)
@@ -1602,10 +1602,10 @@ class TestBlockingDepsPlans:
             use_graphite=False,
         )
 
-        assert row.objective_head_plans == ()
+        assert row.objective_deps_plans == ()
 
     def test_blocking_dep_with_plan_collected(self, tmp_path: Path) -> None:
-        """When next node has a non-terminal dep with a plan, it appears in objective_head_plans."""
+        """When next node has a non-terminal dep with a plan, it appears in objective_deps_plans."""
         provider = self._make_provider(tmp_path)
 
         # Node 1.1 is in_progress with a PR, node 1.2 depends on it and is pending
@@ -1645,8 +1645,8 @@ class TestBlockingDepsPlans:
             use_graphite=False,
         )
 
-        assert len(row.objective_head_plans) == 1
-        display, url = row.objective_head_plans[0]
+        assert len(row.objective_deps_plans) == 1
+        display, url = row.objective_deps_plans[0]
         assert display == "#100"
         assert url == "https://github.com/test/repo/pull/100"
 
@@ -1691,7 +1691,7 @@ class TestBlockingDepsPlans:
             use_graphite=False,
         )
 
-        assert row.objective_head_plans == ()
+        assert row.objective_deps_plans == ()
 
     def test_multiple_blocking_deps_collected(self, tmp_path: Path) -> None:
         """Multiple non-terminal deps with plans are all collected."""
@@ -1739,8 +1739,8 @@ class TestBlockingDepsPlans:
             use_graphite=False,
         )
 
-        assert len(row.objective_head_plans) == 2
-        displays = [d for d, _url in row.objective_head_plans]
+        assert len(row.objective_deps_plans) == 2
+        displays = [d for d, _url in row.objective_deps_plans]
         assert "#100" in displays
         assert "#200" in displays
 

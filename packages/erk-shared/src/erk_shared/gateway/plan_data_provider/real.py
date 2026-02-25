@@ -30,7 +30,6 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
     build_graph,
     build_state_sparkline,
     compute_graph_summary,
-    compute_objective_head_state,
     find_graph_next_node,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
@@ -793,9 +792,9 @@ class RealPlanDataProvider(PlanDataProvider):
         objective_total_nodes = 0
         objective_progress_display = "-"
         objective_state_display = "-"
-        objective_head_state = "-"
+        objective_deps_display = "-"
         objective_next_node_display = "-"
-        objective_head_plans: list[tuple[str, str]] = []
+        objective_deps_plans: list[tuple[str, str]] = []
         if plan.body:
             phases, _errors = parse_roadmap(plan.body)
             if phases:
@@ -808,9 +807,11 @@ class RealPlanDataProvider(PlanDataProvider):
                 next_node = find_graph_next_node(graph, phases)
                 if next_node is not None:
                     objective_next_node_display = next_node["id"]
-                    node_status = next_node.get("status")
                     min_status = graph.min_dep_status(next_node["id"])
-                    objective_head_state = compute_objective_head_state(node_status, min_status)
+                    if min_status is None or min_status in _TERMINAL_STATUSES:
+                        objective_deps_display = "ready"
+                    else:
+                        objective_deps_display = min_status.replace("_", " ")
 
                     # Collect blocking dep PR numbers for the next node
                     target = next((n for n in graph.nodes if n.id == next_node["id"]), None)
@@ -822,8 +823,8 @@ class RealPlanDataProvider(PlanDataProvider):
                                 if dep.status not in _TERMINAL_STATUSES and dep.pr is not None:
                                     num = dep.pr.lstrip("#")
                                     repo_id = self._location.repo_id
-                                    url = f"https://github.com/{repo_id.owner}/{repo_id.repo}/pull/{num}"
-                                    objective_head_plans.append((dep.pr, url))
+                                    url = f"https://github.com/{repo_id.owner}/{repo_id.repo}/issues/{num}"
+                                    objective_deps_plans.append((dep.pr, url))
 
                     # Also show the next node's own PR if it has one (active work indicator)
                     if (
@@ -909,8 +910,8 @@ class RealPlanDataProvider(PlanDataProvider):
             objective_progress_display=objective_progress_display,
             objective_slug_display=objective_slug_display,
             objective_state_display=objective_state_display,
-            objective_head_state=objective_head_state,
-            objective_head_plans=tuple(objective_head_plans),
+            objective_deps_display=objective_deps_display,
+            objective_deps_plans=tuple(objective_deps_plans),
             objective_next_node_display=objective_next_node_display,
             updated_at=plan.updated_at,
             updated_display=updated_display,

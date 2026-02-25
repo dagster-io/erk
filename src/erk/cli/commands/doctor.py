@@ -105,16 +105,16 @@ def _format_subgroup(name: str, checks: list[CheckResult], verbose: bool, indent
                 _format_check_result(result, indent=f"{indent}   ", verbose=False)
 
 
-@click.command("doctor")
+@click.group("doctor", invoke_without_command=True)
 @click.option("-v", "--verbose", is_flag=True, help="Show all individual checks")
 @click.option("--dogfooder", is_flag=True, help="Include early dogfooder migration checks")
 @click.option("--check-hooks", is_flag=True, help="Include hook execution health checks")
 @click.option(
     "--clear-hook-logs", "clear_hook_logs_flag", is_flag=True, help="Clear all hook execution logs"
 )
-@click.pass_obj
+@click.pass_context
 def doctor_cmd(
-    ctx: ErkContext,
+    ctx: click.Context,
     verbose: bool,
     dogfooder: bool,
     check_hooks: bool,
@@ -142,10 +142,18 @@ def doctor_cmd(
 
       # Clear hook execution logs
       erk doctor --clear-hook-logs
+
+      # Check workflow-specific setup
+      erk doctor workflow
     """
+    if ctx.invoked_subcommand is not None:
+        return
+
+    erk_ctx: ErkContext = ctx.obj
+
     # Handle --clear-hook-logs flag (clears logs and returns early)
     if clear_hook_logs_flag:
-        deleted_count = clear_hook_logs(ctx.repo_root)
+        deleted_count = clear_hook_logs(erk_ctx.repo_root)
         click.echo(f"Cleared {deleted_count} hook log(s)")
         return
 
@@ -153,7 +161,7 @@ def doctor_cmd(
     click.echo("")
 
     # Run all checks
-    results = run_all_checks(ctx, check_hooks=check_hooks)
+    results = run_all_checks(erk_ctx, check_hooks=check_hooks)
 
     # Group results by category
     prerequisite_names = {"erk", "claude", "graphite", "github", "uv"}
@@ -253,3 +261,9 @@ def doctor_cmd(
         click.echo(click.style("✨ All checks passed!", fg="green", bold=True))
     else:
         click.echo(click.style(f"⚠️  {failed} check(s) failed", fg="yellow", bold=True))
+
+
+# Register subcommands (import after definition to avoid circular import)
+from erk.cli.commands.doctor_workflow import workflow_cmd  # noqa: E402
+
+doctor_cmd.add_command(workflow_cmd)
