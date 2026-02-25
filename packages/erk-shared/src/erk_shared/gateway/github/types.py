@@ -175,6 +175,9 @@ WorkflowRunConclusion = Literal["success", "failure", "cancelled", "skipped"]
 # PR list filter state (lowercase, matches GitHub API)
 PRListState = Literal["open", "closed", "all"]
 
+# Issue/plan filter state (lowercase, no "all" - callers must specify explicitly)
+IssueFilterState = Literal["open", "closed"]
+
 
 @dataclass(frozen=True)
 class PullRequestInfo:

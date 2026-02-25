@@ -151,7 +151,7 @@ class TestPlanDataTableRowConversion:
         """Basic row conversion without optional columns."""
         filters = PlanFilters(
             labels=("erk-plan",),
-            state=None,
+            state="open",
             run_state=None,
             limit=None,
             show_prs=False,
@@ -179,7 +179,7 @@ class TestPlanDataTableRowConversion:
         """Row conversion with PR columns enabled."""
         filters = PlanFilters(
             labels=("erk-plan",),
-            state=None,
+            state="open",
             run_state=None,
             limit=None,
             show_prs=True,
@@ -207,7 +207,7 @@ class TestPlanDataTableRowConversion:
         """Row conversion shows 🔗 indicator for PRs that will close issues."""
         filters = PlanFilters(
             labels=("erk-plan",),
-            state=None,
+            state="open",
             run_state=None,
             limit=None,
             show_prs=True,
@@ -228,7 +228,7 @@ class TestPlanDataTableRowConversion:
         """Row conversion with run columns enabled."""
         filters = PlanFilters(
             labels=("erk-plan",),
-            state=None,
+            state="open",
             run_state=None,
             limit=None,
             show_prs=False,
@@ -510,7 +510,7 @@ class TestShowPrColumnFalse:
         """
         filters = PlanFilters(
             labels=("erk-plan",),
-            state=None,
+            state="open",
             run_state=None,
             limit=None,
             show_prs=True,
@@ -530,7 +530,7 @@ class TestShowPrColumnFalse:
         """When show_pr_column=False, the pr_display string is absent from values."""
         filters = PlanFilters(
             labels=("erk-plan",),
-            state=None,
+            state="open",
             run_state=None,
             limit=None,
             show_prs=True,
@@ -551,7 +551,7 @@ class TestShowPrColumnFalse:
         """When show_pr_column=True (default), pr_display is included at index 10."""
         filters = PlanFilters(
             labels=("erk-plan",),
-            state=None,
+            state="open",
             run_state=None,
             limit=None,
             show_prs=True,

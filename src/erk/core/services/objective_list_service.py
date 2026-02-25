@@ -10,7 +10,7 @@ from erk_shared.core.objective_list_service import ObjectiveListService
 from erk_shared.core.plan_list_service import PlanListData
 from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
-from erk_shared.gateway.github.types import GitHubRepoLocation
+from erk_shared.gateway.github.types import GitHubRepoLocation, IssueFilterState
 
 _OBJECTIVE_LABEL = "erk-objective"
 
@@ -29,7 +29,7 @@ class RealObjectiveListService(ObjectiveListService):
         self,
         *,
         location: GitHubRepoLocation,
-        state: str | None = None,
+        state: IssueFilterState = "open",
         limit: int | None = None,
         skip_workflow_runs: bool = False,
         creator: str | None = None,

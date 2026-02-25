@@ -10,6 +10,7 @@ from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import (
     BodyContent,
     GitHubRepoLocation,
+    IssueFilterState,
     MergeError,
     MergeResult,
     PRDetails,
@@ -325,7 +326,7 @@ class GitHub(ABC):
         *,
         location: GitHubRepoLocation,
         labels: list[str],
-        state: str | None = None,
+        state: IssueFilterState = "open",
         limit: int | None = None,
         creator: str | None = None,
     ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
@@ -338,7 +339,7 @@ class GitHub(ABC):
         Args:
             location: GitHub repository location (local root + repo identity)
             labels: Labels to filter by (e.g., ["erk-plan"])
-            state: Filter by state ("open", "closed", or None for all)
+            state: Filter by state ("open" or "closed")
             limit: Maximum issues to return (default: 100)
             creator: Filter by creator username (e.g., "octocat"). If provided,
                 only issues created by this user are returned.
@@ -415,7 +416,7 @@ class GitHub(ABC):
         location: GitHubRepoLocation,
         *,
         labels: list[str],
-        state: str | None,
+        state: IssueFilterState,
         limit: int | None,
         author: str | None,
         exclude_labels: list[str] | None = None,
@@ -429,7 +430,7 @@ class GitHub(ABC):
         Args:
             location: GitHub repository location
             labels: Labels to filter by (e.g., ["erk-plan"])
-            state: Filter by state ("open", "closed", or None for all)
+            state: Filter by state ("open" or "closed")
             limit: Maximum number of results (None for no limit)
             author: Filter by PR author username (server-side via REST creator param)
             exclude_labels: Labels to exclude from results (client-side filtering

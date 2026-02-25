@@ -442,7 +442,8 @@ class RealPlanDataProvider(PlanDataProvider):
     def fetch_plans_for_objective(self, objective_issue: int) -> list[PlanRowData]:
         """Fetch plans associated with a specific objective.
 
-        Fetches all erk-plan issues (any state) and filters client-side by objective_issue.
+        Fetches erk-plan issues in both open and closed states, then filters
+        client-side by objective_issue.
 
         Args:
             objective_issue: The objective issue number to filter by
@@ -450,17 +451,19 @@ class RealPlanDataProvider(PlanDataProvider):
         Returns:
             List of PlanRowData objects for plans linked to this objective
         """
-        filters = PlanFilters(
-            labels=("erk-plan",),
-            state=None,
-            run_state=None,
-            limit=100,
-            show_prs=True,
-            show_runs=False,
-            exclude_labels=(),
-            creator=None,
-        )
-        all_plans = self.fetch_plans(filters)
+        all_plans: list[PlanRowData] = []
+        for state in ("open", "closed"):
+            filters = PlanFilters(
+                labels=("erk-plan",),
+                state=state,
+                run_state=None,
+                limit=100,
+                show_prs=True,
+                show_runs=False,
+                exclude_labels=(),
+                creator=None,
+            )
+            all_plans.extend(self.fetch_plans(filters))
         return [row for row in all_plans if row.objective_issue == objective_issue]
 
     def fetch_unresolved_comments(self, pr_number: int) -> list[PRReviewThread]:

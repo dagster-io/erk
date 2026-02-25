@@ -7,7 +7,12 @@ The real implementation remains in erk.core.services.plan_list_service.
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-from erk_shared.gateway.github.types import GitHubRepoLocation, PullRequestInfo, WorkflowRun
+from erk_shared.gateway.github.types import (
+    GitHubRepoLocation,
+    IssueFilterState,
+    PullRequestInfo,
+    WorkflowRun,
+)
 from erk_shared.plan_store.types import Plan
 
 
@@ -40,7 +45,7 @@ class PlanListService(ABC):
         *,
         location: GitHubRepoLocation,
         labels: list[str],
-        state: str | None = None,
+        state: IssueFilterState = "open",
         limit: int | None = None,
         skip_workflow_runs: bool = False,
         creator: str | None = None,
@@ -51,7 +56,7 @@ class PlanListService(ABC):
         Args:
             location: GitHub repository location (local root + repo identity)
             labels: Labels to filter issues by (e.g., ["erk-plan"])
-            state: Filter by state ("open", "closed", or None for all)
+            state: Filter by state ("open" or "closed")
             limit: Maximum number of issues to return (None for no limit)
             skip_workflow_runs: If True, skip fetching workflow runs (for performance)
             creator: Filter by creator username (e.g., "octocat"). If provided,
