@@ -396,16 +396,11 @@ def _make_pr_details(
     branch_name: str,
 ) -> PRDetails:
     """Create PRDetails with a plan-header metadata block containing branch_name."""
-    from erk_shared.plan_store.planned_pr_lifecycle import (
-        DETAILS_CLOSE,
-        DETAILS_OPEN,
-        PLAN_CONTENT_SEPARATOR,
-    )
+    from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
 
     metadata_body = format_plan_header_body_for_test(branch_name=branch_name)
     plan_content = "# Old Plan Content"
-    details_section = DETAILS_OPEN + plan_content + DETAILS_CLOSE
-    pr_body = metadata_body + PLAN_CONTENT_SEPARATOR + details_section
+    pr_body = build_plan_stage_body(metadata_body, plan_content)
 
     return PRDetails(
         number=number,

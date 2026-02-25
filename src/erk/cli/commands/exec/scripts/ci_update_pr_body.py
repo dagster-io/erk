@@ -53,14 +53,13 @@ from erk_shared.context.helpers import (
 from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.metadata.core import find_metadata_block, render_metadata_block
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer, build_remote_execution_note
 from erk_shared.gateway.github.types import BodyText, PRNotFound
 from erk_shared.gateway.gt.prompts import get_commit_message_prompt, truncate_diff
 from erk_shared.plan_store.planned_pr_lifecycle import (
-    PLAN_CONTENT_SEPARATOR,
     build_original_plan_section,
     extract_plan_content,
-    extract_plan_header_block,
 )
 
 
@@ -263,9 +262,11 @@ def _update_pr_body_impl(
     # Build full PR body
     if is_planned_pr:
         # For planned-PR plans: preserve metadata prefix, include original plan section
-        plan_header_block_raw = extract_plan_header_block(pr_result.body)
+        plan_header = find_metadata_block(pr_result.body, "plan-header")
         plan_content = extract_plan_content(pr_result.body)
         original_plan_section = build_original_plan_section(plan_content)
+
+        metadata_text = render_metadata_block(plan_header) if plan_header is not None else ""
 
         summary_body = _build_pr_body(
             summary=summary,
@@ -273,9 +274,7 @@ def _update_pr_body_impl(
             run_id=run_id,
             run_url=run_url,
         )
-        # Strip the content separator — no longer needed when metadata is at bottom
-        metadata_block = plan_header_block_raw.removesuffix(PLAN_CONTENT_SEPARATOR)
-        pr_body = summary_body + original_plan_section + "\n\n" + metadata_block
+        pr_body = summary_body + original_plan_section + "\n\n" + metadata_text
     else:
         pr_body = _build_pr_body(
             summary=summary,

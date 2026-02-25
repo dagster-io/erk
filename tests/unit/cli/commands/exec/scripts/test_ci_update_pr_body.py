@@ -26,6 +26,8 @@ from erk_shared.core.prompt_executor import PromptResult
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 # ============================================================================
 # 1. Helper Function Tests
@@ -728,13 +730,9 @@ def test_impl_planned_pr_preserves_metadata_and_adds_plan_section(tmp_path: Path
     git = FakeGit(current_branches={tmp_path: "plan-test-01-01"})
 
     # Build a PR body with metadata prefix and plan content (planned-PR format)
-    plan_header_block = (
-        "<!-- erk:metadata-block:plan-header -->\n"
-        "plan-header metadata\n"
-        "<!-- /erk:metadata-block -->\n\n---\n\n"
-    )
+    metadata_body = format_plan_header_body_for_test()
     plan_content = "# My Plan\n\n## Steps\n\n1. Do thing"
-    pr_body = plan_header_block + plan_content
+    pr_body = build_plan_stage_body(metadata_body, plan_content)
 
     pr_details = PRDetails(
         number=42,
@@ -818,13 +816,9 @@ def test_cli_planned_pr_flag(tmp_path: Path) -> None:
     git = FakeGit(current_branches={tmp_path: "plan-test-01-01"})
 
     # Build a PR body with metadata prefix and plan content (planned-PR format)
-    plan_header_block = (
-        "<!-- erk:metadata-block:plan-header -->\n"
-        "plan-header metadata\n"
-        "<!-- /erk:metadata-block -->\n\n---\n\n"
-    )
+    metadata_body = format_plan_header_body_for_test()
     plan_content = "# My Plan\n\n## Steps\n\n1. Do thing"
-    pr_body = plan_header_block + plan_content
+    pr_body = build_plan_stage_body(metadata_body, plan_content)
 
     pr_details = PRDetails(
         number=42,
