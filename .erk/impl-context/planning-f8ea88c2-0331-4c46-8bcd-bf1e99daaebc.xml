@@ -1,0 +1,873 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:one-shot&lt;/command-message&gt;
+&lt;command-name&gt;/erk:one-shot&lt;/command-name&gt;
+&lt;command-args&gt;
+
+with our new command structure all copy like this:
+----
+Checking PR status...
+PR #8128: Simplify objective roadmap to single-reference (PR-only) model with deterministic re-rendering (OPEN)
+Base branch: master
+
+Triggering pr-fix-conflicts workflow...
+  Waiting for workflow run... (attempt 1/11)
+  Waiting for workflow run... (attempt 2/11)
+✓ Workflow triggered
+⚠ Plan #8128 has incomplete plan-header (missing created_at, created_by, schema_version), skipping dispatch metadata update
+
+Run URL: https://github.com/dagster-io/erk/actions/runs/22391870130
+
+
+----
+
+should say Dispatched inte of Triggered. audit all copy&lt;/command-args&gt;</user>
+  <user># One-Shot Autonomous Execution
+
+Submit a task for fully autonomous remote execution. The prompt will be dispatched to a GitHub Actions workflow where Claude autonomously explores, plans, implements, and creates a PR.
+
+## Steps
+
+1. Validate that `
+
+with our new command structure all copy like this:
+----
+Checking PR status...
+PR #8128: Simplify objective roadmap to single-reference (PR-only) model with deterministic re-rendering (OPEN)
+Base branch: master
+
+Triggering pr-fix-conflicts workflow...
+  Waiting for workflow run... (attempt 1/11)
+  Waiting for workflow run... (attempt 2/11)
+✓ Workflow triggered
+⚠ Plan #8128 has incomplete plan-header (missing created_at, created_by, schema_version), skipping dispatch metadata update
+
+Run URL: https://github.com/dagster-io/erk/actions/runs/22391870130
+
+
+----
+
+should say Dispatched inte of Triggered. audit all copy` is non-empty. If empty, tell the user they need to provide a prompt.
+
+2. Write the prompt text to a scratch file to avoid shell quoting issues with long or complex prompts:
+
+```bash
+# Write prompt to session-scoped scratch file
+mkdir -p .erk/scratch/sessions/f8ea88c2-0331-4c46-8bcd-bf1e99daaebc
+cat &gt; .erk/scratch/sessions/f8ea88c2-0331-4c46-8bcd-bf1e99daaebc/one-shot-prompt.md &lt;&lt; 'PROMPT_EOF'
+
+
+with our new command structure all copy like this:
+----
+Checking PR status...
+PR #8128: Simplify objective roadmap to single-reference (PR-only) model with deterministic re-rendering (OPEN)
+Base branch: master
+
+Triggering pr-fix-conflicts workflow...
+  Waiting for workflow run... (attempt 1/11)
+  Waiting for workflow run... (attempt 2/11)
+✓ Workflow triggered
+⚠ Plan #8128 has incomplete plan-header (missing created_at, created_by, schema_version), skipping dispatch metadata update
+
+Run URL: https://github.com/dagster-io/erk/actions/runs/22391870130
+
+
+----
+
+should say Dispatched inte of Triggered. audit all copy
+PROMPT_EOF
+```
+
+3. Run the CLI command with --file:
+
+```bash
+erk one-shot --file .erk/scratch/sessions/f8ea88c2-0331-4c46-8bcd-bf1e99daaebc/one-shot-prompt.md
+```
+
+4. Clean up the scratch file:
+
+```bash
+rm -f .erk/scratch/sessions/f8ea88c2-0331-4c46-8bcd-bf1e99daaebc/one-shot-prompt.md
+```
+
+5. Display the output to the user, which includes the PR URL and workflow run URL.
+
+If the command fails, display the error message.
+</user>
+  <thinking>The user wants to dispatch a one-shot task to rename "Triggered" to "Dispatched" in CLI copy. Let me follow the steps in the command.
+
+Let me execute the steps as outlined.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="10400" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10400}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017gNqYxXYPta2do5rsqDNBz">
+    <param name="command">mkdir -p /Users/schrockn/code/erk/.erk/scratch/sessions/f8ea88c2-0331-4c46-8bcd-bf1e99daaebc</param>
+    <param name="description">Create scratch directory for one-shot prompt</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="10400" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10400}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017gNqYxXYPta2do5rsqDNBz">
+
+  </tool_result>
+  <tool_use name="Write" id="toolu_01GCkD37RsdixHkNef5iXbyu">
+    <param name="file_path">/Users/schrockn/code/erk/.erk/scratch/sessions/f8ea88c2-0331-4c46-8bcd-bf1e99daaebc/one-shot-prompt.md</param>
+    <param name="content">
+with our new command structure all copy like this:
+----
+Checking PR status...
+PR #8128: S...[truncated 420 chars].../actions/runs/22391870130
+
+
+----
+
+should say Dispatched inte of Triggered. audit all copy
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="208" cache_read_input_tokens="29514" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 208}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GCkD37RsdixHkNef5iXbyu">
+File created successfully at: /Users/schrockn/code/erk/.erk/scratch/sessions/f8ea88c2-0331-4c46-8bcd-bf1e99daaebc/one-shot-prompt.md
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01PvvVBBydZQPM5FFXg1csbQ">
+    <param name="command">erk one-shot --file .erk/scratch/sessions/f8ea88c2-0331-4c46-8bcd-bf1e99daaebc/one-shot-prompt.md</param>
+    <param name="description">Dispatch one-shot autonomous task</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="372" cache_read_input_tokens="29722" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 372}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PvvVBBydZQPM5FFXg1csbQ">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01HQNgeWNrbRoNReu53tqiTT">
+    <param name="command">rm -f /Users/schrockn/code/erk/.erk/scratch/sessions/f8ea88c2-0331-4c46-8bcd-bf1e99daaebc/one-shot-prompt.md</param>
+    <param name="description">Clean up scratch file</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="166" cache_read_input_tokens="30094" output_tokens="127" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 166, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HQNgeWNrbRoNReu53tqiTT">
+
+  </tool_result>
+  <assistant>The one-shot task has been dispatched. The command completed without errors but produced no visible output — it may have dispatched the workflow silently. The task will audit all CLI copy to replace "Triggered"/"Triggering" with "Dispatched"/"Dispatching" terminology across the codebase, with a PR created automatically by the remote workflow.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="153" cache_read_input_tokens="30260" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 153}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;bash-input&gt;gt pr&lt;/bash-input&gt;</user>
+  <user>&lt;bash-stdout&gt;ERROR: No PR found for master 
+&lt;/bash-stdout&gt;&lt;bash-stderr&gt;ERROR: No PR found for master 
+&lt;/bash-stderr&gt;</user>
+  <user>what pr was created for this</user>
+  <thinking>The user is asking about what PR was created by the one-shot command. The `erk one-shot` command dispatches work to a GitHub Actions workflow that autonomously creates a PR. Let me check if there's a way to find the PR or workflow run that was created.
+
+The command output was empty, which is unusual. Let me check recent workflow runs or PRs to find what was dispatched.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="263" cache_read_input_tokens="30491" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 263}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The `erk one-shot` command produced no output, which is unusual. Let me check what happened.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="263" cache_read_input_tokens="30491" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 263}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LEjCCE56SrKTaZQrW2bVp7">
+    <param name="command">gh run list --workflow=one-shot.yml --limit 3 2&gt;/dev/null || gh run list --limit 5 --json ...[truncated 12 chars]....[] | select(.name | test("one-shot|one_shot"; "i")) | "\(.createdAt) \(.status) \(.url)"'</param>
+    <param name="description">Check recent one-shot workflow runs</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="263" cache_read_input_tokens="30491" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 263}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LEjCCE56SrKTaZQrW2bVp7">
+completed	failure	one-shot:2fidr6	one-shot	master	workflow_dispatch	22391925318	3m15s	2026-02-25T10:03:53Z
+completed	success	one-shot:pi9ctw	one-shot	master	workflow_dispatch	22379870010	23m11s	2026-02-25T02:45:05Z
+completed	success	one-shot:83y92s	one-shot	master	workflow_dispatch	22360892875	10m1s	2026-02-24T16:50:14Z
+  </tool_result>
+  <tool_use name="Bash" id="toolu_016YwaEfMG24iWNBg3ZxmFcV">
+    <param name="command">gh pr list --limit 5 --json number,title,createdAt --jq '.[] | "#\(.number) \(.title) (\(.createdAt))"'</param>
+    <param name="description">Check recent PRs</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="263" cache_read_input_tokens="30491" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 263}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016YwaEfMG24iWNBg3ZxmFcV">
+#8147 [erk-learn] Documentation Plan: Indicator classification pattern and documentation drift prevention (2026-02-25T10:07:30Z)
+#8146 [erk-plan] Update dispatch/launch copy: "Triggered" → "Dispatched" (2026-02-25T10:03:47Z)
+#8145 [erk-plan] Plan: Fix `erk pr submit` producing zero output on timeout (2026-02-25T10:01:44Z)
+#8144 [erk-plan] Objective Plans Modal Screen (2026-02-25T09:57:39Z)
+#8142 Consolidate Feb 24-25 Learn Session Documentation (2026-02-25T05:35:15Z)
+  </tool_result>
+  <assistant>The one-shot created **plan #8146** but the workflow run **failed**:
+
+- **Plan**: [#8146 — Update dispatch/launch copy: "Triggered" → "Dispatched"](https://github.com/dagster-io/erk/issues/8146)
+- **Workflow run**: https://github.com/dagster-io/erk/actions/runs/22391925318 (failed after 3m15s)
+
+The one-shot created the plan issue but the implementation run failed. Want me to check the failure logs, or would you rather implement the plan locally?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="756" cache_read_input_tokens="30754" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 756}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>no debug the remote implementation</user>
+  <assistant>
+
+Let me check the workflow run logs.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="163" cache_read_input_tokens="31648" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 163}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01AVb7KXNgkMCtx9jbZ7g2WP">
+    <param name="command">gh run view 22391925318 --log-failed 2&gt;/dev/null | tail -100</param>
+    <param name="description">Get failed workflow run logs</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="163" cache_read_input_tokens="31648" output_tokens="105" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 163, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AVb7KXNgkMCtx9jbZ7g2WP">
+plan	Validate plan format	﻿2026-02-25T10:07:02.8080871Z ##[group]Run erk plan check 8146
+plan	Validate plan format	2026-02-25T10:07:02.8081195Z [36;1merk plan check 8146[0m
+plan	Validate plan format	2026-02-25T10:07:02.8111938Z shell: /usr/bin/bash -e {0}
+plan	Validate plan format	2026-02-25T10:07:02.8112195Z env:
+plan	Validate plan format	2026-02-25T10:07:02.8112414Z   UV_PYTHON: 3.13
+plan	Validate plan format	2026-02-25T10:07:02.8112715Z   VIRTUAL_ENV: /home/runner/work/erk/erk/.venv
+plan	Validate plan format	2026-02-25T10:07:02.8113071Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+plan	Validate plan format	2026-02-25T10:07:02.8113666Z   GH_TOKEN: ***
+plan	Validate plan format	2026-02-25T10:07:02.8113876Z ##[endgroup]
+plan	Validate plan format	2026-02-25T10:07:03.4174365Z Usage: erk plan [OPTIONS] COMMAND [ARGS]...
+plan	Validate plan format	2026-02-25T10:07:03.4174937Z Try 'erk plan -h' for help.
+plan	Validate plan format	2026-02-25T10:07:03.4175195Z 
+plan	Validate plan format	2026-02-25T10:07:03.4175335Z Error: No such command 'check'.
+plan	Validate plan format	2026-02-25T10:07:03.5039735Z ##[error]Process completed with exit code 2.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01QaYW5sxWcJW6KqozFai9UY">
+    <param name="command">gh run view 22391925318 --log-failed 2&gt;/dev/null | head -50</param>
+    <param name="description">Get full failed step context</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="738" cache_read_input_tokens="31811" output_tokens="95" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QaYW5sxWcJW6KqozFai9UY">
+plan	Validate plan format	﻿2026-02-25T10:07:02.8080871Z ##[group]Run erk plan check 8146
+plan	Validate plan format	2026-02-25T10:07:02.8081195Z [36;1merk plan check 8146[0m
+plan	Validate plan format	2026-02-25T10:07:02.8111938Z shell: /usr/bin/bash -e {0}
+plan	Validate plan format	2026-02-25T10:07:02.8112195Z env:
+plan	Validate plan format	2026-02-25T10:07:02.8112414Z   UV_PYTHON: 3.13
+plan	Validate plan format	2026-02-25T10:07:02.8112715Z   VIRTUAL_ENV: /home/runner/work/erk/erk/.venv
+plan	Validate plan format	2026-02-25T10:07:02.8113071Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+plan	Validate plan format	2026-02-25T10:07:02.8113666Z   GH_TOKEN: ***
+plan	Validate plan format	2026-02-25T10:07:02.8113876Z ##[endgroup]
+plan	Validate plan format	2026-02-25T10:07:03.4174365Z Usage: erk plan [OPTIONS] COMMAND [ARGS]...
+plan	Validate plan format	2026-02-25T10:07:03.4174937Z Try 'erk plan -h' for help.
+plan	Validate plan format	2026-02-25T10:07:03.4175195Z 
+plan	Validate plan format	2026-02-25T10:07:03.4175335Z Error: No such command 'check'.
+plan	Validate plan format	2026-02-25T10:07:03.5039735Z ##[error]Process completed with exit code 2.
+  </tool_result>
+  <assistant>Clear failure. The workflow's "Validate plan format" step runs `erk plan check 8146`, but the `check` subcommand doesn't exist on `erk plan`. Let me find what the workflow expects and what's actually available.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="614" cache_read_input_tokens="32549" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 614}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01AuBSbL2icm1bY9CGJAcSmY">
+    <param name="command">gh run view 22391925318 --log 2&gt;/dev/null | head -200</param>
+    <param name="description">Get full workflow log to see all steps</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="614" cache_read_input_tokens="32549" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 614}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_015u2e4iiQfwDrnuVy1q9wso">
+    <param name="pattern">erk plan check</param>
+    <param name="path">/Users/schrockn/code/erk/.github</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="614" cache_read_input_tokens="32549" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 614}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AuBSbL2icm1bY9CGJAcSmY">
+plan	Set up job	﻿2026-02-25T10:03:58.1987115Z Current runner version: '2.331.0'
+plan	Set up job	2026-02-25T10:03:58.2012455Z ##[group]Runner Image Provisioner
+plan	Set up job	2026-02-25T10:03:58.2013286Z Hosted Compute Agent
+plan	Set up job	2026-02-25T10:03:58.2013938Z Version: 20260123.484
+plan	Set up job	2026-02-25T10:03:58.2014562Z Commit: 6bd6555ca37d84114959e1c76d2c01448ff61c5d
+plan	Set up job	2026-02-25T10:03:58.2015236Z Build Date: 2026-01-23T19:41:17Z
+plan	Set up job	2026-02-25T10:03:58.2016315Z Worker ID: {c31edb41-ee42-41a6-9691-9e78d94e9675}
+plan	Set up job	2026-02-25T10:03:58.2017011Z Azure Region: centralus
+plan	Set up job	2026-02-25T10:03:58.2017520Z ##[endgroup]
+plan	Set up job	2026-02-25T10:03:58.2019047Z ##[group]Operating System
+plan	Set up job	2026-02-25T10:03:58.2019699Z Ubuntu
+plan	Set up job	2026-02-25T10:03:58.2020317Z 24.04.3
+plan	Set up job	2026-02-25T10:03:58.2020905Z LTS
+plan	Set up job	2026-02-25T10:03:58.2021371Z ##[endgroup]
+plan	Set up job	2026-02-25T10:03:58.2021843Z ##[group]Runner Image
+plan	Set up job	2026-02-25T10:03:58.2022465Z Image: ubuntu-24.04
+plan	Set up job	2026-02-25T10:03:58.2023020Z Version: 20260201.15.1
+plan	Set up job	2026-02-25T10:03:58.2024014Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260201.15/images/ubuntu/Ubuntu2404-Readme.md
+plan	Set up job	2026-02-25T10:03:58.2025756Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260201.15
+plan	Set up job	2026-02-25T10:03:58.2026645Z ##[endgroup]
+plan	Set up job	2026-02-25T10:03:58.2027889Z ##[group]GITHUB_TOKEN Permissions
+plan	Set up job	2026-02-25T10:03:58.2029948Z Contents: write
+plan	Set up job	2026-02-25T10:03:58.2030954Z Issues: write
+plan	Set up job	2026-02-25T10:03:58.2031498Z Metadata: read
+plan	Set up job	2026-02-25T10:03:58.2031993Z PullRequests: write
+plan	Set up job	2026-02-25T10:03:58.2032586Z ##[endgroup]
+plan	Set up job	2026-02-25T10:03:58.2034646Z Secret source: Actions
+plan	Set up job	2026-02-25T10:03:58.2035736Z Prepare workflow directory
+plan	Set up job	2026-02-25T10:03:58.2364549Z Prepare all required actions
+plan	Set up job	2026-02-25T10:03:58.2402949Z Getting action download info
+
+... [170 lines omitted] ...
+
+plan	Validate required secrets	2026-02-25T10:03:58.8486364Z [36;1m  echo "::error title=Missing Secret::ERK_QUEUE_GH_PAT secret is not configured or has expired. Add a PAT with 'repo' scope at: Settings &gt; Secrets and variables &gt; Actions"[0m
+plan	Run actions/checkout@v4	2026-02-25T10:03:59.0191077Z hint: to use in all of your new repositories, which will suppress this warning,
+plan	Run actions/checkout@v4	2026-02-25T10:04:03.7937301Z  * [new branch]          P4598-reduce-index-lock-errors-01-11-0340 -&gt; origin/P4598-reduce-index-lock-errors-01-11-0340
+  </tool_result>
+  <tool_result tool="toolu_015u2e4iiQfwDrnuVy1q9wso">
+.github/workflows/one-shot.yml:190:          erk plan check ${{ steps.read_result.outputs.plan_id }}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01FeYz8SZqaEcbN1PGNmFJu1">
+    <param name="command">erk plan --help 2&gt;&amp;1</param>
+    <param name="description">Check available erk plan subcommands</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="614" cache_read_input_tokens="32549" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 614}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FeYz8SZqaEcbN1PGNmFJu1">
+Usage: erk plan [OPTIONS] COMMAND [ARGS]...
+
+  Manage implementation plans.
+
+Options:
+  -h, --help  Show this message and exit.
+
+Commands:
+  docs             Track documentation extraction from plan sessions.
+  duplicate-check  Check if a plan duplicates any existing open plans.
+  learn            Manage documentation learning plans.
+  </tool_result>
+  <assistant>Found it. The workflow at `.github/workflows/one-shot.yml:190` calls `erk plan check`, but that command doesn't exist — `erk plan` only has `docs`, `duplicate-check`, and `learn` subcommands. Let me look at the workflow to understand what `plan check` was supposed to do and when it was removed/renamed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="11808" cache_read_input_tokens="33163" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11808}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019hWAsG6WY35MfamL4JDnNy">
+    <param name="file_path">/Users/schrockn/code/erk/.github/workflows/one-shot.yml</param>
+    <param name="offset">180</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11808" cache_read_input_tokens="33163" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11808}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019hWAsG6WY35MfamL4JDnNy">
+   180→          PLAN_TITLE=$(jq -r '.title' .impl/plan-result.json)
+   181→          echo "plan_id=$PLAN_ID" &gt;&gt; $GITHUB_OUTPUT
+   182→          echo "plan_title=$PLAN_TITLE" &gt;&gt; $GITHUB_OUTPUT
+   183→          echo "Plan saved as #$PLAN_ID: $PLAN_TITLE"
+   184→
+   185→      - name: Validate plan format
+   186→        if: steps.plan.outputs.plan_success == 'true' &amp;&amp; steps.read_result.outputs.plan_id != ''
+   187→        env:
+   188→          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+   189→        run: |
+   190→          erk plan check ${{ steps.read_result.outputs.plan_id }}
+   191→
+   192→      - name: Register one-shot plan with issue and PR
+   193→        if: steps.plan.outputs.plan_success == 'true' &amp;&amp; steps.read_result.outputs.plan_id != ''
+   194→        continue-on-error: true
+   195→        env:
+   196→          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+   197→        run: |
+   198→          erk exec register-one-shot-plan \
+   199→            --plan-number "${{ steps.read_result.outputs.plan_id }}" \
+   200→            --run-id "${{ github.run_id }}" \
+   201→            --pr-number "${{ inputs.pr_number }}" \
+   202→            --submitted-by "${{ inputs.submitted_by }}" \
+   203→            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+   204→
+   205→      - name: Update objective roadmap node
+   206→        if: &gt;
+   207→          steps.plan.outputs.plan_success == 'true'
+   208→          &amp;&amp; steps.read_result.outputs.plan_id != ''
+   209→          &amp;&amp; inputs.objective_issue != ''
+  </tool_result>
+  <tool_use name="Grep" id="toolu_017ZhKBoXsk7QqQ3HTsXAoV5">
+    <param name="pattern">plan.check|plan check|plan_check</param>
+    <param name="path">/Users/schrockn/code/erk/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11808" cache_read_input_tokens="33163" output_tokens="287" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11808, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017ZhKBoXsk7QqQ3HTsXAoV5">
+Found 3 files
+src/erk/cli/commands/pr/checkout_cmd.py
+src/erk/cli/commands/wt/create_cmd.py
+src/erk/core/plan_duplicate_checker.py
+  </tool_result>
+  <thinking>The `erk plan check` command doesn't exist. It was likely removed or never implemented. The workflow calls it at line 190. Let me check git history to see if it was removed.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="931" cache_read_input_tokens="44971" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 931}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KQze3ZUcgt9FNBdXmwTLD9">
+    <param name="command">git log --all --oneline --diff-filter=D -- 'src/erk/cli/commands/plan/check*' 2&gt;/dev/null | head -5</param>
+    <param name="description">Check if plan check command was deleted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="931" cache_read_input_tokens="44971" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 931}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KQze3ZUcgt9FNBdXmwTLD9">
+a4114a802 Unify PR and plan CLI commands under `erk pr` group (#8110)
+bfb17162d Unify PR and plan CLI commands under `erk pr` group (#8110)
+a38df2e13 Unify PR and plan CLI commands under `erk pr` group
+e1ba93154 Unify PR and plan CLI commands under `erk pr` group
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01XxSwHcDkAUdjGoguVcfUEU">
+    <param name="command">git log --all --oneline -10 -- '.github/workflows/one-shot.yml'</param>
+    <param name="description">Check recent changes to one-shot workflow</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="931" cache_read_input_tokens="44971" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 931}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XxSwHcDkAUdjGoguVcfUEU">
+c1585954b Rename issue_number → plan_number in exec scripts and tests (#8134)
+4ac56ad7b Rename issue_number → plan_number in exec scripts and tests (#8134)
+fdf7a85de Rename issue_number/issue_url to plan_number/plan_url in exec scripts
+d80762f95 Rename issue_number → plan_number in exec scripts and tests
+ab8140e55 Commit plan to branch after plan-only one-shot workflow (#7921)
+ffa24ba6f Commit plan to branch after plan-only one-shot workflow
+223542b60 Eliminate .worker-impl/ — consolidate on .erk/impl-context/ (#7901)
+7db076bf1 Eliminate .worker-impl/ — consolidate on .erk/impl-context/
+23575c835 Add `--plan-only` flag to `erk one-shot` and standardize plan/issue naming (#7902)
+4f95e1e84 Eliminate .worker-impl/ — consolidate on .erk/impl-context/
+  </tool_result>
+  <assistant>The `erk plan check` command was removed in commit `a4114a802` ("Unify PR and plan CLI commands under `erk pr` group") but the workflow wasn't updated. Let me see what the command was renamed to.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="773" cache_read_input_tokens="45902" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 773}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DhckvxY5JF7WTJf914D1SX">
+    <param name="command">git show a4114a802 --stat | grep -i check | head -10</param>
+    <param name="description">Check which check files were affected in the unify PR</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="773" cache_read_input_tokens="45902" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 773}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DhckvxY5JF7WTJf914D1SX">
+    Consolidates `erk plan submit`, `erk plan check`, and `erk plan co` under the `erk pr` command group with universal lifecycle stages (check, checkout, dispatch). This creates a cohesive CLI where the `pr` group handles checking, checking out, and dispatching both pull requests and plans.
+    - `src/erk/cli/commands/plan/check_cmd.py` - Merged into `pr/check_cmd.py`
+    - `src/erk/cli/commands/plan/checkout_cmd.py` - Merged into `pr/checkout_cmd.py`
+    - `src/erk/cli/commands/pr/` - Merged plan functionality into check_cmd.py, checkout_cmd.py; added dispatch_cmd.py
+    - **Command consolidation**: Moves `erk plan submit → erk pr dispatch`, `erk plan check → erk pr check`, `erk plan co → erk pr checkout` into unified `erk pr` group
+    - **Universal checkout routing**: `erk pr checkout` now handles both PR references (plain numbers, PR URLs) and plan references (P-prefix, issue URLs) with smart parsing
+    - **Extended plan validation**: `erk pr check` now accepts optional identifier to validate plan format (merged from `plan check` command)
+    - **Simplified plan group**: `erk plan` retains only `dup-check`, `docs`, and `learn` subcommands
+    erk plan check 456            # Validate plan format
+    erk plan co P789              # Checkout plan branch
+  </tool_result>
+  <tool_use name="Bash" id="toolu_013p7bsMuPpEDYC6sySkQaaM">
+    <param name="command">erk pr --help 2&gt;&amp;1</param>
+    <param name="description">Check erk pr subcommands</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="773" cache_read_input_tokens="45902" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 773}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013p7bsMuPpEDYC6sySkQaaM">
+Usage: erk pr [OPTIONS] COMMAND [ARGS]...
+
+  Manage pull requests.
+
+Options:
+  -h, --help  Show this message and exit.
+
+Commands:
+  address          Address PR review comments with AI-powered resolution.
+  check            Validate PR rules or plan format.
+  checkout         Checkout PR or plan into a worktree for review.
+  close            Close a plan by issue number or GitHub URL.
+  co               Checkout PR or plan into a worktree for review.
+  create           Create a plan issue from markdown content.
+  dispatch         Dispatch plans for remote AI implementation via GitHub...
+  fix-conflicts    Fix merge conflicts with AI-powered resolution.
+  list             List plans as a static table.
+  log              Display chronological event log for a plan.
+  replan           Replan existing erk-plan issue(s) against current...
+  rewrite          Squash, regenerate AI commit message, push, and update...
+  submit           Submit PR with AI-generated commit message.
+  sync             Synchronize current PR branch with remote base.
+  sync-divergence  Sync branch with remote and resolve divergence.
+  view             Fetch and display a plan by identifier.
+  </tool_result>
+  <assistant>Got it. The command was renamed from `erk plan check` to `erk pr check` in the unification PR, but the `one-shot.yml` workflow was never updated. The fix is straightforward:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="917" cache_read_input_tokens="46675" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 917}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01APf36U5fJNyc54jFUch9TJ">
+    <param name="file_path">/Users/schrockn/code/erk/.github/workflows/one-shot.yml</param>
+    <param name="offset">185</param>
+    <param name="limit">7</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="917" cache_read_input_tokens="46675" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 917}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01APf36U5fJNyc54jFUch9TJ">
+   185→      - name: Validate plan format
+   186→        if: steps.plan.outputs.plan_success == 'true' &amp;&amp; steps.read_result.outputs.plan_id != ''
+   187→        env:
+   188→          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+   189→        run: |
+   190→          erk plan check ${{ steps.read_result.outputs.plan_id }}
+   191→
+  </tool_result>
+  <tool_use name="Edit" id="toolu_018NaGbkqdbLUwccysDGdpxz">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/code/erk/.github/workflows/one-shot.yml</param>
+    <param name="old_string">          erk plan check ${{ steps.read_result.outputs.plan_id }}</param>
+    <param name="new_string">          erk pr check ${{ steps.read_result.outputs.plan_id }}</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="282" cache_read_input_tokens="47592" output_tokens="146" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 282, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018NaGbkqdbLUwccysDGdpxz">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+  <user>plan fix</user>
+  <assistant>
+
+Good — plan mode is active. The failure is clear: `erk plan check` was renamed to `erk pr check` but the `one-shot.yml` workflow wasn't updated. Let me check if there are other stale references in workflows.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1603" cache_read_input_tokens="47874" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1603}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01CuNAY5EXAV59uEUuMxYWyS">
+    <param name="pattern">erk plan (check|submit|co\b)</param>
+    <param name="path">/Users/schrockn/code/erk/.github</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1603" cache_read_input_tokens="47874" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1603}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CuNAY5EXAV59uEUuMxYWyS">
+.github/workflows/one-shot.yml:190:          erk plan check ${{ steps.read_result.outputs.plan_id }}
+  </tool_result>
+  <assistant>Only one stale reference. The fix is a single line change.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="212" cache_read_input_tokens="49477" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 212}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01WtLYMSqreJviLEGUtvJBu8">
+    <param name="file_path">/Users/schrockn/.claude/plans/optimized-painting-frost.md</param>
+    <param name="content"># Fix: Stale `erk plan check` reference in one-shot workflow
+
+## Context
+
+The one-shot wor...[truncated 648 chars]...2391925318) or dispatch a new one-shot to confirm the "Validate plan format" step passes.
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="212" cache_read_input_tokens="49477" output_tokens="353" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 212, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WtLYMSqreJviLEGUtvJBu8">
+File created successfully at: /Users/schrockn/.claude/plans/optimized-painting-frost.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_011Fij5g7PYLWVG7wyhQCfd1">
+    <param name="plan"># Fix: Stale `erk plan check` reference in one-shot workflow
+
+## Context
+
+The one-shot wor...[truncated 648 chars]...2391925318) or dispatch a new one-shot to confirm the "Validate plan format" step passes.
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="500" cache_read_input_tokens="49689" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 500}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011Fij5g7PYLWVG7wyhQCfd1">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/optimized-painting-frost.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix: Stale `erk plan check` reference in one-shot workflow
+Current context: (wt:erk) (br:master) (plan:#7977)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id f8ea88c2-0331-4c46-8bcd-bf1e99daaebc \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+## Fix: Stale `erk plan check` reference in one-shot workflow
+
+### Context
+
+The one-shot workflow (`one-shot.yml`) fails at the "Validate plan format" step because it calls `erk plan check`, which was renamed to `erk pr check` in PR #8110 ("Unify PR and plan CLI commands under `erk pr` group"). The workflow was not updated during that rename.
+
+This is the sole cause of the one-shot failure (run 22391925318).
+
+### Change
+
+**File:** `.github/workflows/one-shot.yml` (line 190)
+
+```diff
+-          erk plan check ${{ steps.read_result.outputs.plan_id }}
++          erk pr check ${{ steps.read_result.outputs.plan_id }}
+```
+
+No other stale `erk plan check/submit/co` references exist in `.github/`.
+
+### Verification
+
+Re-run the failed one-shot workflow or dispatch a new one-shot to confirm the "Validate plan format" step passes.
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="999" cache_read_input_tokens="50189" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 999}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01QTKVpPxpbyCrReYsmwRicT">
+    <param name="questions">[{'question': '📋 Fix: Stale `erk plan check` reference in one-shot workflow\nCurrent conte...[truncated 455 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="999" cache_read_input_tokens="50189" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 999}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QTKVpPxpbyCrReYsmwRicT">
+User has answered your questions: "📋 Fix: Stale `erk plan check` reference in one-shot workflow
+Current context: (wt:erk) (br:master) (plan:#7977)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_0116wR8VjLmtxc94LRXbaQyM">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="583" cache_read_input_tokens="51188" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 583, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0116wR8VjLmtxc94LRXbaQyM">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+```
+
+Objective linking is automatic: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command.
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+- **Issue backend** (`PLAN_BACKEND = "github"`): Creates a GitHub issue. Metadata in the issue body, plan content in the first comment.
+
+The JSON output contract is the same for both backends (`plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`).
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` flag:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+```
+
+### Step 1.5: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 2: Run Save Command
+
+Run this command with the session ID, branch slug, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="f8ea88c2-0331-4c46-8bcd-bf1e99daaebc" --branch-slug="${BRANCH_SLUG}" ${PLAN_TYPE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 3.
+
+If the command fails, display the error and stop.
+
+### Step 3: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 2.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close &lt;"draft PR" if plan_backend=="draft_pr", else "issue"&gt; #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 3.5: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "f8ea88c2-0331-4c46-8bcd-bf1e99daaebc" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --plan "#&lt;plan_number&gt;"
+```
+
+This atomically fetches the issue body, finds the matching node row, updates the Plan cell, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 4: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below (using the `plan_backend` field to choose the correct format).
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 3, 3.5 above if not already executed).
+
+**Otherwise, on success**, display based on `plan_backend` from JSON output:
+
+**Header (both backends):**
+
+```
+Plan "&lt;title&gt;" saved as &lt;"draft PR" if plan_backend=="draft_pr", else "issue"&gt; #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block (used by both backends below):**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**If `plan_backend` is `"draft_pr"`:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**If `plan_backend` is `"github"` (or absent):**
+
+```
+Next steps:
+
+View Issue: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+  Plan review: /erk:plan-review — Submit plan as PR for human review before implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+## Session Tracking
+
+After successfully saving a plan, the issue number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved issue number:**
+
+```bash
+erk exec marker read --session-id "f8ea88c2-0331-4c46-8bcd-bf1e99daaebc" plan-saved-issue
+```
+
+This returns the issue number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <thinking>Let me follow the plan-save instructions. First, I need to read the plan file to get the title, generate a branch slug, then run the save command.
+
+The plan title from the plan file is: "Fix: Stale `erk plan check` reference in one-shot workflow"
+
+Branch slug: "fix-oneshot-plan-check" - that captures the essence well.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="2328" cache_read_input_tokens="51771" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2328}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>The plan title is "Fix: Stale `erk plan check` reference in one-shot workflow". Branch slug: `fix-oneshot-plan-check`.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2328" cache_read_input_tokens="51771" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2328}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019ruggWqpeWfEDBTx3AP2qT">
+    <param name="command">erk exec plan-save --format json --session-id="f8ea88c2-0331-4c46-8bcd-bf1e99daaebc" --branch-slug="fix-oneshot-plan-check"</param>
+    <param name="description">Save plan to GitHub</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2328" cache_read_input_tokens="51771" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2328}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019ruggWqpeWfEDBTx3AP2qT">
+{"success": true, "plan_number": 8148, "plan_url": "https://github.com/dagster-io/erk/pull/8148", "title": "[erk-plan] Fix: Stale `erk plan check` reference in one-shot workflow", "branch_name": "plnd/fix-oneshot-plan-check-02-25-0210", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/f8ea88c2-0331-4c46-8bcd-bf1e99daaebc/plan_snapshots/000001-ee86a140"}
+  </tool_result>
+  <assistant>Plan "Fix: Stale `erk plan check` reference in one-shot workflow" saved as draft PR #8148
+URL: https://github.com/dagster-io/erk/pull/8148
+
+**Next steps:**
+
+View PR: https://github.com/dagster-io/erk/pull/8148
+
+In Claude Code:
+  Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: `erk br co --new-slot --for-plan 8148`
+    Implement: `source "$(erk br co --new-slot --for-plan 8148 --script)" &amp;&amp; erk implement --dangerous`
+
+  Same slot:
+    Local: `erk br co --for-plan 8148`
+    Implement: `source "$(erk br co --for-plan 8148 --script)" &amp;&amp; erk implement --dangerous`
+
+  Dispatch to Queue: `erk pr dispatch 8148`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="558" cache_read_input_tokens="54099" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 558}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Goodbye!&lt;/local-command-stdout&gt;</user>
+</session>
