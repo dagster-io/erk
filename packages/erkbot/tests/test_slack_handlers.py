@@ -76,7 +76,8 @@ class TestSlackHandlers(unittest.IsolatedAsyncioTestCase):
         await handler(event, say, client)
 
         mock_asyncio.create_task.assert_called_once()
-        mock_asyncio.create_task.call_args[0][0].close()
+        task = mock_asyncio.create_task.call_args[0][0]
+        task.close()
 
     async def test_chat_without_bot_returns_not_configured(self) -> None:
         handler = self.app.event_handlers["app_mention"]
@@ -112,7 +113,8 @@ class TestSlackHandlers(unittest.IsolatedAsyncioTestCase):
         await handler(event, say, client)
 
         mock_asyncio.create_task.assert_called_once()
-        mock_asyncio.create_task.call_args[0][0].close()
+        task = mock_asyncio.create_task.call_args[0][0]
+        task.close()
 
     async def test_ping(self) -> None:
         handler = self.app.message_handlers["ping"]
