@@ -29,6 +29,8 @@ async def run_agent_background(
     time: Time,
     progress_update_interval_seconds: float,
     max_slack_code_block_chars: int,
+    enable_suggested_replies: bool,
+    suggested_reply_blocks: list[dict[str, object]],
 ) -> None:
     success = False
     status_ts: str | None = None
@@ -89,6 +91,17 @@ async def run_agent_background(
                 )
             except SlackApiError:
                 pass  # Best-effort fallback message; failure is non-fatal
+
+        if enable_suggested_replies and suggested_reply_blocks:
+            try:
+                await client.chat_postMessage(
+                    channel=channel,
+                    blocks=suggested_reply_blocks,
+                    text="Suggested follow-ups",
+                    thread_ts=reply_thread_ts,
+                )
+            except SlackApiError:
+                pass  # Best-effort suggested replies; failure is non-fatal
 
         success = True
     except Exception:

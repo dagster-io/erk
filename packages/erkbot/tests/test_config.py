@@ -14,6 +14,7 @@ class TestSettings(unittest.TestCase):
 
     def test_settings_defaults(self) -> None:
         settings = Settings(SLACK_BOT_TOKEN="x", SLACK_APP_TOKEN="y")
+        self.assertTrue(settings.enable_suggested_replies)
         self.assertEqual(settings.max_slack_code_block_chars, 2800)
         self.assertEqual(settings.max_one_shot_message_chars, 1200)
         self.assertEqual(settings.one_shot_progress_tail_lines, 40)

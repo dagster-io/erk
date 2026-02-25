@@ -60,6 +60,8 @@ class TestRunAgentBackground(unittest.IsolatedAsyncioTestCase):
             time=fake_time,
             progress_update_interval_seconds=1.0,
             max_slack_code_block_chars=2800,
+            enable_suggested_replies=False,
+            suggested_reply_blocks=[],
         )
 
         # Should have posted initial status
@@ -96,6 +98,8 @@ class TestRunAgentBackground(unittest.IsolatedAsyncioTestCase):
             time=fake_time,
             progress_update_interval_seconds=1.0,
             max_slack_code_block_chars=2800,
+            enable_suggested_replies=False,
+            suggested_reply_blocks=[],
         )
 
         # Should post error message
@@ -129,6 +133,8 @@ class TestRunAgentBackground(unittest.IsolatedAsyncioTestCase):
             time=fake_time,
             progress_update_interval_seconds=1.0,
             max_slack_code_block_chars=2800,
+            enable_suggested_replies=False,
+            suggested_reply_blocks=[],
         )
 
         # Should post "no response" message
@@ -163,12 +169,113 @@ class TestRunAgentBackground(unittest.IsolatedAsyncioTestCase):
             time=fake_time,
             progress_update_interval_seconds=1.0,
             max_slack_code_block_chars=2800,
+            enable_suggested_replies=False,
+            suggested_reply_blocks=[],
         )
 
         # Should succeed (checkmark emoji)
         client.reactions_add.assert_any_call(
             channel="C1", timestamp="0.99", name="white_check_mark"
         )
+
+    async def test_suggested_replies_posted_after_response(self) -> None:
+        fake_time = FakeTime(monotonic_values=[100.0])
+
+        events = [
+            TurnStart(turn_index=0),
+            TextDelta(text="Hello!"),
+            TurnEnd(turn_index=0),
+            AgentResult(session_id="s1", num_turns=1, input_tokens=10, output_tokens=5),
+        ]
+        bot = self._make_bot(events)
+        client = AsyncMock()
+        client.chat_postMessage.return_value = {"ts": "2.34"}
+        fake_blocks = [{"type": "actions", "elements": []}]
+
+        await run_agent_background(
+            client=client,
+            channel="C1",
+            reply_thread_ts="1.23",
+            source_ts="0.99",
+            prompt="hello",
+            bot=bot,
+            time=fake_time,
+            progress_update_interval_seconds=1.0,
+            max_slack_code_block_chars=2800,
+            enable_suggested_replies=True,
+            suggested_reply_blocks=fake_blocks,
+        )
+
+        client.chat_postMessage.assert_any_call(
+            channel="C1",
+            blocks=fake_blocks,
+            text="Suggested follow-ups",
+            thread_ts="1.23",
+        )
+
+    async def test_suggested_replies_not_posted_when_disabled(self) -> None:
+        fake_time = FakeTime(monotonic_values=[100.0])
+
+        events = [
+            TurnStart(turn_index=0),
+            TextDelta(text="Hello!"),
+            TurnEnd(turn_index=0),
+            AgentResult(session_id="s1", num_turns=1, input_tokens=10, output_tokens=5),
+        ]
+        bot = self._make_bot(events)
+        client = AsyncMock()
+        client.chat_postMessage.return_value = {"ts": "2.34"}
+        fake_blocks = [{"type": "actions", "elements": []}]
+
+        await run_agent_background(
+            client=client,
+            channel="C1",
+            reply_thread_ts="1.23",
+            source_ts="0.99",
+            prompt="hello",
+            bot=bot,
+            time=fake_time,
+            progress_update_interval_seconds=1.0,
+            max_slack_code_block_chars=2800,
+            enable_suggested_replies=False,
+            suggested_reply_blocks=fake_blocks,
+        )
+
+        # Should NOT have posted suggested replies
+        for call in client.chat_postMessage.call_args_list:
+            self.assertNotEqual(call.kwargs.get("text"), "Suggested follow-ups")
+
+    async def test_suggested_replies_not_posted_on_error(self) -> None:
+        fake_time = FakeTime(monotonic_values=[0.0])
+
+        bot = MagicMock()
+
+        async def failing_stream(*, prompt):
+            yield TurnStart(turn_index=0)
+            raise RuntimeError("stream failed")
+
+        bot.chat_stream = failing_stream
+        client = AsyncMock()
+        client.chat_postMessage.return_value = {"ts": "2.34"}
+        fake_blocks = [{"type": "actions", "elements": []}]
+
+        await run_agent_background(
+            client=client,
+            channel="C1",
+            reply_thread_ts="1.23",
+            source_ts="0.99",
+            prompt="hello",
+            bot=bot,
+            time=fake_time,
+            progress_update_interval_seconds=1.0,
+            max_slack_code_block_chars=2800,
+            enable_suggested_replies=True,
+            suggested_reply_blocks=fake_blocks,
+        )
+
+        # Should NOT have posted suggested replies on error path
+        for call in client.chat_postMessage.call_args_list:
+            self.assertNotEqual(call.kwargs.get("text"), "Suggested follow-ups")
 
 
 if __name__ == "__main__":

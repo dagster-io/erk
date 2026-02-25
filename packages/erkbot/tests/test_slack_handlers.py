@@ -15,6 +15,7 @@ class FakeApp:
     def __init__(self) -> None:
         self.event_handlers: dict = {}
         self.message_handlers: dict = {}
+        self.action_handlers: dict = {}
 
     def event(self, name: str):
         def decorator(func):
@@ -26,6 +27,13 @@ class FakeApp:
     def message(self, pattern: str):
         def decorator(func):
             self.message_handlers[pattern] = func
+            return func
+
+        return decorator
+
+    def action(self, pattern):
+        def decorator(func):
+            self.action_handlers[pattern] = func
             return func
 
         return decorator
@@ -121,6 +129,37 @@ class TestSlackHandlers(unittest.IsolatedAsyncioTestCase):
         await handler(message, say, client)
 
         say.assert_called_once_with("Pong!", thread_ts="1.23")
+
+    def test_action_handler_registered(self) -> None:
+        self.assertEqual(len(self.app.action_handlers), 1)
+
+    @patch("erkbot.slack_handlers.asyncio")
+    @patch("erkbot.slack_handlers.build_suggested_replies_blocks")
+    async def test_chat_passes_suggested_reply_params(
+        self, mock_build_blocks: MagicMock, mock_asyncio: MagicMock
+    ) -> None:
+        mock_build_blocks.return_value = [{"type": "actions", "elements": []}]
+        bot = MagicMock()
+        app = FakeApp()
+        register_handlers(app, settings=self.settings, bot=bot, time=FakeTime())
+
+        handler = app.event_handlers["app_mention"]
+        say = AsyncMock()
+        client = AsyncMock()
+        event = {
+            "text": "<@U123> chat hello there",
+            "channel": "C1",
+            "ts": "1.23",
+            "user": "U1",
+        }
+
+        await handler(event, say, client)
+
+        mock_asyncio.create_task.assert_called_once()
+        coroutine = mock_asyncio.create_task.call_args[0][0]
+        # Close the coroutine to avoid warnings
+        coroutine.close()
+        mock_build_blocks.assert_called_once()
 
 
 if __name__ == "__main__":

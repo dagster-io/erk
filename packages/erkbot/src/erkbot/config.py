@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     erk_model: str = Field("claude-sonnet-4-20250514", alias="ERK_MODEL")
     max_turns: int = Field(10, alias="ERK_MAX_TURNS")
 
+    enable_suggested_replies: bool = True
     max_slack_code_block_chars: int = 2800
     max_one_shot_message_chars: int = 1200
     one_shot_progress_tail_lines: int = 40
