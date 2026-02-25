@@ -132,7 +132,8 @@ def test_issue_setup_invokes_setup_impl_from_issue(tmp_path: Path) -> None:
 
     assert result.exit_code == 0, f"Command failed: {result.output}"
     output_lines = result.output.strip().split("\n")
-    json_line = next(line for line in reversed(output_lines) if line.startswith("{"))
-    output = json.loads(json_line)
+    json_lines = [line for line in reversed(output_lines) if line.startswith("{")]
+    assert json_lines, "Expected JSON output"
+    output = json.loads(json_lines[0])
     assert output["success"] is True
     assert output["plan_number"] == pr_number
