@@ -3,7 +3,7 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
-from erk.tui.data.types import PlanFilters, PlanRowData
+from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
 from erk.tui.sorting.types import BranchActivity
 from erk_shared.gateway.browser.abc import BrowserLauncher
 from erk_shared.gateway.browser.fake import FakeBrowserLauncher
@@ -67,7 +67,7 @@ class FakePlanDataProvider(PlanDataProvider):
         """Get the browser launcher interface for opening URLs."""
         return self._browser
 
-    def fetch_plans(self, filters: PlanFilters) -> list[PlanRowData]:
+    def fetch_plans(self, filters: PlanFilters) -> tuple[list[PlanRowData], FetchTimings | None]:
         """Return canned plan data.
 
         Args:
@@ -75,7 +75,7 @@ class FakePlanDataProvider(PlanDataProvider):
                 falls back to default plans list.
 
         Returns:
-            List of canned PlanRowData
+            Tuple of (list of canned PlanRowData, None timings)
 
         Raises:
             RuntimeError: If fetch_error is set
@@ -84,8 +84,8 @@ class FakePlanDataProvider(PlanDataProvider):
         if self._fetch_error is not None:
             raise RuntimeError(self._fetch_error)
         if self._plans_by_labels is not None and filters.labels in self._plans_by_labels:
-            return self._plans_by_labels[filters.labels]
-        return self._plans
+            return (self._plans_by_labels[filters.labels], None)
+        return (self._plans, None)
 
     @property
     def fetch_count(self) -> int:

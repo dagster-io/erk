@@ -190,6 +190,33 @@ class TestStatusBar:
         bar.set_message(None)
         assert bar._message is None
 
+    def test_set_last_update_with_fetch_timings(self) -> None:
+        """Status bar stores fetch_timings when provided."""
+        from erk.tui.data.types import FetchTimings
+
+        bar = StatusBar()
+        timings = FetchTimings(
+            rest_issues_ms=1000,
+            graphql_enrich_ms=500,
+            plan_parsing_ms=200,
+            workflow_runs_ms=300,
+            worktree_mapping_ms=50,
+            row_building_ms=20,
+            total_ms=2070,
+        )
+        bar.set_last_update("14:30:45", duration_secs=2.1, fetch_timings=timings)
+        assert bar._last_update == "14:30:45"
+        assert bar._fetch_duration == 2.1
+        assert bar._fetch_timings is timings
+
+    def test_set_last_update_without_fetch_timings(self) -> None:
+        """Status bar works without fetch_timings (backwards compatibility)."""
+        bar = StatusBar()
+        bar.set_last_update("14:30:45", duration_secs=1.5)
+        assert bar._last_update == "14:30:45"
+        assert bar._fetch_duration == 1.5
+        assert bar._fetch_timings is None
+
 
 class TestClosePlanViaCommandPalette:
     """Tests for close plan functionality via command palette.

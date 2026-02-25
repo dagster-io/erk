@@ -20,6 +20,7 @@ from erk_shared.gateway.github.types import (
     PullRequestInfo,
     WorkflowRun,
 )
+from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.types import Plan, PlanState
 
 TEST_LOCATION = GitHubRepoLocation(root=Path("/test/repo"), repo_id=GitHubRepoId("owner", "repo"))
@@ -46,7 +47,7 @@ class TestPlanListService:
         fake_issues = FakeGitHubIssues(issues={42: issue})
         fake_github = FakeGitHub(issues_data=[issue])
 
-        service = RealPlanListService(fake_github, fake_issues)
+        service = RealPlanListService(fake_github, fake_issues, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
@@ -89,7 +90,7 @@ class TestPlanListService:
         )
         fake_issues = FakeGitHubIssues(issues={42: issue})
 
-        service = RealPlanListService(fake_github, fake_issues)
+        service = RealPlanListService(fake_github, fake_issues, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
@@ -107,7 +108,7 @@ class TestPlanListService:
         fake_issues = FakeGitHubIssues()
         fake_github = FakeGitHub()
 
-        service = RealPlanListService(fake_github, fake_issues)
+        service = RealPlanListService(fake_github, fake_issues, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
@@ -148,7 +149,7 @@ class TestPlanListService:
         fake_github = FakeGitHub(issues_data=[open_issue, closed_issue])
         fake_issues = FakeGitHubIssues(issues={1: open_issue, 2: closed_issue})
 
-        service = RealPlanListService(fake_github, fake_issues)
+        service = RealPlanListService(fake_github, fake_issues, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
@@ -188,7 +189,7 @@ class TestPlanListService:
         fake_issues = FakeGitHubIssues(issues={1: open_issue, 2: closed_issue})
         fake_github = FakeGitHub(issues_data=[open_issue, closed_issue])
 
-        service = RealPlanListService(fake_github, fake_issues)
+        service = RealPlanListService(fake_github, fake_issues, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
@@ -255,7 +256,7 @@ last_dispatched_at: '2024-01-15T11:00:00Z'
             workflow_runs_by_node_id={"WFR_abc123": run},
         )
 
-        service = RealPlanListService(fake_github, fake_issues)
+        service = RealPlanListService(fake_github, fake_issues, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
@@ -306,7 +307,7 @@ last_dispatched_node_id: 'WFR_abc123'
             workflow_runs_by_node_id={"WFR_abc123": run},
         )
 
-        service = RealPlanListService(fake_github, fake_issues)
+        service = RealPlanListService(fake_github, fake_issues, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
@@ -334,7 +335,7 @@ last_dispatched_node_id: 'WFR_abc123'
         fake_issues = FakeGitHubIssues(issues={42: issue})
         fake_github = FakeGitHub(issues_data=[issue])
 
-        service = RealPlanListService(fake_github, fake_issues)
+        service = RealPlanListService(fake_github, fake_issues, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
@@ -374,7 +375,7 @@ last_dispatched_node_id: 'WFR_nonexistent'
         fake_issues = FakeGitHubIssues(issues={42: issue})
         fake_github = FakeGitHub(issues_data=[issue])
 
-        service = RealPlanListService(fake_github, fake_issues)
+        service = RealPlanListService(fake_github, fake_issues, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
@@ -418,7 +419,7 @@ last_dispatched_node_id: 'WFR_abc123'
             workflow_runs_error="Network unreachable",
         )
 
-        service = RealPlanListService(fake_github, fake_issues)
+        service = RealPlanListService(fake_github, fake_issues, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
@@ -487,11 +488,28 @@ class TestPlanListData:
             plans=plans,
             pr_linkages=linkages,
             workflow_runs=runs,
+            api_ms=150.5,
+            plan_parsing_ms=42.3,
+            workflow_runs_ms=88.1,
         )
 
         assert data.plans == plans
         assert data.pr_linkages == linkages
         assert data.workflow_runs == runs
+        assert data.api_ms == 150.5
+        assert data.plan_parsing_ms == 42.3
+        assert data.workflow_runs_ms == 88.1
+
+    def test_timing_fields_default_to_zero(self) -> None:
+        """Timing fields default to 0.0 when not provided."""
+        data = PlanListData(
+            plans=[],
+            pr_linkages={},
+            workflow_runs={},
+        )
+        assert data.api_ms == 0.0
+        assert data.plan_parsing_ms == 0.0
+        assert data.workflow_runs_ms == 0.0
 
 
 def _make_planned_pr_details(
@@ -582,7 +600,7 @@ class TestPlannedPRPlanListService:
         fake_github = FakeGitHub(
             plan_pr_details=_make_plan_pr_data(pr_details_list=[details]),
         )
-        service = PlannedPRPlanListService(fake_github)
+        service = PlannedPRPlanListService(fake_github, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
@@ -595,7 +613,7 @@ class TestPlannedPRPlanListService:
     def test_empty_prs_returns_empty_data(self) -> None:
         """No PRs returns empty plans/linkages/runs."""
         fake_github = FakeGitHub()
-        service = PlannedPRPlanListService(fake_github)
+        service = PlannedPRPlanListService(fake_github, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
@@ -624,7 +642,7 @@ class TestPlannedPRPlanListService:
         fake_github = FakeGitHub(
             plan_pr_details=([details], {70: [pr_info]}),
         )
-        service = PlannedPRPlanListService(fake_github)
+        service = PlannedPRPlanListService(fake_github, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
@@ -662,7 +680,7 @@ class TestPlannedPRPlanListService:
         fake_github = FakeGitHub(
             plan_pr_details=_make_plan_pr_data(pr_details_list=[details]),
         )
-        service = PlannedPRPlanListService(fake_github)
+        service = PlannedPRPlanListService(fake_github, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
@@ -685,7 +703,7 @@ class TestPlannedPRPlanListService:
         fake_github = FakeGitHub(
             plan_pr_details=_make_plan_pr_data(pr_details_list=[details]),
         )
-        service = PlannedPRPlanListService(fake_github)
+        service = PlannedPRPlanListService(fake_github, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
@@ -728,7 +746,7 @@ last_dispatched_at: '2024-06-01T10:00:00Z'
             plan_pr_details=_make_plan_pr_data(pr_details_list=[details]),
             workflow_runs_by_node_id={"WFR_draft123": run},
         )
-        service = PlannedPRPlanListService(fake_github)
+        service = PlannedPRPlanListService(fake_github, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
@@ -765,7 +783,7 @@ last_dispatched_node_id: 'WFR_draft456'
             plan_pr_details=_make_plan_pr_data(pr_details_list=[details]),
             workflow_runs_by_node_id={"WFR_draft456": run},
         )
-        service = PlannedPRPlanListService(fake_github)
+        service = PlannedPRPlanListService(fake_github, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION, labels=["erk-planned-pr", "erk-plan"], skip_workflow_runs=True
         )
@@ -806,7 +824,7 @@ last_dispatched_node_id: 'WFR_draft456'
         fake_github = FakeGitHub(
             plan_pr_details=_make_plan_pr_data(pr_details_list=[details]),
         )
-        service = PlannedPRPlanListService(fake_github)
+        service = PlannedPRPlanListService(fake_github, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
@@ -844,7 +862,7 @@ last_dispatched_node_id: 'WFR_draft456'
         fake_github = FakeGitHub(
             plan_pr_details=_make_plan_pr_data(pr_details_list=[details]),
         )
-        service = PlannedPRPlanListService(fake_github)
+        service = PlannedPRPlanListService(fake_github, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
@@ -876,7 +894,7 @@ last_dispatched_node_id: 'WFR_draft789'
             plan_pr_details=_make_plan_pr_data(pr_details_list=[details]),
             workflow_runs_error="Network unreachable",
         )
-        service = PlannedPRPlanListService(fake_github)
+        service = PlannedPRPlanListService(fake_github, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],

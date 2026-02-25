@@ -20,6 +20,7 @@ from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import GitHubRepoLocation, PullRequestInfo
+from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.github import GitHubPlanStore
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -62,7 +63,7 @@ def test_plan_issue_list_uses_repo_root_not_metadata_dir() -> None:
         github = TrackingGitHub()
         from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 
-        plan_list_service = RealPlanListService(github, FakeGitHubIssues())
+        plan_list_service = RealPlanListService(github, FakeGitHubIssues(), time=FakeTime())
         ctx = env.build_context(github=github, plan_list_service=plan_list_service)
 
         # Act: Run the dash command
