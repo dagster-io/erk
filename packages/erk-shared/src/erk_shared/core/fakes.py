@@ -20,6 +20,7 @@ from erk_shared.core.prompt_executor import (
 from erk_shared.core.script_writer import ScriptResult, ScriptWriter
 from erk_shared.gateway.codespace_registry.abc import CodespaceRegistry, RegisteredCodespace
 from erk_shared.gateway.github.types import GitHubRepoLocation, IssueFilterState
+from erk_shared.gateway.http.abc import HttpClient
 
 
 class InteractiveCall(NamedTuple):
@@ -275,7 +276,7 @@ class FakePlanListService(PlanListService):
         skip_workflow_runs: bool = False,
         creator: str | None = None,
         exclude_labels: list[str] | None = None,
-        http_client: object | None,
+        http_client: HttpClient,
     ) -> PlanListData:
         return self._data
 

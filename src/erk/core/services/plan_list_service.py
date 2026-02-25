@@ -11,7 +11,7 @@ instead of separate calls for issues (~500ms) and PR linkages (~1500ms).
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from erk_shared.core.plan_list_service import PlanListData as PlanListData
 from erk_shared.core.plan_list_service import PlanListService
@@ -28,15 +28,13 @@ from erk_shared.gateway.github.types import (
     IssueFilterState,
     WorkflowRun,
 )
+from erk_shared.gateway.http.abc import HttpClient
 from erk_shared.gateway.time.abc import Time
 from erk_shared.plan_store.conversion import issue_info_to_plan, pr_details_to_plan
 from erk_shared.plan_store.planned_pr_lifecycle import (
     extract_plan_content,
     has_original_plan_section,
 )
-
-if TYPE_CHECKING:
-    from erk_shared.gateway.http.abc import HttpClient
 
 
 class PlannedPRPlanListService(PlanListService):
@@ -67,13 +65,12 @@ class PlannedPRPlanListService(PlanListService):
         skip_workflow_runs: bool = False,
         creator: str | None = None,
         exclude_labels: list[str] | None = None,
-        http_client: HttpClient | None,
+        http_client: HttpClient,
     ) -> PlanListData:
-        """Fetch plan list data from draft PRs via REST+GraphQL.
+        """Fetch plan list data from draft PRs via direct HTTP calls.
 
-        When http_client is provided, uses direct HTTP calls instead of
-        subprocess-based gh CLI, saving ~600-900ms per refresh cycle.
-        Falls back to subprocess path when http_client is None.
+        Uses HttpClient for direct API calls instead of subprocess-based
+        gh CLI, saving ~600-900ms per refresh cycle.
 
         Args:
             location: GitHub repository location
@@ -83,50 +80,20 @@ class PlannedPRPlanListService(PlanListService):
             skip_workflow_runs: If True, skip fetching workflow runs
             creator: Filter by PR author username
             exclude_labels: Labels to exclude from results
-            http_client: Optional HTTP client for direct API calls
+            http_client: HTTP client for direct API calls
 
         Returns:
             PlanListData with plans from draft PRs
         """
-        if http_client is not None:
-            return self._get_plan_list_data_http(
-                http_client,
-                location=location,
-                labels=labels,
-                state=state,
-                limit=limit,
-                skip_workflow_runs=skip_workflow_runs,
-                creator=creator,
-                exclude_labels=exclude_labels,
-            )
-
-        # Subprocess path: REST+GraphQL two-step via gh CLI
-        t0 = self._time.monotonic()
-        pr_details_list, pr_linkages = self._github.list_plan_prs_with_details(
-            location,
+        return self._get_plan_list_data_http(
+            http_client,
+            location=location,
             labels=labels,
             state=state,
             limit=limit,
-            author=creator,
+            skip_workflow_runs=skip_workflow_runs,
+            creator=creator,
             exclude_labels=exclude_labels,
-        )
-        t1 = self._time.monotonic()
-
-        plans, node_id_to_plan = self._parse_pr_details(pr_details_list)
-        t2 = self._time.monotonic()
-
-        workflow_runs = self._fetch_workflow_runs_subprocess(
-            location, node_id_to_plan, skip_workflow_runs=skip_workflow_runs
-        )
-        t3 = self._time.monotonic()
-
-        return PlanListData(
-            plans=plans,
-            pr_linkages=pr_linkages,
-            workflow_runs=workflow_runs,
-            api_ms=(t1 - t0) * 1000,
-            plan_parsing_ms=(t2 - t1) * 1000,
-            workflow_runs_ms=(t3 - t2) * 1000,
         )
 
     def _get_plan_list_data_http(
@@ -317,28 +284,6 @@ class PlannedPRPlanListService(PlanListService):
 
         return (plans, node_id_to_plan)
 
-    def _fetch_workflow_runs_subprocess(
-        self,
-        location: GitHubRepoLocation,
-        node_id_to_plan: dict[str, int],
-        *,
-        skip_workflow_runs: bool,
-    ) -> dict[int, WorkflowRun | None]:
-        """Fetch workflow runs via subprocess (gh CLI)."""
-        workflow_runs: dict[int, WorkflowRun | None] = {}
-        if not skip_workflow_runs and node_id_to_plan:
-            try:
-                runs_by_node_id = self._github.get_workflow_runs_by_node_ids(
-                    location.root,
-                    list(node_id_to_plan.keys()),
-                )
-                for node_id, run in runs_by_node_id.items():
-                    workflow_runs[node_id_to_plan[node_id]] = run
-            except Exception as e:
-                logging.warning("Failed to fetch workflow runs: %s", e)
-        return workflow_runs
-
-
 class RealPlanListService(PlanListService):
     """Service for efficiently fetching plan list data.
 
@@ -369,7 +314,7 @@ class RealPlanListService(PlanListService):
         skip_workflow_runs: bool = False,
         creator: str | None = None,
         exclude_labels: list[str] | None = None,
-        http_client: HttpClient | None,
+        http_client: HttpClient,
     ) -> PlanListData:
         """Batch fetch all data needed for plan listing.
 
@@ -383,7 +328,8 @@ class RealPlanListService(PlanListService):
                 only issues created by this user are returned.
             exclude_labels: Labels to exclude from results (unused for issue-based
                 plans — label filtering is handled server-side by GraphQL)
-            http_client: Unused for issue-based plans (uses GraphQL via GitHub gateway)
+            http_client: Accepted but unused for issue-based plans (uses GraphQL
+                via GitHub gateway). Will be removed in a future cleanup.
 
         Returns:
             PlanListData containing plans, PR linkages, and workflow runs

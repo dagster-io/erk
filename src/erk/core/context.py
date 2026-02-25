@@ -367,7 +367,11 @@ def context_for_test(
         plan_list_service = RealPlanListService(github, issues, time=time)
 
     if objective_list_service is None:
-        objective_list_service = RealObjectiveListService(github, issues, time=time)
+        from erk_shared.gateway.http.fake import FakeHttpClient
+
+        objective_list_service = RealObjectiveListService(
+            github, issues, time=time, http_client=FakeHttpClient()
+        )
 
     if codespace_registry is None:
         codespace_registry = FakeCodespaceRegistry()
@@ -615,8 +619,12 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     plan_list_service: PlanListService = PlannedPRPlanListService(github, time=time)
 
     # Objectives are always issue-based regardless of plan backend
+    # RealPlanListService accepts but ignores http_client, so FakeHttpClient
+    # satisfies the type without requiring real token/HTTP setup.
+    from erk_shared.gateway.http.fake import FakeHttpClient
+
     objective_list_service: ObjectiveListService = RealObjectiveListService(
-        github, issues, time=time
+        github, issues, time=time, http_client=FakeHttpClient()
     )
 
     # 9. Apply dry-run wrappers if needed

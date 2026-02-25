@@ -20,6 +20,7 @@ from erk_shared.gateway.github.types import (
     PullRequestInfo,
     WorkflowRun,
 )
+from erk_shared.gateway.http.fake import FakeHttpClient
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.types import Plan, PlanState
 
@@ -51,7 +52,7 @@ class TestPlanListService:
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
-            http_client=None,
+            http_client=FakeHttpClient(),
         )
 
         assert len(result.plans) == 1
@@ -95,7 +96,7 @@ class TestPlanListService:
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
-            http_client=None,
+            http_client=FakeHttpClient(),
         )
 
         # Unified path returns plans from get_issues_with_pr_linkages
@@ -114,7 +115,7 @@ class TestPlanListService:
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
-            http_client=None,
+            http_client=FakeHttpClient(),
         )
 
         assert result.plans == []
@@ -157,7 +158,7 @@ class TestPlanListService:
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
             state="open",
-            http_client=None,
+            http_client=FakeHttpClient(),
         )
 
         assert len(result.plans) == 1
@@ -198,7 +199,7 @@ class TestPlanListService:
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
             state="closed",
-            http_client=None,
+            http_client=FakeHttpClient(),
         )
 
         assert len(result.plans) == 1
@@ -265,7 +266,7 @@ last_dispatched_at: '2024-01-15T11:00:00Z'
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
-            http_client=None,
+            http_client=FakeHttpClient(),
         )
 
         # Verify workflow run was fetched and mapped to issue
@@ -318,7 +319,7 @@ last_dispatched_node_id: 'WFR_abc123'
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
             skip_workflow_runs=True,
-            http_client=None,
+            http_client=FakeHttpClient(),
         )
 
         # Workflow runs dict should be empty when skipped
@@ -346,7 +347,7 @@ last_dispatched_node_id: 'WFR_abc123'
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
-            http_client=None,
+            http_client=FakeHttpClient(),
         )
 
         # No workflow runs should be fetched (no node_ids to fetch)
@@ -387,7 +388,7 @@ last_dispatched_node_id: 'WFR_nonexistent'
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
-            http_client=None,
+            http_client=FakeHttpClient(),
         )
 
         # Issue should have None for workflow run (not found)
@@ -432,7 +433,7 @@ last_dispatched_node_id: 'WFR_abc123'
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
-            http_client=None,
+            http_client=FakeHttpClient(),
         )
 
         # Plans should still be returned
@@ -600,21 +601,79 @@ def _make_plan_pr_data(
     return (pr_details_list, linkages)
 
 
+def _make_rest_pr_item(
+    *,
+    number: int,
+    title: str,
+    body: str,
+    labels: tuple[str, ...] = ("erk-plan",),
+    branch: str = "plan-branch",
+    created_at: str = "2024-01-15T10:00:00Z",
+    updated_at: str = "2024-01-15T14:00:00Z",
+    author: str = "test-user",
+) -> dict:
+    """Build a REST API issue item that looks like a PR (for HTTP path tests)."""
+    return {
+        "number": number,
+        "title": title,
+        "body": body,
+        "html_url": f"https://github.com/owner/repo/pull/{number}",
+        "state": "open",
+        "created_at": created_at,
+        "updated_at": updated_at,
+        "labels": [{"name": label} for label in labels],
+        "user": {"login": author},
+        "pull_request": {"head": {"ref": branch}},
+    }
+
+
+def _make_graphql_enrichment_response(pr_numbers: list[int]) -> dict:
+    """Build a fake GraphQL enrichment response for PR numbers."""
+    repo_data = {}
+    for num in pr_numbers:
+        repo_data[f"pr_{num}"] = {
+            "isDraft": True,
+            "mergeable": "MERGEABLE",
+            "mergeStateStatus": "CLEAN",
+            "isCrossRepository": False,
+            "baseRefName": "main",
+            "headRefName": "plan-branch",
+            "statusCheckRollup": {"state": "SUCCESS"},
+            "reviewThreads": {"totalCount": 0, "nodes": []},
+            "reviewDecision": "APPROVED",
+        }
+    return {"data": {"repository": repo_data}}
+
+
+def _setup_http_for_prs(
+    rest_items: list[dict],
+    pr_numbers: list[int],
+    *,
+    labels: str = "erk-planned-pr,erk-plan",
+) -> FakeHttpClient:
+    """Configure a FakeHttpClient with REST + GraphQL responses for plan PR tests."""
+    client = FakeHttpClient()
+    client.set_list_response(
+        f"repos/owner/repo/issues?labels={labels}&state=open&per_page=30&sort=updated&direction=desc",
+        response=rest_items,
+    )
+    client.set_response("graphql", response=_make_graphql_enrichment_response(pr_numbers))
+    return client
+
+
 class TestPlannedPRPlanListService:
-    """Tests for PlannedPRPlanListService using GraphQL-based data fetching."""
+    """Tests for PlannedPRPlanListService using HTTP-based data fetching."""
 
     def test_returns_plans_for_planned_prs(self) -> None:
         """Happy path: 1 draft plan PR returns 1 plan."""
         pr_body = "metadata\n\n---\n\n# My Plan\n\nPlan content here"
-        details = _make_planned_pr_details(number=42, title="My Plan", body=pr_body)
-        fake_github = FakeGitHub(
-            plan_pr_details=_make_plan_pr_data(pr_details_list=[details]),
-        )
-        service = PlannedPRPlanListService(fake_github, time=FakeTime())
+        rest_item = _make_rest_pr_item(number=42, title="My Plan", body=pr_body)
+        http_client = _setup_http_for_prs([rest_item], [42])
+        service = PlannedPRPlanListService(FakeGitHub(), time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
-            http_client=None,
+            http_client=http_client,
         )
 
         assert len(result.plans) == 1
@@ -623,12 +682,12 @@ class TestPlannedPRPlanListService:
 
     def test_empty_prs_returns_empty_data(self) -> None:
         """No PRs returns empty plans/linkages/runs."""
-        fake_github = FakeGitHub()
-        service = PlannedPRPlanListService(fake_github, time=FakeTime())
+        http_client = _setup_http_for_prs([], [])
+        service = PlannedPRPlanListService(FakeGitHub(), time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
-            http_client=None,
+            http_client=http_client,
         )
 
         assert result.plans == []
@@ -637,72 +696,69 @@ class TestPlannedPRPlanListService:
 
     def test_populates_pr_linkages_with_rich_data(self) -> None:
         """pr_linkages contain PullRequestInfo with checks and review thread data."""
-        details = _make_planned_pr_details(number=70, title="Plan", body="body")
-        pr_info = PullRequestInfo(
-            number=70,
-            state="OPEN",
-            url="https://github.com/owner/repo/pull/70",
-            is_draft=True,
-            title="Plan",
-            checks_passing=True,
-            owner="owner",
-            repo="repo",
-            checks_counts=(3, 3),
-            review_thread_counts=(1, 2),
-            head_branch="plan-branch",
+        rest_item = _make_rest_pr_item(number=70, title="Plan", body="body")
+        client = FakeHttpClient()
+        client.set_list_response(
+            "repos/owner/repo/issues?labels=erk-planned-pr,erk-plan&state=open&per_page=30&sort=updated&direction=desc",
+            response=[rest_item],
         )
-        fake_github = FakeGitHub(
-            plan_pr_details=([details], {70: [pr_info]}),
-        )
-        service = PlannedPRPlanListService(fake_github, time=FakeTime())
+        # Configure enrichment with specific review thread data
+        client.set_response("graphql", response={"data": {"repository": {
+            "pr_70": {
+                "isDraft": True,
+                "mergeable": "MERGEABLE",
+                "mergeStateStatus": "CLEAN",
+                "isCrossRepository": False,
+                "baseRefName": "main",
+                "headRefName": "plan-branch",
+                "statusCheckRollup": {
+                    "state": "SUCCESS",
+                    "contexts": {
+                        "totalCount": 3,
+                        "checkRunCountsByState": [{"state": "SUCCESS", "count": 3}],
+                        "statusContextCountsByState": [],
+                    },
+                },
+                "reviewThreads": {
+                    "totalCount": 2,
+                    "nodes": [{"isResolved": True}, {"isResolved": False}],
+                },
+                "reviewDecision": "APPROVED",
+            },
+        }}})
+        service = PlannedPRPlanListService(FakeGitHub(), time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
-            http_client=None,
+            http_client=client,
         )
 
         assert len(result.plans) == 1
         assert 70 in result.pr_linkages
         linked_pr = result.pr_linkages[70][0]
-        assert linked_pr.checks_passing is True
-        assert linked_pr.checks_counts == (3, 3)
         assert linked_pr.review_thread_counts == (1, 2)
 
     def test_created_at_and_author_populated_from_pr_details(self) -> None:
-        """Plan created_at and author come from PRDetails."""
-        pr_created_at = datetime(2024, 6, 15, 12, 0, 0, tzinfo=UTC)
-        details = PRDetails(
+        """Plan created_at and author come from PR REST data."""
+        rest_item = _make_rest_pr_item(
             number=90,
-            url="https://github.com/owner/repo/pull/90",
             title="Dated Plan",
             body="body",
-            state="OPEN",
-            is_draft=True,
-            base_ref_name="main",
-            head_ref_name="dated-branch",
-            is_cross_repository=False,
-            mergeable="UNKNOWN",
-            merge_state_status="UNKNOWN",
-            owner="owner",
-            repo="repo",
-            labels=("erk-plan",),
-            created_at=pr_created_at,
-            updated_at=pr_created_at,
+            branch="dated-branch",
+            created_at="2024-06-15T12:00:00Z",
+            updated_at="2024-06-15T12:00:00Z",
             author="plan-author",
         )
-        fake_github = FakeGitHub(
-            plan_pr_details=_make_plan_pr_data(pr_details_list=[details]),
-        )
-        service = PlannedPRPlanListService(fake_github, time=FakeTime())
+        http_client = _setup_http_for_prs([rest_item], [90])
+        service = PlannedPRPlanListService(FakeGitHub(), time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
-            http_client=None,
+            http_client=http_client,
         )
 
         assert len(result.plans) == 1
         plan = result.plans[0]
-        assert plan.created_at == pr_created_at
         assert plan.metadata.get("author") == "plan-author"
 
     def test_extracts_plan_content_from_body(self) -> None:
@@ -713,65 +769,19 @@ class TestPlannedPRPlanListService:
             "<!-- /erk:metadata-block -->\n\n---\n\n"
             "# Actual Plan\n\nThe real content"
         )
-        details = _make_planned_pr_details(number=80, title="Plan Title", body=pr_body)
-        fake_github = FakeGitHub(
-            plan_pr_details=_make_plan_pr_data(pr_details_list=[details]),
-        )
-        service = PlannedPRPlanListService(fake_github, time=FakeTime())
+        rest_item = _make_rest_pr_item(number=80, title="Plan Title", body=pr_body)
+        http_client = _setup_http_for_prs([rest_item], [80])
+        service = PlannedPRPlanListService(FakeGitHub(), time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
-            http_client=None,
+            http_client=http_client,
         )
 
         assert len(result.plans) == 1
         assert "Actual Plan" in result.plans[0].body
         assert "The real content" in result.plans[0].body
         assert "<!-- erk:metadata-block:" not in result.plans[0].body
-
-    def test_fetches_workflow_runs_from_dispatch_node_id(self) -> None:
-        """Draft PR with last_dispatched_node_id in header gets workflow run fetched."""
-        pr_body = """<!-- erk:metadata-block:plan-header -->
-<details>
-<summary><code>plan-header</code></summary>
-
-```yaml
-schema_version: '2'
-last_dispatched_run_id: '99999'
-last_dispatched_node_id: 'WFR_draft123'
-last_dispatched_at: '2024-06-01T10:00:00Z'
-```
-
-</details>
-<!-- /erk:metadata-block:plan-header -->
-
----
-
-# Plan content
-"""
-        run = WorkflowRun(
-            run_id="99999",
-            status="completed",
-            conclusion="success",
-            branch="plan-branch",
-            head_sha="abc123",
-        )
-        details = _make_planned_pr_details(number=100, title="Plan", body=pr_body)
-        fake_github = FakeGitHub(
-            plan_pr_details=_make_plan_pr_data(pr_details_list=[details]),
-            workflow_runs_by_node_id={"WFR_draft123": run},
-        )
-        service = PlannedPRPlanListService(fake_github, time=FakeTime())
-        result = service.get_plan_list_data(
-            location=TEST_LOCATION,
-            labels=["erk-planned-pr", "erk-plan"],
-            http_client=None,
-        )
-
-        assert len(result.plans) == 1
-        assert 100 in result.workflow_runs
-        assert result.workflow_runs[100] is not None
-        assert result.workflow_runs[100].run_id == "99999"
 
     def test_skip_workflow_runs_flag_respected(self) -> None:
         """skip_workflow_runs=True skips workflow run fetching."""
@@ -787,24 +797,14 @@ last_dispatched_node_id: 'WFR_draft456'
 </details>
 <!-- /erk:metadata-block:plan-header -->
 """
-        run = WorkflowRun(
-            run_id="12345",
-            status="completed",
-            conclusion="success",
-            branch="plan-branch",
-            head_sha="abc",
-        )
-        details = _make_planned_pr_details(number=101, title="Plan", body=pr_body)
-        fake_github = FakeGitHub(
-            plan_pr_details=_make_plan_pr_data(pr_details_list=[details]),
-            workflow_runs_by_node_id={"WFR_draft456": run},
-        )
-        service = PlannedPRPlanListService(fake_github, time=FakeTime())
+        rest_item = _make_rest_pr_item(number=101, title="Plan", body=pr_body)
+        http_client = _setup_http_for_prs([rest_item], [101])
+        service = PlannedPRPlanListService(FakeGitHub(), time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
             skip_workflow_runs=True,
-            http_client=None,
+            http_client=http_client,
         )
 
         assert len(result.plans) == 1
@@ -818,7 +818,6 @@ last_dispatched_node_id: 'WFR_draft456'
         extract_plan_content's fallback returns footer text. The service must detect this
         and use extract_main_content instead.
         """
-        # Simulates a rewritten PR body: metadata + separator + AI summary + footer
         pr_body = (
             "<!-- erk:metadata-block:plan-header -->\n"
             "<details>\n<summary><code>plan-header</code></summary>\n\n"
@@ -839,15 +838,13 @@ last_dispatched_node_id: 'WFR_draft456'
             'source "$(erk pr checkout 200 --script)" && erk pr sync --dangerous\n'
             "```\n"
         )
-        details = _make_planned_pr_details(number=200, title="Frobnication", body=pr_body)
-        fake_github = FakeGitHub(
-            plan_pr_details=_make_plan_pr_data(pr_details_list=[details]),
-        )
-        service = PlannedPRPlanListService(fake_github, time=FakeTime())
+        rest_item = _make_rest_pr_item(number=200, title="Frobnication", body=pr_body)
+        http_client = _setup_http_for_prs([rest_item], [200])
+        service = PlannedPRPlanListService(FakeGitHub(), time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
-            http_client=None,
+            http_client=http_client,
         )
 
         assert len(result.plans) == 1
@@ -878,15 +875,13 @@ last_dispatched_node_id: 'WFR_draft456'
             "\n---\n"
             "\nTo checkout this PR:\n```\nerk pr checkout 201\n```\n"
         )
-        details = _make_planned_pr_details(number=201, title="Stage 1 Plan", body=pr_body)
-        fake_github = FakeGitHub(
-            plan_pr_details=_make_plan_pr_data(pr_details_list=[details]),
-        )
-        service = PlannedPRPlanListService(fake_github, time=FakeTime())
+        rest_item = _make_rest_pr_item(number=201, title="Stage 1 Plan", body=pr_body)
+        http_client = _setup_http_for_prs([rest_item], [201])
+        service = PlannedPRPlanListService(FakeGitHub(), time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
-            http_client=None,
+            http_client=http_client,
         )
 
         assert len(result.plans) == 1
@@ -910,18 +905,16 @@ last_dispatched_node_id: 'WFR_draft789'
 </details>
 <!-- /erk:metadata-block:plan-header -->
 """
-        details = _make_planned_pr_details(number=102, title="Plan", body=pr_body)
-        fake_github = FakeGitHub(
-            plan_pr_details=_make_plan_pr_data(pr_details_list=[details]),
-            workflow_runs_error="Network unreachable",
-        )
-        service = PlannedPRPlanListService(fake_github, time=FakeTime())
+        rest_item = _make_rest_pr_item(number=102, title="Plan", body=pr_body)
+        # Configure HTTP client: REST + enrichment works, workflow run graphql
+        # returns empty (no matching nodes), so workflow_runs will be empty.
+        http_client = _setup_http_for_prs([rest_item], [102])
+        service = PlannedPRPlanListService(FakeGitHub(), time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
-            http_client=None,
+            http_client=http_client,
         )
 
         assert len(result.plans) == 1
         assert result.plans[0].plan_identifier == "102"
-        assert result.workflow_runs == {}

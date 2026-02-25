@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 from erk_shared.gateway.github.types import (
     GitHubRepoLocation,
@@ -16,10 +15,8 @@ from erk_shared.gateway.github.types import (
     PullRequestInfo,
     WorkflowRun,
 )
+from erk_shared.gateway.http.abc import HttpClient
 from erk_shared.plan_store.types import Plan
-
-if TYPE_CHECKING:
-    from erk_shared.gateway.http.abc import HttpClient
 
 
 @dataclass(frozen=True)
@@ -62,7 +59,7 @@ class PlanListService(ABC):
         skip_workflow_runs: bool = False,
         creator: str | None = None,
         exclude_labels: list[str] | None = None,
-        http_client: HttpClient | None,
+        http_client: HttpClient,
     ) -> PlanListData:
         """Batch fetch all data needed for plan listing.
 
