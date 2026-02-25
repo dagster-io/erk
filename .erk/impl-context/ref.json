@@ -1,5 +1,9 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Objective #8197 Nodes 1.1\u20131.3 \u2014 Branch-Scoped Impl Directory Foundation",
+  "plan_id": "8215",
+  "url": "https://github.com/dagster-io/erk/pull/8215",
+  "created_at": "2026-02-25T21:43:13.713621",
+  "synced_at": "2026-02-25T21:43:13.713621",
+  "labels": [],
   "objective_id": 8197
 }
