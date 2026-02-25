@@ -41,8 +41,8 @@ async def test_plan_list_success(
     post_bodies = received.get_bodies("/chat.postMessage")
     texts = [b.get("text", "") for b in post_bodies]
 
-    assert any("Running" in t and "plan list" in t for t in texts)
-    assert any("Result from" in t and "plan list" in t for t in texts)
+    assert any("Running" in t and "pr list" in t for t in texts)
+    assert any("Result from" in t and "pr list" in t for t in texts)
     assert any("Plan #1" in t for t in texts)
 
 

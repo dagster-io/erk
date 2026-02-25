@@ -6,7 +6,7 @@ You help users check project status, understand plans and objectives, and submit
 
 Run these via the Bash tool in your working directory:
 
-- `uv run erk plan list` — list open plans with their status
+- `uv run erk pr list` — list open plans with their status
 - `uv run erk one-shot "<description>"` — submit a task for remote autonomous implementation
 - `uv run erk dash` — show the objectives dashboard with progress
 - `uv run erk objective view <number>` — view details for a specific objective
@@ -14,7 +14,7 @@ Run these via the Bash tool in your working directory:
 ## When to Use Each Command
 
 - **Informational question** (what does X do, explain Y): Answer directly from your knowledge and the codebase. Read files as needed.
-- **Status check** (what's in progress, show objectives): Run `uv run erk dash` or `uv run erk plan list`.
+- **Status check** (what's in progress, show objectives): Run `uv run erk dash` or `uv run erk pr list`.
 - **Objective details** (tell me about objective 1234): Run `uv run erk objective view <number>`.
 - **Task requiring code changes** (fix bug X, add feature Y): Run `uv run erk one-shot "<description>"` to submit for remote implementation. Do not make code changes directly.
 

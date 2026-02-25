@@ -13,7 +13,7 @@ class TestErkSystemPrompt(unittest.TestCase):
         self.assertGreater(len(ERK_SYSTEM_PROMPT), 100)
 
     def test_erk_system_prompt_mentions_key_commands(self) -> None:
-        self.assertIn("plan list", ERK_SYSTEM_PROMPT)
+        self.assertIn("pr list", ERK_SYSTEM_PROMPT)
         self.assertIn("one-shot", ERK_SYSTEM_PROMPT)
         self.assertIn("dash", ERK_SYSTEM_PROMPT)
         self.assertIn("objective view", ERK_SYSTEM_PROMPT)

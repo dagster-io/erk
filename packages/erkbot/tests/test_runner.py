@@ -39,6 +39,9 @@ class TestRunErkPlanList(unittest.IsolatedAsyncioTestCase):
         _call_args = mock_runner_cls.return_value.invoke.call_args
         cli_args = _call_args[0][1]
         self.assertIn("--all-users", cli_args)
+        self.assertIn("pr", cli_args)
+        self.assertIn("list", cli_args)
+        self.assertNotIn("plan", cli_args)
 
     @patch("click.testing.CliRunner.invoke")
     async def test_run_erk_plan_list_constructs_cli_runner(self, mock_invoke: MagicMock) -> None:
