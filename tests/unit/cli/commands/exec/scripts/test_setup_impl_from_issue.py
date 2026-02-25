@@ -351,8 +351,8 @@ def test_planned_pr_reads_from_impl_context_when_present(tmp_path: Path) -> None
 
     assert result.exit_code == 0, f"Command failed: {result.output}"
 
-    # .impl/ folder was created with local plan content (not PR body content)
-    impl_plan = tmp_path / ".impl" / "plan.md"
+    # Impl folder was created with local plan content (not PR body content)
+    impl_plan = tmp_path / ".erk" / "impl-context" / plan_branch / "plan.md"
     assert impl_plan.exists()
     assert "Local Plan" in impl_plan.read_text(encoding="utf-8")
     assert "From impl-context" in impl_plan.read_text(encoding="utf-8")
@@ -395,8 +395,8 @@ def test_planned_pr_reads_objective_id_from_ref_json(tmp_path: Path) -> None:
 
     assert result.exit_code == 0, f"Command failed: {result.output}"
 
-    # Verify plan-ref.json in .impl/ has the objective_id
-    plan_ref_path = tmp_path / ".impl" / "plan-ref.json"
+    # Verify ref.json in branch-scoped impl dir has the objective_id
+    plan_ref_path = tmp_path / ".erk" / "impl-context" / plan_branch / "ref.json"
     assert plan_ref_path.exists()
     plan_ref = json.loads(plan_ref_path.read_text(encoding="utf-8"))
     assert plan_ref["objective_id"] == 99
@@ -422,8 +422,8 @@ def test_planned_pr_falls_back_to_pr_body_when_no_impl_context(tmp_path: Path) -
 
     assert result.exit_code == 0, f"Command failed: {result.output}"
 
-    # .impl/ folder was created with plan content extracted from PR body
-    impl_plan = tmp_path / ".impl" / "plan.md"
+    # Impl folder was created with plan content extracted from PR body
+    impl_plan = tmp_path / ".erk" / "impl-context" / plan_branch / "plan.md"
     assert impl_plan.exists()
     # The PR body was created via _make_planned_pr_context with content
     # "# Plan\n\nImplement something."

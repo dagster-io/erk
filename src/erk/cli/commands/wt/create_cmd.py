@@ -733,7 +733,11 @@ def create_wt(
         if output_json:
             # For JSON output, emit a status: "exists" response with available info
             existing_branch = ctx.git.branch.get_current_branch(wt_path)
-            plan_path = get_impl_path(wt_path, git_ops=ctx.git)
+            plan_path = (
+                get_impl_path(wt_path, branch_name=existing_branch, git_ops=ctx.git)
+                if existing_branch is not None
+                else None
+            )
             json_response = _create_json_response(
                 worktree_name=name,
                 worktree_path=wt_path,
@@ -875,9 +879,14 @@ def create_wt(
         # Read plan content from source file
         plan_content = from_plan_file.read_text(encoding="utf-8")
 
-        # Create .impl/ folder in new worktree
-        # Use overwrite=False since fresh worktree should not have .impl/
-        impl_folder_destination = create_impl_folder(wt_path, plan_content, overwrite=False)
+        # Determine the branch for the new worktree
+        wt_branch = branch or default_branch_for_worktree(name)
+
+        # Create impl folder in new worktree
+        # Use overwrite=False since fresh worktree should not have impl folder
+        impl_folder_destination = create_impl_folder(
+            wt_path, plan_content, branch_name=wt_branch, overwrite=False
+        )
 
         # Handle --keep-plan-file flag
         if keep_plan_file:
@@ -892,14 +901,19 @@ def create_wt(
     if from_plan:
         # Type narrowing: setup must be set if from_plan is True
         assert setup is not None, "setup must be set when from_plan is True"
+        assert linked_branch_name is not None, (
+            "linked_branch_name must be set when from_plan is True"
+        )
 
-        # Create .impl/ folder in new worktree
-        # Use overwrite=False since fresh worktree should not have .impl/
-        impl_folder_destination = create_impl_folder(wt_path, setup.plan_content, overwrite=False)
+        # Create impl folder in new worktree
+        # Use overwrite=False since fresh worktree should not have impl folder
+        impl_folder_destination = create_impl_folder(
+            wt_path, setup.plan_content, branch_name=linked_branch_name, overwrite=False
+        )
 
-        # Create .impl/plan-ref.json metadata using shared helper
+        # Create ref.json metadata using shared helper
         save_plan_ref(
-            wt_path / ".impl",
+            impl_folder_destination,
             provider="github",
             plan_id=str(setup.issue_number),
             url=setup.issue_url,

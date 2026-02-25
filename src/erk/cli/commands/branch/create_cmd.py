@@ -241,11 +241,12 @@ def branch_create(
         )
         user_output(click.style(f"✓ Assigned {branch_name} to {slot_result.slot_name}", fg="green"))
 
-    # Create .impl/ folder if --for-plan was used
+    # Create impl folder if --for-plan was used
     if setup is not None:
         impl_path = create_impl_folder(
             slot_result.worktree_path,
             setup.plan_content,
+            branch_name=branch_name,
             overwrite=True,
         )
 

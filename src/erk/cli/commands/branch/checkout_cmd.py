@@ -280,9 +280,10 @@ def _setup_impl_for_plan(
     *,
     setup: IssueBranchSetup,
     worktree_path: Path,
+    branch_name: str,
     script: bool,
 ) -> None:
-    """Create .impl/ folder and save plan ref after checkout for --for-plan.
+    """Create impl folder and save plan ref after checkout for --for-plan.
 
     In script mode, outputs an activation script and exits. In normal mode,
     prints a confirmation message.
@@ -291,11 +292,13 @@ def _setup_impl_for_plan(
         ctx: Erk context
         setup: Plan setup info from prepare_plan_for_worktree
         worktree_path: Path to the target worktree
+        branch_name: Git branch name for scoping the impl directory
         script: Whether to output only the activation script
     """
     impl_path = create_impl_folder(
         worktree_path,
         setup.plan_content,
+        branch_name=branch_name,
         overwrite=True,
     )
 
@@ -542,7 +545,11 @@ def branch_checkout(
 
                     if setup is not None:
                         _setup_impl_for_plan(
-                            ctx, setup=setup, worktree_path=target_wt.path, script=script
+                            ctx,
+                            setup=setup,
+                            worktree_path=target_wt.path,
+                            branch_name=branch,
+                            script=script,
                         )
 
                     worktrees = ctx.git.worktree.list_worktrees(repo.root)
@@ -581,10 +588,14 @@ def branch_checkout(
         # Exactly one worktree contains this branch
         target_worktree = matching_worktrees[0]
 
-        # Set up .impl/ if --for-plan was used
+        # Set up impl folder if --for-plan was used
         if setup is not None:
             _setup_impl_for_plan(
-                ctx, setup=setup, worktree_path=target_worktree.path, script=script
+                ctx,
+                setup=setup,
+                worktree_path=target_worktree.path,
+                branch_name=branch,
+                script=script,
             )
 
         _perform_checkout(
@@ -606,10 +617,14 @@ def branch_checkout(
             # Exactly one worktree has the branch directly checked out - jump to it
             target_worktree = directly_checked_out[0]
 
-            # Set up .impl/ if --for-plan was used
+            # Set up impl folder if --for-plan was used
             if setup is not None:
                 _setup_impl_for_plan(
-                    ctx, setup=setup, worktree_path=target_worktree.path, script=script
+                    ctx,
+                    setup=setup,
+                    worktree_path=target_worktree.path,
+                    branch_name=branch,
+                    script=script,
                 )
 
             _perform_checkout(

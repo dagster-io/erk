@@ -1,7 +1,7 @@
 """Tests for implementation plan ref + worktree creation workflow.
 
 Tests the integration of plan file reading, worktree creation, issue creation,
-and linking them together via .impl/plan-ref.json.
+and linking them together via ref.json.
 """
 
 from pathlib import Path
@@ -17,6 +17,9 @@ from erk_shared.impl_folder import (
 )
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.paths import sentinel_path
+
+BRANCH = "feature/test-branch"
+"""Test branch name used across tests."""
 
 
 def test_save_and_read_plan_ref(tmp_path: Path) -> None:
@@ -35,8 +38,8 @@ def test_save_and_read_plan_ref(tmp_path: Path) -> None:
     )
 
     # Verify file was created
-    plan_ref_json = impl_folder / "plan-ref.json"
-    assert plan_ref_json.exists()
+    ref_json = impl_folder / "ref.json"
+    assert ref_json.exists()
 
     # Read back and verify
     ref = read_plan_ref(impl_folder)
@@ -63,7 +66,7 @@ def test_save_plan_ref_dir_must_exist(tmp_path: Path) -> None:
 
 
 def test_has_plan_ref_false_when_no_file(tmp_path: Path) -> None:
-    """Test has_plan_ref returns False when no plan-ref.json or issue.json exists."""
+    """Test has_plan_ref returns False when no ref.json or issue.json exists."""
     impl_folder = tmp_path / ".impl"
     impl_folder.mkdir()
 
@@ -71,7 +74,7 @@ def test_has_plan_ref_false_when_no_file(tmp_path: Path) -> None:
 
 
 def test_has_plan_ref_true_when_file_exists(tmp_path: Path) -> None:
-    """Test has_plan_ref returns True when plan-ref.json exists."""
+    """Test has_plan_ref returns True when ref.json exists."""
     impl_folder = tmp_path / ".impl"
     impl_folder.mkdir()
 
@@ -108,7 +111,7 @@ Test the workflow.
 2. Step two
 """
     # Step 1: Create plan folder (simulates erk create --from-plan)
-    impl_folder = create_impl_folder(tmp_path, plan_content, overwrite=False)
+    impl_folder = create_impl_folder(tmp_path, plan_content, branch_name=BRANCH, overwrite=False)
 
     # Step 2: Create issue (simulates gh issue create)
     issues = FakeGitHubIssues(next_issue_number=123)

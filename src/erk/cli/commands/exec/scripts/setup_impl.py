@@ -133,8 +133,10 @@ def _setup_from_file(
     branch_manager.create_branch(repo_root, branch_name, current_branch)
     branch_manager.checkout_branch(cwd, branch_name)
 
-    # Create .impl/ folder
-    create_impl_folder(worktree_path=cwd, plan_content=plan_content, overwrite=True)
+    # Create impl folder
+    create_impl_folder(
+        worktree_path=cwd, plan_content=plan_content, branch_name=branch_name, overwrite=True
+    )
 
     related_docs = _extract_related_docs(plan_content)
 

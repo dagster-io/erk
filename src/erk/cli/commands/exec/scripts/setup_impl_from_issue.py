@@ -36,7 +36,7 @@ from erk_shared.gateway.git.remote_ops.types import PullRebaseError
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.metadata.schemas import OBJECTIVE_ISSUE
 from erk_shared.gateway.github.types import PRNotFound
-from erk_shared.impl_folder import create_impl_folder, read_plan_ref, save_plan_ref
+from erk_shared.impl_folder import create_impl_folder, get_impl_dir, read_plan_ref, save_plan_ref
 from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR, extract_plan_content
 
 
@@ -210,12 +210,13 @@ def _setup_planned_pr_plan(
     impl_path_str: str | None = None
 
     if not no_impl:
-        impl_path = cwd / ".impl"
+        impl_path = get_impl_dir(cwd, branch_name=branch_name)
         impl_path_str = str(impl_path)
 
         create_impl_folder(
             worktree_path=cwd,
             plan_content=plan_content,
+            branch_name=branch_name,
             overwrite=True,
         )
 
