@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
+from erk_shared.gateway.github.types import IssueFilterState
+
 
 @dataclass(frozen=True)
 class PlanRowData:
@@ -154,7 +156,7 @@ class PlanFilters:
 
     Attributes:
         labels: Labels to filter by (default: ["erk-plan"])
-        state: Filter by state ("open", "closed", or None for all)
+        state: Filter by state ("open" or "closed")
         run_state: Filter by workflow run state (e.g., "in_progress")
         limit: Maximum number of results (None for no limit)
         show_prs: Whether to include PR data
@@ -165,7 +167,7 @@ class PlanFilters:
     """
 
     labels: tuple[str, ...]
-    state: str | None
+    state: IssueFilterState
     run_state: str | None
     limit: int | None
     show_prs: bool
@@ -180,7 +182,7 @@ class PlanFilters:
         """Create default filters (open erk-plan issues)."""
         return PlanFilters(
             labels=("erk-plan",),
-            state=None,
+            state="open",
             run_state=None,
             limit=None,
             show_prs=False,

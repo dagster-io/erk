@@ -17,6 +17,7 @@ from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_dispatch_info
 from erk_shared.gateway.github.types import (
     GitHubRepoLocation,
+    IssueFilterState,
     WorkflowRun,
 )
 from erk_shared.plan_store.conversion import issue_info_to_plan, pr_details_to_plan
@@ -47,7 +48,7 @@ class PlannedPRPlanListService(PlanListService):
         *,
         location: GitHubRepoLocation,
         labels: list[str],
-        state: str | None = None,
+        state: IssueFilterState = "open",
         limit: int | None = None,
         skip_workflow_runs: bool = False,
         creator: str | None = None,
@@ -142,7 +143,7 @@ class RealPlanListService(PlanListService):
         *,
         location: GitHubRepoLocation,
         labels: list[str],
-        state: str | None = None,
+        state: IssueFilterState = "open",
         limit: int | None = None,
         skip_workflow_runs: bool = False,
         creator: str | None = None,
@@ -153,7 +154,7 @@ class RealPlanListService(PlanListService):
         Args:
             location: GitHub repository location (local root + repo identity)
             labels: Labels to filter issues by (e.g., ["erk-plan"])
-            state: Filter by state ("open", "closed", or None for all)
+            state: Filter by state ("open" or "closed")
             limit: Maximum number of issues to return (None for no limit)
             skip_workflow_runs: If True, skip fetching workflow runs (for performance)
             creator: Filter by creator username (e.g., "octocat"). If provided,

@@ -43,6 +43,7 @@ from erk_shared.gateway.github.types import (
     BodyText,
     GitHubRepoId,
     GitHubRepoLocation,
+    IssueFilterState,
     MergeError,
     MergeResult,
     PRDetails,
@@ -1160,7 +1161,7 @@ query {{
         *,
         location: GitHubRepoLocation,
         labels: list[str],
-        state: str | None = None,
+        state: IssueFilterState = "open",
         limit: int | None = None,
         creator: str | None = None,
     ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
@@ -1171,8 +1172,7 @@ query {{
         """
         repo_id = location.repo_id
 
-        # Build states array - default to OPEN to match gh CLI behavior
-        states = [state.upper()] if state else ["OPEN"]
+        states = [state.upper()]
         effective_limit = limit if limit is not None else 30
 
         # GH-API-AUDIT: GraphQL - issues with timeline
@@ -1621,7 +1621,7 @@ query {{
         location: GitHubRepoLocation,
         *,
         labels: list[str],
-        state: str | None,
+        state: IssueFilterState,
         limit: int | None,
         author: str | None,
         exclude_labels: list[str] | None = None,
@@ -1638,7 +1638,7 @@ query {{
         repo_id = location.repo_id
 
         # Step 1: REST issues list with server-side filtering
-        rest_state = state.lower() if state else "open"
+        rest_state = state.lower()
         effective_limit = limit if limit is not None else 30
 
         endpoint = f"repos/{repo_id.owner}/{repo_id.repo}/issues"
