@@ -26,25 +26,25 @@ TUI plan list "sts" column with emoji indicators
 
 ## GraphQL Source
 
-The `reviewDecision` field is fetched in three queries in `graphql_queries.py`:
+The `reviewDecision` field is fetched in three queries in `graphql_queries.py` (search for `reviewDecision` to locate):
 
-- Line 76: Single PR detail query
-- Line 149: PR list query for plan linkages
-- Line 198: PR detail with review info
+- `ISSUE_PR_LINKAGE_FRAGMENT` — PR linkage data on cross-referenced events
+- `GET_ISSUES_WITH_PR_LINKAGES_QUERY` — issues with PR linkages (nested in PR fragment)
+- `GET_PLAN_PRS_WITH_DETAILS_QUERY` — plan PRs with full detail
 
 Raw values returned by GitHub: `"APPROVED"`, `"CHANGES_REQUESTED"`, `"REVIEW_REQUIRED"`, or `null`.
 
 ## `PullRequestInfo` Type
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/types.py:201, PullRequestInfo -->
+<!-- Source: PullRequestInfo class in packages/erk-shared/src/erk_shared/gateway/github/types.py -->
 
-The `review_decision: str | None` field at `packages/erk-shared/src/erk_shared/gateway/github/types.py:201` stores the raw GraphQL `reviewDecision` value.
+The `review_decision: str | None` field on `PullRequestInfo` in `packages/erk-shared/src/erk_shared/gateway/github/types.py` stores the raw GraphQL `reviewDecision` value.
 
-`None` means the PR has no review state (e.g., no reviewers assigned, or `REVIEW_REQUIRED` maps to no indicator).
+`None` means the PR has no review state (e.g., no reviewers assigned). This is distinct from `REVIEW_REQUIRED`, which means reviewers are assigned but haven't completed their review. Both produce no indicator in the display, but for different reasons.
 
 ## Display Logic
 
-**Location:** `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py:67-108`
+**Location:** `compute_status_indicators()` in `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py`
 
 `compute_status_indicators()` produces emoji indicators for the separate "sts" column:
 
@@ -61,9 +61,9 @@ Review decision indicators only appear on plans in the `review` lifecycle stage.
 
 **Location:** `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py`
 
-- Line 573: `pr_review_decision: str | None = None` — default before PR is found
-- Line 599: `pr_review_decision = selected_pr.review_decision` — extracted from matched PR
-- Line 715: `review_decision=pr_review_decision` — passed to `compute_status_indicators()`
+- `pr_review_decision: str | None = None` — default before PR is found (search for `pr_review_decision` declaration)
+- `pr_review_decision = selected_pr.review_decision` — extracted from matched PR (search for `selected_pr.review_decision`)
+- `review_decision=pr_review_decision` — passed to `compute_status_indicators()` call
 
 ## Related Documentation
 
