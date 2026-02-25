@@ -44,6 +44,7 @@ class PlanListService(ABC):
         limit: int | None = None,
         skip_workflow_runs: bool = False,
         creator: str | None = None,
+        exclude_labels: list[str] | None = None,
     ) -> PlanListData:
         """Batch fetch all data needed for plan listing.
 
@@ -55,6 +56,8 @@ class PlanListService(ABC):
             skip_workflow_runs: If True, skip fetching workflow runs (for performance)
             creator: Filter by creator username (e.g., "octocat"). If provided,
                 only issues created by this user are returned.
+            exclude_labels: Labels to exclude from results. Applied client-side before
+                expensive enrichment operations. None means no exclusion.
 
         Returns:
             PlanListData containing plans, PR linkages, and workflow runs
