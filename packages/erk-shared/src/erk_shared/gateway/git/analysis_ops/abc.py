@@ -66,8 +66,8 @@ class GitAnalysisOps(ABC):
     def get_diff_to_branch(self, cwd: Path, branch: str) -> str:
         """Get diff between branch and HEAD.
 
-        Uses two-dot syntax `git diff {branch}..HEAD` to show what will
-        change when merged.
+        Uses three-dot syntax `git diff {branch}...HEAD` to diff from the
+        merge-base to HEAD, showing only changes introduced on the branch.
 
         Args:
             cwd: Working directory
