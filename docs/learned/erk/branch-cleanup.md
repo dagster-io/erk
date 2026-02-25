@@ -244,8 +244,8 @@ When `erk land` completes a merge, it force-deletes the implementation branch in
 
 **Implementation:**
 
-- Git-only branches: `git branch -D` via `gateway/git/branch_ops/real.py`
-- Graphite-tracked branches: `gt delete -f` via `gateway/graphite/branch_ops/real.py`
+- Git-only branches: `git branch -D` via `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py`
+- Graphite-tracked branches: `gt delete -f` via `packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/real.py`
 
 The `BranchManager.delete_branch()` abstraction routes to the correct implementation based on whether Graphite tracking is active.
 

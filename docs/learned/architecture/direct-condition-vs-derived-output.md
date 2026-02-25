@@ -22,9 +22,9 @@ Decision logic evaluates raw state fields independently. Each condition maps to 
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py, _build_indicators -->
 
-Example from `_build_indicators()` in `lifecycle.py`: the rocket emoji (ready-to-merge) decision checks five raw state fields directly:
+Example from `_build_indicators()` in `lifecycle.py`: the rocket emoji (ready-to-merge) decision checks a lifecycle stage condition and four raw state field parameters:
 
-- `is_impl` — plan is in implementation stage
+- `is_impl` — lifecycle stage check (derived from `lifecycle_display` string, not a raw parameter)
 - `is_draft is not True` — PR is published
 - `has_conflicts is not True` — no merge conflicts
 - `review_decision != "CHANGES_REQUESTED"` — no blocking review
