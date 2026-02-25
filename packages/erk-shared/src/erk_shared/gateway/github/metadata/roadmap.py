@@ -33,7 +33,6 @@ class RoadmapNode:
     id: str
     description: str
     status: RoadmapNodeStatus
-    plan: str | None  # None or "#123" (plan issue number)
     pr: str | None  # None or "#456" (landed PR number)
     depends_on: tuple[str, ...] | None  # None = not specified, () = no deps
     slug: str | None  # None = not yet generated, or kebab-case slug
@@ -108,7 +107,6 @@ def validate_roadmap_frontmatter(
         step_id = step_dict["id"]
         description = step_dict["description"]
         status = step_dict["status"]
-        raw_plan = step_dict.get("plan")
         raw_pr = step_dict.get("pr")
 
         # Validate types
@@ -124,9 +122,6 @@ def validate_roadmap_frontmatter(
         if status not in {"pending", "planning", "done", "in_progress", "blocked", "skipped"}:
             valid_statuses = "pending, planning, done, in_progress, blocked, skipped"
             errors.append(f"Step {i} field 'status' must be one of: {valid_statuses}")
-            return None, errors
-        if raw_plan is not None and not isinstance(raw_plan, str):
-            errors.append(f"Step {i} field 'plan' must be a string or null")
             return None, errors
         if raw_pr is not None and not isinstance(raw_pr, str):
             errors.append(f"Step {i} field 'pr' must be a string or null")
@@ -154,7 +149,6 @@ def validate_roadmap_frontmatter(
                 id=step_id,
                 description=description,
                 status=cast(RoadmapNodeStatus, status),
-                plan=raw_plan,
                 pr=raw_pr,
                 depends_on=depends_on,
                 slug=raw_slug,
@@ -209,7 +203,6 @@ def render_roadmap_block_inner(nodes: list[RoadmapNode]) -> str:
             "slug": s.slug,
             "description": s.description,
             "status": s.status,
-            "plan": s.plan,
             "pr": s.pr,
         }
         if any_has_depends_on:
@@ -306,16 +299,14 @@ def update_node_in_frontmatter(
     block_content: str,
     node_id: str,
     *,
-    plan: str | None,
     pr: str | None,
     status: RoadmapNodeStatus | None,
 ) -> str | None:
-    """Update a node's plan/PR fields (and optionally status) in frontmatter YAML.
+    """Update a node's PR field (and optionally status) in frontmatter YAML.
 
     Args:
         block_content: Raw content from metadata block
         node_id: Node ID to update (e.g., "1.1")
-        plan: New plan value. None=preserve existing, ""=clear, "#6464"=set.
         pr: New PR value. None=preserve existing, ""=clear, "#123"=set.
         status: Explicit status to set, or None to infer from resolved values.
 
@@ -341,26 +332,16 @@ def update_node_in_frontmatter(
             else:
                 resolved_pr = None
 
-            # Resolve plan: None=preserve, ""=clear, "#6464"=set
-            if plan is None:
-                resolved_plan = step.plan
-            else:
-                resolved_plan = plan or None
-
             # Determine status: explicit > infer from resolved values > preserve
             new_status: RoadmapNodeStatus
             if status is not None:
                 new_status = status
             elif resolved_pr:
                 new_status = cast(RoadmapNodeStatus, "in_progress")
-            elif resolved_plan:
-                new_status = cast(RoadmapNodeStatus, "in_progress")
             else:
                 new_status = step.status  # preserve existing status
 
-            updated_steps.append(
-                replace(step, status=new_status, plan=resolved_plan, pr=resolved_pr)
-            )
+            updated_steps.append(replace(step, status=new_status, pr=resolved_pr))
             found = True
         else:
             updated_steps.append(step)
@@ -500,9 +481,9 @@ def render_roadmap_tables(phases: list[RoadmapPhase]) -> str:
 
     Format per phase:
         ### Phase {number}{suffix}: {name} ({N} PR)
-        | Node | Description | Status | Plan | PR |
-        |------|-------------|--------|------|----|
-        | {id} | {desc}      | {status} | {plan} | {pr} |
+        | Node | Description | Status | PR |
+        |------|-------------|--------|----|
+        | {id} | {desc}      | {status} | {pr} |
 
     When any node across all phases has ``depends_on`` specified, a "Depends On"
     column is inserted between Description and Status.
@@ -521,11 +502,11 @@ def render_roadmap_tables(phases: list[RoadmapPhase]) -> str:
 
         rows: list[str] = []
         if any_has_depends_on:
-            rows.append("| Node | Description | Depends On | Status | Plan | PR |")
-            rows.append("|------|-------------|------------|--------|------|----|")
+            rows.append("| Node | Description | Depends On | Status | PR |")
+            rows.append("|------|-------------|------------|--------|----|")
         else:
-            rows.append("| Node | Description | Status | Plan | PR |")
-            rows.append("|------|-------------|--------|------|----|")
+            rows.append("| Node | Description | Status | PR |")
+            rows.append("|------|-------------|--------|----|")
 
         for step in phase.nodes:
             status_display = step.status.replace("_", "-")
@@ -538,7 +519,6 @@ def render_roadmap_tables(phases: list[RoadmapPhase]) -> str:
             cells.extend(
                 [
                     status_display,
-                    step.plan if step.plan is not None else "-",
                     step.pr if step.pr is not None else "-",
                 ]
             )
@@ -604,7 +584,6 @@ def serialize_phases(phases: list[RoadmapPhase]) -> list[dict[str, object]]:
                     "slug": step.slug,
                     "description": step.description,
                     "status": step.status,
-                    "plan": step.plan,
                     "pr": step.pr,
                     "depends_on": list(step.depends_on) if step.depends_on is not None else None,
                 }
@@ -710,3 +689,52 @@ def extract_roadmap_table_section(text: str) -> tuple[str, int, int] | None:
     content_start = start_idx + len(ROADMAP_TABLE_MARKER_START)
     section = text[content_start:end_idx]
     return (section, start_idx, end_idx + len(ROADMAP_TABLE_MARKER_END))
+
+
+def rerender_comment_roadmap(issue_body: str, comment_body: str) -> str | None:
+    """Deterministically re-render the roadmap tables in a comment from YAML source of truth.
+
+    Parses the roadmap YAML from the issue body, enriches phase names from the
+    comment's markdown headers, renders new tables, and splices them into the
+    comment's marker-bounded section.
+
+    This replaces all per-node regex patching (``_replace_table_in_text``).
+
+    Args:
+        issue_body: The objective issue body containing the ``objective-roadmap``
+            metadata block (YAML source of truth).
+        comment_body: The objective-body comment containing the rendered
+            markdown tables bounded by ``<!-- erk:roadmap-table -->`` markers.
+
+    Returns:
+        Updated comment body with re-rendered tables, or None if no roadmap
+        block or no markers found.
+    """
+    raw_blocks = extract_raw_metadata_blocks(issue_body)
+    matching_blocks = [block for block in raw_blocks if block.key == "objective-roadmap"]
+
+    if not matching_blocks:
+        return None
+
+    steps = parse_roadmap_frontmatter(matching_blocks[0].body)
+    if steps is None:
+        return None
+
+    phases = group_nodes_by_phase(steps)
+    phases = enrich_phase_names(comment_body, phases)
+    new_tables = render_roadmap_tables(phases)
+
+    marker_section = extract_roadmap_table_section(comment_body)
+    if marker_section is None:
+        return None
+
+    _section_content, section_start, section_end = marker_section
+    return (
+        comment_body[:section_start]
+        + ROADMAP_TABLE_MARKER_START
+        + "\n"
+        + new_tables
+        + "\n"
+        + ROADMAP_TABLE_MARKER_END
+        + comment_body[section_end:]
+    )

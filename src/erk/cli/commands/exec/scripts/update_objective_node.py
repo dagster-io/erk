@@ -1,52 +1,47 @@
-"""Update node plan/PR cells in an objective's roadmap table.
+"""Update node PR cells in an objective's roadmap table.
 
 Why this command exists (instead of using update-issue-body directly):
 
     The alternative is "fetch body -> parse markdown table -> find node row ->
-    surgically edit the Plan/PR cells -> write entire body back". That's ~15
+    surgically edit the PR cell -> write entire body back". That's ~15
     lines of fragile ad-hoc Python that every caller (skills, hooks, scripts)
     must duplicate. The roadmap table has a specific structure
-    (| node_id | description | status | plan | pr |) and the update has
+    (| node_id | description | status | pr |) and the update has
     specific semantics:
 
     1. Find the row by node ID across all phases
-    2. Compute display status from the plan/PR values
-    3. Write status, plan, and PR cells atomically so the table is
+    2. Compute display status from the PR value
+    3. Write status and PR cells atomically so the table is
        always human-readable without requiring a parse pass
 
     Encoding this once in a tested CLI command means:
     - No duplicated table-parsing logic across callers
     - Testable edge cases (node not found, no roadmap, clearing PR)
-    - Atomic mental model: "update node 1.3's plan/PR to X"
+    - Atomic mental model: "update node 1.3's PR to X"
     - Resilient to roadmap format changes (one command updates, not N sites)
 
 Usage:
-    # Single node -- plan reference
-    erk exec update-objective-node 6423 --node 1.3 --plan "#6464"
+    # Single node -- landed PR
+    erk exec update-objective-node 6423 --node 1.3 --pr "#6500" --status done
 
-    # Single node -- landed PR (requires --plan to prevent accidental loss)
-    erk exec update-objective-node 6423 --node 1.3 --pr "#6500" --plan "#6464"
-    erk exec update-objective-node 6423 --node 1.3 --pr "#6500" --plan "" --status done
-
-    # Clear both
+    # Clear PR
     erk exec update-objective-node 6423 --node 1.3 --pr ""
 
     # Multiple nodes
-    erk exec update-objective-node 6697 --node 5.1 --node 5.2 --node 5.3 --plan "#6759"
+    erk exec update-objective-node 6697 --node 5.1 --node 5.2 --node 5.3 --pr "#6759"
 
 Output:
     Single node: JSON with {success, issue_number, node_id,
-        previous_plan, new_plan, previous_pr, new_pr, url}
-    Multiple nodes: JSON with {success, issue_number, new_plan, new_pr,
+        previous_pr, new_pr, url}
+    Multiple nodes: JSON with {success, issue_number, new_pr,
         url, nodes: [...]}
-        Each node result: {node_id, success, previous_plan, previous_pr, error}
+        Each node result: {node_id, success, previous_pr, error}
 
 Exit Codes:
     0: Always. Check JSON "success" field for pass/fail.
 """
 
 import json
-import re
 from typing import cast, get_args
 
 import click
@@ -59,108 +54,12 @@ from erk_shared.gateway.github.metadata.core import (
     replace_metadata_block_in_body,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
-    ROADMAP_TABLE_MARKER_END,
-    ROADMAP_TABLE_MARKER_START,
     RoadmapNodeStatus,
-    extract_roadmap_table_section,
     parse_roadmap,
+    rerender_comment_roadmap,
     update_node_in_frontmatter,
 )
 from erk_shared.gateway.github.types import BodyText
-
-
-def _replace_table_in_text(
-    text: str,
-    node_id: str,
-    *,
-    new_plan: str | None,
-    new_pr: str | None,
-    explicit_status: str | None,
-) -> str | None:
-    """Replace the plan/PR cells for a node in a markdown table.
-
-    This is the table-only replacement used for updating the comment in v2 format,
-    where the markdown table lives in the objective-body comment rather than the body.
-
-    If ``<!-- erk:roadmap-table -->`` markers are present, searches only within
-    the bounded section. Falls back to full-text regex for v1 compatibility.
-
-    Args:
-        text: Text containing a markdown table with node rows.
-        node_id: Node ID to update (e.g., "1.3").
-        new_plan: New plan value. None=preserve, ""=clear, "#6464"=set.
-        new_pr: New PR value. None=preserve, ""=clear, "#123"=set.
-        explicit_status: Explicit status or None to infer.
-
-    Returns:
-        Updated text, or None if the node row was not found.
-    """
-    # If markers exist, search only within the bounded section
-    marker_section = extract_roadmap_table_section(text)
-    if marker_section is not None:
-        section_content, section_start, section_end = marker_section
-        search_text = section_content
-    else:
-        search_text = text
-
-    # 5-col row: | node_id | description | status | plan | pr |
-    pattern = re.compile(
-        r"^\|(\s*" + re.escape(node_id) + r"\s*)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|$",
-        re.MULTILINE,
-    )
-
-    match = pattern.search(search_text)
-    if match is None:
-        return None
-
-    existing_plan = match.group(4).strip()
-    existing_pr = match.group(5).strip()
-
-    if new_plan is None:
-        resolved_plan = existing_plan  # Always preserve when not explicitly passed
-    elif new_plan:
-        resolved_plan = new_plan
-    else:
-        resolved_plan = "-"
-
-    if new_pr is None:
-        resolved_pr = existing_pr
-    elif new_pr:
-        resolved_pr = new_pr
-    else:
-        resolved_pr = "-"
-
-    # Status inference: when no explicit status is given, PR or plan presence
-    # defaults to "in-progress" (not "done"). Callers who know the PR is merged
-    # must pass explicit_status="done". This is by design — the command cannot
-    # know merge state from a reference string alone.
-    if explicit_status is not None:
-        display_status = explicit_status.replace("_", "-")
-    elif resolved_pr != "-" and resolved_pr:
-        display_status = "in-progress"
-    elif resolved_plan != "-" and resolved_plan:
-        display_status = "in-progress"
-    else:
-        display_status = "pending"
-
-    replacement = (
-        f"|{match.group(1)}|{match.group(2)}| {display_status} | {resolved_plan} | {resolved_pr} |"
-    )
-
-    updated_section = search_text[: match.start()] + replacement + search_text[match.end() :]
-
-    # If we searched within markers, reconstruct the full text
-    if marker_section is not None:
-        _section_content, section_start, section_end = marker_section
-        return (
-            text[:section_start]
-            + ROADMAP_TABLE_MARKER_START
-            + updated_section
-            + ROADMAP_TABLE_MARKER_END
-            + text[section_end:]
-        )
-
-    return updated_section
 
 
 def _node_error_message(node_id: str, issue_number: int, error: object) -> str:
@@ -173,7 +72,6 @@ def _build_output(
     *,
     issue_number: int,
     node: tuple[str, ...],
-    plan_value: str | None,
     pr_value: str | None,
     url: str,
     results: list[dict[str, object]],
@@ -182,14 +80,12 @@ def _build_output(
 ) -> dict[str, object]:
     """Build JSON output dict, using legacy format for single node."""
     # Normalize empty strings to None for JSON output
-    plan_out = plan_value if plan_value else None
     pr_out = pr_value if pr_value else None
 
     if len(node) != 1:
         output: dict[str, object] = {
             "success": all(r["success"] for r in results),
             "issue_number": issue_number,
-            "new_plan": plan_out,
             "new_pr": pr_out,
             "url": url,
             "nodes": results,
@@ -208,8 +104,6 @@ def _build_output(
         "success": True,
         "issue_number": issue_number,
         "node_id": node[0],
-        "previous_plan": single_result.get("previous_plan"),
-        "new_plan": plan_out,
         "previous_pr": single_result.get("previous_pr"),
         "new_pr": pr_out,
         "url": url,
@@ -219,40 +113,34 @@ def _build_output(
     return output
 
 
-def _find_node_refs(body: str, node_id: str) -> tuple[str | None, str | None, bool]:
-    """Find the current plan and PR values for a node in the roadmap body.
+def _find_node_refs(body: str, node_id: str) -> tuple[str | None, bool]:
+    """Find the current PR value for a node in the roadmap body.
 
     Returns:
-        (previous_plan, previous_pr, found)
+        (previous_pr, found)
     """
     phases, _ = parse_roadmap(body)
     for phase in phases:
         for step in phase.nodes:
             if step.id == node_id:
-                return step.plan, step.pr, True
-    return None, None, False
+                return step.pr, True
+    return None, False
 
 
 def _replace_node_refs_in_body(
     body: str,
     node_id: str,
     *,
-    new_plan: str | None,
     new_pr: str | None,
     explicit_status: str | None,
 ) -> str | None:
-    """Replace the plan/PR cells for a node in the raw markdown body.
+    """Replace the PR cell for a node in the raw markdown body.
 
     Checks for frontmatter first within objective-roadmap metadata block.
-    Falls back to regex table replacement for backward compatibility.
-
-    When frontmatter exists, updates both frontmatter (source of truth)
-    and markdown table (rendered view) to keep them in sync.
 
     Args:
         body: Full issue body text.
         node_id: Node ID to update (e.g., "1.3").
-        new_plan: New plan value. None=preserve existing, ""=clear, "#6464"=set.
         new_pr: New PR value. None=preserve existing, ""=clear, "#123"=set.
         explicit_status: If provided, use this status instead of inferring.
 
@@ -270,12 +158,9 @@ def _replace_node_refs_in_body(
     if roadmap_block is None:
         return None
 
-    # Pass None through to frontmatter API (preserves existing value).
-    # Non-None values (including "") are forwarded as-is.
     updated_block_content = update_node_in_frontmatter(
         roadmap_block.body,
         node_id,
-        plan=new_plan,
         pr=new_pr,
         status=cast(RoadmapNodeStatus, explicit_status) if explicit_status is not None else None,
     )
@@ -305,13 +190,9 @@ def _replace_node_refs_in_body(
 @click.argument("issue_number", type=int)
 @click.option("--node", required=True, multiple=True, help="Node ID(s) to update (e.g., '1.3')")
 @click.option(
-    "--plan",
-    "plan_ref",
-    help="Plan issue reference (e.g., '#6464')",
-)
-@click.option(
     "--pr",
     "pr_ref",
+    required=True,
     help="PR reference (e.g., '#456', or '' to clear)",
 )
 @click.option(
@@ -320,7 +201,7 @@ def _replace_node_refs_in_body(
     required=False,
     default=None,
     type=click.Choice(list(get_args(RoadmapNodeStatus))),
-    help="Explicit status to set (default: infer from plan/PR value)",
+    help="Explicit status to set (default: infer from PR value)",
 )
 @click.option(
     "--include-body",
@@ -335,41 +216,11 @@ def update_objective_node(
     issue_number: int,
     *,
     node: tuple[str, ...],
-    plan_ref: str | None,
-    pr_ref: str | None,
+    pr_ref: str,
     explicit_status: str | None,
     include_body: bool,
 ) -> None:
-    """Update node plan/PR cells in an objective's roadmap table."""
-    # Require at least one of --plan or --pr
-    if plan_ref is None and pr_ref is None:
-        click.echo(
-            json.dumps(
-                {
-                    "success": False,
-                    "error": "missing_ref",
-                    "message": "At least one of --plan or --pr is required",
-                }
-            )
-        )
-        raise SystemExit(0)
-
-    # Require --plan when --pr is set to prevent accidental plan loss
-    if pr_ref and plan_ref is None:
-        click.echo(
-            json.dumps(
-                {
-                    "success": False,
-                    "error": "plan_required_with_pr",
-                    "message": (
-                        "--plan is required when --pr is set"
-                        " (use --plan '' to explicitly clear,"
-                        " or --plan '#NNN' to preserve)"
-                    ),
-                }
-            )
-        )
-        raise SystemExit(0)
+    """Update node PR cells in an objective's roadmap table."""
 
     github = require_issues(ctx)
     repo_root = require_repo_root(ctx)
@@ -412,7 +263,6 @@ def update_objective_node(
         output = _build_output(
             issue_number=issue_number,
             node=node,
-            plan_value=plan_ref,
             pr_value=pr_ref,
             url=issue.url,
             results=results,
@@ -428,7 +278,7 @@ def update_objective_node(
     any_failure = False
 
     for node_id in node:
-        previous_plan, previous_pr, found = _find_node_refs(updated_body, node_id)
+        previous_pr, found = _find_node_refs(updated_body, node_id)
         if not found:
             results.append(
                 {
@@ -443,7 +293,6 @@ def update_objective_node(
         new_body = _replace_node_refs_in_body(
             updated_body,
             node_id,
-            new_plan=plan_ref,
             new_pr=pr_ref,
             explicit_status=explicit_status,
         )
@@ -463,7 +312,6 @@ def update_objective_node(
             {
                 "node_id": node_id,
                 "success": True,
-                "previous_plan": previous_plan,
                 "previous_pr": previous_pr,
             }
         )
@@ -473,7 +321,6 @@ def update_objective_node(
         output = _build_output(
             issue_number=issue_number,
             node=node,
-            plan_value=plan_ref,
             pr_value=pr_ref,
             url=issue.url,
             results=results,
@@ -486,31 +333,20 @@ def update_objective_node(
     # Single API call to write all updates
     github.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
 
-    # v2 format: also update the markdown table in the objective-body comment
+    # v2 format: deterministically re-render the comment table from updated YAML
     objective_comment_id = extract_metadata_value(
         updated_body, "objective-header", "objective_comment_id"
     )
     if objective_comment_id is not None:
         comment_body = github.get_comment_by_id(repo_root, objective_comment_id)
-        updated_comment = comment_body
-        for node_id_val in node:
-            result_comment = _replace_table_in_text(
-                updated_comment,
-                node_id_val,
-                new_plan=plan_ref,
-                new_pr=pr_ref,
-                explicit_status=explicit_status,
-            )
-            if result_comment is not None:
-                updated_comment = result_comment
-        if updated_comment != comment_body:
+        updated_comment = rerender_comment_roadmap(updated_body, comment_body)
+        if updated_comment is not None and updated_comment != comment_body:
             github.update_comment(repo_root, objective_comment_id, updated_comment)
 
     # Build and emit output
     output = _build_output(
         issue_number=issue_number,
         node=node,
-        plan_value=plan_ref,
         pr_value=pr_ref,
         url=issue.url,
         results=results,

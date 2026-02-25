@@ -39,26 +39,25 @@ This returns JSON with:
 
 - `objective`: Issue body, title, labels, URL
 - `plan`: Plan issue body and title
-- `roadmap.matched_steps`: Node IDs where `plan == #<plan_number>` (deterministic match)
 - `roadmap.phases`: Serialized roadmap phases
 - `roadmap.summary`: Node counts (done, pending, etc.)
-- `roadmap.next_step`: First pending node or null
+- `roadmap.next_node`: First pending node or null
 - `roadmap.all_complete`: True if every node is done or skipped
 
 If this returns `success: false`, display the error and stop.
 
-### Step 2: Update Roadmap Nodes
+### Step 2: Identify and Reset Affected Nodes
 
-Read `matched_steps` from the context blob. These are the nodes affiliated with the closed plan.
+Examine the roadmap phases from the context. Identify nodes that were affiliated with the closed plan — these are nodes with status `in_progress` or `planning` that should be reset since the plan is being abandoned.
 
-If `matched_steps` is empty, skip to Step 3 (no nodes to reset).
+If no affected nodes are found, skip to Step 3.
 
-**Reset matched nodes to pending with plan reference cleared:**
+**Reset affected nodes to pending:**
 
 **CRITICAL: Pass ALL nodes as multiple `--node` flags in ONE command. Do NOT run separate commands per node — sequential calls cause race conditions and duplicate API calls.**
 
 ```bash
-erk exec update-objective-node <objective-number> --node <node-id-1> --node <node-id-2> ... --plan "" --status pending --include-body
+erk exec update-objective-node <objective-number> --node <node-id-1> --node <node-id-2> ... --pr "" --status pending --include-body
 ```
 
 The `--include-body` flag returns the fully-mutated body as `updated_body` — use this for prose reconciliation (do NOT re-fetch via `gh issue view`).

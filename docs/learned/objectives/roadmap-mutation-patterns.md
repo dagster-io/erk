@@ -6,16 +6,14 @@ read_when:
   - "understanding race condition risks in roadmap table mutations"
 tripwires:
   - action: "using full-body update for single-cell changes"
-    warning: "Full-body updates replace the entire table. For single-cell PR updates, use surgical update (update-objective-node) to preserve other cells and avoid race conditions."
+    warning: "Full-body updates replace the entire table. For single-node PR updates, use surgical update (update-objective-node) to preserve other cells and avoid race conditions."
   - action: "using surgical update for complete table rewrites"
-    warning: "Surgical updates only change one cell. For rewriting roadmaps after landing PRs (status + layout changes), use full-body update (objective-update-with-landed-pr)."
+    warning: "Surgical updates only change one node. For rewriting roadmaps after landing PRs (status + layout changes), use full-body update (objective-update-with-landed-pr)."
   - action: "directly mutating issue body markdown without using either command"
     warning: "Direct body mutation skips status computation. The surgical command writes computed status atomically; bypassing it leaves status stale. See roadmap-mutation-semantics.md."
-  - action: "writing regex patterns to match roadmap table rows without ^ and $ anchors"
-    warning: "All roadmap table row regex patterns MUST use ^...$ anchors with re.MULTILINE. Without anchors, patterns can match partial lines or span rows."
   - action: "using None/empty string interchangeably in update-objective-node parameters"
     warning: "None=preserve existing value, empty string=clear the cell, value=set new value. Confusing these leads to accidental data loss or stale values."
-last_audited: "2026-02-16 14:20 PT"
+last_audited: "2026-02-25 18:00 PT"
 audit_result: edited
 ---
 
@@ -25,91 +23,87 @@ Erk has two distinct strategies for mutating objective roadmap tables, each opti
 
 ## Why Two Patterns?
 
-The roadmap table is a 5-column markdown table stored in a GitHub issue body (`| Node | Description | Status | Plan | PR |`). Two fundamentally different mutation shapes arise from different workflow events:
+The roadmap table is a 4-column markdown table stored in a GitHub issue comment (`| Node | Description | Status | PR |`). The YAML frontmatter in the issue body is the source of truth; the comment table is a rendered view. Two fundamentally different mutation shapes arise from different workflow events:
 
-- **Single-step updates** (plan saved, PR created): Only the plan/PR columns of one step change. The rest of the table — descriptions, other steps, layout — should be untouched. Fetching, parsing, and rewriting the entire table for a single step change would risk overwriting concurrent edits by other agents or humans.
+- **Single-node updates** (plan saved, PR created): Only the status/PR of one step changes. The YAML frontmatter is updated surgically, then the comment table is deterministically re-rendered from YAML.
 
-- **Full-body rewrites** (PR landed): Landing a PR may trigger structural changes — marking a step done, collapsing completed phases, reordering, or adding narrative text. A single-cell regex replacement can't express these layout-level changes.
-
-The split isn't about capability (the full-body approach _could_ do single-cell updates). It's about **blast radius** — a targeted regex replacement can't accidentally destroy unrelated content, while a full rewrite can.
+- **Full-body rewrites** (PR landed): Landing a PR may trigger structural changes — marking multiple steps done, updating descriptions, or adding narrative text. The `objective-apply-landed-update` command handles batch updates.
 
 ## Decision Table
 
 | Workflow Event              | Pattern   | Why                                                          |
 | --------------------------- | --------- | ------------------------------------------------------------ |
-| Plan saved to GitHub        | Surgical  | Only the PR cell of one step changes                         |
+| Plan saved to GitHub        | Surgical  | Only the status of one step changes to in_progress           |
 | PR created from plan        | Surgical  | Only the PR cell of one step changes                         |
-| PR landed via `erk land`    | Full-body | May need to restructure phases, update descriptions          |
+| PR landed via `erk land`    | Full-body | May need to mark multiple nodes done                         |
 | Fixing a stale status value | Surgical  | Minimal blast radius for a quick correction                  |
 | Restructuring roadmap       | Full-body | Need full control over layout, ordering, and section content |
 | Batch status updates        | Full-body | Multiple steps changing simultaneously                       |
 
 ## Surgical Update: `update-objective-node`
 
-<!-- Source: src/erk/cli/commands/exec/scripts/update_objective_node.py, _replace_node_refs_in_body -->
+<!-- Source: src/erk/cli/commands/exec/scripts/update_objective_node.py -->
 
-The surgical command finds a step row by ID using regex and replaces **only** the status, plan, and PR cells in a single operation. See `_replace_node_refs_in_body()` in `src/erk/cli/commands/exec/scripts/update_objective_node.py`.
+The surgical command updates YAML frontmatter for specific node(s) and then deterministically re-renders the comment table using `rerender_comment_roadmap()`. It accepts `--node` flags (one or more) and `--pr`/`--status` options.
 
-**Why it writes status, plan, and PR cells:** The command could leave status as `-` and let parse-time inference determine it later. Instead, it computes a display status (`done`, `in-progress`, `pending`) from the plan/PR values and writes it directly. Setting `--pr` automatically clears the plan column, and vice versa. This makes the table human-readable in GitHub's UI without requiring a parse pass. For the full rationale, see [Roadmap Mutation Semantics](../architecture/roadmap-mutation-semantics.md).
+**How it works:**
 
-**Race condition safety:** Because the regex only touches one row's last three cells, concurrent edits to other steps or descriptions are preserved. This is the key advantage over full-body rewrites for single-step changes.
+1. Updates the YAML frontmatter via `update_node_in_frontmatter()` for each specified node
+2. Serializes the updated YAML back into the metadata block and replaces it in the issue body
+3. Writes the updated issue body to GitHub
+4. Re-renders the comment table from the updated YAML using `rerender_comment_roadmap()`
 
-## Full-Body Update: `objective-update-with-landed-pr`
+**Race condition safety:** Because the YAML update only touches specific node entries, concurrent edits to other nodes or descriptions are preserved. The comment table re-render is deterministic from YAML, so it always reflects the current state.
 
-<!-- Source: .claude/commands/erk/objective-update-with-landed-pr.md:1-50 -->
+## Full-Body Update: `objective-apply-landed-update`
 
-The full-body update is orchestrated by a Claude command (not a Python script). It fetches context via `objective-fetch-context`, then performs all steps inline:
+<!-- Source: src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py -->
 
-1. Analyzes which roadmap steps the landed PR completed
-2. Composes an action comment documenting the change
-3. Rewrites the entire objective body with updated roadmap
-4. Posts both the comment and updated body
+The full-body update is handled by `objective-apply-landed-update`, which combines fetch-context, update-nodes, and post-action-comment in a single call. The caller specifies which nodes to mark done via `--node` flags.
 
-**Why agent-driven instead of a script:** Landing a PR requires _judgment_ — the step description might need updating if the PR title differs, completed phases might need collapsing, and the "Current Focus" section needs to shift to the next pending step. These decisions don't reduce to mechanical regex.
+1. Fetches objective, plan, and PR context
+2. Updates specified nodes to done with PR reference
+3. Re-renders the comment table from updated YAML
+4. Posts an action comment documenting the change
+5. Returns rich JSON for the agent to use in prose reconciliation
 
-**Race condition risk:** The entire issue body is fetched, modified, and written back. Any edits made between fetch and write are lost. This is acceptable because:
-
-- PR landing is an infrequent event (not concurrent with other mutations)
-- The alternative — surgical edits for each sub-change — would require multiple API calls with the same race window each time
-- The action comment provides an audit trail if anything goes wrong
+**Why a single script:** Combining all mechanical steps in one command eliminates 5+ sequential agent commands and reduces API calls.
 
 ## The Context-Fetching Pattern
 
-<!-- Source: src/erk/cli/commands/exec/scripts/objective_fetch_context.py, objective_fetch_context -->
+<!-- Source: src/erk/cli/commands/exec/scripts/objective_fetch_context.py -->
 
-The full-body workflow uses a **bundled context fetch** (`erk exec objective-fetch-context`) to retrieve the objective issue, plan issue, and PR details in a single CLI call. This exists because the command needs all three to compose the update, and fetching them in separate LLM turns would waste tokens and add latency. See `objective_fetch_context()` in `src/erk/cli/commands/exec/scripts/objective_fetch_context.py`.
+The full-body workflow uses a **bundled context fetch** (`erk exec objective-fetch-context`) to retrieve the objective issue, plan issue, and PR details in a single CLI call. This exists because the command needs all three to compose the update, and fetching them in separate LLM turns would waste tokens and add latency.
 
 ## Integration Points
 
 Both patterns are triggered by upstream workflow commands, not invoked directly by users:
 
-| Upstream Command | Triggers                     | Via                                                             |
-| ---------------- | ---------------------------- | --------------------------------------------------------------- |
-| `erk plan save`  | Surgical update to link plan | Skill calls `update-objective-node` with plan reference         |
-| `erk pr submit`  | Surgical update to link PR   | Skill calls `update-objective-node` with PR reference           |
-| `erk land`       | Full-body update after merge | Helpers in `objective_helpers.py` detect objective, prompt user |
-
-<!-- Source: src/erk/cli/commands/objective_helpers.py, prompt_objective_update -->
-
-See `prompt_objective_update()` in `src/erk/cli/commands/objective_helpers.py` for how `erk land` discovers the linked objective and offers to run the full-body update.
+| Upstream Command | Triggers                                | Via                                                   |
+| ---------------- | --------------------------------------- | ----------------------------------------------------- |
+| `erk plan save`  | Surgical update to set node in_progress | Skill calls `update-objective-node` with status       |
+| `erk pr submit`  | Surgical update to link PR              | Skill calls `update-objective-node` with PR reference |
+| `erk land`       | Full-body update after merge            | `objective-apply-landed-update` with `--node` flags   |
 
 ## Anti-Patterns
 
-**WRONG: Calling `update-objective-node` after landing a PR.** The surgical command only updates PR and status cells. After landing, you often need to update descriptions, restructure phases, or add completion notes. Use the full-body workflow.
+**WRONG: Calling `update-objective-node` after landing a PR.** The surgical command only updates specified nodes. After landing, use `objective-apply-landed-update` which also posts action comments.
 
-**WRONG: Using full-body rewrite to link a plan to a step.** The full-body approach fetches, parses, and regenerates the entire body — unnecessary for a single cell change and risks overwriting concurrent edits. Use the surgical command.
+**WRONG: Using full-body rewrite to link a plan to a step.** The full-body approach is unnecessary for a single node change and risks overwriting concurrent edits. Use the surgical command.
 
-**WRONG: Directly editing the issue body markdown without using either command.** Direct mutation skips status computation entirely. If you set the PR cell to `#123` but leave status at `pending`, the table is inconsistent until the next parse. See [Roadmap Mutation Semantics](../architecture/roadmap-mutation-semantics.md) for the write-vs-read asymmetry.
+**WRONG: Directly editing the issue body markdown without using either command.** Direct mutation skips status computation entirely. If you set the PR cell to `#123` but leave status at `pending`, the table is inconsistent. See [Roadmap Mutation Semantics](../architecture/roadmap-mutation-semantics.md) for the write-vs-read asymmetry.
 
-## Regex Anchoring for Table Row Matching
+## Comment Table Re-rendering
 
-All regex patterns that match roadmap table rows MUST use `^...$` anchors with `re.MULTILINE`. Without anchors, patterns can match partial lines or span multiple rows, causing incorrect mutations.
+The comment table (visible in the GitHub UI) is re-rendered deterministically from YAML frontmatter using `rerender_comment_roadmap()`. This function:
 
-The canonical example is `_replace_node_refs_in_body()` in `src/erk/cli/commands/exec/scripts/update_objective_node.py`, which builds a compiled regex anchored with `^...$` and `re.MULTILINE` to match a single 5-column row by step ID. Each cell is captured as a non-greedy group so only the target row's status/plan/PR cells are replaced.
+1. Parses nodes from YAML frontmatter in the issue body
+2. Groups nodes by phase
+3. Enriches phase names from markdown headers in the comment
+4. Renders fresh markdown tables
+5. Splices the new tables into the comment's `<!-- erk:roadmap-table -->` marker-bounded section
 
-**Why anchoring matters**: Without `^` and `$` anchors, a pattern like `\|[^|]+\|` could match across row boundaries. The `re.MULTILINE` flag makes `^` and `$` match at line starts/ends rather than just string starts/ends.
-
-**Pattern**: Every regex that operates on markdown table rows should follow: anchored `^...$` with `re.MULTILINE`.
+This replaced the previous approach of per-node regex patching, which was fragile and couldn't handle column layout changes.
 
 ## Related Documentation
 

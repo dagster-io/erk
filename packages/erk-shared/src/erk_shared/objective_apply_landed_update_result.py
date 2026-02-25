@@ -19,7 +19,6 @@ class NodeUpdateDict(TypedDict):
     """Information about a single node update."""
 
     node_id: str
-    previous_plan: str | None
     previous_pr: str | None
 
 

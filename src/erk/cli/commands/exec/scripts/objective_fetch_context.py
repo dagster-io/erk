@@ -66,7 +66,6 @@ def _error_json(error: str) -> str:
 def _empty_roadmap() -> RoadmapContextDict:
     return RoadmapContextDict(
         phases=[],
-        matched_steps=[],
         summary={},
         next_node=None,
         all_complete=False,
@@ -74,7 +73,7 @@ def _empty_roadmap() -> RoadmapContextDict:
 
 
 def _build_roadmap_context(objective_body: str, plan_id: str) -> RoadmapContextDict:
-    """Parse roadmap from objective body and match steps for this plan.
+    """Parse roadmap from objective body.
 
     Uses parse_roadmap_frontmatter() + group_nodes_by_phase() directly
     (not parse_roadmap() which enriches phase names from markdown headers).
@@ -92,15 +91,11 @@ def _build_roadmap_context(objective_body: str, plan_id: str) -> RoadmapContextD
     phases = group_nodes_by_phase(steps)
     graph = build_graph(phases)
 
-    plan_ref = f"#{plan_id}"
-    matched_steps = [step.id for step in steps if step.plan == plan_ref]
-
     summary = compute_graph_summary(graph)
     next_node = find_graph_next_node(graph, phases)
 
     return RoadmapContextDict(
         phases=serialize_phases(phases),
-        matched_steps=matched_steps,
         summary=summary,
         next_node=next_node,
         all_complete=graph.is_complete(),

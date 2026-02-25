@@ -63,4 +63,4 @@ Boolean flags are not three-state — they are either present (True) or absent (
 ## Related Documentation
 
 - [Command Organization](command-organization.md) — CLI command structure and verb placement
-- [Plan Reference Preservation](../objectives/plan-reference-preservation.md) — Three-state pattern in roadmap updates
+- [Roadmap Mutation Semantics](../architecture/roadmap-mutation-semantics.md) — None/empty/value semantics in roadmap updates

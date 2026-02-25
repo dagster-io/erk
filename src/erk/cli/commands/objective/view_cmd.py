@@ -68,12 +68,11 @@ def _format_ref_link(ref: str | None, repo_base_url: str) -> str:
     return f"[link={repo_base_url}/issues/{issue_number}]{escape(ref)}[/link]"
 
 
-def _format_node_status(status: str, *, plan: str | None, is_unblocked: bool) -> str:
+def _format_node_status(status: str, *, is_unblocked: bool) -> str:
     """Format node status indicator with emoji and Rich markup.
 
     Args:
         status: Node status ("done", "in_progress", "planning", "pending", "blocked", "skipped")
-        plan: Plan reference (e.g., "#6464") or None
         is_unblocked: Whether the node's dependencies are all satisfied
 
     Returns:
@@ -82,11 +81,9 @@ def _format_node_status(status: str, *, plan: str | None, is_unblocked: bool) ->
     if status == "done":
         return "[green]✅ done[/green]"
     if status == "in_progress":
-        ref_text = f" plan {escape(plan)}" if plan else ""
-        return f"[yellow]🔄 in_progress{ref_text}[/yellow]"
+        return "[yellow]🔄 in_progress[/yellow]"
     if status == "planning":
-        ref_text = f" plan {escape(plan)}" if plan else ""
-        return f"[magenta]🚀 planning{ref_text}[/magenta]"
+        return "[magenta]🚀 planning[/magenta]"
     if status == "blocked":
         return "[red]🚫 blocked[/red]"
     if status == "skipped":
@@ -148,7 +145,6 @@ def _display_json(
                     "slug": n.slug,
                     "description": n.description,
                     "status": n.status,
-                    "plan": n.plan,
                     "pr": n.pr,
                     "depends_on": list(n.depends_on),
                 }
@@ -263,16 +259,13 @@ def view_objective(ctx: ErkContext, objective_ref: str, *, json_mode: bool) -> N
         max_status_width = 0
         max_desc_width = 0
         max_deps_width = 0
-        max_plan_width = 0
         max_pr_width = 0
         for phase in phases:
             for step in phase.nodes:
                 max_id_width = max(max_id_width, cell_len(step.id))
                 node = node_by_id.get(step.id)
                 is_unblocked = step.id in unblocked_ids
-                status_markup = _format_node_status(
-                    step.status, plan=step.plan, is_unblocked=is_unblocked
-                )
+                status_markup = _format_node_status(step.status, is_unblocked=is_unblocked)
                 max_status_width = max(
                     max_status_width,
                     cell_len(Text.from_markup(status_markup).plain),
@@ -280,9 +273,6 @@ def view_objective(ctx: ErkContext, objective_ref: str, *, json_mode: bool) -> N
                 max_desc_width = max(max_desc_width, cell_len(step.description))
                 deps_str = ", ".join(node.depends_on) if node and node.depends_on else "-"
                 max_deps_width = max(max_deps_width, cell_len(deps_str))
-                max_plan_width = max(
-                    max_plan_width, cell_len("-" if step.plan is None else step.plan)
-                )
                 max_pr_width = max(max_pr_width, cell_len("-" if step.pr is None else step.pr))
 
         for phase in phases:
@@ -309,7 +299,6 @@ def view_objective(ctx: ErkContext, objective_ref: str, *, json_mode: bool) -> N
             table.add_column("status", no_wrap=True, min_width=max_status_width)
             table.add_column("description", min_width=max_desc_width)
             table.add_column("depends_on", style="dim", min_width=max_deps_width)
-            table.add_column("plan", no_wrap=True, min_width=max_plan_width)
             table.add_column("pr", no_wrap=True, min_width=max_pr_width)
 
             for step in phase.nodes:
@@ -318,10 +307,9 @@ def view_objective(ctx: ErkContext, objective_ref: str, *, json_mode: bool) -> N
                 deps_str = ", ".join(node.depends_on) if node and node.depends_on else "-"
                 table.add_row(
                     escape(step.id),
-                    _format_node_status(step.status, plan=step.plan, is_unblocked=is_unblocked),
+                    _format_node_status(step.status, is_unblocked=is_unblocked),
                     escape(step.description),
                     escape(deps_str),
-                    _format_ref_link(step.plan, repo_base_url),
                     _format_ref_link(step.pr, repo_base_url),
                 )
 

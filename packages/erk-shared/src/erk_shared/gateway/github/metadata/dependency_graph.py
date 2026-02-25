@@ -44,7 +44,6 @@ class ObjectiveNode:
     id: str
     description: str
     status: RoadmapNodeStatus
-    plan: str | None
     pr: str | None
     depends_on: tuple[str, ...]
     slug: str | None
@@ -131,7 +130,6 @@ def graph_from_phases(phases: list[RoadmapPhase]) -> DependencyGraph:
                     id=roadmap_node.id,
                     description=roadmap_node.description,
                     status=roadmap_node.status,
-                    plan=roadmap_node.plan,
                     pr=roadmap_node.pr,
                     depends_on=depends_on,
                     slug=roadmap_node.slug,
@@ -157,7 +155,6 @@ def graph_from_nodes(nodes: list[RoadmapNode]) -> DependencyGraph:
                 id=node.id,
                 description=node.description,
                 status=node.status,
-                plan=node.plan,
                 pr=node.pr,
                 depends_on=node.depends_on if node.depends_on is not None else (),
                 slug=node.slug,
@@ -187,7 +184,6 @@ def nodes_from_graph(graph: DependencyGraph) -> list[RoadmapNode]:
             id=node.id,
             description=node.description,
             status=node.status,
-            plan=node.plan,
             pr=node.pr,
             depends_on=node.depends_on,
             slug=node.slug,

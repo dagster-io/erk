@@ -1,9 +1,9 @@
 ---
 title: Update Objective Node Command
-last_audited: "2026-02-15 18:50 PT"
+last_audited: "2026-02-25 18:00 PT"
 audit_result: edited
 read_when:
-  - working with objective roadmap tables, updating step PR references, implementing plan-save workflow
+  - working with objective roadmap tables, updating step PR references
 tripwires:
   - action: "parsing roadmap tables to update PR cells"
     warning: "Use the update-objective-node command instead of manual parsing. The command encodes table structure knowledge once rather than duplicating it across callers."
@@ -15,29 +15,28 @@ tripwires:
 
 ## Why This Command Exists
 
-The alternative to `erk exec update-objective-node` is inline markdown table manipulation: fetch body -> parse table -> find row by step ID -> regex-replace PR cell -> update body. That's ~15 lines of fragile ad-hoc code duplicated across every caller (skills, hooks, scripts).
+The alternative to `erk exec update-objective-node` is inline YAML frontmatter manipulation: fetch body -> parse YAML -> find node -> update fields -> serialize -> update body. That's fragile ad-hoc code duplicated across every caller (skills, hooks, scripts).
 
 **Why encoding this once wins:**
 
-1. **No duplicated table parsing** -- regex patterns and step lookup logic live in one place
+1. **No duplicated YAML parsing** -- frontmatter parsing and node lookup logic live in one place
 2. **Atomic mental model** -- "update step 1.3's PR to X" instead of "parse, find, replace, validate"
 3. **Testable edge cases** -- step not found, no roadmap, clearing PR all have test coverage
-4. **Format resilience** -- roadmap table structure changes propagate once, not to N call sites
+4. **Comment table re-rendering** -- automatically re-renders the comment table from YAML after updates
+5. **Format resilience** -- roadmap structure changes propagate once, not to N call sites
 
 The command is infrastructure for workflow integration, not an interactive tool.
 
 ## Status Computation Semantics
 
-When the command updates plan/PR cells, it **writes status, plan, and PR cells atomically**:
+When the command updates PR/status cells, it **writes status and PR atomically**:
 
-| Flag                                   | Written Status | Plan Cell   | PR Cell     | Why                                                     |
-| -------------------------------------- | -------------- | ----------- | ----------- | ------------------------------------------------------- |
-| `--plan #6464`                         | `in-progress`  | `#6464`     | (preserved) | Plan reference indicates active work                    |
-| `--plan #6464 --pr #123`               | `in-progress`  | `#6464`     | `#123`      | PR reference without --status done means work in flight |
-| `--plan #6464 --pr #123 --status done` | `done`         | `#6464`     | `#123`      | Explicit --status done confirms PR is merged            |
-| `--pr ""`                              | `pending`\*    | (preserved) | `-`         | \*`in-progress` if preserved plan is non-empty          |
-
-The command also accepts legacy `--pr "plan #NNN"` syntax, which is automatically migrated to `--plan "#NNN"`.
+| Flag                             | Written Status | PR Cell   | Why                                          |
+| -------------------------------- | -------------- | --------- | -------------------------------------------- |
+| `--pr #123`                      | `in-progress`  | `#123`    | PR reference indicates active work           |
+| `--pr #123 --status done`        | `done`         | `#123`    | Explicit --status done confirms PR is merged |
+| `--pr #123 --status in_progress` | `in-progress`  | `#123`    | Explicit status overrides PR-based inference |
+| `--pr ""`                        | `(preserved)`  | (cleared) | Clear PR reference, preserve existing status |
 
 This differs from parse-time inference (which only fires when status is `-` or empty). Writing computed status makes the table human-readable in GitHub's UI without requiring a parse pass.
 
@@ -46,14 +45,14 @@ This differs from parse-time inference (which only fires when status is `-` or e
 ## Usage Pattern
 
 ```bash
-# Single step -- plan reference
-erk exec update-objective-node <ISSUE_NUMBER> --node <STEP_ID> --plan <PLAN_REF>
+# Single step -- set PR reference (marks done)
+erk exec update-objective-node <ISSUE_NUMBER> --node <STEP_ID> --pr <PR_REF>
 
-# Single step -- landed PR (--plan is required with --pr)
-erk exec update-objective-node <ISSUE_NUMBER> --node <STEP_ID> --pr <PR_REF> --plan <PLAN_REF>
+# Single step -- set PR and explicit status
+erk exec update-objective-node <ISSUE_NUMBER> --node <STEP_ID> --pr <PR_REF> --status in_progress
 
 # Multiple steps
-erk exec update-objective-node <ISSUE_NUMBER> --node <STEP_ID> --node <STEP_ID> ... --plan <PLAN_REF>
+erk exec update-objective-node <ISSUE_NUMBER> --node <STEP_ID> --node <STEP_ID> ... --pr <PR_REF>
 ```
 
 ### Examples
@@ -61,24 +60,24 @@ erk exec update-objective-node <ISSUE_NUMBER> --node <STEP_ID> --node <STEP_ID> 
 **Single step updates:**
 
 ```bash
-# Set step to plan phase
-erk exec update-objective-node 6423 --node 1.3 --plan "#6464"
+# Link PR (infers in_progress status)
+erk exec update-objective-node 6423 --node 1.3 --pr "#6500"
 
-# Link PR (infers in-progress status)
-erk exec update-objective-node 6423 --node 1.3 --pr "#6500" --plan "#6464"
+# Link PR with explicit status override
+erk exec update-objective-node 6423 --node 1.3 --pr "#6500" --status in_progress
 
 # Mark step as done with landed PR
-erk exec update-objective-node 6423 --node 1.3 --pr "#6500" --plan "#6464" --status done
+erk exec update-objective-node 6423 --node 1.3 --pr "#6500" --status done
 
-# Clear PR reference (resets to pending)
+# Clear PR reference (preserves existing status)
 erk exec update-objective-node 6423 --node 1.3 --pr ""
 ```
 
 Output is structured JSON with `success`, `issue_number`, `node_id`, `previous_pr`, `new_pr`, and `url` fields.
 
 ```bash
-# Update multiple steps with same plan (single API call)
-erk exec update-objective-node 6697 --node 5.1 --node 5.2 --node 5.3 --plan "#6759"
+# Update multiple steps with same PR (single API call)
+erk exec update-objective-node 6697 --node 5.1 --node 5.2 --node 5.3 --pr "#6759"
 ```
 
 The command follows erk's discriminated union pattern for error returns:
@@ -91,9 +90,7 @@ The command follows erk's discriminated union pattern for error returns:
 | 0         | Step ID not in roadmap   | `node_not_found`     |
 | 0         | Regex replacement failed | `replacement_failed` |
 
-<!-- Source: src/erk/cli/commands/exec/scripts/update_objective_node.py, update_objective_node -->
-
-All error paths exit with code 0 but include typed error fields for programmatic handling. See `update_objective_node()` in `src/erk/cli/commands/exec/scripts/update_objective_node.py` for the LBYL guard sequence.
+All error paths exit with code 0 but include typed error fields for programmatic handling.
 
 ## Body Inclusion: --include-body
 
@@ -101,7 +98,7 @@ The `--include-body` flag causes the command to include the fully-mutated issue 
 
 ```bash
 # Get the updated body back in the JSON output
-erk exec update-objective-node 6423 --node 1.3 --pr "#6500" --plan "#6464" --include-body
+erk exec update-objective-node 6423 --node 1.3 --pr "#6500" --include-body
 ```
 
 **Output with `--include-body` (single step):**
@@ -111,8 +108,6 @@ erk exec update-objective-node 6423 --node 1.3 --pr "#6500" --plan "#6464" --inc
   "success": true,
   "issue_number": 6423,
   "node_id": "1.3",
-  "previous_plan": null,
-  "new_plan": null,
   "previous_pr": null,
   "new_pr": "#6500",
   "url": "https://github.com/owner/repo/issues/6423",
@@ -126,7 +121,6 @@ erk exec update-objective-node 6423 --node 1.3 --pr "#6500" --plan "#6464" --inc
 {
   "success": true,
   "issue_number": 6697,
-  "new_plan": null,
   "new_pr": "#555",
   "url": "https://github.com/owner/repo/issues/6697",
   "nodes": [...],
@@ -134,115 +128,35 @@ erk exec update-objective-node 6423 --node 1.3 --pr "#6500" --plan "#6464" --inc
 }
 ```
 
-The `updated_body` field is only included when:
+## Parameter Semantics: --pr and --status
 
-- `--include-body` is passed
-- The update was successful (all steps for multi-step, the single step for single-step)
+The command uses `--pr` and `--status` flags:
 
-On failure paths, the field is omitted regardless of the flag.
-
-## Parameter Semantics: --plan and --pr
-
-The command uses separate `--plan` and `--pr` flags for the two lifecycle stages:
-
-| Flag                                        | Status Computed | Lifecycle Stage                             |
-| ------------------------------------------- | --------------- | ------------------------------------------- |
-| `--plan "#6464"`                            | `in-progress`   | Step has an active plan issue               |
-| `--plan "#6464" --pr "#6500"`               | `in-progress`   | PR reference (not confirmed merged)         |
-| `--plan "#6464" --pr "#6500" --status done` | `done`          | Step has a confirmed landed PR              |
-| `--pr ""`                                   | `pending`\*     | Clear PR; \*`in-progress` if plan preserved |
-
-When `--pr` is set, `--plan` must also be explicitly provided (error: `plan_required_with_pr`). Use `--plan "#NNN"` to preserve or `--plan ""` to clear. The legacy `--pr "plan #NNN"` syntax is still accepted and automatically migrated to `--plan "#NNN"`.
+| Flag                                | Status Computed | Lifecycle Stage          |
+| ----------------------------------- | --------------- | ------------------------ |
+| `--pr "#6500" --status in_progress` | `in-progress`   | Explicit status override |
+| `--pr "#6500"`                      | `in-progress`   | Step has active work     |
+| `--pr "#6500" --status done`        | `done`          | Explicit confirmation    |
+| `--pr ""`                           | `(preserved)`   | Clear PR reference       |
 
 See [Roadmap Mutation Semantics](../../architecture/roadmap-mutation-semantics.md) for the write-time vs parse-time distinction.
 
-## Output Format
+## Comment Table Re-rendering
 
-### Single Step (Legacy Format)
+After updating YAML frontmatter in the issue body, the command automatically re-renders the comment table using `rerender_comment_roadmap()`. This function:
 
-When updating a single step, the command maintains backward-compatible output:
+1. Parses nodes from the updated YAML frontmatter
+2. Groups by phase and enriches phase names from comment headers
+3. Renders fresh markdown tables
+4. Splices into the comment's `<!-- erk:roadmap-table -->` marker section
 
-```json
-{
-  "success": true,
-  "issue_number": 6423,
-  "node_id": "1.3",
-  "previous_pr": "",
-  "new_pr": "plan #6464",
-  "url": "https://github.com/owner/repo/issues/6423"
-}
-```
-
-### Multiple Steps (New Format)
-
-When updating multiple steps, the output includes a `nodes` array with per-step results:
-
-**All steps successful:**
-
-```json
-{
-  "success": true,
-  "issue_number": 6697,
-  "new_pr": "plan #6759",
-  "url": "https://github.com/owner/repo/issues/6697",
-  "nodes": [
-    { "node_id": "5.1", "success": true, "previous_pr": null },
-    { "node_id": "5.2", "success": true, "previous_pr": null },
-    { "node_id": "5.3", "success": true, "previous_pr": null }
-  ]
-}
-```
-
-**Partial failure (some steps not found):**
-
-```json
-{
-  "success": false,
-  "issue_number": 6697,
-  "new_pr": "plan #6759",
-  "url": "https://github.com/owner/repo/issues/6697",
-  "nodes": [
-    { "node_id": "5.1", "success": true, "previous_pr": null },
-    { "node_id": "9.9", "success": false, "error": "node_not_found" },
-    { "node_id": "5.3", "success": true, "previous_pr": null }
-  ]
-}
-```
-
-Note: When using multiple steps, the command makes a **single GitHub API call** with all successful replacements batched together.
-
-## Exit Codes
-
-The command always exits 0. Check the JSON `success` field for pass/fail:
-
-| Scenario                         | Exit Code | JSON `success` | JSON Error Type      |
-| -------------------------------- | --------- | -------------- | -------------------- |
-| All steps updated                | 0         | `true`         | N/A                  |
-| Issue not found                  | 0         | `false`        | `issue_not_found`    |
-| No roadmap table in issue body   | 0         | `false`        | `no_roadmap`         |
-| Any step ID not found in roadmap | 0         | `false`        | `node_not_found`     |
-| Replacement failed (regex error) | 0         | `false`        | `replacement_failed` |
-
-Callers should always parse the JSON output and check `success` rather than relying on exit codes.
+This ensures the comment table always reflects the current YAML state.
 
 ## Implementation Notes
 
-### Table Structure Assumptions
-
-<!-- Source: src/erk/cli/commands/exec/scripts/update_objective_node.py, _replace_node_refs_in_body -->
-
-The regex in `_replace_node_refs_in_body()` supports both four-column (legacy) and five-column tables:
-
-```
-| step_id | description | status | plan | pr |   (5-col, canonical)
-| step_id | description | status | pr |           (4-col, legacy)
-```
-
-When updating a 4-col table, the command upgrades the header to 5-col automatically. Step lookup works across all phases (the parser flattens phases into a single step list). See `_find_node_refs()` in `src/erk/cli/commands/exec/scripts/update_objective_node.py`.
-
 ### Shared Parsing Logic
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, parse_roadmap -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py -->
 
 Both `update-objective-node` and `erk objective check` use `parse_roadmap()` from `erk_shared.gateway.github.metadata.roadmap`. The shared module defines `RoadmapNode` and `RoadmapPhase` dataclasses -- the canonical representation of parsed roadmap state.
 
@@ -257,12 +171,12 @@ updated = re.sub(r"(\| 1.3 \|.*\|.*\|).*(\|)", r"\1 #123 \2", body)
 github.update_issue_body(...)
 ```
 
-**WHY:** This assumes four-column structure, doesn't handle status computation, doesn't validate step exists, and duplicates logic already tested in the command.
+**WHY:** This doesn't handle status computation, doesn't validate step exists, and duplicates logic already tested in the command.
 
 **DO** call the command:
 
 ```python
-subprocess.run(["erk", "exec", "update-objective-node", str(issue), "--node", "1.3", "--pr", "#123", "--plan", "#456"])
+subprocess.run(["erk", "exec", "update-objective-node", str(issue), "--node", "1.3", "--pr", "#123"])
 ```
 
 The command is designed for programmatic invocation -- JSON output is machine-parsable.
@@ -270,5 +184,6 @@ The command is designed for programmatic invocation -- JSON output is machine-pa
 ## Related Documentation
 
 - [Roadmap Mutation Semantics](../../architecture/roadmap-mutation-semantics.md) -- write-time vs parse-time status computation
+- [Roadmap Mutation Patterns](../../objectives/roadmap-mutation-patterns.md) -- surgical vs full-body update strategy
 - [Roadmap Status System](../../objectives/roadmap-status-system.md) -- two-tier status resolution rules
 - [Roadmap Parser](../../objectives/roadmap-parser.md) -- parsing and validation logic
