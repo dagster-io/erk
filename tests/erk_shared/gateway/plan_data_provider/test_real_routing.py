@@ -21,9 +21,7 @@ def _make_provider(
     mock_plan_service = plan_service or MagicMock()
     mock_ctx.objective_list_service = mock_objective_service
     mock_ctx.plan_list_service = mock_plan_service
-    mock_objective_service.get_objective_list_data.return_value = MagicMock(
-        plans=[]
-    )
+    mock_objective_service.get_objective_list_data.return_value = MagicMock(plans=[])
     mock_plan_service.get_plan_list_data.return_value = MagicMock(plans=[])
 
     return RealPlanDataProvider(
@@ -45,9 +43,7 @@ class TestPlanDataProviderRouting:
         # Arrange
         mock_objective_service = MagicMock()
         mock_plan_service = MagicMock()
-        mock_objective_service.get_objective_list_data.return_value = MagicMock(
-            plans=[]
-        )
+        mock_objective_service.get_objective_list_data.return_value = MagicMock(plans=[])
         provider = _make_provider(
             objective_service=mock_objective_service, plan_service=mock_plan_service
         )
@@ -178,12 +174,12 @@ class TestPlanDataProviderRouting:
             exclude_labels=(),
         )
         provider.fetch_plans(filters_with_objective)
-        assert (
-            mock_objective_service.get_objective_list_data.call_count == 1
-        ), "Should route WITH objective to objective service"
-        assert (
-            mock_plan_service.get_plan_list_data.call_count == 0
-        ), "Should NOT route WITH objective to plan service"
+        assert mock_objective_service.get_objective_list_data.call_count == 1, (
+            "Should route WITH objective to objective service"
+        )
+        assert mock_plan_service.get_plan_list_data.call_count == 0, (
+            "Should NOT route WITH objective to plan service"
+        )
 
         # Reset mocks
         mock_objective_service.reset_mock()
@@ -200,9 +196,9 @@ class TestPlanDataProviderRouting:
             exclude_labels=(),
         )
         provider.fetch_plans(filters_without_objective)
-        assert (
-            mock_plan_service.get_plan_list_data.call_count == 1
-        ), "Should route WITHOUT objective to plan service"
-        assert (
-            mock_objective_service.get_objective_list_data.call_count == 0
-        ), "Should NOT route WITHOUT objective to objective service"
+        assert mock_plan_service.get_plan_list_data.call_count == 1, (
+            "Should route WITHOUT objective to plan service"
+        )
+        assert mock_objective_service.get_objective_list_data.call_count == 0, (
+            "Should NOT route WITHOUT objective to objective service"
+        )
