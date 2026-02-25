@@ -2346,11 +2346,12 @@ query {{
     }}"""
             issue_queries.append(issue_query)
 
+        joined_queries = "\n".join(issue_queries)
         query = f"""{ISSUE_PR_LINKAGE_FRAGMENT}
 
 query {{
   repository(owner: "{repo_id.owner}", name: "{repo_id.repo}") {{
-{chr(10).join(issue_queries)}
+{joined_queries}
   }}
 }}"""
         return query

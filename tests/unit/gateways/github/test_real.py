@@ -312,3 +312,128 @@ def test_get_default_branch_propagates_runtime_error(mock_execute) -> None:  # n
 
     # Error should NOT be cached — next call should retry
     assert repo_root not in github._default_branch_cache
+
+
+# --- Tests for _build_issues_by_numbers_query ---
+
+
+def test_build_issues_by_numbers_query_single_issue() -> None:
+    """Query contains one aliased issueOrPullRequest for a single issue."""
+    github = RealGitHub.for_test()
+    repo_id = GitHubRepoId(owner="acme", repo="widgets")
+
+    query = github._build_issues_by_numbers_query([100], repo_id)
+
+    assert 'issue_100: issueOrPullRequest(number: 100)' in query
+    assert 'repository(owner: "acme", name: "widgets")' in query
+
+
+def test_build_issues_by_numbers_query_multiple_issues() -> None:
+    """Query contains one alias per issue number."""
+    github = RealGitHub.for_test()
+    repo_id = GitHubRepoId(owner="acme", repo="widgets")
+
+    query = github._build_issues_by_numbers_query([100, 200, 300], repo_id)
+
+    assert 'issue_100: issueOrPullRequest(number: 100)' in query
+    assert 'issue_200: issueOrPullRequest(number: 200)' in query
+    assert 'issue_300: issueOrPullRequest(number: 300)' in query
+
+
+# --- Tests for _parse_issues_by_numbers_response ---
+
+
+def _make_issue_node(
+    *,
+    number: int = 100,
+    title: str = "Test issue",
+    state: str = "OPEN",
+) -> dict:
+    """Create a minimal issue node matching the GraphQL response shape."""
+    return {
+        "number": number,
+        "title": title,
+        "body": "",
+        "state": state,
+        "url": f"https://github.com/acme/widgets/issues/{number}",
+        "author": {"login": "testuser"},
+        "labels": {"nodes": [{"name": "erk-plan"}]},
+        "assignees": {"nodes": []},
+        "createdAt": "2025-01-01T00:00:00Z",
+        "updatedAt": "2025-01-02T00:00:00Z",
+        "timelineItems": {"nodes": []},
+    }
+
+
+def test_parse_issues_by_numbers_response_single_issue() -> None:
+    """Single issue node is parsed into one IssueInfo."""
+    github = RealGitHub.for_test()
+    repo_id = GitHubRepoId(owner="acme", repo="widgets")
+
+    response = {
+        "data": {
+            "repository": {
+                "issue_100": _make_issue_node(number=100, title="Plan A"),
+            }
+        }
+    }
+
+    issues, pr_linkages = github._parse_issues_by_numbers_response(response, repo_id)
+
+    assert len(issues) == 1
+    assert issues[0].number == 100
+    assert issues[0].title == "Plan A"
+    assert pr_linkages == {}
+
+
+def test_parse_issues_by_numbers_response_multiple_issues() -> None:
+    """Multiple issue nodes are all parsed."""
+    github = RealGitHub.for_test()
+    repo_id = GitHubRepoId(owner="acme", repo="widgets")
+
+    response = {
+        "data": {
+            "repository": {
+                "issue_100": _make_issue_node(number=100),
+                "issue_200": _make_issue_node(number=200),
+            }
+        }
+    }
+
+    issues, _ = github._parse_issues_by_numbers_response(response, repo_id)
+
+    numbers = {i.number for i in issues}
+    assert numbers == {100, 200}
+
+
+def test_parse_issues_by_numbers_response_skips_null_nodes() -> None:
+    """Null nodes (deleted/inaccessible issues) are skipped."""
+    github = RealGitHub.for_test()
+    repo_id = GitHubRepoId(owner="acme", repo="widgets")
+
+    response = {
+        "data": {
+            "repository": {
+                "issue_100": _make_issue_node(number=100),
+                "issue_999": None,
+            }
+        }
+    }
+
+    issues, _ = github._parse_issues_by_numbers_response(response, repo_id)
+
+    assert len(issues) == 1
+    assert issues[0].number == 100
+
+
+def test_parse_issues_by_numbers_response_empty_repository() -> None:
+    """Empty repository data returns empty results."""
+    github = RealGitHub.for_test()
+    repo_id = GitHubRepoId(owner="acme", repo="widgets")
+
+    response = {"data": {"repository": {}}}
+
+    issues, pr_linkages = github._parse_issues_by_numbers_response(response, repo_id)
+
+    assert issues == []
+    assert pr_linkages == {}
