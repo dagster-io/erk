@@ -32,7 +32,6 @@ from erk_shared.gateway.github.parsing import (
     parse_pr_number_from_url,
 )
 from erk_shared.gateway.github.types import PRNotFound
-from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_output
 
 
@@ -307,28 +306,6 @@ def _checkout_pr(
 # =============================================================================
 
 
-def _find_branches_for_issue(
-    ctx: ErkContext,
-    repo_root,
-    issue_number: int,
-) -> list[str]:
-    """Find local branches that start with the issue number.
-
-    Branch names follow patterns like:
-    - P{issue_number}-{slug}-{timestamp} (e.g., P123-fix-bug-01-15-1430)
-    - {issue_number}-{slug} (legacy format)
-    """
-    local_branches = ctx.git.branch.list_local_branches(repo_root)
-    matching: list[str] = []
-
-    for branch in local_branches:
-        branch_issue = extract_leading_issue_number(branch)
-        if branch_issue == issue_number:
-            matching.append(branch)
-
-    return matching
-
-
 def _checkout_plan(
     ctx: ErkContext,
     repo: RepoContext,
@@ -340,43 +317,21 @@ def _checkout_plan(
 ) -> None:
     """Checkout a branch associated with a plan.
 
-    1. If local branch exists -> checkout (or navigate to existing worktree)
-    2. If no local branch but has PR -> fetch PR and create tracking branch
-    3. If multiple branches/PRs -> display table, no interactive selection
-    4. If no branches/PRs -> display helpful message
+    Plan IDs are no longer encoded in branch names, so we look up PRs
+    referencing the plan issue directly.
+
+    1. If single open PR -> fetch and checkout
+    2. If multiple open PRs -> display table, no interactive selection
+    3. If no open PRs -> display helpful message
     """
-    # Find local branches for this issue
-    local_branches = _find_branches_for_issue(ctx, repo.root, issue_number)
-
-    # Case 1: Single local branch found
-    if len(local_branches) == 1:
-        branch_name = local_branches[0]
-        _checkout_plan_branch(
-            ctx,
-            repo,
-            branch_name=branch_name,
-            issue_number=issue_number,
-            no_slot=no_slot,
-            force=force,
-            script=script,
-        )
-        return
-
-    # Case 2: Multiple local branches found - display table and exit
-    if len(local_branches) > 1:
-        _display_multiple_branches(issue_number, local_branches)
-        raise SystemExit(0)
-
-    # Case 3: No local branches - check for PRs
     prs = ctx.issues.get_prs_referencing_issue(repo.root, issue_number)
 
     # Filter to OPEN PRs only
     open_prs = [pr for pr in prs if pr.state == "OPEN"]
 
     if len(open_prs) == 0:
-        # No local branches and no open PRs
         user_output(
-            f"No local branch or open PR found for plan #{issue_number}\n\n"
+            f"No open PR found for plan #{issue_number}\n\n"
             "This plan has not been implemented yet. To prepare it:\n"
             f"  erk br co --for-plan {issue_number}"
         )
@@ -399,35 +354,6 @@ def _checkout_plan(
     # Multiple open PRs - display table and exit
     _display_multiple_prs(issue_number, open_prs)
     raise SystemExit(0)
-
-
-def _checkout_plan_branch(
-    ctx: ErkContext,
-    repo: RepoContext,
-    *,
-    branch_name: str,
-    issue_number: int,
-    no_slot: bool,
-    force: bool,
-    script: bool,
-) -> None:
-    """Checkout an existing local branch for a plan."""
-    worktree_path, already_existed = ensure_branch_has_worktree(
-        ctx, repo, branch_name=branch_name, no_slot=no_slot, force=force
-    )
-
-    navigate_and_display_checkout(
-        ctx,
-        worktree_path=worktree_path,
-        branch_name=branch_name,
-        script=script,
-        command_name="plan-checkout",
-        already_existed=already_existed,
-        existing_message=f"Plan #{issue_number} already checked out at {{styled_path}}",
-        new_message=f"Created worktree for plan #{issue_number} at {{styled_path}}",
-        script_message_existing=f'echo "Went to worktree for plan #{issue_number}"',
-        script_message_new=f'echo "Checked out plan #{issue_number} at $(pwd)"',
-    )
 
 
 def _checkout_plan_pr(
@@ -503,26 +429,6 @@ def _checkout_plan_pr(
         new_message=new_msg,
         script_message_existing=f'echo "Went to worktree for plan #{issue_number}"',
         script_message_new=f'echo "Checked out plan #{issue_number} (PR #{pr_number}) at $(pwd)"',
-    )
-
-
-def _display_multiple_branches(issue_number: int, branches: list[str]) -> None:
-    """Display table of multiple branches for an issue."""
-    user_output(f"Multiple branches found for plan #{issue_number}:\n")
-
-    table = Table(show_header=True, header_style="bold")
-    table.add_column("branch", style="yellow", no_wrap=True)
-
-    for branch in sorted(branches):
-        table.add_row(branch)
-
-    console = Console(stderr=True, width=200)
-    console.print(table)
-    console.print()
-
-    user_output(
-        "Use git checkout or erk wt create to checkout a specific branch:\n"
-        "  erk wt create <branch-name>"
     )
 
 
