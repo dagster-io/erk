@@ -679,23 +679,23 @@ class ErkDashApp(App):
 
     @work(thread=True)
     def _submit_to_queue_async(self, plan_id: int) -> None:
-        """Submit plan to queue in background thread with toast."""
+        """Dispatch plan to queue in background thread with toast."""
         try:
             subprocess.run(
-                ["erk", "plan", "submit", str(plan_id)],
+                ["erk", "pr", "dispatch", str(plan_id)],
                 capture_output=True,
                 text=True,
                 check=True,
                 stdin=subprocess.DEVNULL,
                 cwd=str(self._provider.repo_root),
             )
-            self.call_from_thread(self.notify, f"Submitted plan #{plan_id} to queue", timeout=3)
+            self.call_from_thread(self.notify, f"Dispatched plan #{plan_id} to queue", timeout=3)
             self.call_from_thread(self.action_refresh)
         except subprocess.CalledProcessError as e:
             error_msg = _extract_subprocess_error(e)
             self.call_from_thread(
                 self.notify,
-                f"Failed to submit plan #{plan_id}: {error_msg}",
+                f"Failed to dispatch plan #{plan_id}: {error_msg}",
                 severity="error",
                 timeout=5,
             )
