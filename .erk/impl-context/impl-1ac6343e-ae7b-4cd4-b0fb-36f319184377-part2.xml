@@ -1,0 +1,850 @@
+<session>
+  <meta branch="add-erkbot-system-prompt" />
+  <meta model="claude-sonnet-4-6" />
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/.claude/skills/fake-driven-testing
+
+# Fake-Driven Testing Architecture for Python
+
+**Use this skill when**: Writing tests, fixing bugs, adding features, or modifying gateway layers in Python projects.
+
+**Prerequisites**: For Python code standards, load the `dignified-python-313` skill first. This skill focuses on testing architecture, not Python syntax.
+
+## Overview
+
+This skill provides a **defense-in-depth testing strategy** with five layers for Python applications:
+
+```
+┌─────────────────────────────────────────┐
+│  Layer 5: Business Logic Integration Tests (5%)  │  ← Smoke tests over real system
+├─────────────────────────────────────────┤
+│  Layer 4: Business Logic Tests (70%)   │  ← Tests over fakes (MOST TESTS)
+├─────────────────────────────────────────┤
+│  Layer 3: Pure Unit Tests (10%)        │  ← Zero dependencies, isolated testing
+├─────────────────────────────────────────┤
+│  Layer 2: Integration Sanity Tests (10%)│  ← Fast validation with mocking
+├─────────────────────────────────────────┤
+│  Layer 1: Fake Infrastructure Tests (5%)│  ← Verify test doubles work
+└─────────────────────────────────────────┘
+```
+
+**Philosophy**: Test business logic extensively over fast in-memory fakes. Use real implementations sparingly for integration validation.
+
+**Terminology note**: The "gateway layer" (also called adapters/providers) refers to thin wrappers around heavyweight external APIs (databases, filesystems, HTTP APIs, message queues, etc.). The pattern matters more than the name.
+
+## Quick Decision: What Should I Read?
+
+**Adding a feature or fixing a bug?**
+→ Read `quick-reference.md` first, then `workflows.md#adding-a-new-feature`
+
+**Need to understand where to put a test?**
+→ Read `testing-strategy.md`
+
+**Working with Python-specific patterns?**
+→ Read `python-specific.md`
+
+**Adding/changing a gateway interface?**
+→ Read `gateway-architecture.md`, then `workflows.md#adding-a-gateway-method`
+
+**Creating a backend (higher-level abstraction over gateways)?**
+→ Read `gateway-architecture.md#gateways-vs-backends` - backends compose gateways and do NOT have fakes
+
+**Need to implement a specific pattern (CliRunner, builders, etc.)?**
+→ Read `patterns.md`
+
+**Not sure if I'm doing it right?**
+→ Read `anti-patterns.md`
+
+**Just need a quick lookup?**
+→ Read `quick-reference.md`
+
+## When to Read Each Reference Document
+
+### 📖 `gateway-architecture.md`
+
+**Read when**:
+
+- Adding or changing gateway/ABC interfaces
+- Understanding the ABC/Real/Fake/DryRun pattern
+- Need examples of gateway implementations
+- Want to understand what gateways are (and why they're thin)
+- **Creating a backend** (higher-level abstraction that composes gateways)
+
+**Contents**:
+
+- What are gateway classes? (naming: gateways/adapters/providers)
+- The four implementations (ABC, Real, Fake, DryRun)
+- Code examples for each
+- When to add/change gateway methods
+- Design principles (keep gateways thin)
+- Common gateway types (Database, API, FileSystem, MessageQueue)
+- **Gateways vs Backends** - critical distinction for DI boundaries
+
+### 📖 `testing-strategy.md`
+
+**Read when**:
+
+- Deciding where to put a test
+- Understanding the five testing layers
+- Need test distribution guidance (5/70/10/10/5 rule)
+- Want to know which layer tests what
+
+**Contents**:
+
+- Layer 1: Unit tests of fakes (verify test infrastructure)
+- Layer 2: Integration sanity tests with mocking (quick validation)
+- Layer 3: Pure unit tests (zero dependencies, isolated testing)
+- Layer 4: Business logic over fakes (majority of tests)
+- Layer 5: Business logic integration tests (smoke tests over real systems)
+- Decision tree: where should my test go?
+- Test distribution examples
+
+### 📖 `python-specific.md`
+
+**Read when**:
+
+- Working with pytest fixtures
+- Need Python mocking patterns
+- Testing Flask/FastAPI/Django applications
+- Understanding Python testing tools
+- Need Python-specific commands
+
+**Contents**:
+
+- pytest fixtures and parametrization
+- Mocking with unittest.mock and pytest-mock
+- Testing web frameworks (Flask, FastAPI, Django)
+- Python testing commands
+- Type hints in tests
+- Python packaging for test utilities
+
+### 📖 `workflows.md`
+
+**Read when**:
+
+- Adding a new feature (step-by-step)
+- Fixing a bug (step-by-step)
+- Adding a gateway method (complete checklist)
+- Changing an interface (what to update)
+- Managing dry-run features
+
+**Contents**:
+
+- Adding a new feature (TDD workflow)
+- Fixing a bug (reproduce → fix → regression test)
+- Adding a gateway method (8-step checklist with examples)
+- Changing an interface (update all layers)
+- Managing dry-run features (wrapping pattern)
+- Testing with builder patterns
+
+### 📖 `patterns.md`
+
+**Read when**:
+
+- Implementing constructor injection for fakes
+- Adding mutation tracking to fakes
+- Using CliRunner for CLI tests
+- Building complex test scenarios with builders
+- Testing dry-run behavior
+- Need code examples of specific patterns
+
+**Contents**:
+
+- Constructor injection (how and why)
+- Mutation tracking properties (read-only access)
+- Using CliRunner (not subprocess)
+- Builder patterns for complex scenarios
+- Simulated environment pattern
+- Error injection pattern
+- Dry-run testing pattern
+
+### 📖 `anti-patterns.md`
+
+**Read when**:
+
+- Unsure if your approach is correct
+- Want to avoid common mistakes
+- Reviewing code for bad patterns
+- Debugging why tests are slow/brittle
+
+**Contents**:
+
+- ❌ Testing speculative features
+- ❌ Hardcoded paths in tests (catastrophic)
+- ❌ Not updating all layers
+- ❌ Using subprocess in unit tests
+- ❌ Complex logic in gateway classes
+- ❌ Fakes with I/O operations
+- ❌ Testing implementation details
+- ❌ Incomplete test coverage for gateways
+
+### 📖 `quick-reference.md`
+
+**Read when**:
+
+- Quick lookup for file locations
+- Finding example tests to reference
+- Looking up common fixtures
+- Need command reference
+- Want test distribution guidelines
+
+**Contents**:
+
+- Decision tree (where to add test)
+- File location map (source + tests)
+- Common fixtures (tmp_path, CliRunner, etc.)
+- Common test patterns (code snippets)
+- Example tests to reference
+- Useful commands (pytest, ty, etc.)
+- Quick checklist for adding gateway methods
+
+## Quick Navigation by Task
+
+### I'm adding a new feature
+
+1. **Quick start**: `quick-reference.md` → Decision tree
+2. **Step-by-step**: `workflows.md#adding-a-new-feature`
+3. **Patterns**: `patterns.md` (CliRunner, builders)
+4. **Avoid**: `anti-patterns.md` (speculative tests, hardcoded paths)
+
+### I'm fixing a bug
+
+1. **Step-by-step**: `workflows.md#fixing-a-bug`
+2. **Patterns**: `patterns.md#constructor-injection-for-fakes`
+3. **Examples**: `quick-reference.md#example-tests-to-reference`
+
+### I'm adding/changing a gateway method
+
+1. **Understanding**: `gateway-architecture.md`
+2. **Step-by-step**: `workflows.md#adding-a-gateway-method`
+3. **Checklist**: `quick-reference.md#quick-checklist-adding-a-new-gateway-method`
+4. **Avoid**: `anti-patterns.md#not-updating-all-layers`
+
+### I don't know where my test should go
+
+1. **Decision tree**: `quick-reference.md#decision-tree`
+2. **Detailed guide**: `testing-strategy.md`
+3. **Examples**: `quick-reference.md#example-tests-to-reference`
+
+### I need to implement a pattern
+
+1. **All patterns**: `patterns.md`
+2. **Examples**: `quick-reference.md#common-test-patterns`
+
+### I think I'm doing something wrong
+
+1. **Anti-patterns**: `anti-patterns.md`
+2. **Correct approach**: `workflows.md`
+
+## Visual Layer Guide
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 5: Business Logic Integration Tests (5%)               │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ Real database, filesystem, APIs, actual subprocess        │ │
+│ │ Purpose: Smoke tests, catch integration issues           │ │
+│ │ When: Sparingly, for critical workflows                  │ │
+│ │ Speed: Seconds per test                                   │ │
+│ │ Location: tests/e2e/ or tests/integration/               │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 4: Business Logic Tests (70%) ← MOST TESTS HERE       │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ FakeDatabase, FakeApiClient, FakeFileSystem              │ │
+│ │ Purpose: Test features and business logic extensively    │ │
+│ │ When: For EVERY feature and bug fix                      │ │
+│ │ Speed: Milliseconds per test                              │ │
+│ │ Location: tests/unit/, tests/services/, tests/commands/  │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 3: Pure Unit Tests (10%)                               │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ Zero dependencies, no fakes, no mocks                    │ │
+│ │ Purpose: Test isolated utilities and helpers             │ │
+│ │ When: For pure functions, data structures, parsers       │ │
+│ │ Speed: Milliseconds per test                              │ │
+│ │ Location: tests/unit/                                     │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 2: Integration Sanity Tests (10%)                      │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ RealDatabase with mocked connections                     │ │
+│ │ Purpose: Quick validation, catch syntax errors           │ │
+│ │ When: When adding/changing real implementation           │ │
+│ │ Speed: Fast (mocked)                                      │ │
+│ │ Location: tests/integration/test_real_*.py               │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 1: Fake Infrastructure Tests (5%)                      │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ Test FakeDatabase itself                                 │ │
+│ │ Purpose: Verify test infrastructure is reliable          │ │
+│ │ When: When adding/changing fake implementation           │ │
+│ │ Speed: Milliseconds per test                              │ │
+│ │ Location: tests/unit/fakes/test_fake_*.py               │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+```
+
+## Key Principles
+
+1. **Thin gateway layer**: Wrap external state, push complexity to business logic
+2. **Fast tests over fakes**: 70% of tests should use in-memory fakes
+3. **Defense in depth**: Fakes → sanity tests → pure unit → business logic → integration
+4. **Test what you're building**: No speculative tests, only active work
+5. **Update all layers**: When changing interfaces, update ABC/real/fake/dry-run
+6. **Gateways vs Backends**: Gateways have fakes; backends compose gateways and do NOT have fakes
+
+## Layer Selection Guide
+
+**Distinguishing Layer 3 (Pure Unit) from Layer 4 (Business Logic):**
+
+- **Layer 3 (Pure Unit Tests)**: ZERO dependencies - no fakes, no mocks, no external state
+  - Testing string utilities: `sanitize_branch_name("feat/FOO")` → `"feat-foo"`
+  - Testing parsers: `parse_git_status("## main")` → `{"branch": "main"}`
+  - Testing data structures: `LinkedList.append()` without any external dependencies
+
+- **Layer 4 (Business Logic Tests)**: Uses fakes for external dependencies
+  - Testing commands: `create_worktree(fake_git, name="feature")`
+  - Testing workflows: `submit_pr(fake_gh, fake_git, ...)`
+  - Testing business logic that coordinates multiple integrations
+
+**If your test imports a Fake\*, it belongs in Layer 4, not Layer 3.**
+
+## Default Testing Strategy
+
+**When in doubt**:
+
+- Write test over fakes (Layer 4) for business logic
+- Write pure unit test (Layer 3) for utilities/helpers with no dependencies
+- Use `pytest` with fixtures
+- Use `tmp_path` fixture (not hardcoded paths)
+- Follow examples in `quick-reference.md`
+
+## Summary
+
+**For quick tasks**: Start with `quick-reference.md`
+
+**For understanding**: Start with `testing-strategy.md` or `gateway-architecture.md`
+
+**For step-by-step guidance**: Use `workflows.md`
+
+**For implementation details**: Use `patterns.md`
+
+**For validation**: Check `anti-patterns.md`
+
+**For Python specifics**: Check `python-specific.md`
+</user>
+  <tool_use name="Skill" id="toolu_01JhEQtYL8yiF2hsGy7SrcQz">
+    <param name="skill">dignified-python</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1566" cache_read_input_tokens="52532" output_tokens="226" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1566, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JhEQtYL8yiF2hsGy7SrcQz">
+Launching skill: dignified-python
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/.claude/skills/dignified-python
+
+# Dignified Python Coding Standards
+
+## Core Knowledge (ALWAYS Loaded)
+
+@dignified-python-core.md
+
+## Version Detection
+
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
+
+## Conditional Loading (Load Based on Task Patterns)
+
+Core files above cover 80%+ of Python code patterns. Only load these additional files when you detect specific patterns:
+
+Pattern detection examples:
+
+- If task mentions "click" or "CLI" -&gt; Load `cli-patterns.md`
+- If task mentions "subprocess" -&gt; Load `subprocess.md`
+
+## When to Read Each Reference Document
+
+The `references/` directory contains detailed guidance for specialized topics. Load these on-demand when you encounter relevant patterns:
+
+### `references/exception-handling.md`
+
+**Read when**:
+
+- Writing try/except blocks
+- Wrapping third-party APIs that may raise
+- Seeing or writing `from e` or `from None`
+- Unsure if LBYL alternative exists
+
+### `references/interfaces.md`
+
+**Read when**:
+
+- Creating ABC or Protocol classes
+- Writing @abstractmethod decorators
+- Designing gateway layer interfaces
+- Choosing between ABC and Protocol
+
+### `references/typing-advanced.md`
+
+**Read when**:
+
+- Using typing.cast()
+- Creating Literal type aliases
+- Narrowing types in conditional blocks
+
+### `references/module-design.md`
+
+**Read when**:
+
+- Creating new Python modules
+- Adding module-level code (beyond simple constants)
+- Using @cache decorator at module level
+- Seeing Path() or computation at module level
+- Considering inline imports
+
+### `references/api-design.md`
+
+**Read when**:
+
+- Adding default parameter values to functions
+- Defining functions with 5 or more parameters
+- Using ThreadPoolExecutor.submit()
+- Reviewing function signatures
+
+### `references/checklists.md`
+
+**Read when**:
+
+- Final review before committing Python code
+- Unsure if you've followed all rules
+- Need a quick lookup of requirements
+
+## How to Use This Skill
+
+1. **Core knowledge** is loaded automatically (LBYL, pathlib, basic imports, anti-patterns)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
+3. **Reference documents** are loaded on-demand based on the triggers above
+4. **Additional patterns** may require extra loading (CLI patterns, subprocess)
+5. **Each file is self-contained** with complete guidance for its domain
+</user>
+  <user>[Request interrupted by user]</user>
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/model&lt;/command-name&gt;
+            &lt;command-message&gt;model&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Set model to [1mDefault (Opus 4.6 · Most capable for complex work)[22m&lt;/local-command-stdout&gt;</user>
+  <user>continue</user>
+  <assistant>
+
+**Phase 2: UNDERSTAND — Analyze the Bug**
+
+The error is clear:
+
+```
+CliRunner(mix_stderr=False).invoke(...)
+TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+```
+
+Click removed `mix_stderr` from `CliRunner` in a newer version. Let me read the affected file.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="40134" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 40134}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011ndkJSuWotxNSces5NCkZB">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/src/erkbot/runner.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="40134" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 40134}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011ndkJSuWotxNSces5NCkZB">
+     1→import asyncio
+     2→from collections.abc import Awaitable, Callable
+     3→from shutil import which
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk import cli
+     8→from erkbot.models import RunResult
+     9→from erkbot.utils import strip_ansi
+    10→
+    11→
+    12→async def run_erk_plan_list() -&gt; RunResult:
+    13→    result = await asyncio.to_thread(
+    14→        CliRunner(mix_stderr=False).invoke, cli, ["plan", "list", "--all-users"]
+    15→    )
+    16→    raw_output = (result.output or "") + (result.stderr or "")
+    17→    output = strip_ansi(raw_output).strip() or "(no output)"
+    18→    return RunResult(exit_code=result.exit_code, output=output)
+    19→
+    20→
+    21→async def run_erk_one_shot(message: str, *, timeout_seconds: float) -&gt; RunResult:
+    22→    if which("uv") is None:
+    23→        return RunResult(exit_code=127, output="Failed to start process: uv was not found in PATH")
+    24→
+    25→    try:
+    26→        process = await asyncio.create_subprocess_exec(
+    27→            "uv",
+    28→            "run",
+    29→            "erk",
+    30→            "one-shot",
+
+... [72 lines omitted] ...
+
+    38→    except TimeoutError:
+    42→        except TimeoutError:
+    61→        return RunResult(exit_code=127, output="Failed to start process: uv was not found in PATH")
+    89→    except TimeoutError:
+    93→        except TimeoutError:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DFRpZCQzR1tV8aPmhiUmQW">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/tests/test_cli.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="40134" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 40134}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DFRpZCQzR1tV8aPmhiUmQW">
+     1→# NOTE: @patch usage is deliberate here. erkbot is a standalone package that
+     2→# tests third-party Slack SDK wiring and does not use erk's gateway layer.
+     3→import asyncio
+     4→import unittest
+     5→from pathlib import Path
+     6→from unittest.mock import ANY, AsyncMock, MagicMock, patch
+     7→
+     8→from erkbot.cli import _run
+     9→
+    10→
+    11→def _make_settings_mock(
+    12→    *,
+    13→    anthropic_api_key: str | None,
+    14→    erk_repo_path: str | None,
+    15→    erk_model: str,
+    16→    max_turns: int,
+    17→) -&gt; MagicMock:
+    18→    mock = MagicMock()
+    19→    mock.anthropic_api_key = anthropic_api_key
+    20→    mock.erk_repo_path = erk_repo_path
+    21→    mock.erk_model = erk_model
+    22→    mock.max_turns = max_turns
+    23→    mock.slack_app_token = "xapp-token"
+    24→    return mock
+    25→
+    26→
+    27→class TestMain(unittest.TestCase):
+    28→    @patch("erkbot.cli.AsyncSocketModeHandler")
+    29→    @patch("erkbot.cli.create_app")
+    30→    @patch("erkbot.cli.Settings")
+
+... [251 lines omitted] ...
+
+   240→            self.assertLogs("erkbot.cli", level="WARNING") as cm,
+   244→        warning_logs = [r for r in cm.output if "not a valid directory" in r]
+   245→        self.assertEqual(len(warning_logs), 1)
+   246→        self.assertIn("/nonexistent/path", warning_logs[0])
+  </tool_result>
+  <thinking>I'm in plan mode - I need to design the plan for fixing this bug, not implement it directly. Let me check what existing tests cover runner.py, then check the Click version to understand why `mix_stderr` is failing.
+
+Let me look at:
+1. Existing runner tests
+2. Click version in erkbot's pyproject.toml
+3. What Click version removed mix_stderr</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5888" cache_read_input_tokens="59248" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5888}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'm in plan mode. Let me investigate and design the fix.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5888" cache_read_input_tokens="59248" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5888}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01MJDTyaS355GYjBrasUzicH">
+    <param name="pattern">packages/erkbot/tests/test_runner*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5888" cache_read_input_tokens="59248" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5888}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MJDTyaS355GYjBrasUzicH">
+/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/tests/test_runner.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_019Ycdy9oQL6DLFWQKCbCbZG">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/pyproject.toml</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5888" cache_read_input_tokens="59248" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5888}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019Ycdy9oQL6DLFWQKCbCbZG">
+     1→[project]
+     2→name = "erkbot"
+     3→version = "0.1.0"
+     4→description = "Add your description here"
+     5→readme = "README.md"
+     6→authors = [
+     7→    { name = "Colton Padden", email = "colton@dagsterlabs.com" }
+     8→]
+     9→requires-python = "&gt;=3.11"
+    10→dependencies = [
+    11→    "aiohttp&gt;=3.7.3",
+    12→    "claude-agent-sdk&gt;=0.1.0",
+    13→    "erk&gt;=0.7.4",
+    14→    "erk-shared",
+    15→    "pydantic&gt;=2.10",
+    16→    "pydantic-settings&gt;=2.4.0",
+    17→    "python-dotenv&gt;=1.0.1",
+    18→    "slack-bolt&gt;=1.21.2",
+    19→]
+    20→
+    21→[project.scripts]
+    22→erkbot = "erkbot.cli:main"
+    23→
+    24→[tool.uv.sources]
+    25→erk = { workspace = true }
+    26→erk-shared = { workspace = true }
+    27→
+    28→[build-system]
+    29→requires = ["uv_build&gt;=0.9.27,&lt;0.10.0"]
+    30→build-backend = "uv_build"
+
+... [13 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01JqX1wZvS9efS7UQeSyZZbH">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/tests/test_runner.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="844" cache_read_input_tokens="65136" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 844}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JqX1wZvS9efS7UQeSyZZbH">
+     1→import asyncio
+     2→import unittest
+     3→from unittest.mock import AsyncMock, MagicMock, patch
+     4→
+     5→from erkbot.runner import run_erk_one_shot, run_erk_plan_list, stream_erk_one_shot
+     6→
+     7→
+     8→class TestRunErkPlanList(unittest.IsolatedAsyncioTestCase):
+     9→    @patch("erkbot.runner.CliRunner")
+    10→    async def test_strips_ansi_codes_from_output(self, mock_runner_cls: MagicMock) -&gt; None:
+    11→        """plan list output with ANSI codes (from Rich Console) is stripped."""
+    12→        ansi_output = (
+    13→            "\x1b[1mpr    \x1b[0m\x1b[1m \x1b[0m\x1b[1mstage   \x1b[0m\n"
+    14→            "\x1b]8;;https://github.com/test/repo/issues/1\x1b\\#1\x1b]8;;\x1b\\"
+    15→            "     \x1b[36mimpl\x1b[0m"
+    16→        )
+    17→        invoke_result = MagicMock()
+    18→        invoke_result.output = ""
+    19→        invoke_result.stderr = ansi_output
+    20→        invoke_result.exit_code = 0
+    21→        mock_runner_cls.return_value.invoke.return_value = invoke_result
+    22→
+    23→        result = await run_erk_plan_list()
+    24→
+    25→        self.assertEqual(result.exit_code, 0)
+    26→        self.assertNotIn("\x1b", result.output)
+    27→        self.assertIn("pr", result.output)
+    28→        self.assertIn("#1", result.output)
+    29→
+    30→    @patch("erkbot.runner.CliRunner")
+
+... [109 lines omitted] ...
+  </tool_result>
+  <thinking>Now I understand the full picture:
+
+1. `runner.py:14` uses `CliRunner(mix_stderr=False)` 
+2. The existing test `test_uses_mix_stderr_false` (line 46) mocks `CliRunner` so it doesn't catch this real-world failure
+3. Click 8.2+ removed `mix_stderr` parameter from CliRunner (it was deprecated)
+
+Let me check which Click version is installed to confirm.
+
+The fix is simple: remove `mix_stderr=False` from `CliRunner()`. But then we need to handle stderr differently - with Click 8.2+, the `CliRunner` captures stderr separately by default (the opposite of the old default where stderr was mixed into stdout).
+ 
+I need to figure out what version of Click is actually installed. Since Click is a transitive dependency through `erk` rather than a direct dependency in `pyproject.toml`, I should check what version got pulled in.
+
+For the TDD approach, I'd write a test that calls `run_erk_plan_list` without mocking the CliRunner construction to expose the `mix_stderr` incompatibility, then fix it by removing that parameter from the CliRunner instantiation, and finally clean up the test that was specifically checking for `mix_stderr=False` since that's no longer relevant.
+
+Now I'm realizing the actual issue — the Click version being used doesn't support the `mix_stderr` parameter at all, so the simplest solution is to just instantiate `CliRunner()` without any arguments and let the default behavior handle stderr mixing.
+
+Since the default already mixes stderr into stdout, the output concatenation in line 16 will still work correctly even though `result.stderr` will be empty. I should remove the `mix_stderr=False` parameter and then update the test to reflect this simpler approach.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2317" cache_read_input_tokens="65980" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2317}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check which Click version is actually installed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2317" cache_read_input_tokens="65980" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2317}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01M5BohRvtPDddRwYDgdDDng">
+    <param name="command">.venv/bin/python -c "import click; print(click.__version__)"</param>
+    <param name="description">Check installed Click version</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2317" cache_read_input_tokens="65980" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2317}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01M5BohRvtPDddRwYDgdDDng">
+&lt;string&gt;:1: DeprecationWarning: The '__version__' attribute is deprecated and will be removed in Click 9.1. Use feature detection or 'importlib.metadata.version("click")' instead.
+  import click; print(click.__version__)
+8.3.1
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01WjEdmgoeJdVnUkzeM9SS1x">
+    <param name="command">.venv/bin/python -c "from click.testing import CliRunner; import inspect; print(inspect.signature(CliRunner.__init__))"</param>
+    <param name="description">Check CliRunner constructor signature</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2317" cache_read_input_tokens="65980" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2317}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WjEdmgoeJdVnUkzeM9SS1x">
+(self, charset: 'str' = 'utf-8', env: 'cabc.Mapping[str, str | None] | None' = None, echo_stdin: 'bool' = False, catch_exceptions: 'bool' = True) -&gt; 'None'
+  </tool_result>
+  <thinking>Click 8.3.1 removed `mix_stderr` completely from `CliRunner.__init__`. The signature is now `(self, charset, env, echo_stdin, catch_exceptions)`.
+
+This means:
+1. `mix_stderr=False` is not a valid parameter anymore
+2. In Click 8.3, stderr is always mixed (or handled differently)
+3. `result.stderr` likely doesn't exist anymore either
+
+Let me check if `result.stderr` is still available in Click 8.3.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1394" cache_read_input_tokens="68297" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1394}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KKokCS9M4wbWQjscStCm8d">
+    <param name="command">.venv/bin/python -c "
+from click.testing import CliRunner
+import click
+
+@click.command()
+d...[truncated 163 chars]... hasattr(result, 'stderr'))
+print('stderr:', repr(getattr(result, 'stderr', 'NO ATTR')))
+"</param>
+    <param name="description">Check Click 8.3 stderr behavior</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1394" cache_read_input_tokens="68297" output_tokens="333" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1394, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KKokCS9M4wbWQjscStCm8d">
+output: 'stdout\nstderr\n'
+has stderr attr: True
+stderr: 'stderr\n'
+  </tool_result>
+  <thinking>Interesting! So in Click 8.3.1:
+- `CliRunner()` works without `mix_stderr` parameter
+- `result.output` contains BOTH stdout and stderr (mixed)
+- `result.stderr` still exists and contains just the stderr
+
+So the fix is simple: remove `mix_stderr=False` from the CliRunner constructor. The existing output handling code `(result.output or "") + (result.stderr or "")` would then double-count stderr since `result.output` already has it mixed in.
+
+Wait, let me re-check. In the old Click with `mix_stderr=False`:
+
+
+- `result.output` = just stdout
+- `result.stderr` = just stderr
+
+In new Click 8.3 without any arg:
+- `result.output` = stdout + stderr (mixed)
+- `result.stderr` = just stderr
+
+So the line `(result.output or "") + (result.stderr or "")` would now be wrong - it would double-count stderr. The simplest fix is to just use `result.output` directly since it already contains everything mixed together.
+
+Now I'm invoking the CLI runner and extracting the output, stripping ANSI codes and handling empty results.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="372" cache_read_input_tokens="69691" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 372}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have full clarity. Click 8.3.1 removed the `mix_stderr` parameter entirely. In Click 8.3, `result.output` contains both stdout and stderr (mixed), and `result.stderr` also exists separately. The current code at line 16 (`(result.output or "") + (result.stderr or "")`) would double-count stderr with the new behavior.
+
+Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="372" cache_read_input_tokens="69691" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 372}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01LZzDZ4mSCaezmsULpXrgmC">
+    <param name="file_path">/Users/schrockn/.claude/plans/rippling-wobbling-candy.md</param>
+    <param name="content"># Fix CliRunner mix_stderr incompatibility with Click 8.3
+
+## Context
+
+`run_erk_plan_list(...[truncated 1388 chars]...s/test_runner.py -v`
+2. `cd packages/erkbot &amp;&amp; uv run pytest tests/ -v`
+3. `make fast-ci`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="372" cache_read_input_tokens="69691" output_tokens="1065" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 372, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LZzDZ4mSCaezmsULpXrgmC">
+File created successfully at: /Users/schrockn/.claude/plans/rippling-wobbling-candy.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01XXAwxiBJmDRdThiNC9qeEn">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests'}, {'tool': 'Bash', 'prompt': 'check Click behavior'}]</param>
+    <param name="plan"># Fix CliRunner mix_stderr incompatibility with Click 8.3
+
+## Context
+
+`run_erk_plan_list(...[truncated 1388 chars]...s/test_runner.py -v`
+2. `cd packages/erkbot &amp;&amp; uv run pytest tests/ -v`
+3. `make fast-ci`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1099" cache_read_input_tokens="70063" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1099}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XXAwxiBJmDRdThiNC9qeEn">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/rippling-wobbling-candy.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix CliRunner mix_stderr incompatibility with Click 8.3
+Current context: (wt:add-erkbot-system-prompt) (br:add-erkbot-system-prompt) (pr:#8125)\n\nWhat would you like to do with this plan?"
+  header: "br:add-erkbo"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 1ac6343e-ae7b-4cd4-b0fb-36f319184377 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+     (no PR tracking - this is for small PR iterations)
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+**Fix CliRunner mix_stderr incompatibility with Click 8.3**
+
+**Context**: `run_erk_plan_list()` in `runner.py:14` constructs `CliRunner(mix_stderr=False)`. Click 8.3.1 removed `mix_stderr` entirely, causing `TypeError` at runtime. Additionally, the output concatenation on line 16 would double-count stderr in Click 8.3 since `result.output` now always contains mixed stdout+stderr.
+
+**TDD Approach**:
+- **RED**: Add test that uses real `CliRunner()` constructor (patches only `.invoke`), fails with same TypeError
+- **GREEN**: Remove `mix_stderr=False`, simplify output to just `result.output or ""`
+- **REFACTOR**: Remove stale `test_uses_mix_stderr_false` that masks the bug
+
+**Files**: `runner.py` (fix lines 14, 16), `test_runner.py` (add test, remove stale test)
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="694" cache_read_input_tokens="71162" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 694}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_018n2QY9N3NYyQCJSfAGby2H">
+    <param name="questions">[{'question': '📋 Fix CliRunner mix_stderr incompatibility with Click 8.3\nCurrent context:...[truncated 488 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="694" cache_read_input_tokens="71162" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 694}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018n2QY9N3NYyQCJSfAGby2H">
+User has answered your questions: "📋 Fix CliRunner mix_stderr incompatibility with Click 8.3
+Current context: (wt:add-erkbot-system-prompt) (br:add-erkbot-system-prompt) (pr:#8125)
+
+What would you like to do with this plan?"="Skip PR and implement here". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_017hSRvRYeCiHftVXo54QMBD">
+    <param name="command">erk exec marker create --session-id 1ac6343e-ae7b-4cd4-b0fb-36f319184377 exit-plan-mode-hook.implement-now</param>
+    <param name="description">Create implement-now marker</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="938" cache_read_input_tokens="71856" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 938}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017hSRvRYeCiHftVXo54QMBD">
+{"success": true, "message": "Created marker: exit-plan-mode-hook.implement-now"}
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01H7gmTw4sS6koD6XbfrMfxH">
+    <param name="plan"># Fix CliRunner mix_stderr incompatibility with Click 8.3
+
+## Context
+
+`run_erk_plan_list(...[truncated 1388 chars]...s/test_runner.py -v`
+2. `cd packages/erkbot &amp;&amp; uv run pytest tests/ -v`
+3. `make fast-ci`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="338" cache_read_input_tokens="72794" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 338}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01H7gmTw4sS6koD6XbfrMfxH">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+</session>

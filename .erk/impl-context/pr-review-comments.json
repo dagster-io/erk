@@ -1,0 +1,96 @@
+{
+  "success": true,
+  "pr_number": 8125,
+  "threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5wj3Q1",
+      "path": "packages/erkbot/src/erkbot/prompts.py",
+      "line": 12,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Tripwires Review**: Missing LBYL check - should verify `prompt_path.exists()` before calling `.read_text()`. Even for bundled resources, erk follows LBYL pattern. See `src/erk/core/release_notes.py` for the standard pattern: check existence before reading.",
+          "created_at": "2026-02-25T02:32:23Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Added LBYL exists() check before read_text() in _load_prompt, with FileNotFoundError if missing. Fixed in a5e7e6cb8.\n\n_Addressed via `/erk:pr-address` at 2026-02-24 18:43 PST_",
+          "created_at": "2026-02-25T02:43:29Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wjxme",
+      "path": "packages/erkbot/tests/test_prompts.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python Review**: Inline import should be at module level - move `import tempfile` to the top of the file with other imports",
+          "created_at": "2026-02-25T02:18:40Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Moved import tempfile to module level. Fixed in a5e7e6cb8.\n\n_Addressed via `/erk:pr-address` at 2026-02-24 18:43 PST_",
+          "created_at": "2026-02-25T02:43:31Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wjxn9",
+      "path": "packages/erkbot/tests/test_prompts.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python Review**: Inline import should be at module level - move `import tempfile` to the top of the file with other imports",
+          "created_at": "2026-02-25T02:18:42Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Moved import tempfile to module level. Fixed in a5e7e6cb8.\n\n_Addressed via `/erk:pr-address` at 2026-02-24 18:43 PST_",
+          "created_at": "2026-02-25T02:43:32Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wj3Cx",
+      "path": "packages/erkbot/tests/test_prompts.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python**: Missing encoding parameter - should be `write_text(..., encoding=\"utf-8\")` to ensure consistent UTF-8 handling across platforms",
+          "created_at": "2026-02-25T02:31:50Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Added encoding=\"utf-8\" to write_text(). Fixed in a5e7e6cb8.\n\n_Addressed via `/erk:pr-address` at 2026-02-24 18:43 PST_",
+          "created_at": "2026-02-25T02:43:36Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wjxkw",
+      "path": "packages/erkbot/tests/test_prompts.py",
+      "line": 31,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: Missing encoding parameter in write_text() - should always specify encoding=\"utf-8\" for consistency",
+          "created_at": "2026-02-25T02:18:34Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Added encoding=\"utf-8\" to write_text(). Fixed in a5e7e6cb8.\n\n_Addressed via `/erk:pr-address` at 2026-02-24 18:43 PST_",
+          "created_at": "2026-02-25T02:43:34Z"
+        }
+      ]
+    }
+  ]
+}

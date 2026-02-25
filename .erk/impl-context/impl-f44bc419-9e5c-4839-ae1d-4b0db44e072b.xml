@@ -1,0 +1,682 @@
+<session>
+  <meta branch="add-erkbot-system-prompt" />
+  <meta model="claude-opus-4-6" />
+  <user>Implement the following plan:
+
+# Fix: erkbot `plan list` → `pr list` CLI migration
+
+## Context
+
+`erk plan list` was moved to `erk pr list` in a prior commit (1d0691256), but the erkbot package still invokes the old `["plan", "list", "--all-users"]` CLI args. This causes the bot to fail with "No such command 'list'" when a user types `@erk plan list` in Slack.
+
+The Slack-facing command name (`@erk plan list`) stays the same — users still type `plan list`. Only the internal CLI invocation needs to change to `["pr", "list", ...]`.
+
+## TDD Approach
+
+### Step 1: Update test to assert correct CLI args (RED)
+
+**File:** `packages/erkbot/tests/test_runner.py`
+
+- In `test_run_erk_plan_list_constructs_cli_runner` (line 44): this test patches `click.testing.CliRunner.invoke` directly — when the runner calls `["pr", "list", ...]` instead of `["plan", "list", ...]`, it will still pass (it doesn't assert on args). No change needed here.
+- In `test_passes_all_users_flag` (line 30): add assertion that the CLI args contain `"pr"` and `"list"` (not `"plan"` and `"list"`). This will fail against the current code.
+
+### Step 2: Fix the runner (GREEN)
+
+**File:** `packages/erkbot/src/erkbot/runner.py` (line 13)
+
+Change:
+```python
+result = await asyncio.to_thread(CliRunner().invoke, cli, ["plan", "list", "--all-users"])
+```
+To:
+```python
+result = await asyncio.to_thread(CliRunner().invoke, cli, ["pr", "list", "--all-users"])
+```
+
+### Step 3: Fix the system prompt
+
+**File:** `packages/erkbot/src/erkbot/resources/erk_system_prompt.md`
+
+- Line 9: `uv run erk plan list` → `uv run erk pr list`
+- Line 17: `uv run erk plan list` → `uv run erk pr list`
+
+### Step 4: Fix system prompt test assertion
+
+**File:** `packages/erkbot/tests/test_prompts.py` (line 16)
+
+Change:
+```python
+self.assertIn("plan list", ERK_SYSTEM_PROMPT)
+```
+To:
+```python
+self.assertIn("pr list", ERK_SYSTEM_PROMPT)
+```
+
+### Step 5: Update Slack handler display text (cosmetic)
+
+**File:** `packages/erkbot/src/erkbot/slack_handlers.py`
+
+Update the user-facing messages on lines 219, 222-224 from `erk plan list` to `erk pr list` so they match the actual command being run. Also update `SUPPORTED_COMMANDS_TEXT` (line 37).
+
+### Step 6: Update handler tests
+
+**File:** `packages/erkbot/tests/test_slack_handlers.py` (line 51-52)
+
+Update the assertion strings from `"erk plan list"` to `"erk pr list"`.
+
+**File:** `packages/erkbot/tests/integration/test_app_mention_integration.py` (lines 44-45)
+
+Update assertion strings from `"plan list"` to `"pr list"`.
+
+## Verification
+
+Run erkbot tests:
+```
+cd packages/erkbot &amp;&amp; uv run pytest tests/ -x
+```
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-add-erkbot-system-prompt/a161c71b-ec1d-4d03-8e78-0c1959f3a295.jsonl</user>
+  <thinking>Let me implement this plan step by step. First, let me read all the files I need to modify to understand the current state.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="8120" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 8120, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll start by reading all the files that need to be modified in parallel.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="8120" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 8120, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01F7rUSLuBhcLiz13VBaNq8G">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/tests/test_runner.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="8120" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 8120, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01F7rUSLuBhcLiz13VBaNq8G">
+     1→import asyncio
+     2→import unittest
+     3→from unittest.mock import AsyncMock, MagicMock, patch
+     4→
+     5→from erkbot.runner import run_erk_one_shot, run_erk_plan_list, stream_erk_one_shot
+     6→
+     7→
+     8→class TestRunErkPlanList(unittest.IsolatedAsyncioTestCase):
+     9→    @patch("erkbot.runner.CliRunner")
+    10→    async def test_strips_ansi_codes_from_output(self, mock_runner_cls: MagicMock) -&gt; None:
+    11→        """plan list output with ANSI codes (from Rich Console) is stripped."""
+    12→        ansi_output = (
+    13→            "\x1b[1mpr    \x1b[0m\x1b[1m \x1b[0m\x1b[1mstage   \x1b[0m\n"
+    14→            "\x1b]8;;https://github.com/test/repo/issues/1\x1b\\#1\x1b]8;;\x1b\\"
+    15→            "     \x1b[36mimpl\x1b[0m"
+    16→        )
+    17→        invoke_result = MagicMock()
+    18→        invoke_result.output = ansi_output
+    19→        invoke_result.exit_code = 0
+    20→        mock_runner_cls.return_value.invoke.return_value = invoke_result
+    21→
+    22→        result = await run_erk_plan_list()
+    23→
+    24→        self.assertEqual(result.exit_code, 0)
+    25→        self.assertNotIn("\x1b", result.output)
+    26→        self.assertIn("pr", result.output)
+    27→        self.assertIn("#1", result.output)
+    28→
+    29→    @patch("erkbot.runner.CliRunner")
+    30→    async def test_passes_all_users_flag(self, mock_runner_cls: MagicMock) -&gt; None:
+
+... [105 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01TUCCTzhK2Cm5ppouHJz3aV">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/src/erkbot/runner.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="8120" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 8120, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TUCCTzhK2Cm5ppouHJz3aV">
+     1→import asyncio
+     2→from collections.abc import Awaitable, Callable
+     3→from shutil import which
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk import cli
+     8→from erkbot.models import RunResult
+     9→from erkbot.utils import strip_ansi
+    10→
+    11→
+    12→async def run_erk_plan_list() -&gt; RunResult:
+    13→    result = await asyncio.to_thread(CliRunner().invoke, cli, ["plan", "list", "--all-users"])
+    14→    raw_output = result.output or ""
+    15→    output = strip_ansi(raw_output).strip() or "(no output)"
+    16→    return RunResult(exit_code=result.exit_code, output=output)
+    17→
+    18→
+    19→async def run_erk_one_shot(message: str, *, timeout_seconds: float) -&gt; RunResult:
+    20→    if which("uv") is None:
+    21→        return RunResult(exit_code=127, output="Failed to start process: uv was not found in PATH")
+    22→
+    23→    try:
+    24→        process = await asyncio.create_subprocess_exec(
+    25→            "uv",
+    26→            "run",
+    27→            "erk",
+    28→            "one-shot",
+    29→            message,
+    30→            stdout=asyncio.subprocess.PIPE,
+
+... [70 lines omitted] ...
+
+    36→    except TimeoutError:
+    40→        except TimeoutError:
+    59→        return RunResult(exit_code=127, output="Failed to start process: uv was not found in PATH")
+    87→    except TimeoutError:
+    91→        except TimeoutError:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01T2cQZEM5GJ7BMfmH29HZFP">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/src/erkbot/resources/erk_system_prompt.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="8120" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 8120, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01T2cQZEM5GJ7BMfmH29HZFP">
+     1→You are erk-bot, an AI assistant for the erk project running in Slack.
+     2→
+     3→You help users check project status, understand plans and objectives, and submit tasks for implementation. You run inside the erk repository with full read access and can execute erk CLI commands.
+     4→
+     5→## Available Commands
+     6→
+     7→Run these via the Bash tool in your working directory:
+     8→
+     9→- `uv run erk plan list` — list open plans with their status
+    10→- `uv run erk one-shot "&lt;description&gt;"` — submit a task for remote autonomous implementation
+    11→- `uv run erk dash` — show the objectives dashboard with progress
+    12→- `uv run erk objective view &lt;number&gt;` — view details for a specific objective
+    13→
+    14→## When to Use Each Command
+    15→
+    16→- **Informational question** (what does X do, explain Y): Answer directly from your knowledge and the codebase. Read files as needed.
+    17→- **Status check** (what's in progress, show objectives): Run `uv run erk dash` or `uv run erk plan list`.
+    18→- **Objective details** (tell me about objective 1234): Run `uv run erk objective view &lt;number&gt;`.
+    19→- **Task requiring code changes** (fix bug X, add feature Y): Run `uv run erk one-shot "&lt;description&gt;"` to submit for remote implementation. Do not make code changes directly.
+    20→
+    21→## Output Formatting
+    22→
+    23→Keep responses concise for Slack:
+    24→
+    25→- No markdown headings — Slack does not render them
+    26→- Use plain text, `code blocks`, and bullet lists
+    27→- Keep responses short; prefer a few clear sentences over walls of text
+    28→- When showing command output, use code blocks
+    29→
+    30→## Limitations
+
+... [5 lines omitted] ...
+
+    34→- If a command fails or returns unexpected output, report the error clearly rather than retrying silently.
+  </tool_result>
+  <tool_use name="Read" id="toolu_016YXvykZQD9ASwVktWFkW3y">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/tests/test_prompts.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="8120" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 8120, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016YXvykZQD9ASwVktWFkW3y">
+     1→# NOTE: @patch usage is deliberate here. erkbot is a standalone package that
+     2→# tests third-party Slack SDK wiring and does not use erk's gateway layer.
+     3→import tempfile
+     4→import unittest
+     5→from pathlib import Path
+     6→
+     7→from erkbot.prompts import ERK_SYSTEM_PROMPT, get_erk_system_prompt
+     8→
+     9→
+    10→class TestErkSystemPrompt(unittest.TestCase):
+    11→    def test_erk_system_prompt_loads_from_resources(self) -&gt; None:
+    12→        self.assertIsInstance(ERK_SYSTEM_PROMPT, str)
+    13→        self.assertGreater(len(ERK_SYSTEM_PROMPT), 100)
+    14→
+    15→    def test_erk_system_prompt_mentions_key_commands(self) -&gt; None:
+    16→        self.assertIn("plan list", ERK_SYSTEM_PROMPT)
+    17→        self.assertIn("one-shot", ERK_SYSTEM_PROMPT)
+    18→        self.assertIn("dash", ERK_SYSTEM_PROMPT)
+    19→        self.assertIn("objective view", ERK_SYSTEM_PROMPT)
+    20→
+    21→    def test_get_erk_system_prompt_returns_default(self) -&gt; None:
+    22→        with tempfile.TemporaryDirectory() as tmp_dir:
+    23→            result = get_erk_system_prompt(repo_root=Path(tmp_dir))
+    24→            self.assertEqual(result, ERK_SYSTEM_PROMPT)
+    25→
+    26→    def test_get_erk_system_prompt_uses_custom_when_present(self) -&gt; None:
+    27→        with tempfile.TemporaryDirectory() as tmp_dir:
+    28→            tmp_path = Path(tmp_dir)
+    29→            custom_dir = tmp_path / ".erk" / "prompt-hooks"
+    30→            custom_dir.mkdir(parents=True)
+
+... [6 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Pf89pH75Ecpaew1ZWFY1E5">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/src/erkbot/slack_handlers.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="8120" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 8120, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Pf89pH75Ecpaew1ZWFY1E5">
+     1→from __future__ import annotations
+     2→
+     3→import asyncio
+     4→import logging
+     5→from collections import deque
+     6→from typing import TYPE_CHECKING, Any
+     7→
+     8→from slack_sdk.errors import SlackApiError
+     9→
+    10→from erk_shared.gateway.time.abc import Time
+    11→from erkbot.agent_handler import run_agent_background
+    12→from erkbot.config import Settings
+    13→from erkbot.models import (
+    14→    ChatCommand,
+    15→    OneShotCommand,
+    16→    OneShotMissingMessageCommand,
+    17→    PlanListCommand,
+    18→    QuoteCommand,
+    19→)
+    20→from erkbot.parser import parse_erk_command
+    21→from erkbot.runner import run_erk_plan_list, stream_erk_one_shot
+    22→from erkbot.utils import (
+    23→    build_one_shot_progress_text,
+    24→    chunk_for_slack,
+    25→    extract_one_shot_links,
+    26→    extract_slack_message_ts,
+    27→    load_quote_text,
+    28→    tail_output_lines,
+    29→)
+    30→
+
+... [288 lines omitted] ...
+
+    45→        except SlackApiError as exc:
+    46→            ignored_errors = {"already_reacted", "missing_scope", "not_reactable"}
+    47→            if exc.response.get("error") not in ignored_errors:
+    56→        except SlackApiError:
+    57→            logger.warning("slack_send failed: channel=%s text=%s", channel, text[:200])
+   110→                except SlackApiError as exc:
+   113→                        error_code = exc.response.get("error") if exc.response else "unknown_error"
+   120→                                f"({error_code}); streaming new output in replies."
+   182→        logger.warning(
+   183→            "one-shot failed: channel=%s exit_code=%d timed_out=%s",
+   193→            text=f"`erk one-shot` failed (exit {result.exit_code}){timeout_suffix}",
+   198→                max_lines=settings.one_shot_failure_tail_lines,
+   224→                else f"`erk plan list` failed (exit {result.exit_code}):"
+   274→                logger.warning(
+   289→                logger.warning("reply: command=one-shot rejected=no_channel")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CUdcxVmZ1G9ohRTxwxzyhn">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/tests/test_slack_handlers.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="8120" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 8120, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CUdcxVmZ1G9ohRTxwxzyhn">
+     1→# NOTE: @patch usage is deliberate here. These tests patch asyncio.create_task
+     2→# and run_erk_plan_list to verify Slack handler dispatch without launching real
+     3→# background tasks or subprocess calls.
+     4→import unittest
+     5→from unittest.mock import AsyncMock, MagicMock, patch
+     6→
+     7→from erkbot.config import Settings
+     8→from erkbot.models import RunResult
+     9→from erkbot.slack_handlers import register_handlers
+    10→
+    11→from erk_shared.gateway.time.fake import FakeTime
+    12→
+    13→
+    14→class FakeApp:
+    15→    def __init__(self) -&gt; None:
+    16→        self.event_handlers: dict = {}
+    17→        self.message_handlers: dict = {}
+    18→
+    19→    def event(self, name: str):
+    20→        def decorator(func):
+    21→            self.event_handlers[name] = func
+    22→            return func
+    23→
+    24→        return decorator
+    25→
+    26→    def message(self, pattern: str):
+    27→        def decorator(func):
+    28→            self.message_handlers[pattern] = func
+    29→            return func
+    30→
+
+... [98 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01VtEe3EPpi4LAijardbCGQt">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/tests/integration/test_app_mention_integration.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="8120" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 8120, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VtEe3EPpi4LAijardbCGQt">
+     1→# NOTE: @patch usage is deliberate here. erk-slack-bot is a standalone package that
+     2→# tests third-party Slack SDK wiring and does not use erk's gateway layer.
+     3→
+     4→from collections.abc import Awaitable, Callable
+     5→from unittest.mock import AsyncMock, MagicMock, patch
+     6→
+     7→import pytest
+     8→from erkbot.config import Settings
+     9→from erkbot.models import RunResult
+    10→from slack_bolt.async_app import AsyncApp
+    11→from slack_bolt.request.async_request import AsyncBoltRequest
+    12→
+    13→from tests.integration.conftest import dispatch_and_settle
+    14→from tests.mock_web_api_server.mock_server_thread import MockServerThread
+    15→from tests.mock_web_api_server.received_requests import ReceivedRequests
+    16→
+    17→BOT_MENTION = "&lt;@B123&gt;"
+    18→
+    19→
+    20→@pytest.mark.asyncio
+    21→async def test_plan_list_success(
+    22→    app: AsyncApp,
+    23→    build_app_mention_request,
+    24→    received: ReceivedRequests,
+    25→) -&gt; None:
+    26→    """plan list: reactions.add called, 'Running...' posted, plan output in code blocks."""
+    27→    with patch(
+    28→        "erkbot.slack_handlers.run_erk_plan_list",
+    29→        new_callable=AsyncMock,
+    30→        return_value=RunResult(exit_code=0, output="Plan #1: Fix bug\nPlan #2: Add feature"),
+
+... [303 lines omitted] ...
+
+    97→async def test_plan_list_error(
+   102→    """plan list with runner failure: error status line posted."""
+   106→        return_value=RunResult(exit_code=1, output="Error: connection refused"),
+   118→    assert any("failed" in t and "exit 1" in t for t in texts)
+   119→    assert any("Error: connection refused" in t for t in texts)
+   256→async def test_one_shot_failure(
+   261→    """one-shot failure: failure message with exit code, tail output in code blocks."""
+   271→            await on_line("Step 2: error occurred")
+   272→            await on_line("Fatal: process exited with code 1")
+   275→            output="Step 1: clone\nStep 2: error occurred\nFatal: process exited with code 1",
+   292→    assert any("failed" in t and "exit 1" in t for t in texts)
+   293→    assert any("Fatal:" in t or "error occurred" in t for t in texts)
+   303→    """one-shot with chat_update errors: fallback notice posted, output as threaded replies."""
+   304→    mock_server.set_error("/chat.update", "channel_not_found")
+  </tool_result>
+  <user>[Request interrupted by user]</user>
+  <user>continue</user>
+  <assistant>
+
+Now I have all the files read. Let me implement the changes following the TDD approach in the plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18608" cache_read_input_tokens="27866" cache_creation="{'ephemeral_5m_input_tokens': 18608, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01PewRgj9pyhQfqQ4QbxHnoe">
+    <param name="subject">Update test to assert "pr" "list" CLI args (RED)</param>
+    <param name="description">In test_passes_all_users_flag, add assertion that CLI args contain "pr" and "list"</param>
+    <param name="activeForm">Updating test assertion for CLI args</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18608" cache_read_input_tokens="27866" output_tokens="153" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 18608}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PewRgj9pyhQfqQ4QbxHnoe">
+Task #1 created successfully: Update test to assert "pr" "list" CLI args (RED)
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01T7eRSnzNMpuLcVLmu1ivne">
+    <param name="subject">Fix runner.py to use ["pr", "list", ...] (GREEN)</param>
+    <param name="description">Change CLI args in run_erk_plan_list from ["plan", "list", "--all-users"] to ["pr", "list", "--all-users"]</param>
+    <param name="activeForm">Fixing runner CLI args</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="189" cache_read_input_tokens="46474" cache_creation="{'ephemeral_5m_input_tokens': 189, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01T7eRSnzNMpuLcVLmu1ivne">
+Task #2 created successfully: Fix runner.py to use ["pr", "list", ...] (GREEN)
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01V2cRogxA7VZkQNhoD325Hb">
+    <param name="subject">Fix system prompt and its test</param>
+    <param name="description">Update erk_system_prompt.md: "plan list" → "pr list". Update test_prompts.py assertion.</param>
+    <param name="activeForm">Fixing system prompt references</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="176" cache_read_input_tokens="46663" output_tokens="122" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 176}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01V2cRogxA7VZkQNhoD325Hb">
+Task #3 created successfully: Fix system prompt and its test
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_013b3dbG3KAHtr33be6QFWAj">
+    <param name="subject">Update Slack handler display text and tests</param>
+    <param name="description">Update slack_handlers.py user-facing messages and SUPPORTED_COMMANDS_TEXT. Update test_slack_handlers.py and integration test assertions.</param>
+    <param name="activeForm">Updating Slack handler text and tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="147" cache_read_input_tokens="46839" output_tokens="131" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 147}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013b3dbG3KAHtr33be6QFWAj">
+Task #4 created successfully: Update Slack handler display text and tests
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_0154fvKPm6LKS5ykFPUDoZtN">
+    <param name="subject">Run erkbot tests to verify</param>
+    <param name="description">Run cd packages/erkbot &amp;&amp; uv run pytest tests/ -x</param>
+    <param name="activeForm">Running erkbot tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="158" cache_read_input_tokens="46986" output_tokens="109" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 158}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0154fvKPm6LKS5ykFPUDoZtN">
+Task #5 created successfully: Run erkbot tests to verify
+  </tool_result>
+  <assistant>**Step 1: Update test to assert correct CLI args (RED)**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="134" cache_read_input_tokens="47144" cache_creation="{'ephemeral_5m_input_tokens': 134, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01K6YurUd8wdYcKs8KyAxbFz">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="134" cache_read_input_tokens="47144" output_tokens="88" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 134}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01K6YurUd8wdYcKs8KyAxbFz">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01NtkhFwp7EyaLDYZbFmLYVU">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/tests/test_runner.py</param>
+    <param name="old_string">        _call_args = mock_runner_cls.return_value.invoke.call_args
+        cli_args = _call_args[0][1]
+        self.assertIn("--all-users", cli_args)</param>
+    <param name="new_string">        _call_args = mock_runner_cls.return_value.invoke.call_args
+        cli_args = _cal...[truncated 70 chars]...i_args)
+        self.assertIn("list", cli_args)
+        self.assertNotIn("plan", cli_args)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="106" cache_read_input_tokens="47278" cache_creation="{'ephemeral_5m_input_tokens': 106, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NtkhFwp7EyaLDYZbFmLYVU">
+The file /Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/tests/test_runner.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01SEYTqUjfjrz9Ls86SW3xaf">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="349" cache_read_input_tokens="47384" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 349}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SEYTqUjfjrz9Ls86SW3xaf">
+Updated task #1 status
+  </tool_result>
+  <assistant>**Step 2: Fix the runner (GREEN)**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="47733" cache_creation="{'ephemeral_5m_input_tokens': 88, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01F2wp3uo4UX5XBvzHERUFGj">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="47733" output_tokens="84" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 88}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01F2wp3uo4UX5XBvzHERUFGj">
+Updated task #2 status
+  </tool_result>
+  <tool_use name="Edit" id="toolu_013yoK8E2NpiQkDwPGyghYZW">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/src/erkbot/runner.py</param>
+    <param name="old_string">    result = await asyncio.to_thread(CliRunner().invoke, cli, ["plan", "list", "--all-users"])</param>
+    <param name="new_string">    result = await asyncio.to_thread(CliRunner().invoke, cli, ["pr", "list", "--all-users"])</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="102" cache_read_input_tokens="47821" cache_creation="{'ephemeral_5m_input_tokens': 102, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013yoK8E2NpiQkDwPGyghYZW">
+The file /Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/src/erkbot/runner.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01QQAzbj471Ucg4MtdTaQ1y6">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="269" cache_read_input_tokens="47923" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 269}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QQAzbj471Ucg4MtdTaQ1y6">
+Updated task #2 status
+  </tool_result>
+  <assistant>**Step 3 &amp; 4: Fix system prompt + its test, and Slack handler + its tests (parallel)**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="48192" cache_creation="{'ephemeral_5m_input_tokens': 88, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_015W7eioFaM3ie9i5vtdVSMC">
+    <param name="taskId">3</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="48192" output_tokens="99" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 88}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015W7eioFaM3ie9i5vtdVSMC">
+Updated task #3 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_014U6jeTNd1JUcjz1U7h6isb">
+    <param name="taskId">4</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="117" cache_read_input_tokens="48280" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 117}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014U6jeTNd1JUcjz1U7h6isb">
+Updated task #4 status
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01MTxH6dyhFjExVaqs6asc5x">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/src/erkbot/resources/erk_system_prompt.md</param>
+    <param name="old_string">uv run erk plan list</param>
+    <param name="new_string">uv run erk pr list</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="48397" output_tokens="170" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 90}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MTxH6dyhFjExVaqs6asc5x">
+The file /Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/src/erkbot/resources/erk_system_prompt.md has been updated. All occurrences of 'uv run erk plan list' were successfully replaced with 'uv run erk pr list'.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01A4wbMzeCfS3J3hfwS6U67q">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/tests/test_prompts.py</param>
+    <param name="old_string">        self.assertIn("plan list", ERK_SYSTEM_PROMPT)</param>
+    <param name="new_string">        self.assertIn("pr list", ERK_SYSTEM_PROMPT)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="266" cache_read_input_tokens="48487" output_tokens="183" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 266}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01A4wbMzeCfS3J3hfwS6U67q">
+The file /Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/tests/test_prompts.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JLgbFg2SYT5Tt3X93jwL5P">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/src/erkbot/slack_handlers.py</param>
+    <param name="old_string">SUPPORTED_COMMANDS_TEXT = (
+    "Supported commands: `@erk plan list`, `@erk chat &lt;message&gt;`, `@erk one-shot &lt;message&gt;`."
+)</param>
+    <param name="new_string">SUPPORTED_COMMANDS_TEXT = (
+    "Supported commands: `@erk pr list`, `@erk chat &lt;message&gt;`, `@erk one-shot &lt;message&gt;`."
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="243" cache_read_input_tokens="48753" output_tokens="239" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 243}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JLgbFg2SYT5Tt3X93jwL5P">
+The file /Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/src/erkbot/slack_handlers.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Vg6SvXJhdbhn1zHCE9MJRn">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/src/erkbot/slack_handlers.py</param>
+    <param name="old_string">            await say("Running `erk plan list`...", thread_ts=reply_thread_ts)
+           ...[truncated 115 chars]...t.exit_code == 0
+                else f"`erk plan list` failed (exit {result.exit_code}):"</param>
+    <param name="new_string">            await say("Running `erk pr list`...", thread_ts=reply_thread_ts)
+            r...[truncated 109 chars]...ult.exit_code == 0
+                else f"`erk pr list` failed (exit {result.exit_code}):"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="301" cache_read_input_tokens="48996" output_tokens="327" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 301}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Vg6SvXJhdbhn1zHCE9MJRn">
+The file /Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/src/erkbot/slack_handlers.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the test assertions:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="389" cache_read_input_tokens="49297" cache_creation="{'ephemeral_5m_input_tokens': 389, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01TW4hJNcmfUzhFenWNz9ryt">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/tests/test_slack_handlers.py</param>
+    <param name="old_string">        say.assert_any_call("Running `erk plan list`...", thread_ts="1.23")
+        say.assert_any_call("Result from `erk plan list`:", thread_ts="1.23")</param>
+    <param name="new_string">        say.assert_any_call("Running `erk pr list`...", thread_ts="1.23")
+        say.assert_any_call("Result from `erk pr list`:", thread_ts="1.23")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="389" cache_read_input_tokens="49297" output_tokens="263" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 389}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TW4hJNcmfUzhFenWNz9ryt">
+The file /Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/tests/test_slack_handlers.py has been updated successfully.
+  </tool_result>
+  <assistant>Now the integration test — lines 44-45 use `"plan list"` in `any()` checks which will still match since users type `plan list` and the test text contains `"plan list"`. Let me re-read the integration test assertions more carefully.
+
+The integration test at lines 44-45:
+```python
+assert any("Running" in t and "plan list" in t for t in texts)
+assert any("Result from" in t and "plan list" in t for t in texts)
+```
+
+These check the Slack messages posted by the handler, which now say `"pr list"` instead of `"plan list"`. So these need updating:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="324" cache_read_input_tokens="49686" cache_creation="{'ephemeral_5m_input_tokens': 324, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01JKU1ozC2PD15LjU88KFKW8">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/tests/integration/test_app_mention_integration.py</param>
+    <param name="old_string">    assert any("Running" in t and "plan list" in t for t in texts)
+    assert any("Result from" in t and "plan list" in t for t in texts)</param>
+    <param name="new_string">    assert any("Running" in t and "pr list" in t for t in texts)
+    assert any("Result from" in t and "pr list" in t for t in texts)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="324" cache_read_input_tokens="49686" output_tokens="386" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 324}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JKU1ozC2PD15LjU88KFKW8">
+The file /Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/tests/integration/test_app_mention_integration.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01N8sNs7tujJth7UToLfVZAy">
+    <param name="taskId">3</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="451" cache_read_input_tokens="50010" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 451}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01N8sNs7tujJth7UToLfVZAy">
+Updated task #3 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01TDxhyoUCuFeHudV3CefSAS">
+    <param name="taskId">4</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="50461" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 88}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TDxhyoUCuFeHudV3CefSAS">
+Updated task #4 status
+  </tool_result>
+  <assistant>**Step 5: Run tests**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="50549" cache_creation="{'ephemeral_5m_input_tokens': 88, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01Amr5ScyYnykACWkXYGoeQS">
+    <param name="taskId">5</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="50549" cache_creation="{'ephemeral_5m_input_tokens': 88, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Amr5ScyYnykACWkXYGoeQS">
+Updated task #5 status
+  </tool_result>
+  <tool_use name="Task" id="toolu_01J1rJcFLkjmgE8mrV1MuAiB">
+    <param name="description">Run erkbot pytest suite</param>
+    <param name="prompt">Run the erkbot test suite and report results. Command: cd /Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot &amp;&amp; uv run pytest tests/ -x</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="99" cache_read_input_tokens="50637" output_tokens="148" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 99}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01J1rJcFLkjmgE8mrV1MuAiB">
+pytest passed: 114 tests passed in 0.92 seconds
+
+All tests in the erkbot test suite passed successfully. There are 3 minor runtime warnings related to unawaited coroutines in mock objects, but these are non-blocking and don't affect test results.
+
+**Summary:**
+- Total: 114 tests
+- Passed: 114
+- Failed: 0
+- Skipped: 0
+- Warnings: 3 (non-critical)
+agentId: ac7d5e106cd437da8 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 16837
+tool_uses: 1
+duration_ms: 4598&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 114 tests pass.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="323" cache_read_input_tokens="50736" cache_creation="{'ephemeral_5m_input_tokens': 323, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01V7nMGJufHx7Aj7baHu9Hmo">
+    <param name="taskId">5</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="323" cache_read_input_tokens="50736" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 323}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01V7nMGJufHx7Aj7baHu9Hmo">
+Updated task #5 status
+  </tool_result>
+  <assistant>All done. Here's a summary of the changes:
+
+| File | Change |
+|------|--------|
+| `packages/erkbot/src/erkbot/runner.py:13` | `["plan", "list", ...]` → `["pr", "list", ...]` |
+| `packages/erkbot/src/erkbot/resources/erk_system_prompt.md` | `uv run erk plan list` → `uv run erk pr list` (2 occurrences) |
+| `packages/erkbot/src/erkbot/slack_handlers.py` | Display text: `erk plan list` → `erk pr list` (lines 37, 219, 222, 224) |
+| `packages/erkbot/tests/test_runner.py:41-44` | Added assertions for `"pr"`, `"list"` in CLI args, `"plan"` not in args |
+| `packages/erkbot/tests/test_prompts.py:16` | `"plan list"` → `"pr list"` |
+| `packages/erkbot/tests/test_slack_handlers.py:51-52` | `"erk plan list"` → `"erk pr list"` |
+| `packages/erkbot/tests/integration/test_app_mention_integration.py:44-45` | `"plan list"` → `"pr list"` |
+
+All 114 erkbot tests pass.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="96" cache_read_input_tokens="51059" cache_creation="{'ephemeral_5m_input_tokens': 96, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>

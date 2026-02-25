@@ -1,0 +1,767 @@
+<session>
+  <meta branch="add-erkbot-system-prompt" />
+  <meta model="claude-opus-4-6" />
+  <user>this is change made this break. it was working before.
+
+fix in tdd fashion </user>
+  <thinking>The user is showing a Slack thread where `erk plan list` is failing with "No such command 'list'" when run via the erk bot. This was working before and a recent change broke it. They want me to fix it in TDD fashion.
+
+Let me explore the codebase to understand what changed and why `plan list` is no longer working. I need to look at:
+1. The recent commits on this branch
+2. The CLI plan command structure
+3. The bot/prompts code that was recently changed
+
+Let me start by exploring the recent changes and the CLI structure.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="12278" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 12278, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the recent changes and the CLI structure to understand the breakage.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="12278" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 12278, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_012xwFXf1VhbT8fSnDy4RsCp">
+    <param name="description">Explore plan CLI and recent changes</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 610 chars]...erkbot-system-prompt`)
+
+Be thorough - read the actual diff of what changed on this branch.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="12278" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 12278, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01SsMV8yVmAtu8wSXMnpUSHY">
+    <param name="description">Explore erkbot and prompts.py</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 494 chars]...ve changed
+
+Search patterns: "plan list", "erkbot", "slack", "dispatch", "command_mapping"</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="12278" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 12278, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012xwFXf1VhbT8fSnDy4RsCp">
+Perfect! Now I have all the information needed. Let me create a comprehensive summary:
+
+## Summary of the Issue
+
+I've found the root cause of the "No such command 'list'" error. Here's what happened:
+
+### The Problem
+
+The bot's system prompt (newly added on this branch) references an outdated command:
+
+**File:** `/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/src/erkbot/resources/erk_system_prompt.md` (lines 9, 17)
+
+```markdown
+- `uv run erk plan list` — list open plans with their status
+...
+- **Status check** (what's in progress, show objectives): Run `uv run erk dash` or `uv run erk plan list`.
+```
+
+### Why It's Broken
+
+**Commit 1d0691256** (included in this branch's history) moved the `plan list` command to `pr list`:
+- **Before:** `erk plan list`
+- **After:** `erk pr list`
+
+However, the bot code still tries to invoke the old command path. Looking at:
+
+**File:** `/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/src/erkbot/runner.py` (line 13)
+
+```python
+async def run_erk_plan_list() -&gt; RunResult:
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01SsMV8yVmAtu8wSXMnpUSHY">
+Perfect! Now I have all the information. Let me create a comprehensive summary of the findings:
+
+## Summary: Root Cause Analysis
+
+I've identified **three related issues** causing `erk plan list` to break after the erkbot system prompt changes:
+
+### Issue 1: Outdated System Prompt (erkbot/resources/erk_system_prompt.md)
+
+**Location:** `/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/src/erkbot/resources/erk_system_prompt.md`
+
+**Problem:** The system prompt still references the old command:
+- Line 9: `- uv run erk plan list` — list open plans with their status
+- Line 17: **Status check** (what's in progress, show objectives): Run `uv run erk dash` or `uv run erk plan list`.
+
+**Why it's broken:** The actual CLI command was moved by commit `1d0691256` from `erk plan list` to `erk pr list`. The system prompt tells the bot to use a command that no longer exists.
+
+---
+
+### Issue 2: Outdated Runner Function (erkbot/src/erkbot/runner.py)
+
+**Location:** `/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/src/erkbot/runner.py`
+
+**Problem:** The `run_erk_plan_list()` function still invokes the old command path:
+```python
+async def run_erk_plan_list() -&gt; RunResult:
+    result = await asyncio.to_thread(CliRunner().invoke, cli, ["plan", "list", "--all-users"])
+```
+
+**Why it's broken:** This hardcoded function calls `["plan", "list", ...]` but the command moved to the `pr` group. Even if the system prompt is fixed, any direct function call would fail.
+
+
+... [43 lines omitted] ...
+  </tool_result>
+  <thinking>Both agents identified the same root cause. The `erk plan list` command was moved to `erk pr list` in a prior commit, but three files on this branch still reference the old command:
+
+1. `packages/erkbot/src/erkbot/resources/erk_system_prompt.md` - system prompt references `erk plan list`
+2. `packages/erkbot/src/erkbot/runner.py` - `run_erk_plan_list()` invokes `["plan", "list", "--all-users"]`
+3. `packages/erkbot/tests/test_prompts.py` - test asserts `"plan list"` in prompt
+   
+The user wants me to approach this with TDD, so I should start by examining the actual files to understand what needs to be fixed and plan the test-first approach.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2624" cache_read_input_tokens="31392" cache_creation="{'ephemeral_5m_input_tokens': 2624, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, both agents found the same root cause. The `plan list` command was moved to `pr list` in a prior commit, but the erkbot code still references the old path. Let me read the key files to write a precise plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2624" cache_read_input_tokens="31392" cache_creation="{'ephemeral_5m_input_tokens': 2624, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QPkBrDsn4bd7iGFBPs9H1J">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/src/erkbot/runner.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2624" cache_read_input_tokens="31392" cache_creation="{'ephemeral_5m_input_tokens': 2624, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QPkBrDsn4bd7iGFBPs9H1J">
+     1→import asyncio
+     2→from collections.abc import Awaitable, Callable
+     3→from shutil import which
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk import cli
+     8→from erkbot.models import RunResult
+     9→from erkbot.utils import strip_ansi
+    10→
+    11→
+    12→async def run_erk_plan_list() -&gt; RunResult:
+    13→    result = await asyncio.to_thread(CliRunner().invoke, cli, ["plan", "list", "--all-users"])
+    14→    raw_output = result.output or ""
+    15→    output = strip_ansi(raw_output).strip() or "(no output)"
+    16→    return RunResult(exit_code=result.exit_code, output=output)
+    17→
+    18→
+    19→async def run_erk_one_shot(message: str, *, timeout_seconds: float) -&gt; RunResult:
+    20→    if which("uv") is None:
+    21→        return RunResult(exit_code=127, output="Failed to start process: uv was not found in PATH")
+    22→
+    23→    try:
+    24→        process = await asyncio.create_subprocess_exec(
+    25→            "uv",
+    26→            "run",
+    27→            "erk",
+    28→            "one-shot",
+    29→            message,
+    30→            stdout=asyncio.subprocess.PIPE,
+
+... [70 lines omitted] ...
+
+    36→    except TimeoutError:
+    40→        except TimeoutError:
+    59→        return RunResult(exit_code=127, output="Failed to start process: uv was not found in PATH")
+    87→    except TimeoutError:
+    91→        except TimeoutError:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MD95KB2Hkbtx66dMeSu9wK">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/tests/test_prompts.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2624" cache_read_input_tokens="31392" cache_creation="{'ephemeral_5m_input_tokens': 2624, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MD95KB2Hkbtx66dMeSu9wK">
+     1→# NOTE: @patch usage is deliberate here. erkbot is a standalone package that
+     2→# tests third-party Slack SDK wiring and does not use erk's gateway layer.
+     3→import tempfile
+     4→import unittest
+     5→from pathlib import Path
+     6→
+     7→from erkbot.prompts import ERK_SYSTEM_PROMPT, get_erk_system_prompt
+     8→
+     9→
+    10→class TestErkSystemPrompt(unittest.TestCase):
+    11→    def test_erk_system_prompt_loads_from_resources(self) -&gt; None:
+    12→        self.assertIsInstance(ERK_SYSTEM_PROMPT, str)
+    13→        self.assertGreater(len(ERK_SYSTEM_PROMPT), 100)
+    14→
+    15→    def test_erk_system_prompt_mentions_key_commands(self) -&gt; None:
+    16→        self.assertIn("plan list", ERK_SYSTEM_PROMPT)
+    17→        self.assertIn("one-shot", ERK_SYSTEM_PROMPT)
+    18→        self.assertIn("dash", ERK_SYSTEM_PROMPT)
+    19→        self.assertIn("objective view", ERK_SYSTEM_PROMPT)
+    20→
+    21→    def test_get_erk_system_prompt_returns_default(self) -&gt; None:
+    22→        with tempfile.TemporaryDirectory() as tmp_dir:
+    23→            result = get_erk_system_prompt(repo_root=Path(tmp_dir))
+    24→            self.assertEqual(result, ERK_SYSTEM_PROMPT)
+    25→
+    26→    def test_get_erk_system_prompt_uses_custom_when_present(self) -&gt; None:
+    27→        with tempfile.TemporaryDirectory() as tmp_dir:
+    28→            tmp_path = Path(tmp_dir)
+    29→            custom_dir = tmp_path / ".erk" / "prompt-hooks"
+    30→            custom_dir.mkdir(parents=True)
+
+... [6 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01B6SV7qiKnCK3DRQjZDqFjs">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/src/erkbot/resources/erk_system_prompt.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2624" cache_read_input_tokens="31392" output_tokens="499" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 2624}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01B6SV7qiKnCK3DRQjZDqFjs">
+     1→You are erk-bot, an AI assistant for the erk project running in Slack.
+     2→
+     3→You help users check project status, understand plans and objectives, and submit tasks for implementation. You run inside the erk repository with full read access and can execute erk CLI commands.
+     4→
+     5→## Available Commands
+     6→
+     7→Run these via the Bash tool in your working directory:
+     8→
+     9→- `uv run erk plan list` — list open plans with their status
+    10→- `uv run erk one-shot "&lt;description&gt;"` — submit a task for remote autonomous implementation
+    11→- `uv run erk dash` — show the objectives dashboard with progress
+    12→- `uv run erk objective view &lt;number&gt;` — view details for a specific objective
+    13→
+    14→## When to Use Each Command
+    15→
+    16→- **Informational question** (what does X do, explain Y): Answer directly from your knowledge and the codebase. Read files as needed.
+    17→- **Status check** (what's in progress, show objectives): Run `uv run erk dash` or `uv run erk plan list`.
+    18→- **Objective details** (tell me about objective 1234): Run `uv run erk objective view &lt;number&gt;`.
+    19→- **Task requiring code changes** (fix bug X, add feature Y): Run `uv run erk one-shot "&lt;description&gt;"` to submit for remote implementation. Do not make code changes directly.
+    20→
+    21→## Output Formatting
+    22→
+    23→Keep responses concise for Slack:
+    24→
+    25→- No markdown headings — Slack does not render them
+    26→- Use plain text, `code blocks`, and bullet lists
+    27→- Keep responses short; prefer a few clear sentences over walls of text
+    28→- When showing command output, use code blocks
+    29→
+    30→## Limitations
+
+... [5 lines omitted] ...
+
+    34→- If a command fails or returns unexpected output, report the error clearly rather than retrying silently.
+  </tool_result>
+  <thinking>Now let me also check if there are existing tests for the runner to understand the testing patterns.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3088" cache_read_input_tokens="34016" cache_creation="{'ephemeral_5m_input_tokens': 3088, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check the existing runner tests and the PR CLI to confirm the correct command.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3088" cache_read_input_tokens="34016" cache_creation="{'ephemeral_5m_input_tokens': 3088, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01EF17wZTBLWeuCxRes7ev5P">
+    <param name="pattern">packages/erkbot/tests/test_runner*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3088" cache_read_input_tokens="34016" cache_creation="{'ephemeral_5m_input_tokens': 3088, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EF17wZTBLWeuCxRes7ev5P">
+/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/tests/test_runner.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01VdGY6wLBDAi8DbCFghnJXv">
+    <param name="pattern">def test.*plan_list|def test.*pr_list</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/tests</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3088" cache_read_input_tokens="34016" cache_creation="{'ephemeral_5m_input_tokens': 3088, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VdGY6wLBDAi8DbCFghnJXv">
+packages/erkbot/tests/test_slack_handlers.py:41:    async def test_plan_list(self, mock_run_plan_list: AsyncMock) -&gt; None:
+packages/erkbot/tests/test_parser.py:14:    def test_parse_plan_list(self) -&gt; None:
+packages/erkbot/tests/integration/test_app_mention_integration.py:21:async def test_plan_list_success(
+packages/erkbot/tests/integration/test_app_mention_integration.py:50:async def test_plan_list_ansi_codes_stripped(
+packages/erkbot/tests/integration/test_app_mention_integration.py:97:async def test_plan_list_error(
+packages/erkbot/tests/test_runner.py:44:    async def test_run_erk_plan_list_constructs_cli_runner(self, mock_invoke: MagicMock) -&gt; None:
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01X6RjwYD6qKbZroRPivuo9x">
+    <param name="pattern">@cli\.command|@plan\.command|def list|\"list\"|'list'</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/src/erk/cli</param>
+    <param name="glob">*pr*</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3088" cache_read_input_tokens="34016" cache_creation="{'ephemeral_5m_input_tokens': 3088, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01X6RjwYD6qKbZroRPivuo9x">
+No matches found
+  </tool_result>
+  <tool_use name="Read" id="toolu_01FF8MYbEN9ksyUVKFbcfaiq">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/tests/test_runner.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="839" cache_read_input_tokens="37104" cache_creation="{'ephemeral_5m_input_tokens': 839, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FF8MYbEN9ksyUVKFbcfaiq">
+     1→import asyncio
+     2→import unittest
+     3→from unittest.mock import AsyncMock, MagicMock, patch
+     4→
+     5→from erkbot.runner import run_erk_one_shot, run_erk_plan_list, stream_erk_one_shot
+     6→
+     7→
+     8→class TestRunErkPlanList(unittest.IsolatedAsyncioTestCase):
+     9→    @patch("erkbot.runner.CliRunner")
+    10→    async def test_strips_ansi_codes_from_output(self, mock_runner_cls: MagicMock) -&gt; None:
+    11→        """plan list output with ANSI codes (from Rich Console) is stripped."""
+    12→        ansi_output = (
+    13→            "\x1b[1mpr    \x1b[0m\x1b[1m \x1b[0m\x1b[1mstage   \x1b[0m\n"
+    14→            "\x1b]8;;https://github.com/test/repo/issues/1\x1b\\#1\x1b]8;;\x1b\\"
+    15→            "     \x1b[36mimpl\x1b[0m"
+    16→        )
+    17→        invoke_result = MagicMock()
+    18→        invoke_result.output = ansi_output
+    19→        invoke_result.exit_code = 0
+    20→        mock_runner_cls.return_value.invoke.return_value = invoke_result
+    21→
+    22→        result = await run_erk_plan_list()
+    23→
+    24→        self.assertEqual(result.exit_code, 0)
+    25→        self.assertNotIn("\x1b", result.output)
+    26→        self.assertIn("pr", result.output)
+    27→        self.assertIn("#1", result.output)
+    28→
+    29→    @patch("erkbot.runner.CliRunner")
+    30→    async def test_passes_all_users_flag(self, mock_runner_cls: MagicMock) -&gt; None:
+
+... [105 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_019Gmq2DFgf3XyG1AB6g61TA">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/tests/test_slack_handlers.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="839" cache_read_input_tokens="37104" cache_creation="{'ephemeral_5m_input_tokens': 839, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019Gmq2DFgf3XyG1AB6g61TA">
+     1→# NOTE: @patch usage is deliberate here. These tests patch asyncio.create_task
+     2→# and run_erk_plan_list to verify Slack handler dispatch without launching real
+     3→# background tasks or subprocess calls.
+     4→import unittest
+     5→from unittest.mock import AsyncMock, MagicMock, patch
+     6→
+     7→from erkbot.config import Settings
+     8→from erkbot.models import RunResult
+     9→from erkbot.slack_handlers import register_handlers
+    10→
+    11→from erk_shared.gateway.time.fake import FakeTime
+    12→
+    13→
+    14→class FakeApp:
+    15→    def __init__(self) -&gt; None:
+    16→        self.event_handlers: dict = {}
+    17→        self.message_handlers: dict = {}
+    18→
+    19→    def event(self, name: str):
+    20→        def decorator(func):
+    21→            self.event_handlers[name] = func
+    22→            return func
+    23→
+    24→        return decorator
+    25→
+    26→    def message(self, pattern: str):
+    27→        def decorator(func):
+    28→            self.message_handlers[pattern] = func
+    29→            return func
+    30→
+
+... [98 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Pmy4T3eDHR5cHaXQLmTu75">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/tests/test_parser.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="839" cache_read_input_tokens="37104" output_tokens="247" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 839}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Pmy4T3eDHR5cHaXQLmTu75">
+     1→import unittest
+     2→
+     3→from erkbot.models import (
+     4→    ChatCommand,
+     5→    OneShotCommand,
+     6→    OneShotMissingMessageCommand,
+     7→    PlanListCommand,
+     8→    QuoteCommand,
+     9→)
+    10→from erkbot.parser import parse_erk_command
+    11→
+    12→
+    13→class TestParseErkCommand(unittest.TestCase):
+    14→    def test_parse_plan_list(self) -&gt; None:
+    15→        command = parse_erk_command("&lt;@U123&gt; plan list")
+    16→        self.assertIsInstance(command, PlanListCommand)
+    17→
+    18→    def test_parse_quote(self) -&gt; None:
+    19→        command = parse_erk_command("&lt;@U123&gt; quote")
+    20→        self.assertIsInstance(command, QuoteCommand)
+    21→
+    22→    def test_parse_one_shot_message(self) -&gt; None:
+    23→        command = parse_erk_command("&lt;@U123&gt; one-shot Review README")
+    24→        self.assertIsInstance(command, OneShotCommand)
+    25→        assert isinstance(command, OneShotCommand)
+    26→        self.assertEqual(command.message, "Review README")
+    27→
+    28→    def test_parse_one_shot_missing_message(self) -&gt; None:
+    29→        command = parse_erk_command("&lt;@U123&gt; one-shot")
+    30→        self.assertIsInstance(command, OneShotMissingMessageCommand)
+
+... [17 lines omitted] ...
+  </tool_result>
+  <thinking>Now let me also look at the slack_handlers.py to see how "plan list" is dispatched and what messages it displays.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4795" cache_read_input_tokens="37943" cache_creation="{'ephemeral_5m_input_tokens': 4795, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me also check the slack handlers and the parser to understand the full dispatch chain.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4795" cache_read_input_tokens="37943" cache_creation="{'ephemeral_5m_input_tokens': 4795, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Si9NhQE81UUPYxNexuv7dV">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/src/erkbot/slack_handlers.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4795" cache_read_input_tokens="37943" cache_creation="{'ephemeral_5m_input_tokens': 4795, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Si9NhQE81UUPYxNexuv7dV">
+     1→from __future__ import annotations
+     2→
+     3→import asyncio
+     4→import logging
+     5→from collections import deque
+     6→from typing import TYPE_CHECKING, Any
+     7→
+     8→from slack_sdk.errors import SlackApiError
+     9→
+    10→from erk_shared.gateway.time.abc import Time
+    11→from erkbot.agent_handler import run_agent_background
+    12→from erkbot.config import Settings
+    13→from erkbot.models import (
+    14→    ChatCommand,
+    15→    OneShotCommand,
+    16→    OneShotMissingMessageCommand,
+    17→    PlanListCommand,
+    18→    QuoteCommand,
+    19→)
+    20→from erkbot.parser import parse_erk_command
+    21→from erkbot.runner import run_erk_plan_list, stream_erk_one_shot
+    22→from erkbot.utils import (
+    23→    build_one_shot_progress_text,
+    24→    chunk_for_slack,
+    25→    extract_one_shot_links,
+    26→    extract_slack_message_ts,
+    27→    load_quote_text,
+    28→    tail_output_lines,
+    29→)
+    30→
+
+... [288 lines omitted] ...
+
+    45→        except SlackApiError as exc:
+    46→            ignored_errors = {"already_reacted", "missing_scope", "not_reactable"}
+    47→            if exc.response.get("error") not in ignored_errors:
+    56→        except SlackApiError:
+    57→            logger.warning("slack_send failed: channel=%s text=%s", channel, text[:200])
+   110→                except SlackApiError as exc:
+   113→                        error_code = exc.response.get("error") if exc.response else "unknown_error"
+   120→                                f"({error_code}); streaming new output in replies."
+   182→        logger.warning(
+   183→            "one-shot failed: channel=%s exit_code=%d timed_out=%s",
+   193→            text=f"`erk one-shot` failed (exit {result.exit_code}){timeout_suffix}",
+   198→                max_lines=settings.one_shot_failure_tail_lines,
+   224→                else f"`erk plan list` failed (exit {result.exit_code}):"
+   274→                logger.warning(
+   289→                logger.warning("reply: command=one-shot rejected=no_channel")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Ho6EAZ4jPVcpMz187PVJzJ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/src/erkbot/parser.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4795" cache_read_input_tokens="37943" cache_creation="{'ephemeral_5m_input_tokens': 4795, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ho6EAZ4jPVcpMz187PVJzJ">
+     1→import re
+     2→
+     3→from erkbot.models import (
+     4→    ChatCommand,
+     5→    Command,
+     6→    OneShotCommand,
+     7→    OneShotMissingMessageCommand,
+     8→    PlanListCommand,
+     9→    QuoteCommand,
+    10→)
+    11→
+    12→
+    13→def strip_mentions(text: str) -&gt; str:
+    14→    return re.sub(r"&lt;@[^&gt;]+&gt;", " ", text).strip()
+    15→
+    16→
+    17→def parse_erk_command(text: str) -&gt; Command | None:
+    18→    message = strip_mentions(text)
+    19→    if not message:
+    20→        return None
+    21→
+    22→    normalized = " ".join(message.split())
+    23→    lowered = normalized.lower()
+    24→
+    25→    if lowered == "plan list":
+    26→        return PlanListCommand()
+    27→    if lowered == "quote":
+    28→        return QuoteCommand()
+    29→
+    30→    chat_match = re.match(r"(?i)^chat\b", normalized)
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01MGPKEcMJ2Zzi846ayWQQPF">
+    <param name="pattern">def list|\"list\"|'list'|pr.*list</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/src/erk/cli</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4795" cache_read_input_tokens="37943" cache_creation="{'ephemeral_5m_input_tokens': 4795, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MGPKEcMJ2Zzi846ayWQQPF">
+src/erk/cli/graphite_command.py:8:    @click.command("list", cls=GraphiteCommand)
+src/erk/cli/graphite_command.py:9:    def list_stack(ctx: ErkContext) -&gt; None:
+src/erk/cli/config.py:248:    - post_create_commands: Repo commands run first, then project commands (list concat)
+src/erk/cli/help_formatter.py:252:            "list",
+src/erk/cli/cli.py:31:from erk.cli.commands.pr.list_cmd import dash
+src/erk/cli/commands/objective/list_cmd.py:16:@click.command("list")
+src/erk/cli/commands/objective/list_cmd.py:18:def list_objectives(ctx: ErkContext) -&gt; None:
+src/erk/cli/commands/branch/list_cmd.py:15:@click.command("list")
+src/erk/cli/commands/plan/docs/unextracted_cmd.py:17:def list_unextracted(ctx: ErkContext) -&gt; None:
+src/erk/cli/commands/wt/list_cmd.py:226:    prs = ctx.github.list_prs(repo.root, state="all")
+src/erk/cli/commands/wt/list_cmd.py:326:@click.command("list")
+src/erk/cli/commands/wt/list_cmd.py:335:def list_wt(ctx: ErkContext, show_all: bool) -&gt; None:
+src/erk/cli/commands/init/capability/list_cmd.py:16:@click.command("list")
+src/erk/cli/commands/init/capability/list_cmd.py:19:def list_cmd(ctx: ErkContext, name: str | None) -&gt; None:
+src/erk/cli/commands/codespace/list_cmd.py:10:@click.command("list")
+src/erk/cli/commands/codespace/list_cmd.py:12:def list_codespaces(ctx: ErkContext) -&gt; None:
+src/erk/cli/commands/submit.py:522:    validated_planned_prs: list[ValidatedPlannedPR] = []
+src/erk/cli/commands/config.py:195:@config_group.command("list")
+src/erk/cli/commands/run/list_cmd.py:7:from erk.cli.commands.pr.list_cmd import format_pr_cell
+src/erk/cli/commands/run/list_cmd.py:91:    pr_linkages: dict[int, list] = {}
+src/erk/cli/commands/run/list_cmd.py:185:@click.command("list")
+src/erk/cli/commands/run/list_cmd.py:188:def list_runs(ctx: ErkContext, show_legacy: bool) -&gt; None:
+src/erk/cli/commands/artifact/list_cmd.py:13:@click.command("list")
+src/erk/cli/commands/artifact/list_cmd.py:21:def list_cmd(artifact_type: str | None, verbose: bool) -&gt; None:
+src/erk/cli/commands/stack/__init__.py:21:register_with_aliases(stack_group, list_stack, name="list")
+src/erk/cli/commands/stack/consolidate_cmd.py:72:def _format_removal_progress(removed_paths: list[Path], unassigned_slots: list[str]) -&gt; str:
+src/erk/cli/commands/slot/list_cmd.py:90:@click.command("list")
+src/erk/cli/commands/pr/list_cmd.py:67:    """Shared filter options for pr list commands."""
+src/erk/cli/commands/pr/list_cmd.py:236:def _pr_list_impl(
+src/erk/cli/commands/pr/list_cmd.py:419:@click.command("list")
+
+... [25 lines omitted] ...
+
+src/erk/cli/commands/completions.py:34:    - Click's shell completion protocol expects functions to return empty lists on error
+  </tool_result>
+  <thinking>Now I have a complete picture. Let me also check the `plan` command group to confirm `list` was removed.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="7128" cache_read_input_tokens="42738" cache_creation="{'ephemeral_5m_input_tokens': 7128, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me verify the current `plan` command group has no `list` subcommand.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7128" cache_read_input_tokens="42738" cache_creation="{'ephemeral_5m_input_tokens': 7128, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UsFQRxi5Fs3nbZkF5LcAEe">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/src/erk/cli/commands/plan/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7128" cache_read_input_tokens="42738" cache_creation="{'ephemeral_5m_input_tokens': 7128, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UsFQRxi5Fs3nbZkF5LcAEe">
+     1→"""Plan command group."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→import click
+     6→
+     7→from erk.cli.capability_check import is_learned_docs_available
+     8→from erk.cli.commands.plan.check_cmd import check_plan
+     9→from erk.cli.commands.plan.checkout_cmd import checkout_plan
+    10→from erk.cli.commands.plan.duplicate_check_cmd import duplicate_check_plan
+    11→from erk.cli.commands.submit import submit_cmd
+    12→from erk_shared.gateway.git.repo_ops.real import RealGitRepoOps
+    13→
+    14→
+    15→@click.group("plan")
+    16→def plan_group() -&gt; None:
+    17→    """Manage implementation plans."""
+    18→    pass
+    19→
+    20→
+    21→plan_group.add_command(check_plan)
+    22→plan_group.add_command(checkout_plan, name="co")
+    23→plan_group.add_command(duplicate_check_plan)
+    24→if is_learned_docs_available(repo_ops=RealGitRepoOps(), cwd=Path.cwd()):
+    25→    from erk.cli.commands.plan.docs import docs_group
+    26→    from erk.cli.commands.plan.learn import learn_group
+    27→
+    28→    plan_group.add_command(docs_group)
+    29→    plan_group.add_command(learn_group)
+    30→plan_group.add_command(submit_cmd, name="submit")
+
+... [1 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01XTfaexvwZd7jKfvcy2Ls5e">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/tests/integration/test_app_mention_integration.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7128" cache_read_input_tokens="42738" cache_creation="{'ephemeral_5m_input_tokens': 7128, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XTfaexvwZd7jKfvcy2Ls5e">
+     1→# NOTE: @patch usage is deliberate here. erk-slack-bot is a standalone package that
+     2→# tests third-party Slack SDK wiring and does not use erk's gateway layer.
+     3→
+     4→from collections.abc import Awaitable, Callable
+     5→from unittest.mock import AsyncMock, MagicMock, patch
+     6→
+     7→import pytest
+     8→from erkbot.config import Settings
+     9→from erkbot.models import RunResult
+    10→from slack_bolt.async_app import AsyncApp
+    11→from slack_bolt.request.async_request import AsyncBoltRequest
+    12→
+    13→from tests.integration.conftest import dispatch_and_settle
+    14→from tests.mock_web_api_server.mock_server_thread import MockServerThread
+    15→from tests.mock_web_api_server.received_requests import ReceivedRequests
+    16→
+    17→BOT_MENTION = "&lt;@B123&gt;"
+    18→
+    19→
+    20→@pytest.mark.asyncio
+    21→async def test_plan_list_success(
+    22→    app: AsyncApp,
+    23→    build_app_mention_request,
+    24→    received: ReceivedRequests,
+    25→) -&gt; None:
+    26→    """plan list: reactions.add called, 'Running...' posted, plan output in code blocks."""
+    27→    with patch(
+    28→        "erkbot.slack_handlers.run_erk_plan_list",
+    29→        new_callable=AsyncMock,
+    30→        return_value=RunResult(exit_code=0, output="Plan #1: Fix bug\nPlan #2: Add feature"),
+
+... [303 lines omitted] ...
+
+    97→async def test_plan_list_error(
+   102→    """plan list with runner failure: error status line posted."""
+   106→        return_value=RunResult(exit_code=1, output="Error: connection refused"),
+   118→    assert any("failed" in t and "exit 1" in t for t in texts)
+   119→    assert any("Error: connection refused" in t for t in texts)
+   256→async def test_one_shot_failure(
+   261→    """one-shot failure: failure message with exit code, tail output in code blocks."""
+   271→            await on_line("Step 2: error occurred")
+   272→            await on_line("Fatal: process exited with code 1")
+   275→            output="Step 1: clone\nStep 2: error occurred\nFatal: process exited with code 1",
+   292→    assert any("failed" in t and "exit 1" in t for t in texts)
+   293→    assert any("Fatal:" in t or "error occurred" in t for t in texts)
+   303→    """one-shot with chat_update errors: fallback notice posted, output as threaded replies."""
+   304→    mock_server.set_error("/chat.update", "channel_not_found")
+  </tool_result>
+  <thinking>Now I have the full picture. The issue is clear:
+
+1. `erk plan list` was moved to `erk pr list` (confirmed - `plan/__init__.py` has no `list` command, while `pr/__init__.py` has `pr_group.add_command(pr_list, name="list")`)
+2. The erkbot code still uses `["plan", "list", "--all-users"]` in `runner.py`
+3. The system prompt still references `erk plan list`
+4. Tests reference `plan list` in assertions
+
+The user wants TDD fix. The key question is: should the user-facing Slack command still be `@erk plan list` (which maps to `erk pr list` internally), or should it change to `@erk pr list`?
+
+
+Looking at the screenshot, the user typed `@erk plan list` and it worked, so the simplest approach is to keep the Slack interface as `plan list` for backward compatibility while fixing the internal runner to call `["pr", "list", ...]` instead. Slack doesn't need to match the CLI exactly. Looking at slack_handlers.py, the messages like "Running `erk plan list`..." are just cosmetic—the real problem is that runner.py calls `["plan", "list", "--all-users"]` which no longer exists in the CLI. I'll fix runner.py to call `["pr", "list", "--all-users"]` instead and keep the Slack command name as `plan list` since that's what users type.
+
+The system prompt also needs updating since it instructs the AI bot which commands to use. I should follow TDD here: write a test verifying the runner calls the correct command, fix the runner, update the system prompt, then update the test for that prompt.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5527" cache_read_input_tokens="49866" cache_creation="{'ephemeral_5m_input_tokens': 5527, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have the complete picture. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5527" cache_read_input_tokens="49866" cache_creation="{'ephemeral_5m_input_tokens': 5527, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01Tb1kCu9LMG8vZkkSBoNzAQ">
+    <param name="file_path">/Users/schrockn/.claude/plans/mellow-hopping-crown.md</param>
+    <param name="content"># Fix: erkbot `plan list` → `pr list` CLI migration
+
+## Context
+
+`erk plan list` was moved...[truncated 2379 chars]...
+## Verification
+
+Run erkbot tests:
+```
+cd packages/erkbot &amp;&amp; uv run pytest tests/ -x
+```
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5527" cache_read_input_tokens="49866" cache_creation="{'ephemeral_5m_input_tokens': 5527, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Tb1kCu9LMG8vZkkSBoNzAQ">
+File created successfully at: /Users/schrockn/.claude/plans/mellow-hopping-crown.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01VUxRFtPVbJb7KKTUibmjCr">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run erkbot tests via devrun agent'}]</param>
+    <param name="plan"># Fix: erkbot `plan list` → `pr list` CLI migration
+
+## Context
+
+`erk plan list` was moved...[truncated 2379 chars]...
+## Verification
+
+Run erkbot tests:
+```
+cd packages/erkbot &amp;&amp; uv run pytest tests/ -x
+```
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1648" cache_read_input_tokens="55393" cache_creation="{'ephemeral_5m_input_tokens': 1648, 'ephemeral_1h_input_tokens': 0}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VUxRFtPVbJb7KKTUibmjCr">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/mellow-hopping-crown.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix: erkbot `plan list` → `pr list` CLI migration
+Current context: (wt:add-erkbot-system-prompt) (br:add-erkbot-system-prompt) (pr:#8125)\n\nWhat would you like to do with this plan?"
+  header: "br:add-erkbo"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id a161c71b-ec1d-4d03-8e78-0c1959f3a295 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+     (no PR tracking - this is for small PR iterations)
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+## Fix: erkbot `plan list` → `pr list` CLI migration
+
+### Context
+`erk plan list` was moved to `erk pr list` in a prior commit, but the erkbot package still invokes the old `["plan", "list", "--all-users"]` CLI args. This causes the bot to fail with "No such command 'list'" when a user types `@erk plan list` in Slack.
+
+### TDD Approach
+
+1. **Update test to assert correct CLI args (RED)** — `test_runner.py`: assert CLI args contain `"pr"` not `"plan"`
+2. **Fix the runner (GREEN)** — `runner.py`: change `["plan", "list", ...]` to `["pr", "list", ...]`
+3. **Fix the system prompt** — `erk_system_prompt.md`: `erk plan list` → `erk pr list`
+4. **Fix system prompt test** — `test_prompts.py`: assert `"pr list"` not `"plan list"`
+5. **Update Slack handler display text** — `slack_handlers.py`: cosmetic message updates + `SUPPORTED_COMMANDS_TEXT`
+6. **Update handler tests** — `test_slack_handlers.py` and integration tests
+
+### Files Modified
+- `packages/erkbot/src/erkbot/runner.py` (line 13)
+- `packages/erkbot/src/erkbot/resources/erk_system_prompt.md` (lines 9, 17)
+- `packages/erkbot/src/erkbot/slack_handlers.py` (lines 37, 219, 222-224)
+- `packages/erkbot/tests/test_runner.py`
+- `packages/erkbot/tests/test_prompts.py` (line 16)
+- `packages/erkbot/tests/test_slack_handlers.py` (lines 51-52)
+- `packages/erkbot/tests/integration/test_app_mention_integration.py` (lines 44-45)</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="685" cache_read_input_tokens="57041" cache_creation="{'ephemeral_5m_input_tokens': 685, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01QPk9dXFzMAF1xGeSYDdiMH">
+    <param name="questions">[{'question': '📋 Fix: erkbot `plan list` → `pr list` CLI migration\nCurrent context: (wt:a...[truncated 486 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="685" cache_read_input_tokens="57041" cache_creation="{'ephemeral_5m_input_tokens': 685, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QPk9dXFzMAF1xGeSYDdiMH">
+User has answered your questions: "📋 Fix: erkbot `plan list` → `pr list` CLI migration
+Current context: (wt:add-erkbot-system-prompt) (br:add-erkbot-system-prompt) (pr:#8125)
+
+What would you like to do with this plan?"="Skip PR and implement here". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01CcBgoNJeU4buy2WZG2F2xz">
+    <param name="command">erk exec marker create --session-id a161c71b-ec1d-4d03-8e78-0c1959f3a295 exit-plan-mode-hook.implement-now</param>
+    <param name="description">Create implement-now marker to skip PR creation</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1181" cache_read_input_tokens="57726" cache_creation="{'ephemeral_5m_input_tokens': 1181, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CcBgoNJeU4buy2WZG2F2xz">
+{"success": true, "message": "Created marker: exit-plan-mode-hook.implement-now"}
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01SiTP5VY5fEhyasUhtyRGmJ">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run erkbot tests via devrun agent'}]</param>
+    <param name="plan"># Fix: erkbot `plan list` → `pr list` CLI migration
+
+## Context
+
+`erk plan list` was moved...[truncated 2379 chars]...
+## Verification
+
+Run erkbot tests:
+```
+cd packages/erkbot &amp;&amp; uv run pytest tests/ -x
+```
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="233" cache_read_input_tokens="58907" output_tokens="79" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 233}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SiTP5VY5fEhyasUhtyRGmJ">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+</session>

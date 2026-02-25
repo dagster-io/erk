@@ -1,0 +1,1613 @@
+<session>
+  <meta branch="add-erkbot-system-prompt" />
+  <meta model="claude-sonnet-4-6" />
+  <user>▐▛███▜▌   Claude Code v2.1.53
+▝▜█████▛▘  Opus 4.6 · Claude Team
+  ▘▘ ▝▝    ~/code/erk
+
+❯ ▐▛███▜▌   Claude Code v2.1.53
+  ▝▜█████▛▘  Opus 4.6 · Claude Max
+    ▘▘ ▝▝    /workspaces/erk
+
+  ❯ erk objective plan 8036
+
+  ● Skill(/erk:objective-plan)
+    ⎿  Successfully loaded skill · 5 tools allowed
+
+  ● Loading objective #8036...
+
+  ● Task(Fetch objective #8036 data) Sonnet 4.6
+    ⎿  Done (4 tool uses · 26.9k tokens · 46s)
+    (ctrl+o to expand)
+
+  ● Bash(erk exec marker read --session-id "105814ea-73da-451e-8ba7-e09502f9dd5e" objective-context)
+    ⎿  8036
+
+  ● Objective context marker verified. Now loading the objective skill for format guidance.
+
+  ● Skill(objective)
+    ⎿  Successfully loaded skill
+
+  ● Here's the roadmap for Objective #8036 — Ship Demo-Ready Agent-Mode erk-slack-bot:
+
+    Phase 1: Core Agent Foundation
+
+    ┌──────┬──────────────────────────────────────────────────────────────────────────────────────────┬─────────────────┐
+    │ Node │                                       Description                                        │     Status      │
+    ├──────┼──────────────────────────────────────────────────────────────────────────────────────────┼─────────────────┤
+    │ 1.1  │ Async migration: replace sync App/SocketModeHandler with AsyncApp/AsyncSocketModeHandler │ done (PR #8039) │
+    ├──────┼──────────────────────────────────────────────────────────────────────────────────────────┼─────────────────┤
+    │ 1.2  │ Create agent event loop module (agent/events.py, agent/stream.py, agent/helpers.py)      │ done (PR #8070) │
+    ├──────┼──────────────────────────────────────────────────────────────────────────────────────────┼─────────────────┤
+    │ 1.3  │ Create basic ErkBot class with chat_stream streaming and eyes emoji lifecycle            │ done (PR #8087) │
+    ├──────┼──────────────────────────────────────────────────────────────────────────────────────────┼─────────────────┤
+    │ 1.4  │ Update config.py with ANTHROPIC_API_KEY, ERK_REPO_PATH, ERK_MODEL, max_turns             │ done (PR #8113) │
+    ├──────┼──────────────────────────────────────────────────────────────────────────────────────────┼─────────────────┤
+    │ 1.5  │ Update cli.py for async ErkBot startup                                                   │ done (PR #8113) │
+    ├──────┼──────────────────────────────────────────────────────────────────────────────────────────┼─────────────────┤
+    │ 1.6  │ Unit tests for event dataclasses, stream helpers, config validation                      │ done (PR #8113) │
+    ├──────┼──────────────────────────────────────────────────────────────────────────────────────────┼─────────────────┤
+    │ 1.7  │ Create prompts.py with erk-specific system prompt                                        │ pending         │
+    ├──────┼──────────────────────────────────────────────────────────────────────────────────────────┼─────────────────┤
+    │ 1.8  │ Add suggested replies as Slack buttons                                                   │ pending         │
+    └──────┴──────────────────────────────────────────────────────────────────────────────────────────┴─────────────────┘
+
+    Phases 2–9: Webhook, Block Kit, Tool Status, Sessions, Cleanup, MCP, Welcome, Digest
+
+    (26 more pending nodes across 8 phases)
+
+    ---
+
+  ● User declined to answer questions
+
+  ❯ make plan for 1.8
+    ⎿  Interrupted · What should Claude do instead?
+
+  ❯ make plan for 1.7
+
+  ● Creating plan for node 1.7: Create prompts.py with erk-specific system prompt.
+
+    Let me set the marker and gather context.
+
+  ● Bash(erk exec marker create --session-id "105814ea-73da-451e-8ba7-e09502f9dd5e" --content "1.7" roadmap-step)
+    ⎿  {
+         "success": true,
+         "message": "Created marker: roadmap-step"
+       }
+
+  ● Explore(Explore slack-bot codebase)
+    ⎿  Done (46 tool uses · 69.8k tokens · 1m 24s)
+    (ctrl+o to expand)
+
+  ● Good, I have thorough context. Let me enter plan mode.
+
+  ● Entered plan mode
+    Claude is now exploring and designing an implementation approach.
+
+  ● I have thorough context from the explore phase. Let me read the key reference files to verify patterns, then design the plan.
+
+  ● Read 6 files (ctrl+o to expand)
+
+  ● Now let me check the commit message prompt for the prompt content style reference, and look at the existing resources
+  directory.
+
+  ● Read 1 file (ctrl+o to expand)
+
+  ● I have everything I need. Let me also check how the bot is used from the agent handler to understand the full flow.
+
+  ● Read 2 files (ctrl+o to expand)
+
+  ● I have all the context I need. Let me write the plan.
+
+  ● Updated plan
+    ⎿  /plan to preview
+
+  ● Here's the plan:
+
+    ---
+    Plan: Node 1.7 — Create prompts.py with erk-specific system prompt
+
+    Part of Objective #8036, Node 1.7
+
+    Context
+
+    The erk-slack-bot's agent mode (nodes 1.1–1.6) is functional but uses a hardcoded one-liner system prompt: "You are erk-bot,
+  an AI
+    assistant for the erk project." This gives the agent no knowledge of erk commands, workflows, or how to help users. Node 1.7
+  creates
+     a proper prompts module with an erk-aware system prompt that teaches the agent about plan list, one-shot, objectives, and
+  dash.
+
+    Approach
+
+    Follow the established pattern from erk_shared/gateway/gt/prompts.py: a prompts.py module that loads a markdown prompt file
+  from
+    resources/, with an optional custom-prompt override path.
+
+    Files to Create
+
+    1. packages/erkbot/src/erkbot/resources/erk_system_prompt.md (NEW)
+
+    System prompt content teaching the agent about:
+
+    - Identity: You are erk-bot, an AI assistant for the erk project running in Slack
+    - Available erk commands (run via Bash tool in cwd):
+      - uv run erk plan list — list open plans with status
+      - uv run erk one-shot "&lt;message&gt;" — submit task for remote implementation
+      - uv run erk dash — show objectives dashboard
+      - uv run erk objective view &lt;number&gt; — view objective details
+    - When to use each command: decision tree (informational query → respond directly; task requiring code changes → one-shot;
+  status
+    check → plan list or dash)
+    - Output formatting: Keep responses concise for Slack. No markdown headings (Slack doesn't render them). Use plain text, code
+    blocks, and bullet lists.
+    - Limitations: The agent runs with bypassPermissions in the repo directory. It can read files and run erk CLI commands but
+  should
+    not make direct code changes (that's what one-shot is for).
+
+    2. packages/erkbot/src/erkbot/prompts.py (NEW)
+
+    Mirrors erk_shared/gateway/gt/prompts.py pattern: _load_prompt() helper, ERK_SYSTEM_PROMPT constant, get_erk_system_prompt(*,
+    repo_root) with custom-prompt override from .erk/prompt-hooks/.
+
+    Files to Modify
+
+    3. packages/erkbot/src/erkbot/cli.py — Replace hardcoded prompt with get_erk_system_prompt(repo_root=repo_path)
+
+    4. packages/erkbot/tests/test_cli.py — Mock get_erk_system_prompt so test doesn't depend on prompt file contents
+
+    5. packages/erkbot/tests/test_prompts.py (NEW) — Tests for prompt loading, default vs custom, key command mentions
+
+    Verification
+
+    Run all erkbot tests: pytest tests/test_prompts.py tests/test_cli.py tests/ -v
+
+    ---
+
+  ● User answered Claude's questions:
+    ⎿  · 📋 Plan: Node 1.7 — Create prompts.py with erk-specific system prompt
+       Current context: (wt:erk) (br:master) (plan:#7885)
+
+       What would you like to do with this plan? → Create a plan PR (Recommended)
+
+  ● Skill(/erk:plan-save)
+    ⎿  Successfully loaded skill
+
+  ● Saving plan to GitHub...
+
+    Step 1: Parsed --objective-issue=8036
+
+    Step 1.5: Branch slug from title "Node 1.7 — Create prompts.py with erk-specific system prompt" → add-erkbot-system-prompt
+
+  ● Bash(erk exec plan-save --format json --session-id="105814ea-73da-451e-8ba7-e09502f9dd5e"
+  --branch-slug="add-erkbot-system-prompt"
+        --objective-issue=8036)
+    ⎿  {"success": true, "plan_number": 8124, "plan_url": "https://github.com/dagster-io/erk/pull/8124", "title": "[erk-plan]
+  Plan:
+        Node 1.7 \u2014 Create prompts.py with erk-specific system prompt", "branch_name":
+  "plnd/O8036-add-erkbot-system-pr-02-25-0
+       208", "plan_backend": "planned_pr", "archived_to":
+  "/workspaces/erk/.erk/scratch/sessions/105814ea-73da-451e-8ba7-e09502f9dd
+       5e/plan_snapshots/000001-ef6ffc25"}
+    ⎿  (timeout 1m)
+
+  ● Plan saved. Now verifying the objective link and updating the roadmap.
+
+  ● Bash(erk exec get-plan-metadata 8124 objective_issue)
+    ⎿  {
+         "success": true,
+         "value": 8036,
+       … +3 lines (ctrl+o to expand)
+
+  ● Bash(erk exec marker read --session-id "105814ea-73da-451e-8ba7-e09502f9dd5e" roadmap-step)
+    ⎿  1.7
+
+  ● Verified objective link: #8036. Now updating the roadmap.
+
+  ✶ Forging… (4m 44s · ↓ 8.8k tokens · thought for 5s)
+    ⎿  Tip: Share Claude Code and earn $10 of extra usage · /passes
+
+  ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ───────
+  ❯ 
+  ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ───────
+    ⏸ plan mode on (shift+tab to cycle) · esc to interrupt
+  Connection to localhost closed by remote host.
+  Connection to localhost closed.
+  shell closed: exit status 255
+  ➜  erk git:(master)
+
+  recover and keep going
+
+∴ Thinking…
+
+  The user's session was disconnected (SSH connection closed) while Claude was in the middle of saving a plan and updating a roadmap
+  for objective #8036, node 1.7. They want me to recover and continue where it left off.
+
+  Let me understand what was completed:
+  1. Plan was saved as issue #8124
+  2. Objective link was verified (#8036)
+  3. Roadmap step marker was read (1.7)
+  4. It was about to update the roadmap on the objective issue
+
+  So I need to:
+  1. Check the current state - what was done
+  2. Update the objective #8036 roadmap to mark node 1.7 as having plan #8124
+
+  3. Then see if the user wants me to move forward with implementing the plan
+
+  Let me verify what's already been completed before proceeding.
+
+⏺ The session dropped mid-flight. Let me pick up where it left off — the plan was saved as #8124, the objective link was verified, and
+   it was about to update the roadmap on objective #8036 to link node 1.7 to plan #8124.
+
+⏺ Bash(gh issue view 8036 --json body --jq '.body' | head -100)
+  ⎿  &lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+     &lt;!-- erk:metadata-block:objective-header --&gt;
+     &lt;details&gt;
+     &lt;summary&gt;objective-header&lt;/summary&gt;
+
+     ```yaml
+
+     created_at: '2026-02-24T01:15:36.327059+00:00'
+     created_by: schrockn
+     objective_comment_id: 3950252500
+     slug: agent-mode-slack-bot
+
+     ```
+
+     &lt;/details&gt;
+     &lt;!-- /erk:metadata-block:objective-header --&gt;
+
+     &lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+     &lt;!-- erk:metadata-block:objective-roadmap --&gt;
+     &lt;details&gt;
+     &lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;
+
+     ```yaml
+     schema_version: '4'
+     nodes:
+     - id: '1.1'
+       slug: async-migration
+       description: 'Async migration: replace sync App/SocketModeHandler with AsyncApp/AsyncSocketModeHandler'
+       status: done
+       plan: null
+       pr: '#8039'
+     - id: '1.2'
+       slug: agent-event-loop
+       description: Create agent event loop module (agent/events.py, agent/stream.py, agent/helpers.py)
+         ported from clack
+       status: done
+       plan: '#8070'
+       pr: '#8070'
+     - id: '1.3'
+       slug: erkbot-streaming
+       description: Create basic ErkBot class with chat_stream streaming and eyes emoji
+         lifecycle
+       status: done
+       plan: '#8087'
+       pr: '#8087'
+     - id: '1.4'
+       slug: config-agent-settings
+       description: Update config.py with ANTHROPIC_API_KEY, ERK_REPO_PATH, ERK_MODEL,
+         max_turns
+       status: done
+       plan: '#8105'
+       pr: '#8113'
+     - id: '1.5'
+       slug: async-cli
+       description: Update cli.py for async ErkBot startup
+       status: done
+       plan: '#8113'
+       pr: '#8113'
+     - id: '1.6'
+       slug: agent-tests
+       description: Unit tests for event dataclasses, stream helpers, config validation
+       status: done
+       plan: '#8113'
+       pr: '#8113'
+     - id: '1.7'
+       slug: erk-system-prompt
+       description: Create prompts.py with erk-specific system prompt (plan list, one-shot,
+         objectives, dash)
+       status: in_progress
+       plan: '#8124'
+       pr: null
+     - id: '1.8'
+       slug: suggested-reply-buttons
+       description: Add suggested replies as Slack buttons (context-aware follow-up actions
+         via Block Kit interactive buttons)
+       status: pending
+       plan: null
+       pr: null
+     - id: '2.1'
+       slug: webhook-server
+       description: Add lightweight HTTP webhook server (Starlette) alongside Socket Mode
+         bot
+       status: pending
+       plan: null
+       pr: null
+     - id: '2.2'
+       slug: webhook-handler
+       description: 'Implement webhook handler: receive payload, invoke agent, post to
+         Slack via MCP slack_response tool'
+       status: pending
+       plan: null
+       pr: null
+     - id: '2.3'
+       slug: oneshot-tracking
+       description: Track one-shot-run-id → (channel, thread_ts) mapping for completion
+         routing
+       status: pending
+       plan: null
+       pr: null
+     - id: '2.4'
+
+⏺ Bash(gh issue view 8124 --json title,state,url --jq '{title, state, url}')
+  ⎿  {
+       "state": "OPEN",
+       "title": "[erk-plan] Plan: Node 1.7 — Create prompts.py with erk-specific system prompt",
+       "url": "https://github.com/dagster-io/erk/pull/8124"
+     }
+
+∴ Thinking…
+
+  The roadmap already shows node 1.7 as in_progress with plan: '#8124'. So the update was already done before the session dropped. The
+   plan #8124 exists and is open.
+
+  So actually, the previous session completed everything it needed to. The roadmap was updated. Now the user said "recover and keep
+  going" — I think they want me to implement the plan.
+
+  Let me ask what they want to do, or just proceed with implementing #8124.
+
+⏺ The roadmap is already updated — node 1.7 shows in_progress with plan: '#8124'. Everything was saved before the disconnect.
+
+  Ready to implement plan #8124. Want me to go ahead?
+
+❯ /erk:plan-save
+
+∴ Thinking…
+
+  The user said "yes" (implicitly) and the system loaded the plan-save skill, but I think the user actually just said "yes" to
+  implementing the plan. The plan-save skill got loaded automatically by a hook or something. Let me re-read...
+
+  Actually, looking at the conversation flow:
+  1. I asked "Ready to implement plan #8124. Want me to go ahead?"
+  2. The user's response triggered the plan-save skill to load
+
+  But wait - the plan was already saved as #8124 in the previous session. The user wants to implement it, not save it again.
+
+  The &lt;command-message&gt;erk:plan-save&lt;/command-message&gt; seems to have been triggered automatically.
+
+  I need to switch gears and use the plan-implement skill instead, since the plan is already saved and the user clearly wants to move
+  forward with executing it.
+
+⏺ The plan is already saved as #8124 — no need to re-save. Let me implement it instead.
+
+⏺ Skill(/erk:plan-implement)
+  ⎿  Successfully loaded skill
+
+∴ Thinking…
+
+  Let me implement plan #8124. I'll follow the plan-implement workflow step by step.
+
+  Step 1: Set up implementation from issue #8124.
+
+⏺ Setting up implementation from plan #8124...
+
+⏺ Bash(erk exec setup-impl --issue 8124)
+  ⎿  Error: Exit code 1
+     Traceback (most recent call last):
+       File "/Users/schrockn/code/erk/.venv/bin/erk", line 10, in &lt;module&gt;
+         sys.exit(main())
+                  ~~~~^^
+       File "/Users/schrockn/code/erk/src/erk/cli/cli.py", line 232, in main
+         cli()
+         ~~~^^
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1485, in __call__
+         return self.main(*args, **kwargs)
+                ~~~~~~~~~^^^^^^^^^^^^^^^^^
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1406, in main
+         rv = self.invoke(ctx)
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1873, in invoke
+         return _process_result(sub_ctx.command.invoke(sub_ctx))
+                                ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1873, in invoke
+         return _process_result(sub_ctx.command.invoke(sub_ctx))
+                                ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1269, in invoke
+         return ctx.invoke(self.callback, **ctx.params)
+                ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 824, in invoke
+         return callback(*args, **kwargs)
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/decorators.py", line 34, in new_func
+         return f(get_current_context(), *args, **kwargs)
+       File "/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/setup_impl.py", line 184, in setup_impl
+         _handle_issue_setup(ctx, issue_number=issue_number, branch_slug=branch_slug)
+         ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+       File "/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/setup_impl.py", line 290, in _handle_issue_setup
+         ctx.invoke(
+         ~~~~~~~~~~^
+             setup_impl_from_issue,
+             ^^^^^^^^^^^^^^^^^^^^^^
+         ...&lt;3 lines&gt;...
+             branch_slug=branch_slug,
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+         )
+         ^
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 824, in invoke
+         return callback(*args, **kwargs)
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/decorators.py", line 34, in new_func
+         return f(get_current_context(), *args, **kwargs)
+     TypeError: setup_impl_from_issue() got an unexpected keyword argument 'branch_slug'
+
+     Traceback (most recent call last):
+       File "/Users/schrockn/code/erk/.venv/bin/erk", line 10, in &lt;module&gt;
+         sys.exit(main())
+                  ~~~~^^
+       File "/Users/schrockn/code/erk/src/erk/cli/cli.py", line 232, in main
+         cli()
+         ~~~^^
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1485, in __call__
+         return self.main(*args, **kwargs)
+                ~~~~~~~~~^^^^^^^^^^^^^^^^^
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1406, in main
+         rv = self.invoke(ctx)
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1873, in invoke
+         return _process_result(sub_ctx.command.invoke(sub_ctx))
+                                ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1873, in invoke
+         return _process_result(sub_ctx.command.invoke(sub_ctx))
+                                ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1269, in invoke
+         return ctx.invoke(self.callback, **ctx.params)
+                ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 824, in invoke
+         return callback(*args, **kwargs)
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/decorators.py", line 34, in new_func
+         return f(get_current_context(), *args, **kwargs)
+       File "/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/setup_impl.py", line 184, in setup_impl
+         _handle_issue_setup(ctx, issue_number=issue_number, branch_slug=branch_slug)
+         ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+       File "/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/setup_impl.py", line 290, in _handle_issue_setup
+         ctx.invoke(
+         ~~~~~~~~~~^
+             setup_impl_from_issue,
+             ^^^^^^^^^^^^^^^^^^^^^^
+         ...&lt;3 lines&gt;...
+             branch_slug=branch_slug,
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+         )
+         ^
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 824, in invoke
+         return callback(*args, **kwargs)
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/decorators.py", line 34, in new_func
+         return f(get_current_context(), *args, **kwargs)
+     TypeError: setup_impl_from_issue() got an unexpected keyword argument 'branch_slug'
+
+∴ Thinking…
+
+  The setup_impl command is failing because the setup_impl_from_issue function doesn't accept a branch_slug keyword. Let me try
+  without the branch slug, since the skill instructions say to only generate a branch slug in the "Otherwise" case. Let me check if
+  setup-impl has a --branch-slug flag or not.
+
+  Actually, looking at the error more carefully, it seems like setup_impl does accept --branch-slug but then passes it to
+  setup_impl_from_issue which doesn't accept it. This is a bug in the erk tool. Let me try without the branch slug.
+
+  Wait, actually looking at the skill instructions again: "Parse 8124 and run the consolidated setup command: If numeric (e.g., 2521):
+   erk exec setup-impl --issue 2521"
+
+  The instructions don't mention passing --branch-slug, so I'll run the command without it.
+
+⏺ Bug in the setup-impl command with branch_slug forwarding. Let me try without the slug — the plan already has a branch from the
+  plan-save step.
+
+⏺ Bash(erk exec setup-impl --issue 8124 --branch-slug="")
+  ⎿  Error: Exit code 1
+     Traceback (most recent call last):
+       File "/Users/schrockn/code/erk/.venv/bin/erk", line 10, in &lt;module&gt;
+         sys.exit(main())
+                  ~~~~^^
+       File "/Users/schrockn/code/erk/src/erk/cli/cli.py", line 232, in main
+         cli()
+         ~~~^^
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1485, in __call__
+         return self.main(*args, **kwargs)
+                ~~~~~~~~~^^^^^^^^^^^^^^^^^
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1406, in main
+         rv = self.invoke(ctx)
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1873, in invoke
+         return _process_result(sub_ctx.command.invoke(sub_ctx))
+                                ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1873, in invoke
+         return _process_result(sub_ctx.command.invoke(sub_ctx))
+                                ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1269, in invoke
+         return ctx.invoke(self.callback, **ctx.params)
+                ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 824, in invoke
+         return callback(*args, **kwargs)
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/decorators.py", line 34, in new_func
+         return f(get_current_context(), *args, **kwargs)
+       File "/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/setup_impl.py", line 184, in setup_impl
+         _handle_issue_setup(ctx, issue_number=issue_number, branch_slug=branch_slug)
+         ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+       File "/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/setup_impl.py", line 290, in _handle_issue_setup
+         ctx.invoke(
+         ~~~~~~~~~~^
+             setup_impl_from_issue,
+             ^^^^^^^^^^^^^^^^^^^^^^
+         ...&lt;3 lines&gt;...
+             branch_slug=branch_slug,
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+         )
+         ^
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 824, in invoke
+         return callback(*args, **kwargs)
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/decorators.py", line 34, in new_func
+         return f(get_current_context(), *args, **kwargs)
+     TypeError: setup_impl_from_issue() got an unexpected keyword argument 'branch_slug'
+
+     Traceback (most recent call last):
+       File "/Users/schrockn/code/erk/.venv/bin/erk", line 10, in &lt;module&gt;
+         sys.exit(main())
+                  ~~~~^^
+       File "/Users/schrockn/code/erk/src/erk/cli/cli.py", line 232, in main
+         cli()
+         ~~~^^
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1485, in __call__
+         return self.main(*args, **kwargs)
+                ~~~~~~~~~^^^^^^^^^^^^^^^^^
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1406, in main
+         rv = self.invoke(ctx)
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1873, in invoke
+         return _process_result(sub_ctx.command.invoke(sub_ctx))
+                                ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1873, in invoke
+         return _process_result(sub_ctx.command.invoke(sub_ctx))
+                                ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1269, in invoke
+         return ctx.invoke(self.callback, **ctx.params)
+                ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 824, in invoke
+         return callback(*args, **kwargs)
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/decorators.py", line 34, in new_func
+         return f(get_current_context(), *args, **kwargs)
+       File "/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/setup_impl.py", line 184, in setup_impl
+         _handle_issue_setup(ctx, issue_number=issue_number, branch_slug=branch_slug)
+         ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+       File "/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/setup_impl.py", line 290, in _handle_issue_setup
+         ctx.invoke(
+         ~~~~~~~~~~^
+             setup_impl_from_issue,
+             ^^^^^^^^^^^^^^^^^^^^^^
+         ...&lt;3 lines&gt;...
+             branch_slug=branch_slug,
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+         )
+         ^
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 824, in invoke
+         return callback(*args, **kwargs)
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/decorators.py", line 34, in new_func
+         return f(get_current_context(), *args, **kwargs)
+     TypeError: setup_impl_from_issue() got an unexpected keyword argument 'branch_slug'
+
+∴ Thinking…
+
+  The issue is that _handle_issue_setup always passes branch_slug to setup_impl_from_issue, but that function doesn't accept it. This
+  is a bug in the erk code. Let me look at the source to understand and work around it.
+
+  Since #8124 is a draft PR (planned_pr backend), the branch already exists from plan-save. I can manually set up the implementation:
+  check out the branch, create .impl/, etc. Let me look at the branch name.
+
+  Actually, from the previous session output: "branch_name": "plnd/O8036-add-erkbot-system-pr-02-25-0208". Let me just do the setup
+  manually.
+
+  Before I go through the manual setup, let me first see what the setup-impl command actually does so I can replicate it properly.
+
+⏺ There's a bug in setup_impl passing branch_slug to setup_impl_from_issue. Since plan #8124 is a draft PR with an existing branch,
+  let me set up manually.
+
+⏺ Bash(gh pr view 8124 --json headRefName,body --jq '{branch: .headRefName, body_length: (.body | length)}')
+  ⎿  {
+       "body_length": 5598,
+       "branch": "plnd/O8036-add-erkbot-system-pr-02-25-0208"
+     }
+
+⏺ Bash(git fetch origin plnd/O8036-add-erkbot-system-pr-02-25-0208 &amp;&amp; git checkout -b add-erkbot-system-prompt
+      origin/plnd/O8036-add-erkbot-system-pr-02-25-0208)
+  ⎿  From https://github.com/dagster-io/erk
+      * branch                plnd/O8036-add-erkbot-system-pr-02-25-0208 -&gt; FETCH_HEAD
+      * [new branch]          plnd/O8036-add-erkbot-system-pr-02-25-0208 -&gt; origin/plnd/O8036-add-erkbot-system-pr-02-25-0208
+     Switched to a new branch 'add-erkbot-system-prompt'
+     branch 'add-erkbot-system-prompt' set up to track 'origin/plnd/O8036-add-erkbot-system-pr-02-25-0208'.
+
+⏺ Bash(gh pr view 8124 --json body --jq '.body' | sed -n '/^---$/,$p' | tail -n +2)
+  ⎿  &lt;details&gt;
+     &lt;summary&gt;original-plan&lt;/summary&gt;
+
+     # Plan: Node 1.7 — Create prompts.py with erk-specific system prompt
+
+     **Part of Objective #8036, Node 1.7**
+
+     ## Context
+
+     The erk-slack-bot's agent mode (nodes 1.1–1.6) is functional but uses a hardcoded one-liner system prompt: `"You are
+     erk-bot, an AI assistant for the erk project."` This gives the agent no knowledge of erk commands, workflows, or how to help
+      users. Node 1.7 creates a proper prompts module with an erk-aware system prompt that teaches the agent about plan list,
+     one-shot, objectives, and dash.
+
+     ## Approach
+
+     Follow the established pattern from `erk_shared/gateway/gt/prompts.py`: a `prompts.py` module that loads a markdown prompt
+     file from `resources/`, with an optional custom-prompt override path.
+
+     ## Files to Create
+
+     ### 1. `packages/erkbot/src/erkbot/resources/erk_system_prompt.md` (NEW)
+
+     System prompt content teaching the agent about:
+
+     - **Identity**: You are erk-bot, an AI assistant for the erk project running in Slack
+     - **Available erk commands** (run via Bash tool in `cwd`):
+       - `uv run erk plan list` — list open plans with status
+       - `uv run erk one-shot "&lt;message&gt;"` — submit task for remote implementation
+       - `uv run erk dash` — show objectives dashboard
+       - `uv run erk objective view &lt;number&gt;` — view objective details
+     - **When to use each command**: decision tree (informational query → respond directly; task requiring code changes →
+     one-shot; status check → plan list or dash)
+     - **Output formatting**: Keep responses concise for Slack. No markdown headings (Slack doesn't render them). Use plain text,
+      code blocks, and bullet lists.
+     - **Limitations**: The agent runs with `bypassPermissions` in the repo directory. It can read files and run erk CLI commands
+      but should not make direct code changes (that's what one-shot is for).
+
+     ### 2. `packages/erkbot/src/erkbot/prompts.py` (NEW)
+
+     ```python
+     """Erk-specific system prompts for erkbot agent."""
+
+     from pathlib import Path
+
+
+     def _load_prompt(filename: str) -&gt; str:
+         prompt_path = Path(__file__).parent / "resources" / filename
+         return prompt_path.read_text(encoding="utf-8")
+
+
+     ERK_SYSTEM_PROMPT = _load_prompt("erk_system_prompt.md")
+
+
+     def get_erk_system_prompt(*, repo_root: Path) -&gt; str:
+         custom_prompt_path = repo_root / ".erk" / "prompt-hooks" / "erk-system-prompt.md"
+         if custom_prompt_path.exists():
+             return custom_prompt_path.read_text(encoding="utf-8")
+         return ERK_SYSTEM_PROMPT
+     ```
+
+     Pattern: mirrors `erk_shared/gateway/gt/prompts.py:6-30`. `repo_root` is keyword-only, no default.
+
+     ## Files to Modify
+
+     ### 3. `packages/erkbot/src/erkbot/cli.py` (MODIFY)
+
+     - Add import: `from erkbot.prompts import get_erk_system_prompt`
+     - Replace hardcoded `system_prompt="You are erk-bot, ..."` with `system_prompt=get_erk_system_prompt(repo_root=repo_path)`
+     - Lines affected: ~29–35
+
+     ### 4. `packages/erkbot/tests/test_cli.py` (MODIFY)
+
+     - Update `test_run_constructs_erkbot_when_agent_config_present` (line 84–90): the `system_prompt` assertion must change from
+      the hardcoded string to the loaded prompt content
+     - Add `@patch("erkbot.cli.get_erk_system_prompt")` to mock the prompt function, so the test doesn't depend on prompt file
+     contents
+     - The mock returns a sentinel string like `"mock-system-prompt"` and the assertion checks
+     `system_prompt="mock-system-prompt"`
+
+     ## Files to Add (Tests)
+
+     ### 5. `packages/erkbot/tests/test_prompts.py` (NEW)
+
+     Tests:
+     - `test_erk_system_prompt_loads_from_resources` — verify `ERK_SYSTEM_PROMPT` is a non-empty string containing key phrases
+     (e.g., "erk" and "plan list")
+     - `test_get_erk_system_prompt_returns_default` — with a `tmp_path` repo_root (no custom file), returns `ERK_SYSTEM_PROMPT`
+     - `test_get_erk_system_prompt_uses_custom_when_present` — create `.erk/prompt-hooks/erk-system-prompt.md` in `tmp_path`,
+     verify it's returned instead
+     - `test_erk_system_prompt_mentions_key_commands` — assert the default prompt mentions "plan list", "one-shot", "dash",
+     "objective"
+
+     ## Implementation Order
+
+     1. Create `resources/erk_system_prompt.md` (prompt content)
+     2. Create `prompts.py` (loading module)
+     3. Create `tests/test_prompts.py` (prompt tests)
+     4. Modify `cli.py` (wire in `get_erk_system_prompt`)
+     5. Modify `tests/test_cli.py` (update assertions)
+     6. Run tests to verify
+
+     ## Verification
+
+     1. `cd packages/erkbot &amp;&amp; uv run pytest tests/test_prompts.py -v` — new prompt tests pass
+     2. `cd packages/erkbot &amp;&amp; uv run pytest tests/test_cli.py -v` — updated CLI tests pass
+     3. `cd packages/erkbot &amp;&amp; uv run pytest tests/ -v` — all erkbot tests pass
+     4. Verify prompt content reads well and covers the four key areas (plan list, one-shot, objectives, dash)
+
+
+     &lt;/details&gt;
+     ---
+
+
+     To checkout this PR in a fresh worktree and environment locally, run:
+
+     ```
+     source "$(erk pr checkout 8124 --script)" &amp;&amp; erk pr sync --dangerous
+     ```
+
+∴ Thinking…
+
+  Good, I have the plan content. Now let me set up .impl/ directory manually and proceed with implementation.
+
+⏺ Good, I have the plan. Let me set up .impl/ and proceed.
+
+⏺ Bash(mkdir -p .impl &amp;&amp; cat &gt; .impl/plan.md &lt;&lt; 'PLAN_EOF'
+      # Plan: Node 1.7 — Create prompts.py with erk-specific system prompt
+
+      **Part of Objective #8036, Node 1.7**
+
+      ## Context
+
+      The erk-slack-bot's agent mode (nodes 1.1–1.6) is functional but uses a hardcoded one-liner system prompt: `"You are erk-bot, an
+       AI assistant for the erk project."` This gives the agent no knowledge of erk commands, workflows, or how to help users. Node
+      1.7 creates a proper prompts module with an erk-aware system prompt that teaches the agent about plan list, one-shot,
+      objectives, and dash.
+
+      ## Approach
+
+      Follow the established pattern from `erk_shared/gateway/gt/prompts.py`: a `prompts.py` module that loads a markdown prompt file
+      from `resources/`, with an optional custom-prompt override path.
+
+      ## Files to Create
+
+      ### 1. `packages/erkbot/src/erkbot/resources/erk_system_prompt.md` (NEW)
+
+      System prompt content teaching the agent about:
+
+      - **Identity**: You are erk-bot, an AI assistant for the erk project running in Slack
+      - **Available erk commands** (run via Bash tool in `cwd`):
+        - `uv run erk plan list` — list open plans with status
+        - `uv run erk one-shot "&lt;message&gt;"` — submit task for remote implementation
+        - `uv run erk dash` — show objectives dashboard
+        - `uv run erk objective view &lt;number&gt;` — view objective details
+      - **When to use each command**: decision tree (informational query → respond directly; task requiring code changes → one-shot;
+      status check → plan list or dash)
+      - **Output formatting**: Keep responses concise for Slack. No markdown headings (Slack doesn't render them). Use plain text,
+      code blocks, and bullet lists.
+      - **Limitations**: The agent runs with `bypassPermissions` in the repo directory. It can read files and run erk CLI commands but
+       should not make direct code changes (that's what one-shot is for).
+
+      ### 2. `packages/erkbot/src/erkbot/prompts.py` (NEW)
+
+      Pattern: mirrors `erk_shared/gateway/gt/prompts.py`. `repo_root` is keyword-only, no default.
+
+      ## Files to Modify
+
+      ### 3. `packages/erkbot/src/erkbot/cli.py` — Replace hardcoded prompt with `get_erk_system_prompt(repo_root=repo_path)`
+
+      ### 4. `packages/erkbot/tests/test_cli.py` — Mock `get_erk_system_prompt` so test doesn't depend on prompt file contents
+
+      ## Files to Add (Tests)
+
+      ### 5. `packages/erkbot/tests/test_prompts.py` (NEW)
+
+      ## Implementation Order
+
+      1. Create `resources/erk_system_prompt.md` (prompt content)
+      2. Create `prompts.py` (loading module)
+      3. Create `tests/test_prompts.py` (prompt tests)
+      4. Modify `cli.py` (wire in `get_erk_system_prompt`)
+      5. Modify `tests/test_cli.py` (update assertions)
+      6. Run tests to verify
+      PLAN_EOF
+      echo "plan.md created")
+  ⎿  plan.md created
+
+⏺ Now let me read the existing reference files to understand the patterns.
+
+⏺ Bash(erk exec impl-signal started --session-id="52bc43f3-2f5f-46f5-b693-bedf4ffd23db" 2&gt;/dev/null || true)
+  ⎿  {
+       "success": true,
+       "event": "started",
+       "plan_number": 7977
+     }
+
+⏺ Read(packages/erkbot/src/erkbot/cli.py)
+  ⎿  Read 60 lines
+
+⏺ Read(packages/erkbot/tests/test_cli.py)
+  ⎿  Read 277 lines
+
+⏺ Search(pattern: "packages/erkbot/src/erkbot/resources/**/*")
+  ⎿  Found 2 files (ctrl+o to expand)
+
+∴ Thinking…
+
+  Now let me also read the gt prompts.py pattern to mirror it, and check the existing resources.
+
+⏺ Now let me read the reference pattern from gt/prompts.py.
+
+⏺ Search(pattern: "prompts\.py", path: "packages")
+  ⎿  Found 0 files
+
+⏺ Read(packages/erkbot/src/erkbot/resources/QUOTE.md)
+  ⎿  Read 21 lines
+
+⏺ Search(pattern: "**/gateway/gt/prompts.py")
+  ⎿  Found 1 file (ctrl+o to expand)
+
+⏺ Read(packages/erk-shared/src/erk_shared/gateway/gt/prompts.py)
+  ⎿  Read 44 lines
+
+∴ Thinking…
+
+  Good. Now I have the full picture. Let me create the implementation tasks and start coding.
+
+  The plan has 6 steps:
+  1. Create resources/erk_system_prompt.md
+  2. Create prompts.py
+  3. Create tests/test_prompts.py
+  4. Modify cli.py
+  5. Modify tests/test_cli.py
+  6. Run tests
+
+  Let me create task entries and start implementing.
+
+⏺ Implementation environment ready. Let me create tasks and start coding.
+
+⏺ Phase 1: Create system prompt resource
+
+⏺ Write(/Users/schrockn/code/erk/packages/erkbot/src/erkbot/resources/erk_system_prompt.md)
+  ⎿  Wrote 34 lines to /Users/schrockn/code/erk/packages/erkbot/src/erkbot/resources/erk_system_prompt.md
+       1 You are erk-bot, an AI assistant for the erk project running in Slack.
+       2
+       3 You help users check project status, understand plans and objectives, and submit tasks for implementation. You run ins
+         ide the erk repository with full read access and can execute erk CLI commands.
+       4
+       5 ## Available Commands
+       6
+       7 Run these via the Bash tool in your working directory:
+       8
+       9 - `uv run erk plan list` — list open plans with their status
+      10 - `uv run erk one-shot "&lt;description&gt;"` — submit a task for remote autonomous implementation
+      11 - `uv run erk dash` — show the objectives dashboard with progress
+      12 - `uv run erk objective view &lt;number&gt;` — view details for a specific objective
+      13
+      14 ## When to Use Each Command
+      15
+      16 - **Informational question** (what does X do, explain Y): Answer directly from your knowledge and the codebase. Read f
+         iles as needed.
+      17 - **Status check** (what's in progress, show objectives): Run `uv run erk dash` or `uv run erk plan list`.
+      18 - **Objective details** (tell me about objective 1234): Run `uv run erk objective view &lt;number&gt;`.
+      19 - **Task requiring code changes** (fix bug X, add feature Y): Run `uv run erk one-shot "&lt;description&gt;"` to submit for
+         remote implementation. Do not make code changes directly.
+      20
+      21 ## Output Formatting
+      22
+      23 Keep responses concise for Slack:
+      24
+      25 - No markdown headings — Slack does not render them
+      26 - Use plain text, `code blocks`, and bullet lists
+      27 - Keep responses short; prefer a few clear sentences over walls of text
+      28 - When showing command output, use code blocks
+      29
+      30 ## Limitations
+      31
+      32 - You can read files and run erk CLI commands but should not make direct code changes. Use `one-shot` to delegate code
+          modifications.
+      33 - You operate in the erk repository directory with bypassPermissions enabled.
+      34 - If a command fails or returns unexpected output, report the error clearly rather than retrying silently.
+
+⏺ Phase 2: Create prompts.py module
+
+⏺ Write(/Users/schrockn/code/erk/packages/erkbot/src/erkbot/prompts.py)
+  ⎿  Wrote 28 lines to /Users/schrockn/code/erk/packages/erkbot/src/erkbot/prompts.py
+       1 """Erk-specific system prompts for erkbot agent."""
+       2
+       3 from pathlib import Path
+       4
+       5
+       6 def _load_prompt(filename: str) -&gt; str:
+       7     """Load prompt from resources directory."""
+       8     prompt_path = Path(__file__).parent / "resources" / filename
+       9     return prompt_path.read_text(encoding="utf-8")
+      10
+      11
+      12 ERK_SYSTEM_PROMPT = _load_prompt("erk_system_prompt.md")
+      13
+      14
+      15 def get_erk_system_prompt(*, repo_root: Path) -&gt; str:
+      16     """Get erk system prompt, checking .erk/prompt-hooks/ first.
+      17
+      18     Args:
+      19         repo_root: Repository root to check for custom prompt.
+      20
+      21     Returns:
+      22         Custom prompt if .erk/prompt-hooks/erk-system-prompt.md exists,
+      23         otherwise the built-in default prompt.
+      24     """
+      25     custom_prompt_path = repo_root / ".erk" / "prompt-hooks" / "erk-system-prompt.md"
+      26     if custom_prompt_path.exists():
+      27         return custom_prompt_path.read_text(encoding="utf-8")
+      28     return ERK_SYSTEM_PROMPT
+
+⏺ Phase 3: Create test_prompts.py
+
+⏺ Write(/Users/schrockn/code/erk/packages/erkbot/tests/test_prompts.py)
+  ⎿  Wrote 35 lines to /Users/schrockn/code/erk/packages/erkbot/tests/test_prompts.py
+       1 # NOTE: @patch usage is deliberate here. erkbot is a standalone package that
+       2 # tests third-party Slack SDK wiring and does not use erk's gateway layer.
+       3 import unittest
+       4 from pathlib import Path
+       5
+       6 from erkbot.prompts import ERK_SYSTEM_PROMPT, get_erk_system_prompt
+       7
+       8
+       9 class TestErkSystemPrompt(unittest.TestCase):
+      10     def test_erk_system_prompt_loads_from_resources(self) -&gt; None:
+      11         self.assertIsInstance(ERK_SYSTEM_PROMPT, str)
+      12         self.assertGreater(len(ERK_SYSTEM_PROMPT), 100)
+      13
+      14     def test_erk_system_prompt_mentions_key_commands(self) -&gt; None:
+      15         self.assertIn("plan list", ERK_SYSTEM_PROMPT)
+      16         self.assertIn("one-shot", ERK_SYSTEM_PROMPT)
+      17         self.assertIn("dash", ERK_SYSTEM_PROMPT)
+      18         self.assertIn("objective view", ERK_SYSTEM_PROMPT)
+      19
+      20     def test_get_erk_system_prompt_returns_default(self, tmp_path: Path = Path("/tmp/test-erkbot-no-custom")) -&gt; None:
+      21         result = get_erk_system_prompt(repo_root=tmp_path)
+      22         self.assertEqual(result, ERK_SYSTEM_PROMPT)
+      23
+      24     def test_get_erk_system_prompt_uses_custom_when_present(self) -&gt; None:
+      25         import tempfile
+      26
+      27         with tempfile.TemporaryDirectory() as tmp_dir:
+      28             tmp_path = Path(tmp_dir)
+      29             custom_dir = tmp_path / ".erk" / "prompt-hooks"
+      30             custom_dir.mkdir(parents=True)
+      31             custom_file = custom_dir / "erk-system-prompt.md"
+      32             custom_file.write_text("Custom erk prompt for testing.")
+      33
+      34             result = get_erk_system_prompt(repo_root=tmp_path)
+      35             self.assertEqual(result, "Custom erk prompt for testing.")
+
+⏺ Phase 4: Wire get_erk_system_prompt into cli.py
+
+⏺ Update(/Users/schrockn/code/erk/packages/erkbot/src/erkbot/cli.py)
+  ⎿  Added 1 line
+       9  from erkbot.agent.bot import ErkBot
+      10  from erkbot.app import create_app
+      11  from erkbot.config import Settings
+      12 +from erkbot.prompts import get_erk_system_prompt
+      13
+      14  logger = logging.getLogger(__name__)
+      15
+
+⏺ Update(/Users/schrockn/code/erk/packages/erkbot/src/erkbot/cli.py)
+  ⎿  Added 1 line, removed 1 line
+      31                  model=settings.erk_model,
+      32                  max_turns=settings.max_turns,
+      33                  cwd=repo_path,
+      34 -                system_prompt="You are erk-bot, an AI assistant for the erk project.",
+      34 +                system_prompt=get_erk_system_prompt(repo_root=repo_path),
+      35                  permission_mode="bypassPermissions",
+      36              )
+      37          else:
+
+⏺ Phase 5: Update test_cli.py to mock the prompt function
+
+⏺ Update(/Users/schrockn/code/erk/packages/erkbot/tests/test_cli.py)
+  ⎿  Added 3 lines, removed 1 line
+      60      @patch("erkbot.cli.AsyncSocketModeHandler")
+      61      @patch("erkbot.cli.create_app")
+      62      @patch("erkbot.cli.ErkBot")
+      63 +    @patch("erkbot.cli.get_erk_system_prompt", return_value="mock-system-prompt")
+      64      @patch("erkbot.cli.Settings")
+      65      @patch("erkbot.cli.load_dotenv")
+      66      def test_run_constructs_erkbot_when_agent_config_present(
+      67          self,
+      68          _mock_load_dotenv: MagicMock,
+      69          mock_settings_cls: MagicMock,
+      70 +        _mock_get_prompt: MagicMock,
+      71          mock_erkbot_cls: MagicMock,
+      72          mock_create_app: MagicMock,
+      73          mock_handler_cls: MagicMock,
+     ...
+      87              model="claude-opus-4-20250514",
+      88              max_turns=20,
+      89              cwd=Path("/tmp/repo"),
+      88 -            system_prompt="You are erk-bot, an AI assistant for the erk project.",
+      90 +            system_prompt="mock-system-prompt",
+      91              permission_mode="bypassPermissions",
+      92          )
+      93          mock_create_app.assert_called_once_with(
+
+⏺ Now I need to update the other test that also constructs ErkBot — test_run_logs_agent_enabled_mode — since it also hits the
+  get_erk_system_prompt call path.
+
+⏺ Update(/Users/schrockn/code/erk/packages/erkbot/tests/test_cli.py)
+  ⎿  Added 2 lines
+      157      @patch("erkbot.cli.AsyncSocketModeHandler")
+      158      @patch("erkbot.cli.create_app")
+      159      @patch("erkbot.cli.ErkBot")
+      160 +    @patch("erkbot.cli.get_erk_system_prompt", return_value="mock-system-prompt")
+      161      @patch("erkbot.cli.Settings")
+      162      @patch("erkbot.cli.load_dotenv")
+      163      def test_run_logs_agent_enabled_mode(
+      164          self,
+      165          _mock_load_dotenv: MagicMock,
+      166          mock_settings_cls: MagicMock,
+      167 +        _mock_get_prompt: MagicMock,
+      168          mock_erkbot_cls: MagicMock,
+      169          _mock_create_app: MagicMock,
+      170          mock_handler_cls: MagicMock,
+
+⏺ Also need to patch the test_run_warns_when_repo_path_not_directory test — it doesn't construct ErkBot but get_erk_system_prompt is
+  never called there since the is_dir check fails first. Let me verify by re-reading the cli.py flow... The get_erk_system_prompt call
+   is inside the if repo_path.is_dir(): block, so when is_dir returns False, it's never called. That test should be fine as-is.
+
+⏺ Phase 6: Run tests
+
+⏺ devrun(Run erkbot tests)
+  ⎿  Done (1 tool use · 20.1k tokens · 8s)
+  (ctrl+o to expand)
+
+⏺ All 114 tests pass. Let me verify the final state of the modified files.
+
+⏺ Bash(erk exec impl-signal ended --session-id="52bc43f3-2f5f-46f5-b693-bedf4ffd23db" 2&gt;/dev/null || true)
+  ⎿  {
+       "success": true,
+       "event": "ended",
+       "plan_number": 7977
+     }
+
+⏺ Bash(erk exec upload-impl-session --session-id="52bc43f3-2f5f-46f5-b693-bedf4ffd23db" 2&gt;/dev/null || true)
+  ⎿  {
+       "uploaded": true,
+       "plan_id": 7977
+     }
+
+⏺ Bash(erk exec impl-verify)
+  ⎿  {
+       "valid": true,
+       "impl_dir": "/Users/schrockn/code/erk/.impl"
+     }
+
+⏺ Good — .impl/ preserved. Now let me run CI.
+
+⏺ Skill(/local:py-fast-ci)
+  ⎿  Successfully loaded skill
+
+⏺ devrun(Run py-fast-ci phase 1)
+  ⎿  Done (1 tool use · 14.0k tokens · 5s)
+  (ctrl+o to expand)
+
+⏺ Line too long in test_prompts.py. Let me fix it.
+
+⏺ Read(packages/erkbot/tests/test_prompts.py)
+  ⎿  Read 36 lines
+
+⏺ Update(/Users/schrockn/code/erk/packages/erkbot/tests/test_prompts.py)
+  ⎿  Added 6 lines, removed 3 lines
+      17          self.assertIn("dash", ERK_SYSTEM_PROMPT)
+      18          self.assertIn("objective view", ERK_SYSTEM_PROMPT)
+      19
+      20 -    def test_get_erk_system_prompt_returns_default(self, tmp_path: Path = Path("/tmp/test-erkbot-no-custom")) -&gt; None
+         -:
+      21 -        result = get_erk_system_prompt(repo_root=tmp_path)
+      22 -        self.assertEqual(result, ERK_SYSTEM_PROMPT)
+      20 +    def test_get_erk_system_prompt_returns_default(self) -&gt; None:
+      21 +        import tempfile
+      22
+      23 +        with tempfile.TemporaryDirectory() as tmp_dir:
+      24 +            result = get_erk_system_prompt(repo_root=Path(tmp_dir))
+      25 +            self.assertEqual(result, ERK_SYSTEM_PROMPT)
+      26 +
+      27      def test_get_erk_system_prompt_uses_custom_when_present(self) -&gt; None:
+      28          import tempfile
+      29
+
+⏺ devrun(Re-run py-fast-ci phase 1)
+  ⎿  Done (1 tool use · 13.5k tokens · 4s)
+  (ctrl+o to expand)
+
+⏺ Phase 1 passed. Now running phase 2 — tests.
+
+⏺ devrun(Run py-fast-ci phase 2 tests)
+  ⎿  Done (1 tool use · 14.3k tokens · 22s)
+  (ctrl+o to expand)
+
+⏺ All CI checks pass — lint, format, ty, and 5542 tests green. Now submitting the PR.
+
+⏺ Skill(/erk:pr-submit)
+  ⎿  Successfully loaded skill
+
+⏺ Step 1: Push and Create PR
+
+⏺ Bash(git add packages/erkbot/src/erkbot/prompts.py packages/erkbot/src/erkbot/resources/erk_system_prompt.md
+      packages/erkbot/tests/test_prompts.py packages/erkbot/src/erkbot/cli.py packages/erkbot/tests/test_cli.py)
+  ⎿  (No output)
+
+⏺ Bash(git commit -m "$(cat &lt;&lt;'EOF'
+      Add erkbot system prompt module with erk-aware agent instructions
+
+      Create prompts.py and erk_system_prompt.md resource teaching the agent
+      about erk commands (plan list, one-shot, dash, objective view), Slack
+      output formatting, and when to use each command. Wire into cli.py
+      replacing the hardcoded one-liner prompt.
+
+      Co-Authored-By: Claude Opus 4.6 &lt;noreply@anthropic.com&gt;
+      EOF
+      )")
+  ⎿  [add-erkbot-system-prompt 44e6ca5df] Add erkbot system prompt module with erk-aware agent instructions
+      5 files changed, 107 insertions(+), 2 deletions(-)
+      create mode 100644 packages/erkbot/src/erkbot/prompts.py
+      create mode 100644 packages/erkbot/src/erkbot/resources/erk_system_prompt.md
+      create mode 100644 packages/erkbot/tests/test_prompts.py
+
+⏺ Bash(erk exec push-and-create-pr)
+  ⎿  Error: Exit code 1
+     {
+       "success": false,
+       "error": {
+         "phase": "push_and_create_pr",
+         "error_type": "graphite_submit_failed",
+         "message": "Graphite submit failed: gt submit failed (exit code 1): ERROR: Cannot perform this operation on untracked branch
+     add-erkbot-system-prompt.\nYou can track it by specifying its parent with gt track. \n"
+       }
+     }
+
+     {
+       "success": false,
+       "error": {
+         "phase": "push_and_create_pr",
+         "error_type": "graphite_submit_failed",
+         "message": "Graphite submit failed: gt submit failed (exit code 1): ERROR: Cannot perform this operation on untracked branch
+     add-erkbot-system-prompt.\nYou can track it by specifying its parent with gt track. \n"
+       }
+     }
+
+⏺ Need to track the branch with Graphite first.
+
+⏺ devrun(Track branch with Graphite)
+  ⎿  Done (1 tool use · 13.4k tokens · 4s)
+  (ctrl+o to expand)
+
+⏺ Now retry the push and create PR.
+
+⏺ Bash(erk exec push-and-create-pr)
+  ⎿  Running in non-interactive mode. Inline prompts to fill PR fields will be skipped.
+
+     🥞 Validating that this Graphite stack is ready to submit...
+
+     ✏️ Preparing to submit PRs for the following branches...
+     ▸ add-erkbot-system-prompt (Create)
+
+     🚀 Pushing branches to remote...
+
+     📨 Creating/updating PRs...
+     add-erkbot-system-prompt: https://app.graphite.com/github/pr/dagster-io/erk/8125 (created)
+     {
+       "success": true,
+       "branch": "add-erkbot-system-prompt",
+       "pr": {
+         "number": 8125,
+         "url": "https://github.com/dagster-io/erk/pull/8125",
+         "was_created": true
+       },
+       "graphite_url": "https://app.graphite.com/github/pr/dagster-io/erk/8125",
+       "issue_number": 7977
+     }
+  ⎿  (timeout 1m)
+
+⏺ PR #8125 created. Now getting context and generating the description.
+
+  Step 2: Get PR Context
+
+⏺ Bash(erk exec get-pr-context)
+  ⎿  {
+       "branch": {
+         "current": "add-erkbot-system-prompt",
+         "parent": "master"
+       },
+       "pr": {
+         "number": 8125,
+         "url": "https://github.com/dagster-io/erk/pull/8125"
+       },
+       "diff_file": "/Users/schrockn/code/erk/.erk/scratch/sessions/6ca50953-404d-4cc9-ab15-2bf1c2e48b36/pr-diff-808cbc8b.diff",
+       "commit_messages": [
+         "Add plan: Plan: Node 1.7 \u2014 Create prompts.py with erk-specific system prompt",
+     "Add erkbot system prompt module with erk-aware agent instructions\n\nCreate prompts.py and erk_system_prompt.md resource
+     teaching the agent\nabout erk commands (plan list, one-shot, dash, objective view), Slack\noutput formatting, and when to
+     use each command. Wire into cli.py\nreplacing the hardcoded one-liner prompt.\n\nCo-Authored-By: Claude Opus 4.6
+     &lt;noreply@anthropic.com&gt;"
+       ],
+       "plan_context": {
+         "plan_id": "8125",
+         "plan_content": "Add plan: Plan: Node 1.7 \u2014 Create prompts.py with erk-specific system prompt\n\nAdd erkbot system
+     prompt module with erk-aware agent instructions\n\nCreate prompts.py and erk_system_prompt.md resource teaching the
+     agent\nabout erk commands (plan list, one-shot, dash, objective view), Slack\noutput formatting, and when to use each
+     command. Wire into cli.py\nreplacing the hardcoded one-liner prompt.\n\nCo-Authored-By: Claude Opus 4.6
+     &lt;noreply@anthropic.com&gt;",
+         "objective_summary": null
+       }
+     }
+  ⎿  (timeout 30s)
+
+⏺ Step 3: Generate Title and Body
+
+⏺ Skill(erk-diff-analysis)
+  ⎿  Successfully loaded skill
+
+⏺ Read(.erk/scratch/sessions/6ca50953-404d-4cc9-ab15-2bf1c2e48b36/pr-diff-808cbc8b.diff)
+  ⎿  Read 293 lines
+
+⏺ Read(.claude/skills/erk-diff-analysis/references/commit-message-prompt.md)
+  ⎿  Read 84 lines
+
+⏺ Now I have the format. Let me generate the PR title and body, then apply it.
+
+⏺ Bash(cat &gt; /tmp/pr-body-8125.md &lt;&lt; 'BODY_EOF'
+      Add erkbot system prompt module with erk-aware agent instructions…)
+  ⎿  body written
+
+⏺ Step 4: Apply Description
+
+⏺ Bash(erk exec set-pr-description --title "Add erkbot system prompt module with erk-aware agent instructions" --body-file
+      "/tmp/pr-body-8125.md")
+  ⎿  PR #8125 updated: Add erkbot system prompt module with erk-aware agent instructions
+  ⎿  (timeout 30s)
+
+⏺ Step 5: Signal and verify
+
+⏺ Bash(erk exec impl-signal submitted 2&gt;/dev/null || true)
+  ⎿  {
+       "success": true,
+       "event": "submitted",
+       "plan_number": 7977
+     }
+
+⏺ Bash(erk exec impl-verify)
+  ⎿  {
+       "valid": true,
+       "impl_dir": "/Users/schrockn/code/erk/.impl"
+     }
+
+⏺ PR submitted: https://github.com/dagster-io/erk/pull/8125
+
+  Summary of changes:
+  - Created packages/erkbot/src/erkbot/resources/erk_system_prompt.md — system prompt teaching the agent about plan list, one-shot,
+  dash, objective view with a decision tree and Slack formatting guidance
+  - Created packages/erkbot/src/erkbot/prompts.py — prompt loading module mirroring the gt/prompts.py pattern with .erk/prompt-hooks/
+  custom override support
+  - Created packages/erkbot/tests/test_prompts.py — 4 tests covering loading, default/custom behavior, and key command mentions
+  - Modified cli.py to use get_erk_system_prompt(repo_root=repo_path) instead of hardcoded string
+  - Updated test_cli.py to mock the prompt function in 2 tests
+
+  All CI checks pass (lint, format, ty, 5542 tests green).
+
+✻ Churned for 5m 42s
+
+❯ /exit
+  ⎿  See ya!
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ➜  (git:erk) (wt:root) (br:add-erkbot-system-prompt) | (gh:#8125 plan:#7977 st:👀 chks:[✅:12 🔄:4]) │…              73852 tokens
+                                                                                                      current: 2.1.53 · latest: 2.…
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
+
+Resume this session with:
+claude --resume 52bc43f3-2f5f-46f5-b693-bedf4ffd23db
+➜  erk git:(master) erk br co add-erkbot-system-prompt
+Switched to worktree add-erkbot-system-prompt
+
+To activate the worktree environment:
+  source /Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/.erk/bin/activate.sh  (copied to clipboard)
+➜  erk git:(master) source /Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/.erk/bin/activate.sh
+-&gt; cd /Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt
+direnv: loading ~/.erk/repos/erk/worktrees/add-erkbot-system-prompt/.envrc
+direnv: loading ~/.erk/repos/erk/worktrees/add-erkbot-system-prompt/.erk/bin/activate.sh
+-&gt; cd /Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt
+-&gt; Activating venv: /Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/.venv (3.13.1)
+-&gt; Loading .env
+Activated: /Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt
+direnv: export +REPO_ROOT +VIRTUAL_ENV +VIRTUAL_ENV_PROMPT +WORKTREE_NAME +WORKTREE_PATH ~PATH
+-&gt; Activating venv: /Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/.venv (3.13.1)
+-&gt; Loading .env
+Activated: /Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt
+(erk) ➜  add-erkbot-system-prompt git:(add-erkbot-system-prompt) gt restack
+Restacked add-erkbot-system-prompt on master.
+(erk) ➜  add-erkbot-system-prompt git:(add-erkbot-system-prompt) gt squash
+[add-erkbot-system-prompt 3dc6a089c] Add plan: Plan: Node 1.7 — Create prompts.py with erk-specific system prompt
+ Date: Wed Feb 25 02:08:07 2026 +0000
+ 7 files changed, 204 insertions(+), 2 deletions(-)
+ create mode 100644 .erk/impl-context/plan.md
+ create mode 100644 .erk/impl-context/ref.json
+ create mode 100644 packages/erkbot/src/erkbot/prompts.py
+ create mode 100644 packages/erkbot/src/erkbot/resources/erk_system_prompt.md
+ create mode 100644 packages/erkbot/tests/test_prompts.py
+(erk) ➜  add-erkbot-system-prompt git:(add-erkbot-system-prompt) make clear_impl_context
+rm -rf .erk/impl-context
+(erk) ➜  add-erkbot-system-prompt git:(add-erkbot-system-prompt) ✗ git commit -a -m cpo
+[add-erkbot-system-prompt 48aefb48d] cpo
+ 2 files changed, 97 deletions(-)
+ delete mode 100644 .erk/impl-context/plan.md
+ delete mode 100644 .erk/impl-context/ref.json
+(erk) ➜  add-erkbot-system-prompt git:(add-erkbot-system-prompt) gt submit
+🥞 Validating that this Graphite stack is ready to submit...
+
+✏️ Preparing to submit PRs for the following branches...
+▸ add-erkbot-system-prompt (Update code)
+
+🚀 Pushing branches to remote...
+Running git push: [========================================] 100% | Done
+
+📨 Creating/updating PRs...
+add-erkbot-system-prompt: https://app.graphite.com/github/pr/dagster-io/erk/8125 (updated)
+(erk) ➜  add-erkbot-system-prompt git:(add-erkbot-system-prompt) gt pr
+https://app.graphite.dev/github/pr/dagster-io/erk/8125
+(erk) ➜  add-erkbot-system-prompt git:(add-erkbot-system-prompt) make slackbot
+cd packages/erkbot &amp;&amp; make dev
+Using PyPI erk dependency
+      Built erkbot @ file:///Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot
+Installed 20 packages in 43ms
+2026-02-24 18:32:24,485 erkbot.cli INFO startup: mode=slack-only
+2026-02-24 18:32:24,968 slack_bolt.AsyncApp INFO A new session (s_274489207) has been established
+2026-02-24 18:32:24,968 slack_bolt.AsyncApp INFO ⚡️ Bolt app is running!
+2026-02-24 18:32:54,395 erkbot.slack_handlers INFO app_mention: user=UCCRA5WFL channel=C0AGRUMSGA0 text=&lt;@U0AGQMAS4H2&gt; plan list
+2026-02-24 18:32:54,977 slack_bolt.AsyncApp ERROR Failed to run listener function (error: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr')
+Traceback (most recent call last):
+  File "/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/.venv/lib/python3.13/site-packages/slack_bolt/listener/asyncio_runner.py", line 118, in run_ack_function_asynchronously
+    await listener.run_ack_function(request=request, response=response)
+  File "/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/.venv/lib/python3.13/site-packages/slack_bolt/listener/async_listener.py", line 117, in run_ack_function
+    return await self.ack_function(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+    ...&lt;7 lines&gt;...
+    )
+    ^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/src/erkbot/slack_handlers.py", line 220, in handle_app_mention
+    result = await run_erk_plan_list()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/src/erkbot/runner.py", line 14, in run_erk_plan_list
+    CliRunner(mix_stderr=False).invoke, cli, ["plan", "list", "--all-users"]
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^
+TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+issue at the bottom</user>
+  <user>[Request interrupted by user]</user>
+  <user>(erk) ➜  add-erkbot-system-prompt git:(add-erkbot-system-prompt) gt pr
+https://app.graphite.dev/github/pr/dagster-io/erk/8125
+(erk) ➜  add-erkbot-system-prompt git:(add-erkbot-system-prompt) make slackbot
+cd packages/erkbot &amp;&amp; make dev
+Using PyPI erk dependency
+      Built erkbot @ file:///Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot
+Installed 20 packages in 43ms
+2026-02-24 18:32:24,485 erkbot.cli INFO startup: mode=slack-only
+2026-02-24 18:32:24,968 slack_bolt.AsyncApp INFO A new session (s_274489207) has been established
+2026-02-24 18:32:24,968 slack_bolt.AsyncApp INFO ⚡️ Bolt app is running!
+2026-02-24 18:32:54,395 erkbot.slack_handlers INFO app_mention: user=UCCRA5WFL channel=C0AGRUMSGA0 text=&lt;@U0AGQMAS4H2&gt; plan list
+2026-02-24 18:32:54,977 slack_bolt.AsyncApp ERROR Failed to run listener function (error: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr')
+Traceback (most recent call last):
+  File "/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/.venv/lib/python3.13/site-packages/slack_bolt/listener/asyncio_runner.py", line 118, in run_ack_function_asynchronously
+    await listener.run_ack_function(request=request, response=response)
+  File "/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/.venv/lib/python3.13/site-packages/slack_bolt/listener/async_listener.py", line 117, in run_ack_function
+    return await self.ack_function(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+    ...&lt;7 lines&gt;...
+    )
+    ^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/src/erkbot/slack_handlers.py", line 220, in handle_app_mention
+    result = await run_erk_plan_list()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/add-erkbot-system-prompt/packages/erkbot/src/erkbot/runner.py", line 14, in run_erk_plan_list
+    CliRunner(mix_stderr=False).invoke, cli, ["plan", "list", "--all-users"]
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^
+TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+claude
+^CTraceback (most recent call last):
+  File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/asyncio/base_events.py", line 720, in run_until_complete
+
+use tdd. fix this issue</user>
+  <thinking>The user wants me to fix the `CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'` error using TDD. Let me understand the issue first.
+
+The error is in `packages/erkbot/src/erkbot/runner.py` at line 14:
+```python
+CliRunner(mix_stderr=False).invoke, cli, ["plan", "list", "--all-users"]
+```
+
+The `mix_stderr` parameter was removed or is not supported in the current version of Click being used. Let me look at the runner.py file and understand the issue, then write a failing test first, then fix it.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="33497" cache_read_input_tokens="19035" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 33497}" output_tokens="0" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_0118Ne9DhZZkzmQx8gMgv42g">
+    <param name="skill">local:tdd</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="33497" cache_read_input_tokens="19035" output_tokens="213" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 33497, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0118Ne9DhZZkzmQx8gMgv42g">
+Launching skill: local:tdd
+  </tool_result>
+  <user># Test-Driven Development Command
+
+You are a TDD enforcement agent. Your role is to ensure strict Red-Green-Refactor workflow discipline while leveraging erk's fake-driven testing architecture.
+
+**Core Principle**: You MUST NOT write implementation code until you have a failing test that demonstrates the need for that code.
+
+## Phase 1: LOAD - Load Required Skills
+
+Load the testing and Python skills:
+
+1. Load the `fake-driven-testing` skill
+2. Load the `dignified-python` skill
+
+## Phase 2: UNDERSTAND - Analyze the Feature Request
+
+Before writing any code, analyze the feature: ``
+
+Determine:
+
+1. **Test Layer**: Where does this test belong?
+   - **Layer 3 (Pure Unit)**: Zero dependencies, testing pure functions/utilities
+   - **Layer 4 (Business Logic)**: Uses Fake\* classes for external dependencies
+
+2. **Test Location**: Based on what you're testing:
+   - `tests/unit/` - Pure unit tests or business logic with fakes
+   - `tests/commands/` - CLI command tests
+   - `tests/services/` - Service layer tests
+
+3. **Existing Fakes**: Check `tests/fakes/` for available Fake\* classes:
+   - `FakeGit`, `FakeGitHub`, `FakeGraphite`
+   - `FakeConsole`, `FakeClaudeCode`
+   - Others as needed
+
+4. **Gateway Impact**: Does this feature require a new gateway method?
+   - If YES: You must follow the gateway checklist (5-file implementation)
+   - If NO: Proceed with business logic testing
+
+Report your analysis before proceeding.
+
+## Phase 3: RED - Write Failing Test First
+
+**GATE**: You cannot proceed to Phase 4 until this test EXISTS and FAILS.
+
+Write the test:
+
+1. Create the test file if it doesn't exist
+2. Write a test that describes the expected behavior
+3. Use existing Fake\* classes from `tests/fakes/`
+4. Use `tmp_path` fixture for any file operations (NEVER hardcoded paths)
+5. Follow naming convention: `test_&lt;behavior&gt;_&lt;condition&gt;()`
+
+Run the test via devrun agent:
+
+```
+Run pytest &lt;test_file&gt;::&lt;test_function&gt; and report results
+```
+
+**Verify the test FAILS**:
+
+- If it passes immediately, the test is not TDD - you're testing existing behavior
+- If it fails with the expected error (e.g., AttributeError, ImportError, AssertionError), proceed
+- Document the failure message
+
+## Phase 4: GREEN - Minimal Implementation
+
+**GATE**: Only enter this phase after Phase 3 shows a failing test.
+
+Write the MINIMUM code to make the test pass:
+
+1. No extra features
+2. No optimization
+3. No "while I'm here" changes
+4. Just enough to satisfy the test
+
+Run the test via devrun agent:
+
+```
+Run pytest &lt;test_file&gt;::&lt;test_function&gt; and report results
+```
+
+**Verify the test PASSES**:
+
+- If it passes, proceed to Phase 5
+- If it fails, fix ONLY what's needed to pass
+
+## Phase 5: REFACTOR - Improve While Green
+
+With a passing test, you may now refactor:
+
+1. Extract helper functions if needed
+2. Improve variable names
+3. Remove duplication
+4. Add type hints if missing
+
+**After each change**, run the test via devrun:
+
+```
+Run pytest &lt;test_file&gt;::&lt;test_function&gt; and report results
+```
+
+**Tests MUST stay green**. If any test fails, revert the refactor.
+
+## Phase 6: EXPAND - Add Edge Cases
+
+For each additional case, repeat the RED-GREEN-REFACTOR cycle:
+
+Consider:
+
+- Error conditions (invalid input, missing data)
+- Boundary values (empty lists, max values)
+- Edge cases specific to the feature
+
+For each case:
+
+1. **RED**: Write failing test for the edge case
+2. **GREEN**: Minimal implementation to pass
+3. **REFACTOR**: Clean up while green
+
+## Phase 7: VERIFY - Final Checks
+
+Run full CI verification via devrun agent:
+
+```
+Run make fast-ci and report results
+```
+
+Confirm:
+
+- All new tests pass
+- No regressions in existing tests
+- Linting and type checking pass
+
+## Gateway Checklist (If Needed)
+
+If Phase 2 determined a new gateway method is needed, you must complete this BEFORE writing business logic tests:
+
+1. **ABC** (`src/erk_shared/&lt;gateway&gt;/abc.py`): Add abstract method
+2. **Real** (`src/erk_shared/&lt;gateway&gt;/real.py`): Implement real behavior
+3. **Fake** (`tests/fakes/&lt;gateway&gt;.py`): Implement fake behavior
+4. **DryRun** (`src/erk_shared/&lt;gateway&gt;/dry_run.py`): Implement dry-run behavior
+5. **Printing** (`src/erk_shared/&lt;gateway&gt;/printing.py`): Implement printing wrapper
+
+After all 5 implementations exist, proceed with business logic testing.
+
+## Enforcement Rules
+
+1. **No implementation before failing test** - Phase 3 MUST complete before Phase 4
+2. **Test must actually fail** - A passing test on first run is not TDD
+3. **Use existing fakes** - Don't create ad-hoc mocks; use Fake\* classes
+4. **Minimal implementation** - Write just enough to pass, no more
+5. **Always run via devrun** - Never run pytest/make directly
+
+## Begin Now
+
+Start by loading the required skills (Phase 1), then analyze the feature request (Phase 2). Report your analysis before writing any code.
+</user>
+  <thinking>The user wants me to fix the `CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'` error using TDD. Let me follow the TDD workflow.
+
+First, let me understand the issue:
+- `runner.py` line 14 uses `CliRunner(mix_stderr=False)` 
+- This parameter is not supported in the current Click version installed
+- Need to: write a failing test first, then fix the implementation
+
+Let me start by loading the skills and understanding the codebase.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="1566" cache_read_input_tokens="52532" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1566}" output_tokens="0" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_011HpjUdmDTk9HcqZi17REmY">
+    <param name="skill">fake-driven-testing</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1566" cache_read_input_tokens="52532" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1566}" output_tokens="0" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011HpjUdmDTk9HcqZi17REmY">
+Launching skill: fake-driven-testing
+  </tool_result>
+</session>
