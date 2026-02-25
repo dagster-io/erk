@@ -401,14 +401,7 @@ if ctx.graphite.is_branch_diverged_from_tracking(ctx.git, repo_root, branch_name
 
 **Why It's Surprising**: Git refuses to force-update the currently checked-out branch (it would make the working tree inconsistent). Rather than switching away and back, the code takes the defensive approach: skip the update and let retracking handle divergence.
 
-**Detection Pattern**:
-
-```python
-# LBYL check at graphite.py line 141
-current_branch = self.git.branch.get_current_branch(repo_root)
-if local_branch == current_branch:
-    return  # Can't force-update checked-out branch; retrack handles divergence
-```
+**Detection Pattern**: The method performs an LBYL check comparing the target branch against the currently checked-out branch. If they match, it returns early rather than attempting a force-update that git would reject.
 
 **When This Happens**:
 

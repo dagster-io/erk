@@ -233,7 +233,7 @@ done
 
 <!-- Source: src/erk/cli/commands/land_cmd.py, delete_branch -->
 
-When `erk land` completes a merge, it force-deletes the implementation branch in all cleanup paths. There are 5 `delete_branch(..., force=True)` calls in `land_cmd.py` (lines 775, 796, 821, 839, 870), covering different worktree configurations:
+When `erk land` completes a merge, it force-deletes the implementation branch in all cleanup paths. There are multiple `delete_branch(..., force=True)` calls in `land_cmd.py`, covering different worktree configurations:
 
 - Simple branch deletion (no worktree)
 - Slot-assigned branch cleanup
