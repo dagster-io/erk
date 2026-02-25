@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: Stale `erk plan check` reference in one-shot workflow"
+}
