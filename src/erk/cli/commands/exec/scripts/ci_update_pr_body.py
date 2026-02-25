@@ -278,11 +278,6 @@ def _update_pr_body_impl(
         plan_content = extract_plan_content(pr_result.body)
         original_plan_section = build_original_plan_section(plan_content)
 
-        # Strip the content separator — no longer needed when metadata is at bottom
-        metadata_block = plan_header_block_raw
-        if metadata_block.endswith(PLAN_CONTENT_SEPARATOR):
-            metadata_block = metadata_block[: -len(PLAN_CONTENT_SEPARATOR)]
-
         summary_body = _build_pr_body(
             summary=summary,
             pr_number=pr_number,
@@ -291,6 +286,8 @@ def _update_pr_body_impl(
             run_url=run_url,
             plans_repo=plans_repo,
         )
+        # Strip the content separator — no longer needed when metadata is at bottom
+        metadata_block = plan_header_block_raw.removesuffix(PLAN_CONTENT_SEPARATOR)
         pr_body = summary_body + original_plan_section + "\n\n" + metadata_block
     else:
         pr_body = _build_pr_body(

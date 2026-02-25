@@ -255,10 +255,7 @@ def assemble_pr_body(
     suffix = ""
     if plan_header_block:
         # Strip the content separator that was used when metadata was at top
-        stripped = plan_header_block
-        if stripped.endswith(PLAN_CONTENT_SEPARATOR):
-            stripped = stripped[: -len(PLAN_CONTENT_SEPARATOR)]
-        suffix = "\n\n" + stripped
+        suffix = "\n\n" + plan_header_block.removesuffix(PLAN_CONTENT_SEPARATOR)
     if header:
         suffix = "\n\n" + header.rstrip("\n") + suffix
 
