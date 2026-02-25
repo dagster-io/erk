@@ -1,0 +1,24 @@
+{
+  "success": true,
+  "pr_number": 8161,
+  "threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5wrZOu",
+      "path": "packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: Nested if/else for status check could be simplified - Consider using early return pattern to reduce indentation depth and improve readability. Current structure checks one condition and nested nested another - LBYL pattern would be: check planning status first, return early if true, then handle the else branch without nesting.",
+          "created_at": "2026-02-25T13:39:23Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Refactored: hoisted `min_status` computation and flattened to if/elif/else chain, reducing one nesting level. Fixed in b6ff1e46e.\n\n_Addressed via `/erk:pr-address` at 2026-02-25 05:54 PST_",
+          "created_at": "2026-02-25T13:54:53Z"
+        }
+      ]
+    }
+  ]
+}
