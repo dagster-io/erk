@@ -60,12 +60,14 @@ class TestMain(unittest.TestCase):
     @patch("erkbot.cli.AsyncSocketModeHandler")
     @patch("erkbot.cli.create_app")
     @patch("erkbot.cli.ErkBot")
+    @patch("erkbot.cli.get_erk_system_prompt", return_value="mock-system-prompt")
     @patch("erkbot.cli.Settings")
     @patch("erkbot.cli.load_dotenv")
     def test_run_constructs_erkbot_when_agent_config_present(
         self,
         _mock_load_dotenv: MagicMock,
         mock_settings_cls: MagicMock,
+        _mock_get_prompt: MagicMock,
         mock_erkbot_cls: MagicMock,
         mock_create_app: MagicMock,
         mock_handler_cls: MagicMock,
@@ -85,7 +87,7 @@ class TestMain(unittest.TestCase):
             model="claude-opus-4-20250514",
             max_turns=20,
             cwd=Path("/tmp/repo"),
-            system_prompt="You are erk-bot, an AI assistant for the erk project.",
+            system_prompt="mock-system-prompt",
             permission_mode="bypassPermissions",
         )
         mock_create_app.assert_called_once_with(
@@ -155,12 +157,14 @@ class TestMain(unittest.TestCase):
     @patch("erkbot.cli.AsyncSocketModeHandler")
     @patch("erkbot.cli.create_app")
     @patch("erkbot.cli.ErkBot")
+    @patch("erkbot.cli.get_erk_system_prompt", return_value="mock-system-prompt")
     @patch("erkbot.cli.Settings")
     @patch("erkbot.cli.load_dotenv")
     def test_run_logs_agent_enabled_mode(
         self,
         _mock_load_dotenv: MagicMock,
         mock_settings_cls: MagicMock,
+        _mock_get_prompt: MagicMock,
         mock_erkbot_cls: MagicMock,
         _mock_create_app: MagicMock,
         mock_handler_cls: MagicMock,
