@@ -51,6 +51,7 @@ class TestPlanListService:
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
+            http_client=None,
         )
 
         assert len(result.plans) == 1
@@ -94,6 +95,7 @@ class TestPlanListService:
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
+            http_client=None,
         )
 
         # Unified path returns plans from get_issues_with_pr_linkages
@@ -112,6 +114,7 @@ class TestPlanListService:
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
+            http_client=None,
         )
 
         assert result.plans == []
@@ -154,6 +157,7 @@ class TestPlanListService:
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
             state="open",
+            http_client=None,
         )
 
         assert len(result.plans) == 1
@@ -194,6 +198,7 @@ class TestPlanListService:
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
             state="closed",
+            http_client=None,
         )
 
         assert len(result.plans) == 1
@@ -260,6 +265,7 @@ last_dispatched_at: '2024-01-15T11:00:00Z'
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
+            http_client=None,
         )
 
         # Verify workflow run was fetched and mapped to issue
@@ -312,6 +318,7 @@ last_dispatched_node_id: 'WFR_abc123'
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
             skip_workflow_runs=True,
+            http_client=None,
         )
 
         # Workflow runs dict should be empty when skipped
@@ -339,6 +346,7 @@ last_dispatched_node_id: 'WFR_abc123'
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
+            http_client=None,
         )
 
         # No workflow runs should be fetched (no node_ids to fetch)
@@ -379,6 +387,7 @@ last_dispatched_node_id: 'WFR_nonexistent'
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
+            http_client=None,
         )
 
         # Issue should have None for workflow run (not found)
@@ -423,6 +432,7 @@ last_dispatched_node_id: 'WFR_abc123'
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
+            http_client=None,
         )
 
         # Plans should still be returned
@@ -604,6 +614,7 @@ class TestPlannedPRPlanListService:
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
+            http_client=None,
         )
 
         assert len(result.plans) == 1
@@ -617,6 +628,7 @@ class TestPlannedPRPlanListService:
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
+            http_client=None,
         )
 
         assert result.plans == []
@@ -646,6 +658,7 @@ class TestPlannedPRPlanListService:
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
+            http_client=None,
         )
 
         assert len(result.plans) == 1
@@ -684,6 +697,7 @@ class TestPlannedPRPlanListService:
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
+            http_client=None,
         )
 
         assert len(result.plans) == 1
@@ -707,6 +721,7 @@ class TestPlannedPRPlanListService:
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
+            http_client=None,
         )
 
         assert len(result.plans) == 1
@@ -750,6 +765,7 @@ last_dispatched_at: '2024-06-01T10:00:00Z'
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
+            http_client=None,
         )
 
         assert len(result.plans) == 1
@@ -785,7 +801,10 @@ last_dispatched_node_id: 'WFR_draft456'
         )
         service = PlannedPRPlanListService(fake_github, time=FakeTime())
         result = service.get_plan_list_data(
-            location=TEST_LOCATION, labels=["erk-planned-pr", "erk-plan"], skip_workflow_runs=True
+            location=TEST_LOCATION,
+            labels=["erk-planned-pr", "erk-plan"],
+            skip_workflow_runs=True,
+            http_client=None,
         )
 
         assert len(result.plans) == 1
@@ -828,6 +847,7 @@ last_dispatched_node_id: 'WFR_draft456'
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
+            http_client=None,
         )
 
         assert len(result.plans) == 1
@@ -866,6 +886,7 @@ last_dispatched_node_id: 'WFR_draft456'
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
+            http_client=None,
         )
 
         assert len(result.plans) == 1
@@ -898,6 +919,7 @@ last_dispatched_node_id: 'WFR_draft789'
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-planned-pr", "erk-plan"],
+            http_client=None,
         )
 
         assert len(result.plans) == 1

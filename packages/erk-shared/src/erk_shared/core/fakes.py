@@ -275,6 +275,7 @@ class FakePlanListService(PlanListService):
         skip_workflow_runs: bool = False,
         creator: str | None = None,
         exclude_labels: list[str] | None = None,
+        http_client: object | None,
     ) -> PlanListData:
         return self._data
 
