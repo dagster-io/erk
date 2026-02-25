@@ -484,7 +484,7 @@ class RealPlanDataProvider(PlanDataProvider):
     def fetch_plans_for_objective(self, objective_issue: int) -> list[PlanRowData]:
         """Fetch plans associated with a specific objective.
 
-        Fetches all open erk-plan issues and filters client-side by objective_issue.
+        Fetches all erk-plan issues (any state) and filters client-side by objective_issue.
 
         Args:
             objective_issue: The objective issue number to filter by
@@ -494,7 +494,7 @@ class RealPlanDataProvider(PlanDataProvider):
         """
         filters = PlanFilters(
             labels=("erk-plan",),
-            state="open",
+            state=None,
             run_state=None,
             limit=100,
             show_prs=True,
