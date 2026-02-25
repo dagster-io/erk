@@ -37,18 +37,21 @@ def impl_folder(tmp_path: Path) -> Path:
     return impl_dir
 
 
-def test_check_impl_validates_complete_issue_json(impl_folder: Path, monkeypatch) -> None:
-    """Test that check-impl validates issue.json has all required fields."""
-    issue_json = impl_folder / "issue.json"
+def test_check_impl_validates_complete_plan_ref(impl_folder: Path, monkeypatch) -> None:
+    """Test that check-impl validates plan-ref.json has all required fields."""
+    plan_ref = impl_folder / "plan-ref.json"
 
     # Write COMPLETE format
-    issue_data = {
-        "issue_number": 123,
-        "issue_url": "https://github.com/org/repo/issues/123",
+    plan_ref_data = {
+        "provider": "github",
+        "plan_id": "123",
+        "url": "https://github.com/org/repo/issues/123",
         "created_at": "2025-01-01T00:00:00Z",
         "synced_at": "2025-01-01T00:00:00Z",
+        "labels": [],
+        "objective_id": None,
     }
-    issue_json.write_text(json.dumps(issue_data), encoding="utf-8")
+    plan_ref.write_text(json.dumps(plan_ref_data), encoding="utf-8")
 
     # Change to parent directory for test
     monkeypatch.chdir(impl_folder.parent)
@@ -63,16 +66,15 @@ def test_check_impl_validates_complete_issue_json(impl_folder: Path, monkeypatch
     assert data["plan_length"] > 0
 
 
-def test_check_impl_handles_incomplete_issue_json(impl_folder: Path, monkeypatch) -> None:
-    """Test that incomplete issue.json is detected and tracking disabled."""
-    issue_json = impl_folder / "issue.json"
+def test_check_impl_handles_incomplete_plan_ref(impl_folder: Path, monkeypatch) -> None:
+    """Test that incomplete plan-ref.json is detected and tracking disabled."""
+    plan_ref = impl_folder / "plan-ref.json"
 
-    # Write SIMPLE format (missing timestamps)
-    issue_data = {
-        "issue_number": 123,
-        "issue_url": "https://github.com/org/repo/issues/123",
+    # Write incomplete format (missing required fields: plan_id, url, etc.)
+    plan_ref_data = {
+        "provider": "github",
     }
-    issue_json.write_text(json.dumps(issue_data), encoding="utf-8")
+    plan_ref.write_text(json.dumps(plan_ref_data), encoding="utf-8")
 
     # Change to parent directory for test
     monkeypatch.chdir(impl_folder.parent)
@@ -156,14 +158,17 @@ def test_check_impl_errors_on_missing_impl_folder(tmp_path: Path, monkeypatch) -
 
 def test_check_impl_normal_mode_with_tracking(impl_folder: Path, monkeypatch) -> None:
     """Test normal mode outputs instructions with tracking enabled."""
-    issue_json = impl_folder / "issue.json"
-    issue_json.write_text(
+    plan_ref = impl_folder / "plan-ref.json"
+    plan_ref.write_text(
         json.dumps(
             {
-                "issue_number": 456,
-                "issue_url": "https://github.com/org/repo/issues/456",
+                "provider": "github",
+                "plan_id": "456",
+                "url": "https://github.com/org/repo/issues/456",
                 "created_at": "2025-01-01T00:00:00Z",
                 "synced_at": "2025-01-01T00:00:00Z",
+                "labels": [],
+                "objective_id": None,
             }
         ),
         encoding="utf-8",
