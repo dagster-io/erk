@@ -43,19 +43,19 @@ def test_get_pr_body_footer_different_pr_numbers() -> None:
     assert "1895" not in result.output
 
 
-def test_get_pr_body_footer_with_issue_number() -> None:
-    """Test that footer includes Closes #N when issue-number is provided."""
+def test_get_pr_body_footer_with_plan_number() -> None:
+    """Test that footer includes Closes #N when plan-number is provided."""
     runner = CliRunner()
 
-    result = runner.invoke(get_pr_body_footer, ["--pr-number", "1895", "--issue-number", "123"])
+    result = runner.invoke(get_pr_body_footer, ["--pr-number", "1895", "--plan-number", "123"])
 
     assert result.exit_code == 0
     assert "Closes #123" in result.output
     assert "erk pr checkout 1895" in result.output
 
 
-def test_get_pr_body_footer_without_issue_number() -> None:
-    """Test that footer does not include Closes #N when issue-number is not provided."""
+def test_get_pr_body_footer_without_plan_number() -> None:
+    """Test that footer does not include Closes #N when plan-number is not provided."""
     runner = CliRunner()
 
     result = runner.invoke(get_pr_body_footer, ["--pr-number", "1895"])

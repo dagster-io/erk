@@ -23,7 +23,7 @@ from erk_shared.gateway.github.types import PRNotFound
 
 
 @click.command(name="register-one-shot-plan")
-@click.option("--issue-number", type=int, required=True)
+@click.option("--plan-number", type=int, required=True)
 @click.option("--run-id", type=str, required=True)
 @click.option("--pr-number", type=int, required=True)
 @click.option("--submitted-by", type=str, required=True)
@@ -32,7 +32,7 @@ from erk_shared.gateway.github.types import PRNotFound
 def register_one_shot_plan(
     ctx: click.Context,
     *,
-    issue_number: int,
+    plan_number: int,
     run_id: str,
     pr_number: int,
     submitted_by: str,
@@ -52,7 +52,7 @@ def register_one_shot_plan(
             plan_backend=plan_backend,
             github=github,
             repo_root=repo_root,
-            issue_number=issue_number,
+            issue_number=plan_number,
             run_id=run_id,
             dispatched_at=datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         )
@@ -62,9 +62,9 @@ def register_one_shot_plan(
 
     # Op 2: queued comment
     try:
-        issue = issues.get_issue(repo_root, issue_number)
+        issue = issues.get_issue(repo_root, plan_number)
         if isinstance(issue, IssueNotFound):
-            raise RuntimeError(f"Issue #{issue_number} not found")
+            raise RuntimeError(f"Plan #{plan_number} not found")
         # Extract owner/repo from run_url for the PR link
         url_parts = run_url.split("/")
         repo_slug = next(
@@ -77,7 +77,7 @@ def register_one_shot_plan(
         )
         issues.add_comment(
             repo_root,
-            issue_number,
+            plan_number,
             f"\U0001f504 **Queued for Implementation**\n\n"
             f"**Submitted by:** @{submitted_by}\n"
             f"**PR:** [#{pr_number}](https://github.com/{repo_slug}/pull/{pr_number})\n"
@@ -88,16 +88,16 @@ def register_one_shot_plan(
         results["queued_comment"] = {"success": False, "error": str(exc)}
 
     # Op 3: PR closing reference
-    # Guard: skip when issue_number == pr_number (planned_pr mode).
+    # Guard: skip when plan_number == pr_number (planned_pr mode).
     # The draft PR IS the plan — Closes #N would be self-referential.
-    if issue_number == pr_number:
+    if plan_number == pr_number:
         results["pr_closing_ref"] = {"success": True, "skipped": "self-referential"}
     else:
         try:
             pr = github.get_pr(repo_root, pr_number)
             if isinstance(pr, PRNotFound):
                 raise RuntimeError(f"PR #{pr_number} not found")
-            ref = f"Closes {plans_repo}#{issue_number}" if plans_repo else f"Closes #{issue_number}"
+            ref = f"Closes {plans_repo}#{plan_number}" if plans_repo else f"Closes #{plan_number}"
             github.update_pr_body(repo_root, pr_number, f"{pr.body}\n\n---\n\n{ref}")
             results["pr_closing_ref"] = {"success": True}
         except Exception as exc:
@@ -107,7 +107,7 @@ def register_one_shot_plan(
     try:
         plan_backend.update_metadata(
             repo_root,
-            str(issue_number),
+            str(plan_number),
             metadata={"lifecycle_stage": "planned"},
         )
         results["lifecycle_stage"] = {"success": True}

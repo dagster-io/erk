@@ -135,7 +135,7 @@ def _build_pr_body(
     *,
     summary: str,
     pr_number: int,
-    issue_number: int | None,
+    plan_number: int | None,
     run_id: str | None,
     run_url: str | None,
     plans_repo: str | None,
@@ -145,7 +145,7 @@ def _build_pr_body(
     Args:
         summary: AI-generated PR summary
         pr_number: PR number for checkout instructions
-        issue_number: Issue number to close on merge, or None for planned-PR plans
+        plan_number: Plan number to close on merge, or None for planned-PR plans
         run_id: Optional workflow run ID
         run_url: Optional workflow run URL
         plans_repo: Target repo in "owner/repo" format for cross-repo plans
@@ -161,7 +161,7 @@ def _build_pr_body(
 
     # Add footer with checkout instructions
     parts.append(
-        build_pr_body_footer(pr_number=pr_number, issue_number=issue_number, plans_repo=plans_repo)
+        build_pr_body_footer(pr_number=pr_number, issue_number=plan_number, plans_repo=plans_repo)
     )
 
     return "\n".join(parts)
@@ -173,7 +173,7 @@ def _update_pr_body_impl(
     github: GitHub,
     executor: PromptExecutor,
     repo_root: Path,
-    issue_number: int,
+    plan_number: int,
     run_id: str | None,
     run_url: str | None,
     plans_repo: str | None,
@@ -186,7 +186,7 @@ def _update_pr_body_impl(
         github: GitHub interface
         executor: PromptExecutor for Claude
         repo_root: Repository root path
-        issue_number: Issue number to close on merge
+        plan_number: Plan number to close on merge
         run_id: Optional workflow run ID
         run_url: Optional workflow run URL
         plans_repo: Target repo in "owner/repo" format for cross-repo plans
@@ -286,7 +286,7 @@ def _update_pr_body_impl(
         summary_body = _build_pr_body(
             summary=summary,
             pr_number=pr_number,
-            issue_number=None,
+            plan_number=None,
             run_id=run_id,
             run_url=run_url,
             plans_repo=plans_repo,
@@ -296,7 +296,7 @@ def _update_pr_body_impl(
         pr_body = _build_pr_body(
             summary=summary,
             pr_number=pr_number,
-            issue_number=issue_number,
+            plan_number=plan_number,
             run_id=run_id,
             run_url=run_url,
             plans_repo=plans_repo,
@@ -354,7 +354,7 @@ def ci_update_pr_body(
         github=github,
         executor=executor,
         repo_root=repo_root,
-        issue_number=plan_id,
+        plan_number=plan_id,
         run_id=run_id,
         run_url=run_url,
         plans_repo=plans_repo,

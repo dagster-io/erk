@@ -1,14 +1,14 @@
 """Extract arbitrary metadata fields from a plan issue's plan-header block.
 
 Usage:
-    erk exec get-plan-metadata <issue-number> <field-name>
+    erk exec get-plan-metadata <plan-number> <field-name>
 
 Output:
     JSON with success status and field value (or null if field doesn't exist)
 
 Exit Codes:
     0: Success (field found or null)
-    1: Error (issue not found)
+    1: Error (plan not found)
 """
 
 import json
@@ -27,7 +27,7 @@ class MetadataSuccess:
 
     success: bool
     value: Any
-    issue_number: int
+    plan_number: int
     field: str
 
 
@@ -41,12 +41,12 @@ class MetadataError:
 
 
 @click.command(name="get-plan-metadata")
-@click.argument("issue_number", type=int)
+@click.argument("plan_number", type=int)
 @click.argument("field_name")
 @click.pass_context
 def get_plan_metadata(
     ctx: click.Context,
-    issue_number: int,
+    plan_number: int,
     field_name: str,
 ) -> None:
     """Extract a metadata field from a plan issue's plan-header block.
@@ -57,7 +57,7 @@ def get_plan_metadata(
     backend = require_plan_backend(ctx)
     repo_root = require_repo_root(ctx)
 
-    plan_id = str(issue_number)
+    plan_id = str(plan_number)
 
     # Get metadata field via PlanBackend
     result = backend.get_metadata_field(repo_root, plan_id, field_name)
@@ -65,7 +65,7 @@ def get_plan_metadata(
         error_result = MetadataError(
             success=False,
             error="issue_not_found",
-            message=f"Issue #{issue_number} not found",
+            message=f"Plan #{plan_number} not found",
         )
         click.echo(json.dumps(asdict(error_result)), err=True)
         raise SystemExit(1)
@@ -74,7 +74,7 @@ def get_plan_metadata(
     result_success = MetadataSuccess(
         success=True,
         value=result,
-        issue_number=issue_number,
+        plan_number=plan_number,
         field=field_name,
     )
     click.echo(json.dumps(asdict(result_success)))

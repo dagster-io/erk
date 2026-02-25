@@ -211,12 +211,12 @@ Extract the PR number (from Step 7 if PR was created, or from Step 6.5 if existi
 > Never replace the entire body — only append the footer to the existing content.
 
 ```bash
-# Get issue number from .impl/issue.json if present (for proper issue linking)
-issue_number=$(jq -r '.issue_number // empty' .impl/issue.json 2>/dev/null || echo "")
+# Get plan number from .impl/plan-ref.json if present (for proper plan linking)
+plan_number=$(jq -r '.plan_id // empty' .impl/plan-ref.json 2>/dev/null || echo "")
 
-# Generate footer with issue number if available
-if [ -n "$issue_number" ]; then
-    footer=$(erk exec get-pr-body-footer --pr-number "$pr_number" --issue-number "$issue_number")
+# Generate footer with plan number if available
+if [ -n "$plan_number" ]; then
+    footer=$(erk exec get-pr-body-footer --pr-number "$pr_number" --plan-number "$plan_number")
 else
     footer=$(erk exec get-pr-body-footer --pr-number "$pr_number")
 fi

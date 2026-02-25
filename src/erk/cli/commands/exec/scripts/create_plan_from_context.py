@@ -43,7 +43,7 @@ def create_plan_from_context(ctx: click.Context) -> None:
         1: Error (empty plan, gh failure, etc.)
 
     Output:
-        JSON object: {"success": true, "issue_number": 123, "issue_url": "..."}
+        JSON object: {"success": true, "plan_number": 123, "plan_url": "..."}
     """
     # Get GitHub Issues from context (LBYL check in helper)
     github = require_github_issues(ctx)
@@ -100,7 +100,7 @@ def create_plan_from_context(ctx: click.Context) -> None:
     # Output structured JSON
     output = {
         "success": True,
-        "issue_number": result.number,
-        "issue_url": result.url,
+        "plan_number": result.number,
+        "plan_url": result.url,
     }
     click.echo(json.dumps(output))
