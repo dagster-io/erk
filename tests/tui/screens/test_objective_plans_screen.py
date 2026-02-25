@@ -7,6 +7,7 @@ from erk.tui.screens.objective_plans_screen import (
     ObjectivePlansScreen,
     _extract_plan_ids_from_roadmap,
 )
+from erk.tui.data.types import PlanFilters
 from erk.tui.widgets.plan_table import PlanDataTable
 from erk_shared.gateway.plan_data_provider.fake import (
     FakePlanDataProvider,
@@ -381,3 +382,124 @@ def test_on_branch_clicked_invalid_index() -> None:
     screen.on_branch_clicked(event)
 
     # Should not crash
+
+
+# Tests for keyboard action handlers (require mounted widgets)
+
+
+def _make_objective_plans_screen(
+    provider: FakePlanDataProvider,
+) -> ObjectivePlansScreen:
+    """Create an ObjectivePlansScreen for testing.
+
+    Args:
+        provider: Fake provider with plans pre-configured
+
+    Returns:
+        ObjectivePlansScreen ready for mounting
+    """
+    return ObjectivePlansScreen(
+        provider=provider,
+        objective_id=8088,
+        objective_title="Test Objective",
+        progress_display="2/5",
+        objective_body="",
+    )
+
+
+@pytest.mark.asyncio
+async def test_action_cursor_down_moves_table_cursor() -> None:
+    """Pressing j moves the PlanDataTable cursor down."""
+    plans = [
+        make_plan_row(100, "Plan A", objective_issue=8088),
+        make_plan_row(101, "Plan B", objective_issue=8088),
+    ]
+    provider = FakePlanDataProvider(plans=plans)
+    screen = _make_objective_plans_screen(provider)
+
+    app = App()
+    async with app.run_test() as pilot:
+        app.push_screen(screen)
+        await pilot.pause()
+        await pilot.pause()
+
+        table = screen.query_one(PlanDataTable)
+        assert table.cursor_row == 0
+
+        await pilot.press("j")
+        assert table.cursor_row == 1
+
+
+@pytest.mark.asyncio
+async def test_action_cursor_up_moves_table_cursor() -> None:
+    """Pressing k moves the PlanDataTable cursor up."""
+    plans = [
+        make_plan_row(100, "Plan A", objective_issue=8088),
+        make_plan_row(101, "Plan B", objective_issue=8088),
+    ]
+    provider = FakePlanDataProvider(plans=plans)
+    screen = _make_objective_plans_screen(provider)
+
+    app = App()
+    async with app.run_test() as pilot:
+        app.push_screen(screen)
+        await pilot.pause()
+        await pilot.pause()
+
+        # Move down first, then up
+        await pilot.press("j")
+        table = screen.query_one(PlanDataTable)
+        assert table.cursor_row == 1
+
+        await pilot.press("k")
+        assert table.cursor_row == 0
+
+
+@pytest.mark.asyncio
+async def test_action_open_issue_launches_browser() -> None:
+    """Pressing o opens the selected plan's issue URL in browser."""
+    plans = [
+        make_plan_row(
+            100,
+            "Plan A",
+            objective_issue=8088,
+            plan_url="https://github.com/test/repo/issues/100",
+        ),
+    ]
+    provider = FakePlanDataProvider(plans=plans)
+    screen = _make_objective_plans_screen(provider)
+
+    app = App()
+    async with app.run_test() as pilot:
+        app.push_screen(screen)
+        await pilot.pause()
+        await pilot.pause()
+
+        await pilot.press("o")
+
+        assert "https://github.com/test/repo/issues/100" in provider.browser.launch_calls  # type: ignore
+
+
+@pytest.mark.asyncio
+async def test_action_open_pr_launches_browser() -> None:
+    """Pressing p opens the selected plan's PR URL in browser."""
+    plans = [
+        make_plan_row(
+            100,
+            "Plan A",
+            objective_issue=8088,
+            pr_url="https://github.com/test/repo/pull/456",
+        ),
+    ]
+    provider = FakePlanDataProvider(plans=plans)
+    screen = _make_objective_plans_screen(provider)
+
+    app = App()
+    async with app.run_test() as pilot:
+        app.push_screen(screen)
+        await pilot.pause()
+        await pilot.pause()
+
+        await pilot.press("p")
+
+        assert "https://github.com/test/repo/pull/456" in provider.browser.launch_calls  # type: ignore
