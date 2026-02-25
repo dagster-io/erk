@@ -143,9 +143,8 @@ def create_plan_issue(
 
     # Step 3: Determine labels - erk-planned-pr + type-specific label
     # Learn plans are identified by having "erk-learn" in extra_labels
-    is_learn_plan = extra_labels is not None and _LABEL_ERK_LEARN in extra_labels
     labels = [_LABEL_ERK_PLANNED_PR]
-    if is_learn_plan:
+    if extra_labels is not None and _LABEL_ERK_LEARN in extra_labels:
         labels.append(_LABEL_ERK_LEARN)
     else:
         labels.append(_LABEL_ERK_PLAN)
