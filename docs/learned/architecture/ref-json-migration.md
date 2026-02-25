@@ -24,11 +24,9 @@ A frozen dataclass with fields: `provider` (PlanProviderType), `plan_id` (str), 
 
 ## Required Fields Constant
 
-```python
-_REQUIRED_REF_FIELDS = ("provider", "plan_id", "url", "created_at", "synced_at")
-```
+<!-- Source: packages/erk-shared/src/erk_shared/impl_folder.py, _REQUIRED_REF_FIELDS -->
 
-Used by `_parse_ref_json()` for LBYL validation before constructing `PlanRef`.
+The private `_REQUIRED_REF_FIELDS` tuple in `packages/erk-shared/src/erk_shared/impl_folder.py` defines which fields must be present. Used by `_parse_ref_json()` for LBYL validation before constructing `PlanRef`. See the source file for current fields.
 
 ## Fallback Chain in read_plan_ref()
 

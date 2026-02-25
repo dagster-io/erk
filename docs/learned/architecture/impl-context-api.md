@@ -70,14 +70,13 @@ The cleanup of `.erk/impl-context/` happens in two phases:
 
 This deferred cleanup ensures the plan is visible in the draft PR during the review period but doesn't interfere with implementation.
 
-## Idempotent LBYL Guard
+## Cleanup-and-Recreate Guard
 
-In `submit.py`, the pattern guards against double-creation:
+In `submit.py`, the pattern cleans up any previous impl-context before creating a fresh one (e.g., from a prior failed submission):
 
 ```python
 if impl_context_exists(repo_root):
-    # Already staged — skip creation
-    return
+    remove_impl_context(repo_root)
 create_impl_context(...)
 ```
 

@@ -62,17 +62,17 @@ Both public functions delegate to a shared helper that returns a list of emoji s
 | 🚧    | Draft PR          | Active stages (planned, implementing, review) when `is_draft=True`       |
 | 👀    | Published PR      | Active stages when `is_draft=False`                                      |
 | 💥    | Merge conflicts   | Implementing, implemented, or review when `has_conflicts=True`           |
-| ✔    | Approved          | Review stage when `review_decision="APPROVED"`                           |
+| ✔     | Approved          | Review stage when `review_decision="APPROVED"`                           |
 | ❌    | Changes requested | Review stage when `review_decision="CHANGES_REQUESTED"`                  |
 | 🚀    | Ready to merge    | Implemented stage when checks pass, no unresolved comments, no conflicts |
 
 ### Stage Detection
 
-Stages are detected from the Rich markup in `lifecycle_display`:
+Stages are detected from the content of `lifecycle_display` using substring matching (not color markup):
 
 - `"planned" in lifecycle_display` → planned stage
-- `"[yellow]" in ... and "impl" in ...` → implementing stage
-- `"[cyan]" in ... and "impl" in ...` → implemented stage
+- `"impl" in lifecycle_display` → implementing or implemented stage (matches "impl", "implementing", "implemented")
+- `"review" in lifecycle_display` → review stage
 
 ## The "sts" Column
 
