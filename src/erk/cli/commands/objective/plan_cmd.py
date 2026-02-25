@@ -387,6 +387,48 @@ def _batch_update_objective_nodes(
             issues.update_comment(repo_root, objective_comment_id, updated_comment)
 
 
+def _mark_node_planning(
+    issues: GitHubIssues,
+    repo_root: Path,
+    *,
+    issue_number: int,
+    node_id: str,
+) -> None:
+    """Best-effort mark a node as 'planning' in the objective roadmap.
+
+    Unlike _update_objective_node, this does a status-only update without
+    requiring a PR number. Used by the interactive flow to mark nodes
+    before launching Claude, so parallel sessions skip them.
+
+    Silently catches all errors — the inner skill will retry if needed.
+    """
+    issue = issues.get_issue(repo_root, issue_number)
+    if isinstance(issue, IssueNotFound):
+        return
+
+    updated_body = _replace_node_refs_in_body(
+        issue.body,
+        node_id,
+        new_pr=None,
+        explicit_status="planning",
+    )
+
+    if updated_body is None:
+        return
+
+    issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
+
+    # v2 format: re-render the comment table from updated YAML
+    objective_comment_id = extract_metadata_value(
+        updated_body, "objective-header", "objective_comment_id"
+    )
+    if objective_comment_id is not None:
+        comment_body = issues.get_comment_by_id(repo_root, objective_comment_id)
+        updated_comment = rerender_comment_roadmap(updated_body, comment_body)
+        if updated_comment is not None and updated_comment != comment_body:
+            issues.update_comment(repo_root, objective_comment_id, updated_comment)
+
+
 @click.command("plan")
 @click.argument("issue_ref", required=False, default=None)
 @click.option(
@@ -532,14 +574,34 @@ def _handle_interactive(
     use_next: bool,
 ) -> None:
     """Launch Claude interactively to create a plan."""
+    # Determine if we have a known node (from --next or --node)
+    known_issue_number: int | None = None
+    known_node_id: str | None = None
+
     if use_next:
         resolved = _resolve_next(ctx, issue_ref=issue_ref)
         user_output(f"Next node: {resolved.node.id}: {resolved.node.description}")
-        command = f"/erk:objective-plan {resolved.issue_number} --node {resolved.node.id}"
-    else:
+        known_issue_number = resolved.issue_number
+        known_node_id = resolved.node.id
+    elif node_id is not None:
         assert issue_ref is not None  # type narrowing: validated in plan_objective
-        node_suffix = f" --node {node_id}" if node_id is not None else ""
-        command = f"/erk:objective-plan {issue_ref}{node_suffix}"
+        known_issue_number = parse_issue_identifier(issue_ref)
+        known_node_id = node_id
+
+    if known_issue_number is not None and known_node_id is not None:
+        # Known node: pre-mark as planning in Python, then launch inner command
+        assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
+        _mark_node_planning(
+            ctx.issues,
+            ctx.repo.root,
+            issue_number=known_issue_number,
+            node_id=known_node_id,
+        )
+        command = f"/erk:objective-plan-node {known_issue_number} --node {known_node_id}"
+    else:
+        # No known node: launch outer command for interactive selection
+        assert issue_ref is not None  # type narrowing: validated in plan_objective
+        command = f"/erk:objective-plan {issue_ref}"
 
     # Get interactive Claude config with plan mode override
     if ctx.global_config is None:

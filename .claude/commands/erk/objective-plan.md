@@ -21,7 +21,23 @@ Create an implementation plan for a specific node in an objective's dependency g
 
 ## Agent Instructions
 
-### Step 1: Parse Issue Reference
+### Step 0: Check for Known Node (Fast Path)
+
+Parse `$ARGUMENTS` for `--node <node-id>`. If `--node` is present along with an issue number:
+
+**Invoke the inner skill immediately** via the Skill tool:
+
+```
+/erk:objective-plan-node <issue-number> --node <node-id>
+```
+
+This skips the interactive selection flow (Steps 1-4 below) since the node is already known. The inner skill handles marker creation, marking as planning, context gathering, plan mode, and saving.
+
+**STOP here** — do not proceed to the steps below.
+
+### Step 1: Parse Issue Reference (Interactive Flow)
+
+If `--node` was NOT provided, proceed with the full interactive flow.
 
 Parse `$ARGUMENTS` to extract the issue reference:
 
@@ -174,83 +190,15 @@ If all nodes are complete or have plans in progress, report appropriately:
 - All complete: "All roadmap nodes are complete! Consider closing the objective."
 - All have plans: "All pending nodes have plans in progress. You can still select one via 'Other' to create a parallel plan."
 
-### Step 5: Create Roadmap Node Marker and Mark as Planning
+### Step 5: Invoke Inner Skill
 
-After the user selects a node, create a marker to store the selected node ID for later use by `plan-save`:
+After the user selects a node, invoke the inner skill via the Skill tool:
 
-```bash
-erk exec marker create --session-id "${CLAUDE_SESSION_ID}" \
-  --content "<step-id>" roadmap-step
+```
+/erk:objective-plan-node <issue-number> --node <selected-node-id>
 ```
 
-Replace `<step-id>` with the node ID selected by the user (e.g., "2A.1"). This marker enables `plan-save` to automatically update the objective's roadmap table with the plan issue number.
-
-Then mark the node as `planning` in the objective's roadmap so parallel sessions skip it:
-
-```bash
-erk exec update-objective-node <issue-number> --node <step-id> --status planning
-```
-
-Replace `<issue-number>` with the objective issue number and `<step-id>` with the selected node ID. This is a best-effort update — if it fails, continue with planning.
-
-### Step 6: Gather Context
-
-Before entering plan mode, gather relevant context:
-
-1. **Objective context:** Goal, design decisions, implementation context
-2. **Node context:** What the specific node requires
-3. **Prior work:** Look at completed nodes and their PRs for patterns
-
-Use this context to inform the plan.
-
-### Step 7: Enter Plan Mode
-
-Enter plan mode to create the implementation plan:
-
-1. Use the EnterPlanMode tool
-2. Focus the plan on the specific node selected
-3. Reference the parent objective in the plan
-
-**Plan should include:**
-
-- Reference to objective: `Part of Objective #<number>, Node <step-id>`
-- Clear goal for this specific node
-- Implementation phases (typically 1-3 for a single node)
-- Files to modify
-- Test requirements
-
-### Step 8: Save Plan with Objective Link
-
-After the plan is approved in plan mode, the `exit-plan-mode-hook` will prompt to save or implement.
-
-The objective-context marker created in Step 2 is automatically read by `/erk:plan-save`. Simply run `/erk:plan-save` and it will link the plan to the objective.
-
-**If the marker was not created (fallback):**
-Create it manually before saving:
-
-```bash
-erk exec marker create --session-id "${CLAUDE_SESSION_ID}" --associated-objective <objective-number> objective-context
-```
-
-Then run `/erk:plan-save`.
-
-This will:
-
-- Create a GitHub issue with the erk-plan label
-- Link it to the parent objective (stored in metadata, read from session marker)
-- Enable objective-aware landing via `/erk:land`
-
-### Step 9: Verify Objective Link
-
-After saving, the JSON output includes `objective_issue`. Check that it matches the expected objective number.
-
-If verification is needed:
-
-```bash
-erk exec get-plan-metadata <new-issue-number> objective_issue
-```
-
-Check that `value` matches the expected objective number.
+The inner skill handles marker creation, marking as planning, context gathering, plan mode, and saving. **STOP here** — the inner skill takes over.
 
 ---
 
