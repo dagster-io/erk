@@ -86,11 +86,21 @@ def maybe_update_plan_dispatch_metadata(
     if node_id is None:
         return
 
-    # LBYL: Check if plan-header block exists before attempting update
-    # This is expected to be missing for non-erk-plan issues that happen
-    # to have P{number} prefix in their branch name
-    schema_version = ctx.plan_backend.get_metadata_field(repo.root, plan_id, "schema_version")
-    if isinstance(schema_version, PlanNotFound) or schema_version is None:
+    # LBYL: Check if plan-header block exists with all required fields before
+    # attempting update. This catches both missing blocks (non-erk-plan issues
+    # that happen to have P{number} prefix) and incomplete blocks (e.g.,
+    # schema_version present but created_at/created_by missing).
+    all_metadata = ctx.plan_backend.get_all_metadata_fields(repo.root, plan_id)
+    if isinstance(all_metadata, PlanNotFound):
+        return
+    required_fields = {"schema_version", "created_at", "created_by"}
+    missing = required_fields - all_metadata.keys()
+    if missing:
+        user_output(
+            click.style("⚠", fg="yellow")
+            + f" Plan #{plan_id} has incomplete plan-header"
+            + f" (missing {', '.join(sorted(missing))}), skipping dispatch metadata update"
+        )
         return
 
     ctx.plan_backend.update_metadata(
