@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Documentation Plan: Fix: Remove unsupported `branch_slug` parameter from `setup_impl`"
+}
