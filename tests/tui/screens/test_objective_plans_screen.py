@@ -7,7 +7,6 @@ from erk.tui.screens.objective_plans_screen import (
     ObjectivePlansScreen,
     _extract_plan_ids_from_roadmap,
 )
-from erk.tui.data.types import PlanFilters
 from erk.tui.widgets.plan_table import PlanDataTable
 from erk_shared.gateway.plan_data_provider.fake import (
     FakePlanDataProvider,
@@ -153,8 +152,6 @@ def test_on_plan_clicked() -> None:
     assert plans[0].plan_url in provider.browser.launch_calls  # type: ignore
 
 
-
-
 def test_on_plan_clicked_invalid_index() -> None:
     """on_plan_clicked handles invalid row index gracefully."""
     plans = [make_plan_row(100, "Plan A", plan_url="https://example.com")]
@@ -202,8 +199,6 @@ def test_on_pr_clicked() -> None:
     assert plans[0].pr_url in provider.browser.launch_calls  # type: ignore
 
 
-
-
 def test_on_run_id_clicked() -> None:
     """on_run_id_clicked opens the run URL from the clicked row."""
     plans = [
@@ -229,8 +224,6 @@ def test_on_run_id_clicked() -> None:
     # Verify browser was called with run URL
     assert provider.browser.launch_calls  # type: ignore
     assert plans[0].run_url in provider.browser.launch_calls  # type: ignore
-
-
 
 
 @pytest.mark.asyncio
