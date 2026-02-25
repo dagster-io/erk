@@ -129,10 +129,15 @@ class PlanViewOutput:
     header: PlanViewHeaderFields | None
 
 
+def _datetime_to_iso(dt: datetime) -> str:
+    """Format a datetime to ISO 8601 string with Z suffix."""
+    return dt.isoformat().replace("+00:00", "Z")
+
+
 def _format_datetime(value: object) -> str | None:
     """Format a datetime value to ISO 8601 string, or return None."""
     if isinstance(value, datetime):
-        return value.isoformat().replace("+00:00", "Z")
+        return _datetime_to_iso(value)
     if isinstance(value, str):
         return value
     return None
@@ -143,9 +148,7 @@ def _get_str(info: dict[str, object], key: str) -> str | None:
     value = info.get(key)
     if isinstance(value, str):
         return value
-    if isinstance(value, datetime):
-        return value.isoformat().replace("+00:00", "Z")
-    return None
+    return _format_datetime(value)
 
 
 def _get_int(info: dict[str, object], key: str) -> int | None:
@@ -172,7 +175,7 @@ def plan_row_to_list_entry(row: PlanRowData) -> PlanListEntry:
         plan_url=row.plan_url,
         title=row.full_title,
         author=row.author,
-        created_at=row.created_at.isoformat().replace("+00:00", "Z"),
+        created_at=_datetime_to_iso(row.created_at),
         pr_number=row.pr_number,
         pr_url=row.pr_url,
         pr_state=row.pr_state,
@@ -239,8 +242,8 @@ def build_plan_view_output(
         url=plan.url,
         labels=tuple(plan.labels),
         assignees=tuple(plan.assignees),
-        created_at=plan.created_at.isoformat().replace("+00:00", "Z"),
-        updated_at=plan.updated_at.isoformat().replace("+00:00", "Z"),
+        created_at=_datetime_to_iso(plan.created_at),
+        updated_at=_datetime_to_iso(plan.updated_at),
         branch_name=branch_name,
         body=plan.body if include_body else None,
         header=header,
