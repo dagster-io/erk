@@ -56,9 +56,9 @@ This field drives three behaviors:
 
 3. **Cycle detection** — `/erk:learn` checks for `erk-learn` label before proceeding, preventing learn-on-learn chains.
 
-<!-- Source: src/erk/cli/commands/submit.py, get_learn_plan_parent_branch -->
+<!-- Source: src/erk/cli/commands/pr/dispatch_cmd.py, get_learn_plan_parent_branch -->
 
-See `get_learn_plan_parent_branch()` in `src/erk/cli/commands/submit.py` for the base branch resolution logic with its fallback to trunk.
+See `get_learn_plan_parent_branch()` in `src/erk/cli/commands/pr/dispatch_cmd.py` for the base branch resolution logic with its fallback to trunk.
 
 <!-- Source: src/erk/cli/commands/land_cmd.py, _update_parent_learn_status_if_learn_plan -->
 
