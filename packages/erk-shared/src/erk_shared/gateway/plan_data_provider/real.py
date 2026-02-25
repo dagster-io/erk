@@ -421,14 +421,6 @@ class RealPlanDataProvider(PlanDataProvider):
         # Build worktree mapping
         worktree_by_plan_id = self._build_worktree_mapping()
 
-        # Batch fetch learn issue states
-        learn_issue_numbers: set[int] = set()
-        for plan in plans:
-            learn_plan_issue = header_int(plan.header_fields, LEARN_PLAN_ISSUE)
-            if learn_plan_issue is not None:
-                learn_issue_numbers.add(learn_plan_issue)
-        learn_issue_states = self._fetch_learn_issue_states(learn_issue_numbers)
-
         # Build row data
         use_graphite = self._ctx.global_config.use_graphite if self._ctx.global_config else False
         rows: list[PlanRowData] = []
@@ -441,7 +433,6 @@ class RealPlanDataProvider(PlanDataProvider):
                 workflow_run=None,
                 worktree_by_plan_id=worktree_by_plan_id,
                 use_graphite=use_graphite,
-                learn_issue_states=learn_issue_states,
             )
             rows.append(row)
 
