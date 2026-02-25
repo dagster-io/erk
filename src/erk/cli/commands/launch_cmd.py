@@ -221,13 +221,13 @@ def _trigger_plan_implement(
     """Trigger plan-implement workflow.
 
     Note: This is a simplified trigger - the full submission flow
-    (branch creation, PR creation, etc.) is handled by `erk plan submit`.
+    (branch creation, PR creation, etc.) is handled by `erk pr dispatch`.
     This command only triggers the workflow directly.
     """
     raise click.UsageError(
-        "Use 'erk plan submit' instead of 'erk workflow launch plan-implement'.\n"
+        "Use 'erk pr dispatch' instead of 'erk workflow launch plan-implement'.\n"
         "The plan-implement workflow requires branch and PR setup that "
-        "'erk plan submit' handles automatically."
+        "'erk pr dispatch' handles automatically."
     )
 
 

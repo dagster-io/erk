@@ -299,7 +299,7 @@ def test_workflow_launch_learn_requires_issue_option(tmp_path: Path) -> None:
 
 
 def test_workflow_launch_plan_implement_shows_usage_error(tmp_path: Path) -> None:
-    """Test plan-implement suggests using erk plan submit instead."""
+    """Test plan-implement suggests using erk pr dispatch instead."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
@@ -314,7 +314,7 @@ def test_workflow_launch_plan_implement_shows_usage_error(tmp_path: Path) -> Non
         result = runner.invoke(cli, ["launch", "plan-implement", "--issue", "123"], obj=ctx)
 
         assert result.exit_code == 2
-        assert "erk plan submit" in result.output
+        assert "erk pr dispatch" in result.output
 
 
 def test_workflow_launch_with_model_option(tmp_path: Path) -> None:

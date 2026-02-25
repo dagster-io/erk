@@ -1,11 +1,11 @@
-"""Tests for learn plan handling in submit."""
+"""Tests for learn plan handling in dispatch."""
 
 from pathlib import Path
 
-from erk.cli.commands.submit import get_learn_plan_parent_branch, is_issue_learn_plan
+from erk.cli.commands.pr.dispatch_cmd import get_learn_plan_parent_branch, is_issue_learn_plan
 from erk_shared.gateway.github.metadata.core import render_metadata_block
 from erk_shared.gateway.github.metadata.types import MetadataBlock
-from tests.commands.submit.conftest import (
+from tests.commands.dispatch.conftest import (
     create_plan,
     make_plan_body,
     setup_submit_context,

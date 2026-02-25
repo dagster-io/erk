@@ -142,11 +142,11 @@ This is a comprehensive test feature that covers the implementation.
     assert "View Issue: https://github.com/test-owner/test-repo/issues/1" in result.output
     # Verify Claude Code slash command options
     assert "In Claude Code:" in result.output
-    assert "Submit to queue: /erk:plan-submit" in result.output
+    assert "Dispatch to queue: /erk:pr-dispatch" in result.output
     # Verify exit Claude Code note and CLI commands
     assert "OR exit Claude Code first, then run one of:" in result.output
     assert "Checkout: erk br co --for-plan 1" in result.output
-    assert "Submit to Queue: erk plan submit 1" in result.output
+    assert "Dispatch to Queue: erk pr dispatch 1" in result.output
 
 
 def test_plan_save_to_issue_label_created() -> None:

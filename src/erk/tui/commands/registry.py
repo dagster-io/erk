@@ -38,7 +38,7 @@ def _display_close_plan(ctx: CommandContext) -> str:
 
 def _display_submit_to_queue(ctx: CommandContext) -> str:
     """Display name for submit_to_queue command."""
-    return f"erk plan submit {ctx.row.plan_id}"
+    return f"erk pr dispatch {ctx.row.plan_id}"
 
 
 def _display_land_pr(ctx: CommandContext) -> str:
@@ -101,7 +101,7 @@ def _display_copy_implement_local(ctx: CommandContext) -> str:
 
 def _display_copy_submit(ctx: CommandContext) -> str:
     """Display name for copy_submit command."""
-    return f"erk plan submit {ctx.row.plan_id}"
+    return f"erk pr dispatch {ctx.row.plan_id}"
 
 
 def _display_copy_replan(ctx: CommandContext) -> str:
@@ -328,7 +328,7 @@ def get_all_commands() -> list[CommandDefinition]:
         ),
         CommandDefinition(
             id="copy_submit",
-            name="erk plan submit",
+            name="erk pr dispatch",
             description="submit",
             category=CommandCategory.COPY,
             shortcut="3",

@@ -1027,7 +1027,7 @@ class ErkDashApp(App):
                 self.notify(f"Copied: {cmd}")
 
         elif command_id == "copy_submit":
-            cmd = f"erk plan submit {row.plan_id}"
+            cmd = f"erk pr dispatch {row.plan_id}"
             self._provider.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 

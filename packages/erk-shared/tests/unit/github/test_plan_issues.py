@@ -901,7 +901,7 @@ class TestCreatePlanIssueCommandsSection:
         # Check for commands section with correct issue number
         assert "## Commands" in updated_body
         assert "erk br co --for-plan 1" in updated_body
-        assert "erk plan submit 1" in updated_body
+        assert "erk pr dispatch 1" in updated_body
 
     def test_learn_plan_does_not_include_commands_section(self, tmp_path: Path) -> None:
         """Extraction plans should NOT include commands section."""
@@ -961,4 +961,4 @@ class TestCreatePlanIssueCommandsSection:
         # Verify commands reference issue 42, not 1
         _, updated_body = fake_gh.updated_bodies[0]
         assert "erk br co --for-plan 42" in updated_body
-        assert "erk plan submit 42" in updated_body
+        assert "erk pr dispatch 42" in updated_body

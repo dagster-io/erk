@@ -58,7 +58,7 @@ class TestPlannedPRNextSteps:
             branch_name="plan-my-feature-02-20",
             url="https://github.com/org/repo/pull/42",
         )
-        assert steps.submit == "erk plan submit 42"
+        assert steps.submit == "erk pr dispatch 42"
 
     def test_checkout_branch_and_implement_uses_branch_name(self) -> None:
         steps = PlannedPRNextSteps(

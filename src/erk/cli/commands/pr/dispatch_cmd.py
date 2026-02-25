@@ -1,4 +1,4 @@
-"""Submit issue for remote AI implementation via GitHub Actions."""
+"""Dispatch plans for remote AI implementation via GitHub Actions."""
 
 import logging
 import tomllib
@@ -8,9 +8,9 @@ from pathlib import Path
 
 import click
 
+from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced
 from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
 from erk.cli.commands.slot.common import is_placeholder_branch
-from erk.cli.commands.submit_helpers import ensure_trunk_synced
 from erk.cli.constants import (
     DISPATCH_WORKFLOW_METADATA_NAME,
     DISPATCH_WORKFLOW_NAME,
@@ -117,8 +117,8 @@ def load_workflow_config(repo_root: Path, workflow_name: str) -> dict[str, str]:
 
 
 @dataclass(frozen=True)
-class SubmitResult:
-    """Result of submitting a single issue."""
+class DispatchResult:
+    """Result of dispatching a single plan."""
 
     issue_number: int
     issue_title: str
@@ -173,12 +173,12 @@ class ValidatedPlannedPR:
     branch_name: str
 
 
-def _validate_planned_pr_for_submit(
+def _validate_planned_pr_for_dispatch(
     ctx: ErkContext,
     repo: RepoContext,
     plan_number: int,
 ) -> ValidatedPlannedPR:
-    """Validate a planned PR plan for submission.
+    """Validate a planned PR plan for dispatch.
 
     Fetches the PR, validates it has the erk-plan label and is OPEN.
 
@@ -200,7 +200,7 @@ def _validate_planned_pr_for_submit(
         user_output(
             click.style("Error: ", fg="red")
             + f"PR #{plan_number} does not have {ERK_PLAN_LABEL} label\n\n"
-            "Cannot submit non-plan PRs for automated implementation."
+            "Cannot dispatch non-plan PRs for automated implementation."
         )
         raise SystemExit(1)
 
@@ -208,7 +208,7 @@ def _validate_planned_pr_for_submit(
     if pr_result.state != "OPEN":
         user_output(
             click.style("Error: ", fg="red") + f"PR #{plan_number} is {pr_result.state}\n\n"
-            "Cannot submit closed PRs for automated implementation."
+            "Cannot dispatch closed PRs for automated implementation."
         )
         raise SystemExit(1)
 
@@ -220,7 +220,7 @@ def _validate_planned_pr_for_submit(
     )
 
 
-def _submit_planned_pr_plan(
+def _dispatch_planned_pr_plan(
     ctx: ErkContext,
     *,
     repo: RepoContext,
@@ -228,8 +228,8 @@ def _submit_planned_pr_plan(
     submitted_by: str,
     original_branch: str,
     base_branch: str,
-) -> SubmitResult:
-    """Submit a validated planned-PR plan for implementation.
+) -> DispatchResult:
+    """Dispatch a validated planned-PR plan for implementation.
 
     For planned-PR plans, the branch and PR already exist. This function:
     - Fetches and checks out the existing plan branch
@@ -246,7 +246,7 @@ def _submit_planned_pr_plan(
         base_branch: Base branch for PR
 
     Returns:
-        SubmitResult with URLs and identifiers.
+        DispatchResult with URLs and identifiers.
     """
     plan_number = validated.number
     branch_name = validated.branch_name
@@ -277,7 +277,7 @@ def _submit_planned_pr_plan(
             f"Failed to sync branch '{branch_name}' with remote: {pull_result.message}"
         )
 
-    # Clean up previous .erk/impl-context/ if it exists (e.g., from a prior failed submission)
+    # Clean up previous .erk/impl-context/ if it exists (e.g., from a prior failed dispatch)
     if impl_context_exists(repo.root):
         user_output("Cleaning up previous .erk/impl-context/ folder...")
         remove_impl_context(repo.root)
@@ -381,7 +381,7 @@ def _submit_planned_pr_plan(
         )
 
         comment_body = render_erk_issue_event(
-            title="🔄 Plan Queued for Implementation",
+            title="Plan Queued for Implementation",
             metadata=metadata_block,
             description=(
                 f"Plan submitted by **{submitted_by}** at {queued_at}.\n\n"
@@ -403,7 +403,7 @@ def _submit_planned_pr_plan(
 
     pr_url = _build_pr_url(validated.url, plan_number)
 
-    return SubmitResult(
+    return DispatchResult(
         issue_number=plan_number,
         issue_title=validated.title,
         issue_url=validated.url,
@@ -414,7 +414,7 @@ def _submit_planned_pr_plan(
     )
 
 
-@click.command("submit")
+@click.command("dispatch")
 @click.argument("issue_numbers", type=int, nargs=-1, required=True)
 @click.option(
     "--base",
@@ -423,19 +423,20 @@ def _submit_planned_pr_plan(
     help="Base branch for PR (defaults to current branch).",
 )
 @click.pass_obj
-def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | None) -> None:
-    """Submit issues for remote AI implementation via GitHub Actions.
+def pr_dispatch(ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | None) -> None:
+    """Dispatch plans for remote AI implementation via GitHub Actions.
 
     Creates branch and draft PR locally (for correct commit attribution),
     then triggers the dispatch-erk-queue.yml GitHub Actions workflow.
 
     Arguments:
-        ISSUE_NUMBERS: One or more GitHub issue numbers to submit
+        ISSUE_NUMBERS: One or more GitHub issue numbers to dispatch
 
+    \b
     Example:
-        erk plan submit 123
-        erk plan submit 123 456 789
-        erk plan submit 123 --base master
+        erk pr dispatch 123
+        erk pr dispatch 123 456 789
+        erk pr dispatch 123 --base master
 
     Requires:
         - All issues must have erk-plan label
@@ -461,7 +462,7 @@ def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | None
     if original_branch is None:
         user_output(
             click.style("Error: ", fg="red")
-            + "Not on a branch (detached HEAD state). Cannot submit from here."
+            + "Not on a branch (detached HEAD state). Cannot dispatch from here."
         )
         raise SystemExit(1)
 
@@ -483,7 +484,7 @@ def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | None
         else:
             target_branch = original_branch
 
-    # For single-issue learn plan submissions, auto-detect parent branch
+    # For single-issue learn plan dispatches, auto-detect parent branch
     issue_number = issue_numbers[0] if len(issue_numbers) == 1 else None
     if issue_number is not None and base is None:
         user_output(f"Checking issue #{issue_number}...")
@@ -522,7 +523,7 @@ def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | None
     validated_planned_prs: list[ValidatedPlannedPR] = []
     for issue_number in issue_numbers:
         user_output(f"Validating PR #{issue_number}...")
-        validated_pr = _validate_planned_pr_for_submit(ctx, repo, issue_number)
+        validated_pr = _validate_planned_pr_for_dispatch(ctx, repo, issue_number)
         validated_planned_prs.append(validated_pr)
 
     user_output("")
@@ -535,16 +536,16 @@ def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | None
         user_output(f"  #{v.number}: {click.style(v.title, fg='yellow')}")
     user_output("")
 
-    # Submit all validated plans
-    results: list[SubmitResult] = []
+    # Dispatch all validated plans
+    results: list[DispatchResult] = []
     for i, v in enumerate(validated_planned_prs):
         if len(validated_planned_prs) > 1:
             count = len(validated_planned_prs)
-            user_output(f"--- Submitting PR {i + 1}/{count}: #{v.number} ---")
+            user_output(f"--- Dispatching PR {i + 1}/{count}: #{v.number} ---")
         else:
-            user_output(f"Submitting PR #{v.number}...")
+            user_output(f"Dispatching PR #{v.number}...")
         user_output("")
-        result = _submit_planned_pr_plan(
+        result = _dispatch_planned_pr_plan(
             ctx,
             repo=repo,
             validated=v,
@@ -557,11 +558,11 @@ def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | None
 
     # Success output
     user_output("")
-    user_output(click.style("✓", fg="green") + f" {len(results)} issue(s) submitted successfully!")
+    user_output(click.style("✓", fg="green") + f" {len(results)} plan(s) dispatched successfully!")
     user_output("")
-    user_output("Submitted issues:")
+    user_output("Dispatched plans:")
     for r in results:
-        user_output(f"  • #{r.issue_number}: {r.issue_title}")
+        user_output(f"  #{r.issue_number}: {r.issue_title}")
         user_output(f"    Issue: {r.issue_url}")
         if r.pr_url:
             user_output(f"    PR: {r.pr_url}")

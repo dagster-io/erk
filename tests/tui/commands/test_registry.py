@@ -233,7 +233,7 @@ def test_display_name_submit_to_queue_shows_cli_command() -> None:
     row = make_plan_row(5831, "Test Plan")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     cmd = next(c for c in get_all_commands() if c.id == "submit_to_queue")
-    assert get_display_name(cmd, ctx) == "erk plan submit 5831"
+    assert get_display_name(cmd, ctx) == "erk pr dispatch 5831"
 
 
 def test_display_name_land_pr_shows_cli_command() -> None:
@@ -318,7 +318,7 @@ def test_display_name_copy_submit_shows_issue() -> None:
     row = make_plan_row(5831, "Test Plan")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     cmd = next(c for c in get_all_commands() if c.id == "copy_submit")
-    assert get_display_name(cmd, ctx) == "erk plan submit 5831"
+    assert get_display_name(cmd, ctx) == "erk pr dispatch 5831"
 
 
 def test_display_name_copy_replan_shows_issue() -> None:

@@ -1,18 +1,18 @@
 ---
-description: Submit the last created issue for remote implementation
+description: Dispatch plans for remote AI implementation
 ---
 
-# /erk:plan-submit
+# /erk:pr-dispatch
 
 ## Goal
 
-Find the most recent GitHub issue created in this conversation and submit it for remote AI implementation via `erk plan submit`.
+Find the most recent GitHub issue created in this conversation and dispatch it for remote AI implementation via `erk pr dispatch`.
 
 ## What This Command Does
 
 1. Search conversation for the last GitHub issue reference
 2. Extract the issue number
-3. Run `erk plan submit <issue_number>` to trigger remote implementation
+3. Run `erk pr dispatch <issue_number>` to trigger remote implementation
 
 ## Finding the Issue
 
@@ -30,7 +30,7 @@ Extract the issue number from the most recent match.
 Once you have the issue number, run:
 
 ```bash
-erk plan submit <issue_number>
+erk pr dispatch <issue_number>
 ```
 
 If the command succeeds, clear the session marker to allow creating new plans in this session:
@@ -39,9 +39,9 @@ If the command succeeds, clear the session marker to allow creating new plans in
 erk exec marker delete --session-id "${CLAUDE_SESSION_ID}" plan-saved-issue
 ```
 
-Display the command output to the user. The `erk plan submit` command handles all validation (issue existence, labels, state).
+Display the command output to the user. The `erk pr dispatch` command handles all validation (issue existence, labels, state).
 
 ## Error Cases
 
 - **No issue found in conversation**: Report "No GitHub issue found in conversation. Run /erk:plan-save first to create an issue."
-- **erk plan submit fails**: Display the error output from the command (erk plan submit validates the issue)
+- **erk pr dispatch fails**: Display the error output from the command (erk pr dispatch validates the issue)

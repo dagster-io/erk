@@ -1,9 +1,9 @@
-"""Shared fixtures and helpers for submit command tests."""
+"""Shared fixtures and helpers for dispatch command tests."""
 
 from datetime import UTC, datetime
 from pathlib import Path
 
-from erk.cli.commands.submit import ERK_PLAN_LABEL
+from erk.cli.commands.pr.dispatch_cmd import ERK_PLAN_LABEL
 from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.github.metadata.core import render_metadata_block

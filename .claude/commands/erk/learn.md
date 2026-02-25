@@ -790,8 +790,8 @@ Post-learn actions:
 
 **Execute the selected action:**
 
-- **Submit**: Run `/erk:plan-submit`
-- **Review**: Display the `issue_url` from the JSON output for the user to click. Then inform the user they can run `/erk:plan-submit` when ready.
+- **Submit**: Run `/erk:pr-dispatch`
+- **Review**: Display the `issue_url` from the JSON output for the user to click. Then inform the user they can run `/erk:pr-dispatch` when ready.
 - **Consolidate**: Run `/local:replan-learn-plans`
 - **Done**: Proceed directly to Step 11
 

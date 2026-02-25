@@ -113,7 +113,7 @@ Load the `erk-planning` skill (`$erk-planning`) for detailed workflow guidance.
 
 - `erk pr list` — view open plans
 - `erk implement <issue>` — implement a plan in a worktree
-- `erk plan submit <issue>` — submit for remote implementation
+- `erk pr dispatch <issue>` — dispatch for remote implementation
 
 ---
 

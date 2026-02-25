@@ -1,4 +1,4 @@
-"""Tests for erk plan submit command."""
+"""Tests for erk pr dispatch command."""
 
 import json
 
@@ -19,10 +19,10 @@ from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
-def test_submit_planned_pr_plan_triggers_workflow_with_planned_pr_backend() -> None:
-    """Test that submitting a planned-PR plan triggers workflow with plan_backend=planned_pr.
+def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() -> None:
+    """Test that dispatching a planned-PR plan triggers workflow with plan_backend=planned_pr.
 
-    Planned-PR plans already have a branch and PR. Submit should:
+    Planned-PR plans already have a branch and PR. Dispatch should:
     - Validate the PR has the erk-plan label and is OPEN
     - Fetch and checkout the existing branch
     - Create .erk/impl-context/ with provider="github-draft-pr"
@@ -112,7 +112,7 @@ def test_submit_planned_pr_plan_triggers_workflow_with_planned_pr_backend() -> N
             plan_store=planned_pr_backend,
         )
 
-        result = runner.invoke(cli, ["plan", "submit", "42", "--base", "main"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "dispatch", "42", "--base", "main"], obj=ctx)
 
         # Verify: workflow was triggered with plan_backend="planned_pr"
         assert len(fake_gh.triggered_workflows) >= 1, (
@@ -139,12 +139,11 @@ def test_submit_planned_pr_plan_triggers_workflow_with_planned_pr_backend() -> N
         assert "Traceback" not in result.output
 
 
-def test_submit_planned_pr_plan_cleans_up_stale_impl_context_folder() -> None:
-    """Test that _submit_planned_pr_plan cleans up stale .erk/impl-context/ before creating new one.
+def test_dispatch_planned_pr_plan_cleans_up_stale_impl_context_folder() -> None:
+    """Test that dispatch cleans up stale .erk/impl-context/ before creating new one.
 
-    When a previous submission failed and left behind a .erk/impl-context/ folder,
-    the planned-PR submit path should remove it before creating the new one.
-    This tests the cleanup logic at submit.py:440-443.
+    When a previous dispatch failed and left behind a .erk/impl-context/ folder,
+    the planned-PR dispatch path should remove it before creating the new one.
     """
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -218,7 +217,7 @@ def test_submit_planned_pr_plan_cleans_up_stale_impl_context_folder() -> None:
             },
         )
 
-        # Pre-create a stale .erk/impl-context/ folder (simulating a prior failed submission)
+        # Pre-create a stale .erk/impl-context/ folder (simulating a prior failed dispatch)
         stale_impl_context = env.cwd / ".erk" / "impl-context"
         stale_impl_context.mkdir(parents=True)
         stale_marker = stale_impl_context / "stale-marker.txt"
@@ -234,7 +233,7 @@ def test_submit_planned_pr_plan_cleans_up_stale_impl_context_folder() -> None:
             plan_store=planned_pr_backend,
         )
 
-        result = runner.invoke(cli, ["plan", "submit", "42", "--base", "main"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "dispatch", "42", "--base", "main"], obj=ctx)
 
         # Verify cleanup message was printed
         assert "Cleaning up previous .erk/impl-context/ folder" in result.output
