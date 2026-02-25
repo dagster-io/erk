@@ -83,15 +83,18 @@ def test_impl_init_extracts_related_docs(
 
 
 def test_impl_init_with_issue_tracking(impl_folder: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test impl-init detects issue.json and returns issue_number."""
-    issue_json = impl_folder / "issue.json"
-    issue_json.write_text(
+    """Test impl-init detects plan-ref.json and returns plan_number."""
+    plan_ref = impl_folder / "plan-ref.json"
+    plan_ref.write_text(
         json.dumps(
             {
-                "issue_number": 123,
-                "issue_url": "https://github.com/org/repo/issues/123",
+                "provider": "github",
+                "plan_id": "123",
+                "url": "https://github.com/org/repo/issues/123",
                 "created_at": "2025-01-01T00:00:00Z",
                 "synced_at": "2025-01-01T00:00:00Z",
+                "labels": [],
+                "objective_id": None,
             }
         ),
         encoding="utf-8",
