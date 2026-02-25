@@ -4,6 +4,8 @@ Layer 3 (Pure Unit Tests): Tests for schema validation logic with zero dependenc
 Tests all validator methods for all schema classes in metadata.py.
 """
 
+import warnings
+
 import pytest
 
 from erk_shared.gateway.github.metadata.schemas import (
@@ -473,16 +475,64 @@ class TestPlanHeaderSchema:
         schema.validate(data)  # Should not raise
 
     def test_non_string_remote_impl_run_id_raises(self) -> None:
-        """Non-string last_remote_impl_run_id raises ValueError."""
+        """Non-string last_remote_impl_run_id raises ValueError (non-int types still rejected)."""
         schema = PlanHeaderSchema()
         data = {
             "schema_version": "2",
             "created_at": "2024-01-15T10:30:00Z",
             "created_by": "testuser",
-            "last_remote_impl_run_id": 12345,
+            "last_remote_impl_run_id": [1, 2, 3],
         }
         with pytest.raises(ValueError, match="last_remote_impl_run_id must be a string or null"):
             schema.validate(data)
+
+    def test_int_remote_impl_run_id_coerced_to_string_with_warning(self) -> None:
+        """Int last_remote_impl_run_id is coerced to str with a warning."""
+        schema = PlanHeaderSchema()
+        data = {
+            "schema_version": "2",
+            "created_at": "2024-01-15T10:30:00Z",
+            "created_by": "testuser",
+            "last_remote_impl_run_id": 22397458206,
+        }
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            schema.validate(data)
+        assert len(caught) == 1
+        assert "last_remote_impl_run_id was int" in str(caught[0].message)
+        assert data["last_remote_impl_run_id"] == "22397458206"
+
+    def test_int_dispatched_run_id_coerced_to_string_with_warning(self) -> None:
+        """Int last_dispatched_run_id is coerced to str with a warning."""
+        schema = PlanHeaderSchema()
+        data = {
+            "schema_version": "2",
+            "created_at": "2024-01-15T10:30:00Z",
+            "created_by": "testuser",
+            "last_dispatched_run_id": 22397458206,
+        }
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            schema.validate(data)
+        assert len(caught) == 1
+        assert "last_dispatched_run_id was int" in str(caught[0].message)
+        assert data["last_dispatched_run_id"] == "22397458206"
+
+    def test_int_learn_run_id_coerced_to_string_with_warning(self) -> None:
+        """Int learn_run_id is coerced to str with a warning."""
+        schema = PlanHeaderSchema()
+        data = {
+            "schema_version": "2",
+            "created_at": "2024-01-15T10:30:00Z",
+            "created_by": "testuser",
+            "learn_run_id": 22397458206,
+        }
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            schema.validate(data)
+        assert len(caught) == 1
+        assert "learn_run_id was int" in str(caught[0].message)
+        assert data["learn_run_id"] == "22397458206"
 
     def test_valid_with_remote_impl_session_id(self) -> None:
         """Valid plan-header with last_remote_impl_session_id field."""

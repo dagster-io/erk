@@ -47,16 +47,30 @@ def _fail(*, error: str, message: str) -> NoReturn:
     raise SystemExit(1)
 
 
-def _coerce_value(raw: str) -> str | None | int:
+# Fields that are string-typed in PlanHeaderSchema but often receive
+# numeric-only values (e.g. GitHub Actions run IDs).  Never coerce these to int.
+_STRING_ONLY_FIELDS: frozenset[str] = frozenset(
+    {
+        "last_remote_impl_run_id",
+        "last_dispatched_run_id",
+        "learn_run_id",
+    }
+)
+
+
+def _coerce_value(raw: str, *, field_name: str) -> str | None | int:
     """Coerce a string value to the appropriate Python type.
 
     Rules:
         "null" -> None
+        String-only fields -> str (never coerced to int)
         Valid int string -> int
         Everything else -> str
     """
     if raw == "null":
         return None
+    if field_name in _STRING_ONLY_FIELDS:
+        return raw
     # Check if valid integer (handles negative numbers too)
     if raw.lstrip("-").isdigit() and raw != "-":
         return int(raw)
@@ -74,7 +88,7 @@ def _parse_fields(fields: tuple[str, ...]) -> dict[str, str | None | int]:
             msg = f"Invalid field format: '{field}'. Expected key=value."
             raise ValueError(msg)
     return {
-        key: _coerce_value(raw_value)
+        key: _coerce_value(raw_value, field_name=key)
         for field in fields
         for key, raw_value in [field.split("=", 1)]
     }
