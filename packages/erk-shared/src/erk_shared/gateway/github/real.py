@@ -2276,6 +2276,134 @@ query {{
         except RuntimeError:
             return False
 
+    def get_issues_by_numbers_with_pr_linkages(
+        self,
+        *,
+        location: GitHubRepoLocation,
+        issue_numbers: list[int],
+    ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+        """Fetch specific issues by number with full PR linkage data.
+
+        Uses issueOrPullRequest to handle both issues and merged PRs.
+        """
+        if not issue_numbers:
+            return ([], {})
+
+        repo_id = location.repo_id
+        query = self._build_issues_by_numbers_query(issue_numbers, repo_id)
+        response = self._execute_batch_pr_query(query, location.root)
+        return self._parse_issues_by_numbers_response(response, repo_id)
+
+    def _build_issues_by_numbers_query(
+        self, issue_numbers: list[int], repo_id: GitHubRepoId
+    ) -> str:
+        """Build GraphQL query to fetch specific issues by number.
+
+        Uses issueOrPullRequest(number: N) aliases to handle both issues
+        and merged PRs. Includes full issue fields and PR linkage timeline.
+
+        Args:
+            issue_numbers: List of issue/PR numbers to query
+            repo_id: GitHub repository identity
+
+        Returns:
+            GraphQL query string
+        """
+        issue_queries = []
+        for issue_num in issue_numbers:
+            issue_query = f"""    issue_{issue_num}: issueOrPullRequest(number: {issue_num}) {{
+      ... on Issue {{
+        number
+        title
+        body
+        state
+        url
+        author {{ login }}
+        labels(first: 100) {{ nodes {{ name }} }}
+        assignees(first: 100) {{ nodes {{ login }} }}
+        createdAt
+        updatedAt
+        timelineItems(itemTypes: [CROSS_REFERENCED_EVENT], first: 20) {{
+          nodes {{
+            ... on CrossReferencedEvent {{
+              ...IssuePRLinkageFields
+            }}
+          }}
+        }}
+      }}
+      ... on PullRequest {{
+        number
+        title
+        body
+        state
+        url
+        author {{ login }}
+        labels(first: 100) {{ nodes {{ name }} }}
+        assignees(first: 100) {{ nodes {{ login }} }}
+        createdAt
+        updatedAt
+      }}
+    }}"""
+            issue_queries.append(issue_query)
+
+        query = f"""{ISSUE_PR_LINKAGE_FRAGMENT}
+
+query {{
+  repository(owner: "{repo_id.owner}", name: "{repo_id.repo}") {{
+{chr(10).join(issue_queries)}
+  }}
+}}"""
+        return query
+
+    def _parse_issues_by_numbers_response(
+        self,
+        response: dict[str, Any],
+        repo_id: GitHubRepoId,
+    ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+        """Parse GraphQL response from issues-by-numbers query.
+
+        Iterates over aliased keys (issue_8070, etc.) and parses each node.
+
+        Args:
+            response: GraphQL response data
+            repo_id: GitHub repository identity
+
+        Returns:
+            Tuple of (issues, pr_linkages)
+        """
+        issues: list[IssueInfo] = []
+        pr_linkages: dict[int, list[PullRequestInfo]] = {}
+
+        repo_data = response.get("data", {}).get("repository", {})
+
+        for key, node in repo_data.items():
+            if not key.startswith("issue_") or node is None:
+                continue
+
+            issue = self._parse_issue_node(node)
+            if issue is None:
+                continue
+            issues.append(issue)
+
+            # Parse PR linkages from timelineItems (only present on Issue type)
+            timeline_items = node.get("timelineItems")
+            if timeline_items is not None:
+                timeline_nodes = timeline_items.get("nodes", [])
+                prs_with_timestamps: list[tuple[PullRequestInfo, str]] = []
+
+                for event in timeline_nodes:
+                    if event is None:
+                        continue
+                    result = self._parse_pr_from_timeline_event(event, repo_id)
+                    if result is not None:
+                        prs_with_timestamps.append(result)
+
+                if prs_with_timestamps:
+                    prs_with_timestamps.sort(key=lambda x: x[1], reverse=True)
+                    pr_linkages[issue.number] = [pr for pr, _ in prs_with_timestamps]
+
+        return (issues, pr_linkages)
+
     def create_commit_status(
         self,
         *,

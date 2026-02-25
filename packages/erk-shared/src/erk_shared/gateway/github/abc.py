@@ -740,6 +740,30 @@ class GitHub(ABC):
         ...
 
     @abstractmethod
+    def get_issues_by_numbers_with_pr_linkages(
+        self,
+        *,
+        location: GitHubRepoLocation,
+        issue_numbers: list[int],
+    ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+        """Fetch specific issues by number with full PR linkage data.
+
+        Uses issueOrPullRequest(number: N) to handle both issues and merged PRs.
+        Returns issue data and PR linkages in the same format as
+        get_issues_with_pr_linkages for compatibility.
+
+        Args:
+            location: GitHub repository location (local root + repo identity)
+            issue_numbers: List of issue/PR numbers to fetch
+
+        Returns:
+            Tuple of (issues, pr_linkages) where:
+            - issues: List of IssueInfo objects for found issues
+            - pr_linkages: Mapping of issue_number -> list of linked PRs
+        """
+        ...
+
+    @abstractmethod
     def create_commit_status(
         self,
         *,
