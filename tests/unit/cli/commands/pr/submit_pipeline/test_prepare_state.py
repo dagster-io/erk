@@ -95,8 +95,13 @@ def test_detached_head_returns_error(tmp_path: Path) -> None:
 
 
 def test_issue_linkage_mismatch_returns_error(tmp_path: Path) -> None:
-    """Branch P42-x + issue.json with issue 99 => error."""
-    # Create .impl/issue.json with mismatched issue number
+    """Branch with P-prefix cannot extract issue number, no mismatch possible.
+
+    Since extract_leading_issue_number() always returns None, P-prefix branches
+    cannot provide an issue number. The test verifies issue_number comes from
+    issue.json without any mismatch error.
+    """
+    # Create .impl/issue.json with issue number
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
     issue_json = impl_dir / "issue.json"
@@ -121,12 +126,18 @@ def test_issue_linkage_mismatch_returns_error(tmp_path: Path) -> None:
 
     result = prepare_state(ctx, state)
 
-    assert isinstance(result, SubmitError)
-    assert result.error_type == "issue_linkage_mismatch"
+    # No mismatch error since branch cannot provide issue number
+    assert isinstance(result, SubmitState)
+    assert result.issue_number == 99  # From issue.json
 
 
 def test_auto_repair_creates_plan_ref_json(tmp_path: Path) -> None:
-    """Branch P42-x + .impl/ exists + no plan-ref.json => creates file."""
+    """Branch with P-prefix cannot extract issue number, no auto-repair possible.
+
+    Since extract_leading_issue_number() always returns None, P-prefix branches
+    cannot provide an issue number for auto-repair. Without plan-ref.json,
+    issue_number remains None.
+    """
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
 
@@ -142,12 +153,11 @@ def test_auto_repair_creates_plan_ref_json(tmp_path: Path) -> None:
     result = prepare_state(ctx, state)
 
     assert isinstance(result, SubmitState)
-    assert result.issue_number == 42
-    # Verify plan-ref.json was created
+    # No auto-repair since branch cannot provide issue number
+    assert result.issue_number is None
+    # Verify plan-ref.json was NOT created
     plan_ref_json = impl_dir / "plan-ref.json"
-    assert plan_ref_json.exists()
-    data = json.loads(plan_ref_json.read_text())
-    assert data["plan_id"] == "42"
+    assert not plan_ref_json.exists()
 
 
 def test_no_issue_number_from_branch(tmp_path: Path) -> None:

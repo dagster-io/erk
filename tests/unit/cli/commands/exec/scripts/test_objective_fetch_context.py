@@ -13,7 +13,7 @@ from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
-from erk_shared.gateway.github.types import PRDetails
+from erk_shared.gateway.github.types import PRDetails, PRNotFound
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 
@@ -34,7 +34,7 @@ def _make_issue(*, number: int, title: str, body: str) -> IssueInfo:
 
 
 def _make_pr_details(
-    *, number: int, title: str, body: str, head_ref_name: str = "P100-test-branch"
+    *, number: int, title: str, body: str, head_ref_name: str = "plnd/test-branch-01-01-1200"
 ) -> PRDetails:
     return PRDetails(
         number=number,
@@ -187,19 +187,30 @@ class TestObjectiveFetchContext:
     def test_happy_path_with_all_args(self, tmp_path: Path) -> None:
         """All three args provided, returns combined JSON with roadmap."""
         objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY)
-        plan = _make_issue(number=6513, title="My Plan", body="plan body")
+        # Create draft PR as plan (PlannedPRBackend resolves plnd/ branches to PRs)
+        plan_pr = _make_pr_details(
+            number=6513,
+            title="My Plan",
+            body="plan body",
+            head_ref_name="plnd/some-branch-01-01-1200",
+        )
         pr = _make_pr_details(number=6517, title="PR Title", body="pr body")
 
-        fake_issues = FakeGitHubIssues(issues={6423: objective, 6513: plan})
-        fake_github = FakeGitHub(pr_details={6517: pr})
+        fake_issues = FakeGitHubIssues(issues={6423: objective})
+        fake_github = FakeGitHub(
+            pr_details={6517: pr, 6513: plan_pr},
+            prs_by_branch={"plnd/some-branch-01-01-1200": plan_pr},
+            issues_gateway=fake_issues,
+        )
+        planned_pr_backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
             objective_fetch_context,
-            ["--pr", "6517", "--objective", "6423", "--branch", "P6513-some-branch"],
+            ["--pr", "6517", "--objective", "6423", "--branch", "plnd/some-branch-01-01-1200"],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
+                plan_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -216,19 +227,29 @@ class TestObjectiveFetchContext:
     def test_roadmap_context_included(self, tmp_path: Path) -> None:
         """Roadmap context is parsed and included in output."""
         objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY)
-        plan = _make_issue(number=6513, title="My Plan", body="plan body")
+        plan_pr = _make_pr_details(
+            number=6513,
+            title="My Plan",
+            body="plan body",
+            head_ref_name="plnd/some-branch-01-01-1200",
+        )
         pr = _make_pr_details(number=6517, title="PR Title", body="pr body")
 
-        fake_issues = FakeGitHubIssues(issues={6423: objective, 6513: plan})
-        fake_github = FakeGitHub(pr_details={6517: pr})
+        fake_issues = FakeGitHubIssues(issues={6423: objective})
+        fake_github = FakeGitHub(
+            pr_details={6517: pr, 6513: plan_pr},
+            prs_by_branch={"plnd/some-branch-01-01-1200": plan_pr},
+            issues_gateway=fake_issues,
+        )
+        planned_pr_backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
             objective_fetch_context,
-            ["--pr", "6517", "--objective", "6423", "--branch", "P6513-some-branch"],
+            ["--pr", "6517", "--objective", "6423", "--branch", "plnd/some-branch-01-01-1200"],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
+                plan_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -274,19 +295,29 @@ class TestObjectiveFetchContext:
             <!-- /erk:metadata-block:objective-roadmap -->
         """)
         objective = _make_issue(number=6423, title="My Objective", body=body)
-        plan = _make_issue(number=100, title="My Plan", body="plan body")
+        plan_pr = _make_pr_details(
+            number=100,
+            title="My Plan",
+            body="plan body",
+            head_ref_name="plnd/some-branch-01-01-1200",
+        )
         pr = _make_pr_details(number=200, title="PR Title", body="pr body")
 
-        fake_issues = FakeGitHubIssues(issues={6423: objective, 100: plan})
-        fake_github = FakeGitHub(pr_details={200: pr})
+        fake_issues = FakeGitHubIssues(issues={6423: objective})
+        fake_github = FakeGitHub(
+            pr_details={200: pr, 100: plan_pr},
+            prs_by_branch={"plnd/some-branch-01-01-1200": plan_pr},
+            issues_gateway=fake_issues,
+        )
+        planned_pr_backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
             objective_fetch_context,
-            ["--pr", "200", "--objective", "6423", "--branch", "P100-some-branch"],
+            ["--pr", "200", "--objective", "6423", "--branch", "plnd/some-branch-01-01-1200"],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
+                plan_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -300,19 +331,29 @@ class TestObjectiveFetchContext:
     def test_roadmap_no_metadata_block(self, tmp_path: Path) -> None:
         """Returns empty roadmap when objective has no roadmap metadata block."""
         objective = _make_issue(number=6423, title="My Objective", body="No roadmap here")
-        plan = _make_issue(number=6513, title="My Plan", body="plan body")
+        plan_pr = _make_pr_details(
+            number=6513,
+            title="My Plan",
+            body="plan body",
+            head_ref_name="plnd/some-branch-01-01-1200",
+        )
         pr = _make_pr_details(number=6517, title="PR Title", body="pr body")
 
-        fake_issues = FakeGitHubIssues(issues={6423: objective, 6513: plan})
-        fake_github = FakeGitHub(pr_details={6517: pr})
+        fake_issues = FakeGitHubIssues(issues={6423: objective})
+        fake_github = FakeGitHub(
+            pr_details={6517: pr, 6513: plan_pr},
+            prs_by_branch={"plnd/some-branch-01-01-1200": plan_pr},
+            issues_gateway=fake_issues,
+        )
+        planned_pr_backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
             objective_fetch_context,
-            ["--pr", "6517", "--objective", "6423", "--branch", "P6513-some-branch"],
+            ["--pr", "6517", "--objective", "6423", "--branch", "plnd/some-branch-01-01-1200"],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
+                plan_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -326,19 +367,29 @@ class TestObjectiveFetchContext:
 
     def test_objective_not_found(self, tmp_path: Path) -> None:
         """Returns error JSON when objective issue not found."""
-        plan = _make_issue(number=6513, title="My Plan", body="plan body")
+        plan_pr = _make_pr_details(
+            number=6513,
+            title="My Plan",
+            body="plan body",
+            head_ref_name="plnd/some-branch-01-01-1200",
+        )
         pr = _make_pr_details(number=6517, title="PR Title", body="pr body")
 
-        fake_issues = FakeGitHubIssues(issues={6513: plan})
-        fake_github = FakeGitHub(pr_details={6517: pr})
+        fake_issues = FakeGitHubIssues(issues={})
+        fake_github = FakeGitHub(
+            pr_details={6517: pr, 6513: plan_pr},
+            prs_by_branch={"plnd/some-branch-01-01-1200": plan_pr},
+            issues_gateway=fake_issues,
+        )
+        planned_pr_backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
             objective_fetch_context,
-            ["--pr", "6517", "--objective", "9999", "--branch", "P6513-some-branch"],
+            ["--pr", "6517", "--objective", "9999", "--branch", "plnd/some-branch-01-01-1200"],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
+                plan_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -352,18 +403,28 @@ class TestObjectiveFetchContext:
     def test_pr_not_found(self, tmp_path: Path) -> None:
         """Returns error JSON when PR not found."""
         objective = _make_issue(number=6423, title="My Objective", body="objective body")
-        plan = _make_issue(number=6513, title="My Plan", body="plan body")
+        plan_pr = _make_pr_details(
+            number=6513,
+            title="My Plan",
+            body="plan body",
+            head_ref_name="plnd/some-branch-01-01-1200",
+        )
 
-        fake_issues = FakeGitHubIssues(issues={6423: objective, 6513: plan})
-        fake_github = FakeGitHub()
+        fake_issues = FakeGitHubIssues(issues={6423: objective})
+        fake_github = FakeGitHub(
+            pr_details={6513: plan_pr},
+            prs_by_branch={"plnd/some-branch-01-01-1200": plan_pr},
+            issues_gateway=fake_issues,
+        )
+        planned_pr_backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
             objective_fetch_context,
-            ["--pr", "9999", "--objective", "6423", "--branch", "P6513-some-branch"],
+            ["--pr", "9999", "--objective", "6423", "--branch", "plnd/some-branch-01-01-1200"],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
+                plan_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -403,15 +464,17 @@ class TestObjectiveFetchContext:
         pr = _make_pr_details(number=6517, title="PR Title", body="pr body")
 
         fake_issues = FakeGitHubIssues(issues={6423: objective})
-        fake_github = FakeGitHub(pr_details={6517: pr})
+        # No plan PR configured for the branch - will trigger PlanNotFound
+        fake_github = FakeGitHub(pr_details={6517: pr}, issues_gateway=fake_issues)
+        planned_pr_backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
             objective_fetch_context,
-            ["--pr", "6517", "--objective", "6423", "--branch", "P6513-some-branch"],
+            ["--pr", "6517", "--objective", "6423", "--branch", "plnd/some-branch-01-01-1200"],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
+                plan_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -427,20 +490,30 @@ class TestDiscoveryMode:
     def test_discover_branch_from_git(self, tmp_path: Path) -> None:
         """Auto-discovers branch when --branch is omitted."""
         objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY)
-        plan = _make_issue(number=6513, title="My Plan", body="plan body")
+        plan_pr = _make_pr_details(
+            number=6513,
+            title="My Plan",
+            body="plan body",
+            head_ref_name="plnd/some-branch-01-01-1200",
+        )
         pr = _make_pr_details(number=6517, title="PR Title", body="pr body")
 
-        fake_issues = FakeGitHubIssues(issues={6423: objective, 6513: plan})
-        fake_github = FakeGitHub(pr_details={6517: pr})
-        fake_git = FakeGit(current_branches={tmp_path: "P6513-some-branch"})
+        fake_issues = FakeGitHubIssues(issues={6423: objective})
+        fake_github = FakeGitHub(
+            pr_details={6517: pr, 6513: plan_pr},
+            prs_by_branch={"plnd/some-branch-01-01-1200": plan_pr},
+            issues_gateway=fake_issues,
+        )
+        planned_pr_backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+        fake_git = FakeGit(current_branches={tmp_path: "plnd/some-branch-01-01-1200"})
 
         runner = CliRunner()
         result = runner.invoke(
             objective_fetch_context,
             ["--pr", "6517", "--objective", "6423"],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
+                plan_store=planned_pr_backend,
                 git=fake_git,
                 repo_root=tmp_path,
                 cwd=tmp_path,
@@ -455,19 +528,30 @@ class TestDiscoveryMode:
     def test_discover_objective_from_plan_metadata(self, tmp_path: Path) -> None:
         """Auto-discovers objective when --objective is omitted."""
         objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY)
-        plan = _make_issue(number=6513, title="My Plan", body=PLAN_BODY_WITH_OBJECTIVE)
+        # Plan PR with objective metadata in body
+        plan_pr = _make_pr_details(
+            number=6513,
+            title="My Plan",
+            body=PLAN_BODY_WITH_OBJECTIVE,
+            head_ref_name="plnd/some-branch-01-01-1200",
+        )
         pr = _make_pr_details(number=6517, title="PR Title", body="pr body")
 
-        fake_issues = FakeGitHubIssues(issues={6423: objective, 6513: plan})
-        fake_github = FakeGitHub(pr_details={6517: pr})
+        fake_issues = FakeGitHubIssues(issues={6423: objective})
+        fake_github = FakeGitHub(
+            pr_details={6517: pr, 6513: plan_pr},
+            prs_by_branch={"plnd/some-branch-01-01-1200": plan_pr},
+            issues_gateway=fake_issues,
+        )
+        planned_pr_backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
             objective_fetch_context,
-            ["--pr", "6517", "--branch", "P6513-some-branch"],
+            ["--pr", "6517", "--branch", "plnd/some-branch-01-01-1200"],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
+                plan_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -481,24 +565,34 @@ class TestDiscoveryMode:
     def test_discover_pr_from_branch(self, tmp_path: Path) -> None:
         """Auto-discovers PR when --pr is omitted."""
         objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY)
-        plan = _make_issue(number=6513, title="My Plan", body="plan body")
+        plan_pr = _make_pr_details(
+            number=6513,
+            title="My Plan",
+            body="plan body",
+            head_ref_name="plnd/some-branch-01-01-1200",
+        )
         pr = _make_pr_details(
-            number=6517, title="PR Title", body="pr body", head_ref_name="P6513-some-branch"
+            number=6517,
+            title="PR Title",
+            body="pr body",
+            head_ref_name="plnd/some-branch-01-01-1200",
         )
 
-        fake_issues = FakeGitHubIssues(issues={6423: objective, 6513: plan})
+        fake_issues = FakeGitHubIssues(issues={6423: objective})
         fake_github = FakeGitHub(
-            pr_details={6517: pr},
-            prs_by_branch={"P6513-some-branch": pr},
+            pr_details={6517: pr, 6513: plan_pr},
+            prs_by_branch={"plnd/some-branch-01-01-1200": pr},
+            issues_gateway=fake_issues,
         )
+        planned_pr_backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
             objective_fetch_context,
-            ["--objective", "6423", "--branch", "P6513-some-branch"],
+            ["--objective", "6423", "--branch", "plnd/some-branch-01-01-1200"],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
+                plan_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -512,25 +606,52 @@ class TestDiscoveryMode:
     def test_discover_all_from_git_state(self, tmp_path: Path) -> None:
         """Discovers branch, objective, and PR when no args provided."""
         objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY)
-        plan = _make_issue(number=6513, title="My Plan", body=PLAN_BODY_WITH_OBJECTIVE)
+        plan_pr = _make_pr_details(
+            number=6513,
+            title="My Plan",
+            body=PLAN_BODY_WITH_OBJECTIVE,
+            head_ref_name="plnd/some-branch-01-01-1200",
+        )
         pr = _make_pr_details(
-            number=6517, title="PR Title", body="pr body", head_ref_name="P6513-some-branch"
+            number=6517,
+            title="PR Title",
+            body="pr body",
+            head_ref_name="plnd/some-branch-01-01-1200",
         )
 
-        fake_issues = FakeGitHubIssues(issues={6423: objective, 6513: plan})
+        fake_issues = FakeGitHubIssues(issues={6423: objective})
         fake_github = FakeGitHub(
-            pr_details={6517: pr},
-            prs_by_branch={"P6513-some-branch": pr},
+            pr_details={6517: pr, 6513: plan_pr},
+            # prs_by_branch maps to plan_pr for plan resolution
+            prs_by_branch={"plnd/some-branch-01-01-1200": plan_pr},
+            issues_gateway=fake_issues,
         )
-        fake_git = FakeGit(current_branches={tmp_path: "P6513-some-branch"})
+
+        # Mock get_pr_for_branch to return plan_pr first (for plan resolution),
+        # then pr for PR discovery
+        call_count = [0]
+
+        def mock_get_pr_for_branch(repo_root: Path, branch: str) -> PRDetails | PRNotFound:
+            call_count[0] += 1
+            if call_count[0] == 1:
+                # First call: plan resolution via PlannedPRBackend
+                return plan_pr
+            else:
+                # Second call: PR discovery
+                return pr
+
+        fake_github.get_pr_for_branch = mock_get_pr_for_branch
+
+        planned_pr_backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+        fake_git = FakeGit(current_branches={tmp_path: "plnd/some-branch-01-01-1200"})
 
         runner = CliRunner()
         result = runner.invoke(
             objective_fetch_context,
             [],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
+                plan_store=planned_pr_backend,
                 git=fake_git,
                 repo_root=tmp_path,
                 cwd=tmp_path,
@@ -571,18 +692,28 @@ class TestDiscoveryMode:
 
     def test_discover_objective_no_metadata_error(self, tmp_path: Path) -> None:
         """Returns error when plan has no objective_issue in metadata."""
-        plan = _make_issue(number=6513, title="My Plan", body="no metadata here")
+        plan_pr = _make_pr_details(
+            number=6513,
+            title="My Plan",
+            body="no metadata here",
+            head_ref_name="plnd/some-branch-01-01-1200",
+        )
 
-        fake_issues = FakeGitHubIssues(issues={6513: plan})
-        fake_github = FakeGitHub()
+        fake_issues = FakeGitHubIssues(issues={})
+        fake_github = FakeGitHub(
+            pr_details={6513: plan_pr},
+            prs_by_branch={"plnd/some-branch-01-01-1200": plan_pr},
+            issues_gateway=fake_issues,
+        )
+        planned_pr_backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
             objective_fetch_context,
-            ["--pr", "6517", "--branch", "P6513-some-branch"],
+            ["--pr", "6517", "--branch", "plnd/some-branch-01-01-1200"],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
+                plan_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -595,24 +726,53 @@ class TestDiscoveryMode:
 
     def test_discover_pr_not_found_error(self, tmp_path: Path) -> None:
         """Returns error when no PR found for the branch."""
-        plan = _make_issue(number=6513, title="My Plan", body="plan body")
+        objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY)
+        plan_pr = _make_pr_details(
+            number=6513,
+            title="My Plan",
+            body="plan body",
+            head_ref_name="plnd/some-branch-01-01-1200",
+        )
 
-        fake_issues = FakeGitHubIssues(issues={6513: plan})
-        fake_github = FakeGitHub()
+        fake_issues = FakeGitHubIssues(issues={6423: objective})
+        fake_github = FakeGitHub(
+            pr_details={6513: plan_pr},
+            prs_by_branch={"plnd/some-branch-01-01-1200": plan_pr},
+            issues_gateway=fake_issues,
+        )
+
+        # Mock get_pr_for_branch to return plan_pr for plan resolution,
+        # then PRNotFound for PR discovery
+        call_count = [0]
+
+        def mock_get_pr_for_branch(repo_root: Path, branch: str) -> PRDetails | PRNotFound:
+            call_count[0] += 1
+            if call_count[0] == 1:
+                # First call: plan resolution
+                return plan_pr
+            else:
+                # Second call: PR discovery fails
+                return PRNotFound(branch=branch)
+
+        fake_github.get_pr_for_branch = mock_get_pr_for_branch
+
+        planned_pr_backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
             objective_fetch_context,
-            ["--objective", "6423", "--branch", "P6513-some-branch"],
+            ["--objective", "6423", "--branch", "plnd/some-branch-01-01-1200"],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
+                plan_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
         )
 
-        assert result.exit_code == 1
+        fail_msg = f"Unexpected exit code. Output: {result.output}, Exception: {result.exception}"
+        assert result.exit_code == 1, fail_msg
+        assert result.output, f"Empty output. Exception: {result.exception}"
         data = json.loads(result.output)
         assert data["success"] is False
         assert "No PR found" in data["error"]
@@ -814,7 +974,12 @@ class TestObjectiveContent:
         objective = _make_issue(
             number=6423, title="My Objective", body=ROADMAP_BODY_WITH_COMMENT_ID
         )
-        plan = _make_issue(number=6513, title="My Plan", body="plan body")
+        plan_pr = _make_pr_details(
+            number=6513,
+            title="My Plan",
+            body="plan body",
+            head_ref_name="plnd/some-branch-01-01-1200",
+        )
         pr = _make_pr_details(number=6517, title="PR Title", body="pr body")
 
         comment = IssueComment(
@@ -824,18 +989,23 @@ class TestObjectiveContent:
             author="testuser",
         )
         fake_issues = FakeGitHubIssues(
-            issues={6423: objective, 6513: plan},
+            issues={6423: objective},
             comments_with_urls={6423: [comment]},
         )
-        fake_github = FakeGitHub(pr_details={6517: pr})
+        fake_github = FakeGitHub(
+            pr_details={6517: pr, 6513: plan_pr},
+            prs_by_branch={"plnd/some-branch-01-01-1200": plan_pr},
+            issues_gateway=fake_issues,
+        )
+        planned_pr_backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
             objective_fetch_context,
-            ["--pr", "6517", "--objective", "6423", "--branch", "P6513-some-branch"],
+            ["--pr", "6517", "--objective", "6423", "--branch", "plnd/some-branch-01-01-1200"],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
+                plan_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -853,19 +1023,29 @@ class TestObjectiveContent:
     def test_objective_content_none_without_header(self, tmp_path: Path) -> None:
         """objective_content is None when objective has no objective-header block."""
         objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY)
-        plan = _make_issue(number=6513, title="My Plan", body="plan body")
+        plan_pr = _make_pr_details(
+            number=6513,
+            title="My Plan",
+            body="plan body",
+            head_ref_name="plnd/some-branch-01-01-1200",
+        )
         pr = _make_pr_details(number=6517, title="PR Title", body="pr body")
 
-        fake_issues = FakeGitHubIssues(issues={6423: objective, 6513: plan})
-        fake_github = FakeGitHub(pr_details={6517: pr})
+        fake_issues = FakeGitHubIssues(issues={6423: objective})
+        fake_github = FakeGitHub(
+            pr_details={6517: pr, 6513: plan_pr},
+            prs_by_branch={"plnd/some-branch-01-01-1200": plan_pr},
+            issues_gateway=fake_issues,
+        )
+        planned_pr_backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
             objective_fetch_context,
-            ["--pr", "6517", "--objective", "6423", "--branch", "P6513-some-branch"],
+            ["--pr", "6517", "--objective", "6423", "--branch", "plnd/some-branch-01-01-1200"],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
+                plan_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),

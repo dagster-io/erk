@@ -601,10 +601,7 @@ def make_execution_state(
     Re-derives repo_root, main_repo_root, plan_id from the args
     passed through the shell script serialization boundary.
     """
-    from erk_shared.naming import extract_leading_issue_number
-
-    issue_number = extract_leading_issue_number(branch)
-    plan_id = str(issue_number) if issue_number is not None else None
+    plan_id = None
 
     return LandState(
         cwd=cwd,

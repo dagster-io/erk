@@ -61,7 +61,7 @@ def test_get_learn_sessions_with_explicit_issue(tmp_path: Path) -> None:
 
 
 def test_get_learn_sessions_infers_from_branch(tmp_path: Path) -> None:
-    """Test session discovery infers issue from branch name."""
+    """Test session discovery fails when branch doesn't resolve."""
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
         cwd = Path.cwd()
@@ -76,7 +76,7 @@ def test_get_learn_sessions_infers_from_branch(tmp_path: Path) -> None:
 
         result = runner.invoke(
             get_learn_sessions,
-            [],  # No issue argument - should infer
+            [],  # No issue argument - branch doesn't resolve
             obj=ErkContext.for_test(
                 git=fake_git,
                 github_issues=fake_issues,
@@ -86,10 +86,10 @@ def test_get_learn_sessions_infers_from_branch(tmp_path: Path) -> None:
             ),
         )
 
-    assert result.exit_code == 0, result.output
+    assert result.exit_code == 1
     output = json.loads(result.output)
-    assert output["success"] is True
-    assert output["plan_id"] == "456"
+    assert output["success"] is False
+    assert "No issue specified" in output["error"]
 
 
 def test_get_learn_sessions_with_url_format(tmp_path: Path) -> None:
@@ -238,7 +238,7 @@ def test_session_sources_contains_local_session_data(tmp_path: Path) -> None:
     with runner.isolated_filesystem(temp_dir=tmp_path):
         cwd = Path.cwd()
 
-        fake_git = FakeGit(current_branches={cwd: "P200-feature"})
+        fake_git = FakeGit(current_branches={cwd: "plnd/feature-200-01-01-1200"})
         test_issue = create_test_issue(200, "Test Plan #200", "Plan body")
         fake_issues = FakeGitHubIssues(issues={200: test_issue})
 
@@ -250,12 +250,16 @@ def test_session_sources_contains_local_session_data(tmp_path: Path) -> None:
                 cwd: FakeProject(
                     sessions={
                         "session-abc-123": FakeSessionData(
-                            content=_session_content_with_branch(branch="P200-feature"),
+                            content=_session_content_with_branch(
+                                branch="plnd/feature-200-01-01-1200"
+                            ),
                             size_bytes=1024,
                             modified_at=1000.0,
                         ),
                         "session-def-456": FakeSessionData(
-                            content=_session_content_with_branch(branch="P200-feature"),
+                            content=_session_content_with_branch(
+                                branch="plnd/feature-200-01-01-1200"
+                            ),
                             size_bytes=2048,
                             modified_at=2000.0,
                         ),
@@ -351,7 +355,7 @@ def test_session_sources_includes_both_local_and_remote(tmp_path: Path) -> None:
     with runner.isolated_filesystem(temp_dir=tmp_path):
         cwd = Path.cwd()
 
-        fake_git = FakeGit(current_branches={cwd: "P400-impl"})
+        fake_git = FakeGit(current_branches={cwd: "plnd/impl-400-01-01-1200"})
 
         # Create issue with remote implementation metadata
         plan_body = format_plan_header_body_for_test(
@@ -369,7 +373,7 @@ def test_session_sources_includes_both_local_and_remote(tmp_path: Path) -> None:
                 cwd: FakeProject(
                     sessions={
                         "local-session-123": FakeSessionData(
-                            content=_session_content_with_branch(branch="P400-impl"),
+                            content=_session_content_with_branch(branch="plnd/impl-400-01-01-1200"),
                             size_bytes=1024,
                             modified_at=1000.0,
                         ),
@@ -458,7 +462,7 @@ def test_local_fallback_filters_by_branch(tmp_path: Path) -> None:
     with runner.isolated_filesystem(temp_dir=tmp_path):
         cwd = Path.cwd()
 
-        fake_git = FakeGit(current_branches={cwd: "P600-feature"})
+        fake_git = FakeGit(current_branches={cwd: "plnd/feature-600-01-01-1200"})
         test_issue = create_test_issue(600, "Test Plan #600", "Plan body")
         fake_issues = FakeGitHubIssues(issues={600: test_issue})
 
@@ -467,12 +471,16 @@ def test_local_fallback_filters_by_branch(tmp_path: Path) -> None:
                 cwd: FakeProject(
                     sessions={
                         "matching-session": FakeSessionData(
-                            content=_session_content_with_branch(branch="P600-feature"),
+                            content=_session_content_with_branch(
+                                branch="plnd/feature-600-01-01-1200"
+                            ),
                             size_bytes=1024,
                             modified_at=3000.0,
                         ),
                         "wrong-branch-session": FakeSessionData(
-                            content=_session_content_with_branch(branch="P999-other"),
+                            content=_session_content_with_branch(
+                                branch="plnd/other-999-01-01-1200"
+                            ),
                             size_bytes=1024,
                             modified_at=2000.0,
                         ),

@@ -171,15 +171,13 @@ def test_land_skips_learn_prompt_for_remote_pr(
 def test_land_shows_learn_prompt_for_local_plan_branch(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Test that learn status check IS performed when landing from a local worktree.
+    """Test that learn status check is skipped when branch cannot resolve to plan ID.
 
-    When running `erk land` on a plan branch that HAS a local worktree, the learn
-    status check should run because there may be local Claude sessions to learn from.
+    Since extract_leading_issue_number() always returns None, numeric-prefixed branches
+    (even without P) cannot resolve to plan IDs. The learn status check is skipped
+    because there's no plan_id to check.
 
-    This is the complementary test to ensure we didn't break the normal case.
-
-    With deferred execution, this test verifies the VALIDATION phase behavior.
-    The learn status check happens during validation, not execution.
+    This test verifies that the command succeeds without attempting the learn check.
     """
     from erk_shared.gateway.console.fake import FakeConsole
 
@@ -187,7 +185,7 @@ def test_land_shows_learn_prompt_for_local_plan_branch(
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
 
-        # Branch name follows plan pattern (starts with issue number)
+        # Branch name follows old numeric pattern (no P prefix)
         plan_branch = "4867-fix-something"
         plan_worktree_path = repo_dir / "worktrees" / plan_branch
 
@@ -246,7 +244,7 @@ def test_land_shows_learn_prompt_for_local_plan_branch(
             merge_should_succeed=True,
         )
 
-        # Create issue for the plan (required for learn status check)
+        # Create issue for the plan (but branch won't resolve to it)
         from tests.test_utils.github_helpers import create_test_issue
         from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
@@ -287,32 +285,20 @@ def test_land_shows_learn_prompt_for_local_plan_branch(
             issues=issues_ops,
         )
 
-        # Track if find_sessions_for_plan was called (it SHOULD be called)
+        # Track if find_sessions_for_plan was called (it should NOT be called)
         find_sessions_called: list[str] = []
 
         def mock_find_sessions(repo_root, plan_id):
-            from erk_shared.sessions.discovery import SessionsForPlan
-
             find_sessions_called.append(plan_id)
-            # Return "already learned" so the command proceeds without prompting
-            return SessionsForPlan(
-                planning_session_id="plan-session-1",
-                implementation_session_ids=["impl-session-1"],
-                learn_session_ids=["learn-session-1"],  # Already learned
-                last_remote_impl_at=None,
-                last_remote_impl_run_id=None,
-                last_remote_impl_session_id=None,
-                last_session_branch=None,
-                last_session_id=None,
-                last_session_source=None,
+            raise AssertionError(
+                f"find_sessions_for_plan should NOT be called when branch cannot resolve "
+                f"to plan_id, but was called with plan_id={plan_id}"
             )
 
         # Patch the method on the plan_backend instance
         monkeypatch.setattr(test_ctx.plan_backend, "find_sessions_for_plan", mock_find_sessions)
 
-        # Validation phase: test learn status check for local plan branch
-        # Don't use --force because that skips the learn check!
-        # FakeConsole with confirm_responses handles any prompts
+        # Validation phase: test learn status check is skipped when branch has no plan ID
         result = runner.invoke(
             cli,
             ["land", "--script"],
@@ -322,15 +308,9 @@ def test_land_shows_learn_prompt_for_local_plan_branch(
 
         assert result.exit_code == 0
 
-        # CRITICAL: Verify find_sessions_for_plan WAS called during validation
-        # because there's a local worktree that could have sessions
-        assert len(find_sessions_called) == 1, (
-            "find_sessions_for_plan should be called for local plan branches "
-            f"(worktree exists), but was called {len(find_sessions_called)} times"
+        # CRITICAL: Verify find_sessions_for_plan was NOT called
+        # because the branch cannot resolve to a plan_id
+        assert len(find_sessions_called) == 0, (
+            f"find_sessions_for_plan should not be called when branch cannot resolve "
+            f"to plan_id, but was called {len(find_sessions_called)} times"
         )
-        assert find_sessions_called[0] == "4867", (
-            f"Expected plan_id='4867', got {find_sessions_called[0]}"
-        )
-
-        # Verify output shows learn check passed
-        assert "Learn completed" in result.output

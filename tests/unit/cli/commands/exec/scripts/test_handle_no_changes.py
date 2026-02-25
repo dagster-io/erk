@@ -159,14 +159,14 @@ def test_build_no_changes_title() -> None:
         plan_id=5799, original_title="Fix RealGraphite Cache Invalidation"
     )
 
-    assert title == "[no-changes] P5799 Impl Attempt: Fix RealGraphite Cache Invalidation"
+    assert title == "[no-changes] #5799 Impl Attempt: Fix RealGraphite Cache Invalidation"
 
 
 def test_build_no_changes_title_preserves_original() -> None:
     """Test that _build_no_changes_title preserves the original title exactly."""
     title = _build_no_changes_title(plan_id=123, original_title="Add [feature] flag support")
 
-    assert title == "[no-changes] P123 Impl Attempt: Add [feature] flag support"
+    assert title == "[no-changes] #123 Impl Attempt: Add [feature] flag support"
 
 
 # ============================================================================
@@ -272,7 +272,7 @@ def test_cli_updates_pr_title_and_body(tmp_path: Path) -> None:
     assert len(github.updated_pr_titles) == 1
     pr_number, title = github.updated_pr_titles[0]
     assert pr_number == 123
-    assert title == "[no-changes] P456 Impl Attempt: Fix Cache Issue"
+    assert title == "[no-changes] #456 Impl Attempt: Fix Cache Issue"
 
     # Verify PR body was updated (updated_pr_bodies is list of (pr_number, body) tuples)
     assert len(github.updated_pr_bodies) == 1

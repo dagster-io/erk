@@ -37,7 +37,6 @@ from erk_shared.gateway.github.retry import RetriesExhausted, RetryRequested, wi
 from erk_shared.gateway.github.types import BodyText
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
-from erk_shared.naming import extract_leading_issue_number
 from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.conversion import issue_info_to_plan
 from erk_shared.plan_store.types import (
@@ -93,22 +92,21 @@ class GitHubPlanStore(PlanBackend):
         self._time = time if time is not None else RealTime()
 
     def resolve_plan_id_for_branch(self, repo_root: Path, branch_name: str) -> str | None:
-        """Resolve plan identifier from branch name via regex.
+        """Resolve plan identifier from branch name.
 
-        Zero-cost operation: parses branch naming convention (P{number}-{slug})
-        without any API call. Does NOT verify the plan exists.
+        Issue-based plan branches use plnd/ prefix and don't encode the issue
+        number. Plan-ref.json is the sole source of truth for plan-to-branch
+        mapping. This method always returns None — callers should use
+        plan-ref.json instead.
 
         Args:
-            repo_root: Repository root directory (unused for regex-based resolution)
-            branch_name: Git branch name
+            repo_root: Repository root directory (unused)
+            branch_name: Git branch name (unused)
 
         Returns:
-            Issue number as string if branch matches plan pattern, None otherwise
+            Always None — plan ID is not encoded in branch names
         """
-        number = extract_leading_issue_number(branch_name)
-        if number is None:
-            return None
-        return str(number)
+        return None
 
     def get_plan_for_branch(self, repo_root: Path, branch_name: str) -> Plan | PlanNotFound:
         """Look up the plan associated with a branch.

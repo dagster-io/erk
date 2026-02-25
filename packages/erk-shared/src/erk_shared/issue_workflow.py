@@ -22,7 +22,7 @@ class IssueBranchSetup:
     """Result of successfully preparing an issue for worktree creation.
 
     Attributes:
-        branch_name: Git branch name (e.g., P123-fix-bug-01-15-1430)
+        branch_name: Git branch name (e.g., plnd/fix-bug-01-15-1430)
         worktree_name: Sanitized directory name for the worktree
         plan_content: Issue body to use as plan.md content
         issue_number: GitHub issue number

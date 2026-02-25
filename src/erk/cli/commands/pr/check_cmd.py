@@ -16,7 +16,6 @@ from erk_shared.gateway.pr.submit import (
     has_issue_closing_reference,
 )
 from erk_shared.impl_folder import read_plan_ref
-from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_output
 
 
@@ -91,35 +90,18 @@ def pr_check(ctx: ErkContext, stage: str | None) -> None:
                 PrCheck(passed=True, description=".erk/impl-context/ not present (cleaned up)")
             )
 
-    # Check 0: Branch/plan-ref agreement
+    # Check 0: Plan reference exists
     issue_number: int | None = None
-    branch_issue = extract_leading_issue_number(branch)
     plan_ref = read_plan_ref(impl_dir) if impl_dir.exists() else None
-    impl_plan_id = plan_ref.plan_id if plan_ref is not None else None
 
-    if branch_issue is not None and impl_plan_id is not None and str(branch_issue) != impl_plan_id:
+    if plan_ref is not None:
+        issue_number = int(plan_ref.plan_id)
         checks.append(
             PrCheck(
-                passed=False,
-                description=(
-                    f"Branch issue ({branch_issue}) disagrees with "
-                    f"plan reference (#{impl_plan_id}). Fix the mismatch before proceeding."
-                ),
+                passed=True,
+                description=f"Plan reference found (#{issue_number})",
             )
         )
-        issue_number = int(impl_plan_id)
-    else:
-        if impl_plan_id is not None:
-            issue_number = int(impl_plan_id)
-        elif branch_issue is not None:
-            issue_number = branch_issue
-        if issue_number is not None:
-            checks.append(
-                PrCheck(
-                    passed=True,
-                    description=f"Branch name and plan reference agree (#{issue_number})",
-                )
-            )
 
     # Check 1: Issue closing reference (if issue number is discoverable)
     # plan_ref already computed above

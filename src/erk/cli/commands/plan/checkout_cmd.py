@@ -17,7 +17,7 @@ from erk.cli.github_parsing import parse_issue_identifier
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
-from erk_shared.naming import extract_leading_issue_number
+from erk_shared.impl_folder import read_plan_ref
 from erk_shared.output.output import user_output
 
 
@@ -26,11 +26,10 @@ def _find_branches_for_issue(
     repo_root,
     issue_number: int,
 ) -> list[str]:
-    """Find local branches that start with the issue number.
+    """Find local branches associated with a plan issue.
 
-    Branch names follow patterns like:
-    - P{issue_number}-{slug}-{timestamp} (e.g., P123-fix-bug-01-15-1430)
-    - {issue_number}-{slug} (legacy format)
+    Reads .impl/plan-ref.json from each worktree to discover plan-to-branch
+    associations. Plan-ref.json is the sole source of truth.
 
     Args:
         ctx: Erk context with git integration
@@ -40,13 +39,16 @@ def _find_branches_for_issue(
     Returns:
         List of matching branch names
     """
-    local_branches = ctx.git.branch.list_local_branches(repo_root)
+    worktrees = ctx.git.worktree.list_worktrees(repo_root)
     matching: list[str] = []
 
-    for branch in local_branches:
-        branch_issue = extract_leading_issue_number(branch)
-        if branch_issue == issue_number:
-            matching.append(branch)
+    for worktree in worktrees:
+        if worktree.branch is None:
+            continue
+        impl_dir = worktree.path / ".impl"
+        plan_ref = read_plan_ref(impl_dir)
+        if plan_ref is not None and plan_ref.plan_id == str(issue_number):
+            matching.append(worktree.branch)
 
     return matching
 

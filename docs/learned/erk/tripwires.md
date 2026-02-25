@@ -18,7 +18,7 @@ Rules triggered by matching actions in code.
 
 **constructing a checkout footer string manually** → Read [PR Checkout Footer Validation Pattern](pr-commands.md) first. Use build_pr_body_footer() from the gateway layer. Manual construction risks format drift from the validator regex.
 
-**constructing branch names manually** → Read [Branch Naming Conventions](branch-naming.md) first. Use generate_issue_branch_name() for consistent objective ID encoding.
+**constructing branch names manually** → Read [Branch Naming Conventions](branch-naming.md) first. Use generate_planned_pr_branch_name() for consistent objective ID encoding.
 
 **creating a placeholder branch with ctx.branch_manager.create_branch()** → Read [Placeholder Branches](placeholder-branches.md) first. Placeholder branches must bypass BranchManager. Use ctx.git.branch.create_branch() to avoid Graphite tracking. See branch-manager-decision-tree.md for the full decision framework.
 
@@ -43,6 +43,8 @@ Rules triggered by matching actions in code.
 **running raw git commands (checkout, branch) without gt track on a Graphite-managed branch** → Read [Graphite Divergence Detection](graphite-divergence-detection.md) first. Raw git commands (checkout, branch) without `gt track` cause Graphite's cache to diverge from actual branch state. Use BranchManager which handles Graphite tracking automatically, or call `gt track` after raw git operations.
 
 **treating informational_count as including review threads** → Read [PR Feedback Classifier Schema](pr-feedback-classifier-schema.md) first. informational_count covers ONLY discussion comments, not review threads. All unresolved review threads must appear individually in actionable_threads.
+
+**trying to extract plan issue number from branch name** → Read [Branch Naming Conventions](branch-naming.md) first. Plan issue numbers are NOT encoded in branch names. Use plan-ref.json as the sole source of truth.
 
 **using `gh codespace create` to create a codespace** → Read [Codespace Machine Types](codespace-machine-types.md) first. The machines endpoint returns HTTP 500 for this repo. Use `POST /user/codespaces` REST API directly. See the workaround section below.
 

@@ -48,11 +48,12 @@ class TestBuildWorktreeMapping:
     """Tests for _build_worktree_mapping method."""
 
     def test_pool_managed_worktree_extracts_from_branch_name(self, tmp_path: Path) -> None:
-        """Pool-managed worktree with generic directory name maps via branch.
+        """Pool-managed worktree with P-prefix branch no longer extracts issue number.
 
-        The directory name is 'erk-slot-02' (no issue prefix),
-        but the branch name is 'P4280-add-required-kwargs-01-05-2230',
-        so issue 4280 should be extracted from the branch.
+        The directory name is 'erk-slot-02' (no issue prefix), and the branch name
+        is 'P4280-add-required-kwargs-01-05-2230'. Since extract_leading_issue_number()
+        always returns None, the branch cannot provide an issue number and the worktree
+        is not added to the mapping.
         """
         repo_root = tmp_path / "repo"
         repo_root.mkdir()
@@ -94,17 +95,17 @@ class TestBuildWorktreeMapping:
 
         mapping = provider._build_worktree_mapping()
 
-        # Issue 4280 should be extracted from the branch name
-        assert 4280 in mapping
-        worktree_name, worktree_branch = mapping[4280]
-        assert worktree_name == "erk-slot-02"
-        assert worktree_branch == branch_name
+        # Issue extraction from P-prefix branches no longer works
+        assert 4280 not in mapping
+        assert len(mapping) == 0
 
     def test_issue_named_worktree_extracts_from_branch_name(self, tmp_path: Path) -> None:
-        """Issue-named worktree with P-prefixed directory also extracts from branch.
+        """Issue-named worktree with P-prefix branch no longer extracts issue number.
 
-        The directory name is 'P1234-feature-01-01-1200' (has issue prefix),
-        and the branch name matches. Issue 1234 should be extracted from branch.
+        The directory name is 'P1234-feature-01-01-1200' (has issue prefix), and the
+        branch name matches. Since extract_leading_issue_number() always returns None,
+        the branch cannot provide an issue number and the worktree is not added to
+        the mapping.
         """
         repo_root = tmp_path / "repo"
         repo_root.mkdir()
@@ -145,11 +146,9 @@ class TestBuildWorktreeMapping:
 
         mapping = provider._build_worktree_mapping()
 
-        # Issue 1234 should be extracted from the branch name
-        assert 1234 in mapping
-        worktree_name, worktree_branch = mapping[1234]
-        assert worktree_name == "P1234-feature-01-01-1200"
-        assert worktree_branch == branch_name
+        # Issue extraction from P-prefix branches no longer works
+        assert 1234 not in mapping
+        assert len(mapping) == 0
 
     def test_detached_head_worktree_not_in_mapping(self, tmp_path: Path) -> None:
         """Worktree with detached HEAD (branch=None) should not be in mapping."""
@@ -371,11 +370,13 @@ class TestBuildWorktreeMapping:
         assert worktree_name == "erk-slot-03"
         assert worktree_branch == branch_name
 
-    def test_planned_hyphen_branch_not_matched(self, tmp_path: Path) -> None:
-        """Branch with 'planned-' (hyphen) prefix is NOT matched.
+    def test_planned_hyphen_branch_resolved_via_plan_ref_json(self, tmp_path: Path) -> None:
+        """Branch with 'planned-' (hyphen) prefix resolved via plan-ref.json.
 
-        Only 'plnd/' or 'planned/' (forward slash) is valid. This test ensures
-        the startswith check uses the correct delimiter.
+        After removing branch-name-based plan discovery, _build_worktree_mapping
+        reads plan-ref.json from ALL worktrees regardless of branch name.
+        Even non-standard branch names like 'planned-' (hyphen) work as long as
+        plan-ref.json is present.
         """
         repo_root = tmp_path / "repo"
         repo_root.mkdir()
@@ -387,7 +388,7 @@ class TestBuildWorktreeMapping:
         worktree_path.mkdir(parents=True)
         branch_name = "planned-fix-auth-bug-01-15-1430"
 
-        # Create .impl/plan-ref.json — should NOT be read because prefix is wrong
+        # Create .impl/plan-ref.json — will be read regardless of branch name format
         impl_dir = worktree_path / ".impl"
         impl_dir.mkdir()
         plan_ref_data = {
@@ -431,9 +432,11 @@ class TestBuildWorktreeMapping:
 
         mapping = provider._build_worktree_mapping()
 
-        # planned- (hyphen) should NOT be recognized — only plnd/ or planned/ (slash) is valid
-        assert 9999 not in mapping
-        assert len(mapping) == 0
+        # Plan ID 9999 should be extracted from plan-ref.json regardless of branch name format
+        assert 9999 in mapping
+        worktree_name, worktree_branch = mapping[9999]
+        assert worktree_name == "erk-slot-04"
+        assert worktree_branch == branch_name
 
     def test_planned_pr_branch_without_plan_ref_not_in_mapping(self, tmp_path: Path) -> None:
         """Draft PR branch without .impl/plan-ref.json is not in mapping."""

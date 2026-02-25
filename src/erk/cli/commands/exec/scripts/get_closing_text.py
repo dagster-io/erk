@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Get closing text for PR body based on .impl/plan-ref.json or branch name.
+"""Get closing text for PR body based on .impl/plan-ref.json.
 
-This command determines the issue number from .impl/plan-ref.json or the branch
-name (P{issue_number}-... pattern) and outputs the appropriate closing text.
+This command determines the issue number from .impl/plan-ref.json and outputs
+the appropriate closing text.
 
 Usage:
     erk exec get-closing-text
@@ -13,7 +13,6 @@ Output:
 
 Exit Codes:
     0: Success (whether issue reference exists or not)
-    1: Error (branch/issue.json mismatch)
 
 Examples:
     $ erk exec get-closing-text
@@ -22,10 +21,7 @@ Examples:
     $ erk exec get-closing-text  # Cross-repo plans
     Closes owner/plans-repo#776
 
-    $ erk exec get-closing-text  # No .impl/issue.json but branch is P123-feature
-    Closes #123
-
-    $ erk exec get-closing-text  # No .impl/ and branch is feature-branch
+    $ erk exec get-closing-text  # No .impl/ folder
     (no output)
 """
 

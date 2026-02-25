@@ -317,8 +317,8 @@ def test_plan_next_with_issue_ref() -> None:
         assert "Next node: 1.1: Setup infra" in result.output
 
 
-def test_plan_next_infers_from_branch() -> None:
-    """Test --next without ISSUE_REF infers objective from branch."""
+def test_plan_next_fails_on_branch_without_objective() -> None:
+    """Test --next without ISSUE_REF fails when branch doesn't encode objective."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
@@ -331,12 +331,12 @@ def test_plan_next_infers_from_branch() -> None:
         )
 
         fake_launcher = FakeAgentLauncher()
-        # Branch P100-... links to plan issue #100
+        # plnd/ branch without O-prefix — cannot resolve objective from branch name
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
             trunk_branches={env.cwd: "main"},
-            current_branches={env.cwd: "P100-setup-infra-01-15-1200"},
+            current_branches={env.cwd: "plnd/setup-infra-01-15-1200"},
         )
         github = FakeGitHub(authenticated=True, issues_gateway=issues)
         ctx = build_workspace_test_context(
@@ -347,13 +347,10 @@ def test_plan_next_infers_from_branch() -> None:
             cli,
             ["objective", "plan", "--next"],
             obj=ctx,
-            catch_exceptions=False,
         )
 
-        assert result.exit_code == 0
-        assert fake_launcher.launch_called
-        assert fake_launcher.last_call is not None
-        assert fake_launcher.last_call.command == "/erk:objective-plan 42 --node 1.1"
+        assert result.exit_code == 1
+        assert "not linked to an objective" in result.output
 
 
 def test_plan_next_no_pending_nodes() -> None:

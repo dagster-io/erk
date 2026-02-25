@@ -353,13 +353,11 @@ class RealGitBranchOps(GitBranchOps):
         return BranchDivergence(is_diverged=is_diverged, ahead=ahead, behind=behind)
 
     def get_branch_issue(self, repo_root: Path, branch: str) -> int | None:
-        """Extract GitHub issue number from branch name.
+        """Deprecated: Branch names no longer encode issue numbers.
 
-        Branch names follow the pattern: P{issue_number}-{slug}-{timestamp}
+        Always returns None. Use plan-ref.json for plan-to-branch mapping.
         """
-        from erk_shared.naming import extract_leading_issue_number
-
-        return extract_leading_issue_number(branch)
+        return None
 
     def get_behind_commit_authors(self, cwd: Path, branch: str) -> list[str]:
         """Get authors of commits on remote that are not in local branch."""

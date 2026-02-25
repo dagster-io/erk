@@ -34,7 +34,7 @@ def _make_issue(*, number: int, title: str, body: str) -> IssueInfo:
 
 
 def _make_pr_details(
-    *, number: int, title: str, body: str, head_ref_name: str = "P100-test-branch"
+    *, number: int, title: str, body: str, head_ref_name: str = "plnd/test-branch"
 ) -> PRDetails:
     return PRDetails(
         number=number,
@@ -159,7 +159,16 @@ class TestApplyLandedUpdateHappyPath:
         runner = CliRunner()
         result = runner.invoke(
             objective_apply_landed_update,
-            ["--pr", "6517", "--objective", "6423", "--branch", "P6513-some-branch"],
+            [
+                "--pr",
+                "6517",
+                "--objective",
+                "6423",
+                "--branch",
+                "plnd/some-branch",
+                "--plan",
+                "6513",
+            ],
             obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
@@ -217,7 +226,16 @@ class TestApplyLandedUpdateHappyPath:
         runner = CliRunner()
         result = runner.invoke(
             objective_apply_landed_update,
-            ["--pr", "6517", "--objective", "6423", "--branch", "P6513-some-branch"],
+            [
+                "--pr",
+                "6517",
+                "--objective",
+                "6423",
+                "--branch",
+                "plnd/some-branch",
+                "--plan",
+                "6513",
+            ],
             obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
@@ -266,7 +284,16 @@ class TestApplyLandedUpdateNoMatchedSteps:
         runner = CliRunner()
         result = runner.invoke(
             objective_apply_landed_update,
-            ["--pr", "6517", "--objective", "6423", "--branch", "P6513-some-branch"],
+            [
+                "--pr",
+                "6517",
+                "--objective",
+                "6423",
+                "--branch",
+                "plnd/some-branch",
+                "--plan",
+                "6513",
+            ],
             obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
@@ -299,7 +326,16 @@ class TestApplyLandedUpdateErrors:
         runner = CliRunner()
         result = runner.invoke(
             objective_apply_landed_update,
-            ["--pr", "6517", "--objective", "9999", "--branch", "P6513-some-branch"],
+            [
+                "--pr",
+                "6517",
+                "--objective",
+                "9999",
+                "--branch",
+                "plnd/some-branch",
+                "--plan",
+                "6513",
+            ],
             obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
@@ -324,7 +360,16 @@ class TestApplyLandedUpdateErrors:
         runner = CliRunner()
         result = runner.invoke(
             objective_apply_landed_update,
-            ["--pr", "9999", "--objective", "6423", "--branch", "P6513-some-branch"],
+            [
+                "--pr",
+                "9999",
+                "--objective",
+                "6423",
+                "--branch",
+                "plnd/some-branch",
+                "--plan",
+                "6513",
+            ],
             obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,
@@ -379,12 +424,12 @@ class TestApplyLandedUpdateDiscovery:
             comments_with_urls={6423: [comment]},
         )
         fake_github = FakeGitHub(pr_details={6517: pr})
-        fake_git = FakeGit(current_branches={tmp_path: "P6513-some-branch"})
+        fake_git = FakeGit(current_branches={tmp_path: "plnd/some-branch"})
 
         runner = CliRunner()
         result = runner.invoke(
             objective_apply_landed_update,
-            ["--pr", "6517", "--objective", "6423"],
+            ["--pr", "6517", "--objective", "6423", "--plan", "6513"],
             obj=context_for_test(
                 github_issues=fake_issues,
                 github=fake_github,

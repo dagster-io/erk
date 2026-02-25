@@ -343,12 +343,12 @@ def test_pr_rewrite_planned_pr_backend_preserves_metadata() -> None:
         assert "Closes #" not in updated_body
 
 
-def test_pr_rewrite_updates_lifecycle_stage_for_linked_plan() -> None:
-    """Rewrite with a plan-linked branch triggers lifecycle update to 'impl'."""
+def test_pr_rewrite_skips_lifecycle_when_plan_not_resolved() -> None:
+    """Rewrite skips lifecycle update when plan cannot be resolved from branch name."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        # Use P-prefix branch so PlanContextProvider resolves the plan
-        branch_name = "P100-add-feature"
+        # plnd/ branch — resolve_plan_id_for_branch returns None
+        branch_name = "plnd/add-feature"
 
         # Create plan issue with lifecycle_stage "planned"
         plan_body = format_plan_header_body_for_test(lifecycle_stage="planned")
@@ -384,7 +384,5 @@ def test_pr_rewrite_updates_lifecycle_stage_for_linked_plan() -> None:
 
         assert result.exit_code == 0, result.output
 
-        # Verify lifecycle_stage was updated in the plan issue
-        assert len(fake_issues.updated_bodies) == 1
-        updated_body = fake_issues.updated_bodies[0][1]
-        assert "lifecycle_stage: impl" in updated_body
+        # Plan cannot be resolved from branch name — no lifecycle update
+        assert len(fake_issues.updated_bodies) == 0

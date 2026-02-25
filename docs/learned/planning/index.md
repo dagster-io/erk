@@ -35,7 +35,7 @@
 - **[next-steps-output.md](next-steps-output.md)** — modifying next-steps output after plan save or submit, understanding IssueNextSteps vs DraftPRNextSteps, adding new next-steps commands to plan output
 - **[no-changes-handling.md](no-changes-handling.md)** — implementing erk-impl workflow, debugging no-changes scenarios, understanding erk-impl error handling
 - **[objective-update-after-land.md](objective-update-after-land.md)** — modifying the land pipeline's post-merge behavior, working with objective-update-after-land exec script, understanding fail-open patterns in erk
-- **[one-shot-workflow.md](one-shot-workflow.md)** — working with erk one-shot dispatch, understanding how plans are autonomously created and implemented, debugging one-shot workflow failures or skeleton plan issues, integrating objectives with one-shot dispatch
+- **[one-shot-workflow.md](one-shot-workflow.md)** — working with erk one-shot dispatch, understanding how plans are autonomously created and implemented, debugging one-shot workflow failures, integrating objectives with one-shot dispatch
 - **[parallel-audit-pattern.md](parallel-audit-pattern.md)** — designing parallel agent workflows for bulk operations, implementing multi-agent batch processing, understanding how audit-scan or learn commands parallelize work
 - **[plan-backend-migration.md](plan-backend-migration.md)** — migrating exec scripts from direct GitHubIssues to PlanBackend, implementing LBYL pattern for plan existence checks, handling PlanNotFound vs PlanHeaderNotFoundError
 - **[plan-creation-pathways.md](plan-creation-pathways.md)** — understanding how plans are created in erk, adding a new plan creation entry point, debugging which code path created a plan

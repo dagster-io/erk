@@ -16,10 +16,8 @@ from erk_shared.naming import (
     default_branch_for_worktree,
     derive_branch_name_from_title,
     ensure_unique_worktree_name,
-    extract_leading_issue_number,
     extract_objective_number,
     extract_trailing_number,
-    generate_issue_branch_name,
     generate_planned_pr_branch_name,
     sanitize_branch_component,
     sanitize_worktree_name,
@@ -374,116 +372,9 @@ def test_derive_branch_name_truncates_to_30_chars() -> None:
     assert not result.endswith("-")  # No trailing hyphens after truncation
 
 
-# Tests for generate_issue_branch_name
-@pytest.mark.parametrize(
-    ("issue_number", "title", "timestamp", "expected"),
-    [
-        # Standard case
-        (123, "Fix Auth Bug", datetime(2024, 1, 15, 14, 30), "P123-fix-auth-bug-01-15-1430"),
-        # Integer issue number
-        (42, "My Feature", datetime(2024, 6, 20, 10, 0), "P42-my-feature-06-20-1000"),
-        # String issue number
-        ("456", "Add Tests", datetime(2024, 12, 31, 23, 59), "P456-add-tests-12-31-2359"),
-        # Midnight edge case
-        (789, "Update Docs", datetime(2024, 1, 1, 0, 0), "P789-update-docs-01-01-0000"),
-    ],
-)
-def test_generate_issue_branch_name_format(
-    issue_number: int | str, title: str, timestamp: datetime, expected: str
-) -> None:
-    """Branch name follows P{num}-{slug}-{timestamp} format."""
-    assert generate_issue_branch_name(issue_number, title, timestamp, objective_id=None) == expected
-
-
-def test_generate_issue_branch_name_truncates_long_title() -> None:
-    """Long titles are truncated before timestamp is appended."""
-    # Very long title that would exceed 31 chars for base name
-    long_title = "This is a very long title that should be truncated before timestamp"
-    timestamp = datetime(2024, 1, 15, 14, 30)
-
-    result = generate_issue_branch_name(123, long_title, timestamp, objective_id=None)
-
-    # Base (P123-...) should be truncated to 31 chars, then timestamp appended
-    # Total = 31 + 11 (timestamp with hyphen) = 42 chars max
-    assert len(result) <= 42
-    assert result.startswith("P123-")
-    assert result.endswith("-01-15-1430")
-    # No trailing hyphen before timestamp
-    assert not result[:-11].endswith("-")
-
-
-def test_generate_issue_branch_name_preserves_hyphens_in_title() -> None:
-    """Hyphens in titles are preserved (not doubled)."""
-    result = generate_issue_branch_name(
-        123, "fix-auth-bug", datetime(2024, 1, 15, 14, 30), objective_id=None
-    )
-    # Should be P123-fix-auth-bug-..., not P123--fix-auth-bug-...
-    assert "P123-fix-auth-bug-" in result
-    assert "--" not in result
-
-
-def test_generate_issue_branch_name_handles_special_chars() -> None:
-    """Special characters in titles are sanitized."""
-    result = generate_issue_branch_name(
-        123, "Fix: Bug #456!", datetime(2024, 1, 15, 14, 30), objective_id=None
-    )
-    # Special chars should be replaced with hyphens, then collapsed
-    assert ":" not in result
-    assert "#" not in result
-    assert "!" not in result
-    assert "--" not in result
-
-
-@pytest.mark.parametrize(
-    ("issue_number", "objective_id", "title", "timestamp", "expected"),
-    [
-        # With objective ID
-        (
-            123,
-            456,
-            "Fix Auth Bug",
-            datetime(2024, 1, 15, 14, 30),
-            "P123-O456-fix-auth-bug-01-15-1430",
-        ),
-        # Different objective ID
-        (42, 789, "My Feature", datetime(2024, 6, 20, 10, 0), "P42-O789-my-feature-06-20-1000"),
-        # Single digit objective
-        (100, 1, "Add Tests", datetime(2024, 12, 31, 23, 59), "P100-O1-add-tests-12-31-2359"),
-    ],
-)
-def test_generate_issue_branch_name_with_objective(
-    issue_number: int, objective_id: int, title: str, timestamp: datetime, expected: str
-) -> None:
-    """Branch name includes objective ID when provided."""
-    result = generate_issue_branch_name(issue_number, title, timestamp, objective_id=objective_id)
-    assert result == expected
-
-
-def test_generate_issue_branch_name_with_objective_truncates_long_title() -> None:
-    """Long titles are truncated with objective ID prefix included."""
-    long_title = "This is a very long title that should be truncated before timestamp"
-    timestamp = datetime(2024, 1, 15, 14, 30)
-
-    result = generate_issue_branch_name(123, long_title, timestamp, objective_id=456)
-
-    # Base (P123-O456-...) should be truncated to 31 chars, then timestamp appended
-    assert len(result) <= 42
-    assert result.startswith("P123-O456-")
-    assert result.endswith("-01-15-1430")
-    # No trailing hyphen before timestamp
-    assert not result[:-11].endswith("-")
-
-
 @pytest.mark.parametrize(
     ("branch_name", "expected"),
     [
-        # With objective ID
-        ("P123-O456-fix-auth-bug-01-15-1430", 456),
-        ("P42-O789-my-feature-06-20-1000", 789),
-        ("P100-O1-add-tests-12-31-2359", 1),
-        # Lowercase o prefix (case insensitive)
-        ("P123-o456-fix-bug", 456),
-        ("p123-o789-feature", 789),
         # Draft-PR branches with objective ID (current prefix)
         ("plnd/O456-fix-auth-bug-01-15-1430", 456),
         ("plnd/O1-add-tests-12-31-2359", 1),
@@ -494,8 +385,6 @@ def test_generate_issue_branch_name_with_objective_truncates_long_title() -> Non
         ("plan/O456-fix-auth-01-15-1430", 456),
         ("plan/O7709-plan-lazy-tip-sync-f-02-21-1116", 7709),
         # Without objective ID
-        ("P123-fix-auth-bug-01-15-1430", None),
-        ("P42-my-feature", None),
         ("plnd/fix-auth-bug-01-15-1430", None),
         ("planned/fix-auth-bug-01-15-1430", None),
         ("plan/fix-auth-bug-01-15-1430", None),
@@ -506,35 +395,6 @@ def test_generate_issue_branch_name_with_objective_truncates_long_title() -> Non
 def test_extract_objective_number(branch_name: str, expected: int | None) -> None:
     """Extract objective ID from branch name."""
     assert extract_objective_number(branch_name) == expected
-
-
-@pytest.mark.parametrize(
-    ("branch_name", "expected"),
-    [
-        # Standard format (still works with objective ID in branch)
-        ("P123-O456-fix-auth-bug-01-15-1430", 123),
-        ("P42-O789-my-feature", 42),
-        # Without objective ID (existing behavior)
-        ("P2382-convert-erk-create-raw-ext-12-05-2359", 2382),
-        ("P42-fix-bug", 42),
-        # Legacy format without P prefix
-        ("2382-convert-erk-create-raw-ext-12-05-2359", 2382),
-        ("42-fix-bug", 42),
-        # Draft-PR branches return None (no extractable issue number)
-        ("plnd/fix-auth-bug-01-15-1430", None),
-        ("plnd/O456-fix-auth-01-15-1430", None),
-        ("planned/fix-auth-bug-01-15-1430", None),
-        ("planned/O456-fix-auth-01-15-1430", None),
-        # Invalid formats
-        ("feature-branch", None),
-        ("master", None),
-    ],
-)
-def test_extract_leading_issue_number_with_objective_format(
-    branch_name: str, expected: int | None
-) -> None:
-    """Extract leading issue number still works with objective ID in branch name."""
-    assert extract_leading_issue_number(branch_name) == expected
 
 
 # Tests for generate_planned_pr_branch_name
