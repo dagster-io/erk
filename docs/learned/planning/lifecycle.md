@@ -1047,7 +1047,7 @@ Each stage is set by specific commands at well-defined moments:
 | ---------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
 | `prompted` | `one_shot_dispatch`                                                                                                              | One-shot plan issue created                       |
 | `planning` | `one-shot.yml` workflow                                                                                                          | Agent begins writing plan                         |
-| `planned`  | `plan_save_to_issue`, `plan create`, `register_one_shot_plan`, `GitHubPlanBackend.create_plan`, `DraftPRPlanBackend.create_plan` | Plan saved to GitHub                              |
+| `planned`  | `plan_save_to_issue`, `plan create`, `register_one_shot_plan`, `GitHubPlanBackend.create_plan`, `PlannedPRBackend.create_plan` | Plan saved to GitHub                              |
 | `impl`     | `mark-impl-started`, `impl-signal` (started/submitted), `handle-no-changes`, `pr/shared.py`                                      | Implementation begins, completes, or PR submitted |
 
 ### Explicit Updates via Exec Command
