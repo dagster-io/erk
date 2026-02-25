@@ -160,14 +160,14 @@ class RealGraphite(Graphite):
         # Cache miss or stale - recompute
         data = read_graphite_json_file(cache_file, "Graphite cache")
 
-        # Get all branch heads from git for enrichment
-        git_branch_heads = {}
+        # Get all branch heads from git in a single call for enrichment
+        all_heads = git_ops.branch.get_all_branch_heads(repo_root)
         branches_data = data.get("branches", [])
-        for branch_name, _ in branches_data:
-            if isinstance(branch_name, str):
-                commit_sha = git_ops.branch.get_branch_head(repo_root, branch_name)
-                if commit_sha:
-                    git_branch_heads[branch_name] = commit_sha
+        git_branch_heads = {
+            branch_name: all_heads[branch_name]
+            for branch_name, _ in branches_data
+            if isinstance(branch_name, str) and branch_name in all_heads
+        }
 
         # parse_graphite_cache expects JSON string, so convert back
         self._branches_cache = parse_graphite_cache(json.dumps(data), git_branch_heads)
