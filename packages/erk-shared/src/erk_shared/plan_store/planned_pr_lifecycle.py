@@ -171,8 +171,8 @@ def extract_plan_content(pr_body: str) -> str:
     return pr_body[separator_index + len(PLAN_CONTENT_SEPARATOR) :]
 
 
-def extract_metadata_prefix(pr_body: str) -> str:
-    """Extract the metadata block + separator for preservation during stage transitions.
+def extract_plan_header_block(pr_body: str) -> str:
+    """Extract the plan-header metadata block + separator for preservation during stage transitions.
 
     Returns everything up to and including the content separator.
     If no separator is found, returns an empty string.
@@ -181,7 +181,7 @@ def extract_metadata_prefix(pr_body: str) -> str:
         pr_body: Full PR body string
 
     Returns:
-        Metadata prefix (metadata block + separator) or empty string
+        Plan header block (metadata block + separator) or empty string
     """
     separator_index = pr_body.find(PLAN_CONTENT_SEPARATOR)
     if separator_index == -1:

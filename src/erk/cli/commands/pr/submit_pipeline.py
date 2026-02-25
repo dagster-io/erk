@@ -39,7 +39,6 @@ from erk_shared.impl_folder import (
     save_plan_ref,
     validate_plan_linkage,
 )
-from erk_shared.plan_store.planned_pr_lifecycle import extract_metadata_prefix
 from erk_shared.scratch.scratch import write_scratch_file
 
 # ---------------------------------------------------------------------------
@@ -91,6 +90,7 @@ class SubmitState:
     plan_context: PlanContext | None
     title: str | None
     body: str | None
+    existing_pr_body: str
 
 
 @dataclass(frozen=True)
@@ -179,6 +179,16 @@ def commit_wip(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError
         ctx.git.commit.add_all(state.cwd)
         ctx.git.commit.commit(state.cwd, "WIP: Prepare for PR submission")
     return state
+
+
+def capture_existing_pr_body(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
+    """Capture full PR body before gt submit overwrites it."""
+    pr_result = ctx.github.get_pr_for_branch(state.repo_root, state.branch_name)
+    if isinstance(pr_result, PRNotFound):
+        return state
+    if not pr_result.body:
+        return state
+    return dataclasses.replace(state, existing_pr_body=pr_result.body)
 
 
 def push_and_create_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
@@ -687,12 +697,8 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
     pr_body = state.body or ""
     pr_title = state.title or "Update"
 
-    # Extract metadata prefix from draft PR body
-    metadata_prefix = ""
-    if state.pr_number is not None:
-        existing_pr = ctx.github.get_pr(state.repo_root, state.pr_number)
-        if not isinstance(existing_pr, PRNotFound):
-            metadata_prefix = extract_metadata_prefix(existing_pr.body)
+    # Use pre-captured PR body (captured before gt submit overwrites it)
+    existing_pr_body = state.existing_pr_body
 
     # Check learn plan label
     impl_dir = state.cwd / ".impl"
@@ -706,7 +712,7 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
         issue_number=None,
         plans_repo=None,
         header="",
-        metadata_prefix=metadata_prefix,
+        existing_pr_body=existing_pr_body,
     )
 
     # Update PR metadata
@@ -803,6 +809,7 @@ def _push_and_create_pipeline() -> tuple[SubmitStep, ...]:
     return (
         prepare_state,
         commit_wip,
+        capture_existing_pr_body,
         push_and_create_pr,
     )
 
@@ -831,6 +838,7 @@ def _submit_pipeline() -> tuple[SubmitStep, ...]:
     return (
         prepare_state,
         commit_wip,
+        capture_existing_pr_body,
         push_and_create_pr,
         extract_diff,
         fetch_plan_context,
@@ -896,4 +904,5 @@ def make_initial_state(
         plan_context=None,
         title=None,
         body=None,
+        existing_pr_body="",
     )

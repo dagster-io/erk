@@ -47,6 +47,7 @@ def _make_state(
     plan_context: PlanContext | None = None,
     title: str | None = "My PR Title",
     body: str | None = "My PR body",
+    existing_pr_body: str = "",
 ) -> SubmitState:
     return SubmitState(
         cwd=cwd,
@@ -70,6 +71,7 @@ def _make_state(
         plan_context=plan_context,
         title=title,
         body=body,
+        existing_pr_body=existing_pr_body,
     )
 
 
@@ -317,7 +319,12 @@ def test_finalize_pr_planned_pr_backend_extracts_metadata(tmp_path: Path) -> Non
         plan_store=PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime()),
         cwd=tmp_path,
     )
-    state = _make_state(cwd=tmp_path, title="Implement feature", body="Summary of work")
+    state = _make_state(
+        cwd=tmp_path,
+        title="Implement feature",
+        body="Summary of work",
+        existing_pr_body=pr_body,
+    )
 
     result = finalize_pr(ctx, state)
 
@@ -537,6 +544,7 @@ def test_updates_lifecycle_stage_for_draft_pr_backend(tmp_path: Path) -> None:
         body="Summary of work",
         plan_context=None,
         issue_number=None,
+        existing_pr_body=pr_body,
     )
 
     result = finalize_pr(ctx, state)
