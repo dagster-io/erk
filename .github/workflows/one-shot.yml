@@ -187,7 +187,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
         run: |
-          erk plan check ${{ steps.read_result.outputs.plan_id }}
+          erk pr check ${{ steps.read_result.outputs.plan_id }}
 
       - name: Register one-shot plan with issue and PR
         if: steps.plan.outputs.plan_success == 'true' && steps.read_result.outputs.plan_id != ''
