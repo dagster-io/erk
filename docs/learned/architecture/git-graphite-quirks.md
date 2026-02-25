@@ -27,6 +27,8 @@ tripwires:
     warning: "After amending commits or running gt restack, Graphite's cache may not update, leaving branches diverged. Call retrack_branch() to fix tracking. The auto-fix is already implemented in sync_cmd and branch_manager."
   - action: "using --force-with-lease in multi-step workflows where earlier steps push"
     warning: "Force-push silently overwrites intermediate commits from earlier workflow steps. Always `git pull --rebase` before pushing in multi-step workflows."
+  - action: "using git merge on a Graphite-managed branch"
+    warning: "Merge commits break Graphite's linear stack model. Use git pull --rebase or gt sync. Merge commits cause gt squash divergence errors and broken parent tracking."
 ---
 
 # Git and Graphite Edge Cases Catalog

@@ -150,6 +150,14 @@ Commands that allocate slots via `allocate_slot_for_branch()`:
 | `erk slot assign`     | Assigns existing branch to slot      |
 | `erk pr checkout`     | Assigns branch when checking out PR  |
 
+### The `--new-slot` Flag
+
+<!-- Source: src/erk/cli/commands/branch/create_cmd.py -->
+
+`erk branch create --new-slot` forces allocation of a new slot instead of stacking in the current slot. Without this flag, `branch create` checks if the current worktree is an assigned slot and stacks the new branch in place.
+
+**Trunk-aware behavior**: When running from trunk (master/main), the command implicitly behaves like `--new-slot` since stacking in the root worktree is not supported. The flag is mutually exclusive with `--no-slot`.
+
 ## Configuration
 
 In `.erk/config.toml` (local config):
