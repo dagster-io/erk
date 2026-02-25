@@ -51,12 +51,13 @@ class PlannedPRPlanListService(PlanListService):
         limit: int | None = None,
         skip_workflow_runs: bool = False,
         creator: str | None = None,
+        exclude_labels: list[str] | None = None,
     ) -> PlanListData:
-        """Fetch plan list data from draft PRs via single GraphQL call.
+        """Fetch plan list data from draft PRs via REST+GraphQL.
 
-        Uses list_plan_prs_with_details() to get PRDetails (for plan content)
-        and PullRequestInfo (with checks, review threads, merge status) in one
-        API call. Workflow runs are fetched separately via batch GraphQL lookup.
+        Uses list_plan_prs_with_details() which performs:
+        1. REST issues list for server-side author/label filtering
+        2. Batched GraphQL enrichment for rich PR fields
 
         Args:
             location: GitHub repository location
@@ -65,19 +66,19 @@ class PlannedPRPlanListService(PlanListService):
             limit: Maximum number of results
             skip_workflow_runs: If True, skip fetching workflow runs
             creator: Filter by PR author username
+            exclude_labels: Labels to exclude from results
 
         Returns:
             PlanListData with plans from draft PRs
         """
-        all_labels = labels
-
-        # Single GraphQL call returns both PRDetails and rich PullRequestInfo
+        # REST+GraphQL two-step: server-side filtering then enrichment
         pr_details_list, pr_linkages = self._github.list_plan_prs_with_details(
             location,
-            labels=all_labels,
+            labels=labels,
             state=state,
             limit=limit,
             author=creator,
+            exclude_labels=exclude_labels,
         )
 
         plans = []
@@ -145,6 +146,7 @@ class RealPlanListService(PlanListService):
         limit: int | None = None,
         skip_workflow_runs: bool = False,
         creator: str | None = None,
+        exclude_labels: list[str] | None = None,
     ) -> PlanListData:
         """Batch fetch all data needed for plan listing.
 
@@ -156,6 +158,8 @@ class RealPlanListService(PlanListService):
             skip_workflow_runs: If True, skip fetching workflow runs (for performance)
             creator: Filter by creator username (e.g., "octocat"). If provided,
                 only issues created by this user are returned.
+            exclude_labels: Labels to exclude from results (unused for issue-based
+                plans — label filtering is handled server-side by GraphQL)
 
         Returns:
             PlanListData containing plans, PR linkages, and workflow runs

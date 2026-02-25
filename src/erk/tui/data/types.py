@@ -173,6 +173,7 @@ class PlanFilters:
     creator: str | None = None
     show_pr_column: bool = True
     lifecycle_stage: str | None = None
+    exclude_labels: tuple[str, ...] = ()
 
     @staticmethod
     def default() -> PlanFilters:
