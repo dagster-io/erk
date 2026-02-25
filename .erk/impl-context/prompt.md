@@ -1,2 +1,0 @@
-/erk:objective-plan 7724
-Implement step 4.1 of objective #7724: Rename in update_dispatch_info.py, get_plan_metadata.py, get_pr_for_plan.py, register_one_shot_plan.py, create_plan_from_context.py, store_tripwire_candidates.py, exit_plan_mode_hook.py, close_issue_with_comment.py, track_learn_evaluation.py, get_closing_text.py, get_pr_body_footer.py, ci_update_pr_body.py, update_pr_description.py (Phase: Phase 4)
