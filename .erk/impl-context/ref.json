@@ -1,4 +1,9 @@
 {
   "provider": "github-draft-pr",
-  "title": "Fix: Remove stale branch_slug forwarding in setup_impl that crashes `erk exec setup-impl --issue`"
+  "plan_id": "8129",
+  "url": "https://github.com/dagster-io/erk/pull/8129",
+  "created_at": "2026-02-25T02:26:48.244263",
+  "synced_at": "2026-02-25T02:26:48.244263",
+  "labels": [],
+  "objective_id": null
 }
