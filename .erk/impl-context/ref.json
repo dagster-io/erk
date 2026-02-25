@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Documentation Plan: Fix learn plan PRs being auto-closed when ephemeral base branch deleted"
+}
