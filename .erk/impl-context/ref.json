@@ -1,5 +1,9 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Add Suggested Reply Buttons (Objective #8036, Node 1.8)",
+  "plan_id": "8133",
+  "url": "https://github.com/dagster-io/erk/pull/8133",
+  "created_at": "2026-02-25T02:48:47.873495",
+  "synced_at": "2026-02-25T02:48:47.873495",
+  "labels": [],
   "objective_id": 8036
 }
