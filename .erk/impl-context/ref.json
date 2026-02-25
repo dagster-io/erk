@@ -1,4 +1,9 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Fix `erk pr submit` producing zero output on timeout"
+  "plan_id": "8145",
+  "url": "https://github.com/dagster-io/erk/pull/8145",
+  "created_at": "2026-02-25T10:03:45.967238",
+  "synced_at": "2026-02-25T10:03:45.967238",
+  "labels": [],
+  "objective_id": null
 }
