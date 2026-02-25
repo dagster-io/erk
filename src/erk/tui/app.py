@@ -674,7 +674,7 @@ class ErkDashApp(App):
         """Submit plan to queue in background thread with toast."""
         try:
             subprocess.run(
-                ["erk", "plan", "submit", str(plan_id), "-f"],
+                ["erk", "plan", "submit", str(plan_id)],
                 capture_output=True,
                 text=True,
                 check=True,

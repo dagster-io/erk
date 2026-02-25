@@ -225,13 +225,13 @@ Clean up .erk/impl-context/ staging directory.
 
 Close a plan with a comment.
 
-**Usage:** `erk exec close-issue-with-comment` <issue_number>
+**Usage:** `erk exec close-issue-with-comment` <plan_number>
 
 **Arguments:**
 
-| Name           | Required | Description |
-| -------------- | -------- | ----------- |
-| `ISSUE_NUMBER` | Yes      | -           |
+| Name          | Required | Description |
+| ------------- | -------- | ----------- |
+| `PLAN_NUMBER` | Yes      | -           |
 
 **Options:**
 
@@ -473,14 +473,14 @@ Retrieve plan info from the appropriate backend.
 
 Extract a metadata field from a plan issue's plan-header block.
 
-**Usage:** `erk exec get-plan-metadata` <issue_number> <field_name>
+**Usage:** `erk exec get-plan-metadata` <plan_number> <field_name>
 
 **Arguments:**
 
-| Name           | Required | Description |
-| -------------- | -------- | ----------- |
-| `ISSUE_NUMBER` | Yes      | -           |
-| `FIELD_NAME`   | Yes      | -           |
+| Name          | Required | Description |
+| ------------- | -------- | ----------- |
+| `PLAN_NUMBER` | Yes      | -           |
+| `FIELD_NAME`  | Yes      | -           |
 
 ### get-plans-for-objective
 
@@ -502,11 +502,11 @@ Generate PR body footer with checkout command.
 
 **Options:**
 
-| Flag             | Type    | Required | Default        | Description                                   |
-| ---------------- | ------- | -------- | -------------- | --------------------------------------------- |
-| `--pr-number`    | INTEGER | Yes      | Sentinel.UNSET | PR number for checkout command                |
-| `--issue-number` | INTEGER | No       | Sentinel.UNSET | Issue number to close                         |
-| `--plans-repo`   | TEXT    | No       | Sentinel.UNSET | Target repo in owner/repo format (cross-repo) |
+| Flag            | Type    | Required | Default        | Description                                   |
+| --------------- | ------- | -------- | -------------- | --------------------------------------------- |
+| `--pr-number`   | INTEGER | Yes      | Sentinel.UNSET | PR number for checkout command                |
+| `--plan-number` | INTEGER | No       | Sentinel.UNSET | Plan number to close                          |
+| `--plans-repo`  | TEXT    | No       | Sentinel.UNSET | Target repo in owner/repo format (cross-repo) |
 
 ### get-pr-commits
 
@@ -548,13 +548,13 @@ Fetch PR discussion comments for agent context injection.
 
 Get PR details for a plan.
 
-**Usage:** `erk exec get-pr-for-plan` <issue_number>
+**Usage:** `erk exec get-pr-for-plan` <plan_number>
 
 **Arguments:**
 
-| Name           | Required | Description |
-| -------------- | -------- | ----------- |
-| `ISSUE_NUMBER` | Yes      | -           |
+| Name          | Required | Description |
+| ------------- | -------- | ----------- |
+| `PLAN_NUMBER` | Yes      | -           |
 
 ### get-pr-review-comments
 
@@ -1101,7 +1101,7 @@ Register a one-shot plan with issue metadata, comment, and PR closing ref.
 
 | Flag             | Type    | Required | Default        | Description |
 | ---------------- | ------- | -------- | -------------- | ----------- |
-| `--issue-number` | INTEGER | Yes      | Sentinel.UNSET | -           |
+| `--plan-number`  | INTEGER | Yes      | Sentinel.UNSET | -           |
 | `--run-id`       | TEXT    | Yes      | Sentinel.UNSET | -           |
 | `--pr-number`    | INTEGER | Yes      | Sentinel.UNSET | -           |
 | `--submitted-by` | TEXT    | Yes      | Sentinel.UNSET | -           |
@@ -1225,7 +1225,7 @@ Store tripwire candidates as a metadata comment on a plan issue.
 
 | Flag                | Type    | Required | Default        | Description                      |
 | ------------------- | ------- | -------- | -------------- | -------------------------------- |
-| `--issue`           | INTEGER | Yes      | Sentinel.UNSET | Plan issue number                |
+| `--plan-number`     | INTEGER | Yes      | Sentinel.UNSET | Plan number                      |
 | `--candidates-file` | TEXT    | Yes      | Sentinel.UNSET | Path to tripwire-candidates.json |
 
 ### track-learn-evaluation
