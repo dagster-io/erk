@@ -4,7 +4,7 @@ argument-hint: "<issue-number> --node <node-id>"
 allowed-tools: Bash, Task, Skill, AskUserQuestion, EnterPlanMode
 ---
 
-# /erk:objective-plan-node
+# /erk:system:objective-plan-node
 
 Inner skill for creating an implementation plan when the objective issue and node ID are already known. Called by the outer `/erk:objective-plan` command or directly by `plan_cmd.py` via Claude launch.
 
@@ -13,7 +13,7 @@ This skips interactive node selection (Steps 3-4 of the outer command) since the
 ## Usage
 
 ```bash
-/erk:objective-plan-node 3679 --node 2.1
+/erk:system:objective-plan-node 3679 --node 2.1
 ```
 
 Both `<issue-number>` and `--node <node-id>` are required.
@@ -29,7 +29,7 @@ Parse `$ARGUMENTS` to extract:
 - **Issue number**: The numeric issue reference (required)
 - **Node ID**: The `--node` value (required)
 
-If either is missing, STOP and report: "ERROR: Both issue number and --node are required. Usage: /erk:objective-plan-node <issue-number> --node <node-id>"
+If either is missing, STOP and report: "ERROR: Both issue number and --node are required. Usage: /erk:system:objective-plan-node <issue-number> --node <node-id>"
 
 ### Step 2: Create Objective Context Marker
 

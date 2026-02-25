@@ -597,7 +597,7 @@ def _handle_interactive(
             issue_number=known_issue_number,
             node_id=known_node_id,
         )
-        command = f"/erk:objective-plan-node {known_issue_number} --node {known_node_id}"
+        command = f"/erk:system:objective-plan-node {known_issue_number} --node {known_node_id}"
     else:
         # No known node: launch outer command for interactive selection
         assert issue_ref is not None  # type narrowing: validated in plan_objective

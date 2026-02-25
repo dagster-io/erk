@@ -28,7 +28,7 @@ Parse `$ARGUMENTS` for `--node <node-id>`. If `--node` is present along with an 
 **Invoke the inner skill immediately** via the Skill tool:
 
 ```
-/erk:objective-plan-node <issue-number> --node <node-id>
+/erk:system:objective-plan-node <issue-number> --node <node-id>
 ```
 
 This skips the interactive selection flow (Steps 1-4 below) since the node is already known. The inner skill handles marker creation, marking as planning, context gathering, plan mode, and saving.
@@ -195,7 +195,7 @@ If all nodes are complete or have plans in progress, report appropriately:
 After the user selects a node, invoke the inner skill via the Skill tool:
 
 ```
-/erk:objective-plan-node <issue-number> --node <selected-node-id>
+/erk:system:objective-plan-node <issue-number> --node <selected-node-id>
 ```
 
 The inner skill handles marker creation, marking as planning, context gathering, plan mode, and saving. **STOP here** — the inner skill takes over.

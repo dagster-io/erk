@@ -187,7 +187,7 @@ def test_plan_with_node_flag() -> None:
         assert fake_launcher.launch_called
         assert fake_launcher.last_call is not None
         # Should launch inner command instead of outer
-        assert fake_launcher.last_call.command == "/erk:objective-plan-node 42 --node 1.1"
+        assert fake_launcher.last_call.command == "/erk:system:objective-plan-node 42 --node 1.1"
         # Should have pre-marked the node as planning via API
         assert len(issues.updated_bodies) == 1
         issue_number, updated_body = issues.updated_bodies[0]
@@ -340,7 +340,7 @@ def test_plan_next_with_issue_ref() -> None:
         assert fake_launcher.launch_called
         assert fake_launcher.last_call is not None
         # Should launch inner command instead of outer
-        assert fake_launcher.last_call.command == "/erk:objective-plan-node 42 --node 1.1"
+        assert fake_launcher.last_call.command == "/erk:system:objective-plan-node 42 --node 1.1"
         assert "Next node: 1.1: Setup infra" in result.output
         # Should have pre-marked the node as planning via API
         assert len(issues.updated_bodies) == 1
