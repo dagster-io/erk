@@ -33,6 +33,7 @@ class RealObjectiveListService(ObjectiveListService):
         limit: int | None = None,
         skip_workflow_runs: bool = False,
         creator: str | None = None,
+        exclude_labels: list[str] | None = None,
     ) -> PlanListData:
         return self._plan_list_service.get_plan_list_data(
             location=location,
@@ -41,4 +42,5 @@ class RealObjectiveListService(ObjectiveListService):
             limit=limit,
             skip_workflow_runs=skip_workflow_runs,
             creator=creator,
+            exclude_labels=exclude_labels,
         )

@@ -277,15 +277,15 @@ Serialize plan dashboard data to JSON.
 
 **Options:**
 
-| Flag          | Type    | Required | Default       | Description |
-| ------------- | ------- | -------- | ------------- | ----------- |
-| `--state`     | CHOICE  | No       | -             | -           |
-| `--label`     | TEXT    | No       | ('erk-plan',) | -           |
-| `--limit`     | INTEGER | No       | -             | -           |
-| `--show-prs`  | FLAG    | No       | -             | -           |
-| `--show-runs` | FLAG    | No       | -             | -           |
-| `--run-state` | TEXT    | No       | -             | -           |
-| `--creator`   | TEXT    | No       | -             | -           |
+| Flag          | Type    | Required | Default                        | Description |
+| ------------- | ------- | -------- | ------------------------------ | ----------- |
+| `--state`     | CHOICE  | No       | -                              | -           |
+| `--label`     | TEXT    | No       | ('erk-planned-pr', 'erk-plan') | -           |
+| `--limit`     | INTEGER | No       | -                              | -           |
+| `--show-prs`  | FLAG    | No       | -                              | -           |
+| `--show-runs` | FLAG    | No       | -                              | -           |
+| `--run-state` | TEXT    | No       | -                              | -           |
+| `--creator`   | TEXT    | No       | -                              | -           |
 
 ### detect-plan-from-branch
 

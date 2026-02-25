@@ -25,7 +25,7 @@ def _make_issue(
         body=body,
         state="OPEN",
         url=f"https://github.com/test/repo/issues/{number}",
-        labels=["erk-plan"],
+        labels=["erk-planned-pr", "erk-plan"],
         assignees=[],
         created_at=now,
         updated_at=now,
@@ -52,7 +52,7 @@ def test_get_issue_body_success() -> None:
     assert output["title"] == "Test Issue"
     assert output["body"] == "This is the issue body"
     assert output["state"] == "OPEN"
-    assert output["labels"] == ["erk-plan"]
+    assert output["labels"] == ["erk-planned-pr", "erk-plan"]
     assert output["url"] == "https://github.com/test/repo/issues/42"
 
 

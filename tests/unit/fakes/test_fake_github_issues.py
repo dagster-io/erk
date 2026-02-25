@@ -381,7 +381,13 @@ def test_fake_github_issues_label_filtering_implemented() -> None:
         1: create_test_issue(
             1, "Issue 1", "Body 1", url="http://url/1", labels=["erk-plan", "bug"]
         ),
-        2: create_test_issue(2, "Issue 2", "Body 2", url="http://url/2", labels=["erk-plan"]),
+        2: create_test_issue(
+            2,
+            "Issue 2",
+            "Body 2",
+            url="http://url/2",
+            labels=["erk-planned-pr", "erk-plan"],
+        ),
     }
     issues = FakeGitHubIssues(issues=pre_configured)
 

@@ -92,7 +92,7 @@ def test_list_plans_no_filters() -> None:
     issue1 = create_test_issue(
         number=1,
         title="Issue 1",
-        labels=["erk-plan"],
+        labels=["erk-planned-pr", "erk-plan"],
     )
     issue2 = create_test_issue(
         number=2,
@@ -209,13 +209,13 @@ def test_list_plans_combined_filters() -> None:
     issue1 = create_test_issue(
         number=1,
         title="Open Issue",
-        labels=["erk-plan"],
+        labels=["erk-planned-pr", "erk-plan"],
     )
     issue2 = create_test_issue(
         number=2,
         title="Closed Issue",
         state="CLOSED",
-        labels=["erk-plan"],
+        labels=["erk-planned-pr", "erk-plan"],
         created_at=datetime(2024, 1, 2, 0, 0, 0, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, 0, 0, 0, tzinfo=UTC),
     )
@@ -223,7 +223,7 @@ def test_list_plans_combined_filters() -> None:
     store = GitHubPlanStore(fake_github)
 
     query = PlanQuery(
-        labels=["erk-plan"],
+        labels=["erk-planned-pr", "erk-plan"],
         state=PlanState.OPEN,
         limit=5,
     )
@@ -324,7 +324,7 @@ def test_list_plans_passes_limit_to_interface() -> None:
             number=1,
             title="Plan 1",
             body="Body 1",
-            labels=["erk-plan"],
+            labels=["erk-planned-pr", "erk-plan"],
             created_at=now,
             updated_at=now,
         ),
@@ -332,7 +332,7 @@ def test_list_plans_passes_limit_to_interface() -> None:
             number=2,
             title="Plan 2",
             body="Body 2",
-            labels=["erk-plan"],
+            labels=["erk-planned-pr", "erk-plan"],
             created_at=now,
             updated_at=now,
         ),
@@ -341,7 +341,7 @@ def test_list_plans_passes_limit_to_interface() -> None:
     store = GitHubPlanStore(fake_github)
 
     # Query with limit=1
-    query = PlanQuery(labels=["erk-plan"], limit=1)
+    query = PlanQuery(labels=["erk-planned-pr", "erk-plan"], limit=1)
     results = store.list_plans(Path("/repo"), query)
 
     # Should only return 1 result (not slice in Python)
@@ -744,22 +744,24 @@ def test_create_plan_with_learn_type() -> None:
 
     Learn plans are identified by the erk-learn label, not by metadata.
     """
-    fake_github = FakeGitHubIssues(username="testuser", labels={"erk-plan", "erk-learn"})
+    fake_github = FakeGitHubIssues(
+        username="testuser", labels={"erk-planned-pr", "erk-plan", "erk-learn"}
+    )
     store = GitHubPlanStore(fake_github)
 
     result = store.create_plan(
         repo_root=Path("/fake/repo"),
         title="Learn Plan",
         content="# Learn Plan\n\nContent",
-        labels=("erk-plan", "erk-learn"),
+        labels=("erk-planned-pr", "erk-plan", "erk-learn"),
         metadata={},
     )
 
     # Verify result
     assert result.plan_id == "1"
-    # Verify labels include learn
+    # Verify labels include learn and planned-pr
     _title, _body, labels = fake_github.created_issues[0]
-    assert "erk-plan" in labels
+    assert "erk-planned-pr" in labels
     assert "erk-learn" in labels
 
 

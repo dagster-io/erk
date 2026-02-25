@@ -252,7 +252,7 @@ def test_land_shows_learn_prompt_for_local_plan_branch(
             number=4867,
             title="Fix something",
             body=format_plan_header_body_for_test(),
-            labels=["erk-plan"],
+            labels=["erk-planned-pr", "erk-plan"],
         )
         issues_ops = FakeGitHubIssues(
             username="testuser",

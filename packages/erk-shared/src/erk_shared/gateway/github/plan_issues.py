@@ -43,6 +43,10 @@ _LABEL_ERK_PLAN = "erk-plan"
 _LABEL_ERK_PLAN_DESC = "Implementation plan for manual execution"
 _LABEL_ERK_PLAN_COLOR = "0E8A16"
 
+_LABEL_ERK_PLANNED_PR = "erk-planned-pr"
+_LABEL_ERK_PLANNED_PR_DESC = "Plan managed as a draft PR"
+_LABEL_ERK_PLANNED_PR_COLOR = "1D76DB"
+
 _LABEL_ERK_LEARN = "erk-learn"
 _LABEL_ERK_LEARN_DESC = "Documentation learning plan"
 _LABEL_ERK_LEARN_COLOR = "D93F0B"
@@ -137,18 +141,20 @@ def create_plan_issue(
     if title is None:
         title = extract_title_from_plan(plan_content)
 
-    # Step 3: Determine labels - start with erk-plan, add extra_labels
+    # Step 3: Determine labels - erk-planned-pr + type-specific label
     # Learn plans are identified by having "erk-learn" in extra_labels
-    labels = [_LABEL_ERK_PLAN]
+    is_learn_plan = extra_labels is not None and _LABEL_ERK_LEARN in extra_labels
+    labels = [_LABEL_ERK_PLANNED_PR]
+    if is_learn_plan:
+        labels.append(_LABEL_ERK_LEARN)
+    else:
+        labels.append(_LABEL_ERK_PLAN)
 
-    # Add any extra labels
+    # Add remaining extra_labels (excluding already-added ones)
     if extra_labels:
         for label in extra_labels:
             if label not in labels:
                 labels.append(label)
-
-    # Check if this is a learn plan (erk-learn label present)
-    is_learn_plan = _LABEL_ERK_LEARN in labels
 
     # Ensure labels exist
     label_errors = _ensure_labels_exist(github_issues, repo_root, labels)
@@ -446,7 +452,14 @@ def _ensure_labels_exist(
     """
     try:
         for label in labels:
-            if label == _LABEL_ERK_PLAN:
+            if label == _LABEL_ERK_PLANNED_PR:
+                github_issues.ensure_label_exists(
+                    repo_root=repo_root,
+                    label=_LABEL_ERK_PLANNED_PR,
+                    description=_LABEL_ERK_PLANNED_PR_DESC,
+                    color=_LABEL_ERK_PLANNED_PR_COLOR,
+                )
+            elif label == _LABEL_ERK_PLAN:
                 github_issues.ensure_label_exists(
                     repo_root=repo_root,
                     label=_LABEL_ERK_PLAN,
@@ -499,6 +512,11 @@ def get_erk_label_definitions() -> list[LabelDefinition]:
     """
     return [
         LabelDefinition(
+            name=_LABEL_ERK_PLANNED_PR,
+            description=_LABEL_ERK_PLANNED_PR_DESC,
+            color=_LABEL_ERK_PLANNED_PR_COLOR,
+        ),
+        LabelDefinition(
             name=_LABEL_ERK_PLAN,
             description=_LABEL_ERK_PLAN_DESC,
             color=_LABEL_ERK_PLAN_COLOR,
@@ -530,6 +548,11 @@ def get_required_erk_labels() -> list[LabelDefinition]:
     Used by doctor command to verify required labels exist.
     """
     return [
+        LabelDefinition(
+            name=_LABEL_ERK_PLANNED_PR,
+            description=_LABEL_ERK_PLANNED_PR_DESC,
+            color=_LABEL_ERK_PLANNED_PR_COLOR,
+        ),
         LabelDefinition(
             name=_LABEL_ERK_PLAN,
             description=_LABEL_ERK_PLAN_DESC,

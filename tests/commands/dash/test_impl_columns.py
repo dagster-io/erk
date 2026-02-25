@@ -38,7 +38,7 @@ last_dispatched_node_id: 'WFR_all_flag'
         body=plan_body,
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/200",
-        labels=["erk-plan"],
+        labels=["erk-planned-pr", "erk-plan"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),

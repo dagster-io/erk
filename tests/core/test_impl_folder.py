@@ -127,7 +127,7 @@ def test_add_worktree_creation_comment_success(tmp_path: Path) -> None:
                 body="Test body",
                 state="OPEN",
                 url="https://github.com/owner/repo/issues/42",
-                labels=["erk-plan"],
+                labels=["erk-planned-pr", "erk-plan"],
                 assignees=[],
                 created_at=datetime.now(UTC),
                 updated_at=datetime.now(UTC),
@@ -522,7 +522,7 @@ def test_read_plan_ref_roundtrip(tmp_path: Path) -> None:
         provider="github",
         plan_id="42",
         url="https://github.com/owner/repo/issues/42",
-        labels=("erk-plan", "erk-learn"),
+        labels=("erk-planned-pr", "erk-learn"),
         objective_id=99,
     )
 
@@ -531,7 +531,7 @@ def test_read_plan_ref_roundtrip(tmp_path: Path) -> None:
     assert ref.provider == "github"
     assert ref.plan_id == "42"
     assert ref.url == "https://github.com/owner/repo/issues/42"
-    assert ref.labels == ("erk-plan", "erk-learn")
+    assert ref.labels == ("erk-planned-pr", "erk-learn")
     assert ref.objective_id == 99
     assert len(ref.created_at) > 0
     assert len(ref.synced_at) > 0

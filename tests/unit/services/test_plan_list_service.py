@@ -37,7 +37,7 @@ class TestPlanListService:
             body="Plan body",
             state="OPEN",
             url="https://github.com/owner/repo/issues/42",
-            labels=["erk-plan"],
+            labels=["erk-planned-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -49,7 +49,7 @@ class TestPlanListService:
         service = RealPlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-plan"],
+            labels=["erk-planned-pr", "erk-plan"],
         )
 
         assert len(result.plans) == 1
@@ -66,7 +66,7 @@ class TestPlanListService:
             body="",
             state="OPEN",
             url="https://github.com/owner/repo/issues/42",
-            labels=["erk-plan"],
+            labels=["erk-planned-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -92,7 +92,7 @@ class TestPlanListService:
         service = RealPlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-plan"],
+            labels=["erk-planned-pr", "erk-plan"],
         )
 
         # Unified path returns plans from get_issues_with_pr_linkages
@@ -110,7 +110,7 @@ class TestPlanListService:
         service = RealPlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-plan"],
+            labels=["erk-planned-pr", "erk-plan"],
         )
 
         assert result.plans == []
@@ -126,7 +126,7 @@ class TestPlanListService:
             body="",
             state="OPEN",
             url="https://github.com/owner/repo/issues/1",
-            labels=["erk-plan"],
+            labels=["erk-planned-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -138,7 +138,7 @@ class TestPlanListService:
             body="",
             state="CLOSED",
             url="https://github.com/owner/repo/issues/2",
-            labels=["erk-plan"],
+            labels=["erk-planned-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -151,7 +151,7 @@ class TestPlanListService:
         service = RealPlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-plan"],
+            labels=["erk-planned-pr", "erk-plan"],
             state="open",
         )
 
@@ -167,7 +167,7 @@ class TestPlanListService:
             body="",
             state="OPEN",
             url="https://github.com/owner/repo/issues/1",
-            labels=["erk-plan"],
+            labels=["erk-planned-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -179,7 +179,7 @@ class TestPlanListService:
             body="",
             state="CLOSED",
             url="https://github.com/owner/repo/issues/2",
-            labels=["erk-plan"],
+            labels=["erk-planned-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -191,7 +191,7 @@ class TestPlanListService:
         service = RealPlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-plan"],
+            labels=["erk-planned-pr", "erk-plan"],
             state="closed",
         )
 
@@ -232,7 +232,7 @@ last_dispatched_at: '2024-01-15T11:00:00Z'
             body=issue_body,
             state="OPEN",
             url="https://github.com/owner/repo/issues/42",
-            labels=["erk-plan"],
+            labels=["erk-planned-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -258,7 +258,7 @@ last_dispatched_at: '2024-01-15T11:00:00Z'
         service = RealPlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-plan"],
+            labels=["erk-planned-pr", "erk-plan"],
         )
 
         # Verify workflow run was fetched and mapped to issue
@@ -287,7 +287,7 @@ last_dispatched_node_id: 'WFR_abc123'
             body=issue_body,
             state="OPEN",
             url="https://github.com/owner/repo/issues/42",
-            labels=["erk-plan"],
+            labels=["erk-planned-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -309,7 +309,7 @@ last_dispatched_node_id: 'WFR_abc123'
         service = RealPlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-plan"],
+            labels=["erk-planned-pr", "erk-plan"],
             skip_workflow_runs=True,
         )
 
@@ -325,7 +325,7 @@ last_dispatched_node_id: 'WFR_abc123'
             body="Plain body without metadata",
             state="OPEN",
             url="https://github.com/owner/repo/issues/42",
-            labels=["erk-plan"],
+            labels=["erk-planned-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -337,7 +337,7 @@ last_dispatched_node_id: 'WFR_abc123'
         service = RealPlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-plan"],
+            labels=["erk-planned-pr", "erk-plan"],
         )
 
         # No workflow runs should be fetched (no node_ids to fetch)
@@ -364,7 +364,7 @@ last_dispatched_node_id: 'WFR_nonexistent'
             body=issue_body,
             state="OPEN",
             url="https://github.com/owner/repo/issues/42",
-            labels=["erk-plan"],
+            labels=["erk-planned-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -377,7 +377,7 @@ last_dispatched_node_id: 'WFR_nonexistent'
         service = RealPlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-plan"],
+            labels=["erk-planned-pr", "erk-plan"],
         )
 
         # Issue should have None for workflow run (not found)
@@ -405,7 +405,7 @@ last_dispatched_node_id: 'WFR_abc123'
             body=issue_body,
             state="OPEN",
             url="https://github.com/owner/repo/issues/42",
-            labels=["erk-plan"],
+            labels=["erk-planned-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -421,7 +421,7 @@ last_dispatched_node_id: 'WFR_abc123'
         service = RealPlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-plan"],
+            labels=["erk-planned-pr", "erk-plan"],
         )
 
         # Plans should still be returned
@@ -455,7 +455,7 @@ class TestPlanListData:
                 body="",
                 state=PlanState.OPEN,
                 url="",
-                labels=["erk-plan"],
+                labels=["erk-planned-pr", "erk-plan"],
                 assignees=[],
                 created_at=now,
                 updated_at=now,
@@ -583,7 +583,10 @@ class TestPlannedPRPlanListService:
             plan_pr_details=_make_plan_pr_data(pr_details_list=[details]),
         )
         service = PlannedPRPlanListService(fake_github)
-        result = service.get_plan_list_data(location=TEST_LOCATION, labels=["erk-plan"])
+        result = service.get_plan_list_data(
+            location=TEST_LOCATION,
+            labels=["erk-planned-pr", "erk-plan"],
+        )
 
         assert len(result.plans) == 1
         assert result.plans[0].plan_identifier == "42"
@@ -593,7 +596,10 @@ class TestPlannedPRPlanListService:
         """No PRs returns empty plans/linkages/runs."""
         fake_github = FakeGitHub()
         service = PlannedPRPlanListService(fake_github)
-        result = service.get_plan_list_data(location=TEST_LOCATION, labels=["erk-plan"])
+        result = service.get_plan_list_data(
+            location=TEST_LOCATION,
+            labels=["erk-planned-pr", "erk-plan"],
+        )
 
         assert result.plans == []
         assert result.pr_linkages == {}
@@ -619,7 +625,10 @@ class TestPlannedPRPlanListService:
             plan_pr_details=([details], {70: [pr_info]}),
         )
         service = PlannedPRPlanListService(fake_github)
-        result = service.get_plan_list_data(location=TEST_LOCATION, labels=["erk-plan"])
+        result = service.get_plan_list_data(
+            location=TEST_LOCATION,
+            labels=["erk-planned-pr", "erk-plan"],
+        )
 
         assert len(result.plans) == 1
         assert 70 in result.pr_linkages
@@ -654,7 +663,10 @@ class TestPlannedPRPlanListService:
             plan_pr_details=_make_plan_pr_data(pr_details_list=[details]),
         )
         service = PlannedPRPlanListService(fake_github)
-        result = service.get_plan_list_data(location=TEST_LOCATION, labels=["erk-plan"])
+        result = service.get_plan_list_data(
+            location=TEST_LOCATION,
+            labels=["erk-planned-pr", "erk-plan"],
+        )
 
         assert len(result.plans) == 1
         plan = result.plans[0]
@@ -674,7 +686,10 @@ class TestPlannedPRPlanListService:
             plan_pr_details=_make_plan_pr_data(pr_details_list=[details]),
         )
         service = PlannedPRPlanListService(fake_github)
-        result = service.get_plan_list_data(location=TEST_LOCATION, labels=["erk-plan"])
+        result = service.get_plan_list_data(
+            location=TEST_LOCATION,
+            labels=["erk-planned-pr", "erk-plan"],
+        )
 
         assert len(result.plans) == 1
         assert "Actual Plan" in result.plans[0].body
@@ -714,7 +729,10 @@ last_dispatched_at: '2024-06-01T10:00:00Z'
             workflow_runs_by_node_id={"WFR_draft123": run},
         )
         service = PlannedPRPlanListService(fake_github)
-        result = service.get_plan_list_data(location=TEST_LOCATION, labels=["erk-plan"])
+        result = service.get_plan_list_data(
+            location=TEST_LOCATION,
+            labels=["erk-planned-pr", "erk-plan"],
+        )
 
         assert len(result.plans) == 1
         assert 100 in result.workflow_runs
@@ -749,7 +767,7 @@ last_dispatched_node_id: 'WFR_draft456'
         )
         service = PlannedPRPlanListService(fake_github)
         result = service.get_plan_list_data(
-            location=TEST_LOCATION, labels=["erk-plan"], skip_workflow_runs=True
+            location=TEST_LOCATION, labels=["erk-planned-pr", "erk-plan"], skip_workflow_runs=True
         )
 
         assert len(result.plans) == 1
@@ -789,7 +807,10 @@ last_dispatched_node_id: 'WFR_draft456'
             plan_pr_details=_make_plan_pr_data(pr_details_list=[details]),
         )
         service = PlannedPRPlanListService(fake_github)
-        result = service.get_plan_list_data(location=TEST_LOCATION, labels=["erk-plan"])
+        result = service.get_plan_list_data(
+            location=TEST_LOCATION,
+            labels=["erk-planned-pr", "erk-plan"],
+        )
 
         assert len(result.plans) == 1
         plan_body = result.plans[0].body
@@ -824,7 +845,10 @@ last_dispatched_node_id: 'WFR_draft456'
             plan_pr_details=_make_plan_pr_data(pr_details_list=[details]),
         )
         service = PlannedPRPlanListService(fake_github)
-        result = service.get_plan_list_data(location=TEST_LOCATION, labels=["erk-plan"])
+        result = service.get_plan_list_data(
+            location=TEST_LOCATION,
+            labels=["erk-planned-pr", "erk-plan"],
+        )
 
         assert len(result.plans) == 1
         plan_body = result.plans[0].body
@@ -853,7 +877,10 @@ last_dispatched_node_id: 'WFR_draft789'
             workflow_runs_error="Network unreachable",
         )
         service = PlannedPRPlanListService(fake_github)
-        result = service.get_plan_list_data(location=TEST_LOCATION, labels=["erk-plan"])
+        result = service.get_plan_list_data(
+            location=TEST_LOCATION,
+            labels=["erk-planned-pr", "erk-plan"],
+        )
 
         assert len(result.plans) == 1
         assert result.plans[0].plan_identifier == "102"
