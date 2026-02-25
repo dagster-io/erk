@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: Objective #7978 Display Shows All Dashes Due to `status: '-'`"
+}
