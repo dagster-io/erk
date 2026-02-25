@@ -7,6 +7,7 @@ Each step: (ErkContext, SubmitState) -> SubmitState | SubmitError
 """
 
 import dataclasses
+import sys
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -238,12 +239,13 @@ def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | S
 
     if not state.quiet:
         click.echo(click.style("   Running gt submit...", dim=True))
+    sys.stdout.flush()
     try:
         ctx.graphite.submit_stack(
             state.repo_root,
             publish=True,
             restack=False,
-            quiet=False,
+            quiet=state.quiet,
             force=effective_force,
         )
     except RuntimeError as e:
@@ -636,12 +638,13 @@ def enhance_with_graphite(ctx: ErkContext, state: SubmitState) -> SubmitState | 
         return state
 
     # Run gt submit
+    sys.stdout.flush()
     try:
         ctx.graphite.submit_stack(
             repo_root,
             publish=True,
             restack=False,
-            quiet=False,
+            quiet=state.quiet,
             force=state.force,
         )
     except RuntimeError as e:
