@@ -31,7 +31,6 @@ from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_LEARN_LABEL, is_learn_plan
 from erk_shared.gateway.gt.operations.squash import execute_squash
 from erk_shared.gateway.gt.types import SquashError
-from erk_shared.plan_store.planned_pr_lifecycle import extract_plan_header_block
 
 
 @click.command("rewrite")
@@ -155,9 +154,7 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
         raise click.ClickException(f"Push failed: {submit_result.message}")
     click.echo(click.style("   Branch pushed", fg="green"))
 
-    # Extract metadata prefix from draft PR body
     impl_dir = cwd / ".impl"
-    plan_header_block = extract_plan_header_block(pr_info.body)
 
     final_body = assemble_pr_body(
         body=body,
@@ -166,7 +163,7 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
         issue_number=None,
         plans_repo=None,
         header="",
-        plan_header_block=plan_header_block,
+        existing_pr_body=pr_info.body,
     )
 
     ctx.github.update_pr_title_and_body(

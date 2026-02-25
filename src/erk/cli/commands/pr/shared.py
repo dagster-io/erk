@@ -26,6 +26,7 @@ from erk_shared.plan_store.conversion import header_str
 from erk_shared.plan_store.planned_pr_lifecycle import (
     PLAN_CONTENT_SEPARATOR,
     build_original_plan_section,
+    extract_plan_header_block,
 )
 from erk_shared.plan_store.types import PlanNotFound
 
@@ -214,7 +215,7 @@ def assemble_pr_body(
     issue_number: int | None,
     plans_repo: str | None,
     header: str,
-    plan_header_block: str,
+    existing_pr_body: str,
 ) -> str:
     """Assemble final PR body with plan details and footer.
 
@@ -225,13 +226,16 @@ def assemble_pr_body(
         issue_number: Optional issue number for "Closes #N"
         plans_repo: Optional plans repo for cross-repo references
         header: Existing PR header to preserve (may be empty)
-        plan_header_block: Draft PR metadata block + separator to preserve.
-            When non-empty, uses original-plan details format instead of
+        existing_pr_body: Full PR body captured before gt submit overwrites it.
+            Used to extract plan-header metadata block. When the extracted block
+            is non-empty, uses original-plan details format instead of
             issue-based plan details format.
 
     Returns:
         Complete PR body ready for GitHub API
     """
+    plan_header_block = extract_plan_header_block(existing_pr_body)
+
     pr_body_content = body
     if plan_context is not None:
         if plan_header_block:

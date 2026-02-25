@@ -1,30 +1,29 @@
-"""Unit tests for capture_plan_header_block pipeline step."""
+"""Unit tests for capture_existing_pr_body pipeline step."""
 
 from pathlib import Path
 
 from erk.cli.commands.pr.submit_pipeline import (
     SubmitState,
-    capture_plan_header_block,
+    capture_existing_pr_body,
 )
 from erk.core.context import context_for_test
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.types import PRDetails
 
-_METADATA_BLOCK = (
+_PR_BODY_WITH_METADATA = (
     "<!-- erk:metadata-block:start -->\n"
     "schema_version: 2\n"
     "created_by: test\n"
-    "<!-- erk:metadata-block:end -->"
+    "<!-- erk:metadata-block:end -->\n\n---\n\n"
+    "Plan content here"
 )
-
-_SEPARATOR = "\n\n---\n\n"
 
 
 def _make_state(
     *,
     cwd: Path,
     branch_name: str = "feature",
-    plan_header_block: str = "",
+    existing_pr_body: str = "",
 ) -> SubmitState:
     return SubmitState(
         cwd=cwd,
@@ -48,17 +47,16 @@ def _make_state(
         plan_context=None,
         title=None,
         body=None,
-        plan_header_block=plan_header_block,
+        existing_pr_body=existing_pr_body,
     )
 
 
 def _pr_with_metadata(*, number: int = 42, branch: str = "feature") -> PRDetails:
-    body = _METADATA_BLOCK + _SEPARATOR + "Plan content here"
     return PRDetails(
         number=number,
         url=f"https://github.com/owner/repo/pull/{number}",
         title="Test PR",
-        body=body,
+        body=_PR_BODY_WITH_METADATA,
         state="OPEN",
         base_ref_name="main",
         head_ref_name=branch,
@@ -71,8 +69,8 @@ def _pr_with_metadata(*, number: int = 42, branch: str = "feature") -> PRDetails
     )
 
 
-def test_captures_metadata_from_existing_pr(tmp_path: Path) -> None:
-    """Plan header block is captured from PR body containing a metadata block."""
+def test_captures_full_body_from_existing_pr(tmp_path: Path) -> None:
+    """Full PR body is captured from existing PR."""
     pr = _pr_with_metadata(number=42, branch="feature")
     fake_github = FakeGitHub(
         prs_by_branch={"feature": pr},
@@ -80,11 +78,10 @@ def test_captures_metadata_from_existing_pr(tmp_path: Path) -> None:
     ctx = context_for_test(github=fake_github, cwd=tmp_path)
     state = _make_state(cwd=tmp_path)
 
-    result = capture_plan_header_block(ctx, state)
+    result = capture_existing_pr_body(ctx, state)
 
     assert isinstance(result, SubmitState)
-    assert "<!-- erk:metadata-block:start -->" in result.plan_header_block
-    assert result.plan_header_block.endswith(_SEPARATOR)
+    assert result.existing_pr_body == pr.body
 
 
 def test_no_pr_returns_state_unchanged(tmp_path: Path) -> None:
@@ -93,19 +90,19 @@ def test_no_pr_returns_state_unchanged(tmp_path: Path) -> None:
     ctx = context_for_test(github=fake_github, cwd=tmp_path)
     state = _make_state(cwd=tmp_path)
 
-    result = capture_plan_header_block(ctx, state)
+    result = capture_existing_pr_body(ctx, state)
 
     assert isinstance(result, SubmitState)
-    assert result.plan_header_block == ""
+    assert result.existing_pr_body == ""
 
 
-def test_pr_without_metadata_returns_state_unchanged(tmp_path: Path) -> None:
-    """When PR body has no metadata block, state is returned unchanged."""
+def test_pr_with_empty_body_returns_state_unchanged(tmp_path: Path) -> None:
+    """When PR body is empty, state is returned unchanged."""
     pr = PRDetails(
         number=42,
         url="https://github.com/owner/repo/pull/42",
         title="Test PR",
-        body="Just a plain PR body with no metadata",
+        body="",
         state="OPEN",
         base_ref_name="main",
         head_ref_name="feature",
@@ -122,7 +119,7 @@ def test_pr_without_metadata_returns_state_unchanged(tmp_path: Path) -> None:
     ctx = context_for_test(github=fake_github, cwd=tmp_path)
     state = _make_state(cwd=tmp_path)
 
-    result = capture_plan_header_block(ctx, state)
+    result = capture_existing_pr_body(ctx, state)
 
     assert isinstance(result, SubmitState)
-    assert result.plan_header_block == ""
+    assert result.existing_pr_body == ""

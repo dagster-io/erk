@@ -102,7 +102,7 @@ def test_make_initial_state_sets_placeholders(tmp_path: Path) -> None:
     assert state.plan_context is None
     assert state.title is None
     assert state.body is None
-    assert state.plan_header_block == ""
+    assert state.existing_pr_body == ""
 
 
 def test_catches_unhandled_exception_from_step(tmp_path: Path) -> None:

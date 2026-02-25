@@ -24,7 +24,6 @@ from erk.cli.commands.pr.shared import (
 from erk.core.plan_context_provider import PlanContextProvider
 from erk_shared.context.helpers import require_context
 from erk_shared.gateway.github.types import BodyText, PRNotFound
-from erk_shared.plan_store.planned_pr_lifecycle import extract_plan_header_block
 
 
 @click.command(name="set-pr-description")
@@ -78,9 +77,6 @@ def set_pr_description(
         branch_name=discovery.current_branch,
     )
 
-    # Extract metadata prefix from draft PR body
-    plan_header_block = extract_plan_header_block(existing_body)
-
     final_body = assemble_pr_body(
         body=pr_body,
         plan_context=plan_context,
@@ -88,7 +84,7 @@ def set_pr_description(
         issue_number=None,
         plans_repo=None,
         header="",
-        plan_header_block=plan_header_block,
+        existing_pr_body=existing_body,
     )
 
     erk_ctx.github.update_pr_title_and_body(

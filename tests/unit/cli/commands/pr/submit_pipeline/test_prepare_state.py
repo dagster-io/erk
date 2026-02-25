@@ -56,7 +56,7 @@ def _make_state(
         plan_context=plan_context,
         title=title,
         body=body,
-        plan_header_block="",
+        existing_pr_body="",
     )
 
 
