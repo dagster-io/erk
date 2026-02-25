@@ -338,9 +338,7 @@ def register_handlers(app, *, settings: Settings, bot: ErkBot | None, time: Time
             await client.chat_update(
                 channel=channel,
                 ts=message_ts,
-                blocks=build_selected_reply_blocks(
-                    selected_label=selected_label, user_id=user_id
-                ),
+                blocks=build_selected_reply_blocks(selected_label=selected_label, user_id=user_id),
                 text=f"<@{user_id}> selected: {selected_label}",
             )
         except SlackApiError:
