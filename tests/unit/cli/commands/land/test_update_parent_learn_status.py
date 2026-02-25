@@ -95,7 +95,7 @@ def test_update_parent_learn_status_updates_parent(
     learn_plan = _make_plan(
         number=learn_plan_number,
         title="Learn: Extract patterns",
-        labels=["erk-plan", "erk-learn"],
+        labels=["erk-planned-pr", "erk-learn"],
         learned_from_issue=parent_number,
     )
 
@@ -140,7 +140,7 @@ def test_update_parent_learn_status_handles_missing_parent(
     learn_plan = _make_plan(
         number=learn_plan_number,
         title="Learn: Extract patterns",
-        labels=["erk-plan", "erk-learn"],
+        labels=["erk-planned-pr", "erk-learn"],
         learned_from_issue=parent_number,
     )
 

@@ -40,7 +40,7 @@ def _create_plan_issue_with_objective(
         body=body,
         state="OPEN",
         url=f"https://github.com/owner/repo/issues/{plan_number}",
-        labels=["erk-plan"],
+        labels=["erk-planned-pr", "erk-plan"],
         assignees=[],
         created_at=datetime.now(UTC),
         updated_at=datetime.now(UTC),

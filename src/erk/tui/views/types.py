@@ -45,7 +45,7 @@ PLANS_VIEW = ViewConfig(
 LEARN_VIEW = ViewConfig(
     mode=ViewMode.LEARN,
     display_name="Learn",
-    labels=("erk-plan", "erk-learn"),
+    labels=("erk-learn",),
     key_hint="2",
     exclude_labels=(),
 )

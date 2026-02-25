@@ -324,10 +324,8 @@ class ErkDashApp(App):
         Returns:
             Filtered rows for the given view
         """
-        if mode == ViewMode.LEARN:
-            return [r for r in rows if r.is_learn_plan]
-        if mode == ViewMode.PLANS:
-            return [r for r in rows if not r.is_learn_plan]
+        # Server-side label AND logic now correctly splits Plans/Learn.
+        # Keep as pass-through safety net.
         return rows
 
     def _notify_with_severity(self, message: str, severity: str | None) -> None:

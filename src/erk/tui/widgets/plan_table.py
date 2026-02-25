@@ -236,6 +236,15 @@ class PlanDataTable(DataTable):
         # Save cursor row index for fallback (move up if plan disappears)
         saved_cursor_row = self.cursor_row
 
+        # Deduplicate rows by plan_id (multi-label queries can return the same plan twice)
+        seen: set[int] = set()
+        unique_rows: list[PlanRowData] = []
+        for row in rows:
+            if row.plan_id not in seen:
+                seen.add(row.plan_id)
+                unique_rows.append(row)
+        rows = unique_rows
+
         self._rows = rows
         self.clear()
 

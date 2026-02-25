@@ -240,9 +240,11 @@ def _save_as_planned_pr(
         metadata["created_from_workflow_run_url"] = created_from_workflow_run_url
 
     # Build labels
-    labels = ["erk-plan"]
+    labels = ["erk-planned-pr"]
     if plan_type == "learn":
         labels.append("erk-learn")
+    else:
+        labels.append("erk-plan")
 
     # Prefix title with [erk-plan] or [erk-learn] for GitHub visibility
     title_tag = get_title_tag_from_labels(labels)

@@ -244,7 +244,7 @@ def test_check_learn_status_and_prompt_skips_for_learn_plans(
     plan = _make_plan(
         number=issue_number,
         title="Learn: Extract testing patterns",
-        labels=["erk-plan", "erk-learn"],
+        labels=["erk-planned-pr", "erk-learn"],
     )
     backend, fake_github = create_plan_store_with_plans({str(issue_number): plan})
 
