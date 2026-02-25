@@ -682,9 +682,7 @@ class RealPlanDataProvider(PlanDataProvider):
                     if min_status is None or min_status in _TERMINAL_STATUSES:
                         objective_head_state = "ready"
                     else:
-                        objective_head_state = {"in_progress": "active"}.get(
-                            min_status, min_status.replace("_", " ")
-                        )
+                        objective_head_state = min_status.replace("_", " ")
 
                     # Collect blocking dep plan numbers for the next node
                     target = next((n for n in graph.nodes if n.id == next_node["id"]), None)
