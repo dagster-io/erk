@@ -27,6 +27,9 @@ Usage:
     # Clear PR
     erk exec update-objective-node 6423 --node 1.3 --pr ""
 
+    # Status-only update (preserve existing PR)
+    erk exec update-objective-node 6423 --node 1.3 --status planning
+
     # Multiple nodes
     erk exec update-objective-node 6697 --node 5.1 --node 5.2 --node 5.3 --pr "#6759"
 
@@ -192,8 +195,9 @@ def _replace_node_refs_in_body(
 @click.option(
     "--pr",
     "pr_ref",
-    required=True,
-    help="PR reference (e.g., '#456', or '' to clear)",
+    required=False,
+    default=None,
+    help="PR reference (e.g., '#456', or '' to clear). Omit to preserve existing.",
 )
 @click.option(
     "--status",
@@ -216,11 +220,22 @@ def update_objective_node(
     issue_number: int,
     *,
     node: tuple[str, ...],
-    pr_ref: str,
+    pr_ref: str | None,
     explicit_status: str | None,
     include_body: bool,
 ) -> None:
     """Update node PR cells in an objective's roadmap table."""
+    if pr_ref is None and explicit_status is None:
+        click.echo(
+            json.dumps(
+                {
+                    "success": False,
+                    "error": "no_update",
+                    "message": "At least one of --pr or --status must be provided",
+                }
+            )
+        )
+        raise SystemExit(0)
 
     github = require_issues(ctx)
     repo_root = require_repo_root(ctx)

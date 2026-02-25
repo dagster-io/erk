@@ -755,8 +755,11 @@ class RealPlanDataProvider(PlanDataProvider):
                 next_node = find_graph_next_node(graph, phases)
                 if next_node is not None:
                     objective_next_node_display = next_node["id"]
+                    node_status = next_node.get("status")
                     min_status = graph.min_dep_status(next_node["id"])
-                    if min_status is None or min_status in _TERMINAL_STATUSES:
+                    if node_status == "planning":
+                        objective_head_state = "planning"
+                    elif min_status is None or min_status in _TERMINAL_STATUSES:
                         objective_head_state = "ready"
                     else:
                         objective_head_state = min_status.replace("_", " ")
