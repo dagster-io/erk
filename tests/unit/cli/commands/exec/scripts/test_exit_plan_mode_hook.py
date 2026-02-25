@@ -379,7 +379,7 @@ class TestBuildBlockingMessage:
             plan_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_issue_number=None,
+            plan_number=None,
             editor=None,
         )
         assert "PLAN SAVE PROMPT" in message
@@ -406,7 +406,7 @@ class TestBuildBlockingMessage:
             plan_title=None,
             worktree_name="erk-slot-02",
             pr_number=None,
-            plan_issue_number=None,
+            plan_number=None,
             editor=None,
         )
         # Should have both question: and header: instructions
@@ -424,7 +424,7 @@ class TestBuildBlockingMessage:
             plan_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_issue_number=None,
+            plan_number=None,
             editor=None,
         )
         assert 'header: "Plan Action"' in message
@@ -439,7 +439,7 @@ class TestBuildBlockingMessage:
             plan_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_issue_number=None,
+            plan_number=None,
             editor=None,
         )
         assert "WARNING" in message
@@ -457,7 +457,7 @@ class TestBuildBlockingMessage:
             plan_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_issue_number=None,
+            plan_number=None,
             editor=None,
         )
         assert "WARNING" in message
@@ -474,7 +474,7 @@ class TestBuildBlockingMessage:
             plan_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_issue_number=None,
+            plan_number=None,
             editor=None,
         )
         assert "WARNING" not in message
@@ -490,7 +490,7 @@ class TestBuildBlockingMessage:
             plan_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_issue_number=None,
+            plan_number=None,
             editor=None,
         )
         assert "WARNING" not in message
@@ -506,7 +506,7 @@ class TestBuildBlockingMessage:
             plan_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_issue_number=None,
+            plan_number=None,
             editor=None,
         )
         assert "View/Edit the plan" in message
@@ -522,7 +522,7 @@ class TestBuildBlockingMessage:
             plan_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_issue_number=None,
+            plan_number=None,
             editor=None,
         )
         assert "If user chooses 'View/Edit the plan':" in message
@@ -539,7 +539,7 @@ class TestBuildBlockingMessage:
             plan_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_issue_number=None,
+            plan_number=None,
             editor=None,
         )
         # The option is still listed (as it's hardcoded), but no instructions
@@ -556,7 +556,7 @@ class TestBuildBlockingMessage:
             plan_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_issue_number=None,
+            plan_number=None,
             editor=None,
         )
         assert "/erk:plan-save" in message
@@ -572,7 +572,7 @@ class TestBuildBlockingMessage:
             plan_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_issue_number=None,
+            plan_number=None,
             editor=None,
         )
         # Should have /erk:plan-save but not --objective-issue
@@ -589,7 +589,7 @@ class TestBuildBlockingMessage:
             plan_title="Add Feature X",
             worktree_name=None,
             pr_number=None,
-            plan_issue_number=None,
+            plan_number=None,
             editor=None,
         )
         assert "📋 Add Feature X" in message
@@ -605,7 +605,7 @@ class TestBuildBlockingMessage:
             plan_title="Add Feature X",
             worktree_name="erk-slot-02",
             pr_number=4230,
-            plan_issue_number=4224,
+            plan_number=4224,
             editor=None,
         )
         # Title should be present
@@ -628,7 +628,7 @@ class TestBuildBlockingMessage:
             plan_title=None,
             worktree_name="erk-slot-02",
             pr_number=None,
-            plan_issue_number=4224,
+            plan_number=4224,
             editor=None,
         )
         # No title emoji
@@ -648,7 +648,7 @@ class TestBuildBlockingMessage:
             plan_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_issue_number=None,
+            plan_number=None,
             editor=None,
         )
         # Should still have the basic question
@@ -668,7 +668,7 @@ class TestBuildBlockingMessage:
             plan_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_issue_number=None,
+            plan_number=None,
             editor="vim",
         )
         assert "If user chooses 'View/Edit the plan':" in message
@@ -690,7 +690,7 @@ class TestBuildBlockingMessage:
             plan_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_issue_number=None,
+            plan_number=None,
             editor="/opt/homebrew/bin/nvim",
         )
         assert "nvim is a terminal-based editor" in message
@@ -706,7 +706,7 @@ class TestBuildBlockingMessage:
             plan_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_issue_number=None,
+            plan_number=None,
             editor="code",
         )
         assert "If user chooses 'View/Edit the plan':" in message
@@ -725,7 +725,7 @@ class TestBuildBlockingMessage:
             plan_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_issue_number=None,
+            plan_number=None,
             editor=None,
         )
         assert "If user chooses 'View/Edit the plan':" in message
@@ -743,7 +743,7 @@ class TestBuildBlockingMessage:
             plan_title="My Plan",
             worktree_name=None,
             pr_number=None,
-            plan_issue_number=None,
+            plan_number=None,
             editor=None,
         )
         assert "DISPLAY PLAN" in message
@@ -762,7 +762,7 @@ class TestBuildBlockingMessage:
             plan_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_issue_number=None,
+            plan_number=None,
             editor=None,
         )
         assert "DISPLAY PLAN" not in message
@@ -779,7 +779,7 @@ class TestBuildBlockingMessage:
             plan_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_issue_number=None,
+            plan_number=None,
             editor=None,
         )
         assert "Create a plan PR" in message
@@ -800,7 +800,7 @@ class TestBuildBlockingMessage:
             plan_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_issue_number=None,
+            plan_number=None,
             editor=None,
         )
         assert "Save plan and implement here" not in message
@@ -816,7 +816,7 @@ class TestBuildBlockingMessage:
             plan_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_issue_number=None,
+            plan_number=None,
             editor=None,
         )
         assert "Save and submit for review" not in message
@@ -832,7 +832,7 @@ class TestBuildBlockingMessage:
             plan_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_issue_number=None,
+            plan_number=None,
             editor=None,
         )
         assert "If user chooses 'Create a plan PR':" in message

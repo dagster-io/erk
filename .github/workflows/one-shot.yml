@@ -196,7 +196,7 @@ jobs:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
         run: |
           erk exec register-one-shot-plan \
-            --issue-number "${{ steps.read_result.outputs.plan_id }}" \
+            --plan-number "${{ steps.read_result.outputs.plan_id }}" \
             --run-id "${{ github.run_id }}" \
             --pr-number "${{ inputs.pr_number }}" \
             --submitted-by "${{ inputs.submitted_by }}" \

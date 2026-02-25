@@ -5,19 +5,19 @@ the plan-header metadata block to record that learn evaluation was performed.
 It replaces the tracking side-effect in `erk learn --no-interactive`.
 
 Usage:
-    erk exec track-learn-evaluation <issue-number> --session-id="..."
+    erk exec track-learn-evaluation <plan-number> --session-id="..."
 
 Output:
     JSON object with tracking result:
     {
         "success": true,
-        "issue_number": 123,
+        "plan_number": 123,
         "tracked": true
     }
 
 Exit Codes:
     0: Success
-    1: Error (invalid issue, GitHub failure, etc.)
+    1: Error (invalid plan, GitHub failure, etc.)
 """
 
 import json
@@ -44,7 +44,7 @@ class TrackLearnResult:
     """Result of track-learn-evaluation command."""
 
     success: bool
-    issue_number: int
+    plan_number: int
     tracked: bool
 
 
@@ -57,14 +57,14 @@ class TrackLearnError:
     message: str
 
 
-def _extract_issue_number(identifier: str) -> int | None:
-    """Extract issue number from identifier (number or URL).
+def _extract_plan_number(identifier: str) -> int | None:
+    """Extract plan number from identifier (number or URL).
 
     Args:
-        identifier: Issue number or GitHub issue URL
+        identifier: Plan number or GitHub issue URL
 
     Returns:
-        Issue number or None if invalid
+        Plan number or None if invalid
     """
     # Try direct number (LBYL: check before converting)
     if identifier.isdigit():
@@ -83,7 +83,7 @@ def _do_track(
     *,
     backend,
     repo_root: Path,
-    issue_number: int,
+    plan_number: int,
     session_id: str | None,
     time: Time,
 ) -> None:
@@ -92,7 +92,7 @@ def _do_track(
     Args:
         backend: PlanBackend interface for metadata updates and comments
         repo_root: Repository root path
-        issue_number: Plan issue number
+        plan_number: Plan number
         session_id: Session ID invoking learn (optional)
         time: Time gateway for testable timestamps
     """
@@ -102,7 +102,7 @@ def _do_track(
     track_learn_invocation(
         backend,
         repo_root,
-        str(issue_number),
+        str(plan_number),
         session_id=session_id,
         readable_count=0,
         total_count=0,
@@ -113,7 +113,7 @@ def _do_track(
     try:
         backend.update_metadata(
             repo_root,
-            str(issue_number),
+            str(plan_number),
             metadata={
                 "last_learn_at": timestamp,
                 "last_learn_session": session_id,
@@ -124,7 +124,7 @@ def _do_track(
             success=False,
             error="no-metadata-block",
             message=(
-                f"Plan {issue_number} has no plan-header metadata block"
+                f"Plan #{plan_number} has no plan-header metadata block"
                 " — cannot update learn evaluation"
             ),
         )
@@ -134,7 +134,7 @@ def _do_track(
         error = TrackLearnError(
             success=False,
             error="github-api-failed",
-            message=f"Failed to track learn evaluation on issue #{issue_number}: {e}",
+            message=f"Failed to track learn evaluation on plan #{plan_number}: {e}",
         )
         click.echo(json.dumps(asdict(error)), err=True)
         raise SystemExit(1) from None
@@ -151,7 +151,7 @@ def _do_track(
 def track_learn_evaluation(ctx: click.Context, issue: str | None, session_id: str | None) -> None:
     """Track learn evaluation completion on a plan issue.
 
-    ISSUE can be a plan issue number (e.g., "123") or a full GitHub URL.
+    ISSUE can be a plan number (e.g., "123") or a full GitHub URL.
     If not provided, infers from .impl/plan-ref.json on the current branch.
 
     Posts a tracking comment to record that learn was invoked.
@@ -163,15 +163,15 @@ def track_learn_evaluation(ctx: click.Context, issue: str | None, session_id: st
     repo_root = require_repo_root(ctx)
     time = require_time(ctx)
 
-    # Resolve issue number: explicit argument or infer from branch
-    issue_number: int | None = None
+    # Resolve plan number: explicit argument or infer from branch
+    plan_number: int | None = None
     if issue is not None:
-        issue_number = _extract_issue_number(issue)
-        if issue_number is None:
+        plan_number = _extract_plan_number(issue)
+        if plan_number is None:
             error = TrackLearnError(
                 success=False,
-                error="invalid-issue-identifier",
-                message=f"Invalid issue identifier: {issue}",
+                error="invalid-plan-identifier",
+                message=f"Invalid plan identifier: {issue}",
             )
             click.echo(json.dumps(asdict(error)))
             raise SystemExit(1)
@@ -181,13 +181,13 @@ def track_learn_evaluation(ctx: click.Context, issue: str | None, session_id: st
         if branch is not None:
             plan_id_str = backend.resolve_plan_id_for_branch(repo_root, branch)
             if plan_id_str is not None:
-                issue_number = int(plan_id_str)
+                plan_number = int(plan_id_str)
 
-    if issue_number is None:
+    if plan_number is None:
         error = TrackLearnError(
             success=False,
-            error="no-issue-specified",
-            message="No issue specified and could not infer from branch name",
+            error="no-plan-specified",
+            message="No plan specified and could not infer from branch name",
         )
         click.echo(json.dumps(asdict(error)))
         raise SystemExit(1)
@@ -196,14 +196,14 @@ def track_learn_evaluation(ctx: click.Context, issue: str | None, session_id: st
     _do_track(
         backend=backend,
         repo_root=repo_root,
-        issue_number=issue_number,
+        plan_number=plan_number,
         session_id=session_id,
         time=time,
     )
 
     result = TrackLearnResult(
         success=True,
-        issue_number=issue_number,
+        plan_number=plan_number,
         tracked=True,
     )
 
