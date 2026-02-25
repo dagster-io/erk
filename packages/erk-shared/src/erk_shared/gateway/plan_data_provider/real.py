@@ -698,8 +698,7 @@ class RealPlanDataProvider(PlanDataProvider):
                     if min_status is None or min_status in _TERMINAL_STATUSES:
                         objective_head_state = "ready"
                     else:
-                        _STATUS_DISPLAY = {"in_progress": "active"}
-                        objective_head_state = _STATUS_DISPLAY.get(
+                        objective_head_state = {"in_progress": "active"}.get(
                             min_status, min_status.replace("_", " ")
                         )
 
