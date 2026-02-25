@@ -1,0 +1,348 @@
+{
+  "success": true,
+  "pr_number": 7974,
+  "threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5wQ-Y1",
+      "path": "docs/learned/desktop-dash/visual-status-indicators.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Verbatim source code copy detected.\n\nSource: `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py:232`\n\nThis line embeds `has_blocking_indicators = any(i != \"\ud83e\udd5e\" for i in indicators)` \u2014 a verbatim copy of a single expression from the source file. This will go stale if the implementation changes (e.g., additional non-blocking indicators are added).\n\nSuggested fix: Replace with the source pointer format from `docs/learned/documentation/source-pointers.md` (HTML comment + prose reference). A source pointer is already present on line 70 \u2014 fold the expression description into prose instead:\n\n```markdown\nThe distinction is implemented in `_build_indicators()` in `lifecycle.py`: it checks whether any indicator other than \ud83e\udd5e is present to determine if there are blocking indicators. When a plan is implemented and has no blocking indicators, the rocket emoji is appended to signal \"ready to merge.\"\n```",
+          "created_at": "2026-02-24T00:39:25Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Replaced verbatim code snippet with prose description in fd6062b8e\n\n_Addressed via `/erk:pr-address` at 2026-02-24 12:15 UTC_",
+          "created_at": "2026-02-24T12:15:02Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wcaU_",
+      "path": "docs/learned/desktop-dash/visual-status-indicators.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: \"`_build_indicators()` in `lifecycle.py`, which checks whether any indicator besides the pancake emoji (\ud83e\udd5e) is present\"\nReality: `_build_indicators()` in the current code never appends \ud83e\udd5e and has no exclusion check for \ud83e\udd5e. The `is_stacked` parameter is accepted but unused (no-op). The blocking logic checks `is_draft`, `has_conflicts`, and `review_decision` \u2014 not the presence/absence of \ud83e\udd5e. Tests confirm this: see test_lifecycle_display.py:666 comment \"pancake removed, stacked is no-op\".\n\nSource: `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py, _build_indicators`\n\nSuggested fix: Update to describe the actual blocking logic \u2014 a plan is ready to merge when `is_draft is not True`, `has_conflicts is not True`, `review_decision != \"CHANGES_REQUESTED\"`, `checks_passing is True`, and `has_unresolved_comments is not True`. Remove the pancake-based framing entirely as the pancake indicator was removed.",
+          "created_at": "2026-02-24T15:35:21Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed in b22ee33 \u2014 corrected the description to reflect that _build_indicators() directly checks specific blocking conditions rather than using a pancake emoji exclusion check.\n\n_Addressed via `/erk:pr-address` at 2026-02-25 02:51 UTC_",
+          "created_at": "2026-02-25T02:51:33Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wlJqf",
+      "path": "docs/learned/desktop-dash/visual-status-indicators.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Verbatim source code copy that is now inaccurate.\n\nSource: `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py:232-233`\n\nThe doc embeds `has_blocking_indicators = any(i != \"\ud83e\udd5e\" for i in indicators)`, which was the old single-emoji exclusion check. After this PR, the source now uses a multi-emoji non-blocking set:\n\n```python\n_non_blocking = {\"\ud83e\udd5e\", \"\ud83d\udc40\", \"\u2714\"}\nhas_blocking_indicators = any(i not in _non_blocking for i in indicators)\n```\n\nThe \ud83d\udc40 (published/review) and \u2714 (approved) indicators are now also non-blocking \u2014 the doc's verbatim snippet no longer matches the implementation.\n\nSuggested fix: Replace with prose describing the expanded non-blocking set, keeping the existing source pointer on line 70:\n> The distinction is implemented in `_build_indicators()` in `lifecycle.py`: it checks whether any indicator is absent from the non-blocking set (\ud83e\udd5e, \ud83d\udc40, \u2714). When a plan is implemented and has no blocking indicators, the rocket emoji is appended to signal \"ready to merge.\"",
+          "created_at": "2026-02-25T05:31:08Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed in commit d895d6f55 \u2014 replaced verbatim code block with prose describing the expanded _non_blocking set (pancake, eyes, checkmark).\n\n_Addressed via `/erk:pr-address` at 2026-02-24 21:36 PST_",
+          "created_at": "2026-02-25T05:36:17Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wlPcR",
+      "path": "docs/learned/desktop-dash/visual-status-indicators.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Drift risk \u2014 documents specific set membership values that will change.\n\nSource: `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py, _build_indicators`\n\nRisk: The prose enumerates the exact current contents of the `_non_blocking` set (\ud83e\udd5e, \ud83d\udc40, \u2714). If a new non-blocking indicator is added, this description will silently go stale. The source pointer on the preceding line already points to `_build_indicators` \u2014 consider removing the specific enumeration and relying on the pointer, or add a tripwire note.",
+          "created_at": "2026-02-25T05:41:21Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed in 1314479c8 \u2014 removed specific set enumeration. The source pointer to `_build_indicators()` on the preceding line already directs readers to the canonical definition.\n\n_Addressed via `/erk:pr-address` at 2026-02-24 21:53 PST_",
+          "created_at": "2026-02-25T05:53:56Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wOgGG",
+      "path": "docs/learned/testing/environment-variable-isolation.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Verbatim source code copy detected.\n\nSource: `packages/erk-shared/src/erk_shared/context/testing.py:194`\n\nThis code block reproduces erk source code (`elif \"draft_pr\" == \"draft_pr\" ...`) and will go stale if the code changes. There is no source pointer HTML comment above this block.\n\nSuggested fix: Replace with the source pointer format from `docs/learned/documentation/source-pointers.md`:\n```\n<!-- Source: packages/erk-shared/src/erk_shared/context/testing.py, context_for_test -->\nSee `context_for_test()` in `testing.py` \u2014 the backend branch is now a tautological comparison after PR #7971, meaning the DraftPRPlanBackend path is always taken.\n```",
+          "created_at": "2026-02-23T20:33:34Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed: Replaced verbatim code block with source pointer reference to context_for_test() in testing.py.\n\n_Addressed via `/erk:pr-address` at 2026-02-23 23:11 UTC_",
+          "created_at": "2026-02-23T23:11:58Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wOgr3",
+      "path": "docs/learned/testing/environment-variable-isolation.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected (table below).\n\nThe table at the \"Two context_for_test() Implementations\" section claims `packages/erk-shared/src/erk_shared/context/testing.py` has `Checks ERK_PLAN_BACKEND? \u2192 Yes \u2014 respects env var`.\n\nClaim: `Checks ERK_PLAN_BACKEND? \u2192 Yes \u2014 respects env var`\nReality: After PR #7971, `testing.py:194` uses a tautological comparison (`\"draft_pr\" == \"draft_pr\"`) that ignores the env var entirely.\n\nSource: `packages/erk-shared/src/erk_shared/context/testing.py:194`\n\nSuggested fix: Update the table to reflect that after PR #7971, `testing.py` no longer reads `ERK_PLAN_BACKEND` \u2014 the column should say `No \u2014 hardcoded to draft_pr after PR #7971`.",
+          "created_at": "2026-02-23T20:34:11Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed: Updated table to reflect post-PR #7971 reality - erk-shared context_for_test() no longer checks ERK_PLAN_BACKEND (tautological comparison always takes draft-PR path).\n\n_Addressed via `/erk:pr-address` at 2026-02-23 23:11 UTC_",
+          "created_at": "2026-02-23T23:11:55Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wkA_7",
+      "path": "docs/learned/testing/environment-variable-isolation.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: `\"planned_pr\" == \"planned_pr\"` always evaluates to `True`, so the planned-PR path is always taken regardless of environment variables.\nReality: The current `context_for_test()` source (testing.py:184-195) contains NO tautological comparison. The code was properly refactored \u2014 it now uses explicit conditional logic: if `plan_store` is provided use it, elif `issues_explicitly_passed` use `GitHubPlanStore`, else use `PlannedPRBackend` directly. There is no string literal comparison in the plan_store resolution block.\n\nSource: `packages/erk-shared/src/erk_shared/context/testing.py:184-195`\n\nSuggested fix: Remove the reference to `\"planned_pr\" == \"planned_pr\"`. The accurate description is: after PR #7971, `context_for_test()` defaults to `PlannedPRBackend` unless `plan_store` is explicitly provided or `issues` was explicitly passed. The env var `ERK_PLAN_BACKEND` is not read at all.",
+          "created_at": "2026-02-25T02:55:30Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed in commit ef39d66 \u2014 removed all references to tautological comparison. Updated to describe the actual explicit conditional logic: defaults to PlannedPRBackend unless plan_store is explicitly provided or issues was explicitly passed.\n\n_Addressed via `/erk:pr-address` at 2026-02-25 03:32 UTC_",
+          "created_at": "2026-02-25T03:32:32Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wOg3a",
+      "path": "docs/learned/tui/backend-aware-commands.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Drift risk \u2014 source pointer uses line numbers instead of name-based identifiers.\n\nSource: `src/erk/tui/commands/registry.py:31-33` (line-range pointer)\n\nRisk: High maintenance burden as code evolves. Line numbers shift with any insertion above line 31. The source-pointers.md standard says to prefer name-based identifiers when the file has greppable symbol names \u2014 which it does (`_is_github_backend`).\n\nSuggested fix:\n```markdown\n<!-- Source: src/erk/tui/commands/registry.py, _is_github_backend -->\nSee `_is_github_backend()` in `src/erk/tui/commands/registry.py`.\n```",
+          "created_at": "2026-02-23T20:34:21Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed: Replaced line-range pointer registry.py:31-33 with name-based reference _is_github_backend() in src/erk/tui/commands/registry.py.\n\n_Addressed via `/erk:pr-address` at 2026-02-23 23:11 UTC_",
+          "created_at": "2026-02-23T23:12:00Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wOg_v",
+      "path": "docs/learned/tui/backend-aware-commands.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Drift risk \u2014 source pointer uses line numbers instead of name-based identifiers.\n\nSource: `src/erk/tui/commands/types.py:23-35` (line-range pointer)\n\nRisk: Line numbers shift with any insertion above line 23. The `CommandContext` class name is stable and greppable.\n\nSuggested fix:\n```markdown\n<!-- Source: src/erk/tui/commands/types.py, CommandContext -->\nSee `CommandContext` in `src/erk/tui/commands/types.py`.\n```",
+          "created_at": "2026-02-23T20:34:29Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed: Replaced line-range pointer types.py:23-35 with name-based reference CommandContext in src/erk/tui/commands/types.py.\n\n_Addressed via `/erk:pr-address` at 2026-02-23 23:12 UTC_",
+          "created_at": "2026-02-23T23:12:02Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wOf7V",
+      "path": "docs/learned/tui/stacked-pr-indicator.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Verbatim source code copy detected.\n\nSource: `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py:235`\n\nThis code block copies 1 line from the source file and will go stale if the source changes.\n\nSuggested fix: Replace with the source pointer format from `docs/learned/documentation/source-pointers.md` (HTML comment + prose reference). The source pointer comment is already present on line 48 \u2014 just remove the fenced code block and fold the expression into the surrounding prose sentence (which already references this logic inline in `visual-status-indicators.md`).",
+          "created_at": "2026-02-23T20:33:25Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed: Replaced verbatim code block with prose description referencing _build_indicators() in lifecycle.py.\n\n_Addressed via `/erk:pr-address` at 2026-02-23 23:12 UTC_",
+          "created_at": "2026-02-23T23:12:04Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wcakn",
+      "path": "docs/learned/tui/stacked-pr-indicator.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: \"`_build_indicators()` checks whether any indicator other than \ud83e\udd5e is present to determine if there are blocking indicators\"\nReality: `_build_indicators()` in the current code never appends \ud83e\udd5e and has no exclusion check for \ud83e\udd5e. The `is_stacked` parameter is accepted but is a no-op. Tests at `tests/unit/plan_store/test_lifecycle_display.py:669` explicitly document this: \"Stacked PR no longer shows pancake emoji\" and `_indicators(..., is_stacked=True) == \"-\"`.\n\nThe broader doc description of the pancake emoji (lines 11, 25-27, 38, 40, 48-53) refers to removed behavior. The stacked PR indicator (\ud83e\udd5e) was removed from `_build_indicators()`.\n\nSource: `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py, _build_indicators`\n\nSuggested fix: This entire document describes a feature that was removed. Either: (1) update to document that stacked PR detection still occurs in `_build_plan_row()` but the pancake indicator is no longer emitted, or (2) archive/delete the doc and remove the reference from `visual-status-indicators.md`.",
+          "created_at": "2026-02-24T15:35:35Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed in b22ee33 \u2014 corrected the description to reflect that _build_indicators() directly checks specific blocking conditions rather than using a pancake emoji exclusion check.\n\n_Addressed via `/erk:pr-address` at 2026-02-25 02:51 UTC_",
+          "created_at": "2026-02-25T02:51:35Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wkA6q",
+      "path": "docs/learned/tui/stacked-pr-indicator.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected \u2014 internal contradiction.\n\nThis line correctly notes that the pancake emoji is not currently added by `_build_indicators()`. However, this contradicts lines 27 and 52 in this same document:\n- Line 27: \"The pancake emoji is the first indicator added in `_build_indicators()`\" \u2014 INACCURATE\n- Line 52 (data flow): `\u2192 _build_indicators appends \ud83e\udd5e when is_stacked is True` \u2014 INACCURATE\n\nSource: `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py, _build_indicators`\n\nReality: `_build_indicators()` never appends \ud83e\udd5e. The `is_stacked` parameter is a no-op. The function body has no code that reads `is_stacked` (confirmed in lifecycle.py:173-236).\n\nSuggested fix: Update lines 27 and 52 to match the note added here. The \"Indicator Ordering\" section (line 27) should either be removed or updated to describe the actual ordering of indicators that ARE added. The data flow diagram on line 52 should remove the `\u2192 _build_indicators appends \ud83e\udd5e when is_stacked is True` line.",
+          "created_at": "2026-02-25T02:55:17Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed in commit ef39d66 \u2014 updated line 27 to note the pancake emoji is not currently added by _build_indicators() (is_stacked is a no-op), and updated line 52 data flow diagram to reflect this.\n\n_Addressed via `/erk:pr-address` at 2026-02-25 03:32 UTC_",
+          "created_at": "2026-02-25T03:32:34Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wlJxb",
+      "path": "docs/learned/tui/stacked-pr-indicator.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Verbatim source code copy that is now inaccurate.\n\nSource: `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py:232-233`\n\nThis code block shows:\n```\nhas_blocking_indicators = any(i != \"\ud83e\udd5e\" for i in indicators)\n```\n\nBut the source after this PR uses:\n```python\n_non_blocking = {\"\ud83e\udd5e\", \"\ud83d\udc40\", \"\u2714\"}\nhas_blocking_indicators = any(i not in _non_blocking for i in indicators)\n```\n\nThe \ud83d\udc40 (published indicator) and \u2714 (approved indicator) are now also non-blocking, so the single-emoji exclusion check shown in the doc is stale.\n\nSuggested fix: Replace with the source pointer format from `docs/learned/documentation/source-pointers.md` (HTML comment + prose reference). A source pointer is already present on line 48 \u2014 fold the description into prose:\n> The mechanism uses an exclusion check against a non-blocking set (\ud83e\udd5e, \ud83d\udc40, \u2714): if any indicator is not in this set, the plan has blocking indicators and the rocket is suppressed.\n\nThen remove the code block entirely.",
+          "created_at": "2026-02-25T05:31:18Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed in commit d895d6f55 \u2014 replaced stale code block with prose + source pointer describing the _non_blocking set.\n\n_Addressed via `/erk:pr-address` at 2026-02-24 21:36 PST_",
+          "created_at": "2026-02-25T05:36:19Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wlPhq",
+      "path": "docs/learned/tui/stacked-pr-indicator.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Drift risk \u2014 documents specific set membership values that will change.\n\nSource: `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py, _build_indicators`\n\nRisk: The prose enumerates the exact current contents of the `_non_blocking` set (\ud83e\udd5e, \ud83d\udc40, \u2714). If a new non-blocking indicator is added, this description will silently go stale. The source pointer on line 42 already points to `_build_indicators` \u2014 consider removing the specific enumeration and relying on the pointer.",
+          "created_at": "2026-02-25T05:41:30Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed in 1314479c8 \u2014 removed specific set enumeration. The source pointer to `_build_indicators()` already directs readers to the canonical definition.\n\n_Addressed via `/erk:pr-address` at 2026-02-24 21:53 PST_",
+          "created_at": "2026-02-25T05:53:58Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wOe3o",
+      "path": "src/erk/cli/commands/exec/scripts/update_comment_body.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python**: Import organization - combine imports from the same module on lines 24-29 into a single import statement to follow import organization standards.",
+          "created_at": "2026-02-23T20:32:24Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "False positive: ruff isort rules enforce separate import statements when an alias (as) is present. Combining these imports causes ruff I001 violation, which ruff --fix reverts. The imports are already in the correct ruff-enforced style.\n\n_Addressed via `/erk:pr-address` at 2026-02-23 23:12 UTC_",
+          "created_at": "2026-02-23T23:12:06Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wQ-Av",
+      "path": "src/erk/cli/commands/exec/scripts/update_comment_body.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python Review**: No re-export gratuitous aliasing - Imports must use canonical names. The 'as' keyword should only be used for resolving genuine name collisions between different modules. Use 'require_issues' directly rather than aliasing to 'require_github_issues'.",
+          "created_at": "2026-02-24T00:38:37Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Removed gratuitous alias, now using canonical name require_issues directly in fd6062b8e\n\n_Addressed via `/erk:pr-address` at 2026-02-24 12:15 UTC_",
+          "created_at": "2026-02-24T12:15:04Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wQ-Ez",
+      "path": "tests/unit/cli/commands/exec/scripts/test_update_comment_body.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python Review**: Inline import at non-exception boundary - Module-level imports are default. Inline imports should only be used for circular dependencies, TYPE_CHECKING blocks, or conditional features. Move 'from erk_shared.gateway.github.types import BodyContent' to module level.",
+          "created_at": "2026-02-24T00:38:43Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Moved BodyContent import to module level in fd6062b8e\n\n_Addressed via `/erk:pr-address` at 2026-02-24 12:15 UTC_",
+          "created_at": "2026-02-24T12:15:06Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wY-p4",
+      "path": "tests/unit/cli/commands/exec/scripts/test_update_comment_body.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: Inline import at non-exception boundary - Module-level imports are default. Inline imports should only be used for circular dependencies, TYPE_CHECKING blocks, or conditional features. Move 'import tempfile' to module level (line 3-4 area).",
+          "created_at": "2026-02-24T12:17:33Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed in b22ee33 \u2014 moved import tempfile to module level.\n\n_Addressed via `/erk:pr-address` at 2026-02-25 02:51 UTC_",
+          "created_at": "2026-02-25T02:51:31Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wY-7g",
+      "path": "tests/unit/cli/commands/exec/scripts/test_update_comment_body.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python Review**: Inline import - Module-level imports are default. Move `import tempfile` to the top of the file with other imports. Inline imports are only acceptable for circular dependencies, TYPE_CHECKING blocks, or conditional features. Standard library imports like tempfile should always be at module level.",
+          "created_at": "2026-02-24T12:17:46Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Already fixed in b22ee33 \u2014 moved import tempfile to module level.\n\n_Addressed via `/erk:pr-address` at 2026-02-25 02:52 UTC_",
+          "created_at": "2026-02-25T02:52:13Z"
+        }
+      ]
+    }
+  ]
+}

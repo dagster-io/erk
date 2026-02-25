@@ -1,0 +1,1560 @@
+<session>
+  <meta branch="plnd/scratch-objective-storage-02-23-0914" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>
+
+🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11852" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11852}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1538" cache_read_input_tokens="30966" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1538}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;erk:pr-preview-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-preview-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-preview-address
+
+## Description
+
+Fetches unresolved PR review comments and discussion comments, displays a summary of what `/erk:pr-address` would do. This is a read-only preview command that makes no changes.
+
+## Usage
+
+```bash
+/erk:pr-preview-address
+/erk:pr-preview-address --all               # Include resolved threads
+/erk:pr-preview-address --pr 6631           # Target specific PR
+/erk:pr-preview-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Agent Instructions
+
+&gt; **IMPORTANT: This is a READ-ONLY preview command.**
+&gt;
+&gt; Do NOT make any code changes, resolve any threads, reply to any comments, or create any commits.
+
+### Phase 1: Classify Feedback
+
+Invoke the pr-feedback-classifier skill to fetch and classify all PR feedback:
+
+```
+/pr-feedback-classifier [--pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+```
+
+Parse the JSON response.
+
+### Phase 2: Display Results
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If `actionable_threads` is empty and `discussion_actions` is empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+**Format the results** as a human-readable summary:
+
+```
+## PR #5944: "Feature: Add new API endpoint"
+
+### Actionable Items (N total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | foo.py:42 | actionable | Use LBYL pattern | local |
+| 2 | review | bar.py:15 | actionable | Add type annotation | local |
+| 3 | discussion | - | actionable | Update documentation | cross_cutting |
+
+### Informational Items (N total)
+
+| # | Type | Location | Summary | Complexity |
+|---|------|----------|---------|------------|
+| 4 | review | utils.py:10 | Bot suggestion: extract helper (optional) | local |
+
+### Execution Plan Preview
+
+**Batch 1: Local Fixes** (auto-proceed)
+- Item #1: foo.py:42 - Use LBYL pattern
+- Item #2: bar.py:15 - Add type annotation
+
+**Batch 2: Cross-Cutting** (user confirmation)
+- Item #3: Update documentation
+
+**Batch 3: Informational** (user decides: act or dismiss)
+- Item #4: utils.py:10 - Bot suggestion: extract helper (optional)
+
+### Statistics
+- Actionable items: 3
+- Informational items: 1
+- Informational discussion comments: 12
+- Estimated batches: 3
+- Auto-proceed batches: 1
+- User confirmation batches: 2
+```
+
+**Note:** Items in `actionable_threads` are split into two sections based on their `classification` field: `"actionable"` items appear under "Actionable Items", `"informational"` items appear under "Informational Items". Both sections use the same item numbering (continuous across sections).
+
+Add footer:
+
+```
+To address these comments, run: /erk:pr-address
+```
+
+### Phase 3: Exit (NO ACTIONS)
+
+**CRITICAL**: This is a preview-only command. Do NOT:
+
+- Make any code changes
+- Resolve any threads
+- Reply to any comments
+- Create any commits
+- Push anything to remote
+- Run any CI commands
+
+Simply display the summary and exit.
+
+## Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+</user>
+  <thinking>The user wants me to run the `/erk:pr-preview-address` command. This is a read-only preview that fetches PR review comments and displays what `/erk:pr-address` would do.
+
+Let me first invoke the pr-feedback-classifier skill to get the PR feedback.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="1156" cache_read_input_tokens="32504" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1156}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01CWe49dQGPikA9o9Uad4R1T">
+    <param name="skill">pr-feedback-classifier</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1156" cache_read_input_tokens="32504" output_tokens="136" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1156, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CWe49dQGPikA9o9Uad4R1T">
+Skill "pr-feedback-classifier" completed (forked execution).
+
+Result:
+Now I have all the data needed. Let me classify the results.
+
+**Review threads:**
+- `PRRT_kwDOPxC3hc5wlJqf`: Bot (`github-actions`) flagging stale verbatim code block in `docs/learned/desktop-dash/visual-status-indicators.md:72`. The doc embeds old single-emoji exclusion check that no longer matches the multi-emoji non-blocking set in the source. Actionable, single-file doc change.
+- `PRRT_kwDOPxC3hc5wlJxb`: Bot (`github-actions`) flagging same issue in `docs/learned/tui/stacked-pr-indicator.md:43`. Same pattern — stale code block needs to become prose + source pointer. Actionable, single-file doc change.
+
+**Discussion comments:** All from `github-actions[bot]` or `schrockn` (Graphite stack comment). These are CI workflow status, bot review summaries, rebase notifications, and a Graphite stack comment — all informational.
+
+```json
+{
+  "success": true,
+  "pr_number": 7974,
+  "pr_title": "Use scratch storage for objective comment updates",
+  "pr_url": "https://github.com/dagster-io/erk/pull/7974",
+  "actionable_threads": [
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5wlJqf",
+      "type": "review",
+      "path": "docs/learned/desktop-dash/visual-status-indicators.md",
+      "line": 72,
+      "is_outdated": false,
+      "classification": "actionable",
+      "action_summary": "Replace stale verbatim code block (single-emoji exclusion check) with prose describing the expanded non-blocking set (pancake, eyes, checkmark). Keep source pointer on line 70.",
+      "complexity": "local",
+      "original_comment": "**Audit PR Docs**: Verbatim source code copy that is now inaccurate.\n\nSource: `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py:232-233`\n\nThe doc embeds `has_blocking_indicators = any(i != \"🥞\" for i in indicators)`, which was the old single-emoji exclu"
+    },
+    {
+
+... [24 lines omitted] ...
+
+  "error": null
+  </tool_result>
+  <assistant>## PR #7974: "Use scratch storage for objective comment updates"
+
+### Actionable Items (2 total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | `docs/learned/desktop-dash/visual-status-indicators.md:72` | actionable | Replace stale verbatim code block (single-emoji exclusion check) with prose describing the expanded non-blocking set | local |
+| 2 | review | `docs/learned/tui/stacked-pr-indicator.md:43` | actionable | Replace stale verbatim code block with prose + source pointer describing the non-blocking set | local |
+
+### Informational Items (0 in threads)
+
+No informational review threads.
+
+### Execution Plan Preview
+
+**Batch 1: Local Fixes** (auto-proceed)
+- Item #1: `docs/learned/desktop-dash/visual-status-indicators.md:72` - Replace stale verbatim code block with prose describing expanded non-blocking set (pancake, eyes, checkmark)
+- Item #2: `docs/learned/tui/stacked-pr-indicator.md:43` - Replace stale verbatim code block with prose + source pointer
+
+### Statistics
+- Actionable items: 2
+- Informational items: 0
+- Informational discussion comments: 14
+- Estimated batches: 1
+- Auto-proceed batches: 1
+- User confirmation batches: 0
+
+---
+
+To address these comments, run: `/erk:pr-address`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1109" cache_read_input_tokens="33660" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1109}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-address
+
+## Description
+
+Fetches unresolved PR review comments AND PR discussion comments from the current branch's PR and addresses them using holistic analysis with smart batching. Comments are grouped by complexity and relationship, then processed batch-by-batch with incremental commits and resolution.
+
+## Usage
+
+```bash
+/erk:pr-address
+/erk:pr-address --all               # Include resolved threads (for reference)
+/erk:pr-address --pr 6631           # Target specific PR
+/erk:pr-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Prerequisite
+
+**Load the `pr-operations` skill first** for complete command reference and common mistake patterns.
+
+## Agent Instructions
+
+&gt; **Prerequisite**: Load `pr-operations` skill first for command reference.
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands**
+&gt;
+&gt; See `pr-operations` skill for the complete command reference. Never use raw `gh api` calls for thread operations.
+
+### Phase 1: Classify Feedback
+
+Use the Task tool (NOT a `/pr-feedback-classifier` skill invocation) to run the classifier. The skill's `context: fork` metadata does not create true subagent isolation in `--print` mode, so we must use an explicit Task tool call to guarantee the classifier runs in a separate agent context:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Classify PR feedback",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+Parse the JSON response. The skill returns:
+
+- `success`: Whether the operation succeeded
+- `pr_number`, `pr_title`, `pr_url`: PR metadata
+- `actionable_threads`: Array with `thread_id`, `path`, `line`, `classification`, `action_summary`, `complexity`
+  - `classification`: `"actionable"` (code changes needed) or `"informational"` (user decides to act or dismiss)
+- `discussion_actions`: Array with `comment_id`, `action_summary`, `complexity`
+- `batches`: Execution order with `item_indices` referencing the arrays above
+  - Includes an **Informational** batch (last) for `classification: "informational"` threads
+- `error`: Error message if `success` is false
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If both `actionable_threads` and `discussion_actions` are empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+### Phase 2: Display Batched Plan
+
+Show the user the batched execution plan from the classifier output:
+
+```
+## Execution Plan
+
+### Batch 1: Local Fixes (3 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 1 | foo.py:42 | Use LBYL pattern |
+| 2 | bar.py:15 | Add type annotation |
+| 3 | baz.py:99 | Fix typo |
+
+### Batch 2: Single-File Changes (1 comment)
+| # | Location | Summary |
+|---|----------|---------|
+| 4 | impl.py (multiple) | Rename `old_name` to `new_name` throughout |
+
+### Batch 3: Cross-Cutting Changes (2 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 5 | Multiple files | Update all callers of deprecated function |
+| 6 | docs/ | Update documentation per reviewer request |
+
+### Batch 4: Complex Changes (2 comments -&gt; 1 unified change)
+| # | Location | Summary |
+|---|----------|---------|
+| 7 | impl.py:50 | Fold validate into prepare with union types |
+| 8 | cmd.py:100 | (related to #7 - same refactor) |
+```
+
+**User confirmation flow:**
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval before executing
+
+### Phase 3: Execute by Batch
+
+For each batch, execute this workflow using the thread IDs from the classifier JSON:
+
+#### Step 1: Address All Comments in the Batch
+
+For each comment in the batch:
+
+**For Informational Review Threads** (`classification: "informational"`):
+
+Present the user with a choice using AskUserQuestion:
+
+- **Act**: Make the suggested change, then resolve the thread
+- **Dismiss**: Resolve the thread without code changes (reply with a brief message like "Acknowledged, not acting on this suggestion")
+
+If the user chooses **Act**, proceed as a normal review thread (read file, make fix, track change). If the user chooses **Dismiss**, skip to Step 4 to resolve the thread with a dismissal reply.
+
+**For Actionable Review Threads** (`classification: "actionable"`):
+
+1. Read the file to understand context:
+   - If `line` is specified: Read around that line number
+   - If `line` is null (outdated thread): Read the entire file or search for relevant code mentioned in the comment
+2. Make the fix following the reviewer's feedback
+3. Track the change for the batch commit message
+
+**For Discussion Comments:**
+
+1. Determine if action is needed:
+   - If it's a request (e.g., "Please update docs"), take the requested action
+   - If it's a question, provide an answer or make clarifying changes
+   - If it's architectural feedback/suggestion, investigate the codebase to understand implications
+   - If it's just acknowledgment/thanks, note it and move on
+2. **Investigate the codebase** when the comment requires understanding existing code:
+   - Search for relevant patterns, existing implementations, or related code
+   - Note any interesting findings that inform your decision
+   - Record these findings - they become permanent documentation in the reply
+3. Take action if needed
+
+**Handling False Positives from Automated Reviewers:**
+
+Automated review bots (like `dignified-python-review`, linters, or security scanners) can flag false positives. Before making code changes:
+
+1. **Read the flagged code carefully** - understand what the bot is complaining about
+2. **Verify if it's a false positive** by checking:
+   - Is the pattern the bot wants already implemented nearby? (e.g., LBYL check already exists on a preceding line)
+   - Is the bot misunderstanding the code structure?
+   - Is the bot applying a rule that doesn't fit this specific context?
+3. **If it's a false positive**, do NOT make unnecessary code changes. Instead:
+   - Reply to the comment explaining why it's a false positive
+   - Reference specific line numbers where the correct pattern already exists
+   - Resolve the thread
+
+**For Outdated Review Threads** (`is_outdated: true`):
+
+Outdated threads have `line: null` because the code has changed since the comment was made.
+
+1. **Read the file** at the path (ignore line number - search for relevant code)
+2. **Check if the issue is already fixed** in the current code
+3. **Take action:**
+   - If already fixed -&gt; Proceed directly to Step 4 to resolve the thread
+   - If not fixed -&gt; Apply the fix, then proceed to Step 4
+
+**IMPORTANT**: Outdated threads MUST still be resolved via `erk exec resolve-review-thread`.
+Do not skip resolution just because no code change was needed.
+
+#### Step 2: Run CI Checks
+
+After making all changes in the batch:
+
+```bash
+# Run relevant CI checks for changed files
+# (This may vary by project - use project's test commands)
+```
+
+If CI fails, fix the issues before proceeding.
+
+#### Step 3: Commit the Batch
+
+Create a single commit for all changes in the batch:
+
+```bash
+git add &lt;changed files&gt;
+git commit -m "Address PR review comments (batch N/M)
+
+- &lt;summary of comment 1&gt;
+- &lt;summary of comment 2&gt;
+..."
+```
+
+#### Step 4: Resolve All Threads in the Batch (MANDATORY)
+
+**This step is NOT optional.** Every thread must be resolved using the thread IDs from the classifier JSON.
+
+After committing, resolve review threads and mark discussion comments.
+
+**For Review Threads** - use the batch command `erk exec resolve-review-threads` to resolve all review threads in a single call. Pipe a JSON array via stdin:
+
+```bash
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed in commit abc1234"}, {"thread_id": "PRRT_def", "comment": "Applied suggestion"}]' | erk exec resolve-review-threads
+```
+
+Each item has `thread_id` (required) and `comment` (optional). Build the JSON array from the batch's thread IDs and resolution messages, then pipe it in one call.
+
+**For Discussion Comments** - use `erk exec reply-to-discussion-comment` with the `comment_id` from the JSON, with a substantive reply that quotes the original comment and explains what action was taken.
+
+#### Step 5: Report Progress
+
+After completing the batch, report:
+
+```
+## Batch N Complete
+
+Addressed:
+- foo.py:42 - Used LBYL pattern
+- bar.py:15 - Added type annotation
+
+Committed: abc1234 "Address PR review comments (batch 1/3)"
+
+Resolved threads: 2
+Remaining batches: 2
+```
+
+Then proceed to the next batch.
+
+### Phase 4: Final Verification
+
+After all batches complete, re-invoke the classifier to verify all threads are resolved. Use Task tool (NOT skill invocation) for the same `--print` mode isolation reason as Phase 1:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Verify PR feedback resolved",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if originally specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+If `actionable_threads` or `discussion_actions` are non-empty, warn about remaining unresolved items. Both `actionable` and `informational` classified threads should be resolved (either by code changes or by dismissal).
+
+#### Report Final Summary
+
+```
+## All PR Comments Addressed
+
+Total comments: 8
+Batches: 4
+Commits: 4
+
+All review threads resolved.
+All discussion comments marked with reaction.
+
+Next steps:
+1. Push changes:
+   - **Graphite repos**: `gt submit` (or `gt ss`)
+   - **Plain git repos**: `git push`
+   - If push is rejected (non-fast-forward): Run `/erk:sync-divergence` to resolve. Do NOT use `git pull --rebase`.
+2. Wait for CI to pass
+3. Request re-review if needed
+```
+
+#### Handle Any Skipped Comments
+
+If the user explicitly skipped any comments during the process, list them:
+
+```
+## Skipped Comments (user choice)
+- #5: src/legacy.py:100 - "Refactor this module" (user deferred)
+```
+
+### Phase 5: Update PR Title and Body
+
+After all review comments have been addressed, update the PR to reflect the full scope of changes.
+
+Run:
+
+```bash
+erk exec update-pr-description --session-id "5fbf43e7-88f6-4b41-82a3-ad46c92e935d"
+```
+
+This generates an AI-powered title and body from the full PR diff, preserving existing header and footer metadata.
+
+### Common Mistakes
+
+See `pr-operations` skill for the complete table of common mistakes and correct approaches.
+
+### Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+
+**CI failure during batch:** Stop, display the failure, and let the user decide whether to fix and continue or abort
+</user>
+  <thinking>The user wants me to run `/erk:pr-address` to address PR review comments. Let me follow the instructions:
+
+1. First, load the `pr-operations` skill
+2. Then classify feedback using a Task tool
+3. Then follow the batched execution plan
+
+Let me start by loading the pr-operations skill and running the classifier in parallel.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="3096" cache_read_input_tokens="35144" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3096}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me load the prerequisite skill and classify the feedback.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="3096" cache_read_input_tokens="35144" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3096}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_017spBpcRU6YxiVxwmqGtfwE">
+    <param name="skill">pr-operations</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3096" cache_read_input_tokens="35144" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3096}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017spBpcRU6YxiVxwmqGtfwE">
+Launching skill: pr-operations
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-47/.claude/skills/pr-operations
+
+# PR Operations Skill
+
+## Core Rule
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands for PR Thread Operations**
+&gt;
+&gt; - ❌ DO NOT use raw `gh api` calls for thread operations
+&gt; - ❌ DO NOT use `gh pr` commands directly for thread resolution
+&gt; - ✅ ONLY use `erk exec` commands listed below
+&gt;
+&gt; The `erk exec` commands handle thread resolution correctly. Raw API calls only reply without resolving.
+
+## Quick Reference
+
+| Command                       | Purpose                           | Key Point                          |
+| ----------------------------- | --------------------------------- | ---------------------------------- |
+| `get-pr-review-comments`      | Fetch unresolved review threads   | Returns threads with line info     |
+| `get-pr-discussion-comments`  | Fetch PR discussion comments      | Returns top-level comments         |
+| `resolve-review-thread`       | Reply AND resolve a single thread | Does both in one operation         |
+| `resolve-review-threads`      | Batch resolve multiple threads    | JSON stdin, one call for N threads |
+| `reply-to-discussion-comment` | Reply to discussion comment       | For non-code feedback              |
+| `post-pr-inline-comment`      | Post new inline comment           | Creates new review thread          |
+
+## When to Use Each Command
+
+### Fetching Comments
+
+```bash
+# Get all unresolved review threads (code comments)
+erk exec get-pr-review-comments
+
+# Get all discussion comments (top-level PR comments)
+erk exec get-pr-discussion-comments
+
+# Include resolved threads (for reference)
+erk exec get-pr-review-comments --all
+```
+
+### Resolving Review Threads
+
+```bash
+# Resolve a single thread
+erk exec resolve-review-thread --thread-id "PRRT_abc123" --comment "Fixed in commit abc1234"
+
+# Batch resolve multiple threads (preferred for pr-address batches)
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed"}, {"thread_id": "PRRT_def", "comment": "Applied"}]' | erk exec resolve-review-threads
+```
+
+### Replying to Discussion Comments
+
+```bash
+# For PR discussion comments (not code review threads)
+erk exec reply-to-discussion-comment --comment-id 12345 --reply "**Action taken:** Updated the docs as requested."
+```
+
+## Common Mistakes
+
+| Mistake                                        | Why It's Wrong                | Correct Approach                      |
+| ---------------------------------------------- | ----------------------------- | ------------------------------------- |
+| Using `gh api repos/.../comments/{id}/replies` | Only replies, doesn't resolve | Use `erk exec resolve-review-thread`  |
+| Using `gh pr comment`                          | Doesn't resolve threads       | Use `erk exec resolve-review-thread`  |
+| Skipping resolution for outdated threads       | Threads stay open in PR       | Always resolve, even if already fixed |
+| Generic replies like "Noted"                   | Not useful for PR history     | Include investigation findings        |
+
+## Replying vs Resolving
+
+&gt; **IMPORTANT: Replying ≠ Resolving**
+&gt;
+&gt; - **Replying** (via raw `gh api .../replies`): Adds a comment but thread stays OPEN
+&gt; - **Resolving** (via `erk exec resolve-review-thread`): Adds a comment AND marks thread as RESOLVED
+&gt;
+&gt; Always use `erk exec resolve-review-thread` (single) or `erk exec resolve-review-threads` (batch) - they do both in one operation.
+
+## Comment Classification Model
+
+When analyzing PR feedback, classify comments by complexity and group into batches.
+
+### Complexity Categories
+
+- **Local fix**: Single comment → single location change (e.g., "Fix typo", "Add type annotation")
+- **Multi-location**: Single comment → changes in multiple spots in one file
+- **Cross-cutting**: Single comment → changes across multiple files
+- **Related**: Multiple comments that inform a single unified change
+
+### Batch Ordering
+
+Process batches from simplest to most complex:
+
+| Batch | Complexity                 | Description                         | Example                                                   |
+| ----- | -------------------------- | ----------------------------------- | --------------------------------------------------------- |
+| 1     | Local fixes                | One file, one location per comment  | "Use LBYL pattern at line 42"                             |
+| 2     | Single-file multi-location | One file, multiple locations        | "Rename this variable everywhere in this file"            |
+| 3     | Cross-cutting              | Multiple files affected             | "Update all callers of this function"                     |
+| 4     | Complex/Related            | Multiple comments inform one change | "Fold validate into prepare" + "Use union types for this" |
+
+**Note**: Discussion comments requiring doc updates go in Batch 3 (cross-cutting).
+
+### Batch Confirmation Flow
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval
+
+## Inline Comment Deduplication
+
+When posting inline review comments, always deduplicate to prevent re-posting existing comments:
+
+1. **Build dedup key**: `(file_path, line_number, body_prefix)` where prefix is first 80 characters of comment body
+2. **Check proximity**: Match within 2-line tolerance (line 42 matches existing comments at lines 40–44)
+3. **Skip duplicates**: If a matching key exists, do not post the comment
+
+This prevents the same feedback from appearing multiple times across review iterations. See [Inline Comment Deduplication](../../docs/learned/review/inline-comment-deduplication.md) for full algorithm details.
+
+## Detailed Documentation
+
+For complete command documentation including JSON output formats, options, and examples:
+
+@references/commands.md
+</user>
+  <tool_use name="Task" id="toolu_015YaHwuqiRUEVE4SLjzY2PB">
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="description">Classify PR feedback</param>
+    <param name="prompt">Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+Return the complete JSON output as your final message.</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3096" cache_read_input_tokens="35144" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3096}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015YaHwuqiRUEVE4SLjzY2PB">
+```json
+{
+  "success": true,
+  "pr_number": 7974,
+  "pr_title": "Use scratch storage for objective comment updates",
+  "pr_url": "https://github.com/dagster-io/erk/pull/7974",
+  "actionable_threads": [
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5wlJqf",
+      "type": "review",
+      "path": "docs/learned/desktop-dash/visual-status-indicators.md",
+      "line": 72,
+      "is_outdated": false,
+      "classification": "actionable",
+      "action_summary": "Update doc snippet: Replace single-emoji exclusion check with prose describing multi-emoji non-blocking set",
+      "complexity": "single_file",
+      "original_comment": "**Audit PR Docs**: Verbatim source code copy that is now inaccurate. Source: `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py:232-233` The doc embeds `has_blocking_indicators = any(i != \"🥞\" for i in indicators)`, which was the old single-emoji exclusion check. After this PR, the source now uses a multi-emoji non-blocking set..."
+    },
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5wlJxb",
+      "type": "review",
+      "path": "docs/learned/tui/stacked-pr-indicator.md",
+      "line": 43,
+      "is_outdated": false,
+      "classification": "actionable",
+      "action_summary": "Update doc snippet: Replace stale code block with prose + source pointer describing non-blocking indicator set",
+      "complexity": "single_file",
+      "original_comment": "**Audit PR Docs**: Verbatim source code copy that is now inaccurate. Source: `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py:232-233` This code block shows: `has_blocking_indicators = any(i != \"🥞\" for i in indicators)` But the source after this PR uses: `_non_blocking = {\"🥞\", \"👀\", \"✔\"}` has_blocking_indicators..."
+    }
+  ],
+
+... [17 lines omitted] ...
+
+  "error": null
+  </tool_result>
+  <assistant>
+
+## Execution Plan
+
+### Batch 1: Single-File Fixes (2 comments) — auto-proceed
+
+| # | Location | Summary |
+|---|----------|---------|
+| 1 | `docs/learned/desktop-dash/visual-status-indicators.md:72` | Replace stale verbatim code block with prose describing multi-emoji non-blocking set |
+| 2 | `docs/learned/tui/stacked-pr-indicator.md:43` | Replace stale code block with prose + source pointer describing non-blocking indicator set |
+
+Both are simple doc fixes — auto-proceeding. Let me read the files and the source code to understand the current state.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2512" cache_read_input_tokens="38240" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2512}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VHw8vX9jRcvgg6YxUHQcNH">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-47/docs/learned/desktop-dash/visual-status-indicators.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2512" cache_read_input_tokens="38240" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2512}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VHw8vX9jRcvgg6YxUHQcNH">
+     1→---
+     2→title: Visual Status Indicators
+     3→read_when:
+     4→  - implementing visual status indicators in erkdesk
+     5→  - adding color-coded status to the erkdesk plan list
+     6→  - migrating erkdesk from pre-rendered display strings to derived status
+     7→tripwires:
+     8→  - action: "Introduce a status color outside the five-color palette"
+     9→    warning: "Map to the canonical five colors (green/amber/purple/red/gray) rather than adding new ones. See the color semantics table in this doc."
+    10→    score: 7
+    11→  - action: "Render status indicators from backend-provided display strings"
+    12→    warning: "Status indicators must derive from raw state fields via pure functions, not pre-rendered strings. See state-derivation-pattern.md."
+    13→    score: 8
+    14→last_audited: "2026-02-20 00:00 PT"
+    15→audit_result: edited
+    16→---
+    17→
+    18→# Visual Status Indicators
+    19→
+    20→## Implementation Status
+    21→
+    22→**Live in TUI (PR #7662).** The TUI plan list renders lifecycle status with emoji indicators derived from raw state fields.
+    23→
+    24→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py, format_lifecycle_with_status --&gt;
+    25→
+    26→`format_lifecycle_with_status()` in `lifecycle.py` adds draft/published prefixes and review decision suffixes to lifecycle stage strings.
+    27→
+    28→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py, RealPlanDataProvider._build_plan_row --&gt;
+    29→
+    30→`RealPlanDataProvider._build_plan_row()` in `real.py` wires `review_decision` from `PullRequestInfo` into the formatter.
+
+... [50 lines omitted] ...
+
+    46→| Amber  | Warning / Attention | Checks pending, unresolved comments            |
+    48→| Red    | Failure             | PR closed without merge, checks failed         |
+    67→- **Blocking indicators** prevent the rocket emoji (🚀) from appearing when a plan reaches the `implemented` stage. Examples: CI failures, unresolved review comments, merge conflicts.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01FrGK4FzXTNPAq3SUm4ncSm">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-47/docs/learned/tui/stacked-pr-indicator.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2512" cache_read_input_tokens="38240" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2512}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FrGK4FzXTNPAq3SUm4ncSm">
+     1→---
+     2→title: Stacked PR Indicator
+     3→read_when:
+     4→  - "adding or modifying PR indicators in the TUI dashboard"
+     5→  - "understanding blocking vs. informational indicators"
+     6→  - "working with stacked PR detection"
+     7→---
+     8→
+     9→# Stacked PR Indicator
+    10→
+    11→The pancake emoji (🥞) indicates a stacked PR in the TUI dashboard lifecycle column. It appears when a plan's PR targets a branch other than master/main.
+    12→
+    13→## Dual-Source Detection
+    14→
+    15→Stacked status is detected from two sources with a fallback strategy:
+    16→
+    17→1. **Primary: `base_ref_name`** — The `base_ref_name` field on `PullRequestInfo` is checked against `("master", "main")`. If the base ref targets a different branch, the PR is stacked.
+    18→
+    19→2. **Fallback: Graphite `get_parent_branch()`** — If `base_ref_name` detection doesn't confirm stacking and the PR head branch is known, the branch manager's `get_parent_branch()` is consulted. If it returns a parent, the PR is stacked.
+    20→
+    21→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py, RealPlanDataProvider._build_plan_row --&gt;
+    22→
+    23→See `RealPlanDataProvider._build_plan_row()` in `real.py` for the dual-source detection logic.
+    24→
+    25→## Indicator Ordering
+    26→
+    27→The pancake emoji is the first indicator added in `_build_indicators()`, appearing before CI status, review decision, and merge conflict indicators.
+    28→
+    29→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py, _build_indicators --&gt;
+    30→
+
+... [36 lines omitted] ...
+
+    37→- **Blocking indicators** (CI failures, unresolved reviews, merge conflicts) prevent the rocket emoji (🚀) from appearing in the implemented stage.
+  </tool_result>
+  <tool_use name="Grep" id="toolu_015y24j8kwEAM6pmPuzpEyXg">
+    <param name="pattern">_non_blocking|has_blocking_indicators</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-47/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2512" cache_read_input_tokens="38240" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2512}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015y24j8kwEAM6pmPuzpEyXg">
+229-    # Ready-to-land indicator for impl stage:
+230-    # shown only when checks pass, no unresolved comments, and no blocking indicators
+231-    # (🥞, 👀, and ✔ are informational and should not block 🚀)
+232:    _non_blocking = {"🥞", "👀", "✔"}
+233:    has_blocking_indicators = any(i not in _non_blocking for i in indicators)
+234:    if is_impl and not has_blocking_indicators:
+235-        if checks_passing is True and has_unresolved_comments is not True:
+236-            indicators.append("🚀")
+237-
+  </tool_result>
+  <thinking>Now I have the full picture. The source code now uses:
+
+```python
+_non_blocking = {"🥞", "👀", "✔"}
+has_blocking_indicators = any(i not in _non_blocking for i in indicators)
+```
+
+But both docs still reference the old single-emoji exclusion check:
+```
+has_blocking_indicators = any(i != "🥞" for i in indicators)
+```
+
+I need to update both docs to replace the stale code blocks with prose describing the expanded non-blocking set. Let me make the edits.
+
+For `docs/learned/desktop-dash/visual-status-indicators.md:72`:
+
+
+The current line describes the blocking indicator logic using the outdated single-emoji check. I'll replace it with prose explaining that the implementation checks whether any indicators fall outside the set of non-blocking emojis (pancake, eyes, and checkmark), and when a plan has no blocking indicators, the rocket emoji signals readiness to merge.
+
+For `docs/learned/tui/stacked-pr-indicator.md:43`:
+The code block showing the old comparison logic needs to be converted to prose describing how the system identifies blocking indicators by checking against the expanded non-blocking set.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3336" cache_read_input_tokens="40752" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3336}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have the full picture. The source code at `lifecycle.py:232-233` now uses:
+
+```python
+_non_blocking = {"🥞", "👀", "✔"}
+has_blocking_indicators = any(i not in _non_blocking for i in indicators)
+```
+
+Both docs still reference the old single-emoji exclusion check. Let me fix both.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3336" cache_read_input_tokens="40752" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3336}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_017hM3kzqdwwgQbSJQCDak3F">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-47/docs/learned/desktop-dash/visual-status-indicators.md</param>
+    <param name="old_string">The distinction is implemented in `_build_indicators()` in `lifecycle.py`: `has_blocking_i...[truncated 53 chars]...d and has no blocking indicators, the rocket emoji is appended to signal "ready to merge."</param>
+    <param name="new_string">The distinction is implemented in `_build_indicators()` in `lifecycle.py`: a `_non_blockin...[truncated 163 chars]...d and has no blocking indicators, the rocket emoji is appended to signal "ready to merge."</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3336" cache_read_input_tokens="40752" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3336}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017hM3kzqdwwgQbSJQCDak3F">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-47/docs/learned/desktop-dash/visual-status-indicators.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01EJ8S8AKTXoayrQ4iRstT1W">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-47/docs/learned/tui/stacked-pr-indicator.md</param>
+    <param name="old_string">The mechanism uses an exclusion check:
+
+```
+has_blocking_indicators = any(i != "🥞" for i i...[truncated 10 chars]...s in the `implemented` stage and has no blocking indicators, the rocket emoji is appended.</param>
+    <param name="new_string">The mechanism uses a `_non_blocking` set in `_build_indicators()` that defines which indic...[truncated 123 chars]...s in the `implemented` stage and has no blocking indicators, the rocket emoji is appended.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3336" cache_read_input_tokens="40752" output_tokens="954" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3336, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EJ8S8AKTXoayrQ4iRstT1W">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-47/docs/learned/tui/stacked-pr-indicator.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me commit and resolve the threads.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1140" cache_read_input_tokens="44088" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1140}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BVuqSxfkpTA2yRf2EmpBGM">
+    <param name="command">git add docs/learned/desktop-dash/visual-status-indicators.md docs/learned/tui/stacked-pr-...[truncated 244 chars]...d stacked-pr-indicator.md.
+
+Co-Authored-By: Claude Opus 4.6 &lt;noreply@anthropic.com&gt;
+EOF
+)"</param>
+    <param name="description">Commit doc fixes for stale code snippets</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1140" cache_read_input_tokens="44088" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1140}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BVuqSxfkpTA2yRf2EmpBGM">
+[plnd/scratch-objective-storage-02-23-0914 d895d6f55] Address PR review: update stale code snippets in docs
+ 2 files changed, 2 insertions(+), 8 deletions(-)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0169jMABE5Xr2437nWSV6reb">
+    <param name="command">echo '[{"thread_id": "PRRT_kwDOPxC3hc5wlJqf", "comment": "Fixed in commit d895d6f55 — repl...[truncated 203 chars]...e + source pointer describing the _non_blocking set."}]' | erk exec resolve-review-threads</param>
+    <param name="description">Batch resolve both review threads</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="293" cache_read_input_tokens="45228" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 293}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0169jMABE5Xr2437nWSV6reb">
+{
+  "success": true,
+  "results": [
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5wlJqf",
+      "comment_added": true
+    },
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5wlJxb",
+      "comment_added": true
+    }
+  ]
+}
+  </tool_result>
+  <assistant>## Batch 1 Complete
+
+Addressed:
+- `docs/learned/desktop-dash/visual-status-indicators.md:72` — Replaced stale verbatim code block with prose describing expanded `_non_blocking` set
+- `docs/learned/tui/stacked-pr-indicator.md:43` — Replaced stale code block with prose + source pointer
+
+Committed: `d895d6f55` "Address PR review: update stale code snippets in docs"
+
+Resolved threads: 2/2
+
+Now let me verify all threads are resolved.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="341" cache_read_input_tokens="45521" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 341}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01UaFXJU3Nb47YrxMamYch6w">
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="description">Verify PR feedback resolved</param>
+    <param name="prompt">Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+Return the complete JSON output as your final message.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="341" cache_read_input_tokens="45521" output_tokens="276" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 341, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UaFXJU3Nb47YrxMamYch6w">
+```json
+{
+  "success": true,
+  "pr_number": 7974,
+  "pr_title": "Use scratch storage for objective comment updates",
+  "pr_url": "https://github.com/dagster-io/erk/pull/7974",
+  "actionable_threads": [],
+  "discussion_actions": [],
+  "informational_count": 15,
+  "batches": [],
+  "error": null
+}
+```
+agentId: a23c051543eb12c65 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 35748
+tool_uses: 5
+duration_ms: 11658&lt;/usage&gt;
+  </tool_result>
+  <assistant>All threads resolved. Now let me update the PR description.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="453" cache_read_input_tokens="45862" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 453}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GXvNfRhSGTKYSEjJ4dSvj9">
+    <param name="command">erk exec update-pr-description --session-id "5fbf43e7-88f6-4b41-82a3-ad46c92e935d"</param>
+    <param name="description">Update PR title and body from diff</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="453" cache_read_input_tokens="45862" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 453}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GXvNfRhSGTKYSEjJ4dSvj9">
+
+  </tool_result>
+  <assistant>## All PR Comments Addressed
+
+**Total comments:** 2
+**Batches:** 1
+**Commits:** 1 (`d895d6f55`)
+
+All review threads resolved.
+
+**Next steps:**
+1. Push changes:
+   - **Graphite repos**: `gt submit` (or `gt ss`)
+   - If push is rejected (non-fast-forward): Run `/erk:sync-divergence` to resolve. Do NOT use `git pull --rebase`.
+2. Wait for CI to pass
+3. Request re-review if needed</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="247" cache_read_input_tokens="46315" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 247}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;local:quick-submit&lt;/command-message&gt;
+&lt;command-name&gt;/local:quick-submit&lt;/command-name&gt;</user>
+  <user># Quick Submit
+
+Quickly commit all changes with a generic "update" message and submit to Graphite.
+
+## Usage
+
+```bash
+/quick-submit
+```
+
+## Implementation
+
+Run the CLI command:
+
+```bash
+erk exec quick-submit
+```
+
+## Notes
+
+- This is a shortcut for rapid iteration
+- Uses generic "update" commit message
+- For proper commit messages, use `/erk:pr-submit` instead
+</user>
+  <tool_use name="Bash" id="toolu_014oJwfhgxCFeEG1XNA6PWhK">
+    <param name="command">erk exec quick-submit</param>
+    <param name="description">Quick commit and submit to Graphite</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="286" cache_read_input_tokens="46690" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 286}" output_tokens="20" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014oJwfhgxCFeEG1XNA6PWhK">
+  Staging all changes...
+  Checking for staged changes...
+  Submitting to Graphite...
+  Getting PR URL...
+{
+  "success": true,
+  "staged_changes": false,
+  "committed": false,
+  "message": "No new changes, submitted existing commits",
+  "pr_url": "https://github.com/dagster-io/erk/pull/7974"
+}
+  </tool_result>
+  <assistant>Submitted — no new changes to stage (the commit was already made). PR: https://github.com/dagster-io/erk/pull/7974</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="210" cache_read_input_tokens="46976" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 210}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="338" cache_read_input_tokens="47222" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 338}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="338" cache_read_input_tokens="47571" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 338}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-preview-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-preview-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-preview-address
+
+## Description
+
+Fetches unresolved PR review comments and discussion comments, displays a summary of what `/erk:pr-address` would do. This is a read-only preview command that makes no changes.
+
+## Usage
+
+```bash
+/erk:pr-preview-address
+/erk:pr-preview-address --all               # Include resolved threads
+/erk:pr-preview-address --pr 6631           # Target specific PR
+/erk:pr-preview-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Agent Instructions
+
+&gt; **IMPORTANT: This is a READ-ONLY preview command.**
+&gt;
+&gt; Do NOT make any code changes, resolve any threads, reply to any comments, or create any commits.
+
+### Phase 1: Classify Feedback
+
+Invoke the pr-feedback-classifier skill to fetch and classify all PR feedback:
+
+```
+/pr-feedback-classifier [--pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+```
+
+Parse the JSON response.
+
+### Phase 2: Display Results
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If `actionable_threads` is empty and `discussion_actions` is empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+**Format the results** as a human-readable summary:
+
+```
+## PR #5944: "Feature: Add new API endpoint"
+
+### Actionable Items (N total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | foo.py:42 | actionable | Use LBYL pattern | local |
+| 2 | review | bar.py:15 | actionable | Add type annotation | local |
+| 3 | discussion | - | actionable | Update documentation | cross_cutting |
+
+### Informational Items (N total)
+
+| # | Type | Location | Summary | Complexity |
+|---|------|----------|---------|------------|
+| 4 | review | utils.py:10 | Bot suggestion: extract helper (optional) | local |
+
+### Execution Plan Preview
+
+**Batch 1: Local Fixes** (auto-proceed)
+- Item #1: foo.py:42 - Use LBYL pattern
+- Item #2: bar.py:15 - Add type annotation
+
+**Batch 2: Cross-Cutting** (user confirmation)
+- Item #3: Update documentation
+
+**Batch 3: Informational** (user decides: act or dismiss)
+- Item #4: utils.py:10 - Bot suggestion: extract helper (optional)
+
+### Statistics
+- Actionable items: 3
+- Informational items: 1
+- Informational discussion comments: 12
+- Estimated batches: 3
+- Auto-proceed batches: 1
+- User confirmation batches: 2
+```
+
+**Note:** Items in `actionable_threads` are split into two sections based on their `classification` field: `"actionable"` items appear under "Actionable Items", `"informational"` items appear under "Informational Items". Both sections use the same item numbering (continuous across sections).
+
+Add footer:
+
+```
+To address these comments, run: /erk:pr-address
+```
+
+### Phase 3: Exit (NO ACTIONS)
+
+**CRITICAL**: This is a preview-only command. Do NOT:
+
+- Make any code changes
+- Resolve any threads
+- Reply to any comments
+- Create any commits
+- Push anything to remote
+- Run any CI commands
+
+Simply display the summary and exit.
+
+## Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+</user>
+  <tool_use name="Skill" id="toolu_017RkSBv2fUKfEcr1kWrJmEF">
+    <param name="skill">pr-feedback-classifier</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1106" cache_read_input_tokens="47920" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1106, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017RkSBv2fUKfEcr1kWrJmEF">
+Skill "pr-feedback-classifier" completed (forked execution).
+
+Result:
+{"success":true,"pr_number":7974,"pr_title":"Refactor lifecycle indicators to use non-blocking set for rocket readiness","pr_url":"https://github.com/dagster-io/erk/pull/7974","actionable_threads":[{"thread_id":"PRRT_kwDOPxC3hc5wlPcR","type":"review","path":"docs/learned/desktop-dash/visual-status-indicators.md","line":72,"is_outdated":false,"classification":"actionable","action_summary":"Bot suggestion: remove or refactor the specific enumeration of _non_blocking set values to avoid drift when new indicators are added","complexity":"single_file","original_comment":"**Audit PR Docs**: Drift risk — documents specific set membership values that will change.\n\nSource: `packages/erk-shared/src/erk_shared/gateway/plan_data_prov"},{"thread_id":"PRRT_kwDOPxC3hc5wlPhq","type":"review","path":"docs/learned/tui/stacked-pr-indicator.md","line":40,"is_outdated":false,"classification":"actionable","action_summary":"Bot suggestion: remove or refactor the specific enumeration of _non_blocking set values to avoid drift when new indicators are added","complexity":"single_file","original_comment":"**Audit PR Docs**: Drift risk — documents specific set membership values that will change.\n\nSource: `packages/erk-shared/src/erk_shared/gateway/plan_data_prov"}],"discussion_actions":[],"informational_count":13,"batches":[{"name":"Single-File","complexity":"single_file","auto_proceed":true,"item_indices":[0,1]}],"error":null}
+  </tool_result>
+  <assistant>## PR #7974: "Refactor lifecycle indicators to use non-blocking set for rocket readiness"
+
+### Actionable Items (2 total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | `docs/learned/desktop-dash/visual-status-indicators.md:72` | actionable | Remove specific enumeration of `_non_blocking` set values to avoid drift when new indicators are added | single_file |
+| 2 | review | `docs/learned/tui/stacked-pr-indicator.md:40` | actionable | Remove specific enumeration of `_non_blocking` set values to avoid drift when new indicators are added | single_file |
+
+### Execution Plan Preview
+
+**Batch 1: Single-File Fixes** (auto-proceed)
+- Item #1: `visual-status-indicators.md:72` - Refactor to reference `_non_blocking` set generically instead of listing specific emojis
+- Item #2: `stacked-pr-indicator.md:40` - Same drift-risk fix
+
+### Statistics
+- Actionable items: 2
+- Informational items: 0
+- Informational discussion comments: 13
+- Estimated batches: 1
+- Auto-proceed batches: 1
+- User confirmation batches: 0
+
+---
+
+To address these comments, run: `/erk:pr-address`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="507" cache_read_input_tokens="49026" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 507}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;erk:pr-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-address
+
+## Description
+
+Fetches unresolved PR review comments AND PR discussion comments from the current branch's PR and addresses them using holistic analysis with smart batching. Comments are grouped by complexity and relationship, then processed batch-by-batch with incremental commits and resolution.
+
+## Usage
+
+```bash
+/erk:pr-address
+/erk:pr-address --all               # Include resolved threads (for reference)
+/erk:pr-address --pr 6631           # Target specific PR
+/erk:pr-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Prerequisite
+
+**Load the `pr-operations` skill first** for complete command reference and common mistake patterns.
+
+## Agent Instructions
+
+&gt; **Prerequisite**: Load `pr-operations` skill first for command reference.
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands**
+&gt;
+&gt; See `pr-operations` skill for the complete command reference. Never use raw `gh api` calls for thread operations.
+
+### Phase 1: Classify Feedback
+
+Use the Task tool (NOT a `/pr-feedback-classifier` skill invocation) to run the classifier. The skill's `context: fork` metadata does not create true subagent isolation in `--print` mode, so we must use an explicit Task tool call to guarantee the classifier runs in a separate agent context:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Classify PR feedback",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+Parse the JSON response. The skill returns:
+
+- `success`: Whether the operation succeeded
+- `pr_number`, `pr_title`, `pr_url`: PR metadata
+- `actionable_threads`: Array with `thread_id`, `path`, `line`, `classification`, `action_summary`, `complexity`
+  - `classification`: `"actionable"` (code changes needed) or `"informational"` (user decides to act or dismiss)
+- `discussion_actions`: Array with `comment_id`, `action_summary`, `complexity`
+- `batches`: Execution order with `item_indices` referencing the arrays above
+  - Includes an **Informational** batch (last) for `classification: "informational"` threads
+- `error`: Error message if `success` is false
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If both `actionable_threads` and `discussion_actions` are empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+### Phase 2: Display Batched Plan
+
+Show the user the batched execution plan from the classifier output:
+
+```
+## Execution Plan
+
+### Batch 1: Local Fixes (3 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 1 | foo.py:42 | Use LBYL pattern |
+| 2 | bar.py:15 | Add type annotation |
+| 3 | baz.py:99 | Fix typo |
+
+### Batch 2: Single-File Changes (1 comment)
+| # | Location | Summary |
+|---|----------|---------|
+| 4 | impl.py (multiple) | Rename `old_name` to `new_name` throughout |
+
+### Batch 3: Cross-Cutting Changes (2 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 5 | Multiple files | Update all callers of deprecated function |
+| 6 | docs/ | Update documentation per reviewer request |
+
+### Batch 4: Complex Changes (2 comments -&gt; 1 unified change)
+| # | Location | Summary |
+|---|----------|---------|
+| 7 | impl.py:50 | Fold validate into prepare with union types |
+| 8 | cmd.py:100 | (related to #7 - same refactor) |
+```
+
+**User confirmation flow:**
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval before executing
+
+### Phase 3: Execute by Batch
+
+For each batch, execute this workflow using the thread IDs from the classifier JSON:
+
+#### Step 1: Address All Comments in the Batch
+
+For each comment in the batch:
+
+**For Informational Review Threads** (`classification: "informational"`):
+
+Present the user with a choice using AskUserQuestion:
+
+- **Act**: Make the suggested change, then resolve the thread
+- **Dismiss**: Resolve the thread without code changes (reply with a brief message like "Acknowledged, not acting on this suggestion")
+
+If the user chooses **Act**, proceed as a normal review thread (read file, make fix, track change). If the user chooses **Dismiss**, skip to Step 4 to resolve the thread with a dismissal reply.
+
+**For Actionable Review Threads** (`classification: "actionable"`):
+
+1. Read the file to understand context:
+   - If `line` is specified: Read around that line number
+   - If `line` is null (outdated thread): Read the entire file or search for relevant code mentioned in the comment
+2. Make the fix following the reviewer's feedback
+3. Track the change for the batch commit message
+
+**For Discussion Comments:**
+
+1. Determine if action is needed:
+   - If it's a request (e.g., "Please update docs"), take the requested action
+   - If it's a question, provide an answer or make clarifying changes
+   - If it's architectural feedback/suggestion, investigate the codebase to understand implications
+   - If it's just acknowledgment/thanks, note it and move on
+2. **Investigate the codebase** when the comment requires understanding existing code:
+   - Search for relevant patterns, existing implementations, or related code
+   - Note any interesting findings that inform your decision
+   - Record these findings - they become permanent documentation in the reply
+3. Take action if needed
+
+**Handling False Positives from Automated Reviewers:**
+
+Automated review bots (like `dignified-python-review`, linters, or security scanners) can flag false positives. Before making code changes:
+
+1. **Read the flagged code carefully** - understand what the bot is complaining about
+2. **Verify if it's a false positive** by checking:
+   - Is the pattern the bot wants already implemented nearby? (e.g., LBYL check already exists on a preceding line)
+   - Is the bot misunderstanding the code structure?
+   - Is the bot applying a rule that doesn't fit this specific context?
+3. **If it's a false positive**, do NOT make unnecessary code changes. Instead:
+   - Reply to the comment explaining why it's a false positive
+   - Reference specific line numbers where the correct pattern already exists
+   - Resolve the thread
+
+**For Outdated Review Threads** (`is_outdated: true`):
+
+Outdated threads have `line: null` because the code has changed since the comment was made.
+
+1. **Read the file** at the path (ignore line number - search for relevant code)
+2. **Check if the issue is already fixed** in the current code
+3. **Take action:**
+   - If already fixed -&gt; Proceed directly to Step 4 to resolve the thread
+   - If not fixed -&gt; Apply the fix, then proceed to Step 4
+
+**IMPORTANT**: Outdated threads MUST still be resolved via `erk exec resolve-review-thread`.
+Do not skip resolution just because no code change was needed.
+
+#### Step 2: Run CI Checks
+
+After making all changes in the batch:
+
+```bash
+# Run relevant CI checks for changed files
+# (This may vary by project - use project's test commands)
+```
+
+If CI fails, fix the issues before proceeding.
+
+#### Step 3: Commit the Batch
+
+Create a single commit for all changes in the batch:
+
+```bash
+git add &lt;changed files&gt;
+git commit -m "Address PR review comments (batch N/M)
+
+- &lt;summary of comment 1&gt;
+- &lt;summary of comment 2&gt;
+..."
+```
+
+#### Step 4: Resolve All Threads in the Batch (MANDATORY)
+
+**This step is NOT optional.** Every thread must be resolved using the thread IDs from the classifier JSON.
+
+After committing, resolve review threads and mark discussion comments.
+
+**For Review Threads** - use the batch command `erk exec resolve-review-threads` to resolve all review threads in a single call. Pipe a JSON array via stdin:
+
+```bash
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed in commit abc1234"}, {"thread_id": "PRRT_def", "comment": "Applied suggestion"}]' | erk exec resolve-review-threads
+```
+
+Each item has `thread_id` (required) and `comment` (optional). Build the JSON array from the batch's thread IDs and resolution messages, then pipe it in one call.
+
+**For Discussion Comments** - use `erk exec reply-to-discussion-comment` with the `comment_id` from the JSON, with a substantive reply that quotes the original comment and explains what action was taken.
+
+#### Step 5: Report Progress
+
+After completing the batch, report:
+
+```
+## Batch N Complete
+
+Addressed:
+- foo.py:42 - Used LBYL pattern
+- bar.py:15 - Added type annotation
+
+Committed: abc1234 "Address PR review comments (batch 1/3)"
+
+Resolved threads: 2
+Remaining batches: 2
+```
+
+Then proceed to the next batch.
+
+### Phase 4: Final Verification
+
+After all batches complete, re-invoke the classifier to verify all threads are resolved. Use Task tool (NOT skill invocation) for the same `--print` mode isolation reason as Phase 1:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Verify PR feedback resolved",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if originally specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+If `actionable_threads` or `discussion_actions` are non-empty, warn about remaining unresolved items. Both `actionable` and `informational` classified threads should be resolved (either by code changes or by dismissal).
+
+#### Report Final Summary
+
+```
+## All PR Comments Addressed
+
+Total comments: 8
+Batches: 4
+Commits: 4
+
+All review threads resolved.
+All discussion comments marked with reaction.
+
+Next steps:
+1. Push changes:
+   - **Graphite repos**: `gt submit` (or `gt ss`)
+   - **Plain git repos**: `git push`
+   - If push is rejected (non-fast-forward): Run `/erk:sync-divergence` to resolve. Do NOT use `git pull --rebase`.
+2. Wait for CI to pass
+3. Request re-review if needed
+```
+
+#### Handle Any Skipped Comments
+
+If the user explicitly skipped any comments during the process, list them:
+
+```
+## Skipped Comments (user choice)
+- #5: src/legacy.py:100 - "Refactor this module" (user deferred)
+```
+
+### Phase 5: Update PR Title and Body
+
+After all review comments have been addressed, update the PR to reflect the full scope of changes.
+
+Run:
+
+```bash
+erk exec update-pr-description --session-id "5fbf43e7-88f6-4b41-82a3-ad46c92e935d"
+```
+
+This generates an AI-powered title and body from the full PR diff, preserving existing header and footer metadata.
+
+### Common Mistakes
+
+See `pr-operations` skill for the complete table of common mistakes and correct approaches.
+
+### Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+
+**CI failure during batch:** Stop, display the failure, and let the user decide whether to fix and continue or abort
+</user>
+  <assistant>
+
+The `pr-operations` skill is already loaded from earlier. Let me classify the feedback.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="3096" cache_read_input_tokens="49874" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3096}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+</session>
