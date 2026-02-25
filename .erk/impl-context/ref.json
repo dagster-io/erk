@@ -1,4 +1,9 @@
 {
   "provider": "github-draft-pr",
-  "title": "Fix: Numeric string fields coerced to int by `_coerce_value`"
+  "plan_id": "8167",
+  "url": "https://github.com/dagster-io/erk/pull/8167",
+  "created_at": "2026-02-25T13:41:08.520342",
+  "synced_at": "2026-02-25T13:41:08.520342",
+  "labels": [],
+  "objective_id": null
 }
