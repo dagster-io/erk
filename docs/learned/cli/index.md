@@ -39,11 +39,13 @@
 - **[learn-plan-land-flow.md](learn-plan-land-flow.md)** — landing PRs associated with learn plans, understanding how learn plan metadata updates parent issues
 - **[local-commands.md](local-commands.md)** — designing local commands, understanding local command taxonomy, creating audit or assessment commands
 - **[local-remote-command-groups.md](local-remote-command-groups.md)** — considering invoke_without_command=True for Click command groups, deciding between command groups vs separate commands for local/remote workflows, understanding why erk uses separate commands instead of unified groups
+- **[oauth-secret-management.md](oauth-secret-management.md)** — working with erk admin gh-actions-api-key command, understanding API key vs OAuth token precedence, adding new secret types to admin commands
 - **[objective-commands.md](objective-commands.md)** — working with erk objective commands, implementing objective check or close functionality, understanding objective validation patterns
 - **[optional-arguments.md](optional-arguments.md)** — making a CLI argument optional, inferring CLI arguments from context, implementing branch-based argument defaults
 - **[output-styling.md](output-styling.md)** — styling CLI output, using colors in CLI, formatting terminal output
 - **[parameter-addition-checklist.md](parameter-addition-checklist.md)** — adding a parameter to a multi-layer command, working with skills that call erk exec scripts, debugging parameter not found errors
 - **[plan-implement.md](plan-implement.md)** — understanding the /erk:plan-implement command, implementing plans from GitHub issues, working with .impl/ folders, debugging plan execution failures
+- **[plan-list-provider-pattern.md](plan-list-provider-pattern.md)** — modifying erk plan list output, understanding how plan list and TUI share data providers, adding columns to plan list display
 - **[pr-operations.md](pr-operations.md)** — creating PRs programmatically, implementing PR submission workflows, preventing duplicate PR creation
 - **[pr-rewrite.md](pr-rewrite.md)** — using or modifying erk pr rewrite, understanding the PR rewrite pipeline phases, working with squash, commit message generation, or PR updating
 - **[pr-submission.md](pr-submission.md)** — choosing between git-pr-push and pr-submit commands, understanding PR submission workflows, deciding whether to use Graphite or plain git

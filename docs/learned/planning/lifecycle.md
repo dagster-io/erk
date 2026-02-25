@@ -1028,16 +1028,16 @@ The `lifecycle_stage` field in the plan-header metadata block provides machine-r
 
 ### Stage Values
 
-| Stage      | Meaning                                            | Color (TUI) |
-| ---------- | -------------------------------------------------- | ----------- |
-| `prompted` | Plan issue created, planning not yet started       | magenta     |
-| `planning` | Plan is being written by an agent                  | magenta     |
-| `planned`  | Plan written, ready for implementation             | dim         |
-| `impl`     | Implementation in progress or complete, PR created | cyan        |
+| Stage      | Meaning                                      | Color (TUI) |
+| ---------- | -------------------------------------------- | ----------- |
+| `prompted` | Plan issue created, planning not yet started | magenta     |
+| `planning` | Plan is being written by an agent            | magenta     |
+| `planned`  | Plan written, ready for implementation       | dim         |
+| `impl`     | Implementation in progress or complete       | yellow      |
 
-**Note:** The former `implementing` and `implemented` stages have been consolidated into `impl`. Old values are accepted for backwards compatibility but new code should write `impl`.
+Legacy values `implementing` and `implemented` are accepted by schema validation for backwards compatibility but are never written. The display layer renders all three as `[yellow]impl[/yellow]`. See [Lifecycle Stage Consolidation](lifecycle-stage-consolidation.md) for details.
 
-The field is nullable — plans created before this feature have `lifecycle_stage: null`, and the TUI falls back to inferring stage from PR metadata (draft state, open/merged/closed), displaying `impl` (cyan) for non-draft open PRs.
+The field is nullable — plans created before this feature have `lifecycle_stage: null`, and the TUI falls back to inferring stage from PR metadata (draft state, open/merged/closed), displaying `impl` (yellow) for non-draft open PRs.
 
 ### Write Points
 
@@ -1048,14 +1048,14 @@ Each stage is set by specific commands at well-defined moments:
 | `prompted` | `one_shot_dispatch`                                                                                                            | One-shot plan issue created                       |
 | `planning` | `one-shot.yml` workflow                                                                                                        | Agent begins writing plan                         |
 | `planned`  | `plan_save_to_issue`, `plan create`, `register_one_shot_plan`, `GitHubPlanBackend.create_plan`, `PlannedPRBackend.create_plan` | Plan saved to GitHub                              |
-| `impl`     | `mark-impl-started`, `impl-signal submitted`, `handle-no-changes`, `pr/shared.py`                                              | Implementation begins, completes, or PR submitted |
+| `impl`     | `mark-impl-started`, `impl-signal` (started/submitted), `handle-no-changes`, `pr/shared.py`                                    | Implementation begins, completes, or PR submitted |
 
 ### Explicit Updates via Exec Command
 
 The `update-plan-header` exec command allows explicit field updates, including lifecycle stage:
 
 ```bash
-erk exec update-plan-header 123 lifecycle_stage=implementing
+erk exec update-plan-header 123 lifecycle_stage=impl
 ```
 
 Returns JSON on success:

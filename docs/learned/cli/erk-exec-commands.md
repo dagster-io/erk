@@ -118,7 +118,33 @@ Updates a step's status and/or PR reference. When `--pr` is provided without `--
 
 ### Implementation Setup Operations
 
-- `setup-impl-from-issue` - Prepare worktree for plan implementation
+- `setup-impl` - Consolidated implementation setup (orchestrator)
+- `setup-impl-from-issue` - Prepare worktree from a plan issue (called by `setup-impl`)
+- `cleanup-impl-context` - Remove `.erk/impl-context/` staging directory
+
+#### setup-impl
+
+Consolidated entry point for implementation setup. Handles all plan sources:
+
+```bash
+erk exec setup-impl --issue 2521              # From issue number
+erk exec setup-impl --file ./my-plan.md       # From local file
+erk exec setup-impl                           # Auto-detect from .impl/, branch, or fail
+```
+
+**What it does:**
+
+1. Detects plan source (issue, file, existing `.impl/`, or branch name)
+2. Delegates to `setup-impl-from-issue` for issue-based plans
+3. Runs `impl-init` validation
+4. Cleans up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+**Flags:**
+
+- `--issue` - Issue number to fetch plan from
+- `--file` - Local markdown file path
+
+**Output:** JSON with `success`, `source`, `plan_number`, `has_plan_tracking`, `impl_type`, `valid`, `related_docs`
 
 #### setup-impl-from-issue
 
@@ -140,3 +166,29 @@ Creates implementation environment from a plan issue:
 - If on feature branch: Stacks new branch on current branch
 
 **Important:** After `create_branch()`, explicit `checkout_branch()` is called because GraphiteBranchManager restores the original branch after tracking.
+
+#### cleanup-impl-context
+
+Removes the `.erk/impl-context/` staging directory after implementation:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+Performs `git rm -rf .erk/impl-context/` and commits the deletion.
+
+### PR Validation Operations
+
+- `erk pr check` - Validate PR structural invariants
+
+#### erk pr check --stage=impl
+
+The `--stage=impl` flag adds implementation-specific validation:
+
+```bash
+erk pr check --stage=impl
+```
+
+**Additional check:** Verifies `.erk/impl-context/` has been cleaned up. This catches cases where the staging directory was not removed after implementation.
+
+**Output format:** Each check returns a `PrCheck(passed: bool, description: str)` result. All checks are displayed with `[PASS]`/`[FAIL]` status.

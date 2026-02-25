@@ -16,6 +16,8 @@ Rules triggered by matching actions in code.
 
 **loading erk-diff-analysis skill more than once per session** → Read [Skill-Based Commit Message Generation](commit-messages.md) first. Skills persist for the entire session. Check conversation history for 'erk-diff-analysis' before reloading.
 
+**merging a PR without verifying documentation matches code changes** → Read [Post-PR Validation Checklist](pr-validation.md) first. Check that any new patterns, commands, or architectural decisions are documented in docs/learned/. Run erk docs sync after adding new docs.
+
 **modifying one-shot branch naming convention** → Read [One-Shot Workflow](one-shot-workflow.md) first. Branch format is `oneshot-{slug}-{MM-DD-HHMM}` (no plan issue) or `P{N}-{slug}-{MM-DD-HHMM}` (when plan_issue_number is provided). The workflow and CLI both depend on these prefixes for identification.
 
 **running gt sync without committing or stashing working tree changes** → Read [Git Sync State Preservation](git-sync-state-preservation.md) first. gt sync performs a rebase which can silently lose uncommitted changes. Always commit or stash before sync, and verify working tree state after.

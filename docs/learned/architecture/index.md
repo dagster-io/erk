@@ -22,6 +22,7 @@
 - **[cli-to-pipeline-boundary.md](cli-to-pipeline-boundary.md)** — refactoring complex CLI commands, separating business logic from Click layer, deciding when to extract pipeline from CLI command
 - **[click-context-di-pattern.md](click-context-di-pattern.md)** — adding dependency injection to a Click command, using @click.pass*context with require*\*() helpers, testing Click commands with ErkContext
 - **[command-boundaries.md](command-boundaries.md)** — Choosing between agent vs CLI command, Deciding when to use .claude/commands/ vs src/erk/cli/, Understanding when AI capabilities are needed
+- **[command-composition.md](command-composition.md)** — creating an exec script that orchestrates other exec scripts, understanding setup-impl command architecture, adding CWD injection for testability
 - **[commandresult-extension-pattern.md](commandresult-extension-pattern.md)** — adding new field to CommandResult, extending CommandResult dataclass, adding metadata extraction, implementing new CommandResult field
 - **[composable-remote-commands.md](composable-remote-commands.md)** — adding a new remote command to run on codespaces, implementing erk codespace run subcommands, working with streaming remote execution
 - **[context-efficiency.md](context-efficiency.md)** — orchestrating multi-agent workflows, parent agent reading large agent output via TaskOutput, designing agent output routing to minimize context usage
@@ -33,6 +34,7 @@
 - **[erk-architecture.md](erk-architecture.md)** — understanding erk architecture, implementing dry-run patterns, regenerating context after os.chdir, detecting root worktree, detecting worktree location, adding composing template methods to ABC
 - **[erk-shared-package.md](erk-shared-package.md)** — deciding where to put new utilities, moving code between packages
 - **[erk-statusline.md](erk-statusline.md)** — modifying the Claude Code status line, adding new status indicators to the statusline, understanding how statusline fetches GitHub data, working with Token/TokenSeq patterns, debugging statusline performance
+- **[error-handling-patterns.md](error-handling-patterns.md)** — implementing error handling in exec scripts, deciding between fail-fast and best-effort patterns, handling GitHub API errors gracefully
 - **[event-progress-pattern.md](event-progress-pattern.md)** — implementing operations that need progress reporting, separating business logic from UI output, building testable CLI operations, using ProgressEvent or CompletionEvent
 - **[exception-logging-patterns.md](exception-logging-patterns.md)** — deciding between logger.debug and UserFacingCliError for error handling, implementing best-effort cleanup alongside primary operations, writing error handling for multi-step CLI operations
 - **[fail-open-patterns.md](fail-open-patterns.md)** — implementing cleanup operations, designing resilient workflows, handling optional or non-critical operations

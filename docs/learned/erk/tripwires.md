@@ -12,6 +12,8 @@ read_when:
 
 Rules triggered by matching actions in code.
 
+**adding a new cleanup path in land_cmd.py without calling \_ensure_branch_not_checked_out()** → Read [Multi-Path Branch Cleanup in Land](four-path-cleanup.md) first. All cleanup paths must call \_ensure_branch_not_checked_out() before branch deletion. Git refuses to delete branches checked out in any worktree.
+
 **adding a new step to the bootstrap sequence** → Read [Codespace Remote Execution Pattern](codespace-remote-execution.md) first. This affects ALL remote commands. The bootstrap runs on every SSH invocation, so added steps must be idempotent and fast.
 
 **checking thread count without comparing to dash count** → Read [PR Feedback Classifier Schema](pr-feedback-classifier-schema.md) first. Thread count in classifier output must equal erk dash count. Missing threads are silently dropped.
