@@ -13,6 +13,7 @@ from erk.cli.commands.exec.scripts.get_plan_metadata import get_plan_metadata
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.plan_store.github import GitHubPlanStore
 
 
 def make_plan_header_body(
@@ -81,7 +82,7 @@ def test_get_plan_metadata_returns_existing_field() -> None:
     result = runner.invoke(
         get_plan_metadata,
         ["3509", "objective_issue"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github_issues=fake_gh, plan_store=GitHubPlanStore(fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -101,7 +102,7 @@ def test_get_plan_metadata_returns_string_field() -> None:
     result = runner.invoke(
         get_plan_metadata,
         ["3509", "worktree_name"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github_issues=fake_gh, plan_store=GitHubPlanStore(fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -120,7 +121,7 @@ def test_get_plan_metadata_returns_null_for_nonexistent_field() -> None:
     result = runner.invoke(
         get_plan_metadata,
         ["3509", "nonexistent_field"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github_issues=fake_gh, plan_store=GitHubPlanStore(fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -139,7 +140,7 @@ def test_get_plan_metadata_returns_null_for_null_field() -> None:
     result = runner.invoke(
         get_plan_metadata,
         ["3509", "objective_issue"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github_issues=fake_gh, plan_store=GitHubPlanStore(fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -161,7 +162,7 @@ This is an issue created before plan-header blocks were introduced.
     result = runner.invoke(
         get_plan_metadata,
         ["100", "objective_issue"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github_issues=fake_gh, plan_store=GitHubPlanStore(fake_gh)),
     )
 
     # Should succeed with null value, not error
@@ -185,7 +186,7 @@ def test_get_plan_metadata_issue_not_found() -> None:
     result = runner.invoke(
         get_plan_metadata,
         ["9999", "objective_issue"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github_issues=fake_gh, plan_store=GitHubPlanStore(fake_gh)),
     )
 
     assert result.exit_code == 1
@@ -209,7 +210,7 @@ def test_json_output_structure_success() -> None:
     result = runner.invoke(
         get_plan_metadata,
         ["321", "objective_issue"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github_issues=fake_gh, plan_store=GitHubPlanStore(fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -241,7 +242,7 @@ def test_json_output_structure_error() -> None:
     result = runner.invoke(
         get_plan_metadata,
         ["999", "objective_issue"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github_issues=fake_gh, plan_store=GitHubPlanStore(fake_gh)),
     )
 
     assert result.exit_code == 1

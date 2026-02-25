@@ -11,6 +11,7 @@ from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import find_metadata_block
+from erk_shared.plan_store.github import GitHubPlanStore
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 
@@ -55,7 +56,11 @@ def test_update_single_field() -> None:
     result = runner.invoke(
         update_plan_header,
         ["123", "objective_issue=7823"],
-        obj=ErkContext.for_test(github_issues=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            repo_root=repo_root,
+            plan_store=GitHubPlanStore(fake_gh),
+        ),
     )
 
     assert result.exit_code == 0
@@ -81,7 +86,11 @@ def test_update_multiple_fields() -> None:
     result = runner.invoke(
         update_plan_header,
         ["456", "lifecycle_stage=impl", "objective_issue=7823"],
-        obj=ErkContext.for_test(github_issues=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            repo_root=repo_root,
+            plan_store=GitHubPlanStore(fake_gh),
+        ),
     )
 
     assert result.exit_code == 0
@@ -111,7 +120,11 @@ def test_overwrites_existing() -> None:
     result = runner.invoke(
         update_plan_header,
         ["789", "objective_issue=7823"],
-        obj=ErkContext.for_test(github_issues=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            repo_root=repo_root,
+            plan_store=GitHubPlanStore(fake_gh),
+        ),
     )
 
     assert result.exit_code == 0
@@ -142,7 +155,11 @@ def test_null_coercion() -> None:
     result = runner.invoke(
         update_plan_header,
         ["100", "objective_issue=null"],
-        obj=ErkContext.for_test(github_issues=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            repo_root=repo_root,
+            plan_store=GitHubPlanStore(fake_gh),
+        ),
     )
 
     assert result.exit_code == 0
@@ -163,7 +180,11 @@ def test_int_coercion() -> None:
     result = runner.invoke(
         update_plan_header,
         ["101", "objective_issue=7823"],
-        obj=ErkContext.for_test(github_issues=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            repo_root=repo_root,
+            plan_store=GitHubPlanStore(fake_gh),
+        ),
     )
 
     assert result.exit_code == 0
@@ -185,7 +206,11 @@ def test_string_preserved() -> None:
     result = runner.invoke(
         update_plan_header,
         ["102", "branch_name=my-branch"],
-        obj=ErkContext.for_test(github_issues=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            repo_root=repo_root,
+            plan_store=GitHubPlanStore(fake_gh),
+        ),
     )
 
     assert result.exit_code == 0
@@ -212,7 +237,11 @@ def test_schema_validation_rejects_unknown_field() -> None:
     result = runner.invoke(
         update_plan_header,
         ["200", "bogus_field=x"],
-        obj=ErkContext.for_test(github_issues=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            repo_root=repo_root,
+            plan_store=GitHubPlanStore(fake_gh),
+        ),
     )
 
     assert result.exit_code == 1
@@ -230,7 +259,11 @@ def test_schema_validation_rejects_invalid_lifecycle_stage() -> None:
     result = runner.invoke(
         update_plan_header,
         ["201", "lifecycle_stage=bogus"],
-        obj=ErkContext.for_test(github_issues=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            repo_root=repo_root,
+            plan_store=GitHubPlanStore(fake_gh),
+        ),
     )
 
     assert result.exit_code == 1
@@ -248,7 +281,11 @@ def test_immutable_field_protected() -> None:
     result = runner.invoke(
         update_plan_header,
         ["202", "created_by=hacker"],
-        obj=ErkContext.for_test(github_issues=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            repo_root=repo_root,
+            plan_store=GitHubPlanStore(fake_gh),
+        ),
     )
 
     # Backend silently ignores immutable fields, so command succeeds
@@ -274,7 +311,10 @@ def test_no_fields_provided() -> None:
     result = runner.invoke(
         update_plan_header,
         ["300"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            plan_store=GitHubPlanStore(fake_gh),
+        ),
     )
 
     assert result.exit_code == 1
@@ -291,7 +331,10 @@ def test_invalid_field_format() -> None:
     result = runner.invoke(
         update_plan_header,
         ["301", "no-equals-sign"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            plan_store=GitHubPlanStore(fake_gh),
+        ),
     )
 
     assert result.exit_code == 1
@@ -314,7 +357,11 @@ def test_plan_not_found() -> None:
     result = runner.invoke(
         update_plan_header,
         ["999", "lifecycle_stage=planned"],
-        obj=ErkContext.for_test(github_issues=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            repo_root=repo_root,
+            plan_store=GitHubPlanStore(fake_gh),
+        ),
     )
 
     assert result.exit_code == 1
@@ -336,7 +383,11 @@ This is an issue created before plan-header blocks were introduced.
     result = runner.invoke(
         update_plan_header,
         ["400", "lifecycle_stage=planned"],
-        obj=ErkContext.for_test(github_issues=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            repo_root=repo_root,
+            plan_store=GitHubPlanStore(fake_gh),
+        ),
     )
 
     assert result.exit_code == 1

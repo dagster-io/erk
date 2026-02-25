@@ -1,18 +1,47 @@
 """Unit tests for _update_parent_learn_status_if_learn_plan in land command."""
 
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 
 from erk.cli.commands.land_cmd import _update_parent_learn_status_if_learn_plan
-from erk.core.context import context_for_test
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.context.testing import context_for_test
 from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_header_learn_plan_pr,
     extract_plan_header_learn_status,
 )
-from tests.test_utils.github_helpers import create_test_issue
-from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+from erk_shared.plan_store.types import Plan, PlanState
+from tests.test_utils.plan_helpers import (
+    create_plan_store_with_plans,
+    format_plan_header_body_for_test,
+)
+
+
+def _make_plan(
+    *,
+    number: int,
+    title: str = "Test plan",
+    labels: list[str] | None = None,
+    **header_kwargs: object,
+) -> Plan:
+    """Create a Plan object with plan-header metadata for testing."""
+    now = datetime(2024, 1, 15, 10, 30, tzinfo=UTC)
+    body = format_plan_header_body_for_test(**header_kwargs)
+    return Plan(
+        plan_identifier=str(number),
+        title=title,
+        body=body,
+        state=PlanState.OPEN,
+        url=f"https://github.com/test-owner/test-repo/pull/{number}",
+        labels=labels if labels is not None else ["erk-plan"],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        metadata={},
+        objective_id=None,
+        header_fields={},
+    )
 
 
 def test_update_parent_learn_status_skips_non_learn_plan(
@@ -23,18 +52,11 @@ def test_update_parent_learn_status_skips_non_learn_plan(
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
-    # Create a regular plan issue (no learned_from_issue)
     plan_number = 100
-    plan_body = format_plan_header_body_for_test()
-    plan_issue = create_test_issue(
-        number=plan_number,
-        title="Regular plan",
-        body=plan_body,
-        labels=["erk-plan"],
-    )
+    plan = _make_plan(number=plan_number, title="Regular plan")
+    backend, fake_github = create_plan_store_with_plans({str(plan_number): plan})
 
-    fake_issues = FakeGitHubIssues(issues={plan_number: plan_issue})
-    ctx = context_for_test(cwd=repo_root, issues=fake_issues)
+    ctx = context_for_test(cwd=repo_root, github=fake_github, plan_store=backend)
 
     # Call the function
     _update_parent_learn_status_if_learn_plan(
@@ -47,9 +69,6 @@ def test_update_parent_learn_status_skips_non_learn_plan(
     # Verify no output (nothing was updated)
     captured = capsys.readouterr()
     assert "Updated learn status" not in captured.err
-
-    # Verify no issues were updated (updated_bodies is a list of tuples)
-    assert fake_issues.updated_bodies == []
 
 
 def test_update_parent_learn_status_updates_parent(
@@ -65,32 +84,25 @@ def test_update_parent_learn_status_updates_parent(
     pr_number = 42
 
     # Create parent plan issue (the original plan)
-    parent_body = format_plan_header_body_for_test(
+    parent_plan = _make_plan(
+        number=parent_number,
+        title="Parent plan",
         learn_status="pending",
         learn_plan_issue=learn_plan_number,
     )
-    parent_issue = create_test_issue(
-        number=parent_number,
-        title="Parent plan",
-        body=parent_body,
-        labels=["erk-plan"],
-    )
 
     # Create learn plan issue (points back to parent via learned_from_issue)
-    learn_body = format_plan_header_body_for_test(
-        learned_from_issue=parent_number,
-    )
-    learn_issue = create_test_issue(
+    learn_plan = _make_plan(
         number=learn_plan_number,
         title="Learn: Extract patterns",
-        body=learn_body,
         labels=["erk-plan", "erk-learn"],
+        learned_from_issue=parent_number,
     )
 
-    fake_issues = FakeGitHubIssues(
-        issues={parent_number: parent_issue, learn_plan_number: learn_issue}
+    backend, fake_github = create_plan_store_with_plans(
+        {str(parent_number): parent_plan, str(learn_plan_number): learn_plan}
     )
-    ctx = context_for_test(cwd=repo_root, issues=fake_issues)
+    ctx = context_for_test(cwd=repo_root, github=fake_github, plan_store=backend)
 
     # Call the function
     _update_parent_learn_status_if_learn_plan(
@@ -104,17 +116,12 @@ def test_update_parent_learn_status_updates_parent(
     captured = capsys.readouterr()
     assert f"Updated learn status on parent plan {parent_number}" in captured.err
 
-    # Verify parent issue was updated (updated_bodies is a list of tuples)
-    assert len(fake_issues.updated_bodies) == 1
-    updated_number, updated_body = fake_issues.updated_bodies[0]
-    assert updated_number == parent_number
-
-    # Verify learn_status is now "plan_completed"
-    learn_status = extract_plan_header_learn_status(updated_body)
+    # Verify parent PR body was updated
+    parent_pr = fake_github.get_pr(Path("/repo"), parent_number)
+    learn_status = extract_plan_header_learn_status(parent_pr.body)
     assert learn_status == "plan_completed"
 
-    # Verify learn_plan_pr was set
-    learn_plan_pr = extract_plan_header_learn_plan_pr(updated_body)
+    learn_plan_pr = extract_plan_header_learn_plan_pr(parent_pr.body)
     assert learn_plan_pr == pr_number
 
 
@@ -130,19 +137,16 @@ def test_update_parent_learn_status_handles_missing_parent(
     learn_plan_number = 200
 
     # Create learn plan that references non-existent parent
-    learn_body = format_plan_header_body_for_test(
-        learned_from_issue=parent_number,
-    )
-    learn_issue = create_test_issue(
+    learn_plan = _make_plan(
         number=learn_plan_number,
         title="Learn: Extract patterns",
-        body=learn_body,
         labels=["erk-plan", "erk-learn"],
+        learned_from_issue=parent_number,
     )
 
     # Only the learn plan exists, not the parent
-    fake_issues = FakeGitHubIssues(issues={learn_plan_number: learn_issue})
-    ctx = context_for_test(cwd=repo_root, issues=fake_issues)
+    backend, fake_github = create_plan_store_with_plans({str(learn_plan_number): learn_plan})
+    ctx = context_for_test(cwd=repo_root, github=fake_github, plan_store=backend)
 
     # Should not raise - gracefully returns early
     _update_parent_learn_status_if_learn_plan(
@@ -155,7 +159,6 @@ def test_update_parent_learn_status_handles_missing_parent(
     # Verify no update was made (since parent doesn't exist)
     captured = capsys.readouterr()
     assert "Updated learn status" not in captured.err
-    assert fake_issues.updated_bodies == []
 
 
 def test_update_parent_learn_status_handles_missing_plan_issue(
@@ -166,19 +169,16 @@ def test_update_parent_learn_status_handles_missing_plan_issue(
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
-    plan_number = 100  # Does NOT exist
-    fake_issues = FakeGitHubIssues(issues={})
-    ctx = context_for_test(cwd=repo_root, issues=fake_issues)
+    ctx = context_for_test(cwd=repo_root)
 
     # Should not raise - gracefully returns early
     _update_parent_learn_status_if_learn_plan(
         ctx,
         repo_root=repo_root,
-        plan_issue_number=plan_number,
+        plan_issue_number=100,
         pr_number=42,
     )
 
     # Verify no update was made (since plan doesn't exist)
     captured = capsys.readouterr()
     assert "Updated learn status" not in captured.err
-    assert fake_issues.updated_bodies == []

@@ -78,7 +78,6 @@ from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.store import PlanStore
 
@@ -161,7 +160,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         git=git,
         github=fake_github,
         github_admin=FakeGitHubAdmin(),
-        plan_store=GitHubPlanStore(fake_issues, fake_time),
+        plan_store=PlannedPRBackend(fake_github, fake_issues, time=fake_time),
         graphite=fake_graphite,
         graphite_branch_ops=fake_graphite_branch_ops,
         console=fake_console,
@@ -298,9 +297,16 @@ def context_for_test(
         github_admin = FakeGitHubAdmin()
 
     if plan_store is None:
-        # Always compose from issues layer - no separate FakePlanStore
-        # This ensures tests use the same composition as production code
-        plan_store = GitHubPlanStore(issues)
+        from erk_shared.gateway.time.fake import FakeTime
+
+        if issues_explicitly_passed:
+            # Caller seeded issue data — use GitHubPlanStore so plan lookups
+            # go through the issues gateway the caller configured.
+            from erk_shared.plan_store.github import GitHubPlanStore
+
+            plan_store = GitHubPlanStore(issues, FakeTime())
+        else:
+            plan_store = PlannedPRBackend(github, issues, time=FakeTime())
 
     # Handle graphite based on global_config.use_graphite to match production behavior
     # When use_graphite=False, use GraphiteDisabled sentinel so that

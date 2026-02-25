@@ -19,6 +19,7 @@ from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
 from tests.fakes.prompt_executor import FakePromptExecutor
@@ -400,6 +401,7 @@ def test_no_plan_context_after_pxxxx_removal() -> None:
             github=github,
             prompt_executor=executor,
             issues=fake_github_issues,
+            plan_store=GitHubPlanStore(fake_github_issues),
         )
 
         result = runner.invoke(update_pr_description, [], obj=ctx)

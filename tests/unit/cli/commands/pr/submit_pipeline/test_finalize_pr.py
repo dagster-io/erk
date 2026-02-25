@@ -19,6 +19,7 @@ from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
@@ -447,7 +448,13 @@ def test_updates_lifecycle_stage_for_linked_plan(tmp_path: Path) -> None:
         pr_details={42: pr},
         issues_gateway=fake_issues,
     )
-    ctx = context_for_test(git=fake_git, github=fake_github, issues=fake_issues, cwd=tmp_path)
+    ctx = context_for_test(
+        git=fake_git,
+        github=fake_github,
+        issues=fake_issues,
+        plan_store=GitHubPlanStore(fake_issues),
+        cwd=tmp_path,
+    )
 
     plan_ctx = PlanContext(
         plan_id="321",

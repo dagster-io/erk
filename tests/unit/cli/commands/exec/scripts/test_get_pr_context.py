@@ -7,9 +7,11 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.get_pr_context import get_pr_context
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
+from erk_shared.plan_store.github import GitHubPlanStore
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -78,7 +80,13 @@ def test_outputs_valid_json() -> None:
             prs_by_branch={"feature": pr_details},
         )
 
-        ctx = build_workspace_test_context(env, git=git, graphite=graphite, github=github)
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            graphite=graphite,
+            github=github,
+            plan_store=GitHubPlanStore(FakeGitHubIssues()),
+        )
 
         result = runner.invoke(get_pr_context, [], obj=ctx)
 
