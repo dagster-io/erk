@@ -2,7 +2,7 @@
 
 Tests triggering the learn.yml workflow for async learn.
 Uses FakeGitHub, FakeGitHubIssues, and FakeClaudeInstallation for
-dependency injection — no subprocess mocking.
+dependency injection -- no subprocess mocking.
 """
 
 import json
@@ -30,8 +30,8 @@ from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo, RepoInfo
 from erk_shared.gateway.github_admin.fake import FakeGitHubAdmin
 from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from tests.test_utils.plan_helpers import issue_info_to_pr_details
 
 
 def _parse_json_output(output: str) -> dict[str, object]:
@@ -227,7 +227,8 @@ def test_trigger_async_learn_success(tmp_path: Path) -> None:
         branch_name=None,
         planning_session_id=session_id,
     )
-    fake_issues = FakeGitHubIssues(issues={123: _make_issue_info(123, body)})
+    issue = _make_issue_info(123, body)
+    fake_issues = FakeGitHubIssues(issues={123: issue})
 
     # FakeClaudeInstallation that can find the session
     fake_claude = FakeClaudeInstallation.for_test(
@@ -244,12 +245,16 @@ def test_trigger_async_learn_success(tmp_path: Path) -> None:
         },
     )
 
-    fake_gh = FakeGitHub(repo_info=repo_info, issues_gateway=fake_issues)
+    fake_gh = FakeGitHub(
+        repo_info=repo_info,
+        pr_details={123: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
     ctx = ErkContext.for_test(
         repo_root=tmp_path,
         cwd=tmp_path,
         github=fake_gh,
-        plan_store=GitHubPlanStore(fake_issues),
+        plan_store=PlannedPRBackend(fake_gh, fake_issues, time=FakeTime()),
         claude_installation=fake_claude,
         repo_info=repo_info,
     )
@@ -280,16 +285,21 @@ def test_trigger_async_learn_verifies_workflow_call(tmp_path: Path) -> None:
 
     # Plan issue with no sessions (no created_from_session in metadata)
     body = _make_plan_issue_body(branch_name=None)
-    fake_issues = FakeGitHubIssues(issues={456: _make_issue_info(456, body)})
+    issue = _make_issue_info(456, body)
+    fake_issues = FakeGitHubIssues(issues={456: issue})
     fake_claude = FakeClaudeInstallation.for_test()
-    fake_gh = FakeGitHub(repo_info=repo_info, issues_gateway=fake_issues)
+    fake_gh = FakeGitHub(
+        repo_info=repo_info,
+        pr_details={456: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
     fake_git = FakeGit()
 
     ctx = ErkContext.for_test(
         repo_root=tmp_path,
         cwd=tmp_path,
         github=fake_gh,
-        plan_store=GitHubPlanStore(fake_issues),
+        plan_store=PlannedPRBackend(fake_gh, fake_issues, time=FakeTime()),
         claude_installation=fake_claude,
         git=fake_git,
         repo_info=repo_info,
@@ -329,7 +339,7 @@ def test_trigger_async_learn_no_repo_info(tmp_path: Path) -> None:
     ctx = ErkContext.for_test(
         repo_root=tmp_path,
         github=fake_gh,
-        plan_store=GitHubPlanStore(fake_issues),
+        plan_store=PlannedPRBackend(fake_gh, fake_issues, time=FakeTime()),
         claude_installation=fake_claude,
     )
 
@@ -359,15 +369,20 @@ def test_trigger_async_learn_json_output_structure(tmp_path: Path) -> None:
     repo_info = RepoInfo(owner="dagster-io", name="erk")
 
     body = _make_plan_issue_body(branch_name=None)
-    fake_issues = FakeGitHubIssues(issues={789: _make_issue_info(789, body)})
+    issue = _make_issue_info(789, body)
+    fake_issues = FakeGitHubIssues(issues={789: issue})
     fake_claude = FakeClaudeInstallation.for_test()
-    fake_gh = FakeGitHub(repo_info=repo_info, issues_gateway=fake_issues)
+    fake_gh = FakeGitHub(
+        repo_info=repo_info,
+        pr_details={789: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
 
     ctx = ErkContext.for_test(
         repo_root=tmp_path,
         cwd=tmp_path,
         github=fake_gh,
-        plan_store=GitHubPlanStore(fake_issues),
+        plan_store=PlannedPRBackend(fake_gh, fake_issues, time=FakeTime()),
         claude_installation=fake_claude,
         repo_info=repo_info,
     )
@@ -419,7 +434,8 @@ def test_trigger_async_learn_filtered_session_skipped(tmp_path: Path) -> None:
         branch_name=None,
         planning_session_id=session_id,
     )
-    fake_issues = FakeGitHubIssues(issues={123: _make_issue_info(123, body)})
+    issue = _make_issue_info(123, body)
+    fake_issues = FakeGitHubIssues(issues={123: issue})
     fake_claude = FakeClaudeInstallation.for_test(
         projects={
             session_dir: FakeProject(
@@ -433,13 +449,17 @@ def test_trigger_async_learn_filtered_session_skipped(tmp_path: Path) -> None:
             ),
         },
     )
-    fake_gh = FakeGitHub(repo_info=repo_info, issues_gateway=fake_issues)
+    fake_gh = FakeGitHub(
+        repo_info=repo_info,
+        pr_details={123: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
 
     ctx = ErkContext.for_test(
         repo_root=tmp_path,
         cwd=tmp_path,
         github=fake_gh,
-        plan_store=GitHubPlanStore(fake_issues),
+        plan_store=PlannedPRBackend(fake_gh, fake_issues, time=FakeTime()),
         claude_installation=fake_claude,
         repo_info=repo_info,
     )
@@ -471,7 +491,8 @@ def test_trigger_async_learn_preprocess_failure(tmp_path: Path) -> None:
         branch_name=None,
         planning_session_id=session_id,
     )
-    fake_issues = FakeGitHubIssues(issues={123: _make_issue_info(123, body)})
+    issue = _make_issue_info(123, body)
+    fake_issues = FakeGitHubIssues(issues={123: issue})
 
     # FakeClaudeInstallation reports the session exists, but the file isn't on disk
     fake_claude = FakeClaudeInstallation.for_test(
@@ -487,13 +508,17 @@ def test_trigger_async_learn_preprocess_failure(tmp_path: Path) -> None:
             ),
         },
     )
-    fake_gh = FakeGitHub(repo_info=repo_info, issues_gateway=fake_issues)
+    fake_gh = FakeGitHub(
+        repo_info=repo_info,
+        pr_details={123: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
 
     ctx = ErkContext.for_test(
         repo_root=tmp_path,
         cwd=tmp_path,
         github=fake_gh,
-        plan_store=GitHubPlanStore(fake_issues),
+        plan_store=PlannedPRBackend(fake_gh, fake_issues, time=FakeTime()),
         claude_installation=fake_claude,
         repo_info=repo_info,
     )
@@ -533,7 +558,8 @@ def test_trigger_async_learn_logs_session_source_summary(tmp_path: Path) -> None
         planning_session_id=planning_id,
         impl_session_id=impl_id,
     )
-    fake_issues = FakeGitHubIssues(issues={123: _make_issue_info(123, body)})
+    issue = _make_issue_info(123, body)
+    fake_issues = FakeGitHubIssues(issues={123: issue})
 
     fake_claude = FakeClaudeInstallation.for_test(
         projects={
@@ -553,13 +579,17 @@ def test_trigger_async_learn_logs_session_source_summary(tmp_path: Path) -> None
             ),
         },
     )
-    fake_gh = FakeGitHub(repo_info=repo_info, issues_gateway=fake_issues)
+    fake_gh = FakeGitHub(
+        repo_info=repo_info,
+        pr_details={123: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
 
     ctx = ErkContext.for_test(
         repo_root=tmp_path,
         cwd=tmp_path,
         github=fake_gh,
-        plan_store=GitHubPlanStore(fake_issues),
+        plan_store=PlannedPRBackend(fake_gh, fake_issues, time=FakeTime()),
         claude_installation=fake_claude,
         repo_info=repo_info,
     )
@@ -584,21 +614,27 @@ def test_trigger_async_learn_logs_session_source_summary(tmp_path: Path) -> None
 
 
 def test_trigger_async_learn_pr_lookup_failure_continues(tmp_path: Path) -> None:
-    """Test that PR lookup failure is handled gracefully and pipeline continues."""
+    """Test that pipeline succeeds when plan is in pr_details (PlannedPRBackend direct lookup)."""
     runner = CliRunner()
     repo_info = RepoInfo(owner="test-owner", name="test-repo")
 
-    # Plan issue with no branch_name -> _get_pr_for_plan_direct returns None
+    # With PlannedPRBackend, _get_pr_for_plan_direct looks up by plan_id directly
+    # PR 999 in pr_details means lookup succeeds (no "failed, skipping" warning)
     body = _make_plan_issue_body(branch_name=None)
-    fake_issues = FakeGitHubIssues(issues={999: _make_issue_info(999, body)})
+    issue = _make_issue_info(999, body)
+    fake_issues = FakeGitHubIssues(issues={999: issue})
     fake_claude = FakeClaudeInstallation.for_test()
-    fake_gh = FakeGitHub(repo_info=repo_info, issues_gateway=fake_issues)
+    fake_gh = FakeGitHub(
+        repo_info=repo_info,
+        pr_details={999: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
 
     ctx = ErkContext.for_test(
         repo_root=tmp_path,
         cwd=tmp_path,
         github=fake_gh,
-        plan_store=GitHubPlanStore(fake_issues),
+        plan_store=PlannedPRBackend(fake_gh, fake_issues, time=FakeTime()),
         claude_installation=fake_claude,
         repo_info=repo_info,
     )
@@ -610,18 +646,12 @@ def test_trigger_async_learn_pr_lookup_failure_continues(tmp_path: Path) -> None
 
     result = runner.invoke(trigger_async_learn_command, ["999"], obj=ctx)
 
-    # Pipeline should still succeed even though PR lookup failed
+    # Pipeline should succeed
     assert result.exit_code == 0
     output = _parse_json_output(result.output)
     assert output["success"] is True
     assert output["plan_id"] == "999"
     assert output["workflow_triggered"] is True
-
-    # Verify PR lookup warning
-    stderr_lines = _get_stderr_lines(result.output)
-    warning_lines = [line for line in stderr_lines if "failed, skipping" in line]
-    assert len(warning_lines) == 1
-    assert "Getting PR for plan" in warning_lines[0]
 
 
 def test_trigger_async_learn_logs_output_file_sizes(tmp_path: Path) -> None:
@@ -641,7 +671,8 @@ def test_trigger_async_learn_logs_output_file_sizes(tmp_path: Path) -> None:
         branch_name=None,
         planning_session_id=session_id,
     )
-    fake_issues = FakeGitHubIssues(issues={123: _make_issue_info(123, body)})
+    issue = _make_issue_info(123, body)
+    fake_issues = FakeGitHubIssues(issues={123: issue})
     fake_claude = FakeClaudeInstallation.for_test(
         projects={
             session_dir: FakeProject(
@@ -655,13 +686,17 @@ def test_trigger_async_learn_logs_output_file_sizes(tmp_path: Path) -> None:
             ),
         },
     )
-    fake_gh = FakeGitHub(repo_info=repo_info, issues_gateway=fake_issues)
+    fake_gh = FakeGitHub(
+        repo_info=repo_info,
+        pr_details={123: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
 
     ctx = ErkContext.for_test(
         repo_root=tmp_path,
         cwd=tmp_path,
         github=fake_gh,
-        plan_store=GitHubPlanStore(fake_issues),
+        plan_store=PlannedPRBackend(fake_gh, fake_issues, time=FakeTime()),
         claude_installation=fake_claude,
         repo_info=repo_info,
     )
@@ -683,15 +718,20 @@ def test_trigger_async_learn_logs_branch_size(tmp_path: Path) -> None:
     repo_info = RepoInfo(owner="test-owner", name="test-repo")
 
     body = _make_plan_issue_body(branch_name=None)
-    fake_issues = FakeGitHubIssues(issues={123: _make_issue_info(123, body)})
+    issue = _make_issue_info(123, body)
+    fake_issues = FakeGitHubIssues(issues={123: issue})
     fake_claude = FakeClaudeInstallation.for_test()
-    fake_gh = FakeGitHub(repo_info=repo_info, issues_gateway=fake_issues)
+    fake_gh = FakeGitHub(
+        repo_info=repo_info,
+        pr_details={123: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
 
     ctx = ErkContext.for_test(
         repo_root=tmp_path,
         cwd=tmp_path,
         github=fake_gh,
-        plan_store=GitHubPlanStore(fake_issues),
+        plan_store=PlannedPRBackend(fake_gh, fake_issues, time=FakeTime()),
         claude_installation=fake_claude,
         repo_info=repo_info,
     )
@@ -708,7 +748,10 @@ def test_trigger_async_learn_logs_branch_size(tmp_path: Path) -> None:
     assert result.exit_code == 0
     stderr_lines = _get_stderr_lines(result.output)
 
-    branch_lines = [line for line in stderr_lines if "3 file(s)" in line]
+    # With PlannedPRBackend and PR 123 in pr_details, _get_pr_for_plan_direct succeeds
+    # and also writes pr-review-comments.json + pr-discussion-comments.json (2 extra files)
+    # Total: 3 created + 2 PR comment files = 5 files
+    branch_lines = [line for line in stderr_lines if "5 file(s)" in line]
     assert len(branch_lines) == 1
     assert "bytes" in branch_lines[0]
 
@@ -720,15 +763,20 @@ def test_trigger_async_learn_skip_workflow(tmp_path: Path) -> None:
 
     # Plan issue with no sessions (no created_from_session in metadata)
     body = _make_plan_issue_body(branch_name=None)
-    fake_issues = FakeGitHubIssues(issues={456: _make_issue_info(456, body)})
+    issue = _make_issue_info(456, body)
+    fake_issues = FakeGitHubIssues(issues={456: issue})
     fake_claude = FakeClaudeInstallation.for_test()
-    fake_gh = FakeGitHub(repo_info=repo_info, issues_gateway=fake_issues)
+    fake_gh = FakeGitHub(
+        repo_info=repo_info,
+        pr_details={456: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
 
     ctx = ErkContext.for_test(
         repo_root=tmp_path,
         cwd=tmp_path,
         github=fake_gh,
-        plan_store=GitHubPlanStore(fake_issues),
+        plan_store=PlannedPRBackend(fake_gh, fake_issues, time=FakeTime()),
         claude_installation=fake_claude,
         repo_info=repo_info,
     )
@@ -827,7 +875,8 @@ def test_trigger_async_learn_includes_remote_session(tmp_path: Path) -> None:
         remote_session_id=remote_id,
         session_branch=session_branch,
     )
-    fake_issues = FakeGitHubIssues(issues={123: _make_issue_info(123, body)})
+    issue = _make_issue_info(123, body)
+    fake_issues = FakeGitHubIssues(issues={123: issue})
 
     fake_claude = FakeClaudeInstallation.for_test(
         projects={
@@ -844,12 +893,16 @@ def test_trigger_async_learn_includes_remote_session(tmp_path: Path) -> None:
     )
 
     fake_git = FakeGit(current_branches={tmp_path: "plan/my-feature"})
-    fake_gh = FakeGitHub(repo_info=repo_info, issues_gateway=fake_issues)
+    fake_gh = FakeGitHub(
+        repo_info=repo_info,
+        pr_details={123: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
     ctx = ErkContext.for_test(
         repo_root=tmp_path,
         cwd=tmp_path,
         github=fake_gh,
-        plan_store=GitHubPlanStore(fake_issues),
+        plan_store=PlannedPRBackend(fake_gh, fake_issues, time=FakeTime()),
         claude_installation=fake_claude,
         git=fake_git,
         repo_info=repo_info,
@@ -894,7 +947,8 @@ def test_trigger_async_learn_remote_session_download_failure(tmp_path: Path) -> 
         remote_session_id=remote_id,
         session_branch=session_branch,
     )
-    fake_issues = FakeGitHubIssues(issues={123: _make_issue_info(123, body)})
+    issue = _make_issue_info(123, body)
+    fake_issues = FakeGitHubIssues(issues={123: issue})
 
     fake_claude = FakeClaudeInstallation.for_test(
         projects={
@@ -910,12 +964,16 @@ def test_trigger_async_learn_remote_session_download_failure(tmp_path: Path) -> 
         },
     )
 
-    fake_gh = FakeGitHub(repo_info=repo_info, issues_gateway=fake_issues)
+    fake_gh = FakeGitHub(
+        repo_info=repo_info,
+        pr_details={123: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
     ctx = ErkContext.for_test(
         repo_root=tmp_path,
         cwd=tmp_path,
         github=fake_gh,
-        plan_store=GitHubPlanStore(fake_issues),
+        plan_store=PlannedPRBackend(fake_gh, fake_issues, time=FakeTime()),
         claude_installation=fake_claude,
         repo_info=repo_info,
     )
@@ -999,9 +1057,14 @@ def test_trigger_async_learn_claude_enabled_false_skips(tmp_path: Path) -> None:
     repo_info = RepoInfo(owner="test-owner", name="test-repo")
 
     body = _make_plan_issue_body(branch_name=None)
-    fake_issues = FakeGitHubIssues(issues={123: _make_issue_info(123, body)})
+    issue = _make_issue_info(123, body)
+    fake_issues = FakeGitHubIssues(issues={123: issue})
     fake_claude = FakeClaudeInstallation.for_test()
-    fake_gh = FakeGitHub(repo_info=repo_info, issues_gateway=fake_issues)
+    fake_gh = FakeGitHub(
+        repo_info=repo_info,
+        pr_details={123: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
     fake_admin = FakeGitHubAdmin(variables={"CLAUDE_ENABLED": "false"})
 
     ctx = ErkContext.for_test(
@@ -1009,7 +1072,7 @@ def test_trigger_async_learn_claude_enabled_false_skips(tmp_path: Path) -> None:
         cwd=tmp_path,
         github=fake_gh,
         github_admin=fake_admin,
-        plan_store=GitHubPlanStore(fake_issues),
+        plan_store=PlannedPRBackend(fake_gh, fake_issues, time=FakeTime()),
         claude_installation=fake_claude,
         repo_info=repo_info,
     )
@@ -1031,10 +1094,15 @@ def test_trigger_async_learn_claude_enabled_unset_proceeds(tmp_path: Path) -> No
     repo_info = RepoInfo(owner="test-owner", name="test-repo")
 
     body = _make_plan_issue_body(branch_name=None)
-    fake_issues = FakeGitHubIssues(issues={456: _make_issue_info(456, body)})
+    issue = _make_issue_info(456, body)
+    fake_issues = FakeGitHubIssues(issues={456: issue})
     fake_claude = FakeClaudeInstallation.for_test()
-    fake_gh = FakeGitHub(repo_info=repo_info, issues_gateway=fake_issues)
-    # Default FakeGitHubAdmin has empty variables dict — get_variable returns None
+    fake_gh = FakeGitHub(
+        repo_info=repo_info,
+        pr_details={456: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
+    # Default FakeGitHubAdmin has empty variables dict -- get_variable returns None
     fake_admin = FakeGitHubAdmin()
 
     ctx = ErkContext.for_test(
@@ -1042,7 +1110,7 @@ def test_trigger_async_learn_claude_enabled_unset_proceeds(tmp_path: Path) -> No
         cwd=tmp_path,
         github=fake_gh,
         github_admin=fake_admin,
-        plan_store=GitHubPlanStore(fake_issues),
+        plan_store=PlannedPRBackend(fake_gh, fake_issues, time=FakeTime()),
         claude_installation=fake_claude,
         repo_info=repo_info,
     )

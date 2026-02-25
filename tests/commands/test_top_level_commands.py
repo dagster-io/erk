@@ -176,7 +176,7 @@ def test_top_level_close_command_works() -> None:
     issue1 = Plan(
         plan_identifier="456",
         title="Plan to Close",
-        body="content",  # GitHubPlanStore requires non-empty body
+        body="content",  # non-empty body required for plan header parsing
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/456",
         labels=["erk-planned-pr", "erk-plan"],

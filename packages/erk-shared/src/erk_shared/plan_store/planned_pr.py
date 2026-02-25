@@ -114,8 +114,8 @@ class PlannedPRBackend(PlanBackend):
     def resolve_plan_id_for_branch(self, repo_root: Path, branch_name: str) -> str | None:
         """Resolve plan identifier for a branch by querying for a PR.
 
-        Unlike GitHubPlanStore (zero-cost regex), this requires an API call
-        to find the draft PR associated with the branch.
+        Resolving the plan requires an API call to find the draft PR associated
+        with the branch.
 
         Args:
             repo_root: Repository root directory

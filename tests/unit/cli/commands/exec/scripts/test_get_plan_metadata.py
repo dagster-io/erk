@@ -14,7 +14,9 @@ from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
-from erk_shared.plan_store.github import GitHubPlanStore
+from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from tests.test_utils.plan_helpers import issue_info_to_pr_details
 
 
 def make_plan_header_body(
@@ -77,14 +79,19 @@ def make_issue_info(number: int, body: str) -> IssueInfo:
 def test_get_plan_metadata_returns_existing_field() -> None:
     """Test successful extraction of an existing field."""
     body = make_plan_header_body(objective_issue=3400)
-    fake_gh = FakeGitHubIssues(issues={3509: make_issue_info(3509, body)})
+    issue = make_issue_info(3509, body)
+    fake_gh = FakeGitHubIssues(issues={3509: issue})
+    fake_github = FakeGitHub(
+        pr_details={3509: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_gh,
+    )
     runner = CliRunner()
 
     result = runner.invoke(
         get_plan_metadata,
         ["3509", "objective_issue"],
         obj=ErkContext.for_test(
-            github=FakeGitHub(issues_gateway=fake_gh), plan_store=GitHubPlanStore(fake_gh)
+            github=fake_github, plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime())
         ),
     )
 
@@ -99,14 +106,19 @@ def test_get_plan_metadata_returns_existing_field() -> None:
 def test_get_plan_metadata_returns_string_field() -> None:
     """Test extraction of a string field value."""
     body = make_plan_header_body(worktree_name="P3509-feature-xyz")
-    fake_gh = FakeGitHubIssues(issues={3509: make_issue_info(3509, body)})
+    issue = make_issue_info(3509, body)
+    fake_gh = FakeGitHubIssues(issues={3509: issue})
+    fake_github = FakeGitHub(
+        pr_details={3509: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_gh,
+    )
     runner = CliRunner()
 
     result = runner.invoke(
         get_plan_metadata,
         ["3509", "worktree_name"],
         obj=ErkContext.for_test(
-            github=FakeGitHub(issues_gateway=fake_gh), plan_store=GitHubPlanStore(fake_gh)
+            github=fake_github, plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime())
         ),
     )
 
@@ -120,14 +132,19 @@ def test_get_plan_metadata_returns_string_field() -> None:
 def test_get_plan_metadata_returns_null_for_nonexistent_field() -> None:
     """Test that a nonexistent field returns null, not an error."""
     body = make_plan_header_body()
-    fake_gh = FakeGitHubIssues(issues={3509: make_issue_info(3509, body)})
+    issue = make_issue_info(3509, body)
+    fake_gh = FakeGitHubIssues(issues={3509: issue})
+    fake_github = FakeGitHub(
+        pr_details={3509: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_gh,
+    )
     runner = CliRunner()
 
     result = runner.invoke(
         get_plan_metadata,
         ["3509", "nonexistent_field"],
         obj=ErkContext.for_test(
-            github=FakeGitHub(issues_gateway=fake_gh), plan_store=GitHubPlanStore(fake_gh)
+            github=fake_github, plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime())
         ),
     )
 
@@ -141,14 +158,19 @@ def test_get_plan_metadata_returns_null_for_nonexistent_field() -> None:
 def test_get_plan_metadata_returns_null_for_null_field() -> None:
     """Test that a field explicitly set to null returns null."""
     body = make_plan_header_body(objective_issue=None)
-    fake_gh = FakeGitHubIssues(issues={3509: make_issue_info(3509, body)})
+    issue = make_issue_info(3509, body)
+    fake_gh = FakeGitHubIssues(issues={3509: issue})
+    fake_github = FakeGitHub(
+        pr_details={3509: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_gh,
+    )
     runner = CliRunner()
 
     result = runner.invoke(
         get_plan_metadata,
         ["3509", "objective_issue"],
         obj=ErkContext.for_test(
-            github=FakeGitHub(issues_gateway=fake_gh), plan_store=GitHubPlanStore(fake_gh)
+            github=fake_github, plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime())
         ),
     )
 
@@ -165,14 +187,19 @@ def test_get_plan_metadata_no_plan_header_block() -> None:
 
 This is an issue created before plan-header blocks were introduced.
 """
-    fake_gh = FakeGitHubIssues(issues={100: make_issue_info(100, old_format_body)})
+    issue = make_issue_info(100, old_format_body)
+    fake_gh = FakeGitHubIssues(issues={100: issue})
+    fake_github = FakeGitHub(
+        pr_details={100: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_gh,
+    )
     runner = CliRunner()
 
     result = runner.invoke(
         get_plan_metadata,
         ["100", "objective_issue"],
         obj=ErkContext.for_test(
-            github=FakeGitHub(issues_gateway=fake_gh), plan_store=GitHubPlanStore(fake_gh)
+            github=fake_github, plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime())
         ),
     )
 
@@ -192,13 +219,14 @@ This is an issue created before plan-header blocks were introduced.
 def test_get_plan_metadata_issue_not_found() -> None:
     """Test error when issue doesn't exist."""
     fake_gh = FakeGitHubIssues()
+    fake_github = FakeGitHub(issues_gateway=fake_gh)
     runner = CliRunner()
 
     result = runner.invoke(
         get_plan_metadata,
         ["9999", "objective_issue"],
         obj=ErkContext.for_test(
-            github=FakeGitHub(issues_gateway=fake_gh), plan_store=GitHubPlanStore(fake_gh)
+            github=fake_github, plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime())
         ),
     )
 
@@ -217,14 +245,19 @@ def test_get_plan_metadata_issue_not_found() -> None:
 def test_json_output_structure_success() -> None:
     """Test JSON output structure on success."""
     body = make_plan_header_body(objective_issue=3400)
-    fake_gh = FakeGitHubIssues(issues={321: make_issue_info(321, body)})
+    issue = make_issue_info(321, body)
+    fake_gh = FakeGitHubIssues(issues={321: issue})
+    fake_github = FakeGitHub(
+        pr_details={321: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_gh,
+    )
     runner = CliRunner()
 
     result = runner.invoke(
         get_plan_metadata,
         ["321", "objective_issue"],
         obj=ErkContext.for_test(
-            github=FakeGitHub(issues_gateway=fake_gh), plan_store=GitHubPlanStore(fake_gh)
+            github=fake_github, plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime())
         ),
     )
 
@@ -252,13 +285,14 @@ def test_json_output_structure_success() -> None:
 def test_json_output_structure_error() -> None:
     """Test JSON output structure on error."""
     fake_gh = FakeGitHubIssues()
+    fake_github = FakeGitHub(issues_gateway=fake_gh)
     runner = CliRunner()
 
     result = runner.invoke(
         get_plan_metadata,
         ["999", "objective_issue"],
         obj=ErkContext.for_test(
-            github=FakeGitHub(issues_gateway=fake_gh), plan_store=GitHubPlanStore(fake_gh)
+            github=fake_github, plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime())
         ),
     )
 

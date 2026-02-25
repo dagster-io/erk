@@ -15,10 +15,12 @@ from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
-from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+from tests.test_utils.plan_helpers import (
+    format_plan_header_body_for_test,
+    issue_info_to_pr_details,
+)
 
 
 def _make_issue(
@@ -60,6 +62,10 @@ def test_plan_update_issue_success() -> None:
         issues={42: issue},
         comments_with_urls={42: [comment]},
     )
+    fake_github = FakeGitHub(
+        pr_details={42: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_gh,
+    )
     plan_content = """# Updated Plan
 
 - New step 1
@@ -71,8 +77,8 @@ def test_plan_update_issue_success() -> None:
         plan_update_issue,
         ["--plan-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
-            github=FakeGitHub(issues_gateway=fake_gh),
-            plan_store=GitHubPlanStore(fake_gh),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
             claude_installation=fake_store,
         ),
     )
@@ -84,16 +90,16 @@ def test_plan_update_issue_success() -> None:
 
     assert output["title"] == "[erk-plan] Updated Plan"
 
-    # Verify update_comment was called
-    assert len(fake_gh.updated_comments) == 1
-    updated_comment_id, updated_body = fake_gh.updated_comments[0]
-    assert updated_comment_id == 12345
+    # Verify update_plan_content was called (updates PR body with PlannedPRBackend)
+    content_bodies = [b for n, b in fake_github.updated_pr_bodies if n == 42]
+    assert len(content_bodies) >= 1
+    updated_body = content_bodies[-1]
     assert "New step 1" in updated_body
     assert "New step 2" in updated_body
 
-    # Verify update_issue_title was called
-    assert len(fake_gh.updated_titles) == 1
-    assert fake_gh.updated_titles[0] == (42, "[erk-plan] Updated Plan")
+    # Verify update_plan_title was called
+    assert len(fake_github.updated_pr_titles) == 1
+    assert fake_github.updated_pr_titles[0] == (42, "[erk-plan] Updated Plan")
 
 
 def test_plan_update_issue_display_format() -> None:
@@ -103,6 +109,10 @@ def test_plan_update_issue_display_format() -> None:
     fake_gh = FakeGitHubIssues(
         issues={99: issue},
         comments_with_urls={99: [comment]},
+    )
+    fake_github = FakeGitHub(
+        pr_details={99: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_gh,
     )
     plan_content = """# Display Test
 
@@ -114,8 +124,8 @@ def test_plan_update_issue_display_format() -> None:
         plan_update_issue,
         ["--plan-number", "99", "--format", "display"],
         obj=ErkContext.for_test(
-            github=FakeGitHub(issues_gateway=fake_gh),
-            plan_store=GitHubPlanStore(fake_gh),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
             claude_installation=fake_store,
         ),
     )
@@ -134,6 +144,10 @@ def test_plan_update_issue_no_plan_found() -> None:
         issues={42: issue},
         comments_with_urls={42: [comment]},
     )
+    fake_github = FakeGitHub(
+        pr_details={42: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_gh,
+    )
     # Empty store - no plans
     fake_store = FakeClaudeInstallation.for_test()
     runner = CliRunner()
@@ -142,8 +156,8 @@ def test_plan_update_issue_no_plan_found() -> None:
         plan_update_issue,
         ["--plan-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
-            github=FakeGitHub(issues_gateway=fake_gh),
-            plan_store=GitHubPlanStore(fake_gh),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
             claude_installation=fake_store,
         ),
     )
@@ -158,6 +172,7 @@ def test_plan_update_issue_issue_not_found() -> None:
     """Test error when issue does not exist."""
     # Empty issues dict - no issues
     fake_gh = FakeGitHubIssues()
+    fake_github = FakeGitHub(issues_gateway=fake_gh)
     plan_content = """# Test
 
 - Step"""
@@ -168,8 +183,8 @@ def test_plan_update_issue_issue_not_found() -> None:
         plan_update_issue,
         ["--plan-number", "999", "--format", "json"],
         obj=ErkContext.for_test(
-            github=FakeGitHub(issues_gateway=fake_gh),
-            plan_store=GitHubPlanStore(fake_gh),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
             claude_installation=fake_store,
         ),
     )
@@ -188,6 +203,10 @@ def test_plan_update_issue_formats_plan_content() -> None:
         issues={42: issue},
         comments_with_urls={42: [comment]},
     )
+    fake_github = FakeGitHub(
+        pr_details={42: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_gh,
+    )
     plan_content = """# My Plan
 
 - Step 1"""
@@ -198,18 +217,21 @@ def test_plan_update_issue_formats_plan_content() -> None:
         plan_update_issue,
         ["--plan-number", "42"],
         obj=ErkContext.for_test(
-            github=FakeGitHub(issues_gateway=fake_gh),
-            plan_store=GitHubPlanStore(fake_gh),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
             claude_installation=fake_store,
         ),
     )
 
     assert result.exit_code == 0
 
-    # Verify the updated content is formatted (wrapped in metadata block)
-    _, updated_body = fake_gh.updated_comments[0]
-    # The format_plan_content_comment wraps in collapsible metadata block
-    assert "plan-body" in updated_body or "erk:metadata-block" in updated_body
+    # Verify the plan content was stored in the PR body
+    content_bodies = [b for n, b in fake_github.updated_pr_bodies if n == 42]
+    assert len(content_bodies) >= 1
+    updated_body = content_bodies[-1]
+    # PlannedPRBackend stores content directly (no comment wrapper)
+    assert "# My Plan" in updated_body
+    assert "Step 1" in updated_body
 
 
 def test_plan_update_issue_updates_title_from_plan() -> None:
@@ -219,6 +241,10 @@ def test_plan_update_issue_updates_title_from_plan() -> None:
     fake_gh = FakeGitHubIssues(
         issues={42: issue},
         comments_with_urls={42: [comment]},
+    )
+    fake_github = FakeGitHub(
+        pr_details={42: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_gh,
     )
     plan_content = """# New Feature Name
 
@@ -231,8 +257,8 @@ def test_plan_update_issue_updates_title_from_plan() -> None:
         plan_update_issue,
         ["--plan-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
-            github=FakeGitHub(issues_gateway=fake_gh),
-            plan_store=GitHubPlanStore(fake_gh),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
             claude_installation=fake_store,
         ),
     )
@@ -241,9 +267,9 @@ def test_plan_update_issue_updates_title_from_plan() -> None:
     output = json.loads(result.output)
     assert output["title"] == "[erk-plan] New Feature Name"
 
-    # Verify update_issue_title was called
-    assert len(fake_gh.updated_titles) == 1
-    assert fake_gh.updated_titles[0] == (42, "[erk-plan] New Feature Name")
+    # Verify update_plan_title was called
+    assert len(fake_github.updated_pr_titles) == 1
+    assert fake_github.updated_pr_titles[0] == (42, "[erk-plan] New Feature Name")
 
 
 def test_plan_update_issue_learn_plan_gets_learn_tag() -> None:
@@ -266,6 +292,10 @@ def test_plan_update_issue_learn_plan_gets_learn_tag() -> None:
         issues={42: issue},
         comments_with_urls={42: [comment]},
     )
+    fake_github = FakeGitHub(
+        pr_details={42: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_gh,
+    )
     plan_content = """# Learn Something New
 
 - Insight 1"""
@@ -276,8 +306,8 @@ def test_plan_update_issue_learn_plan_gets_learn_tag() -> None:
         plan_update_issue,
         ["--plan-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
-            github=FakeGitHub(issues_gateway=fake_gh),
-            plan_store=GitHubPlanStore(fake_gh),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
             claude_installation=fake_store,
         ),
     )
@@ -286,7 +316,7 @@ def test_plan_update_issue_learn_plan_gets_learn_tag() -> None:
     output = json.loads(result.output)
     assert output["title"] == "[erk-learn] Learn Something New"
 
-    assert fake_gh.updated_titles[0] == (42, "[erk-learn] Learn Something New")
+    assert fake_github.updated_pr_titles[0] == (42, "[erk-learn] Learn Something New")
 
 
 def test_plan_update_issue_strips_plan_prefix_from_title() -> None:
@@ -296,6 +326,10 @@ def test_plan_update_issue_strips_plan_prefix_from_title() -> None:
     fake_gh = FakeGitHubIssues(
         issues={42: issue},
         comments_with_urls={42: [comment]},
+    )
+    fake_github = FakeGitHub(
+        pr_details={42: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_gh,
     )
     plan_content = """# Plan: Add Feature X
 
@@ -307,8 +341,8 @@ def test_plan_update_issue_strips_plan_prefix_from_title() -> None:
         plan_update_issue,
         ["--plan-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
-            github=FakeGitHub(issues_gateway=fake_gh),
-            plan_store=GitHubPlanStore(fake_gh),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
             claude_installation=fake_store,
         ),
     )
@@ -326,6 +360,10 @@ def test_plan_update_issue_display_format_shows_new_title() -> None:
         issues={42: issue},
         comments_with_urls={42: [comment]},
     )
+    fake_github = FakeGitHub(
+        pr_details={42: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_gh,
+    )
     plan_content = """# Updated Feature
 
 - Step 1"""
@@ -336,8 +374,8 @@ def test_plan_update_issue_display_format_shows_new_title() -> None:
         plan_update_issue,
         ["--plan-number", "42", "--format", "display"],
         obj=ErkContext.for_test(
-            github=FakeGitHub(issues_gateway=fake_gh),
-            plan_store=GitHubPlanStore(fake_gh),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
             claude_installation=fake_store,
         ),
     )
@@ -476,6 +514,10 @@ def test_plan_update_no_branch_skips_push() -> None:
         issues={42: issue},
         comments_with_urls={42: [comment]},
     )
+    fake_github = FakeGitHub(
+        pr_details={42: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_gh,
+    )
     fake_git = FakeGit()
     plan_content = """# Updated Plan
 
@@ -487,9 +529,9 @@ def test_plan_update_no_branch_skips_push() -> None:
         plan_update_issue,
         ["--plan-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
-            github=FakeGitHub(issues_gateway=fake_gh),
+            github=fake_github,
             git=fake_git,
-            plan_store=GitHubPlanStore(fake_gh),
+            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
             claude_installation=fake_store,
         ),
     )

@@ -12,7 +12,6 @@ from erk_shared.gateway.claude_installation.abc import (
     ClaudeInstallation,
     FoundSession,
 )
-from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.learn.extraction.session_schema import extract_git_branch
 
 
@@ -70,30 +69,6 @@ class SessionsForPlan:
                 seen.add(session_id)
 
         return result
-
-
-def find_sessions_for_plan(
-    github: GitHubIssues,
-    repo_root: Path,
-    issue_number: int,
-) -> SessionsForPlan:
-    """Find all Claude Code sessions associated with a plan issue.
-
-    DEPRECATED: Use ``PlanBackend.find_sessions_for_plan()`` instead.
-    This wrapper constructs a temporary GitHubPlanStore to delegate.
-
-    Args:
-        github: GitHub issues interface
-        repo_root: Repository root path
-        issue_number: Plan issue number
-
-    Returns:
-        SessionsForPlan with all discovered session IDs
-    """
-    from erk_shared.plan_store.github import GitHubPlanStore
-
-    backend = GitHubPlanStore(github)
-    return backend.find_sessions_for_plan(repo_root, str(issue_number))
 
 
 def get_readable_sessions(

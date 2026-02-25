@@ -16,7 +16,9 @@ from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.plan_store.github import GitHubPlanStore
+from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from tests.test_utils.plan_helpers import issue_info_to_pr_details
 
 
 def _make_issue(*, number: int, title: str, body: str) -> IssueInfo:
@@ -152,7 +154,10 @@ class TestApplyLandedUpdateHappyPath:
             issues={6423: objective, 6513: plan},
             comments_with_urls={6423: [comment]},
         )
-        fake_github = FakeGitHub(issues_gateway=fake_issues, pr_details={6517: pr})
+        fake_github = FakeGitHub(
+            issues_gateway=fake_issues,
+            pr_details={6517: pr, 6513: issue_info_to_pr_details(plan)},
+        )
 
         runner = CliRunner()
         result = runner.invoke(
@@ -173,7 +178,7 @@ class TestApplyLandedUpdateHappyPath:
             ],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=GitHubPlanStore(fake_issues),
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -223,7 +228,10 @@ class TestApplyLandedUpdateHappyPath:
             issues={6423: objective, 6513: plan},
             comments_with_urls={6423: [comment]},
         )
-        fake_github = FakeGitHub(issues_gateway=fake_issues, pr_details={6517: pr})
+        fake_github = FakeGitHub(
+            issues_gateway=fake_issues,
+            pr_details={6517: pr, 6513: issue_info_to_pr_details(plan)},
+        )
 
         runner = CliRunner()
         result = runner.invoke(
@@ -244,7 +252,7 @@ class TestApplyLandedUpdateHappyPath:
             ],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=GitHubPlanStore(fake_issues),
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -273,7 +281,10 @@ class TestApplyLandedUpdateNoNodes:
             issues={6423: objective, 6513: plan},
             comments_with_urls={6423: [comment]},
         )
-        fake_github = FakeGitHub(issues_gateway=fake_issues, pr_details={6517: pr})
+        fake_github = FakeGitHub(
+            issues_gateway=fake_issues,
+            pr_details={6517: pr, 6513: issue_info_to_pr_details(plan)},
+        )
 
         runner = CliRunner()
         result = runner.invoke(
@@ -290,7 +301,7 @@ class TestApplyLandedUpdateNoNodes:
             ],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=GitHubPlanStore(fake_issues),
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -315,7 +326,10 @@ class TestApplyLandedUpdateErrors:
         pr = _make_pr_details(number=6517, title="PR Title", body="pr body")
 
         fake_issues = FakeGitHubIssues(issues={6513: plan})
-        fake_github = FakeGitHub(issues_gateway=fake_issues, pr_details={6517: pr})
+        fake_github = FakeGitHub(
+            issues_gateway=fake_issues,
+            pr_details={6517: pr, 6513: issue_info_to_pr_details(plan)},
+        )
 
         runner = CliRunner()
         result = runner.invoke(
@@ -332,7 +346,7 @@ class TestApplyLandedUpdateErrors:
             ],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=GitHubPlanStore(fake_issues),
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -349,7 +363,10 @@ class TestApplyLandedUpdateErrors:
         plan = _make_issue(number=6513, title="My Plan", body="plan body")
 
         fake_issues = FakeGitHubIssues(issues={6423: objective, 6513: plan})
-        fake_github = FakeGitHub(issues_gateway=fake_issues)
+        fake_github = FakeGitHub(
+            issues_gateway=fake_issues,
+            pr_details={6513: issue_info_to_pr_details(plan)},
+        )
 
         runner = CliRunner()
         result = runner.invoke(
@@ -366,7 +383,7 @@ class TestApplyLandedUpdateErrors:
             ],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=GitHubPlanStore(fake_issues),
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -388,7 +405,7 @@ class TestApplyLandedUpdateErrors:
             ["--pr", "6517", "--objective", "6423", "--branch", "feature-branch"],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=GitHubPlanStore(fake_issues),
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -417,7 +434,10 @@ class TestApplyLandedUpdateDiscovery:
             issues={6423: objective, 6513: plan},
             comments_with_urls={6423: [comment]},
         )
-        fake_github = FakeGitHub(issues_gateway=fake_issues, pr_details={6517: pr})
+        fake_github = FakeGitHub(
+            issues_gateway=fake_issues,
+            pr_details={6517: pr, 6513: issue_info_to_pr_details(plan)},
+        )
         fake_git = FakeGit(current_branches={tmp_path: "plnd/some-branch"})
 
         runner = CliRunner()
@@ -437,7 +457,7 @@ class TestApplyLandedUpdateDiscovery:
             ],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=GitHubPlanStore(fake_issues),
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 git=fake_git,
                 repo_root=tmp_path,
                 cwd=tmp_path,
@@ -465,10 +485,13 @@ class TestApplyLandedUpdateDiscovery:
             issues={6423: objective, 6513: plan},
             comments_with_urls={6423: [comment]},
         )
-        fake_github = FakeGitHub(issues_gateway=fake_issues, pr_details={6517: pr})
+        fake_github = FakeGitHub(
+            issues_gateway=fake_issues,
+            pr_details={6517: pr, 6513: issue_info_to_pr_details(plan)},
+        )
 
         runner = CliRunner()
-        # Use a branch name that does NOT encode the plan number —
+        # Use a branch name that does NOT encode the plan number ---
         # branch-based discovery would fail, but --plan bypasses it.
         result = runner.invoke(
             objective_apply_landed_update,
@@ -484,7 +507,7 @@ class TestApplyLandedUpdateDiscovery:
             ],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=GitHubPlanStore(fake_issues),
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -515,7 +538,7 @@ class TestApplyLandedUpdateDiscovery:
             ],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=GitHubPlanStore(fake_issues),
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),

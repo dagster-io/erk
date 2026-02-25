@@ -1,7 +1,7 @@
 """Tests for impl-signal exec CLI command.
 
 Tests the started/ended event signaling for /erk:plan-implement.
-Uses ErkContext.for_test() for dependency injection with FakeGitHubIssues.
+Uses ErkContext.for_test() for dependency injection with PlannedPRBackend.
 """
 
 import json
@@ -17,7 +17,9 @@ from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
-from erk_shared.plan_store.github import GitHubPlanStore
+from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from tests.test_utils.plan_helpers import issue_info_to_pr_details
 
 
 def _is_on_git_branch() -> bool:
@@ -176,7 +178,7 @@ def test_impl_context_fallback(tmp_path: Path) -> None:
     impl_dir = tmp_path / ".erk" / "impl-context"
     impl_dir.mkdir(parents=True)
     (impl_dir / "plan.md").write_text("# Plan", encoding="utf-8")
-    # No plan-ref.json — should fail on that, not folder detection
+    # No plan-ref.json -- should fail on that, not folder detection
 
     runner = CliRunner()
     result = runner.invoke(
@@ -258,9 +260,13 @@ def test_started_fails_with_whitespace_session_id(tmp_path: Path) -> None:
 
 @_requires_git_branch
 def test_started_posts_comment_and_updates_metadata(tmp_path: Path) -> None:
-    """Started event posts a comment and updates issue metadata via PlanBackend."""
+    """Started event posts a comment and updates PR metadata via PlannedPRBackend."""
     issue = _make_issue(number=123)
     fake_issues = FakeGitHubIssues(issues={123: issue})
+    fake_github = FakeGitHub(
+        pr_details={123: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
     _setup_plan_ref(tmp_path / ".impl", plan_id="123")
 
     runner = CliRunner()
@@ -269,8 +275,8 @@ def test_started_posts_comment_and_updates_metadata(tmp_path: Path) -> None:
         ["started", "--session-id", "test-session-123"],
         obj=ErkContext.for_test(
             cwd=tmp_path,
-            github=FakeGitHub(issues_gateway=fake_issues),
-            plan_store=GitHubPlanStore(fake_issues),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
         ),
     )
 
@@ -280,23 +286,27 @@ def test_started_posts_comment_and_updates_metadata(tmp_path: Path) -> None:
     assert data["event"] == "started"
     assert data["plan_number"] == 123
 
-    # Verify comment was posted
-    assert len(fake_issues.added_comments) == 1
-    comment_issue_number, comment_body, _comment_id = fake_issues.added_comments[0]
-    assert comment_issue_number == 123
+    # Verify comment was posted (via FakeGitHub.create_pr_comment)
+    assert len(fake_github.pr_comments) == 1
+    comment_pr_number, comment_body = fake_github.pr_comments[0]
+    assert comment_pr_number == 123
     assert "Starting implementation" in comment_body
 
-    # Verify issue body was updated (metadata block)
-    assert len(fake_issues.updated_bodies) == 1
-    updated_issue_number, updated_body = fake_issues.updated_bodies[0]
-    assert updated_issue_number == 123
+    # Verify PR body was updated (metadata block via FakeGitHub.update_pr_body)
+    assert len(fake_github.updated_pr_bodies) == 1
+    updated_pr_number, updated_body = fake_github.updated_pr_bodies[0]
+    assert updated_pr_number == 123
     assert "plan-header" in updated_body
 
 
 def test_ended_updates_metadata(tmp_path: Path) -> None:
-    """Ended event updates issue metadata via PlanBackend without posting a comment."""
+    """Ended event updates PR metadata via PlannedPRBackend without posting a comment."""
     issue = _make_issue(number=456)
     fake_issues = FakeGitHubIssues(issues={456: issue})
+    fake_github = FakeGitHub(
+        pr_details={456: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
     _setup_plan_ref(tmp_path / ".impl", plan_id="456")
 
     runner = CliRunner()
@@ -305,8 +315,8 @@ def test_ended_updates_metadata(tmp_path: Path) -> None:
         ["ended", "--session-id", "test-session-456"],
         obj=ErkContext.for_test(
             cwd=tmp_path,
-            github=FakeGitHub(issues_gateway=fake_issues),
-            plan_store=GitHubPlanStore(fake_issues),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
         ),
     )
 
@@ -317,12 +327,12 @@ def test_ended_updates_metadata(tmp_path: Path) -> None:
     assert data["plan_number"] == 456
 
     # No comment for ended events
-    assert len(fake_issues.added_comments) == 0
+    assert len(fake_github.pr_comments) == 0
 
-    # Verify issue body was updated (metadata block)
-    assert len(fake_issues.updated_bodies) == 1
-    updated_issue_number, updated_body = fake_issues.updated_bodies[0]
-    assert updated_issue_number == 456
+    # Verify PR body was updated (metadata block)
+    assert len(fake_github.updated_pr_bodies) == 1
+    updated_pr_number, updated_body = fake_github.updated_pr_bodies[0]
+    assert updated_pr_number == 456
     assert "plan-header" in updated_body
 
 
@@ -331,6 +341,10 @@ def test_started_sets_lifecycle_stage_impl(tmp_path: Path) -> None:
     """Started event sets lifecycle_stage to 'impl' in metadata."""
     issue = _make_issue(number=321)
     fake_issues = FakeGitHubIssues(issues={321: issue})
+    fake_github = FakeGitHub(
+        pr_details={321: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
     _setup_plan_ref(tmp_path / ".impl", plan_id="321")
 
     runner = CliRunner()
@@ -339,8 +353,8 @@ def test_started_sets_lifecycle_stage_impl(tmp_path: Path) -> None:
         ["started", "--session-id", "test-session-321"],
         obj=ErkContext.for_test(
             cwd=tmp_path,
-            github=FakeGitHub(issues_gateway=fake_issues),
-            plan_store=GitHubPlanStore(fake_issues),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
         ),
     )
 
@@ -349,8 +363,8 @@ def test_started_sets_lifecycle_stage_impl(tmp_path: Path) -> None:
     assert data["success"] is True
 
     # Verify lifecycle_stage was set in the updated body
-    assert len(fake_issues.updated_bodies) == 1
-    _updated_issue_number, updated_body = fake_issues.updated_bodies[0]
+    assert len(fake_github.updated_pr_bodies) == 1
+    _updated_pr_number, updated_body = fake_github.updated_pr_bodies[0]
     assert "lifecycle_stage: impl\n" in updated_body
 
 
@@ -359,6 +373,10 @@ def test_started_writes_local_run_state(tmp_path: Path) -> None:
     """Started event writes local run state file."""
     issue = _make_issue(number=789)
     fake_issues = FakeGitHubIssues(issues={789: issue})
+    fake_github = FakeGitHub(
+        pr_details={789: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
     _setup_plan_ref(tmp_path / ".impl", plan_id="789")
 
     runner = CliRunner()
@@ -367,8 +385,8 @@ def test_started_writes_local_run_state(tmp_path: Path) -> None:
         ["started", "--session-id", "test-session-789"],
         obj=ErkContext.for_test(
             cwd=tmp_path,
-            github=FakeGitHub(issues_gateway=fake_issues),
-            plan_store=GitHubPlanStore(fake_issues),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
         ),
     )
 
@@ -388,9 +406,13 @@ def test_started_writes_local_run_state(tmp_path: Path) -> None:
 
 
 def test_submitted_updates_lifecycle_stage(tmp_path: Path) -> None:
-    """Submitted event sets lifecycle_stage to 'implemented' via PlanBackend."""
+    """Submitted event sets lifecycle_stage to 'implemented' via PlannedPRBackend."""
     issue = _make_issue(number=100)
     fake_issues = FakeGitHubIssues(issues={100: issue})
+    fake_github = FakeGitHub(
+        pr_details={100: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
     _setup_plan_ref(tmp_path / ".impl", plan_id="100")
 
     runner = CliRunner()
@@ -399,8 +421,8 @@ def test_submitted_updates_lifecycle_stage(tmp_path: Path) -> None:
         ["submitted"],
         obj=ErkContext.for_test(
             cwd=tmp_path,
-            github=FakeGitHub(issues_gateway=fake_issues),
-            plan_store=GitHubPlanStore(fake_issues),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
         ),
     )
 
@@ -411,12 +433,12 @@ def test_submitted_updates_lifecycle_stage(tmp_path: Path) -> None:
     assert data["plan_number"] == 100
 
     # No comment for submitted events
-    assert len(fake_issues.added_comments) == 0
+    assert len(fake_github.pr_comments) == 0
 
-    # Verify issue body was updated (metadata block with lifecycle_stage)
-    assert len(fake_issues.updated_bodies) == 1
-    updated_issue_number, updated_body = fake_issues.updated_bodies[0]
-    assert updated_issue_number == 100
+    # Verify PR body was updated (metadata block with lifecycle_stage)
+    assert len(fake_github.updated_pr_bodies) == 1
+    updated_pr_number, updated_body = fake_github.updated_pr_bodies[0]
+    assert updated_pr_number == 100
     assert "impl" in updated_body
 
 
@@ -444,6 +466,10 @@ def test_submitted_no_session_id_ok(tmp_path: Path) -> None:
     """Submitted event succeeds without --session-id (not required)."""
     issue = _make_issue(number=200)
     fake_issues = FakeGitHubIssues(issues={200: issue})
+    fake_github = FakeGitHub(
+        pr_details={200: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
     _setup_plan_ref(tmp_path / ".impl", plan_id="200")
 
     runner = CliRunner()
@@ -452,8 +478,8 @@ def test_submitted_no_session_id_ok(tmp_path: Path) -> None:
         ["submitted"],
         obj=ErkContext.for_test(
             cwd=tmp_path,
-            github=FakeGitHub(issues_gateway=fake_issues),
-            plan_store=GitHubPlanStore(fake_issues),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
         ),
     )
 
@@ -467,6 +493,7 @@ def test_submitted_no_session_id_ok(tmp_path: Path) -> None:
 def test_submitted_issue_not_found(tmp_path: Path) -> None:
     """Submitted event returns error when plan issue doesn't exist."""
     fake_issues = FakeGitHubIssues(issues={})
+    fake_github = FakeGitHub(issues_gateway=fake_issues)
     _setup_plan_ref(tmp_path / ".impl", plan_id="999")
 
     runner = CliRunner()
@@ -475,8 +502,8 @@ def test_submitted_issue_not_found(tmp_path: Path) -> None:
         ["submitted"],
         obj=ErkContext.for_test(
             cwd=tmp_path,
-            github=FakeGitHub(issues_gateway=fake_issues),
-            plan_store=GitHubPlanStore(fake_issues),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
         ),
     )
 

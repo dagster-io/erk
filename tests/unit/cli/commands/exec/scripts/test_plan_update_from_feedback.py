@@ -1,7 +1,7 @@
 """Unit tests for plan_update_from_feedback exec command.
 
-Tests updating plan-body comments on GitHub issues from reviewer feedback.
-Uses FakeGitHubIssues for fast, reliable testing.
+Tests updating plan content on GitHub PRs from reviewer feedback.
+Uses PlannedPRBackend with FakeGitHub for fast, reliable testing.
 """
 
 import json
@@ -17,7 +17,9 @@ from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
-from erk_shared.plan_store.github import GitHubPlanStore
+from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from tests.test_utils.plan_helpers import issue_info_to_pr_details
 
 
 def make_plan_header_body(
@@ -122,14 +124,18 @@ def test_success_with_plan_content(tmp_path: Path) -> None:
         issues={issue_number: issue},
         comments_with_urls={issue_number: [comment]},
     )
+    fake_github = FakeGitHub(
+        pr_details={issue_number: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_gh,
+    )
 
     runner = CliRunner()
     result = runner.invoke(
         plan_update_from_feedback,
         [str(issue_number), "--plan-content", new_plan],
         obj=ErkContext.for_test(
-            github=FakeGitHub(issues_gateway=fake_gh),
-            plan_store=GitHubPlanStore(fake_gh),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
             repo_root=repo_root,
         ),
     )
@@ -139,13 +145,12 @@ def test_success_with_plan_content(tmp_path: Path) -> None:
     assert output["success"] is True
     assert output["plan_number"] == issue_number
 
-    # Verify comment was updated
-    assert len(fake_gh.updated_comments) == 1
-    updated_id, updated_body = fake_gh.updated_comments[0]
-    assert updated_id == comment_id
-    # Updated body should contain the new plan content wrapped in metadata markers
+    # PlannedPRBackend.update_plan_content updates the PR body via FakeGitHub
+    assert len(fake_github.updated_pr_bodies) == 1
+    updated_pr_number, updated_body = fake_github.updated_pr_bodies[0]
+    assert updated_pr_number == issue_number
+    # Updated body should contain the new plan content
     assert "Updated Plan" in updated_body
-    assert "plan-body" in updated_body
 
 
 def test_success_with_plan_path(tmp_path: Path) -> None:
@@ -169,14 +174,18 @@ def test_success_with_plan_path(tmp_path: Path) -> None:
         issues={issue_number: issue},
         comments_with_urls={issue_number: [comment]},
     )
+    fake_github = FakeGitHub(
+        pr_details={issue_number: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_gh,
+    )
 
     runner = CliRunner()
     result = runner.invoke(
         plan_update_from_feedback,
         [str(issue_number), "--plan-path", str(plan_file)],
         obj=ErkContext.for_test(
-            github=FakeGitHub(issues_gateway=fake_gh),
-            plan_store=GitHubPlanStore(fake_gh),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
             repo_root=repo_root,
         ),
     )
@@ -186,14 +195,14 @@ def test_success_with_plan_path(tmp_path: Path) -> None:
     assert output["success"] is True
     assert output["plan_number"] == issue_number
 
-    # Verify comment was updated with file content
-    assert len(fake_gh.updated_comments) == 1
-    _, updated_body = fake_gh.updated_comments[0]
+    # PlannedPRBackend.update_plan_content updates the PR body via FakeGitHub
+    assert len(fake_github.updated_pr_bodies) == 1
+    _, updated_body = fake_github.updated_pr_bodies[0]
     assert "Plan from file" in updated_body
 
 
 def test_updated_comment_contains_plan_body_markers(tmp_path: Path) -> None:
-    """Test that the updated comment contains plan-body metadata block markers."""
+    """Test that the updated PR body contains the plan content."""
     issue_number = 1234
     comment_id = 123456789
     repo_root = tmp_path / "repo"
@@ -206,23 +215,28 @@ def test_updated_comment_contains_plan_body_markers(tmp_path: Path) -> None:
         issues={issue_number: issue},
         comments_with_urls={issue_number: [comment]},
     )
+    fake_github = FakeGitHub(
+        pr_details={issue_number: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_gh,
+    )
 
     runner = CliRunner()
     result = runner.invoke(
         plan_update_from_feedback,
         [str(issue_number), "--plan-content", "## New Plan"],
         obj=ErkContext.for_test(
-            github=FakeGitHub(issues_gateway=fake_gh),
-            plan_store=GitHubPlanStore(fake_gh),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
             repo_root=repo_root,
         ),
     )
 
     assert result.exit_code == 0
 
-    _, updated_body = fake_gh.updated_comments[0]
-    assert "<!-- erk:metadata-block:plan-body -->" in updated_body
-    assert "<!-- /erk:metadata-block:plan-body -->" in updated_body
+    # PlannedPRBackend.update_plan_content updates the PR body
+    _, updated_body = fake_github.updated_pr_bodies[0]
+    # The updated body should contain the new plan content
+    assert "New Plan" in updated_body
 
 
 # ============================================================================
@@ -234,14 +248,15 @@ def test_error_issue_not_found(tmp_path: Path) -> None:
     """Test error when issue doesn't exist."""
     repo_root = tmp_path / "repo"
     fake_gh = FakeGitHubIssues()
+    fake_github = FakeGitHub(issues_gateway=fake_gh)
     runner = CliRunner()
 
     result = runner.invoke(
         plan_update_from_feedback,
         ["9999", "--plan-content", "content"],
         obj=ErkContext.for_test(
-            github=FakeGitHub(issues_gateway=fake_gh),
-            plan_store=GitHubPlanStore(fake_gh),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
             repo_root=repo_root,
         ),
     )
@@ -267,14 +282,18 @@ def test_error_missing_erk_plan_label(tmp_path: Path) -> None:
         issues={issue_number: issue},
         comments_with_urls={issue_number: [comment]},
     )
+    fake_github = FakeGitHub(
+        pr_details={issue_number: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_gh,
+    )
     runner = CliRunner()
 
     result = runner.invoke(
         plan_update_from_feedback,
         [str(issue_number), "--plan-content", "content"],
         obj=ErkContext.for_test(
-            github=FakeGitHub(issues_gateway=fake_gh),
-            plan_store=GitHubPlanStore(fake_gh),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
             repo_root=repo_root,
         ),
     )
@@ -293,14 +312,15 @@ def test_error_both_plan_path_and_content(tmp_path: Path) -> None:
 
     repo_root = tmp_path / "repo"
     fake_gh = FakeGitHubIssues()
+    fake_github = FakeGitHub(issues_gateway=fake_gh)
     runner = CliRunner()
 
     result = runner.invoke(
         plan_update_from_feedback,
         ["1234", "--plan-path", str(plan_file), "--plan-content", "content"],
         obj=ErkContext.for_test(
-            github=FakeGitHub(issues_gateway=fake_gh),
-            plan_store=GitHubPlanStore(fake_gh),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
             repo_root=repo_root,
         ),
     )
@@ -316,14 +336,15 @@ def test_error_neither_plan_path_nor_content(tmp_path: Path) -> None:
     """Test error when neither --plan-path nor --plan-content is provided."""
     repo_root = tmp_path / "repo"
     fake_gh = FakeGitHubIssues()
+    fake_github = FakeGitHub(issues_gateway=fake_gh)
     runner = CliRunner()
 
     result = runner.invoke(
         plan_update_from_feedback,
         ["1234"],
         obj=ErkContext.for_test(
-            github=FakeGitHub(issues_gateway=fake_gh),
-            plan_store=GitHubPlanStore(fake_gh),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
             repo_root=repo_root,
         ),
     )

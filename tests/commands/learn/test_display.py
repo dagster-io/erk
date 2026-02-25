@@ -17,11 +17,13 @@ from erk_shared.gateway.claude_installation.fake import (
     FakeSessionData,
 )
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import render_metadata_block
 from erk_shared.gateway.github.metadata.types import MetadataBlock
 from tests.fakes.prompt_executor import FakePromptExecutor
+from tests.test_utils.plan_helpers import issue_info_to_pr_details
 
 
 def test_display_shows_remote_impl_message_when_set(capsys: pytest.CaptureFixture[str]) -> None:
@@ -109,21 +111,22 @@ def test_dangerous_flag_passed_to_execute_interactive(tmp_path: Path) -> None:
     issue_body = _make_plan_body_with_session(session_id)
 
     now = datetime.now(UTC)
-    fake_issues = FakeGitHubIssues(
-        issues={
-            123: IssueInfo(
-                number=123,
-                title="Test Plan",
-                body=issue_body,
-                state="OPEN",
-                url="https://github.com/owner/repo/issues/123",
-                labels=["erk-planned-pr", "erk-plan"],
-                assignees=[],
-                created_at=now,
-                updated_at=now,
-                author="testuser",
-            ),
-        },
+    issue_123 = IssueInfo(
+        number=123,
+        title="Test Plan",
+        body=issue_body,
+        state="OPEN",
+        url="https://github.com/owner/repo/issues/123",
+        labels=["erk-planned-pr", "erk-plan"],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        author="testuser",
+    )
+    fake_issues = FakeGitHubIssues(issues={123: issue_123})
+    fake_github = FakeGitHub(
+        pr_details={123: issue_info_to_pr_details(issue_123)},
+        issues_gateway=fake_issues,
     )
 
     # Set up fake git with proper directory structure
@@ -165,6 +168,7 @@ def test_dangerous_flag_passed_to_execute_interactive(tmp_path: Path) -> None:
     ctx = context_for_test(
         cwd=tmp_path,
         git=fake_git,
+        github=fake_github,
         issues=fake_issues,
         claude_installation=fake_installation,
         prompt_executor=fake_executor,
@@ -194,21 +198,22 @@ def test_learn_without_dangerous_flag(tmp_path: Path) -> None:
     issue_body = _make_plan_body_with_session(session_id)
 
     now = datetime.now(UTC)
-    fake_issues = FakeGitHubIssues(
-        issues={
-            456: IssueInfo(
-                number=456,
-                title="Test Plan",
-                body=issue_body,
-                state="OPEN",
-                url="https://github.com/owner/repo/issues/456",
-                labels=["erk-planned-pr", "erk-plan"],
-                assignees=[],
-                created_at=now,
-                updated_at=now,
-                author="testuser",
-            ),
-        },
+    issue_456 = IssueInfo(
+        number=456,
+        title="Test Plan",
+        body=issue_body,
+        state="OPEN",
+        url="https://github.com/owner/repo/issues/456",
+        labels=["erk-planned-pr", "erk-plan"],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        author="testuser",
+    )
+    fake_issues = FakeGitHubIssues(issues={456: issue_456})
+    fake_github = FakeGitHub(
+        pr_details={456: issue_info_to_pr_details(issue_456)},
+        issues_gateway=fake_issues,
     )
 
     # Set up fake git with proper directory structure
@@ -250,6 +255,7 @@ def test_learn_without_dangerous_flag(tmp_path: Path) -> None:
     ctx = context_for_test(
         cwd=tmp_path,
         git=fake_git,
+        github=fake_github,
         issues=fake_issues,
         claude_installation=fake_installation,
         prompt_executor=fake_executor,
@@ -292,21 +298,22 @@ def test_learn_passes_learn_branch_when_available(tmp_path: Path) -> None:
     issue_body = _make_plan_body_with_learn_branch(session_id, learn_branch)
 
     now = datetime.now(UTC)
-    fake_issues = FakeGitHubIssues(
-        issues={
-            789: IssueInfo(
-                number=789,
-                title="Test Plan",
-                body=issue_body,
-                state="OPEN",
-                url="https://github.com/owner/repo/issues/789",
-                labels=["erk-planned-pr", "erk-plan"],
-                assignees=[],
-                created_at=now,
-                updated_at=now,
-                author="testuser",
-            ),
-        },
+    issue_789 = IssueInfo(
+        number=789,
+        title="Test Plan",
+        body=issue_body,
+        state="OPEN",
+        url="https://github.com/owner/repo/issues/789",
+        labels=["erk-planned-pr", "erk-plan"],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        author="testuser",
+    )
+    fake_issues = FakeGitHubIssues(issues={789: issue_789})
+    fake_github = FakeGitHub(
+        pr_details={789: issue_info_to_pr_details(issue_789)},
+        issues_gateway=fake_issues,
     )
 
     git_dir = tmp_path / ".git"
@@ -346,6 +353,7 @@ def test_learn_passes_learn_branch_when_available(tmp_path: Path) -> None:
     ctx = context_for_test(
         cwd=tmp_path,
         git=fake_git,
+        github=fake_github,
         issues=fake_issues,
         claude_installation=fake_installation,
         prompt_executor=fake_executor,
@@ -374,21 +382,22 @@ def test_learn_branch_skips_session_discovery_and_display(tmp_path: Path) -> Non
     issue_body = _make_plan_body_with_learn_branch(session_id, learn_branch)
 
     now = datetime.now(UTC)
-    fake_issues = FakeGitHubIssues(
-        issues={
-            555: IssueInfo(
-                number=555,
-                title="Test Plan",
-                body=issue_body,
-                state="OPEN",
-                url="https://github.com/owner/repo/issues/555",
-                labels=["erk-planned-pr", "erk-plan"],
-                assignees=[],
-                created_at=now,
-                updated_at=now,
-                author="testuser",
-            ),
-        },
+    issue_555 = IssueInfo(
+        number=555,
+        title="Test Plan",
+        body=issue_body,
+        state="OPEN",
+        url="https://github.com/owner/repo/issues/555",
+        labels=["erk-planned-pr", "erk-plan"],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        author="testuser",
+    )
+    fake_issues = FakeGitHubIssues(issues={555: issue_555})
+    fake_github = FakeGitHub(
+        pr_details={555: issue_info_to_pr_details(issue_555)},
+        issues_gateway=fake_issues,
     )
 
     git_dir = tmp_path / ".git"
@@ -429,6 +438,7 @@ def test_learn_branch_skips_session_discovery_and_display(tmp_path: Path) -> Non
     ctx = context_for_test(
         cwd=tmp_path,
         git=fake_git,
+        github=fake_github,
         issues=fake_issues,
         claude_installation=fake_installation,
         prompt_executor=fake_executor,
@@ -468,21 +478,22 @@ def test_learn_without_learn_branch_does_not_include_param(tmp_path: Path) -> No
     issue_body = _make_plan_body_with_session(session_id)
 
     now = datetime.now(UTC)
-    fake_issues = FakeGitHubIssues(
-        issues={
-            321: IssueInfo(
-                number=321,
-                title="Test Plan",
-                body=issue_body,
-                state="OPEN",
-                url="https://github.com/owner/repo/issues/321",
-                labels=["erk-planned-pr", "erk-plan"],
-                assignees=[],
-                created_at=now,
-                updated_at=now,
-                author="testuser",
-            ),
-        },
+    issue_321 = IssueInfo(
+        number=321,
+        title="Test Plan",
+        body=issue_body,
+        state="OPEN",
+        url="https://github.com/owner/repo/issues/321",
+        labels=["erk-planned-pr", "erk-plan"],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        author="testuser",
+    )
+    fake_issues = FakeGitHubIssues(issues={321: issue_321})
+    fake_github = FakeGitHub(
+        pr_details={321: issue_info_to_pr_details(issue_321)},
+        issues_gateway=fake_issues,
     )
 
     git_dir = tmp_path / ".git"
@@ -522,6 +533,7 @@ def test_learn_without_learn_branch_does_not_include_param(tmp_path: Path) -> No
     ctx = context_for_test(
         cwd=tmp_path,
         git=fake_git,
+        github=fake_github,
         issues=fake_issues,
         claude_installation=fake_installation,
         prompt_executor=fake_executor,
@@ -551,21 +563,22 @@ def test_learn_branch_auto_launches_without_interactive_flag(tmp_path: Path) -> 
     issue_body = _make_plan_body_with_learn_branch(session_id, learn_branch)
 
     now = datetime.now(UTC)
-    fake_issues = FakeGitHubIssues(
-        issues={
-            900: IssueInfo(
-                number=900,
-                title="Test Plan",
-                body=issue_body,
-                state="OPEN",
-                url="https://github.com/owner/repo/issues/900",
-                labels=["erk-planned-pr", "erk-plan"],
-                assignees=[],
-                created_at=now,
-                updated_at=now,
-                author="testuser",
-            ),
-        },
+    issue_900 = IssueInfo(
+        number=900,
+        title="Test Plan",
+        body=issue_body,
+        state="OPEN",
+        url="https://github.com/owner/repo/issues/900",
+        labels=["erk-planned-pr", "erk-plan"],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        author="testuser",
+    )
+    fake_issues = FakeGitHubIssues(issues={900: issue_900})
+    fake_github = FakeGitHub(
+        pr_details={900: issue_info_to_pr_details(issue_900)},
+        issues_gateway=fake_issues,
     )
 
     git_dir = tmp_path / ".git"
@@ -605,6 +618,7 @@ def test_learn_branch_auto_launches_without_interactive_flag(tmp_path: Path) -> 
     ctx = context_for_test(
         cwd=tmp_path,
         git=fake_git,
+        github=fake_github,
         issues=fake_issues,
         claude_installation=fake_installation,
         prompt_executor=fake_executor,
@@ -632,21 +646,22 @@ def test_dangerous_flag_auto_launches_without_interactive_flag(tmp_path: Path) -
     issue_body = _make_plan_body_with_session(session_id)
 
     now = datetime.now(UTC)
-    fake_issues = FakeGitHubIssues(
-        issues={
-            901: IssueInfo(
-                number=901,
-                title="Test Plan",
-                body=issue_body,
-                state="OPEN",
-                url="https://github.com/owner/repo/issues/901",
-                labels=["erk-planned-pr", "erk-plan"],
-                assignees=[],
-                created_at=now,
-                updated_at=now,
-                author="testuser",
-            ),
-        },
+    issue_901 = IssueInfo(
+        number=901,
+        title="Test Plan",
+        body=issue_body,
+        state="OPEN",
+        url="https://github.com/owner/repo/issues/901",
+        labels=["erk-planned-pr", "erk-plan"],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        author="testuser",
+    )
+    fake_issues = FakeGitHubIssues(issues={901: issue_901})
+    fake_github = FakeGitHub(
+        pr_details={901: issue_info_to_pr_details(issue_901)},
+        issues_gateway=fake_issues,
     )
 
     git_dir = tmp_path / ".git"
@@ -686,6 +701,7 @@ def test_dangerous_flag_auto_launches_without_interactive_flag(tmp_path: Path) -
     ctx = context_for_test(
         cwd=tmp_path,
         git=fake_git,
+        github=fake_github,
         issues=fake_issues,
         claude_installation=fake_installation,
         prompt_executor=fake_executor,
@@ -714,21 +730,22 @@ def test_session_path_without_flags_prompts_user(tmp_path: Path) -> None:
     issue_body = _make_plan_body_with_session(session_id)
 
     now = datetime.now(UTC)
-    fake_issues = FakeGitHubIssues(
-        issues={
-            902: IssueInfo(
-                number=902,
-                title="Test Plan",
-                body=issue_body,
-                state="OPEN",
-                url="https://github.com/owner/repo/issues/902",
-                labels=["erk-planned-pr", "erk-plan"],
-                assignees=[],
-                created_at=now,
-                updated_at=now,
-                author="testuser",
-            ),
-        },
+    issue_902 = IssueInfo(
+        number=902,
+        title="Test Plan",
+        body=issue_body,
+        state="OPEN",
+        url="https://github.com/owner/repo/issues/902",
+        labels=["erk-planned-pr", "erk-plan"],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        author="testuser",
+    )
+    fake_issues = FakeGitHubIssues(issues={902: issue_902})
+    fake_github = FakeGitHub(
+        pr_details={902: issue_info_to_pr_details(issue_902)},
+        issues_gateway=fake_issues,
     )
 
     git_dir = tmp_path / ".git"
@@ -768,6 +785,7 @@ def test_session_path_without_flags_prompts_user(tmp_path: Path) -> None:
     ctx = context_for_test(
         cwd=tmp_path,
         git=fake_git,
+        github=fake_github,
         issues=fake_issues,
         claude_installation=fake_installation,
         prompt_executor=fake_executor,

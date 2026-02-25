@@ -19,7 +19,9 @@ from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
-from erk_shared.plan_store.github import GitHubPlanStore
+from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from tests.test_utils.plan_helpers import issue_info_to_pr_details
 
 
 def _make_plan_issue(
@@ -54,14 +56,18 @@ def test_success_creates_impl_context(tmp_path: Path) -> None:
         url="https://github.com/test-owner/test-repo/issues/123",
     )
     fake_issues = FakeGitHubIssues(issues={123: issue})
+    fake_github = FakeGitHub(
+        pr_details={123: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
 
     runner = CliRunner()
     result = runner.invoke(
         create_impl_context_from_plan,
         ["123"],
         obj=ErkContext.for_test(
-            github=FakeGitHub(issues_gateway=fake_issues),
-            plan_store=GitHubPlanStore(fake_issues),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
             repo_root=tmp_path,
         ),
     )
@@ -70,7 +76,8 @@ def test_success_creates_impl_context(tmp_path: Path) -> None:
     output = json.loads(result.output)
     assert output["success"] is True
     assert output["plan_id"] == 123
-    assert "test-owner/test-repo/issues/123" in output["plan_url"]
+    # PlannedPRBackend uses PR URLs (issue_info_to_pr_details converts /issues/ to /pull/)
+    assert "test-owner/test-repo/pull/123" in output["plan_url"]
 
     # Verify .erk/impl-context/ folder was created with correct files
     impl_context_dir = tmp_path / ".erk" / "impl-context"
@@ -83,9 +90,9 @@ def test_success_creates_impl_context(tmp_path: Path) -> None:
     ref_file = impl_context_dir / "ref.json"
     assert ref_file.exists()
     ref_data = json.loads(ref_file.read_text(encoding="utf-8"))
-    assert ref_data["provider"] == "github"
+    assert ref_data["provider"] == "github-draft-pr"
     assert ref_data["plan_id"] == "123"
-    assert ref_data["url"] == "https://github.com/test-owner/test-repo/issues/123"
+    assert ref_data["url"] == "https://github.com/test-owner/test-repo/pull/123"
     assert "created_at" in ref_data
     assert "synced_at" in ref_data
 
@@ -93,14 +100,15 @@ def test_success_creates_impl_context(tmp_path: Path) -> None:
 def test_plan_not_found_exits_with_error(tmp_path: Path) -> None:
     """Test error output when plan does not exist."""
     fake_issues = FakeGitHubIssues(issues={})
+    fake_github = FakeGitHub(issues_gateway=fake_issues)
 
     runner = CliRunner()
     result = runner.invoke(
         create_impl_context_from_plan,
         ["999"],
         obj=ErkContext.for_test(
-            github=FakeGitHub(issues_gateway=fake_issues),
-            plan_store=GitHubPlanStore(fake_issues),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
             repo_root=tmp_path,
         ),
     )
@@ -127,14 +135,18 @@ def test_objective_id_preserved_in_ref_json(tmp_path: Path) -> None:
         url="https://github.com/test-owner/test-repo/issues/456",
     )
     fake_issues = FakeGitHubIssues(issues={456: issue})
+    fake_github = FakeGitHub(
+        pr_details={456: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
 
     runner = CliRunner()
     result = runner.invoke(
         create_impl_context_from_plan,
         ["456"],
         obj=ErkContext.for_test(
-            github=FakeGitHub(issues_gateway=fake_issues),
-            plan_store=GitHubPlanStore(fake_issues),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
             repo_root=tmp_path,
         ),
     )

@@ -9,10 +9,8 @@ from pathlib import Path
 import pytest
 
 from erk_shared.gateway.github.fake import FakeGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.backend import PlanBackend
-from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.types import PlanNotFound, PlanQuery, PlanState
 
@@ -632,16 +630,15 @@ def test_add_label_not_found_raises_runtime_error(plan_backend: PlanBackend) -> 
 
 
 def test_update_metadata_accepts_previously_blocked_fields() -> None:
-    """GitHub backend now accepts fields that were previously blocked by whitelist."""
-    fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-plan"})
-    backend = GitHubPlanStore(fake_issues)
+    """PlanBackend accepts fields like learn_status in metadata."""
+    backend = _make_planned_pr_backend()
 
     created = backend.create_plan(
         repo_root=Path("/repo"),
         title="Whitelist test",
         content="# Plan",
         labels=("erk-plan",),
-        metadata={},
+        metadata={"branch_name": "whitelist-test-branch"},
     )
 
     backend.update_metadata(

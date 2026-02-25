@@ -14,9 +14,14 @@ from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.metadata.core import find_metadata_block
-from erk_shared.plan_store.github import GitHubPlanStore
+from erk_shared.gateway.github.types import PRNotFound
+from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from tests.test_utils.github_helpers import create_test_issue
-from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+from tests.test_utils.plan_helpers import (
+    format_plan_header_body_for_test,
+    issue_info_to_pr_details,
+)
 
 # ============================================================================
 # Success Cases (Layer 4: Business Logic over Fakes)
@@ -26,7 +31,12 @@ from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 def test_track_learn_result_completed_no_plan(tmp_path: Path) -> None:
     """Test tracking completed_no_plan status."""
     plan_body = format_plan_header_body_for_test(learn_status="pending")
-    fake_issues = FakeGitHubIssues(issues={42: create_test_issue(42, "Test Plan #42", plan_body)})
+    issue = create_test_issue(42, "Test Plan #42", plan_body)
+    fake_issues = FakeGitHubIssues(issues={42: issue})
+    fake_github = FakeGitHub(
+        pr_details={42: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
 
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
@@ -35,8 +45,8 @@ def test_track_learn_result_completed_no_plan(tmp_path: Path) -> None:
             track_learn_result,
             ["--plan-id", "42", "--status", "completed_no_plan"],
             obj=ErkContext.for_test(
-                github=FakeGitHub(issues_gateway=fake_issues),
-                plan_store=GitHubPlanStore(fake_issues),
+                github=fake_github,
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -50,8 +60,9 @@ def test_track_learn_result_completed_no_plan(tmp_path: Path) -> None:
     assert output["learn_plan_issue"] is None
 
     # Verify plan-header was updated
-    updated_issue = fake_issues.get_issue(cwd, 42)
-    block = find_metadata_block(updated_issue.body, "plan-header")
+    updated_pr = fake_github.get_pr(cwd, 42)
+    assert not isinstance(updated_pr, PRNotFound)
+    block = find_metadata_block(updated_pr.body, "plan-header")
     assert block is not None
     assert block.data.get("learn_status") == "completed_no_plan"
     assert "learn_plan_issue" not in block.data or block.data.get("learn_plan_issue") is None
@@ -60,7 +71,12 @@ def test_track_learn_result_completed_no_plan(tmp_path: Path) -> None:
 def test_track_learn_result_completed_with_plan(tmp_path: Path) -> None:
     """Test tracking completed_with_plan status with plan issue."""
     plan_body = format_plan_header_body_for_test(learn_status="pending")
-    fake_issues = FakeGitHubIssues(issues={42: create_test_issue(42, "Test Plan #42", plan_body)})
+    issue = create_test_issue(42, "Test Plan #42", plan_body)
+    fake_issues = FakeGitHubIssues(issues={42: issue})
+    fake_github = FakeGitHub(
+        pr_details={42: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
 
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
@@ -69,8 +85,8 @@ def test_track_learn_result_completed_with_plan(tmp_path: Path) -> None:
             track_learn_result,
             ["--plan-id", "42", "--status", "completed_with_plan", "--plan-issue", "456"],
             obj=ErkContext.for_test(
-                github=FakeGitHub(issues_gateway=fake_issues),
-                plan_store=GitHubPlanStore(fake_issues),
+                github=fake_github,
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -84,8 +100,9 @@ def test_track_learn_result_completed_with_plan(tmp_path: Path) -> None:
     assert output["learn_plan_issue"] == 456
 
     # Verify plan-header was updated with both status and plan issue
-    updated_issue = fake_issues.get_issue(cwd, 42)
-    block = find_metadata_block(updated_issue.body, "plan-header")
+    updated_pr = fake_github.get_pr(cwd, 42)
+    assert not isinstance(updated_pr, PRNotFound)
+    block = find_metadata_block(updated_pr.body, "plan-header")
     assert block is not None
     assert block.data.get("learn_status") == "completed_with_plan"
     assert block.data.get("learn_plan_issue") == 456
@@ -99,7 +116,12 @@ def test_track_learn_result_completed_with_plan(tmp_path: Path) -> None:
 def test_track_learn_result_requires_plan_issue_for_completed_with_plan(tmp_path: Path) -> None:
     """Test error when completed_with_plan is missing --plan-issue."""
     plan_body = format_plan_header_body_for_test(learn_status="pending")
-    fake_issues = FakeGitHubIssues(issues={42: create_test_issue(42, "Test Plan #42", plan_body)})
+    issue = create_test_issue(42, "Test Plan #42", plan_body)
+    fake_issues = FakeGitHubIssues(issues={42: issue})
+    fake_github = FakeGitHub(
+        pr_details={42: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
 
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
@@ -108,8 +130,8 @@ def test_track_learn_result_requires_plan_issue_for_completed_with_plan(tmp_path
             track_learn_result,
             ["--plan-id", "42", "--status", "completed_with_plan"],
             obj=ErkContext.for_test(
-                github=FakeGitHub(issues_gateway=fake_issues),
-                plan_store=GitHubPlanStore(fake_issues),
+                github=fake_github,
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -124,7 +146,12 @@ def test_track_learn_result_requires_plan_issue_for_completed_with_plan(tmp_path
 def test_track_learn_result_rejects_plan_issue_for_completed_no_plan(tmp_path: Path) -> None:
     """Test error when completed_no_plan has --plan-issue."""
     plan_body = format_plan_header_body_for_test(learn_status="pending")
-    fake_issues = FakeGitHubIssues(issues={42: create_test_issue(42, "Test Plan #42", plan_body)})
+    issue = create_test_issue(42, "Test Plan #42", plan_body)
+    fake_issues = FakeGitHubIssues(issues={42: issue})
+    fake_github = FakeGitHub(
+        pr_details={42: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
 
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
@@ -133,8 +160,8 @@ def test_track_learn_result_rejects_plan_issue_for_completed_no_plan(tmp_path: P
             track_learn_result,
             ["--plan-id", "42", "--status", "completed_no_plan", "--plan-issue", "456"],
             obj=ErkContext.for_test(
-                github=FakeGitHub(issues_gateway=fake_issues),
-                plan_store=GitHubPlanStore(fake_issues),
+                github=fake_github,
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -154,7 +181,12 @@ def test_track_learn_result_rejects_plan_issue_for_completed_no_plan(tmp_path: P
 def test_track_learn_result_pending_review_with_plan_pr(tmp_path: Path) -> None:
     """Test tracking pending_review status with plan PR."""
     plan_body = format_plan_header_body_for_test(learn_status="pending")
-    fake_issues = FakeGitHubIssues(issues={42: create_test_issue(42, "Test Plan #42", plan_body)})
+    issue = create_test_issue(42, "Test Plan #42", plan_body)
+    fake_issues = FakeGitHubIssues(issues={42: issue})
+    fake_github = FakeGitHub(
+        pr_details={42: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
 
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
@@ -163,8 +195,8 @@ def test_track_learn_result_pending_review_with_plan_pr(tmp_path: Path) -> None:
             track_learn_result,
             ["--plan-id", "42", "--status", "pending_review", "--plan-pr", "789"],
             obj=ErkContext.for_test(
-                github=FakeGitHub(issues_gateway=fake_issues),
-                plan_store=GitHubPlanStore(fake_issues),
+                github=fake_github,
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -179,8 +211,9 @@ def test_track_learn_result_pending_review_with_plan_pr(tmp_path: Path) -> None:
     assert output["learn_plan_pr"] == 789
 
     # Verify plan-header was updated with both status and plan PR
-    updated_issue = fake_issues.get_issue(cwd, 42)
-    block = find_metadata_block(updated_issue.body, "plan-header")
+    updated_pr = fake_github.get_pr(cwd, 42)
+    assert not isinstance(updated_pr, PRNotFound)
+    block = find_metadata_block(updated_pr.body, "plan-header")
     assert block is not None
     assert block.data.get("learn_status") == "pending_review"
     assert block.data.get("learn_plan_pr") == 789
@@ -189,7 +222,12 @@ def test_track_learn_result_pending_review_with_plan_pr(tmp_path: Path) -> None:
 def test_track_learn_result_pending_review_requires_plan_pr(tmp_path: Path) -> None:
     """Test error when pending_review is missing --plan-pr."""
     plan_body = format_plan_header_body_for_test(learn_status="pending")
-    fake_issues = FakeGitHubIssues(issues={42: create_test_issue(42, "Test Plan #42", plan_body)})
+    issue = create_test_issue(42, "Test Plan #42", plan_body)
+    fake_issues = FakeGitHubIssues(issues={42: issue})
+    fake_github = FakeGitHub(
+        pr_details={42: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
 
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
@@ -198,8 +236,8 @@ def test_track_learn_result_pending_review_requires_plan_pr(tmp_path: Path) -> N
             track_learn_result,
             ["--plan-id", "42", "--status", "pending_review"],
             obj=ErkContext.for_test(
-                github=FakeGitHub(issues_gateway=fake_issues),
-                plan_store=GitHubPlanStore(fake_issues),
+                github=fake_github,
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -214,7 +252,12 @@ def test_track_learn_result_pending_review_requires_plan_pr(tmp_path: Path) -> N
 def test_track_learn_result_pending_review_rejects_plan_issue(tmp_path: Path) -> None:
     """Test error when pending_review has --plan-issue."""
     plan_body = format_plan_header_body_for_test(learn_status="pending")
-    fake_issues = FakeGitHubIssues(issues={42: create_test_issue(42, "Test Plan #42", plan_body)})
+    issue = create_test_issue(42, "Test Plan #42", plan_body)
+    fake_issues = FakeGitHubIssues(issues={42: issue})
+    fake_github = FakeGitHub(
+        pr_details={42: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
 
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
@@ -232,8 +275,8 @@ def test_track_learn_result_pending_review_rejects_plan_issue(tmp_path: Path) ->
                 "456",
             ],
             obj=ErkContext.for_test(
-                github=FakeGitHub(issues_gateway=fake_issues),
-                plan_store=GitHubPlanStore(fake_issues),
+                github=fake_github,
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -248,7 +291,12 @@ def test_track_learn_result_pending_review_rejects_plan_issue(tmp_path: Path) ->
 def test_track_learn_result_completed_with_plan_rejects_plan_pr(tmp_path: Path) -> None:
     """Test error when completed_with_plan has --plan-pr."""
     plan_body = format_plan_header_body_for_test(learn_status="pending")
-    fake_issues = FakeGitHubIssues(issues={42: create_test_issue(42, "Test Plan #42", plan_body)})
+    issue = create_test_issue(42, "Test Plan #42", plan_body)
+    fake_issues = FakeGitHubIssues(issues={42: issue})
+    fake_github = FakeGitHub(
+        pr_details={42: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
 
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
@@ -266,8 +314,8 @@ def test_track_learn_result_completed_with_plan_rejects_plan_pr(tmp_path: Path) 
                 "789",
             ],
             obj=ErkContext.for_test(
-                github=FakeGitHub(issues_gateway=fake_issues),
-                plan_store=GitHubPlanStore(fake_issues),
+                github=fake_github,
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
