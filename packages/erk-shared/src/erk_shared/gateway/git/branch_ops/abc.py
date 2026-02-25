@@ -142,6 +142,18 @@ class GitBranchOps(ABC):
         ...
 
     @abstractmethod
+    def get_all_branch_heads(self, repo_root: Path) -> dict[str, str]:
+        """Get commit SHAs for all local branches in a single call.
+
+        Args:
+            repo_root: Path to the git repository root
+
+        Returns:
+            Mapping of branch name to commit SHA.
+        """
+        ...
+
+    @abstractmethod
     def detect_trunk_branch(self, repo_root: Path) -> str:
         """Auto-detect the trunk branch name.
 
