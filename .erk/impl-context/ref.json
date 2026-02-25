@@ -1,0 +1,5 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Delete GitHubPlanStore and PlanStore ABC (Objective #7911, Node 3.1)",
+  "objective_id": 7911
+}
