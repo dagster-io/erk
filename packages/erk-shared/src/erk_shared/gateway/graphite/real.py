@@ -324,7 +324,8 @@ class RealGraphite(Graphite):
                 user_output(result.stderr, nl=False)
         except subprocess.TimeoutExpired as e:
             if not quiet and e.stdout:
-                user_output(e.stdout if isinstance(e.stdout, str) else e.stdout.decode(), nl=False)
+                stdout = e.stdout if isinstance(e.stdout, str) else e.stdout.decode()
+                user_output(stdout, nl=False)
             raise RuntimeError(
                 "gt submit timed out after 90 seconds. Check network connectivity and try again."
             ) from e
