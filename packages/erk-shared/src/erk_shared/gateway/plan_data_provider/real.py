@@ -466,6 +466,7 @@ class RealPlanDataProvider(PlanDataProvider):
             limit=100,
             show_prs=True,
             show_runs=False,
+            exclude_labels=(),
             creator=None,
         )
         all_plans = self.fetch_plans(filters)
