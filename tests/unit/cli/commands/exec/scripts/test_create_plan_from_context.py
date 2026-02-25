@@ -8,6 +8,7 @@ from erk.cli.commands.exec.scripts.create_plan_from_context import (
     create_plan_from_context,
 )
 from erk_shared.context.context import ErkContext
+from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 
 
@@ -21,7 +22,7 @@ def test_create_plan_issue_success() -> None:
     result = runner.invoke(
         create_plan_from_context,
         input=plan,
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -46,7 +47,7 @@ def test_create_plan_issue_empty_plan() -> None:
     result = runner.invoke(
         create_plan_from_context,
         input="",
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 1
@@ -63,7 +64,7 @@ def test_create_plan_issue_unicode() -> None:
     result = runner.invoke(
         create_plan_from_context,
         input=plan,
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -81,7 +82,7 @@ def test_create_plan_issue_ensures_label() -> None:
     result = runner.invoke(
         create_plan_from_context,
         input=plan,
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -103,7 +104,7 @@ def test_create_plan_issue_h2_title() -> None:
     result = runner.invoke(
         create_plan_from_context,
         input=plan,
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -137,7 +138,7 @@ Test instructions
     result = runner.invoke(
         create_plan_from_context,
         input=plan,
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0

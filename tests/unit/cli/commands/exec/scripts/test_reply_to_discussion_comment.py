@@ -142,12 +142,12 @@ def test_reply_to_discussion_comment_success(tmp_path: Path) -> None:
         make_issue_comment(101, "Looks good!"),
     ]
 
-    fake_github = FakeGitHub(pr_details={123: pr_details})
     # FakeGitHubIssues.add_comment requires issue to exist, so register PR as issue
     fake_github_issues = FakeGitHubIssues(
         issues={123: make_issue_info(123)},
         comments_with_urls={123: comments},
     )
+    fake_github = FakeGitHub(issues_gateway=fake_github_issues, pr_details={123: pr_details})
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -166,7 +166,6 @@ def test_reply_to_discussion_comment_success(tmp_path: Path) -> None:
             ],
             obj=ErkContext.for_test(
                 github=fake_github,
-                github_issues=fake_github_issues,
                 git=fake_git,
                 repo_root=cwd,
                 cwd=cwd,
@@ -199,12 +198,12 @@ def test_reply_to_discussion_comment_quotes_original(tmp_path: Path) -> None:
     original_body = "This is architectural feedback.\nPlease consider a gateway pattern."
     comments = [make_issue_comment(200, original_body, author="schrockn")]
 
-    fake_github = FakeGitHub(pr_details={123: pr_details})
     # FakeGitHubIssues.add_comment requires issue to exist, so register PR as issue
     fake_github_issues = FakeGitHubIssues(
         issues={123: make_issue_info(123)},
         comments_with_urls={123: comments},
     )
+    fake_github = FakeGitHub(issues_gateway=fake_github_issues, pr_details={123: pr_details})
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -223,7 +222,6 @@ def test_reply_to_discussion_comment_quotes_original(tmp_path: Path) -> None:
             ],
             obj=ErkContext.for_test(
                 github=fake_github,
-                github_issues=fake_github_issues,
                 git=fake_git,
                 repo_root=cwd,
                 cwd=cwd,
@@ -246,8 +244,8 @@ def test_reply_to_discussion_comment_quotes_original(tmp_path: Path) -> None:
 
 def test_reply_to_discussion_comment_pr_not_found(tmp_path: Path) -> None:
     """Test error when PR doesn't exist."""
-    fake_github = FakeGitHub()
     fake_github_issues = FakeGitHubIssues()
+    fake_github = FakeGitHub(issues_gateway=fake_github_issues)
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -259,7 +257,6 @@ def test_reply_to_discussion_comment_pr_not_found(tmp_path: Path) -> None:
             ["--comment-id", "100", "--pr", "999", "--reply", "Action taken."],
             obj=ErkContext.for_test(
                 github=fake_github,
-                github_issues=fake_github_issues,
                 git=fake_git,
                 repo_root=cwd,
                 cwd=cwd,
@@ -277,8 +274,8 @@ def test_reply_to_discussion_comment_comment_not_found(tmp_path: Path) -> None:
     pr_details = make_pr_details(123)
     comments = [make_issue_comment(100, "Existing comment")]
 
-    fake_github = FakeGitHub(pr_details={123: pr_details})
     fake_github_issues = FakeGitHubIssues(comments_with_urls={123: comments})
+    fake_github = FakeGitHub(issues_gateway=fake_github_issues, pr_details={123: pr_details})
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -297,7 +294,6 @@ def test_reply_to_discussion_comment_comment_not_found(tmp_path: Path) -> None:
             ],
             obj=ErkContext.for_test(
                 github=fake_github,
-                github_issues=fake_github_issues,
                 git=fake_git,
                 repo_root=cwd,
                 cwd=cwd,
@@ -318,7 +314,6 @@ def test_reply_to_discussion_comment_comment_not_found(tmp_path: Path) -> None:
 
 def test_reply_to_discussion_comment_missing_comment_id(tmp_path: Path) -> None:
     """Test error when comment-id is missing."""
-    fake_github_issues = FakeGitHubIssues()
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -329,7 +324,6 @@ def test_reply_to_discussion_comment_missing_comment_id(tmp_path: Path) -> None:
             reply_to_discussion_comment,
             ["--pr", "123", "--reply", "Action taken."],  # Missing --comment-id
             obj=ErkContext.for_test(
-                github_issues=fake_github_issues,
                 git=fake_git,
                 repo_root=cwd,
                 cwd=cwd,
@@ -342,7 +336,6 @@ def test_reply_to_discussion_comment_missing_comment_id(tmp_path: Path) -> None:
 
 def test_reply_to_discussion_comment_missing_reply(tmp_path: Path) -> None:
     """Test error when reply is missing."""
-    fake_github_issues = FakeGitHubIssues()
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -353,7 +346,6 @@ def test_reply_to_discussion_comment_missing_reply(tmp_path: Path) -> None:
             reply_to_discussion_comment,
             ["--comment-id", "100", "--pr", "123"],  # Missing --reply
             obj=ErkContext.for_test(
-                github_issues=fake_github_issues,
                 git=fake_git,
                 repo_root=cwd,
                 cwd=cwd,
@@ -374,12 +366,12 @@ def test_reply_to_discussion_comment_json_structure(tmp_path: Path) -> None:
     pr_details = make_pr_details(123)
     comments = [make_issue_comment(100, "Test comment")]
 
-    fake_github = FakeGitHub(pr_details={123: pr_details})
     # FakeGitHubIssues.add_comment requires issue to exist, so register PR as issue
     fake_github_issues = FakeGitHubIssues(
         issues={123: make_issue_info(123)},
         comments_with_urls={123: comments},
     )
+    fake_github = FakeGitHub(issues_gateway=fake_github_issues, pr_details={123: pr_details})
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -391,7 +383,6 @@ def test_reply_to_discussion_comment_json_structure(tmp_path: Path) -> None:
             ["--comment-id", "100", "--pr", "123", "--reply", "Action taken."],
             obj=ErkContext.for_test(
                 github=fake_github,
-                github_issues=fake_github_issues,
                 git=fake_git,
                 repo_root=cwd,
                 cwd=cwd,

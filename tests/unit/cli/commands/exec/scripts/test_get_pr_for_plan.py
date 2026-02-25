@@ -59,9 +59,7 @@ def test_get_pr_for_plan_success() -> None:
     result = runner.invoke(
         get_pr_for_plan,
         ["5103"],
-        obj=context_for_test(
-            github=fake_gh, github_issues=fake_issues, plan_store=planned_pr_backend
-        ),
+        obj=context_for_test(github=fake_gh, plan_store=planned_pr_backend),
     )
 
     assert result.exit_code == 0, result.output
@@ -89,9 +87,7 @@ def test_get_pr_for_plan_not_found() -> None:
     result = runner.invoke(
         get_pr_for_plan,
         ["9999"],
-        obj=context_for_test(
-            github=fake_gh, github_issues=fake_issues, plan_store=planned_pr_backend
-        ),
+        obj=context_for_test(github=fake_gh, plan_store=planned_pr_backend),
     )
 
     assert result.exit_code == 1
@@ -122,9 +118,7 @@ def test_json_output_structure_success() -> None:
     result = runner.invoke(
         get_pr_for_plan,
         ["5103"],
-        obj=context_for_test(
-            github=fake_gh, github_issues=fake_issues, plan_store=planned_pr_backend
-        ),
+        obj=context_for_test(github=fake_gh, plan_store=planned_pr_backend),
     )
 
     assert result.exit_code == 0
@@ -161,9 +155,7 @@ def test_json_output_structure_error() -> None:
     result = runner.invoke(
         get_pr_for_plan,
         ["999"],
-        obj=context_for_test(
-            github=fake_gh, github_issues=fake_issues, plan_store=planned_pr_backend
-        ),
+        obj=context_for_test(github=fake_gh, plan_store=planned_pr_backend),
     )
 
     assert result.exit_code == 1
@@ -199,9 +191,7 @@ def test_get_pr_for_plan_planned_pr_backend() -> None:
     result = runner.invoke(
         get_pr_for_plan,
         [str(pr_number)],
-        obj=context_for_test(
-            github=fake_gh, github_issues=fake_issues, plan_store=planned_pr_backend
-        ),
+        obj=context_for_test(github=fake_gh, plan_store=planned_pr_backend),
     )
 
     assert result.exit_code == 0, result.output
@@ -222,9 +212,7 @@ def test_get_pr_for_plan_planned_pr_backend_not_found() -> None:
     result = runner.invoke(
         get_pr_for_plan,
         ["9999"],
-        obj=context_for_test(
-            github=fake_gh, github_issues=fake_issues, plan_store=planned_pr_backend
-        ),
+        obj=context_for_test(github=fake_gh, plan_store=planned_pr_backend),
     )
 
     assert result.exit_code == 1

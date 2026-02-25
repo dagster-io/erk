@@ -14,8 +14,10 @@ from erk.cli.commands.exec.scripts.plan_update_from_feedback import (
     plan_update_from_feedback,
 )
 from erk_shared.context.context import ErkContext
+from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
+from erk_shared.plan_store.github import GitHubPlanStore
 
 
 def make_plan_header_body(
@@ -126,7 +128,8 @@ def test_success_with_plan_content(tmp_path: Path) -> None:
         plan_update_from_feedback,
         [str(issue_number), "--plan-content", new_plan],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
+            plan_store=GitHubPlanStore(fake_gh),
             repo_root=repo_root,
         ),
     )
@@ -172,7 +175,8 @@ def test_success_with_plan_path(tmp_path: Path) -> None:
         plan_update_from_feedback,
         [str(issue_number), "--plan-path", str(plan_file)],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
+            plan_store=GitHubPlanStore(fake_gh),
             repo_root=repo_root,
         ),
     )
@@ -208,7 +212,8 @@ def test_updated_comment_contains_plan_body_markers(tmp_path: Path) -> None:
         plan_update_from_feedback,
         [str(issue_number), "--plan-content", "## New Plan"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
+            plan_store=GitHubPlanStore(fake_gh),
             repo_root=repo_root,
         ),
     )
@@ -235,7 +240,8 @@ def test_error_issue_not_found(tmp_path: Path) -> None:
         plan_update_from_feedback,
         ["9999", "--plan-content", "content"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
+            plan_store=GitHubPlanStore(fake_gh),
             repo_root=repo_root,
         ),
     )
@@ -267,7 +273,8 @@ def test_error_missing_erk_plan_label(tmp_path: Path) -> None:
         plan_update_from_feedback,
         [str(issue_number), "--plan-content", "content"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
+            plan_store=GitHubPlanStore(fake_gh),
             repo_root=repo_root,
         ),
     )
@@ -292,7 +299,8 @@ def test_error_both_plan_path_and_content(tmp_path: Path) -> None:
         plan_update_from_feedback,
         ["1234", "--plan-path", str(plan_file), "--plan-content", "content"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
+            plan_store=GitHubPlanStore(fake_gh),
             repo_root=repo_root,
         ),
     )
@@ -314,7 +322,8 @@ def test_error_neither_plan_path_nor_content(tmp_path: Path) -> None:
         plan_update_from_feedback,
         ["1234"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
+            plan_store=GitHubPlanStore(fake_gh),
             repo_root=repo_root,
         ),
     )

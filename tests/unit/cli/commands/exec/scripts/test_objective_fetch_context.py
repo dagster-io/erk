@@ -15,6 +15,7 @@ from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 from erk_shared.gateway.github.types import PRDetails, PRNotFound
 from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 
 
@@ -437,7 +438,6 @@ class TestObjectiveFetchContext:
 
     def test_bad_branch_pattern(self, tmp_path: Path) -> None:
         """Returns error JSON when branch doesn't match any plan pattern."""
-        fake_issues = FakeGitHubIssues()
         fake_github = FakeGitHub()
 
         runner = CliRunner()
@@ -445,7 +445,6 @@ class TestObjectiveFetchContext:
             objective_fetch_context,
             ["--pr", "6517", "--objective", "6423", "--branch", "feature-branch"],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
                 repo_root=tmp_path,
                 cwd=tmp_path,
@@ -668,7 +667,6 @@ class TestDiscoveryMode:
 
     def test_discover_branch_detached_head_error(self, tmp_path: Path) -> None:
         """Returns error when branch discovery finds detached HEAD."""
-        fake_issues = FakeGitHubIssues()
         fake_github = FakeGitHub()
         fake_git = FakeGit(current_branches={tmp_path: None})
 
@@ -677,7 +675,6 @@ class TestDiscoveryMode:
             objective_fetch_context,
             ["--pr", "6517", "--objective", "6423"],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
                 git=fake_git,
                 repo_root=tmp_path,
@@ -799,6 +796,7 @@ class TestPlannedPRBackend:
         fake_github = FakeGitHub(
             prs_by_branch={"plan-draft-pr-plan": draft_pr},
             pr_details={8002: pr},
+            issues_gateway=fake_issues,
         )
         planned_pr_backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
 
@@ -807,7 +805,6 @@ class TestPlannedPRBackend:
             objective_fetch_context,
             ["--pr", "8002", "--objective", "7419", "--branch", "plan-draft-pr-plan"],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
                 plan_store=planned_pr_backend,
                 repo_root=tmp_path,
@@ -843,6 +840,7 @@ class TestPlannedPRBackend:
         fake_github = FakeGitHub(
             prs_by_branch={"plan-draft-pr-plan": draft_pr},
             pr_details={8002: pr},
+            issues_gateway=fake_issues,
         )
         planned_pr_backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
 
@@ -851,7 +849,6 @@ class TestPlannedPRBackend:
             objective_fetch_context,
             ["--pr", "8002", "--branch", "plan-draft-pr-plan"],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
                 plan_store=planned_pr_backend,
                 repo_root=tmp_path,
@@ -875,7 +872,6 @@ class TestPlannedPRBackend:
             objective_fetch_context,
             ["--pr", "8002", "--objective", "7419", "--branch", "plan-no-such-plan"],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
                 plan_store=planned_pr_backend,
                 repo_root=tmp_path,
@@ -897,15 +893,15 @@ class TestDirectPlanLookup:
         pr = _make_pr_details(number=6517, title="PR Title", body="pr body")
 
         fake_issues = FakeGitHubIssues(issues={6423: objective, 6513: plan})
-        fake_github = FakeGitHub(pr_details={6517: pr})
+        fake_github = FakeGitHub(pr_details={6517: pr}, issues_gateway=fake_issues)
 
         runner = CliRunner()
         result = runner.invoke(
             objective_fetch_context,
             ["--pr", "6517", "--objective", "6423", "--plan", "6513"],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
+                plan_store=GitHubPlanStore(fake_issues),
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -920,15 +916,15 @@ class TestDirectPlanLookup:
     def test_plan_flag_not_found(self, tmp_path: Path) -> None:
         """Returns error when --plan references a non-existent plan."""
         fake_issues = FakeGitHubIssues()
-        fake_github = FakeGitHub()
+        fake_github = FakeGitHub(issues_gateway=fake_issues)
 
         runner = CliRunner()
         result = runner.invoke(
             objective_fetch_context,
             ["--pr", "6517", "--objective", "6423", "--plan", "9999"],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
+                plan_store=GitHubPlanStore(fake_issues),
                 repo_root=tmp_path,
                 cwd=tmp_path,
             ),
@@ -945,7 +941,7 @@ class TestDirectPlanLookup:
         objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY)
 
         fake_issues = FakeGitHubIssues(issues={6423: objective, 6513: plan})
-        fake_github = FakeGitHub()
+        fake_github = FakeGitHub(issues_gateway=fake_issues)
         # No branch set, no PR provided - should error
         fake_git = FakeGit(current_branches={tmp_path: "master"})
 
@@ -954,8 +950,8 @@ class TestDirectPlanLookup:
             objective_fetch_context,
             ["--objective", "6423", "--plan", "6513"],
             obj=context_for_test(
-                github_issues=fake_issues,
                 github=fake_github,
+                plan_store=GitHubPlanStore(fake_issues),
                 git=fake_git,
                 repo_root=tmp_path,
                 cwd=tmp_path,

@@ -11,8 +11,10 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.track_learn_result import track_learn_result
 from erk_shared.context.context import ErkContext
+from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.metadata.core import find_metadata_block
+from erk_shared.plan_store.github import GitHubPlanStore
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
@@ -33,7 +35,8 @@ def test_track_learn_result_completed_no_plan(tmp_path: Path) -> None:
             track_learn_result,
             ["--plan-id", "42", "--status", "completed_no_plan"],
             obj=ErkContext.for_test(
-                github_issues=fake_issues,
+                github=FakeGitHub(issues_gateway=fake_issues),
+                plan_store=GitHubPlanStore(fake_issues),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -66,7 +69,8 @@ def test_track_learn_result_completed_with_plan(tmp_path: Path) -> None:
             track_learn_result,
             ["--plan-id", "42", "--status", "completed_with_plan", "--plan-issue", "456"],
             obj=ErkContext.for_test(
-                github_issues=fake_issues,
+                github=FakeGitHub(issues_gateway=fake_issues),
+                plan_store=GitHubPlanStore(fake_issues),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -104,7 +108,8 @@ def test_track_learn_result_requires_plan_issue_for_completed_with_plan(tmp_path
             track_learn_result,
             ["--plan-id", "42", "--status", "completed_with_plan"],
             obj=ErkContext.for_test(
-                github_issues=fake_issues,
+                github=FakeGitHub(issues_gateway=fake_issues),
+                plan_store=GitHubPlanStore(fake_issues),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -128,7 +133,8 @@ def test_track_learn_result_rejects_plan_issue_for_completed_no_plan(tmp_path: P
             track_learn_result,
             ["--plan-id", "42", "--status", "completed_no_plan", "--plan-issue", "456"],
             obj=ErkContext.for_test(
-                github_issues=fake_issues,
+                github=FakeGitHub(issues_gateway=fake_issues),
+                plan_store=GitHubPlanStore(fake_issues),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -157,7 +163,8 @@ def test_track_learn_result_pending_review_with_plan_pr(tmp_path: Path) -> None:
             track_learn_result,
             ["--plan-id", "42", "--status", "pending_review", "--plan-pr", "789"],
             obj=ErkContext.for_test(
-                github_issues=fake_issues,
+                github=FakeGitHub(issues_gateway=fake_issues),
+                plan_store=GitHubPlanStore(fake_issues),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -191,7 +198,8 @@ def test_track_learn_result_pending_review_requires_plan_pr(tmp_path: Path) -> N
             track_learn_result,
             ["--plan-id", "42", "--status", "pending_review"],
             obj=ErkContext.for_test(
-                github_issues=fake_issues,
+                github=FakeGitHub(issues_gateway=fake_issues),
+                plan_store=GitHubPlanStore(fake_issues),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -224,7 +232,8 @@ def test_track_learn_result_pending_review_rejects_plan_issue(tmp_path: Path) ->
                 "456",
             ],
             obj=ErkContext.for_test(
-                github_issues=fake_issues,
+                github=FakeGitHub(issues_gateway=fake_issues),
+                plan_store=GitHubPlanStore(fake_issues),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -257,7 +266,8 @@ def test_track_learn_result_completed_with_plan_rejects_plan_pr(tmp_path: Path) 
                 "789",
             ],
             obj=ErkContext.for_test(
-                github_issues=fake_issues,
+                github=FakeGitHub(issues_gateway=fake_issues),
+                plan_store=GitHubPlanStore(fake_issues),
                 cwd=cwd,
                 repo_root=cwd,
             ),

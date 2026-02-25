@@ -12,8 +12,10 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.track_learn_evaluation import track_learn_evaluation
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.metadata.core import find_metadata_block
+from erk_shared.plan_store.github import GitHubPlanStore
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
@@ -36,7 +38,8 @@ def test_track_learn_evaluation_posts_comment_and_updates_header(tmp_path: Path)
             ["42", "--session-id=test-session-123"],
             obj=ErkContext.for_test(
                 git=fake_git,
-                github_issues=fake_issues,
+                github=FakeGitHub(issues_gateway=fake_issues),
+                plan_store=GitHubPlanStore(fake_issues),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -78,7 +81,8 @@ def test_track_learn_evaluation_without_session_id(tmp_path: Path) -> None:
             ["100"],
             obj=ErkContext.for_test(
                 git=fake_git,
-                github_issues=fake_issues,
+                github=FakeGitHub(issues_gateway=fake_issues),
+                plan_store=GitHubPlanStore(fake_issues),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -119,7 +123,8 @@ def test_track_learn_evaluation_infers_from_branch(tmp_path: Path) -> None:
             ["--session-id=session-xyz"],
             obj=ErkContext.for_test(
                 git=fake_git,
-                github_issues=fake_issues,
+                github=FakeGitHub(issues_gateway=fake_issues),
+                plan_store=GitHubPlanStore(fake_issues),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -146,7 +151,8 @@ def test_track_learn_evaluation_with_url_format(tmp_path: Path) -> None:
             ["https://github.com/owner/repo/issues/789"],
             obj=ErkContext.for_test(
                 git=fake_git,
-                github_issues=fake_issues,
+                github=FakeGitHub(issues_gateway=fake_issues),
+                plan_store=GitHubPlanStore(fake_issues),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -179,7 +185,8 @@ def test_track_learn_evaluation_fails_without_issue(tmp_path: Path) -> None:
             [],
             obj=ErkContext.for_test(
                 git=fake_git,
-                github_issues=fake_issues,
+                github=FakeGitHub(issues_gateway=fake_issues),
+                plan_store=GitHubPlanStore(fake_issues),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -204,7 +211,8 @@ def test_track_learn_evaluation_fails_with_invalid_issue(tmp_path: Path) -> None
             ["not-a-number"],
             obj=ErkContext.for_test(
                 git=fake_git,
-                github_issues=fake_issues,
+                github=FakeGitHub(issues_gateway=fake_issues),
+                plan_store=GitHubPlanStore(fake_issues),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -236,7 +244,8 @@ def test_json_output_structure_success(tmp_path: Path) -> None:
             ["200"],
             obj=ErkContext.for_test(
                 git=fake_git,
-                github_issues=fake_issues,
+                github=FakeGitHub(issues_gateway=fake_issues),
+                plan_store=GitHubPlanStore(fake_issues),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -269,7 +278,8 @@ def test_json_output_structure_error(tmp_path: Path) -> None:
             ["invalid"],
             obj=ErkContext.for_test(
                 git=fake_git,
-                github_issues=fake_issues,
+                github=FakeGitHub(issues_gateway=fake_issues),
+                plan_store=GitHubPlanStore(fake_issues),
                 cwd=cwd,
                 repo_root=cwd,
             ),

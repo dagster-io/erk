@@ -7,6 +7,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.update_objective_node import update_objective_node
 from erk_shared.context.context import ErkContext
+from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 
@@ -104,7 +105,7 @@ def test_update_pending_step_with_plan() -> None:
     result = runner.invoke(
         update_objective_node,
         ["6423", "--node", "1.3", "--plan", "#6464"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -132,7 +133,7 @@ def test_update_step_with_pr_requires_plan() -> None:
     result = runner.invoke(
         update_objective_node,
         ["6423", "--node", "1.2", "--pr", "#500"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -150,7 +151,7 @@ def test_clear_pr_reference() -> None:
     result = runner.invoke(
         update_objective_node,
         ["6423", "--node", "1.1", "--pr", ""],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -172,7 +173,7 @@ def test_step_not_found() -> None:
     result = runner.invoke(
         update_objective_node,
         ["6423", "--node", "9.9", "--plan", "#123"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -190,7 +191,7 @@ def test_issue_not_found() -> None:
     result = runner.invoke(
         update_objective_node,
         ["999", "--node", "1.1", "--pr", "#123", "--plan", ""],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -209,7 +210,7 @@ def test_no_roadmap_table() -> None:
     result = runner.invoke(
         update_objective_node,
         ["6423", "--node", "1.1", "--pr", "#123", "--plan", ""],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -227,7 +228,7 @@ def test_update_step_in_phase_2() -> None:
     result = runner.invoke(
         update_objective_node,
         ["6423", "--node", "2.1", "--plan", "#300"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -250,7 +251,7 @@ def test_update_with_frontmatter() -> None:
     result = runner.invoke(
         update_objective_node,
         ["6423", "--node", "1.3", "--pr", "#999", "--plan", ""],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -272,7 +273,7 @@ def test_update_with_frontmatter_preserves_other_steps() -> None:
     result = runner.invoke(
         update_objective_node,
         ["6423", "--node", "1.2", "--pr", "#777", "--plan", ""],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -293,7 +294,7 @@ def test_explicit_status_option_with_frontmatter() -> None:
     result = runner.invoke(
         update_objective_node,
         ["6423", "--node", "1.3", "--pr", "#500", "--plan", "", "--status", "done"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -313,7 +314,7 @@ def test_update_multiple_steps_success() -> None:
     result = runner.invoke(
         update_objective_node,
         ["6697", "--node", "1.2", "--node", "1.3", "--node", "2.1", "--plan", "#6759"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -348,7 +349,7 @@ def test_update_multiple_steps_partial_failure() -> None:
     result = runner.invoke(
         update_objective_node,
         ["6697", "--node", "1.2", "--node", "9.9", "--node", "2.1", "--plan", "#6759"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -405,7 +406,7 @@ def test_update_multiple_steps_same_phase() -> None:
     result = runner.invoke(
         update_objective_node,
         ["6697", "--node", "1.1", "--node", "1.2", "--node", "1.3", "--pr", "#555", "--plan", ""],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -429,7 +430,7 @@ def test_single_step_maintains_legacy_output_format() -> None:
     result = runner.invoke(
         update_objective_node,
         ["6423", "--node", "1.3", "--plan", "#6464"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -452,7 +453,7 @@ def test_missing_ref_error() -> None:
     result = runner.invoke(
         update_objective_node,
         ["6423", "--node", "1.3"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -470,7 +471,7 @@ def test_include_body_flag_single_step() -> None:
     result = runner.invoke(
         update_objective_node,
         ["6423", "--node", "1.3", "--pr", "#500", "--plan", "", "--include-body"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -490,7 +491,7 @@ def test_include_body_flag_multiple_steps() -> None:
     result = runner.invoke(
         update_objective_node,
         ["6697", "--node", "1.2", "--node", "1.3", "--pr", "#555", "--plan", "", "--include-body"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -510,7 +511,7 @@ def test_include_body_not_set_by_default() -> None:
     result = runner.invoke(
         update_objective_node,
         ["6423", "--node", "1.3", "--pr", "#500", "--plan", ""],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -587,7 +588,7 @@ def test_planning_status_via_explicit_status() -> None:
     result = runner.invoke(
         update_objective_node,
         ["6423", "--node", "1.3", "--pr", "#200", "--plan", "", "--status", "planning"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -608,7 +609,7 @@ def test_include_body_on_failure() -> None:
     result = runner.invoke(
         update_objective_node,
         ["6423", "--node", "9.9", "--pr", "#500", "--plan", "", "--include-body"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -637,7 +638,7 @@ def test_no_metadata_block_returns_no_roadmap() -> None:
     result = runner.invoke(
         update_objective_node,
         ["6423", "--node", "1.1", "--plan", "#6464"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -737,7 +738,7 @@ def test_v2_update_also_updates_comment_table() -> None:
     result = runner.invoke(
         update_objective_node,
         ["6423", "--node", "1.3", "--plan", "#6464"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -774,7 +775,7 @@ def test_v2_pr_without_plan_returns_error() -> None:
     result = runner.invoke(
         update_objective_node,
         ["6423", "--node", "1.2", "--pr", "#777"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -792,7 +793,7 @@ def test_v2_no_comment_update_when_no_header() -> None:
     result = runner.invoke(
         update_objective_node,
         ["6423", "--node", "1.3", "--plan", "#6464"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -889,7 +890,7 @@ def test_update_step_with_pr_and_plan_preserved() -> None:
     result = runner.invoke(
         update_objective_node,
         ["6423", "--node", "1.2", "--pr", "#500", "--plan", "#200"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -914,7 +915,7 @@ def test_update_step_with_pr_and_plan_cleared() -> None:
     result = runner.invoke(
         update_objective_node,
         ["6423", "--node", "1.2", "--pr", "#500", "--plan", ""],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -938,7 +939,7 @@ def test_pr_without_plan_returns_error() -> None:
     result = runner.invoke(
         update_objective_node,
         ["6423", "--node", "1.3", "--pr", "#500"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"

@@ -8,6 +8,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.update_issue_body import update_issue_body
 from erk_shared.context.context import ErkContext
+from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 
@@ -43,7 +44,7 @@ def test_update_issue_body_success() -> None:
     result = runner.invoke(
         update_issue_body,
         ["42", "--body", new_body],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -80,7 +81,7 @@ def new_function():
     result = runner.invoke(
         update_issue_body,
         ["99", "--body", new_body],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -101,7 +102,7 @@ def test_update_issue_body_not_found() -> None:
     result = runner.invoke(
         update_issue_body,
         ["999", "--body", "new content"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 1
@@ -119,7 +120,7 @@ def test_update_issue_body_empty_body() -> None:
     result = runner.invoke(
         update_issue_body,
         ["42", "--body", ""],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -148,7 +149,7 @@ This content came from a file with special chars: "quotes" and `backticks`.
     result = runner.invoke(
         update_issue_body,
         ["42", "--body-file", str(body_file)],
-        obj=ErkContext.for_test(github_issues=fake_gh, cwd=tmp_path),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh), cwd=tmp_path),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -175,7 +176,7 @@ def test_update_issue_body_fails_with_both_body_and_file(tmp_path: Path) -> None
     result = runner.invoke(
         update_issue_body,
         ["42", "--body", "inline content", "--body-file", str(body_file)],
-        obj=ErkContext.for_test(github_issues=fake_gh, cwd=tmp_path),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh), cwd=tmp_path),
     )
 
     assert result.exit_code == 1
@@ -192,7 +193,7 @@ def test_update_issue_body_fails_without_body_or_file() -> None:
     result = runner.invoke(
         update_issue_body,
         ["42"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 1

@@ -139,7 +139,6 @@ def test_happy_path_sets_marker(tmp_path: Path) -> None:
         [],
         obj=ErkContext.for_test(
             github=fake_gh,
-            github_issues=fake_issues,
             git=fake_git,
             repo_root=tmp_path,
         ),
@@ -181,7 +180,6 @@ def test_no_pr_for_branch(tmp_path: Path) -> None:
         [],
         obj=ErkContext.for_test(
             github=fake_gh,
-            github_issues=fake_issues,
             git=fake_git,
             repo_root=tmp_path,
         ),
@@ -222,7 +220,6 @@ def test_existing_marker_replaced(tmp_path: Path) -> None:
         [],
         obj=ErkContext.for_test(
             github=fake_gh,
-            github_issues=fake_issues,
             git=fake_git,
             repo_root=tmp_path,
         ),
@@ -266,7 +263,6 @@ def test_pr_body_with_footer(tmp_path: Path) -> None:
         [],
         obj=ErkContext.for_test(
             github=fake_gh,
-            github_issues=fake_issues,
             git=fake_git,
             repo_root=tmp_path,
         ),
@@ -300,7 +296,6 @@ def test_detached_head(tmp_path: Path) -> None:
         [],
         obj=ErkContext.for_test(
             github=fake_gh,
-            github_issues=fake_issues,
             git=fake_git,
             repo_root=tmp_path,
         ),

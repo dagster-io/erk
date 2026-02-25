@@ -51,7 +51,6 @@ def test_get_plan_info_success() -> None:
         [plan_id],
         obj=context_for_test(
             github=fake_github,
-            github_issues=fake_github.issues,
             plan_store=backend,
         ),
     )
@@ -77,7 +76,6 @@ def test_get_plan_info_includes_objective_id() -> None:
         [plan_id],
         obj=context_for_test(
             github=fake_github,
-            github_issues=fake_github.issues,
             plan_store=backend,
         ),
     )
@@ -102,7 +100,6 @@ def test_get_plan_info_include_body() -> None:
         [plan_id, "--include-body"],
         obj=context_for_test(
             github=fake_github,
-            github_issues=fake_github.issues,
             plan_store=backend,
         ),
     )
@@ -124,7 +121,6 @@ def test_get_plan_info_excludes_body_by_default() -> None:
         [plan_id],
         obj=context_for_test(
             github=fake_github,
-            github_issues=fake_github.issues,
             plan_store=backend,
         ),
     )

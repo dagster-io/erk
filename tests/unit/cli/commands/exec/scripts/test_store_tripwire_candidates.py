@@ -10,6 +10,7 @@ from erk.cli.commands.exec.scripts.store_tripwire_candidates import (
     store_tripwire_candidates,
 )
 from erk_shared.context.context import ErkContext
+from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 
@@ -59,7 +60,7 @@ def test_store_success(tmp_path: Path) -> None:
     )
 
     fake_issues = FakeGitHubIssues(issues={42: _make_issue(42)})
-    ctx = ErkContext.for_test(github_issues=fake_issues, repo_root=tmp_path)
+    ctx = ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_issues), repo_root=tmp_path)
 
     runner = CliRunner()
     result = runner.invoke(
@@ -84,7 +85,7 @@ def test_store_empty_candidates(tmp_path: Path) -> None:
     candidates_file = _write_candidates_file(tmp_path, [])
 
     fake_issues = FakeGitHubIssues()
-    ctx = ErkContext.for_test(github_issues=fake_issues, repo_root=tmp_path)
+    ctx = ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_issues), repo_root=tmp_path)
 
     runner = CliRunner()
     result = runner.invoke(
@@ -186,7 +187,7 @@ def test_store_normalizes_root_key_drift(tmp_path: Path) -> None:
     )
 
     fake_issues = FakeGitHubIssues(issues={42: _make_issue(42)})
-    ctx = ErkContext.for_test(github_issues=fake_issues, repo_root=tmp_path)
+    ctx = ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_issues), repo_root=tmp_path)
 
     runner = CliRunner()
     result = runner.invoke(
@@ -217,7 +218,7 @@ def test_store_normalizes_field_aliases(tmp_path: Path) -> None:
     )
 
     fake_issues = FakeGitHubIssues(issues={42: _make_issue(42)})
-    ctx = ErkContext.for_test(github_issues=fake_issues, repo_root=tmp_path)
+    ctx = ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_issues), repo_root=tmp_path)
 
     runner = CliRunner()
     result = runner.invoke(
@@ -250,7 +251,7 @@ def test_store_strips_extra_fields(tmp_path: Path) -> None:
     )
 
     fake_issues = FakeGitHubIssues(issues={42: _make_issue(42)})
-    ctx = ErkContext.for_test(github_issues=fake_issues, repo_root=tmp_path)
+    ctx = ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_issues), repo_root=tmp_path)
 
     runner = CliRunner()
     result = runner.invoke(

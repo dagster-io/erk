@@ -9,6 +9,7 @@ from erk.cli.commands.exec.scripts.get_plans_for_objective import (
     get_plans_for_objective,
 )
 from erk_shared.context.context import ErkContext
+from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 
@@ -81,7 +82,7 @@ def test_get_plans_for_objective_returns_empty_list() -> None:
     result = runner.invoke(
         get_plans_for_objective,
         ["4954"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -124,7 +125,7 @@ def test_get_plans_for_objective_finds_linked_plans() -> None:
     result = runner.invoke(
         get_plans_for_objective,
         ["4954"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -165,7 +166,7 @@ def test_get_plans_for_objective_finds_multiple_plans() -> None:
     result = runner.invoke(
         get_plans_for_objective,
         ["4954"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -192,7 +193,7 @@ def test_get_plans_for_objective_supports_legacy_field() -> None:
     result = runner.invoke(
         get_plans_for_objective,
         ["4954"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -217,7 +218,7 @@ def test_get_plans_for_objective_skips_plans_without_metadata() -> None:
     result = runner.invoke(
         get_plans_for_objective,
         ["4954"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -239,7 +240,7 @@ def test_json_output_structure() -> None:
     result = runner.invoke(
         get_plans_for_objective,
         ["100"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0

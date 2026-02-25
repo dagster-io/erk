@@ -70,8 +70,8 @@ def test_get_pr_discussion_comments_with_pr_number(tmp_path: Path) -> None:
         make_issue_comment(101, "Second comment", "reviewer2"),
     ]
 
-    fake_github = FakeGitHub(pr_details={123: pr_details})
     fake_github_issues = FakeGitHubIssues(comments_with_urls={123: comments})
+    fake_github = FakeGitHub(issues_gateway=fake_github_issues, pr_details={123: pr_details})
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -83,7 +83,6 @@ def test_get_pr_discussion_comments_with_pr_number(tmp_path: Path) -> None:
             ["--pr", "123"],
             obj=ErkContext.for_test(
                 github=fake_github,
-                github_issues=fake_github_issues,
                 git=fake_git,
                 repo_root=cwd,
                 cwd=cwd,
@@ -106,8 +105,8 @@ def test_get_pr_discussion_comments_no_comments(tmp_path: Path) -> None:
     """Test get-pr-discussion-comments returns empty list when no comments."""
     pr_details = make_pr_details(123)
 
-    fake_github = FakeGitHub(pr_details={123: pr_details})
     fake_github_issues = FakeGitHubIssues(comments_with_urls={123: []})
+    fake_github = FakeGitHub(issues_gateway=fake_github_issues, pr_details={123: pr_details})
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -119,7 +118,6 @@ def test_get_pr_discussion_comments_no_comments(tmp_path: Path) -> None:
             ["--pr", "123"],
             obj=ErkContext.for_test(
                 github=fake_github,
-                github_issues=fake_github_issues,
                 git=fake_git,
                 repo_root=cwd,
                 cwd=cwd,
@@ -139,8 +137,8 @@ def test_get_pr_discussion_comments_no_comments(tmp_path: Path) -> None:
 
 def test_get_pr_discussion_comments_pr_not_found(tmp_path: Path) -> None:
     """Test error when PR doesn't exist."""
-    fake_github = FakeGitHub()
     fake_github_issues = FakeGitHubIssues()
+    fake_github = FakeGitHub(issues_gateway=fake_github_issues)
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -152,7 +150,6 @@ def test_get_pr_discussion_comments_pr_not_found(tmp_path: Path) -> None:
             ["--pr", "999"],
             obj=ErkContext.for_test(
                 github=fake_github,
-                github_issues=fake_github_issues,
                 git=fake_git,
                 repo_root=cwd,
                 cwd=cwd,
@@ -183,7 +180,7 @@ def test_add_reaction_to_comment_success(tmp_path: Path) -> None:
             add_reaction_to_comment,
             ["--comment-id", "12345"],
             obj=ErkContext.for_test(
-                github_issues=fake_github_issues,
+                github=FakeGitHub(issues_gateway=fake_github_issues),
                 git=fake_git,
                 repo_root=cwd,
                 cwd=cwd,
@@ -213,7 +210,7 @@ def test_add_reaction_to_comment_custom_reaction(tmp_path: Path) -> None:
             add_reaction_to_comment,
             ["--comment-id", "12345", "--reaction", "rocket"],
             obj=ErkContext.for_test(
-                github_issues=fake_github_issues,
+                github=FakeGitHub(issues_gateway=fake_github_issues),
                 git=fake_git,
                 repo_root=cwd,
                 cwd=cwd,
@@ -238,7 +235,7 @@ def test_add_reaction_to_comment_multiple(tmp_path: Path) -> None:
     with runner.isolated_filesystem(temp_dir=tmp_path):
         cwd = Path.cwd()
         ctx = ErkContext.for_test(
-            github_issues=fake_github_issues,
+            github=FakeGitHub(issues_gateway=fake_github_issues),
             git=fake_git,
             repo_root=cwd,
             cwd=cwd,
@@ -281,7 +278,7 @@ def test_add_reaction_to_comment_missing_comment_id(tmp_path: Path) -> None:
             add_reaction_to_comment,
             [],  # Missing --comment-id
             obj=ErkContext.for_test(
-                github_issues=fake_github_issues,
+                github=FakeGitHub(issues_gateway=fake_github_issues),
                 git=fake_git,
                 repo_root=cwd,
                 cwd=cwd,
@@ -303,8 +300,8 @@ def test_get_pr_discussion_comments_json_structure(tmp_path: Path) -> None:
     pr_details = make_pr_details(123)
     comments = [make_issue_comment(100, "Test comment")]
 
-    fake_github = FakeGitHub(pr_details={123: pr_details})
     fake_github_issues = FakeGitHubIssues(comments_with_urls={123: comments})
+    fake_github = FakeGitHub(issues_gateway=fake_github_issues, pr_details={123: pr_details})
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -316,7 +313,6 @@ def test_get_pr_discussion_comments_json_structure(tmp_path: Path) -> None:
             ["--pr", "123"],
             obj=ErkContext.for_test(
                 github=fake_github,
-                github_issues=fake_github_issues,
                 git=fake_git,
                 repo_root=cwd,
                 cwd=cwd,
@@ -354,7 +350,7 @@ def test_add_reaction_to_comment_json_structure_success(tmp_path: Path) -> None:
             add_reaction_to_comment,
             ["--comment-id", "12345"],
             obj=ErkContext.for_test(
-                github_issues=fake_github_issues,
+                github=FakeGitHub(issues_gateway=fake_github_issues),
                 git=fake_git,
                 repo_root=cwd,
                 cwd=cwd,

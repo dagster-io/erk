@@ -13,6 +13,7 @@ from erk_shared.gateway.claude_installation.fake import (
     FakeClaudeInstallation,
 )
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 
 # Valid plan content that passes validation (100+ chars with structure)
@@ -41,7 +42,7 @@ This is a comprehensive objective that includes all the necessary details.
         objective_save_to_issue,
         ["--format", "json"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             claude_installation=fake_store,
         ),
     )
@@ -81,7 +82,7 @@ def test_objective_save_to_issue_no_plan() -> None:
         objective_save_to_issue,
         ["--format", "json"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             claude_installation=fake_store,
         ),
     )
@@ -108,7 +109,7 @@ This is a comprehensive test objective that covers the implementation.
         objective_save_to_issue,
         ["--format", "display"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             claude_installation=fake_store,
         ),
     )
@@ -171,7 +172,7 @@ This objective is from Claude plans directory and should NOT be used.
             objective_save_to_issue,
             ["--format", "json", "--session-id", test_session_id],
             obj=ErkContext.for_test(
-                github_issues=fake_gh,
+                github=FakeGitHub(issues_gateway=fake_gh),
                 git=fake_git,
                 claude_installation=fake_store,
                 cwd=Path(td),
@@ -222,7 +223,7 @@ This objective is from Claude plans directory as fallback.
             objective_save_to_issue,
             ["--format", "json", "--session-id", test_session_id],
             obj=ErkContext.for_test(
-                github_issues=fake_gh,
+                github=FakeGitHub(issues_gateway=fake_gh),
                 git=fake_git,
                 claude_installation=fake_store,
                 cwd=Path(td),
@@ -256,7 +257,7 @@ This objective is found without session ID.
         objective_save_to_issue,
         ["--format", "json"],  # No --session-id
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             claude_installation=fake_store,
         ),
     )
@@ -297,7 +298,7 @@ This objective should only be created once.
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as td:
         ctx = ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             git=fake_git,
             claude_installation=fake_store,
             cwd=Path(td),
@@ -359,7 +360,7 @@ This objective tests display format idempotency.
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as td:
         ctx = ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             git=fake_git,
             claude_installation=fake_store,
             cwd=Path(td),
@@ -450,7 +451,7 @@ def test_objective_save_to_issue_with_roadmap_creates_frontmatter() -> None:
         objective_save_to_issue,
         ["--format", "json"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             claude_installation=fake_store,
         ),
     )
@@ -488,7 +489,7 @@ def test_objective_save_to_issue_validate_flag_json() -> None:
         objective_save_to_issue,
         ["--format", "json", "--validate"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             claude_installation=fake_store,
         ),
     )
@@ -512,7 +513,7 @@ def test_objective_save_to_issue_validate_flag_display() -> None:
         objective_save_to_issue,
         ["--format", "display", "--validate"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             claude_installation=fake_store,
         ),
     )
@@ -534,7 +535,7 @@ def test_objective_save_to_issue_without_validate_flag_no_validation() -> None:
         objective_save_to_issue,
         ["--format", "json"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             claude_installation=fake_store,
         ),
     )
@@ -564,7 +565,7 @@ This objective covers building an authentication system.
         objective_save_to_issue,
         ["--format", "json", "--slug", "build-auth-system"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             claude_installation=fake_store,
         ),
     )
@@ -594,7 +595,7 @@ This objective covers building an authentication system.
         objective_save_to_issue,
         ["--format", "json", "--slug", "INVALID SLUG"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             claude_installation=fake_store,
         ),
     )
@@ -623,7 +624,7 @@ This objective has no slug.
         objective_save_to_issue,
         ["--format", "json"],
         obj=ErkContext.for_test(
-            github_issues=fake_gh,
+            github=FakeGitHub(issues_gateway=fake_gh),
             claude_installation=fake_store,
         ),
     )

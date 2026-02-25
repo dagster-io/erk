@@ -9,6 +9,7 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.upload_session import upload_session
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import find_metadata_block
@@ -138,7 +139,7 @@ def test_upload_session_with_issue_update(tmp_path: Path) -> None:
             "42",
         ],
         obj=ErkContext.for_test(
-            github_issues=fake_gh_issues,
+            github=FakeGitHub(issues_gateway=fake_gh_issues),
             git=fake_git,
             repo_root=repo_root,
             cwd=repo_root,
@@ -188,7 +189,7 @@ def test_upload_session_plan_not_found(tmp_path: Path) -> None:
             "999",
         ],
         obj=ErkContext.for_test(
-            github_issues=fake_gh_issues,
+            github=FakeGitHub(issues_gateway=fake_gh_issues),
             git=fake_git,
             repo_root=repo_root,
             cwd=repo_root,

@@ -18,8 +18,10 @@ from erk.cli.commands.exec.scripts.post_workflow_started_comment import (
     post_workflow_started_comment as post_workflow_started_comment_command,
 )
 from erk_shared.context.context import ErkContext
+from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.plan_store.github import GitHubPlanStore
 
 
 def _create_test_issue(issue_number: int) -> IssueInfo:
@@ -151,7 +153,11 @@ def test_cli_success(tmp_path: Path) -> None:
     fake_github = FakeGitHubIssues(
         issues={123: _create_test_issue(123)},
     )
-    ctx = ErkContext.for_test(github_issues=fake_github, repo_root=tmp_path)
+    ctx = ErkContext.for_test(
+        github=FakeGitHub(issues_gateway=fake_github),
+        plan_store=GitHubPlanStore(fake_github),
+        repo_root=tmp_path,
+    )
 
     result = runner.invoke(
         post_workflow_started_comment_command,
@@ -189,7 +195,11 @@ def test_cli_github_api_failure(tmp_path: Path) -> None:
     runner = CliRunner()
     # Issue not in the fake, so add_comment will raise RuntimeError
     fake_github = FakeGitHubIssues(issues={})
-    ctx = ErkContext.for_test(github_issues=fake_github, repo_root=tmp_path)
+    ctx = ErkContext.for_test(
+        github=FakeGitHub(issues_gateway=fake_github),
+        plan_store=GitHubPlanStore(fake_github),
+        repo_root=tmp_path,
+    )
 
     result = runner.invoke(
         post_workflow_started_comment_command,
@@ -235,7 +245,11 @@ def test_cli_passes_correct_args_to_github(tmp_path: Path) -> None:
     fake_github = FakeGitHubIssues(
         issues={789: _create_test_issue(789)},
     )
-    ctx = ErkContext.for_test(github_issues=fake_github, repo_root=tmp_path)
+    ctx = ErkContext.for_test(
+        github=FakeGitHub(issues_gateway=fake_github),
+        plan_store=GitHubPlanStore(fake_github),
+        repo_root=tmp_path,
+    )
 
     runner.invoke(
         post_workflow_started_comment_command,
