@@ -31,7 +31,6 @@ from erk.cli.commands.pr import pr_group
 from erk.cli.commands.pr.list_cmd import dash
 from erk.cli.commands.prepare_cwd_recovery import prepare_cwd_recovery_cmd
 from erk.cli.commands.project import project_group
-from erk.cli.commands.run import run_group
 from erk.cli.commands.slot import slot_group
 from erk.cli.commands.stack import stack_group
 from erk.cli.commands.up import up_cmd
@@ -204,7 +203,6 @@ cli.add_command(objective_group)
 cli.add_command(one_shot)
 cli.add_command(project_group)
 cli.add_command(slot_group)
-cli.add_command(run_group)
 cli.add_command(stack_group)
 cli.add_command(up_cmd)
 cli.add_command(launch)
