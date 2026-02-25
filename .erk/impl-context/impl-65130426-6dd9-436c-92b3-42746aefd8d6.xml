@@ -1,0 +1,625 @@
+<session>
+  <meta branch="plnd/fix-metadata-lbyl-guard-02-25-0219" />
+  <meta model="claude-opus-4-6" />
+  <user>before commiting this change i want to understand where this fits into the lifecycle of metadata</user>
+  <thinking>The user wants to understand where the metadata update fits into the lifecycle before committing. Let me look at what's on this branch to understand the change, then trace the metadata lifecycle.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="10569" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 10569, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at the current change and then trace the metadata lifecycle.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="10569" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 10569, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0136AB5tK3SyAn5Pv73uC6qc">
+    <param name="command">git diff HEAD~1 --stat</param>
+    <param name="description">See what files changed in the last commit</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="10569" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 10569, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0136AB5tK3SyAn5Pv73uC6qc">
+ src/erk/cli/commands/pr/metadata_helpers.py        | 14 +++++++++-----
+ .../unit/cli/commands/pr/test_metadata_helpers.py  | 22 ++++++++++++++++++++++
+ 2 files changed, 31 insertions(+), 5 deletions(-)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01VUhjEcdPPptfaxKP5Tf2Lx">
+    <param name="command">git diff HEAD~1</param>
+    <param name="description">See the full diff of the last commit</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="10569" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 10569, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VUhjEcdPPptfaxKP5Tf2Lx">
+diff --git a/src/erk/cli/commands/pr/metadata_helpers.py b/src/erk/cli/commands/pr/metadata_helpers.py
+index b800bad82..15322aba2 100644
+--- a/src/erk/cli/commands/pr/metadata_helpers.py
++++ b/src/erk/cli/commands/pr/metadata_helpers.py
+@@ -86,11 +86,15 @@ def maybe_update_plan_dispatch_metadata(
+     if node_id is None:
+         return
+ 
+-    # LBYL: Check if plan-header block exists before attempting update
+-    # This is expected to be missing for non-erk-plan issues that happen
+-    # to have P{number} prefix in their branch name
+-    schema_version = ctx.plan_backend.get_metadata_field(repo.root, plan_id, "schema_version")
+-    if isinstance(schema_version, PlanNotFound) or schema_version is None:
++    # LBYL: Check if plan-header block exists with all required fields before
++    # attempting update. This catches both missing blocks (non-erk-plan issues
++    # that happen to have P{number} prefix) and incomplete blocks (e.g.,
++    # schema_version present but created_at/created_by missing).
++    all_metadata = ctx.plan_backend.get_all_metadata_fields(repo.root, plan_id)
++    if isinstance(all_metadata, PlanNotFound):
++        return
++    required_fields = {"schema_version", "created_at", "created_by"}
++    if not required_fields.issubset(all_metadata.keys()):
+         return
+ 
+     ctx.plan_backend.update_metadata(
+diff --git a/tests/unit/cli/commands/pr/test_metadata_helpers.py b/tests/unit/cli/commands/pr/test_metadata_helpers.py
+index 7fa0ec37f..056647f5c 100644
+--- a/tests/unit/cli/commands/pr/test_metadata_helpers.py
++++ b/tests/unit/cli/commands/pr/test_metadata_helpers.py
+@@ -7,6 +7,8 @@ from erk.cli.commands.pr.metadata_helpers import maybe_update_plan_dispatch_meta
+
+... [32 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me trace the full metadata lifecycle — where metadata is created, read, and updated.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1515" cache_read_input_tokens="29683" cache_creation="{'ephemeral_5m_input_tokens': 1515, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01R5o9qSuU7aoYjdB9VEDTqo">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/src/erk/cli/commands/pr/metadata_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1515" cache_read_input_tokens="29683" cache_creation="{'ephemeral_5m_input_tokens': 1515, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01R5o9qSuU7aoYjdB9VEDTqo">
+     1→"""Helpers for plan dispatch metadata updates.
+     2→
+     3→This module extracts shared logic for updating plan issue dispatch metadata
+     4→when triggering remote workflows on branches that follow the P{issue}-pattern.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from pathlib import Path
+    10→from typing import TYPE_CHECKING
+    11→
+    12→import click
+    13→
+    14→from erk_shared.output.output import user_output
+    15→from erk_shared.plan_store.backend import PlanBackend
+    16→from erk_shared.plan_store.types import PlanNotFound
+    17→
+    18→if TYPE_CHECKING:
+    19→    from erk.core.context import ErkContext
+    20→    from erk.core.repo_discovery import RepoContext
+    21→    from erk_shared.gateway.github.abc import GitHub
+    22→
+    23→
+    24→def write_dispatch_metadata(
+    25→    *,
+    26→    plan_backend: PlanBackend,
+    27→    github: GitHub,
+    28→    repo_root: Path,
+    29→    issue_number: int,
+    30→    run_id: str,
+
+... [82 lines omitted] ...
+
+    36→        RuntimeError: If issue not found or node_id unavailable.
+    40→        raise RuntimeError(f"Could not get node_id for run {run_id}")
+    46→        raise RuntimeError(f"Plan #{issue_number} not found")
+  </tool_result>
+  <tool_use name="Task" id="toolu_01QYNQssgyQSGt85pkMFJafQ">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Trace plan metadata lifecycle</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 1039 chars]...tests/. Report back with file paths, line numbers, and a clear narrative of the lifecycle.</param>
+    <param name="model">sonnet</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1515" cache_read_input_tokens="29683" cache_creation="{'ephemeral_5m_input_tokens': 1515, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QYNQssgyQSGt85pkMFJafQ">
+Now I have everything I need to write a thorough, precise report. Here is the full narrative:
+
+---
+
+# Plan Dispatch Metadata Lifecycle: Full Report
+
+## 1. Schema and Field Definitions
+
+**File:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py`
+
+The `PlanHeaderSchema` (lines 439–773) defines two tiers of fields:
+
+**Required fields** (must be present for schema validation to pass):
+- `schema_version` — always `"2"` (a string)
+- `created_at` — ISO 8601 timestamp of plan creation
+- `created_by` — GitHub username of the creator
+
+**Optional fields** — a large set including `worktree_name`, `branch_name`, `plan_comment_id`, `last_dispatched_run_id`, `last_dispatched_node_id`, `last_dispatched_at`, `last_local_impl_*`, `last_remote_impl_*`, `lifecycle_stage`, `learned_from_issue`, and many more (lines 483–514).
+
+Field name constants are declared with `Literal` types:
+- `SCHEMA_VERSION: Literal["schema_version"] = "schema_version"` (line 351)
+- `CREATED_AT: Literal["created_at"] = "created_at"` (line 352)
+- `CREATED_BY: Literal["created_by"] = "created_by"` (line 353)
+
+---
+
+## 2. Creation: Where the plan-header block is first written
+
+There are **three distinct creation paths**, all funneling through the same rendering infrastructure.
+
+
+... [316 lines omitted] ...
+
+3. Raises `PlanHeaderNotFoundError` if the block is absent
+Used in `one_shot_dispatch.py` and `register_one_shot_plan.py`. Unlike `maybe_update_...`, this variant **raises** on failure:
+        raise RuntimeError(...)
+        raise RuntimeError(...)
+**Error type distinction** (documented in `planning/plan-backend-migration.md`):
+- `PlanHeaderNotFoundError` — a `RuntimeError` subclass raised by `update_metadata()` when the plan exists but has no `plan-header` metadata block
+4. **Partial write failures.** The creation path in `create_plan_issue()` first calls `github_issues.create_issue()` with the full header, but if the GitHub API accepted the issue creation but the body was truncated or corrupted, the stored block could be incomplete.
+The guard uses `get_all_metadata_fields()` (which returns `{}` for a missing block, not an error) to check the presence of `created_at` and `created_by` **before** calling `update_metadata()`. Without this guard, `update_metadata()` would:
+4. The schema validates `created_at` and `created_by` as **required** — validation would fail with a `ValueError`
+5. The `ValueError` would propagate up uncaught (since `maybe_update_plan_dispatch_metadata` has no exception handling)
+The LBYL guard therefore prevents a `ValueError` crash in a best-effort, non-critical update path. The function's contract is to skip silently when the plan isn't a "real" erk plan — and an incomplete `plan-header` block is a reliable signal of that.
+  </tool_result>
+  <assistant>
+
+Here's the metadata lifecycle as it relates to your change:
+
+## Plan-Header Metadata Lifecycle
+
+### 1. Creation (always complete)
+
+All three creation paths — `create_plan_issue()`, `PlannedPRBackend.create_plan()`, and `one_shot_dispatch.py` — funnel through `format_plan_header_body()` → `create_plan_header_block()`, which **unconditionally** includes `schema_version`, `created_at`, and `created_by`. At creation time, the header is always complete.
+
+### 2. Reading
+
+Two read methods on `PlanBackend`:
+- **`get_metadata_field()`** — single field lookup (used in 7+ places: submit, view, land, learn, etc.)
+- **`get_all_metadata_fields()`** — full dict (used **only** by your function `maybe_update_plan_dispatch_metadata`)
+
+### 3. Updating
+
+- **`update_metadata()`** — the sole mutation path. It merges new fields into existing data, **protects immutable fields** (`schema_version`, `created_at`, `created_by`), validates with `PlanHeaderSchema`, then writes back. Raises `PlanHeaderNotFoundError` if the block is missing entirely.
+- **`maybe_update_plan_dispatch_metadata()`** — best-effort wrapper called after `erk pr launch`. Uses LBYL guards to silently skip non-plan branches.
+- **`write_dispatch_metadata()`** — assertive wrapper (raises on failure) used by one-shot dispatch.
+
+### Where Your Change Fits
+
+Your change strengthens the LBYL guard in `maybe_update_plan_dispatch_metadata` — the **best-effort** dispatch path. The old guard only checked `schema_version is not None`. The new guard checks all three required fields.
+
+**Why this matters:** Without the guard, if an incomplete plan-header exists, `update_metadata()` would merge the dispatch fields, then `PlanHeaderSchema.validate()` would fail because `created_at`/`created_by` are required — raising a `ValueError` that propagates uncaught through a function whose contract is "skip silently when it's not a real plan."
+
+### When Can Metadata Be Incomplete?
+
+Since creation always writes all three fields, incomplete headers arise from:
+1. **Non-erk-plan issues** — a branch resolves to an issue with a hand-edited or partial metadata block
+2. **Manual edits** — someone edited the issue body on GitHub
+3. **Pre-schema-v2 issues** — older tooling may have written partial blocks
+4. **Truncated writes** — API accepted but body was corrupted/truncated
+
+The assertive path (`write_dispatch_metadata`) doesn't need this guard because it's only called on plans that erk just created, so the header is guaranteed complete. Your function handles the opportunistic case where erk encounters an arbitrary branch that *might* be a plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="11757" cache_read_input_tokens="31198" cache_creation="{'ephemeral_5m_input_tokens': 11757, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>in the codebase we were dealing it seemed in appropriate that a hard error would halt the landing process. everything ground to a halt</user>
+  <assistant>
+
+That makes sense — the whole point of `maybe_update_plan_dispatch_metadata` is that it's best-effort. A landing operation shouldn't blow up because some metadata block is incomplete on a tangentially related issue.
+
+Your change converts what would be a `ValueError` crash (from schema validation inside `update_metadata()`) into a silent skip, which matches the function's "maybe" contract. The dispatch metadata (`last_dispatched_run_id`, etc.) is informational — losing it is far less costly than blocking a land/launch.
+
+Want me to go ahead and commit this?</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="916" cache_read_input_tokens="42955" cache_creation="{'ephemeral_5m_input_tokens': 916, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <user>yes have it warn though</user>
+  <thinking>The user wants me to add a warning when the LBYL guard skips due to incomplete metadata, then commit. Let me first read the current file to make the edit.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="294" cache_read_input_tokens="43871" cache_creation="{'ephemeral_5m_input_tokens': 294, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me add a warning before the silent return, then commit.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="294" cache_read_input_tokens="43871" cache_creation="{'ephemeral_5m_input_tokens': 294, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HBrCvftcCB64MD7W4Kbk6p">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/src/erk/cli/commands/pr/metadata_helpers.py</param>
+    <param name="offset">89</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="294" cache_read_input_tokens="43871" cache_creation="{'ephemeral_5m_input_tokens': 294, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HBrCvftcCB64MD7W4Kbk6p">
+    89→    # LBYL: Check if plan-header block exists with all required fields before
+    90→    # attempting update. This catches both missing blocks (non-erk-plan issues
+    91→    # that happen to have P{number} prefix) and incomplete blocks (e.g.,
+    92→    # schema_version present but created_at/created_by missing).
+    93→    all_metadata = ctx.plan_backend.get_all_metadata_fields(repo.root, plan_id)
+    94→    if isinstance(all_metadata, PlanNotFound):
+    95→        return
+    96→    required_fields = {"schema_version", "created_at", "created_by"}
+    97→    if not required_fields.issubset(all_metadata.keys()):
+    98→        return
+    99→
+   100→    ctx.plan_backend.update_metadata(
+   101→        repo.root,
+   102→        plan_id,
+   103→        {
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016gurac9YC2MXpFk2TCEHpf">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/src/erk/cli/commands/pr/metadata_helpers.py</param>
+    <param name="old_string">    required_fields = {"schema_version", "created_at", "created_by"}
+    if not required_fields.issubset(all_metadata.keys()):
+        return</param>
+    <param name="new_string">    required_fields = {"schema_version", "created_at", "created_by"}
+    missing = require...[truncated 177 chars]...{', '.join(sorted(missing))}), skipping dispatch metadata update"
+        )
+        return</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="555" cache_read_input_tokens="44165" cache_creation="{'ephemeral_5m_input_tokens': 555, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016gurac9YC2MXpFk2TCEHpf">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/src/erk/cli/commands/pr/metadata_helpers.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run the tests to make sure everything passes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="25965" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 25965}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_011gHbpP3TkFAEi1nANnNTSU">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run metadata helper tests</param>
+    <param name="prompt">Run pytest on the metadata helpers test file and report results:
+uv run pytest tests/unit/cli/commands/pr/test_metadata_helpers.py -v</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="25965" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 25965}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011gHbpP3TkFAEi1nANnNTSU">
+pytest passed: 4 passed in 0.55s
+
+All tests in the metadata helpers test file passed successfully. The 4 test cases executed without any failures or errors.
+agentId: a66522e9c679d1015 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13867
+tool_uses: 1
+duration_ms: 5834&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 4 tests pass. Now let me update the test to verify the warning message is emitted.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="247" cache_read_input_tokens="45079" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 247}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RoKGwxXcp2QS4ap32hhTmp">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/pr/test_metadata_helpers.py</param>
+    <param name="offset">96</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="247" cache_read_input_tokens="45079" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 247}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RoKGwxXcp2QS4ap32hhTmp">
+    96→    assert "last_dispatched_run_id: run-42" in updated_body
+    97→    assert "last_dispatched_node_id: WFR_fake_node_id_run-42" in updated_body
+    98→    assert "2024-06-15T12:00:00+00:00" in updated_body
+    99→
+   100→
+   101→def _make_incomplete_plan_body() -&gt; str:
+   102→    """Create a plan body with incomplete plan-header (only schema_version)."""
+   103→    incomplete_data = {"schema_version": "2"}
+   104→    header_block = render_metadata_block(MetadataBlock("plan-header", incomplete_data))
+   105→    return f"{header_block}\n\n# Plan\n\nImplementation details..."
+   106→
+   107→
+   108→def test_update_incomplete_metadata_skips_update(tmp_path: Path) -&gt; None:
+   109→    """Plan-header with schema_version but missing created_at/created_by skips update."""
+   110→    repo = _make_repo(tmp_path)
+   111→    plan = create_plan("789", "Test plan", body=_make_incomplete_plan_body())
+   112→    plan_store, fake_github = create_plan_store_with_plans({"789": plan})
+   113→    _register_branch_alias(fake_github, "789", "P789-fix-bug")
+   114→    ctx = context_for_test(cwd=repo.root, plan_store=plan_store, repo=repo)
+   115→
+   116→    maybe_update_plan_dispatch_metadata(ctx, repo, "P789-fix-bug", "run-99")
+   117→
+   118→    assert fake_github.updated_pr_bodies == []
+   119→
+  </tool_result>
+  <assistant>Let me check how `user_output` is captured in tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="620" cache_read_input_tokens="45326" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 620}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_011aE5Nhq2fvAUQXLtNAqZDS">
+    <param name="pattern">user_output</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/pr/test_metadata_helpers.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="620" cache_read_input_tokens="45326" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 620}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011aE5Nhq2fvAUQXLtNAqZDS">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01MAgvKJF8nhi8CShWVwSiU5">
+    <param name="pattern">capsys|capture_output|user_output</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/pr</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="620" cache_read_input_tokens="45326" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 620}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MAgvKJF8nhi8CShWVwSiU5">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0139DR5KzxKjmsSRV2X1gjVZ">
+    <param name="pattern">capsys.*user_output|capture_user_output</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="330" cache_read_input_tokens="45946" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 330}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0139DR5KzxKjmsSRV2X1gjVZ">
+No matches found
+
+[Showing results with pagination = limit: 5, offset: 0]
+  </tool_result>
+  <tool_use name="Grep" id="toolu_019c3kVUnUZkgsykfz6Ty5ok">
+    <param name="pattern">user_output.*assert|assert.*capsys</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="178" cache_read_input_tokens="46276" output_tokens="143" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 178, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019c3kVUnUZkgsykfz6Ty5ok">
+No matches found
+
+[Showing results with pagination = limit: 10, offset: 0]
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Hbrcq7Tw44XihPxSt6red1">
+    <param name="pattern">capsys</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="286" cache_read_input_tokens="46454" output_tokens="135" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 286, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Hbrcq7Tw44XihPxSt6red1">
+tests/commands/learn/test_display.py:27:def test_display_shows_remote_impl_message_when_set(capsys: pytest.CaptureFixture[str]) -&gt; None:
+tests/commands/learn/test_display.py:42:    captured = capsys.readouterr()
+tests/commands/learn/test_display.py:47:def test_display_shows_none_when_no_impl_at_all(capsys: pytest.CaptureFixture[str]) -&gt; None:
+tests/commands/learn/test_display.py:62:    captured = capsys.readouterr()
+tests/commands/learn/test_display.py:68:def test_display_shows_impl_sessions_when_present(capsys: pytest.CaptureFixture[str]) -&gt; None:
+tests/commands/learn/test_display.py:83:    captured = capsys.readouterr()
+tests/unit/cli/commands/land/test_update_parent_learn_status.py:49:    capsys: pytest.CaptureFixture[str],
+tests/unit/cli/commands/land/test_update_parent_learn_status.py:70:    captured = capsys.readouterr()
+tests/unit/cli/commands/land/test_update_parent_learn_status.py:76:    capsys: pytest.CaptureFixture[str],
+tests/unit/cli/commands/land/test_update_parent_learn_status.py:116:    captured = capsys.readouterr()
+
+[Showing results with pagination = limit: 10, offset: 0]
+  </tool_result>
+  <assistant>Good — `capsys` is the standard pattern. Let me update the test to assert the warning is emitted.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="536" cache_read_input_tokens="46740" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 536}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01JRjNVJyAdeKssm3RG97Egk">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/pr/test_metadata_helpers.py</param>
+    <param name="old_string">def test_update_incomplete_metadata_skips_update(tmp_path: Path) -&gt; None:
+    """Plan-head...[truncated 412 chars]...adata(ctx, repo, "P789-fix-bug", "run-99")
+
+    assert fake_github.updated_pr_bodies == []</param>
+    <param name="new_string">def test_update_incomplete_metadata_skips_update(
+    tmp_path: Path, capsys: pytest.Captu...[truncated 621 chars]...ptured.out
+    assert "created_at" in captured.out
+    assert "created_by" in captured.out</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="536" cache_read_input_tokens="46740" output_tokens="633" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 536, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JRjNVJyAdeKssm3RG97Egk">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/pr/test_metadata_helpers.py has been updated successfully.
+  </tool_result>
+  <assistant>Now check if `pytest` is imported in the test file.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="714" cache_read_input_tokens="47276" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 714}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013nJw8NuUfA9xbJGye3xVfj">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/pr/test_metadata_helpers.py</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="714" cache_read_input_tokens="47276" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 714}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013nJw8NuUfA9xbJGye3xVfj">
+     1→"""Unit tests for plan dispatch metadata helpers."""
+     2→
+     3→from datetime import UTC, datetime
+     4→from pathlib import Path
+     5→
+     6→from erk.cli.commands.pr.metadata_helpers import maybe_update_plan_dispatch_metadata
+     7→from erk.core.context import context_for_test
+     8→from erk.core.repo_discovery import RepoContext
+     9→from erk_shared.gateway.github.fake import FakeGitHub
+    10→from erk_shared.gateway.github.metadata.core import render_metadata_block
+  </tool_result>
+  <assistant>Need to add `pytest` import.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="283" cache_read_input_tokens="47990" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 283}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_015djtMK2AjZrnNRztfAXtn7">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/pr/test_metadata_helpers.py</param>
+    <param name="old_string">"""Unit tests for plan dispatch metadata helpers."""
+
+from datetime import UTC, datetime
+from pathlib import Path</param>
+    <param name="new_string">"""Unit tests for plan dispatch metadata helpers."""
+
+from datetime import UTC, datetime
+from pathlib import Path
+
+import pytest</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="283" cache_read_input_tokens="47990" output_tokens="188" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 283, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015djtMK2AjZrnNRztfAXtn7">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/pr/test_metadata_helpers.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Task" id="toolu_017cSD8YRL2WS5g8bLE8QHqM">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run metadata helper tests</param>
+    <param name="prompt">Run pytest on the metadata helpers test file and report results:
+uv run pytest tests/unit/cli/commands/pr/test_metadata_helpers.py -v</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="269" cache_read_input_tokens="48273" output_tokens="128" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 269, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017cSD8YRL2WS5g8bLE8QHqM">
+pytest failed: 1 issue found
+
+**File:** /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/pr/test_metadata_helpers.py:124
+
+**Test:** `test_update_incomplete_metadata_skips_update`
+
+**Error:** The test expects the warning message "incomplete plan-header" to be in stdout (`captured.out`), but the message is actually being written to stderr (`captured.err`).
+
+**Current behavior:** Message is printed to stderr:
+```
+⚠ Plan #789 has incomplete plan-header (missing created_at, created_by), skipping dispatch metadata update
+```
+
+**Expected behavior:** Message should be in stdout for the test assertion to pass:
+```python
+assert "incomplete plan-header" in captured.out
+```
+
+The issue is that the warning is being printed to stderr rather than stdout. The test needs either the output to be redirected to stdout, or the test assertion needs to check stderr instead.
+agentId: acad42df8f7ea7c1c (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 15157
+tool_uses: 1
+duration_ms: 6678&lt;/usage&gt;
+  </tool_result>
+  <assistant>Let me check how `user_output` writes — likely stderr.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="431" cache_read_input_tokens="48542" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 431}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01FZRjFSCt1roTKjhmhzXSw8">
+    <param name="pattern">def user_output</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/packages/erk-shared/src/erk_shared/output</param>
+    <param name="output_mode">content</param>
+    <param name="-A">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="431" cache_read_input_tokens="48542" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 431}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FZRjFSCt1roTKjhmhzXSw8">
+packages/erk-shared/src/erk_shared/output/output.py:9:def user_output(
+packages/erk-shared/src/erk_shared/output/output.py-10-    message: Any | None = None,
+packages/erk-shared/src/erk_shared/output/output.py-11-    nl: bool = True,
+packages/erk-shared/src/erk_shared/output/output.py-12-    color: bool | None = None,
+packages/erk-shared/src/erk_shared/output/output.py-13-) -&gt; None:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/packages/erk-shared/src/erk_shared/output/output.py-14-    """Output informational message for human users.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01VFRLthZdArNoJwzbejsgXG">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/packages/erk-shared/src/erk_shared/output/output.py</param>
+    <param name="offset">9</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="495" cache_read_input_tokens="48973" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 495}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VFRLthZdArNoJwzbejsgXG">
+     9→def user_output(
+    10→    message: Any | None = None,
+    11→    nl: bool = True,
+    12→    color: bool | None = None,
+    13→) -&gt; None:
+    14→    """Output informational message for human users.
+    15→
+    16→    Routes to stderr so shell integration can capture structured data
+    17→    on stdout while users still see progress/status messages.
+    18→
+    19→    Args:
+    20→        message: The string or bytes to output. Other objects are converted to strings.
+    21→        nl: Print a newline after the message. Enabled by default.
+    22→        color: Force showing or hiding colors and other styles. By default, Click
+    23→            will remove color if the output does not look like an interactive terminal.
+    24→    """
+    25→    click.echo(message, nl=nl, err=True, color=color)
+    26→
+    27→
+    28→def machine_output(
+  </tool_result>
+  <assistant>Right, `user_output` goes to stderr. Fix the test assertion.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="383" cache_read_input_tokens="49468" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 383}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01PxzPmTFWNgkyZMoAzTmkuh">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/pr/test_metadata_helpers.py</param>
+    <param name="old_string">    captured = capsys.readouterr()
+    assert "incomplete plan-header" in captured.out
+    assert "created_at" in captured.out
+    assert "created_by" in captured.out</param>
+    <param name="new_string">    captured = capsys.readouterr()
+    assert "incomplete plan-header" in captured.err
+    assert "created_at" in captured.err
+    assert "created_by" in captured.err</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="383" cache_read_input_tokens="49468" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 383}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PxzPmTFWNgkyZMoAzTmkuh">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/pr/test_metadata_helpers.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Task" id="toolu_01EehztWB1xkqxg12yo1Xhq1">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run metadata helper tests</param>
+    <param name="prompt">Run pytest on the metadata helpers test file and report results:
+uv run pytest tests/unit/cli/commands/pr/test_metadata_helpers.py -v</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="326" cache_read_input_tokens="49851" output_tokens="128" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 326, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EehztWB1xkqxg12yo1Xhq1">
+pytest passed: All 4 tests in the metadata helpers test file passed in 0.42s
+
+The test file at `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/pr/test_metadata_helpers.py` contains 4 test cases, all of which are passing.
+agentId: a79271ce8dd2e05b4 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13750
+tool_uses: 1
+duration_ms: 4967&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 4 tests pass. Now let me commit.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="281" cache_read_input_tokens="50177" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 281}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Vv79T6hZF7ToPDVFdnALrP">
+    <param name="command">git status</param>
+    <param name="description">Show working tree status</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="281" cache_read_input_tokens="50177" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 281}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Vv79T6hZF7ToPDVFdnALrP">
+On branch plnd/fix-metadata-lbyl-guard-02-25-0219
+Your branch and 'origin/plnd/fix-metadata-lbyl-guard-02-25-0219' have diverged,
+and have 1 and 5 different commits each, respectively.
+  (use "git pull" if you want to integrate the remote branch with yours)
+
+Changes not staged for commit:
+  (use "git add &lt;file&gt;..." to update what will be committed)
+  (use "git restore &lt;file&gt;..." to discard changes in working directory)
+	modified:   src/erk/cli/commands/pr/metadata_helpers.py
+	modified:   tests/unit/cli/commands/pr/test_metadata_helpers.py
+
+no changes added to commit (use "git add" and/or "git commit -a")
+  </tool_result>
+  <tool_use name="Bash" id="toolu_018wxCzJ3qFLdBAjN9oMZFjA">
+    <param name="command">git diff</param>
+    <param name="description">Show staged and unstaged changes</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="281" cache_read_input_tokens="50177" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 281}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018wxCzJ3qFLdBAjN9oMZFjA">
+diff --git a/src/erk/cli/commands/pr/metadata_helpers.py b/src/erk/cli/commands/pr/metadata_helpers.py
+index 15322aba2..e779e536c 100644
+--- a/src/erk/cli/commands/pr/metadata_helpers.py
++++ b/src/erk/cli/commands/pr/metadata_helpers.py
+@@ -94,7 +94,13 @@ def maybe_update_plan_dispatch_metadata(
+     if isinstance(all_metadata, PlanNotFound):
+         return
+     required_fields = {"schema_version", "created_at", "created_by"}
+-    if not required_fields.issubset(all_metadata.keys()):
++    missing = required_fields - all_metadata.keys()
++    if missing:
++        user_output(
++            click.style("⚠", fg="yellow")
++            + f" Plan #{plan_id} has incomplete plan-header"
++            + f" (missing {', '.join(sorted(missing))}), skipping dispatch metadata update"
++        )
+         return
+ 
+     ctx.plan_backend.update_metadata(
+diff --git a/tests/unit/cli/commands/pr/test_metadata_helpers.py b/tests/unit/cli/commands/pr/test_metadata_helpers.py
+index 056647f5c..d69296e68 100644
+--- a/tests/unit/cli/commands/pr/test_metadata_helpers.py
++++ b/tests/unit/cli/commands/pr/test_metadata_helpers.py
+@@ -3,6 +3,8 @@
+ from datetime import UTC, datetime
+ from pathlib import Path
+ 
++import pytest
++
+ from erk.cli.commands.pr.metadata_helpers import maybe_update_plan_dispatch_metadata
+
+... [21 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01JesaV1u35jhXGEmMvUKGgy">
+    <param name="command">git log --oneline -5</param>
+    <param name="description">Show recent commit messages</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="281" cache_read_input_tokens="50177" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 281}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JesaV1u35jhXGEmMvUKGgy">
+2e8df0881 Add plan: Fix: Strengthen LBYL guard in `maybe_update_plan_dispatch_metadata`
+4ac56ad7b Rename issue_number → plan_number in exec scripts and tests (#8134)
+b52c4ab8f Add erkbot system prompt module with erk-aware agent instructions (#8125)
+8b821ebaf Fix: Remove unsupported `branch_slug` parameter from `setup_impl` (#8130)
+6199c8500 Fix: Remove stale branch_slug forwarding in setup_impl that crashes setup from issue (#8129)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_014tfxbEyzDDQh6a1YUuLGtW">
+    <param name="command">git add src/erk/cli/commands/pr/metadata_helpers.py tests/unit/cli/commands/pr/test_metada...[truncated 499 chars]...elds and skips gracefully.
+
+Co-Authored-By: Claude Opus 4.6 &lt;noreply@anthropic.com&gt;
+EOF
+)"</param>
+    <param name="description">Commit the LBYL guard fix with warning</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1427" cache_read_input_tokens="50458" output_tokens="268" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1427, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014tfxbEyzDDQh6a1YUuLGtW">
+[plnd/fix-metadata-lbyl-guard-02-25-0219 6a5dd9362] Fix: Strengthen LBYL guard in `maybe_update_plan_dispatch_metadata`
+ 2 files changed, 16 insertions(+), 2 deletions(-)
+  </tool_result>
+  <assistant>Committed. The change now warns with the specific missing fields (e.g., `⚠ Plan #789 has incomplete plan-header (missing created_at, created_by), skipping dispatch metadata update`) instead of silently returning or crashing with a `ValueError`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="349" cache_read_input_tokens="51885" output_tokens="63" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 349, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;See ya!&lt;/local-command-stdout&gt;</user>
+</session>
