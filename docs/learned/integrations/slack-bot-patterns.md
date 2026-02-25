@@ -35,13 +35,15 @@ Commands are modeled as a discriminated union using Pydantic `BaseModel`:
 - `QuoteCommand` - Returns a random quote
 - `OneShotCommand(message: str)` - Executes an erk one-shot with the message
 - `OneShotMissingMessageCommand` - Error state when one-shot lacks content
+- `ChatCommand(message: str)` - Agent-mode chat command
 
 ## Streaming Subprocess Execution
 
-`runner.py` provides two execution modes:
+`runner.py` provides three execution modes:
 
 1. **In-process** (`run_erk_plan_list`): Uses Click's `CliRunner` for fast execution
-2. **Streaming** (`stream_erk_one_shot`): Streams output line-by-line with progress callbacks
+2. **Batch subprocess** (`run_erk_one_shot`): Runs subprocess, collects full output, handles timeout
+3. **Streaming** (`stream_erk_one_shot`): Streams output line-by-line with progress callbacks
 
 The streaming mode enables live Slack message updates during long-running operations. It uses `asyncio.create_subprocess_exec` with async line-by-line reading and a callback function for progress updates.
 
