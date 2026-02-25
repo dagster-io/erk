@@ -19,7 +19,7 @@ from erk_shared.core.prompt_executor import (
 )
 from erk_shared.core.script_writer import ScriptResult, ScriptWriter
 from erk_shared.gateway.codespace_registry.abc import CodespaceRegistry, RegisteredCodespace
-from erk_shared.gateway.github.types import GitHubRepoLocation
+from erk_shared.gateway.github.types import GitHubRepoLocation, IssueFilterState
 
 
 class InteractiveCall(NamedTuple):
@@ -270,7 +270,7 @@ class FakePlanListService(PlanListService):
         *,
         location: GitHubRepoLocation,
         labels: list[str],
-        state: str | None = None,
+        state: IssueFilterState = "open",
         limit: int | None = None,
         skip_workflow_runs: bool = False,
         creator: str | None = None,
@@ -292,7 +292,7 @@ class FakeObjectiveListService(ObjectiveListService):
         self,
         *,
         location: GitHubRepoLocation,
-        state: str | None = None,
+        state: IssueFilterState = "open",
         limit: int | None = None,
         skip_workflow_runs: bool = False,
         creator: str | None = None,

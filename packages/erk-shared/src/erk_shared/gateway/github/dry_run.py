@@ -9,6 +9,7 @@ from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import (
     BodyContent,
     GitHubRepoLocation,
+    IssueFilterState,
     MergeResult,
     PRDetails,
     PRListState,
@@ -169,7 +170,7 @@ class DryRunGitHub(GitHub):
         *,
         location: GitHubRepoLocation,
         labels: list[str],
-        state: str | None = None,
+        state: IssueFilterState = "open",
         limit: int | None = None,
         creator: str | None = None,
     ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
@@ -205,7 +206,7 @@ class DryRunGitHub(GitHub):
         location: GitHubRepoLocation,
         *,
         labels: list[str],
-        state: str | None,
+        state: IssueFilterState,
         limit: int | None,
         author: str | None,
         exclude_labels: list[str] | None = None,

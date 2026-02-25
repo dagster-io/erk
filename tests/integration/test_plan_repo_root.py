@@ -51,7 +51,7 @@ def test_plan_issue_list_uses_repo_root_not_metadata_dir() -> None:
                 self,
                 location: GitHubRepoLocation,
                 labels: list[str],
-                state: str | None = None,
+                state: str = "open",
                 limit: int | None = None,
                 creator: str | None = None,
             ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
