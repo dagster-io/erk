@@ -463,3 +463,80 @@ def test_updates_lifecycle_stage_for_linked_plan(tmp_path: Path) -> None:
     assert len(fake_issues.updated_bodies) == 1
     updated_body = fake_issues.updated_bodies[0][1]
     assert "lifecycle_stage: impl" in updated_body
+
+
+def test_no_lifecycle_update_with_only_issue_number(tmp_path: Path) -> None:
+    """finalize_pr does NOT update lifecycle when only issue_number is set (no plan_context)."""
+    plan_body = format_plan_header_body_for_test(lifecycle_stage="planned")
+    plan_issue = IssueInfo(
+        number=321,
+        title="Plan #321",
+        body=plan_body,
+        state="OPEN",
+        url="https://github.com/owner/repo/issues/321",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
+        author="test-user",
+    )
+    fake_issues = FakeGitHubIssues(issues={321: plan_issue})
+
+    pr = _pr_details(number=42)
+    fake_git = FakeGit(
+        repository_roots={tmp_path: tmp_path},
+        remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
+    )
+    fake_github = FakeGitHub(
+        prs_by_branch={"feature": pr},
+        pr_details={42: pr},
+        issues_gateway=fake_issues,
+    )
+    ctx = context_for_test(git=fake_git, github=fake_github, issues=fake_issues, cwd=tmp_path)
+
+    state = _make_state(cwd=tmp_path, issue_number=321, plan_context=None)
+
+    result = finalize_pr(ctx, state)
+
+    assert isinstance(result, SubmitState)
+    # issue_number alone should NOT trigger lifecycle update
+    assert len(fake_issues.updated_bodies) == 0
+
+
+def test_updates_lifecycle_stage_for_draft_pr_backend(tmp_path: Path) -> None:
+    """finalize_pr updates lifecycle for draft-PR backend where plan IS the PR."""
+    metadata_body = format_plan_header_body_for_test(lifecycle_stage="planned")
+    plan_content = "# My Plan\n\nImplement the thing."
+    pr_body = build_plan_stage_body(metadata_body, plan_content)
+
+    pr = _pr_details(number=42, body=pr_body)
+    fake_git = FakeGit(
+        repository_roots={tmp_path: tmp_path},
+        remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
+    )
+    fake_github = FakeGitHub(
+        prs_by_branch={"feature": pr},
+        pr_details={42: pr},
+    )
+    ctx = context_for_test(
+        git=fake_git,
+        github=fake_github,
+        plan_store=PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime()),
+        cwd=tmp_path,
+    )
+    state = _make_state(
+        cwd=tmp_path,
+        title="Implement feature",
+        body="Summary of work",
+        plan_context=None,
+        issue_number=None,
+    )
+
+    result = finalize_pr(ctx, state)
+
+    assert isinstance(result, SubmitState)
+    # First update is the PR body (title/body), second is lifecycle metadata update
+    assert len(fake_github.updated_pr_bodies) >= 2
+    # The lifecycle update is the last PR body update
+    lifecycle_body = fake_github.updated_pr_bodies[-1][1]
+    assert "lifecycle_stage: impl" in lifecycle_body
