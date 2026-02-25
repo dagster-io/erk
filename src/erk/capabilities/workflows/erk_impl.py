@@ -22,6 +22,7 @@ class ErkImplWorkflowCapability(Capability):
     - .github/workflows/plan-implement.yml
     - .github/actions/setup-claude-code/
     - .github/actions/setup-claude-erk/
+    - .github/actions/erk-remote-setup/
     """
 
     @property
@@ -55,6 +56,10 @@ class ErkImplWorkflowCapability(Capability):
                 path=".github/actions/setup-claude-erk/",
                 artifact_type="directory",
             ),
+            CapabilityArtifact(
+                path=".github/actions/erk-remote-setup/",
+                artifact_type="directory",
+            ),
         ]
 
     @property
@@ -64,6 +69,7 @@ class ErkImplWorkflowCapability(Capability):
             ManagedArtifact(name="plan-implement", artifact_type="workflow"),
             ManagedArtifact(name="setup-claude-code", artifact_type="action"),
             ManagedArtifact(name="setup-claude-erk", artifact_type="action"),
+            ManagedArtifact(name="erk-remote-setup", artifact_type="action"),
         ]
 
     def is_installed(self, repo_root: Path | None, *, backend: AgentBackend) -> bool:
@@ -93,7 +99,7 @@ class ErkImplWorkflowCapability(Capability):
             installed_count += 1
 
         # Install actions
-        actions = ["setup-claude-code", "setup-claude-erk"]
+        actions = ["setup-claude-code", "setup-claude-erk", "erk-remote-setup"]
         for action_name in actions:
             action_src = bundled_github_dir / "actions" / action_name
             if action_src.exists():
@@ -129,7 +135,7 @@ class ErkImplWorkflowCapability(Capability):
             removed.append(".github/workflows/plan-implement.yml")
 
         # Remove actions
-        actions = ["setup-claude-code", "setup-claude-erk"]
+        actions = ["setup-claude-code", "setup-claude-erk", "erk-remote-setup"]
         for action_name in actions:
             action_dir = repo_root / ".github" / "actions" / action_name
             if action_dir.exists():
