@@ -81,7 +81,7 @@ See [Phase 0 Detection Pattern](../architecture/phase-zero-detection-pattern.md)
 4. **Sync to GitHub issue**: Run `erk exec plan-update-from-feedback` to sync changes back to the issue
 5. **Resolve threads**: Mark review threads as resolved with plan-specific messages
 
-See [Plan File Sync Pattern](../architecture/plan-file-sync-pattern.md) for sync mechanics.
+Plan changes to the local file require an explicit sync command to propagate to the issue.
 
 #### Why separate sync is needed
 

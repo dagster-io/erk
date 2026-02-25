@@ -7,6 +7,8 @@ tripwires:
     warning: "The P{issue}- prefix (issue-based) and plnd/ prefix (planned-PR) are cross-cutting contracts used by branch creation, extraction functions, and PR recovery. Changing either prefix format requires updating all consumers."
   - action: "adding branch_name to plan-header at creation time"
     warning: "branch_name is intentionally omitted at creation because the branch doesn't exist yet. The plan-save → branch-create → impl-signal lifecycle requires this gap. See the temporal gap section below."
+  - action: "recovering a branch name from a PR number using UI or truncated display"
+    warning: "Use `gh pr view <pr-number> --json headRefName` to recover exact branch names. UI display may truncate long branch names."
 read_when:
   - "debugging missing branch_name in plan issues"
   - "implementing PR lookup from plan issues"

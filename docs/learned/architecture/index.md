@@ -65,10 +65,12 @@
 - **[globalconfig-field-addition.md](globalconfig-field-addition.md)** — adding a new field to GlobalConfig, extending erk's global configuration, adding a user-configurable setting to ~/.erk/config.toml
 - **[graphite-cache-invalidation.md](graphite-cache-invalidation.md)** — implementing mtime-based cache invalidation, caching Graphite branch metadata, optimizing repeated calls to git or graphite operations
 - **[hook-marker-detection.md](hook-marker-detection.md)** — Adding a new hook managed by erk, Implementing version detection for artifacts, Understanding how hook updates work
+- **[impl-context-api.md](impl-context-api.md)** — working with .erk/impl-context/ folder, understanding plan submission staging, creating or removing impl-context directories
 - **[impl-folder-lifecycle.md](impl-folder-lifecycle.md)** — working with .impl/ or .erk/impl-context/ folders, understanding remote implementation workflow, debugging plan visibility in PRs
 - **[inference-hoisting.md](inference-hoisting.md)** — adding LLM calls to an exec script, calling PromptExecutor from a CLI command or exec script, working with BranchSlugGenerator or generate_slug_or_fallback, adding --branch-slug or similar pre-computed value flags to exec commands, understanding why exec scripts must be deterministic, refactoring nested LLM calls out of exec scripts
 - **[interactive-agent-config.md](interactive-agent-config.md)** — Working with global config loading (GlobalConfig), Implementing interactive agent launch behavior, Adding new agent configuration options
 - **[issue-reference-flow.md](issue-reference-flow.md)** — issue references not appearing in PRs, debugging 'Closes #N' in PR body, working with plan-ref.json, closing reference lost after erk pr submit
+- **[json-parsing-patterns.md](json-parsing-patterns.md)** — parsing JSON from files or API responses, validating JSON field presence, implementing LBYL JSON parsing
 - **[land-state-threading.md](land-state-threading.md)** — implementing pipelines with immutable state, using dataclasses.replace() for state updates, designing stateful workflows with frozen dataclasses
 - **[lbyl-gateway-pattern.md](lbyl-gateway-pattern.md)** — implementing existence checks before gateway operations, adding LBYL validation to CLI commands, understanding why gateways have separate existence methods
 - **[learn-origin-tracking.md](learn-origin-tracking.md)** — understanding how learn PRs are identified, modifying erk land behavior, working with erk-skip-learn label
@@ -88,7 +90,6 @@
 - **[pipeline-transformation-patterns.md](pipeline-transformation-patterns.md)** — designing data transformation pipelines, deciding when to enrich vs filter data, troubleshooting lost metadata in pipelines
 - **[plan-backend-migration.md](plan-backend-migration.md)** — migrating exec scripts to use PlanBackend, working with require_plan_backend, understanding post_event vs update_metadata, Phase 3 PlanBackend consolidation
 - **[plan-context-integration.md](plan-context-integration.md)** — using PlanContextProvider for PR generation, extracting plan content from branches, understanding how PR descriptions get plan context
-- **[plan-file-sync-pattern.md](plan-file-sync-pattern.md)** — editing PLAN-REVIEW files locally, syncing local plan changes to GitHub issues, working with plan feedback workflows
 - **[plan-ref-architecture.md](plan-ref-architecture.md)** — working with plan-ref.json, working with PlanRef dataclass, migrating from IssueReference to PlanRef, understanding provider-agnostic plan references
 - **[plan-save-branch-restoration.md](plan-save-branch-restoration.md)** — modifying plan_save.py branch commit behavior, understanding git plumbing patterns in erk, working with commit_files_to_branch
 - **[pr-body-assembly.md](pr-body-assembly.md)** — implementing or modifying PR body construction, working with PR footer, closing references, or issue discovery, adding a new PR command that generates or updates PR descriptions
@@ -101,6 +102,7 @@
 - **[protocol-vs-abc.md](protocol-vs-abc.md)** — choosing between Protocol and ABC for interface design, designing interfaces with structural vs nominal typing, working with frozen dataclasses and Protocol @property patterns
 - **[re-export-pattern.md](re-export-pattern.md)** — Creating public API surface from internal gateway modules, Simplifying import paths for commonly used types, Working with ruff import linting
 - **[rebase-conflict-patterns.md](rebase-conflict-patterns.md)** — resolving merge conflicts after rebase, debugging test failures after rebase, handling auto-generated file conflicts
+- **[ref-json-migration.md](ref-json-migration.md)** — working with plan-ref.json or ref.json, understanding plan reference file formats, debugging plan reference loading failures
 - **[roadmap-mutation-semantics.md](roadmap-mutation-semantics.md)** — modifying objective roadmap update logic, understanding status inference when updating roadmap steps, working with update-objective-node command
 - **[selection-preservation-by-value.md](selection-preservation-by-value.md)** — working with auto-refreshing lists or tables in UI components, implementing selection state that should persist across data updates, building real-time dashboard views with user-selected items, debugging cursor position resets in DataTable or list components
 - **[sentinel-path-compatibility.md](sentinel-path-compatibility.md)** — writing functions that check path existence, seeing 'Called .exists() on sentinel path' errors, making functions testable with FakeGit

@@ -19,6 +19,8 @@ tripwires:
   - action: "calling update-objective-node or plan-save inside objective-plan workflow without creating roadmap-step marker first"
     warning: "The roadmap-step marker must be created before entering plan mode. If missing, plan-save cannot call update-objective-node, and the objective roadmap table silently fails to update. Create the marker immediately after the user selects a node (step 5 of objective-plan), before gathering code context."
     score: 5
+  - action: "updating objective from multiple concurrent plan completions"
+    warning: "When multiple nodes in an objective complete simultaneously, concurrent updates can race. Check objective state before updating to avoid overwriting recent changes."
 last_audited: "2026-02-17 00:00 PT"
 audit_result: edited
 ---

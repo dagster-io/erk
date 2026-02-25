@@ -343,8 +343,6 @@ PlanHeaderFieldName = Literal[
     "learn_plan_pr",
     "learned_from_issue",
     "learn_materials_branch",
-    "review_pr",
-    "last_review_pr",
     "lifecycle_stage",
 ]
 """Union type of all valid plan-header field names."""
@@ -392,10 +390,6 @@ LEARNED_FROM_ISSUE: Literal["learned_from_issue"] = "learned_from_issue"
 
 # Learn materials branch (preprocessed learn materials committed to a branch)
 LEARN_MATERIALS_BRANCH: Literal["learn_materials_branch"] = "learn_materials_branch"
-
-# Review PR tracking fields
-REVIEW_PR: Literal["review_pr"] = "review_pr"
-LAST_REVIEW_PR: Literal["last_review_pr"] = "last_review_pr"
 
 # Lifecycle stage field
 LIFECYCLE_STAGE: Literal["lifecycle_stage"] = "lifecycle_stage"
@@ -476,8 +470,6 @@ class PlanHeaderSchema(MetadataBlockSchema):
         last_session_at: ISO 8601 timestamp of session upload (nullable)
         last_session_source: "local" or "remote" indicating session origin (nullable)
         learn_materials_branch: Branch containing preprocessed learn materials (nullable)
-        review_pr: PR number for plan review (nullable)
-        last_review_pr: PR number of the last completed review (nullable)
         lifecycle_stage: Current stage in the plan lifecycle (nullable)
     """
 
@@ -518,8 +510,6 @@ class PlanHeaderSchema(MetadataBlockSchema):
             LEARN_PLAN_PR,
             LEARNED_FROM_ISSUE,
             LEARN_MATERIALS_BRANCH,
-            REVIEW_PR,
-            LAST_REVIEW_PR,
             LIFECYCLE_STAGE,
         }
 
@@ -753,20 +743,6 @@ class PlanHeaderSchema(MetadataBlockSchema):
                 raise ValueError("learn_materials_branch must be a string or null")
             if len(data[LEARN_MATERIALS_BRANCH]) == 0:
                 raise ValueError("learn_materials_branch must not be empty when provided")
-
-        # Validate optional review_pr field
-        if REVIEW_PR in data and data[REVIEW_PR] is not None:
-            if not isinstance(data[REVIEW_PR], int):
-                raise ValueError("review_pr must be an integer or null")
-            if data[REVIEW_PR] <= 0:
-                raise ValueError("review_pr must be positive when provided")
-
-        # Validate optional last_review_pr field
-        if LAST_REVIEW_PR in data and data[LAST_REVIEW_PR] is not None:
-            if not isinstance(data[LAST_REVIEW_PR], int):
-                raise ValueError("last_review_pr must be an integer or null")
-            if data[LAST_REVIEW_PR] <= 0:
-                raise ValueError("last_review_pr must be positive when provided")
 
         # Validate optional lifecycle_stage field
         if LIFECYCLE_STAGE in data and data[LIFECYCLE_STAGE] is not None:

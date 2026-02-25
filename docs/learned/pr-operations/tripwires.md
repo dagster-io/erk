@@ -28,6 +28,8 @@ Rules triggered by matching actions in code.
 
 **silently catching exceptions in PR body updates** → Read [Stub PR Workflow Link](stub-pr-workflow-link.md) first. Use best-effort pattern: try/except with logger.warning(), not silent pass. See one_shot_dispatch.py for the canonical example.
 
+**treating all PR comments as actionable without classification** → Read [PR Feedback Classification](feedback-classification.md) first. PR comments fall into distinct categories (actionable, informational, praise, question). Only actionable comments need code changes. Classify first to avoid unnecessary work.
+
 **using GitHub API to fetch PR diffs** → Read [Large Diff PR Submission Recovery](large-diff-recovery.md) first. GitHub returns HTTP 406 for diffs exceeding ~20k lines. Use local git diff instead via get_diff_to_branch() for reliable extraction.
 
 **using gh pr create directly in Python code** → Read [Git-Only PR Submission Path](pr-submission-workflow.md) first. The pipeline uses ctx.github.create_pr() (REST API gateway), not gh pr create. The command-level path uses gh CLI directly because it runs in shell context. See pr-submission-workflow.md.

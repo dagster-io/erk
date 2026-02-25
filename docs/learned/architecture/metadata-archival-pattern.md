@@ -60,15 +60,7 @@ The None check prevents overwriting existing archived values with None.
 
 ## Pattern in Context
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py, clear_plan_header_review_pr -->
-
-See `clear_plan_header_review_pr()` in plan_header.py for the canonical implementation. This function archives `review_pr` → `last_review_pr` when plan review completes.
-
-Currently, the only field using the full archive-on-clear pattern is:
-
-- **Plan review completion**: `review_pr` → `last_review_pr` (review PR closed)
-
-Note: Other `last_` prefixed fields (e.g., `last_session_id`, `last_local_impl_at`) use direct overwrite, not archive-on-clear. They track "most recent value" without a separate active/archived pair. The archive-on-clear pattern applies specifically when a field must be **cleared to signal completion** while preserving its previous value.
+Note: `last_` prefixed fields (e.g., `last_session_id`, `last_local_impl_at`) use direct overwrite, not archive-on-clear. They track "most recent value" without a separate active/archived pair. The archive-on-clear pattern applies specifically when a field must be **cleared to signal completion** while preserving its previous value.
 
 ## Naming Convention
 
@@ -97,20 +89,14 @@ This naming signals "most recent historical value" vs "current active value."
 
 Both active and archived fields need **identical type constraints**. If the active field is `int | None`, the archived field must be too. This ensures validation works correctly across the lifecycle.
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py, PlanHeaderSchema.validate -->
-
-See `PlanHeaderSchema.validate()` in `schemas.py` for the canonical validation of both `REVIEW_PR` and `LAST_REVIEW_PR` with identical constraints.
-
 ## Testing the Pattern
 
-<!-- Source: tests/unit/cli/commands/exec/scripts/test_plan_review_complete.py, test_plan_review_complete_sets_last_review_pr -->
-
-See `test_plan_review_complete_sets_last_review_pr()` for test pattern. The test verifies:
+The test pattern verifies:
 
 1. Active field contains value before operation
 2. Operation completes successfully
-3. Archived field (`last_review_pr`) contains the old value
-4. Active field (`review_pr`) is now None
+3. Archived field contains the old value
+4. Active field is now None
 
 ## Common Mistakes
 
@@ -134,5 +120,5 @@ Validation schemas must include **both** active and archived fields with identic
 
 ## Related Documentation
 
-- [Plan Review Lifecycle](../planning/lifecycle.md) — How `review_pr`/`last_review_pr` fit into the full plan lifecycle (see Phase 2b: Plan Review)
+- [Plan Lifecycle](../planning/lifecycle.md) — Plan lifecycle state transitions
 - [Discriminated Union Error Handling](discriminated-union-error-handling.md) — Related pattern for state transitions with error handling

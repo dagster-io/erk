@@ -5,7 +5,7 @@ read_when:
   - "understanding how learn plan metadata updates parent issues"
 tripwires:
   - action: "landing a PR without updating associated learn plan status"
-    warning: "Learn plan PRs trigger special execution pipeline steps that update parent plan metadata. Ensure check_learn_status, update_learn_plan, and close_review_pr steps execute after merge."
+    warning: "Learn plan PRs trigger special execution pipeline steps that update parent plan metadata. Ensure check_learn_status and update_learn_plan steps execute after merge."
 last_audited: "2026-02-17 16:00 PT"
 audit_result: clean
 ---
@@ -26,7 +26,6 @@ When landing a PR from a learn plan branch, the land execution pipeline runs add
 **The solution**: The execution pipeline detects learn plan branches and runs additional steps after merge:
 
 1. **Update parent plan metadata**: Set `learn_status = plan_completed` and record the PR number
-2. **Close review PR**: Clean up any associated review PR
 
 ## How Learn Plan Detection Works
 
@@ -55,10 +54,7 @@ After the PR merges, the execution pipeline runs learn-specific steps in this or
 
 1. **`merge_pr`** (standard) — Merge first; if this fails, no cleanup needed
 2. **`update_learn_plan`** — Update parent plan's `learn_status` field
-3. **`close_review_pr`** — Close associated review PR if exists
-4. **`cleanup_and_navigate`** (standard) — Delete branches and navigate
-
-Note: The pipeline previously included additional steps (`update_objective`, `promote_tripwires`), but these were removed. The current pipeline has 4 steps.
+3. **`cleanup_and_navigate`** (standard) — Delete branches and navigate
 
 **Why learn plan updates come early**: If execution fails partway through, we prefer to have updated the learn metadata rather than leaving it stale.
 
@@ -84,20 +80,6 @@ Learn plans are child plans (they document parent features). The parent plan iss
 learn_status: plan_completed # Was: completed_with_plan
 learn_plan_pr: 456 # The landed PR number
 ```
-
-## Review PR Cleanup
-
-<!-- Source: src/erk/cli/commands/land_pipeline.py, close_review_pr() step -->
-
-Learn plans may have associated review PRs (created via `erk plan review`). The `close_review_pr()` step closes these PRs after the implementation lands. See `close_review_pr()` in `src/erk/cli/commands/land_pipeline.py`.
-
-**Why close review PRs automatically?**
-
-Review PRs exist to discuss the plan before implementation. Once the implementation lands, the review is obsolete. Manual cleanup would be tedious and error-prone (engineers forget to close stale reviews).
-
-**Detection mechanism**: The step calls `cleanup_review_pr()` which searches for review PRs linked to the plan issue number.
-
-**Fail-open pattern**: If no review PR exists or closing fails, the step silently continues. Review PR cleanup is non-critical—the implementation already landed.
 
 ## State Field Threading
 

@@ -18,6 +18,7 @@
 - **[plan-row-data.md](plan-row-data.md)** — writing command availability predicates, understanding what data is available for TUI commands, checking which PlanRowData fields are nullable
 - **[plan-title-rendering-pipeline.md](plan-title-rendering-pipeline.md)** — debugging why plan titles display incorrectly, troubleshooting missing prefixes in TUI, understanding plan data flow in TUI
 - **[stacked-pr-indicator.md](stacked-pr-indicator.md)** — adding or modifying PR indicators in the TUI dashboard, understanding blocking vs. informational indicators, working with stacked PR detection
+- **[status-indicators.md](status-indicators.md)** — working with status indicators in TUI dashboard, adding new emoji indicators to plan display, modifying the sts column
 - **[streaming-output.md](streaming-output.md)** — displaying streaming command output in TUI, executing long-running commands with progress, cross-thread UI updates in Textual
 - **[textual-async.md](textual-async.md)** — overriding Screen actions, working with async/await in Textual, testing async TUI code
 - **[title-truncation-edge-cases.md](title-truncation-edge-cases.md)** — implementing title truncation in TUI, troubleshooting truncated titles showing only prefix, working with title display lengths

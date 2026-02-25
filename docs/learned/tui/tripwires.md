@@ -28,6 +28,8 @@ Rules triggered by matching actions in code.
 
 **adding an ACTION command that executes instantly** → Read [TUI Command Architecture](action-inventory.md) first. ACTION category implies mutative operations. Instant operations belong in OPEN or COPY categories.
 
+**adding emoji with Unicode variation selector (\ufe0f) to status indicators** → Read [TUI Status Indicators](status-indicators.md) first. Variation selector forces double-wide rendering in terminals, breaking column alignment. Current safe emoji: 🚧 👀 💥 ✔ ❌ 🚀. Test any new emoji in terminal before adding.
+
 **adding or reordering PlanDataTable columns** → Read [Column Addition Pattern](column-addition-pattern.md) first. TUI column index cascade: adding or reordering columns invalidates ALL test assertions using column indices. Run a systematic grep for column-index assertions (e.g., row[N]) before and after the change. Update every affected test file.
 
 **adding streaming commands without using \_push_streaming_detail helper** → Read [View-Aware Command Filtering](view-aware-commands.md) first. Streaming ACTION commands need \_push_streaming_detail() to handle the push-then-stream sequence correctly. Direct streaming without it skips the detail screen push.
@@ -49,6 +51,8 @@ Rules triggered by matching actions in code.
 **duplicating execute_palette_command logic between ErkDashApp and PlanDetailScreen** → Read [Dual Provider Pattern for Context-Agnostic Commands](dual-handler-pattern.md) first. This duplication is a known trade-off. Both ErkDashApp.execute_palette_command() and PlanDetailScreen.execute_command() implement the same command_id switch because they dispatch to different APIs (provider methods vs executor methods). See the asymmetries section below.
 
 **extending PlanDataProvider ABC** → Read [TUI Architecture Overview](architecture.md) first. Requires 3-file update: abc.py + real.py + fake.py. Fake must initialize new dict in **init**. Missing init causes AttributeError at test time.
+
+**extracting status indicators from the lifecycle display string** → Read [TUI Status Indicators](status-indicators.md) first. Indicators are computed from RAW PR state fields (is_draft, has_conflicts, review_decision), NOT extracted from lifecycle display. Use compute_status_indicators() for standalone display, format_lifecycle_with_status() for inline.
 
 **formatting display strings during table render** → Read [TUI Data Contract](data-contract.md) first. Display strings are pre-formatted at fetch time. Add new \*\_display fields to PlanRowData and format in RealPlanDataProvider.\_build_row_data(), not in the widget layer.
 
