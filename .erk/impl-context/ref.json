@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Documentation Plan: Fix TUI dispatch command: correct CLI path and update user-facing labels"
+}
