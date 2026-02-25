@@ -69,9 +69,9 @@ def _parse_checkout_reference(reference: str) -> _PrRef | _PlanRef:
         return _PrRef(int(reference))
 
     # GitHub issue URL → plan
-    issue_number = parse_issue_number_from_url(reference)
-    if issue_number is not None:
-        return _PlanRef(issue_number)
+    plan_number = parse_issue_number_from_url(reference)
+    if plan_number is not None:
+        return _PlanRef(plan_number)
 
     # GitHub PR URL → PR
     pr_number = parse_pr_number_from_url(reference)
@@ -128,7 +128,7 @@ def pr_checkout(ctx: ErkContext, reference: str, no_slot: bool, force: bool, scr
 
     if isinstance(ref, _PlanRef):
         _checkout_plan(
-            ctx, repo, issue_number=ref.number, no_slot=no_slot, force=force, script=script
+            ctx, repo, plan_number=ref.number, no_slot=no_slot, force=force, script=script
         )
     else:
         _checkout_pr(ctx, repo, pr_number=ref.number, no_slot=no_slot, force=force, script=script)
@@ -310,7 +310,7 @@ def _checkout_plan(
     ctx: ErkContext,
     repo: RepoContext,
     *,
-    issue_number: int,
+    plan_number: int,
     no_slot: bool,
     force: bool,
     script: bool,
@@ -324,16 +324,16 @@ def _checkout_plan(
     2. If multiple open PRs -> display table, no interactive selection
     3. If no open PRs -> display helpful message
     """
-    prs = ctx.issues.get_prs_referencing_issue(repo.root, issue_number)
+    prs = ctx.issues.get_prs_referencing_issue(repo.root, plan_number)
 
     # Filter to OPEN PRs only
     open_prs = [pr for pr in prs if pr.state == "OPEN"]
 
     if len(open_prs) == 0:
         user_output(
-            f"No open PR found for plan #{issue_number}\n\n"
+            f"No open PR found for plan #{plan_number}\n\n"
             "This plan has not been implemented yet. To prepare it:\n"
-            f"  erk br co --for-plan {issue_number}"
+            f"  erk br co --for-plan {plan_number}"
         )
         raise SystemExit(1)
 
@@ -344,7 +344,7 @@ def _checkout_plan(
             ctx,
             repo,
             pr_number=pr.number,
-            issue_number=issue_number,
+            plan_number=plan_number,
             no_slot=no_slot,
             force=force,
             script=script,
@@ -352,7 +352,7 @@ def _checkout_plan(
         return
 
     # Multiple open PRs - display table and exit
-    _display_multiple_prs(issue_number, open_prs)
+    _display_multiple_prs(plan_number, open_prs)
     raise SystemExit(0)
 
 
@@ -361,7 +361,7 @@ def _checkout_plan_pr(
     repo: RepoContext,
     *,
     pr_number: int,
-    issue_number: int,
+    plan_number: int,
     no_slot: bool,
     force: bool,
     script: bool,
@@ -389,9 +389,9 @@ def _checkout_plan_pr(
             script=script,
             command_name="plan-checkout",
             already_existed=True,
-            existing_message=f"Plan #{issue_number} already checked out at {{styled_path}}",
+            existing_message=f"Plan #{plan_number} already checked out at {{styled_path}}",
             new_message="",  # Not used when already_existed=True
-            script_message_existing=f'echo "Went to worktree for plan #{issue_number}"',
+            script_message_existing=f'echo "Went to worktree for plan #{plan_number}"',
             script_message_new="",  # Not used when already_existed=True
         )
         return
@@ -417,7 +417,7 @@ def _checkout_plan_pr(
         ctx, repo, branch_name=branch_name, no_slot=no_slot, force=force
     )
 
-    new_msg = f"Created worktree for plan #{issue_number} (PR #{pr_number}) at {{styled_path}}"
+    new_msg = f"Created worktree for plan #{plan_number} (PR #{pr_number}) at {{styled_path}}"
     navigate_and_display_checkout(
         ctx,
         worktree_path=worktree_path,
@@ -425,16 +425,16 @@ def _checkout_plan_pr(
         script=script,
         command_name="plan-checkout",
         already_existed=already_existed,
-        existing_message=f"Plan #{issue_number} already checked out at {{styled_path}}",
+        existing_message=f"Plan #{plan_number} already checked out at {{styled_path}}",
         new_message=new_msg,
-        script_message_existing=f'echo "Went to worktree for plan #{issue_number}"',
-        script_message_new=f'echo "Checked out plan #{issue_number} (PR #{pr_number}) at $(pwd)"',
+        script_message_existing=f'echo "Went to worktree for plan #{plan_number}"',
+        script_message_new=f'echo "Checked out plan #{plan_number} (PR #{pr_number}) at $(pwd)"',
     )
 
 
-def _display_multiple_prs(issue_number: int, prs) -> None:
-    """Display table of multiple PRs for an issue."""
-    user_output(f"Multiple open PRs found for plan #{issue_number}:\n")
+def _display_multiple_prs(plan_number: int, prs) -> None:
+    """Display table of multiple PRs for a plan."""
+    user_output(f"Multiple open PRs found for plan #{plan_number}:\n")
 
     table = Table(show_header=True, header_style="bold")
     table.add_column("pr", style="cyan", no_wrap=True)

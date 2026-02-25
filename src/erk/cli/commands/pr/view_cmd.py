@@ -241,12 +241,12 @@ def pr_view(ctx: ErkContext, identifier: str | None, *, full: bool) -> None:
 
     # Resolve plan: explicit argument or infer from branch
     if identifier is not None:
-        issue_number = parse_issue_identifier(identifier)
-        if issue_number is None:
+        plan_number = parse_issue_identifier(identifier)
+        if plan_number is None:
             user_output(click.style("Error: ", fg="red") + f"Invalid identifier: {identifier}")
             raise SystemExit(1)
-        result = ctx.plan_store.get_plan(repo_root, str(issue_number))
-        plan_id = str(issue_number)
+        result = ctx.plan_store.get_plan(repo_root, str(plan_number))
+        plan_id = str(plan_number)
     else:
         # Try to infer from current branch
         branch = ctx.git.branch.get_current_branch(ctx.cwd)

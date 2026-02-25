@@ -27,12 +27,12 @@ def unextract_docs(ctx: ErkContext, identifier: str) -> None:
     repo_root = repo.root
 
     # Parse issue number
-    issue_number = parse_issue_identifier(identifier)
+    plan_number = parse_issue_identifier(identifier)
 
     # Remove label from issue
     try:
-        ctx.issues.remove_label_from_issue(repo_root, issue_number, DOCS_EXTRACTED_LABEL)
+        ctx.issues.remove_label_from_issue(repo_root, plan_number, DOCS_EXTRACTED_LABEL)
     except RuntimeError as e:
-        raise click.ClickException(f"Failed to remove label from issue #{issue_number}: {e}") from e
+        raise click.ClickException(f"Failed to remove label from issue #{plan_number}: {e}") from e
 
-    user_output(f"Removed docs-extracted label from plan #{issue_number}")
+    user_output(f"Removed docs-extracted label from plan #{plan_number}")
