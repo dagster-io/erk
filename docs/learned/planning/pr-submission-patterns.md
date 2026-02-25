@@ -11,20 +11,20 @@ tripwires:
   - action: "using issue number from .impl/issue.json in a checkout footer"
     warning: "Checkout footers require the PR number, not the issue number. The issue is the plan; the PR is the implementation. See the PR Number vs Issue Number section."
   - action: "creating a PR without first checking if one already exists for the branch"
-    warning: "The submit pipeline is idempotent — it checks for existing PRs before creating. If building PR creation outside the pipeline, replicate this check to prevent duplicates."
+    warning: "The dispatch pipeline is idempotent — it checks for existing PRs before creating. If building PR creation outside the pipeline, replicate this check to prevent duplicates."
   - action: "constructing a PR footer manually instead of using build_pr_body_footer()"
     warning: "The footer format includes checkout commands and closing references with specific patterns. Use the builder function to ensure validation passes."
 ---
 
 # PR Submission Patterns
 
-Cross-cutting patterns for reliable, idempotent PR creation in erk. The submit pipeline touches git, GitHub API, Graphite, and the `.impl/` metadata system — mistakes in any layer cascade into validation failures or duplicate artifacts.
+Cross-cutting patterns for reliable, idempotent PR creation in erk. The dispatch pipeline touches git, GitHub API, Graphite, and the `.impl/` metadata system — mistakes in any layer cascade into validation failures or duplicate artifacts.
 
 ## Idempotency: Why Every PR Operation Must Be Re-Runnable
 
 PR submission frequently retries due to network failures, hook loops, or agent restarts. Without idempotency, each retry creates duplicate PRs or issues. Erk enforces idempotency at two levels:
 
-**Branch-level:** The submit pipeline checks GitHub for an existing PR on the current branch before creating one. If found, it updates the existing PR rather than creating a duplicate. This is the single most important idempotency guarantee — without it, every retry during the push-and-create phase would spawn a new PR.
+**Branch-level:** The dispatch pipeline checks GitHub for an existing PR on the current branch before creating one. If found, it updates the existing PR rather than creating a duplicate. This is the single most important idempotency guarantee — without it, every retry during the push-and-create phase would spawn a new PR.
 
 <!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, push_and_create_pr -->
 
@@ -32,9 +32,9 @@ See `push_and_create_pr()` in `src/erk/cli/commands/pr/submit_pipeline.py` — i
 
 **Session-level:** Plan-save operations use scratch-directory marker files keyed by session ID. Before creating a GitHub issue, the command checks if this session already created one. This prevents the specific failure mode where exit-plan-mode hook retries cause duplicate plan issues.
 
-<!-- Source: src/erk/cli/commands/exec/scripts/plan_save_to_issue.py, _get_existing_saved_issue -->
+<!-- Source: packages/erk-shared/src/erk_shared/scratch/session_markers.py, get_existing_saved_issue -->
 
-See `_get_existing_saved_issue()` in `src/erk/cli/commands/exec/scripts/plan_save_to_issue.py`.
+See `get_existing_saved_issue()` in `packages/erk-shared/src/erk_shared/scratch/session_markers.py`.
 
 ## The Two-Phase Footer Problem
 
@@ -87,4 +87,3 @@ See `_extract_closing_ref_from_pr()` in `src/erk/cli/commands/pr/submit_pipeline
 - [PR Validation Rules](../pr-operations/pr-validation-rules.md) — Complete `erk pr check` validation ruleset and regex patterns
 - [Source Investigation Over Trial-and-Error](debugging-patterns.md) — When to stop guessing and read validator source
 - [Plan Lifecycle](lifecycle.md) — Full plan lifecycle including PR creation phases
-- [Submit Branch Reuse](submit-branch-reuse.md) — Branch reuse detection in plan submit

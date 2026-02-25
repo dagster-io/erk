@@ -89,53 +89,60 @@ Note: This command fetches erk-plan issues and filters by `objective_id` in the 
 
 ### Step 6: Analyze Roadmap Progress
 
-Use haiku inference (via model parameter in prompts) to analyze the objective body's Roadmap section:
+Use a Task agent with `model: "haiku"` to analyze the objective body's Roadmap section:
 
-**Prompt to haiku:**
+````
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Analyze roadmap progress",
+  prompt: |
+    Analyze this objective issue's Roadmap section. For each phase, identify:
 
-> Analyze this objective issue's Roadmap section. For each phase, identify:
->
-> 1. Phase name (e.g., "Phase 1A: Git Gateway Steelthread")
-> 2. Total nodes in that phase
-> 3. Completed nodes (status is "done")
-> 4. Phase completion status (all nodes done = complete)
->
-> Return as JSON:
->
-> ```json
-> {
->   "phases": [
->     {
->       "name": "Phase 1A",
->       "total_nodes": 2,
->       "done_nodes": 2,
->       "complete": true
->     },
->     {
->       "name": "Phase 1B",
->       "total_nodes": 3,
->       "done_nodes": 1,
->       "complete": false
->     }
->   ],
->   "total_phases": 2,
->   "complete_phases": 1,
->   "total_nodes": 5,
->   "done_nodes": 3
-> }
-> ```
->
-> Handle variations in status values:
->
-> - done/complete/completed/✅ = done
-> - pending/todo/not-started = not done
-> - in-progress/wip/active = not done
-> - blocked/waiting = not done
-> - skipped/n/a = don't count toward total
->
-> Objective body:
+    1. Phase name (e.g., "Phase 1A: Git Gateway Steelthread")
+    2. Total nodes in that phase
+    3. Completed nodes (status is "done")
+    4. Phase completion status (all nodes done = complete)
 
-Pass the objective body content after this prompt.
+    Return as JSON:
+
+    ```json
+    {
+      "phases": [
+        {
+          "name": "Phase 1A",
+          "total_nodes": 2,
+          "done_nodes": 2,
+          "complete": true
+        },
+        {
+          "name": "Phase 1B",
+          "total_nodes": 3,
+          "done_nodes": 1,
+          "complete": false
+        }
+      ],
+      "total_phases": 2,
+      "complete_phases": 1,
+      "total_nodes": 5,
+      "done_nodes": 3
+    }
+    ```
+
+    Handle variations in status values:
+
+    - done/complete/completed/✅ = done
+    - pending/todo/not-started = not done
+    - in-progress/wip/active = not done
+    - blocked/waiting = not done
+    - skipped/n/a = don't count toward total
+
+    Objective body:
+    <paste objective body content here>
+)
+````
+
+Replace `<paste objective body content here>` with the actual objective body from Step 2.
 
 ### Step 7: Calculate Relative Time
 

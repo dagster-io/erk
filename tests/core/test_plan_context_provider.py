@@ -4,13 +4,15 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from erk.core.plan_context_provider import PlanContext, PlanContextProvider
+from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 from erk_shared.gateway.github.metadata.plan_header import (
     format_plan_content_comment,
     format_plan_header_body,
 )
-from erk_shared.plan_store.github import GitHubPlanStore
+from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
 
 
 def _make_issue_info(
@@ -27,7 +29,7 @@ def _make_issue_info(
         body=body,
         state="OPEN",
         url=f"https://github.com/test-owner/test-repo/issues/{number}",
-        labels=["erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=now,
         updated_at=now,
@@ -36,8 +38,9 @@ def _make_issue_info(
 
 
 def _make_provider(github_issues: FakeGitHubIssues) -> PlanContextProvider:
-    """Create a PlanContextProvider with GitHubPlanStore backed by fake issues."""
-    plan_backend = GitHubPlanStore(github_issues)
+    """Create a PlanContextProvider with PlannedPRBackend backed by fake GitHub."""
+    fake_github = FakeGitHub(issues_gateway=github_issues)
+    plan_backend = PlannedPRBackend(fake_github, github_issues, time=FakeTime())
     return PlanContextProvider(plan_backend=plan_backend, github_issues=github_issues)
 
 
@@ -56,8 +59,7 @@ def test_get_plan_context_returns_none_for_non_plan_branch(tmp_path: Path) -> No
 def test_get_plan_context_returns_none_for_missing_issue(tmp_path: Path) -> None:
     """Test that branches return None when branch-based resolution no longer works.
 
-    Since extract_leading_issue_number() now always returns None, P-prefix branches
-    can no longer be resolved to plan IDs from the branch name alone.
+    P-prefix branches cannot be resolved to plan IDs from the branch name alone.
     """
     provider = _make_provider(FakeGitHubIssues(issues={}))
 
@@ -72,8 +74,7 @@ def test_get_plan_context_returns_none_for_missing_issue(tmp_path: Path) -> None
 def test_get_plan_context_returns_content_for_old_format_issue(tmp_path: Path) -> None:
     """Test that branch-based resolution returns None since it's no longer supported.
 
-    Since extract_leading_issue_number() always returns None, P-prefix branches
-    cannot resolve to plan IDs, even when the issue exists.
+    P-prefix branches cannot be resolved to plan IDs, even when the issue exists.
     """
     issue = _make_issue_info(
         number=123,
@@ -95,7 +96,7 @@ def test_get_plan_context_falls_back_to_body_for_missing_comment(tmp_path: Path)
     """Test that branch-based resolution returns None since it's no longer supported.
 
     Even when the issue exists and has plan metadata, P-prefix branches cannot
-    resolve to plan IDs because extract_leading_issue_number() always returns None.
+    be resolved to plan IDs.
     """
     body = format_plan_header_body(
         created_at="2024-01-01T00:00:00Z",
@@ -140,8 +141,8 @@ def test_get_plan_context_falls_back_to_body_for_missing_comment(tmp_path: Path)
 def test_get_plan_context_extracts_plan_content(tmp_path: Path) -> None:
     """Test that branch-based resolution returns None since it's no longer supported.
 
-    Even with a complete plan issue and comment, P-prefix branches cannot resolve
-    to plan IDs because extract_leading_issue_number() always returns None.
+    Even with a complete plan issue and comment, P-prefix branches cannot be
+    resolved to plan IDs.
     """
     plan_content = """# Plan: Fix Authentication Bug
 
@@ -208,8 +209,8 @@ Fix the session token expiration logic."""
 def test_get_plan_context_includes_objective_summary(tmp_path: Path) -> None:
     """Test that branch-based resolution returns None since it's no longer supported.
 
-    Even when a plan is linked to an objective, P-prefix branches cannot resolve
-    to plan IDs because extract_leading_issue_number() always returns None.
+    Even when a plan is linked to an objective, P-prefix branches cannot be
+    resolved to plan IDs.
     """
     plan_content = "# Plan: Implement Feature\n\nDetails here."
     comment_body = format_plan_content_comment(plan_content)
@@ -276,7 +277,7 @@ def test_get_plan_context_handles_missing_objective(tmp_path: Path) -> None:
     """Test that branch-based resolution returns None since it's no longer supported.
 
     Even when a plan references a missing objective, P-prefix branches cannot
-    resolve to plan IDs because extract_leading_issue_number() always returns None.
+    be resolved to plan IDs.
     """
     plan_content = "# Plan: Implement Feature\n\nDetails here."
     comment_body = format_plan_content_comment(plan_content)
@@ -336,8 +337,7 @@ def test_get_plan_context_handles_missing_objective(tmp_path: Path) -> None:
 def test_get_plan_context_supports_legacy_branch_format(tmp_path: Path) -> None:
     """Test that branch-based resolution returns None for legacy format too.
 
-    Even plain numeric-prefixed branches (without P) cannot resolve to plan IDs
-    because extract_leading_issue_number() always returns None.
+    Even plain numeric-prefixed branches (without P) cannot be resolved to plan IDs.
     """
     plan_content = "# Plan: Fix Bug\n\nDetails."
     comment_body = format_plan_content_comment(plan_content)

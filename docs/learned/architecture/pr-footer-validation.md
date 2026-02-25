@@ -55,7 +55,7 @@ Closes #123
 To checkout this PR in a fresh worktree and environment locally, run:
 ```
 
-source "$(erk pr checkout 1895 --script)" && erk pr sync --dangerous
+source "$(erk pr checkout 1895 --script)"
 
 ```
 
@@ -65,7 +65,7 @@ source "$(erk pr checkout 1895 --script)" && erk pr sync --dangerous
 
 - Footer starts after last `\n---\n` delimiter in PR body
 - Closing reference comes first (if present): `Closes #N` or `Closes owner/repo#N`
-- Checkout command always includes `&& erk pr sync --dangerous` suffix
+- Checkout command uses `source "$(erk pr checkout <N> --script)"` format
 - PR number in checkout command must match actual PR number (initially 0, updated after creation)
 
 **Cross-repo variation:** When `plans_repo` is set, closing reference uses `owner/repo#N` format instead of `#N`.

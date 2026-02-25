@@ -19,7 +19,8 @@ from erk_shared.core.prompt_executor import (
 )
 from erk_shared.core.script_writer import ScriptResult, ScriptWriter
 from erk_shared.gateway.codespace_registry.abc import CodespaceRegistry, RegisteredCodespace
-from erk_shared.gateway.github.types import GitHubRepoLocation
+from erk_shared.gateway.github.types import GitHubRepoLocation, IssueFilterState
+from erk_shared.plan_store.types import PlanState
 
 
 class InteractiveCall(NamedTuple):
@@ -270,12 +271,39 @@ class FakePlanListService(PlanListService):
         *,
         location: GitHubRepoLocation,
         labels: list[str],
-        state: str | None = None,
+        state: IssueFilterState = "open",
         limit: int | None = None,
         skip_workflow_runs: bool = False,
         creator: str | None = None,
+        exclude_labels: list[str] | None = None,
+        http_client: object | None,
     ) -> PlanListData:
-        return self._data
+        plans = list(self._data.plans)
+
+        # State filtering
+        if state == "open":
+            plans = [p for p in plans if p.state == PlanState.OPEN]
+        elif state == "closed":
+            plans = [p for p in plans if p.state == PlanState.CLOSED]
+
+        # Label filtering (AND logic)
+        if labels:
+            plans = [p for p in plans if all(label in p.labels for label in labels)]
+
+        # Exclude labels
+        if exclude_labels:
+            exclude_set = set(exclude_labels)
+            plans = [p for p in plans if not any(label in exclude_set for label in p.labels)]
+
+        # Limit
+        if limit is not None:
+            plans = plans[:limit]
+
+        return PlanListData(
+            plans=plans,
+            pr_linkages=self._data.pr_linkages,
+            workflow_runs=self._data.workflow_runs,
+        )
 
 
 class FakeObjectiveListService(ObjectiveListService):
@@ -291,9 +319,10 @@ class FakeObjectiveListService(ObjectiveListService):
         self,
         *,
         location: GitHubRepoLocation,
-        state: str | None = None,
+        state: IssueFilterState = "open",
         limit: int | None = None,
         skip_workflow_runs: bool = False,
         creator: str | None = None,
+        exclude_labels: list[str] | None = None,
     ) -> PlanListData:
         return self._data

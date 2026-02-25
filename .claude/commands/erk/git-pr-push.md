@@ -127,17 +127,7 @@ Push the branch to origin with upstream tracking:
 git push -u origin "$(git branch --show-current)"
 ```
 
-### Step 6: Get Closing Text
-
-Get the issue closing text if this worktree was created from a GitHub issue:
-
-```bash
-closing_text=$(erk exec get-closing-text 2>/dev/null || echo "")
-```
-
-This reads `.impl/issue.json` and returns `Closes #N` if an issue reference exists.
-
-### Step 6.5: Check for Existing PR
+### Step 6: Check for Existing PR
 
 Before creating a new PR, check if one already exists for the current branch:
 
@@ -148,7 +138,7 @@ existing_pr=$(gh pr list --head "$(git branch --show-current)" --state open --js
 **Decision logic:**
 
 - If `existing_pr` is empty or null: No existing PR, proceed to Step 7
-- If `existing_pr` has data: PR exists, skip Step 7 and go directly to Step 7.5
+- If `existing_pr` has data: PR exists, skip Step 7 and go directly to Step 7.5 (Add Checkout Footer)
 
 > **CRITICAL: When an existing PR is found, do NOT run `gh pr edit --body` or `gh pr edit --title`.**
 > The PR body may contain plan-header metadata blocks (`<!-- erk:metadata-block:plan-header -->`)
@@ -165,9 +155,9 @@ is_draft=$(echo "$existing_pr" | jq -r '.isDraft')
 
 ### Step 7: Create GitHub PR (if no existing PR)
 
-**Skip this step if an existing PR was found in Step 6.5.** The push in Step 5 already updated the existing PR with new commits.
+**Skip this step if an existing PR was found in Step 6.** The push in Step 5 already updated the existing PR with new commits.
 
-Extract PR title (first line) and body (remaining lines) from commit message, then create PR with closing text appended:
+Extract PR title (first line) and body (remaining lines) from commit message:
 
 ```bash
 # Get the commit message
@@ -177,16 +167,7 @@ commit_msg=$(git log -1 --pretty=%B)
 pr_title=$(echo "$commit_msg" | head -n 1)
 
 # Extract remaining lines as body (skip empty first line after title)
-commit_body=$(echo "$commit_msg" | tail -n +2)
-
-# Append closing text if present
-if [ -n "$closing_text" ]; then
-    pr_body="${commit_body}
-
-${closing_text}"
-else
-    pr_body="${commit_body}"
-fi
+pr_body=$(echo "$commit_msg" | tail -n +2)
 
 # Create PR using GitHub CLI
 pr_output=$(gh pr create --title "$pr_title" --body "$pr_body")
@@ -203,7 +184,7 @@ Extract the PR number (from Step 7 if PR was created, or from Step 6.5 if existi
 **Determining PR number:**
 
 - If Step 7 was executed: Use `pr_number` extracted from `gh pr create` output
-- If Step 7 was skipped: Use `pr_number` extracted from `existing_pr` in Step 6.5
+- If Step 7 was skipped: Use `pr_number` extracted from `existing_pr` in Step 6
 
 **Generate and append footer:**
 
@@ -211,22 +192,15 @@ Extract the PR number (from Step 7 if PR was created, or from Step 6.5 if existi
 > Never replace the entire body — only append the footer to the existing content.
 
 ```bash
-# Get plan number from .impl/plan-ref.json if present (for proper plan linking)
-plan_number=$(jq -r '.plan_id // empty' .impl/plan-ref.json 2>/dev/null || echo "")
-
-# Generate footer with plan number if available
-if [ -n "$plan_number" ]; then
-    footer=$(erk exec get-pr-body-footer --pr-number "$pr_number" --plan-number "$plan_number")
-else
-    footer=$(erk exec get-pr-body-footer --pr-number "$pr_number")
-fi
+# Generate footer
+footer=$(erk exec get-pr-body-footer --pr-number "$pr_number")
 
 # Get current PR body using REST API (avoids GraphQL rate limits) and append footer
 current_body=$(erk exec get-pr-view "$pr_number" | jq -r '.body')
 gh pr edit "$pr_number" --body "${current_body}${footer}"
 ```
 
-**Note:** The footer includes the checkout command and issue reference (if issue tracking exists). This ensures `erk pr check` passes.
+**Note:** The footer includes the checkout command. This ensures `erk pr check` passes.
 
 ### Step 8: Validate PR Rules
 
@@ -238,7 +212,6 @@ erk pr check
 
 This validates:
 
-- Issue closing reference (Closes #N) is present when `.impl/issue.json` exists
 - PR body contains the standard checkout footer
 
 If any checks fail, display the output and warn the user, but continue to Step 9.
@@ -258,7 +231,6 @@ Display a clear summary based on whether a PR was created or found:
 ✓ Created commit with AI-generated message
 ✓ Pushed branch to origin with upstream tracking
 ✓ Created GitHub PR
-✓ Linked to issue #N (will auto-close on merge)  [only if closing_text was present]
 
 ### View PR
 
@@ -276,7 +248,6 @@ Display a clear summary based on whether a PR was created or found:
 ✓ Created commit with AI-generated message
 ✓ Pushed branch to origin with upstream tracking
 ✓ Found existing PR #N for this branch (skipped PR creation)
-✓ Linked to issue #M (will auto-close on merge)  [only if closing_text was present]
 
 ### Note
 
@@ -289,7 +260,6 @@ Display a clear summary based on whether a PR was created or found:
 
 **Conditional lines:**
 
-- The "Linked to issue" line should only appear if `closing_text` was non-empty
 - The "Note" section with draft guidance should only appear if `is_draft` is true
 
 **CRITICAL**: The PR URL MUST be the absolute last line of your output. Do not add any text after it.
@@ -400,7 +370,6 @@ Before completing, verify:
 - [ ] File paths are relative to repository root
 - [ ] Commit created successfully
 - [ ] Branch pushed to origin with upstream tracking
-- [ ] Closing text obtained (if issue reference exists)
 - [ ] GitHub PR created successfully (or existing PR found)
 - [ ] PR URL extracted from output
 - [ ] Results displayed with "What Was Done" section listing actions

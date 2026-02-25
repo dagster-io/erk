@@ -1,7 +1,7 @@
 """Helpers for plan dispatch metadata updates.
 
-This module extracts shared logic for updating plan issue dispatch metadata
-when triggering remote workflows on branches that follow the P{issue}-pattern.
+This module extracts shared logic for updating plan dispatch metadata
+when triggering remote workflows on branches that follow the P{plan}-pattern.
 """
 
 from __future__ import annotations
@@ -26,24 +26,24 @@ def write_dispatch_metadata(
     plan_backend: PlanBackend,
     github: GitHub,
     repo_root: Path,
-    issue_number: int,
+    plan_number: int,
     run_id: str,
     dispatched_at: str,
 ) -> None:
     """Resolve node_id and write dispatch metadata to plan header.
 
     Raises:
-        RuntimeError: If issue not found or node_id unavailable.
+        RuntimeError: If plan not found or node_id unavailable.
     """
     node_id = github.get_workflow_run_node_id(repo_root, run_id)
     if node_id is None:
         raise RuntimeError(f"Could not get node_id for run {run_id}")
 
     # LBYL: Check plan exists before updating metadata
-    plan_id = str(issue_number)
+    plan_id = str(plan_number)
     plan_result = plan_backend.get_plan(repo_root, plan_id)
     if isinstance(plan_result, PlanNotFound):
-        raise RuntimeError(f"Plan #{issue_number} not found")
+        raise RuntimeError(f"Plan #{plan_number} not found")
 
     plan_backend.update_metadata(
         repo_root,
@@ -62,15 +62,15 @@ def maybe_update_plan_dispatch_metadata(
     branch_name: str,
     run_id: str,
 ) -> None:
-    """Update plan issue dispatch metadata if branch follows P{issue}-pattern.
+    """Update plan dispatch metadata if branch follows P{plan}-pattern.
 
     This function is used after triggering a remote workflow to record dispatch
-    metadata (run_id, node_id, timestamp) on the associated plan issue.
+    metadata (run_id, node_id, timestamp) on the associated plan.
 
     Uses early returns to skip updates when:
-    - Branch doesn't match P{issue_number} pattern
+    - Branch doesn't match P{plan_number} pattern
     - Workflow run node ID is not available
-    - Issue doesn't have a plan-header metadata block
+    - Plan doesn't have a plan-header metadata block
 
     Args:
         ctx: Erk context with gateways

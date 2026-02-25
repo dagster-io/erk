@@ -6,13 +6,6 @@ been replaced by the finalize_pr step in submit_pipeline.py.
 
 from pathlib import Path
 
-from erk_shared.gateway.github.pr_footer import (
-    ClosingReference,
-    extract_closing_reference,
-    extract_footer_from_body,
-)
-from erk_shared.gateway.github.types import PRNotFound
-from erk_shared.gateway.gt.abc import GtKit
 from erk_shared.impl_folder import read_plan_ref
 
 # Label added to PRs that originate from learn plans.
@@ -37,22 +30,3 @@ def is_learn_plan(impl_dir: Path) -> bool:
         return False
 
     return "erk-learn" in plan_ref.labels
-
-
-def _extract_closing_ref_from_pr(
-    ops: GtKit,
-    cwd: Path,
-    pr_number: int,
-) -> ClosingReference | None:
-    """Extract closing reference from an existing PR's footer.
-
-    Used to preserve closing references when .impl/issue.json is missing.
-    """
-    repo_root = ops.git.repo.get_repository_root(cwd)
-    current_pr = ops.github.get_pr(repo_root, pr_number)
-    if isinstance(current_pr, PRNotFound) or not current_pr.body:
-        return None
-    existing_footer = extract_footer_from_body(current_pr.body)
-    if existing_footer is None:
-        return None
-    return extract_closing_reference(existing_footer)

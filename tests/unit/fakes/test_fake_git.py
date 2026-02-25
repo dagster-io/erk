@@ -403,57 +403,6 @@ def test_fake_git_is_worktree_clean_with_nonexistent_path() -> None:
 
 
 # ============================================================================
-# Branch-Issue Extraction Tests
-# ============================================================================
-
-
-def test_fake_git_get_branch_issue_extracts_from_branch_name() -> None:
-    """Test get_branch_issue returns None since branch-based extraction is removed.
-
-    Since extract_leading_issue_number() always returns None, get_branch_issue()
-    always returns None regardless of branch name format.
-    """
-    git_ops = FakeGit()
-
-    # All branch name formats now return None (branch-based extraction removed)
-    assert (
-        git_ops.branch.get_branch_issue(
-            Path("/repo"), "P2382-convert-erk-create-raw-ext-12-05-2359"
-        )
-        is None
-    )
-    assert git_ops.branch.get_branch_issue(Path("/repo"), "P42-fix-bug") is None
-    assert git_ops.branch.get_branch_issue(Path("/repo"), "P123-feature-name") is None
-    assert git_ops.branch.get_branch_issue(Path("/repo"), "p100-lowercase-prefix") is None
-    assert (
-        git_ops.branch.get_branch_issue(Path("/repo"), "2382-convert-erk-create-raw-ext-12-05-2359")
-        is None
-    )
-    assert git_ops.branch.get_branch_issue(Path("/repo"), "42-fix-bug") is None
-    assert git_ops.branch.get_branch_issue(Path("/repo"), "123-feature-name") is None
-
-
-def test_fake_git_get_branch_issue_returns_none_for_no_prefix() -> None:
-    """Test get_branch_issue returns None when branch has no issue number prefix."""
-    git_ops = FakeGit()
-
-    # Branch names without issue number prefix
-    assert git_ops.branch.get_branch_issue(Path("/repo"), "feature-branch") is None
-    assert git_ops.branch.get_branch_issue(Path("/repo"), "master") is None
-    assert git_ops.branch.get_branch_issue(Path("/repo"), "main") is None
-    assert git_ops.branch.get_branch_issue(Path("/repo"), "develop") is None
-
-
-def test_fake_git_get_branch_issue_requires_hyphen_after_number() -> None:
-    """Test get_branch_issue requires hyphen after issue number."""
-    git_ops = FakeGit()
-
-    # Numbers without trailing hyphen are not issue numbers
-    assert git_ops.branch.get_branch_issue(Path("/repo"), "123") is None
-    assert git_ops.branch.get_branch_issue(Path("/repo"), "v2.0.0") is None
-
-
-# ============================================================================
 # Commit Messages Since Tests
 # ============================================================================
 

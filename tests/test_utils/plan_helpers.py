@@ -5,6 +5,8 @@ It converts Plan objects to PlannedPRBackend backed by FakeGitHub.
 """
 
 from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.gateway.time.fake import FakeTime
@@ -12,7 +14,6 @@ from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.planned_pr_lifecycle import (
     DETAILS_CLOSE,
     DETAILS_OPEN,
-    PLAN_CONTENT_SEPARATOR,
 )
 from erk_shared.plan_store.types import Plan, PlanState
 
@@ -45,14 +46,14 @@ def _plan_to_pr_details(plan: Plan) -> PRDetails:
         metadata_part = body[: end_marker_idx + len(_PLAN_HEADER_END_MARKER)]
         content_part = body[end_marker_idx + len(_PLAN_HEADER_END_MARKER) :].strip()
         details_section = DETAILS_OPEN + content_part + DETAILS_CLOSE
-        pr_body = metadata_part + PLAN_CONTENT_SEPARATOR + details_section
+        pr_body = details_section + "\n\n" + metadata_part
     else:
         # Plain body without a plan-header block - synthesize one with branch_name so
         # PlannedPRBackend._convert_to_plan() can populate header_fields["branch_name"].
         # Real planned-PR plans always have branch_name in plan-header (set by plan_save).
         metadata_body = format_plan_header_body_for_test(branch_name=branch_name)
         details_section = DETAILS_OPEN + body + DETAILS_CLOSE
-        pr_body = metadata_body + PLAN_CONTENT_SEPARATOR + details_section
+        pr_body = details_section + "\n\n" + metadata_body
 
     # Include erk-plan label plus any existing labels
     labels = tuple(plan.labels) if "erk-plan" in plan.labels else ("erk-plan", *plan.labels)
@@ -188,3 +189,76 @@ def format_plan_header_body_for_test(
         learned_from_issue=learned_from_issue,
         lifecycle_stage=lifecycle_stage,
     )
+
+
+def issue_info_to_pr_details(issue: IssueInfo) -> PRDetails:
+    """Convert an IssueInfo to PRDetails for use with PlannedPRBackend.
+
+    This helper converts IssueInfo test data to PRDetails for use with PlannedPRBackend.
+
+    The PR body wraps the issue body in plan lifecycle format (details tags)
+    if the body contains a plan-header metadata block.
+
+    Args:
+        issue: IssueInfo to convert
+
+    Returns:
+        PRDetails with equivalent data
+    """
+    body = issue.body
+    end_marker_idx = body.find(_PLAN_HEADER_END_MARKER)
+    if end_marker_idx != -1:
+        metadata_part = body[: end_marker_idx + len(_PLAN_HEADER_END_MARKER)]
+        content_part = body[end_marker_idx + len(_PLAN_HEADER_END_MARKER) :].strip()
+        if content_part:
+            details_section = DETAILS_OPEN + content_part + DETAILS_CLOSE
+            pr_body = details_section + "\n\n" + metadata_part
+        else:
+            pr_body = metadata_part
+    else:
+        pr_body = body
+
+    return PRDetails(
+        number=issue.number,
+        url=issue.url.replace("/issues/", "/pull/"),
+        title=issue.title,
+        body=pr_body,
+        state=issue.state,
+        is_draft=True,
+        base_ref_name="main",
+        head_ref_name=f"plan-{issue.number}",
+        is_cross_repository=False,
+        mergeable="UNKNOWN",
+        merge_state_status="UNKNOWN",
+        owner="test-owner",
+        repo="test-repo",
+        labels=tuple(issue.labels),
+        created_at=issue.created_at,
+        updated_at=issue.updated_at,
+        author=issue.author,
+    )
+
+
+def create_backend_from_issues(
+    issues: dict[int, IssueInfo],
+) -> tuple[PlannedPRBackend, FakeGitHub, FakeGitHubIssues]:
+    """Create a PlannedPRBackend from IssueInfo data.
+
+    Migration helper: converts issue-based test data to PR-based data
+    for PlannedPRBackend. The FakeGitHubIssues is also created so tests
+    that need comment access (same API for PRs and issues) still work.
+
+    Args:
+        issues: Mapping of issue_number -> IssueInfo
+
+    Returns:
+        Tuple of (backend, fake_github, fake_issues)
+    """
+    pr_details: dict[int, PRDetails] = {}
+    for num, issue in issues.items():
+        pr_details[num] = issue_info_to_pr_details(issue)
+
+    fake_issues = FakeGitHubIssues(issues=issues)
+    fake_github = FakeGitHub(pr_details=pr_details, issues_gateway=fake_issues)
+    backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+    return backend, fake_github, fake_issues

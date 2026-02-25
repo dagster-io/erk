@@ -260,7 +260,6 @@ When squashing commits on a branch that already has a PR:
 
 This pattern applies to:
 
-- `erk pr sync` (automatically uses force after squash)
 - Manual squash + submit workflows
 - Any workflow that rewrites history on an existing PR branch
 
@@ -562,9 +561,9 @@ A boolean field on `PullRequestInfo` indicating whether a PR will automatically 
 | `true`  | PR was created with "Closes #N" (or equivalent) in initial body                              |
 | `false` | PR merely references the issue without closing keywords, or keyword was added after creation |
 
-**Display**: In `erk plan list`, PRs with `will_close_target: true` show a link indicator.
+**Display**: In `erk pr list`, PRs with `will_close_target: true` show a link indicator.
 
-**Critical Timing**: This field is determined at PR creation time. Editing the PR body afterward to add "Closes #N" does **not** update `willCloseTarget`. This is why `erk plan submit` must include the closing keyword in the initial `create_pr()` call.
+**Critical Timing**: This field is determined at PR creation time. Editing the PR body afterward to add "Closes #N" does **not** update `willCloseTarget`. This is why `erk pr dispatch` must include the closing keyword in the initial `create_pr()` call.
 
 **Related**: [GitHub Issue-PR Linkage API Patterns](architecture/github-pr-linkage-api.md), [Issue-PR Linkage Storage](erk/issue-pr-linkage-storage.md)
 
@@ -854,14 +853,14 @@ A special type of implementation plan created by `/erk:learn`. Learn plans captu
 **Identifying Learn Plans in Code**:
 
 - Issue label: Check for `erk-learn` in `issue.labels`
-- Helper function: `is_issue_learn_plan(labels)` in `src/erk/cli/commands/submit.py`
+- Helper function: `is_issue_learn_plan(labels)` in `src/erk/cli/commands/pr/dispatch_cmd.py`
 - Plan metadata: Check `plan_type: learn` in plan-header
 - PR label: PRs from learn plans have `erk-skip-extraction`
 
 **Special Behaviors**:
 
 - `erk land` skips the "not learned from" warning for learn plans (they don't need learning)
-- `erk plan learn complete` validates the issue has the `erk-learn` label
+- `/erk:learn` validates the issue has the `erk-learn` label
 
 **Purpose**: Prevent valuable learnings from being lost after implementation sessions by systematically documenting patterns, decisions, and discoveries.
 
@@ -875,7 +874,7 @@ A GitHub label added to PRs that originate from learn plans. When `erk land` det
 
 **Applied by**:
 
-- `erk plan submit` when the source issue has `plan_type: learn`
+- `erk pr dispatch` when the source issue has `plan_type: learn`
 - `gt finalize` when the `.impl/plan.md` has `plan_type: learn`
 
 **Checked by**:

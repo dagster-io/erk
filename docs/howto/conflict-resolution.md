@@ -6,7 +6,6 @@ Handle merge conflicts with AI assistance.
 
 Merge conflicts occur when two branches modify the same lines of code. In erk workflows, you'll encounter conflicts during:
 
-- **PR sync** (`erk pr sync`): Syncing your branch with upstream changes
 - **Stack rebase** (`gt restack`): Restacking branches after landing a PR
 - **Remote rebase**: When GitHub Actions rebases your PR
 
@@ -74,23 +73,23 @@ This commonly happens when:
 
 ### Divergence vs Conflicts
 
-| Situation          | What It Means                             | Command to Use           |
-| ------------------ | ----------------------------------------- | ------------------------ |
-| Branch diverged    | Local and remote both have new commits    | `erk pr sync-divergence` |
-| Rebase in progress | Conflict markers in files during a rebase | `erk pr fix-conflicts`   |
+| Situation          | What It Means                             | Command to Use                 |
+| ------------------ | ----------------------------------------- | ------------------------------ |
+| Branch diverged    | Local and remote both have new commits    | `erk pr reconcile-with-remote` |
+| Rebase in progress | Conflict markers in files during a rebase | `erk pr fix-conflicts`         |
 
-### Sync Divergence Command
+### Reconcile With Remote Command
 
 **CLI command** (outside a Claude session):
 
 ```bash
-erk pr sync-divergence --dangerous
+erk pr reconcile-with-remote --dangerous
 ```
 
 **Slash command** (inside a Claude Code session):
 
 ```
-/erk:sync-divergence
+/erk:reconcile-with-remote
 ```
 
 ### How It Works
@@ -218,7 +217,7 @@ When AI resolution doesn't produce the desired result, fall back to standard git
 
 ## Best Practices
 
-**Sync frequently.** The longer your branch diverges from trunk, the more likely conflicts become. Run `erk pr sync --dangerous` regularly to stay up to date.
+**Sync frequently.** The longer your branch diverges from trunk, the more likely conflicts become. Run `erk pr sync-divergence --dangerous` or `/erk:sync-divergence` regularly to stay up to date.
 
 **Prefer smaller, focused PRs.** Large PRs touching many files are more likely to conflict. Break work into smaller, independent changes when possible.
 

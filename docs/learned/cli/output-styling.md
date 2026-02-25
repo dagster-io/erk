@@ -92,8 +92,8 @@ table.add_row(issue_id, ...)
 ### Examples in Codebase
 
 - `src/erk/core/display_utils.py` - `format_pr_info()` function (reference implementation)
-- `src/erk/cli/commands/plan/list_cmd.py` - Clickable plan IDs in table
-- `src/erk/cli/commands/plan/view.py` - Clickable plan ID in details
+- `src/erk/cli/commands/pr/list_cmd.py` - Clickable plan IDs in table
+- `src/erk/cli/commands/pr/view_cmd.py` - Clickable plan ID in details
 - `src/erk/status/renderers/simple.py` - Clickable issue numbers in status
 
 ### Terminal Compatibility
@@ -187,14 +187,9 @@ Emojis serve as visual type indicators for different stages of async workflows:
 
 ### Context-Aware Emoji Selection
 
-For session processing, choose emoji based on session type:
+<!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py -->
 
-```python
-# From trigger_async_learn.py:230-232
-prefix = "planning" if sid == planning_session_id else "impl"
-emoji = "📝" if prefix == "planning" else "🔧"
-session_line = click.style(f"     {emoji} {prefix}: {sid} ({source_type})", dim=True)
-```
+For session processing, choose emoji based on session type. See `trigger_async_learn.py` for the canonical implementation.
 
 | Context                 | Emoji | Usage                         |
 | ----------------------- | ----- | ----------------------------- |
@@ -203,15 +198,7 @@ session_line = click.style(f"     {emoji} {prefix}: {sid} ({source_type})", dim=
 
 ### Output Routing
 
-**Critical:** All progress output goes to **stderr**, JSON output goes to **stdout**.
-
-```python
-# From trigger_async_learn.py:100-102
-message = click.style(f"{prefix}{description}...", fg="cyan")
-click.echo(message, err=True)  # Note: err=True
-```
-
-This allows shell scripts to parse JSON from stdout without interference from progress messages.
+**Critical:** All progress output goes to **stderr** (via `click.echo(message, err=True)`), JSON output goes to **stdout**. This allows shell scripts to parse JSON from stdout without interference from progress messages.
 
 ### Example: Full Async Progress Flow
 
@@ -326,22 +313,9 @@ The pattern consists of three elements:
 
 ### Implementation
 
-```python
-import click
+<!-- Source: src/erk/cli/commands/pr/shared.py, echo_plan_context_status -->
 
-if plan_context is not None:
-    click.echo(
-        click.style(
-            f"   Incorporating plan from issue #{plan_context.issue_number}",
-            fg="green",
-        )
-    )
-    if plan_context.objective_summary is not None:
-        click.echo(click.style(f"   Linked to {plan_context.objective_summary}", fg="green"))
-else:
-    click.echo(click.style("   No linked plan found", dim=True))
-click.echo("")
-```
+See `echo_plan_context_status()` in `src/erk/cli/commands/pr/shared.py` for the canonical implementation. Uses `plan_context.plan_id` (not `issue_number`) to display the plan reference.
 
 ### Usage Examples
 
@@ -371,8 +345,8 @@ click.echo("")
 
 This pattern is currently used in:
 
-- `erk pr submit` - During PR submission (`src/erk/cli/commands/pr/submit_pipeline.py:466-472`)
-- `erk pr rewrite` - When generating PR descriptions (`src/erk/cli/commands/pr/rewrite_cmd.py:_execute_pr_rewrite`)
+- `erk pr submit` - During PR submission (calls `echo_plan_context_status()` from `src/erk/cli/commands/pr/shared.py`)
+- `erk pr rewrite` - When generating PR descriptions (calls `echo_plan_context_status()` from `src/erk/cli/commands/pr/shared.py`)
 
 ### Design Rationale
 
@@ -805,7 +779,7 @@ console.print()  # Blank line after table
 
 ### Reference Implementations
 
-- `src/erk/cli/commands/plan/list_cmd.py` - Plan list table with all conventions
+- `src/erk/cli/commands/pr/list_cmd.py` - Plan list table with all conventions
 
 ## Rich Markup Escaping in CLI Tables
 

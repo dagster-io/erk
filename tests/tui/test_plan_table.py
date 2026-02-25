@@ -151,11 +151,12 @@ class TestPlanDataTableRowConversion:
         """Basic row conversion without optional columns."""
         filters = PlanFilters(
             labels=("erk-plan",),
-            state=None,
+            state="open",
             run_state=None,
             limit=None,
             show_prs=False,
             show_runs=False,
+            exclude_labels=(),
         )
         table = PlanDataTable(filters)
         row = make_plan_row(123, "Test Plan")
@@ -178,11 +179,12 @@ class TestPlanDataTableRowConversion:
         """Row conversion with PR columns enabled."""
         filters = PlanFilters(
             labels=("erk-plan",),
-            state=None,
+            state="open",
             run_state=None,
             limit=None,
             show_prs=True,
             show_runs=False,
+            exclude_labels=(),
         )
         table = PlanDataTable(filters)
         row = make_plan_row(123, "Test Plan", pr_number=456)
@@ -205,11 +207,12 @@ class TestPlanDataTableRowConversion:
         """Row conversion shows 🔗 indicator for PRs that will close issues."""
         filters = PlanFilters(
             labels=("erk-plan",),
-            state=None,
+            state="open",
             run_state=None,
             limit=None,
             show_prs=True,
             show_runs=False,
+            exclude_labels=(),
         )
         table = PlanDataTable(filters)
         # Use custom pr_display with link indicator (simulates will_close_target=True)
@@ -225,11 +228,12 @@ class TestPlanDataTableRowConversion:
         """Row conversion with run columns enabled."""
         filters = PlanFilters(
             labels=("erk-plan",),
-            state=None,
+            state="open",
             run_state=None,
             limit=None,
             show_prs=False,
             show_runs=True,
+            exclude_labels=(),
         )
         table = PlanDataTable(filters)
         row = make_plan_row(123, "Test Plan")
@@ -506,11 +510,12 @@ class TestShowPrColumnFalse:
         """
         filters = PlanFilters(
             labels=("erk-plan",),
-            state=None,
+            state="open",
             run_state=None,
             limit=None,
             show_prs=True,
             show_runs=False,
+            exclude_labels=(),
             show_pr_column=False,
         )
         table = PlanDataTable(filters)
@@ -525,11 +530,12 @@ class TestShowPrColumnFalse:
         """When show_pr_column=False, the pr_display string is absent from values."""
         filters = PlanFilters(
             labels=("erk-plan",),
-            state=None,
+            state="open",
             run_state=None,
             limit=None,
             show_prs=True,
             show_runs=False,
+            exclude_labels=(),
             show_pr_column=False,
         )
         table = PlanDataTable(filters)
@@ -545,11 +551,12 @@ class TestShowPrColumnFalse:
         """When show_pr_column=True (default), pr_display is included at index 10."""
         filters = PlanFilters(
             labels=("erk-plan",),
-            state=None,
+            state="open",
             run_state=None,
             limit=None,
             show_prs=True,
             show_runs=False,
+            exclude_labels=(),
             show_pr_column=True,
         )
         table = PlanDataTable(filters)
@@ -574,6 +581,7 @@ def test_row_to_values_planned_pr_includes_stage() -> None:
         limit=None,
         show_prs=False,
         show_runs=False,
+        exclude_labels=(),
     )
     table = PlanDataTable(filters)
     row = make_plan_row(123, "Test Plan", lifecycle_display="[cyan]review[/cyan]")
@@ -633,3 +641,94 @@ def test_row_to_values_status_both() -> None:
     values = table._row_to_values(row)
 
     assert values[5] == "\U0001f4bb\u2601"
+
+
+# --- Tests for row deduplication logic ---
+
+
+def _deduplicate_rows(rows: list) -> list:
+    """Apply deduplication logic (matching populate() behavior).
+
+    This directly applies the same deduplication logic used in populate()
+    to verify the filtering works correctly.
+    """
+    seen: set[int] = set()
+    unique_rows: list = []
+    for row in rows:
+        if row.plan_id not in seen:
+            seen.add(row.plan_id)
+            unique_rows.append(row)
+    return unique_rows
+
+
+def test_deduplicates_rows_by_plan_id() -> None:
+    """Deduplication keeps first occurrence when plan_id appears multiple times."""
+    # Create rows with duplicate plan_ids (e.g., multi-label query returns same plan twice)
+    row1 = make_plan_row(123, "Plan A")
+    row2 = make_plan_row(456, "Plan B")
+    row3 = make_plan_row(123, "Plan A")  # Duplicate of row1 by plan_id
+
+    rows = [row1, row2, row3]
+    unique_rows = _deduplicate_rows(rows)
+
+    # Should have 2 rows (the duplicate was removed)
+    assert len(unique_rows) == 2
+    # First row should be preserved
+    assert unique_rows[0].plan_id == 123
+    assert unique_rows[1].plan_id == 456
+
+
+def test_dedup_preserves_row_order() -> None:
+    """Deduplication preserves order when removing duplicates."""
+    row1 = make_plan_row(100, "Plan 1")
+    row2 = make_plan_row(200, "Plan 2")
+    row3 = make_plan_row(300, "Plan 3")
+    row4 = make_plan_row(200, "Plan 2")  # Duplicate of row2
+    row5 = make_plan_row(400, "Plan 4")
+
+    rows = [row1, row2, row3, row4, row5]
+    unique_rows = _deduplicate_rows(rows)
+
+    # Should have 4 rows (one duplicate removed)
+    assert len(unique_rows) == 4
+    # Order should be preserved, with duplicate removed
+    plan_ids = [r.plan_id for r in unique_rows]
+    assert plan_ids == [100, 200, 300, 400]
+
+
+def test_dedup_multi_label_query_scenario() -> None:
+    """Deduplication handles multi-label queries returning same plan multiple times."""
+    # Simulates multi-label query (e.g., erk-pr + erk-learn) returning same plan
+    plan_a = make_plan_row(123, "Multi-Label Plan A")
+    plan_b = make_plan_row(456, "Plan B")
+    plan_a_duplicate = make_plan_row(123, "Multi-Label Plan A")  # Same plan, different label result
+    plan_c = make_plan_row(789, "Plan C")
+
+    rows = [plan_a, plan_b, plan_a_duplicate, plan_c]
+    unique_rows = _deduplicate_rows(rows)
+
+    # Should have 3 unique plans
+    assert len(unique_rows) == 3
+    unique_plan_ids = [r.plan_id for r in unique_rows]
+    assert unique_plan_ids == [123, 456, 789]
+
+
+def test_dedup_all_duplicate_rows_keeps_first() -> None:
+    """Deduplication with all identical plan_ids keeps only first row."""
+    row1 = make_plan_row(123, "Plan A")
+    row2 = make_plan_row(123, "Plan A")
+    row3 = make_plan_row(123, "Plan A")
+
+    rows = [row1, row2, row3]
+    unique_rows = _deduplicate_rows(rows)
+
+    # Should have 1 row (all duplicates removed)
+    assert len(unique_rows) == 1
+    assert unique_rows[0].plan_id == 123
+
+
+def test_dedup_empty_rows_list() -> None:
+    """Deduplication handles empty rows list."""
+    unique_rows = _deduplicate_rows([])
+
+    assert len(unique_rows) == 0

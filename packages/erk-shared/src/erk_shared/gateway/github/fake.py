@@ -18,6 +18,7 @@ from erk_shared.gateway.github.types import (
     BodyFile,
     BodyText,
     GitHubRepoLocation,
+    IssueFilterState,
     MergeError,
     MergeResult,
     PRDetails,
@@ -594,7 +595,7 @@ class FakeGitHub(GitHub):
         *,
         location: GitHubRepoLocation,
         labels: list[str],
-        state: str | None = None,
+        state: IssueFilterState = "open",
         limit: int | None = None,
         creator: str | None = None,
     ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
@@ -606,16 +607,13 @@ class FakeGitHub(GitHub):
         Args:
             location: GitHub repository location (ignored in fake)
             labels: Labels to filter by
-            state: Filter by state ("open", "closed", or None for OPEN default)
+            state: Filter by state ("open" or "closed")
             limit: Maximum issues to return (default: all)
             creator: Filter by creator username (e.g., "octocat")
 
         Returns:
             Tuple of (filtered_issues, pr_linkages for those issues)
         """
-        # Default to OPEN to match gh CLI behavior (gh issue list defaults to open)
-        effective_state = state if state is not None else "open"
-
         # Filter issues by labels, state, and creator
         filtered_issues = []
         for issue in self._issues_data:
@@ -623,7 +621,7 @@ class FakeGitHub(GitHub):
             if not all(label in issue.labels for label in labels):
                 continue
             # Check state filter
-            if issue.state.lower() != effective_state.lower():
+            if issue.state.lower() != state.lower():
                 continue
             # Check creator filter
             if creator is not None and issue.author != creator:
@@ -725,9 +723,10 @@ class FakeGitHub(GitHub):
         location: GitHubRepoLocation,
         *,
         labels: list[str],
-        state: str | None,
+        state: IssueFilterState,
         limit: int | None,
         author: str | None,
+        exclude_labels: list[str] | None = None,
     ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
         """Return pre-configured plan PR details and linkages."""
         return self._plan_pr_details

@@ -37,11 +37,9 @@ from erk_shared.context.helpers import (
     require_issues as require_github_issues,
 )
 from erk_shared.gateway.github.checks import GitHubChecks
-from erk_shared.gateway.github.issues.types import IssueComment
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.non_ideal_state import (
     BranchDetectionFailed,
-    GitHubAPIFailed,
     NoPRForBranch,
     PRNotFoundError,
 )
@@ -73,16 +71,6 @@ def _ensure_pr_result_by_number(
         exit_with_error(pr_result.error_type, pr_result.message)
     assert not isinstance(pr_result, PRNotFoundError)  # Type narrowing after NoReturn
     return pr_result
-
-
-def _ensure_comments(
-    comments_result: list[IssueComment] | GitHubAPIFailed,
-) -> list[IssueComment]:
-    """Ensure comments fetch succeeded, exit with error if not."""
-    if isinstance(comments_result, GitHubAPIFailed):
-        exit_with_error(comments_result.error_type, comments_result.message)
-    assert not isinstance(comments_result, GitHubAPIFailed)  # Type narrowing after NoReturn
-    return comments_result
 
 
 class DiscussionCommentDict(TypedDict):
@@ -121,14 +109,11 @@ def get_pr_discussion_comments(ctx: click.Context, pr: int | None) -> None:
         pr_details = _ensure_pr_result_by_number(GitHubChecks.pr_by_number(github, repo_root, pr))
 
     # Fetch discussion comments (exits on failure)
-    comments = _ensure_comments(
-        GitHubChecks.issue_comments(github_issues, repo_root, pr_details.number)
-    )
+    comments = GitHubChecks.issue_comments(github_issues, repo_root, pr_details.number).ensure()
 
     # Format comments for JSON output
     formatted_comments: list[DiscussionCommentDict] = []
     for comment in comments:
-        assert isinstance(comment, IssueComment)  # Runtime verification for type safety
         formatted_comments.append(
             {
                 "id": comment.id,

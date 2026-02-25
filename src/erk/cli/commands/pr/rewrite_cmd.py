@@ -31,6 +31,7 @@ from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_LEARN_LABEL, is_learn_plan
 from erk_shared.gateway.gt.operations.squash import execute_squash
 from erk_shared.gateway.gt.types import SquashError
+from erk_shared.impl_folder import resolve_impl_dir
 
 
 @click.command("rewrite")
@@ -154,14 +155,12 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
         raise click.ClickException(f"Push failed: {submit_result.message}")
     click.echo(click.style("   Branch pushed", fg="green"))
 
-    impl_dir = cwd / ".impl"
+    impl_dir = resolve_impl_dir(cwd, branch_name=discovery.current_branch)
 
     final_body = assemble_pr_body(
         body=body,
         plan_context=plan_context,
         pr_number=pr_number,
-        issue_number=None,
-        plans_repo=None,
         header="",
         existing_pr_body=pr_info.body,
     )
@@ -184,7 +183,7 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
         )
 
     # Add learn skip label if applicable
-    is_learn_origin = is_learn_plan(impl_dir)
+    is_learn_origin = is_learn_plan(impl_dir) if impl_dir is not None else False
     if is_learn_origin:
         ctx.github.add_label_to_pr(discovery.repo_root, pr_number, ERK_SKIP_LEARN_LABEL)
 

@@ -12,7 +12,10 @@ from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.commands.dash.conftest import plan_to_issue
-from tests.test_utils.context_builders import build_workspace_test_context
+from tests.test_utils.context_builders import (
+    build_fake_plan_list_service,
+    build_workspace_test_context,
+)
 from tests.test_utils.env_helpers import erk_inmem_env
 
 
@@ -25,7 +28,7 @@ def test_plan_list_pr_column_no_pr_linked() -> None:
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/106",
-        labels=["erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
@@ -38,7 +41,10 @@ def test_plan_list_pr_column_no_pr_linked() -> None:
         issues = FakeGitHubIssues(issues={106: plan_to_issue(plan)})
         github = FakeGitHub(issues_data=[plan_to_issue(plan)])
         # No PR linkages configured
-        ctx = build_workspace_test_context(env, issues=issues, github=github)
+        plan_service = build_fake_plan_list_service([plan])
+        ctx = build_workspace_test_context(
+            env, issues=issues, github=github, plan_list_service=plan_service
+        )
 
         # Act
         result = runner.invoke(cli, ["pr", "list"], obj=ctx)

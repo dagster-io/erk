@@ -15,11 +15,12 @@
 - **[click-patterns.md](click-patterns.md)** — implementing CLI options with complex behavior, creating flags that optionally accept values, designing CLI flags with default behaviors
 - **[code-review-filtering.md](code-review-filtering.md)** — debugging false positives in code review, understanding keyword-only parameter exceptions, working with ABC/Protocol method validation
 - **[codespace-patterns.md](codespace-patterns.md)** — implementing CLI commands that use codespaces, handling codespace name resolution with optional defaults, bypassing GitHub API endpoint bugs
+- **[command-deletion-patterns.md](command-deletion-patterns.md)** — deleting a CLI command or command group, removing dead code after a feature deletion, identifying vestigial features for removal
 - **[command-group-structure.md](command-group-structure.md)** — creating a new command group, adding commands to an existing group, understanding command file organization
 - **[command-organization.md](command-organization.md)** — organizing CLI commands, understanding command structure, designing command hierarchies
 - **[command-rename-checklist.md](command-rename-checklist.md)** — renaming an exec script or CLI command, changing a Click command name, migrating command references across the codebase
+- **[commands/pr-reconcile-with-remote.md](commands/pr-reconcile-with-remote.md)** — resolving branch divergence from remote, fixing gt submit 'Branch has been updated remotely' errors, reconciling local branch with remote tracking branch
 - **[commands/pr-summarize.md](commands/pr-summarize.md)** — historical reference for pr summarize command, understanding pr summarize replacement by pr rewrite
-- **[commands/pr-sync-divergence.md](commands/pr-sync-divergence.md)** — resolving branch divergence from remote, fixing gt submit 'Branch has been updated remotely' errors, syncing local branch with remote tracking branch
 - **[commands/update-objective-node.md](commands/update-objective-node.md)** — working with objective roadmap tables, updating step PR references
 - **[dependency-injection-patterns.md](dependency-injection-patterns.md)** — writing erk exec scripts, testing exec scripts that use gateways, understanding exec script architecture, migrating exec scripts from subprocess to gateways
 - **[ensure-ideal-pattern.md](ensure-ideal-pattern.md)** — handling discriminated union returns in CLI commands, narrowing types from T | NonIdealState or T | ErrorType, working with PR lookups, branch detection, or API calls that return union types, seeing EnsureIdeal in code and wondering when to use it vs Ensure
@@ -31,6 +32,7 @@
 - **[exec-command-patterns.md](exec-command-patterns.md)** — writing exec scripts with PR/issue output, building diagnostic messages, standardizing exec command output
 - **[exec-script-discovery.md](exec-script-discovery.md)** — using erk exec commands, unsure what flags an exec command accepts
 - **[exec-script-patterns.md](exec-script-patterns.md)** — Creating new exec CLI commands, Understanding why exec commands use context injection instead of Path.cwd(), Deciding where to import gateway ABCs from
+- **[exec-script-performance.md](exec-script-performance.md)** — optimizing exec script execution time, reducing gh subprocess overhead in exec scripts, bundling multiple API calls into a single exec script
 - **[exec-script-schema-patterns.md](exec-script-schema-patterns.md)** — writing an exec script that produces JSON consumed by another script, debugging silent filtering failures in exec script pipelines, adding new fields to exec script JSON output
 - **[fast-path-pattern.md](fast-path-pattern.md)** — implementing CLI commands that can skip expensive operations, adding fast path optimization to existing commands, understanding when to invoke Claude vs complete locally
 - **[help-text-formatting.md](help-text-formatting.md)** — Writing CLI command docstrings, Adding Examples sections to Click commands, Formatting bulleted lists in help text
@@ -45,7 +47,7 @@
 - **[output-styling.md](output-styling.md)** — styling CLI output, using colors in CLI, formatting terminal output
 - **[parameter-addition-checklist.md](parameter-addition-checklist.md)** — adding a parameter to a multi-layer command, working with skills that call erk exec scripts, debugging parameter not found errors
 - **[plan-implement.md](plan-implement.md)** — understanding the /erk:plan-implement command, implementing plans from GitHub issues, working with .impl/ folders, debugging plan execution failures
-- **[plan-list-provider-pattern.md](plan-list-provider-pattern.md)** — modifying erk plan list output, understanding how plan list and TUI share data providers, adding columns to plan list display
+- **[plan-list-provider-pattern.md](plan-list-provider-pattern.md)** — modifying erk pr list output, understanding how plan list and TUI share data providers, adding columns to plan list display
 - **[pr-operations.md](pr-operations.md)** — creating PRs programmatically, implementing PR submission workflows, preventing duplicate PR creation
 - **[pr-rewrite.md](pr-rewrite.md)** — using or modifying erk pr rewrite, understanding the PR rewrite pipeline phases, working with squash, commit message generation, or PR updating
 - **[pr-submission.md](pr-submission.md)** — choosing between git-pr-push and pr-submit commands, understanding PR submission workflows, deciding whether to use Graphite or plain git

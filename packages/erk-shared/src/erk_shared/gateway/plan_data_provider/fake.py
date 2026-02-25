@@ -3,7 +3,7 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
-from erk.tui.data.types import PlanFilters, PlanRowData
+from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
 from erk.tui.sorting.types import BranchActivity
 from erk_shared.gateway.browser.abc import BrowserLauncher
 from erk_shared.gateway.browser.fake import FakeBrowserLauncher
@@ -51,6 +51,7 @@ class FakePlanDataProvider(PlanDataProvider):
         self._plan_content_by_plan_id: dict[int, str] = {}
         self._objective_content_by_plan_id: dict[int, str] = {}
         self._review_threads_by_pr: dict[int, list[PRReviewThread]] = {}
+        self._stacks_by_branch: dict[str, list[str]] = {}
 
     @property
     def repo_root(self) -> Path:
@@ -67,7 +68,7 @@ class FakePlanDataProvider(PlanDataProvider):
         """Get the browser launcher interface for opening URLs."""
         return self._browser
 
-    def fetch_plans(self, filters: PlanFilters) -> list[PlanRowData]:
+    def fetch_plans(self, filters: PlanFilters) -> tuple[list[PlanRowData], FetchTimings | None]:
         """Return canned plan data.
 
         Args:
@@ -75,7 +76,7 @@ class FakePlanDataProvider(PlanDataProvider):
                 falls back to default plans list.
 
         Returns:
-            List of canned PlanRowData
+            Tuple of (list of canned PlanRowData, None timings)
 
         Raises:
             RuntimeError: If fetch_error is set
@@ -84,8 +85,8 @@ class FakePlanDataProvider(PlanDataProvider):
         if self._fetch_error is not None:
             raise RuntimeError(self._fetch_error)
         if self._plans_by_labels is not None and filters.labels in self._plans_by_labels:
-            return self._plans_by_labels[filters.labels]
-        return self._plans
+            return (self._plans_by_labels[filters.labels], None)
+        return (self._plans, None)
 
     @property
     def fetch_count(self) -> int:
@@ -115,16 +116,16 @@ class FakePlanDataProvider(PlanDataProvider):
         self._plans = [p for p in self._plans if p.plan_id != plan_id]
         return []
 
-    def submit_to_queue(self, plan_id: int, plan_url: str) -> None:
-        """Fake submit to queue implementation.
+    def dispatch_to_queue(self, plan_id: int, plan_url: str) -> None:
+        """Fake dispatch to queue implementation.
 
-        Tracks the submission without actually submitting.
+        Tracks the dispatch without actually dispatching.
 
         Args:
-            plan_id: The plan ID to submit
+            plan_id: The plan ID to dispatch
             plan_url: The plan URL (unused in fake)
         """
-        # Just track the call - actual submit is complex and not needed for UI tests
+        # Just track the call - actual dispatch is complex and not needed for UI tests
         pass
 
     def fetch_branch_activity(self, rows: list[PlanRowData]) -> dict[int, BranchActivity]:
@@ -214,6 +215,28 @@ class FakePlanDataProvider(PlanDataProvider):
             List of PlanRowData matching the given objective_issue
         """
         return [p for p in self._plans if p.objective_issue == objective_issue]
+
+    def get_branch_stack(self, branch: str) -> list[str] | None:
+        """Fake branch stack lookup.
+
+        Returns the configured stack for a branch, or None.
+
+        Args:
+            branch: The branch name to look up
+
+        Returns:
+            Configured list of branch names, or None
+        """
+        return self._stacks_by_branch.get(branch)
+
+    def set_branch_stack(self, branch: str, stack: list[str]) -> None:
+        """Configure the stack to return for a branch.
+
+        Args:
+            branch: The branch name
+            stack: List of branch names in the stack
+        """
+        self._stacks_by_branch[branch] = stack
 
     def fetch_unresolved_comments(self, pr_number: int) -> list[PRReviewThread]:
         """Fake unresolved comments fetch implementation.
@@ -312,7 +335,7 @@ def make_plan_row(
         objective_progress_display: Progress display (e.g., "3/7" or "-")
         objective_slug_display: Slug or stripped title fallback (max 25 chars)
         objective_state_display: Sparkline string (e.g., "✓✓✓▶▶○○○○")
-        objective_head_state: Head state of next node (e.g., "ready", "in progress")
+        objective_head_state: Head state of next node (e.g., "ready", "in-progress")
         updated_at: Last update datetime (defaults to same as created_at)
         updated_display: Formatted relative time for last update
         created_at: Creation datetime (defaults to 2025-01-01T00:00:00Z)

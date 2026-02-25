@@ -26,6 +26,8 @@ from erk_shared.core.prompt_executor import PromptResult
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 # ============================================================================
 # 1. Helper Function Tests
@@ -54,15 +56,13 @@ def test_build_pr_body_includes_summary_and_footer() -> None:
     body = _build_pr_body(
         summary="This is the summary",
         pr_number=123,
-        plan_number=456,
         run_id=None,
         run_url=None,
-        plans_repo=None,
     )
 
     assert "## Summary" in body
     assert "This is the summary" in body
-    assert "Closes #456" in body
+    assert "Closes #" not in body
     assert "erk pr checkout 123" in body
 
 
@@ -71,10 +71,8 @@ def test_build_pr_body_includes_workflow_link_when_provided() -> None:
     body = _build_pr_body(
         summary="Summary",
         pr_number=123,
-        plan_number=456,
         run_id="789",
         run_url="https://github.com/owner/repo/actions/runs/789",
-        plans_repo=None,
     )
 
     assert "Remotely executed" in body
@@ -103,10 +101,8 @@ def test_build_pr_body_omits_workflow_link_when_not_provided() -> None:
     body = _build_pr_body(
         summary="Summary",
         pr_number=123,
-        plan_number=456,
         run_id=None,
         run_url=None,
-        plans_repo=None,
     )
 
     assert "Remotely executed" not in body
@@ -171,10 +167,8 @@ def test_impl_success(tmp_path: Path) -> None:
         github=github,
         executor=executor,
         repo_root=tmp_path,
-        plan_number=456,
         run_id=None,
         run_url=None,
-        plans_repo=None,
         is_planned_pr=False,
     )
 
@@ -203,10 +197,8 @@ def test_impl_no_pr_for_branch(tmp_path: Path) -> None:
         github=github,
         executor=executor,
         repo_root=tmp_path,
-        plan_number=456,
         run_id=None,
         run_url=None,
-        plans_repo=None,
         is_planned_pr=False,
     )
 
@@ -259,10 +251,8 @@ def test_impl_empty_diff(tmp_path: Path) -> None:
         github=github,
         executor=executor,
         repo_root=tmp_path,
-        plan_number=456,
         run_id=None,
         run_url=None,
-        plans_repo=None,
         is_planned_pr=False,
     )
 
@@ -317,10 +307,8 @@ def test_impl_claude_failure(tmp_path: Path) -> None:
         github=github,
         executor=executor,
         repo_root=tmp_path,
-        plan_number=456,
         run_id=None,
         run_url=None,
-        plans_repo=None,
         is_planned_pr=False,
     )
 
@@ -379,10 +367,8 @@ def test_impl_claude_failure_truncates_long_stderr(tmp_path: Path) -> None:
         github=github,
         executor=executor,
         repo_root=tmp_path,
-        plan_number=456,
         run_id=None,
         run_url=None,
-        plans_repo=None,
         is_planned_pr=False,
     )
 
@@ -440,10 +426,8 @@ def test_impl_claude_empty_output(tmp_path: Path) -> None:
         github=github,
         executor=executor,
         repo_root=tmp_path,
-        plan_number=456,
         run_id=None,
         run_url=None,
-        plans_repo=None,
         is_planned_pr=False,
     )
 
@@ -726,15 +710,13 @@ def test_cli_json_output_structure_error(tmp_path: Path) -> None:
 # ============================================================================
 
 
-def test_build_pr_body_planned_pr_no_closes_reference() -> None:
-    """Test that _build_pr_body omits Closes #N when issue_number is None."""
+def test_build_pr_body_no_closes_reference() -> None:
+    """Test that _build_pr_body never includes Closes #N."""
     body = _build_pr_body(
         summary="This is the summary",
         pr_number=123,
-        plan_number=None,
         run_id=None,
         run_url=None,
-        plans_repo=None,
     )
 
     assert "## Summary" in body
@@ -748,13 +730,9 @@ def test_impl_planned_pr_preserves_metadata_and_adds_plan_section(tmp_path: Path
     git = FakeGit(current_branches={tmp_path: "plan-test-01-01"})
 
     # Build a PR body with metadata prefix and plan content (planned-PR format)
-    plan_header_block = (
-        "<!-- erk:metadata-block:plan-header -->\n"
-        "plan-header metadata\n"
-        "<!-- /erk:metadata-block -->\n\n---\n\n"
-    )
+    metadata_body = format_plan_header_body_for_test()
     plan_content = "# My Plan\n\n## Steps\n\n1. Do thing"
-    pr_body = plan_header_block + plan_content
+    pr_body = build_plan_stage_body(metadata_body, plan_content)
 
     pr_details = PRDetails(
         number=42,
@@ -801,10 +779,8 @@ def test_impl_planned_pr_preserves_metadata_and_adds_plan_section(tmp_path: Path
         github=github,
         executor=executor,
         repo_root=tmp_path,
-        plan_number=42,
         run_id=None,
         run_url=None,
-        plans_repo=None,
         is_planned_pr=True,
     )
 
@@ -840,13 +816,9 @@ def test_cli_planned_pr_flag(tmp_path: Path) -> None:
     git = FakeGit(current_branches={tmp_path: "plan-test-01-01"})
 
     # Build a PR body with metadata prefix and plan content (planned-PR format)
-    plan_header_block = (
-        "<!-- erk:metadata-block:plan-header -->\n"
-        "plan-header metadata\n"
-        "<!-- /erk:metadata-block -->\n\n---\n\n"
-    )
+    metadata_body = format_plan_header_body_for_test()
     plan_content = "# My Plan\n\n## Steps\n\n1. Do thing"
-    pr_body = plan_header_block + plan_content
+    pr_body = build_plan_stage_body(metadata_body, plan_content)
 
     pr_details = PRDetails(
         number=42,

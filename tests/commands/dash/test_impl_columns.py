@@ -13,7 +13,10 @@ from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.commands.dash.conftest import plan_to_issue
-from tests.test_utils.context_builders import build_workspace_test_context
+from tests.test_utils.context_builders import (
+    build_fake_plan_list_service,
+    build_workspace_test_context,
+)
 from tests.test_utils.env_helpers import erk_inmem_env
 
 
@@ -38,7 +41,7 @@ last_dispatched_node_id: 'WFR_all_flag'
         body=plan_body,
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/200",
-        labels=["erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
@@ -74,7 +77,14 @@ last_dispatched_node_id: 'WFR_all_flag'
             pr_issue_linkages={200: [pr]},
             workflow_runs_by_node_id={"WFR_all_flag": workflow_run},
         )
-        ctx = build_workspace_test_context(env, issues=issues, github=github)
+        plan_service = build_fake_plan_list_service(
+            [plan],
+            pr_linkages={200: [pr]},
+            workflow_runs={200: workflow_run},
+        )
+        ctx = build_workspace_test_context(
+            env, issues=issues, github=github, plan_list_service=plan_service
+        )
 
         # Act - Run columns always shown now
         result = runner.invoke(cli, ["pr", "list"], obj=ctx)

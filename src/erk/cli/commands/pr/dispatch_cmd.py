@@ -37,6 +37,7 @@ from erk_shared.impl_context import (
     impl_context_exists,
     remove_impl_context,
 )
+from erk_shared.impl_folder import read_plan_ref, resolve_impl_dir
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 from erk_shared.plan_store.types import PlanNotFound
@@ -120,43 +121,43 @@ def load_workflow_config(repo_root: Path, workflow_name: str) -> dict[str, str]:
 class DispatchResult:
     """Result of dispatching a single plan."""
 
-    issue_number: int
-    issue_title: str
-    issue_url: str
+    plan_number: int
+    plan_title: str
+    plan_url: str
     pr_number: int | None
     pr_url: str | None
     workflow_run_id: str
     workflow_url: str
 
 
-def _build_workflow_run_url(issue_url: str, run_id: str) -> str:
-    """Construct GitHub Actions workflow run URL from issue URL and run ID.
+def _build_workflow_run_url(plan_url: str, run_id: str) -> str:
+    """Construct GitHub Actions workflow run URL from plan URL and run ID.
 
     Args:
-        issue_url: GitHub issue URL (e.g., https://github.com/owner/repo/issues/123)
+        plan_url: GitHub plan URL (e.g., https://github.com/owner/repo/issues/123)
         run_id: Workflow run ID
 
     Returns:
         Workflow run URL (e.g., https://github.com/owner/repo/actions/runs/1234567890)
     """
-    owner_repo = extract_owner_repo_from_github_url(issue_url)
+    owner_repo = extract_owner_repo_from_github_url(plan_url)
     if owner_repo is not None:
         owner, repo = owner_repo
         return construct_workflow_run_url(owner, repo, run_id)
     return f"https://github.com/actions/runs/{run_id}"
 
 
-def _build_pr_url(issue_url: str, pr_number: int) -> str:
-    """Construct GitHub PR URL from issue URL and PR number.
+def _build_pr_url(plan_url: str, pr_number: int) -> str:
+    """Construct GitHub PR URL from plan URL and PR number.
 
     Args:
-        issue_url: GitHub issue URL (e.g., https://github.com/owner/repo/issues/123)
+        plan_url: GitHub plan URL (e.g., https://github.com/owner/repo/issues/123)
         pr_number: PR number
 
     Returns:
         PR URL (e.g., https://github.com/owner/repo/pull/456)
     """
-    owner_repo = extract_owner_repo_from_github_url(issue_url)
+    owner_repo = extract_owner_repo_from_github_url(plan_url)
     if owner_repo is not None:
         owner, repo = owner_repo
         return construct_pr_url(owner, repo, pr_number)
@@ -295,7 +296,7 @@ def _dispatch_planned_pr_plan(
     )
 
     # Stage, commit, and push
-    ctx.git.commit.stage_files(repo.root, [IMPL_CONTEXT_DIR])
+    ctx.git.commit.stage_files(repo.root, [IMPL_CONTEXT_DIR], force=True)
     ctx.git.commit.commit(repo.root, f"Add plan for PR #{plan_number}")
     push_result = ctx.git.remote.push_to_remote(
         repo.root, "origin", branch_name, set_upstream=False, force=False
@@ -303,6 +304,10 @@ def _dispatch_planned_pr_plan(
     if isinstance(push_result, PushError):
         raise UserFacingCliError(push_result.message)
     user_output(click.style("✓", fg="green") + " Branch pushed to remote")
+
+    # Fix Graphite tracking divergence caused by pull_rebase + commit
+    if ctx.graphite_branch_ops is not None:
+        ctx.graphite_branch_ops.retrack_branch(repo.root, branch_name)
 
     # Switch back to original branch
     ctx.branch_manager.checkout_branch(repo.root, original_branch)
@@ -345,7 +350,7 @@ def _dispatch_planned_pr_plan(
             plan_backend=ctx.plan_backend,
             github=ctx.github,
             repo_root=repo.root,
-            issue_number=plan_number,
+            plan_number=plan_number,
             run_id=run_id,
             dispatched_at=queued_at,
         )
@@ -404,9 +409,9 @@ def _dispatch_planned_pr_plan(
     pr_url = _build_pr_url(validated.url, plan_number)
 
     return DispatchResult(
-        issue_number=plan_number,
-        issue_title=validated.title,
-        issue_url=validated.url,
+        plan_number=plan_number,
+        plan_title=validated.title,
+        plan_url=validated.url,
         pr_number=plan_number,
         pr_url=pr_url,
         workflow_run_id=run_id,
@@ -414,8 +419,34 @@ def _dispatch_planned_pr_plan(
     )
 
 
+def _detect_plan_number_from_context(
+    repo: RepoContext,
+    *,
+    branch_name: str | None,
+) -> int | None:
+    """Detect plan PR number from local context when no argument given.
+
+    Uses resolve_impl_dir() for unified discovery across legacy .impl/
+    and branch-scoped .erk/impl-context/ directories.
+
+    Args:
+        repo: Repository context
+        branch_name: Current git branch name, or None
+
+    Returns:
+        Detected PR number, or None if nothing found.
+    """
+    impl_dir = resolve_impl_dir(repo.root, branch_name=branch_name)
+    if impl_dir is not None:
+        plan_ref = read_plan_ref(impl_dir)
+        if plan_ref is not None and plan_ref.plan_id.isdigit():
+            return int(plan_ref.plan_id)
+
+    return None
+
+
 @click.command("dispatch")
-@click.argument("issue_numbers", type=int, nargs=-1, required=True)
+@click.argument("plan_numbers", type=int, nargs=-1, required=False)
 @click.option(
     "--base",
     type=str,
@@ -423,20 +454,22 @@ def _dispatch_planned_pr_plan(
     help="Base branch for PR (defaults to current branch).",
 )
 @click.pass_obj
-def pr_dispatch(ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | None) -> None:
+def pr_dispatch(ctx: ErkContext, plan_numbers: tuple[int, ...], base: str | None) -> None:
     """Dispatch plans for remote AI implementation via GitHub Actions.
 
     Creates branch and draft PR locally (for correct commit attribution),
-    then triggers the dispatch-erk-queue.yml GitHub Actions workflow.
+    then triggers the plan-implement.yml GitHub Actions workflow.
 
     Arguments:
-        ISSUE_NUMBERS: One or more GitHub issue numbers to dispatch
+        PLAN_NUMBERS: One or more plan numbers to dispatch.
+            If omitted, auto-detects from the resolved implementation directory or current branch.
 
     \b
     Example:
         erk pr dispatch 123
         erk pr dispatch 123 456 789
         erk pr dispatch 123 --base master
+        erk pr dispatch                     # auto-detect from context
 
     Requires:
         - All issues must have erk-plan label
@@ -466,6 +499,20 @@ def pr_dispatch(ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | Non
         )
         raise SystemExit(1)
 
+    # If no arguments given, try to auto-detect from context
+    if not plan_numbers:
+        detected = _detect_plan_number_from_context(repo, branch_name=original_branch)
+        if detected is None:
+            user_output(
+                click.style("Error: ", fg="red")
+                + "No plan numbers provided and could not auto-detect from context.\n\n"
+                "Provide plan numbers explicitly: erk pr dispatch <number>\n"
+                "Or run from a plan branch with an associated PR."
+            )
+            raise SystemExit(1)
+        user_output(f"Auto-detected PR #{detected} from context")
+        plan_numbers = (detected,)
+
     # Validate base branch if provided, otherwise default to current branch (LBYL)
     if base is not None:
         if not ctx.git.branch.branch_exists_on_remote(repo.root, "origin", base):
@@ -484,32 +531,28 @@ def pr_dispatch(ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | Non
         else:
             target_branch = original_branch
 
-    # For single-issue learn plan dispatches, auto-detect parent branch
-    issue_number = issue_numbers[0] if len(issue_numbers) == 1 else None
-    if issue_number is not None and base is None:
-        user_output(f"Checking issue #{issue_number}...")
-    if (
-        issue_number is not None
-        and base is None
-        and ctx.issues.issue_exists(repo.root, issue_number)
-    ):
-        issue = ctx.issues.get_issue(repo.root, issue_number)
-        # issue_exists check above ensures this won't be IssueNotFound
-        if not isinstance(issue, IssueNotFound) and is_issue_learn_plan(issue.labels):
-            parent_branch = get_learn_plan_parent_branch(ctx, repo.root, str(issue_number))
-            if parent_branch is not None and ctx.git.branch.branch_exists_on_remote(
-                repo.root, "origin", parent_branch
-            ):
-                target_branch = parent_branch
-                user_output(
-                    f"Learn plan detected, stacking on parent branch: "
-                    f"{click.style(parent_branch, fg='cyan')}"
-                )
-            elif parent_branch is not None:
-                user_output(
-                    click.style("Warning: ", fg="yellow")
-                    + f"Parent branch '{parent_branch}' not on remote, using trunk"
-                )
+    # For single-plan learn plan dispatches, auto-detect parent branch
+    plan_number = plan_numbers[0] if len(plan_numbers) == 1 else None
+    if plan_number is not None and base is None:
+        user_output(f"Checking plan #{plan_number}...")
+        if ctx.issues.issue_exists(repo.root, plan_number):
+            issue = ctx.issues.get_issue(repo.root, plan_number)
+            # issue_exists check above ensures this won't be IssueNotFound
+            if not isinstance(issue, IssueNotFound) and is_issue_learn_plan(issue.labels):
+                parent_branch = get_learn_plan_parent_branch(ctx, repo.root, str(plan_number))
+                if parent_branch is not None and ctx.git.branch.branch_exists_on_remote(
+                    repo.root, "origin", parent_branch
+                ):
+                    target_branch = parent_branch
+                    user_output(
+                        f"Learn plan detected, stacking on parent branch: "
+                        f"{click.style(parent_branch, fg='cyan')}"
+                    )
+                elif parent_branch is not None:
+                    user_output(
+                        click.style("Warning: ", fg="yellow")
+                        + f"Parent branch '{parent_branch}' not on remote, using trunk"
+                    )
 
     # Get GitHub username (authentication already validated)
     user_output("Resolving GitHub username...")
@@ -517,13 +560,13 @@ def pr_dispatch(ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | Non
     submitted_by = username or "unknown"
 
     # Validate all planned-PR plans upfront
-    user_output(f"Validating {len(issue_numbers)} planned-PR plan(s)...")
+    user_output(f"Validating {len(plan_numbers)} planned-PR plan(s)...")
     user_output("")
 
     validated_planned_prs: list[ValidatedPlannedPR] = []
-    for issue_number in issue_numbers:
-        user_output(f"Validating PR #{issue_number}...")
-        validated_pr = _validate_planned_pr_for_dispatch(ctx, repo, issue_number)
+    for plan_number in plan_numbers:
+        user_output(f"Validating PR #{plan_number}...")
+        validated_pr = _validate_planned_pr_for_dispatch(ctx, repo, plan_number)
         validated_planned_prs.append(validated_pr)
 
     user_output("")
@@ -562,8 +605,8 @@ def pr_dispatch(ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | Non
     user_output("")
     user_output("Dispatched plans:")
     for r in results:
-        user_output(f"  #{r.issue_number}: {r.issue_title}")
-        user_output(f"    Issue: {r.issue_url}")
+        user_output(f"  #{r.plan_number}: {r.plan_title}")
+        user_output(f"    Plan: {r.plan_url}")
         if r.pr_url:
             user_output(f"    PR: {r.pr_url}")
         user_output(f"    Workflow: {r.workflow_url}")

@@ -23,7 +23,7 @@ def _make_state(
     force: bool = False,
     debug: bool = False,
     session_id: str = "test-session",
-    issue_number: int | None = None,
+    plan_id: str | None = None,
     pr_number: int | None = None,
     pr_url: str | None = None,
     was_created: bool = False,
@@ -46,7 +46,7 @@ def _make_state(
         session_id=session_id,
         skip_description=False,
         quiet=False,
-        issue_number=issue_number,
+        plan_id=plan_id,
         pr_number=pr_number,
         pr_url=pr_url,
         was_created=was_created,
@@ -98,9 +98,8 @@ def test_detached_head_returns_error(tmp_path: Path) -> None:
 def test_issue_linkage_mismatch_returns_error(tmp_path: Path) -> None:
     """Branch with P-prefix cannot extract issue number, no mismatch possible.
 
-    Since extract_leading_issue_number() always returns None, P-prefix branches
-    cannot provide an issue number. The test verifies issue_number comes from
-    issue.json without any mismatch error.
+    P-prefix branches cannot provide an issue number. The test verifies plan_id
+    comes from issue.json without any mismatch error.
     """
     # Create .impl/issue.json with issue number
     impl_dir = tmp_path / ".impl"
@@ -129,15 +128,14 @@ def test_issue_linkage_mismatch_returns_error(tmp_path: Path) -> None:
 
     # No mismatch error since branch cannot provide issue number
     assert isinstance(result, SubmitState)
-    assert result.issue_number == 99  # From issue.json
+    assert result.plan_id == "99"  # From issue.json
 
 
 def test_auto_repair_creates_plan_ref_json(tmp_path: Path) -> None:
     """Branch with P-prefix cannot extract issue number, no auto-repair possible.
 
-    Since extract_leading_issue_number() always returns None, P-prefix branches
-    cannot provide an issue number for auto-repair. Without plan-ref.json,
-    issue_number remains None.
+    P-prefix branches cannot provide an issue number for auto-repair. Without
+    plan-ref.json, plan_id remains None.
     """
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
@@ -155,14 +153,14 @@ def test_auto_repair_creates_plan_ref_json(tmp_path: Path) -> None:
 
     assert isinstance(result, SubmitState)
     # No auto-repair since branch cannot provide issue number
-    assert result.issue_number is None
+    assert result.plan_id is None
     # Verify plan-ref.json was NOT created
     plan_ref_json = impl_dir / "plan-ref.json"
     assert not plan_ref_json.exists()
 
 
-def test_no_issue_number_from_branch(tmp_path: Path) -> None:
-    """Regular branch (no P-prefix) => issue_number=None."""
+def test_no_plan_id_from_branch(tmp_path: Path) -> None:
+    """Regular branch (no P-prefix) => plan_id=None."""
     fake_git = FakeGit(
         repository_roots={tmp_path: tmp_path},
         current_branches={tmp_path: "feature-branch"},
@@ -174,11 +172,11 @@ def test_no_issue_number_from_branch(tmp_path: Path) -> None:
     result = prepare_state(ctx, state)
 
     assert isinstance(result, SubmitState)
-    assert result.issue_number is None
+    assert result.plan_id is None
 
 
-def test_issue_from_impl_folder(tmp_path: Path) -> None:
-    """.impl/issue.json present => issue_number populated."""
+def test_plan_id_from_impl_folder(tmp_path: Path) -> None:
+    """.impl/issue.json present => plan_id populated."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
     issue_json = impl_dir / "issue.json"
@@ -204,7 +202,7 @@ def test_issue_from_impl_folder(tmp_path: Path) -> None:
     result = prepare_state(ctx, state)
 
     assert isinstance(result, SubmitState)
-    assert result.issue_number == 55
+    assert result.plan_id == "55"
 
 
 def test_parent_falls_back_to_trunk(tmp_path: Path) -> None:

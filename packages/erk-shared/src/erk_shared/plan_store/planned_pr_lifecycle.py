@@ -28,31 +28,32 @@ Stages
 
 1. Plan Creation
    ``plan_save`` / ``PlannedPRBackend.create_plan()`` creates a draft PR.
-   The body contains the plan-header metadata block, the plan content
-   collapsed in a <details> tag, and a checkout footer.
+   The body contains the plan content collapsed in a <details> tag,
+   followed by the plan-header metadata block and a checkout footer.
+   The metadata block is self-delimiting via HTML comment markers,
+   so no separator is needed.
 
    Body format::
 
-       [metadata block]
-       \\n\\n---\\n\\n
        <details>
        <summary>original-plan</summary>
 
        [plan content]
 
        </details>
+
+       [metadata block]
        \\n---\\n
        [checkout footer]
 
 2. Implementation
    After code changes, ``erk pr submit`` / ``erk pr rewrite`` rewrites the body.
-   The metadata block is preserved. The AI-generated summary is inserted
-   before the collapsed plan. The footer is regenerated.
+   The metadata block is preserved (extracted via ``find_metadata_block``
+   from ``metadata/core.py``). The AI-generated summary is inserted before
+   the collapsed plan. The footer is regenerated.
 
    Body format::
 
-       [metadata block]
-       \\n\\n---\\n\\n
        [AI-generated summary]
 
        <details>
@@ -61,6 +62,8 @@ Stages
        [plan content]
 
        </details>
+
+       [metadata block]
        \\n---\\n
        [checkout footer]
 
@@ -74,13 +77,11 @@ Stages
 
 Separators
 ----------
-- Content separator: ``\\n\\n---\\n\\n`` (double newline each side) --
-  between metadata block and content section
 - Footer separator: ``\\n---\\n`` (single newline each side) --
   standard PR footer delimiter
-
-These are distinct: find() matches the first (content), rsplit() matches
-the last (footer).
+- Content separator (``PLAN_CONTENT_SEPARATOR``): Legacy constant kept
+  only for backward compatibility in ``extract_plan_content`` for old PRs
+  that still use the flat format.
 """
 
 IMPL_CONTEXT_DIR = ".erk/impl-context"
@@ -92,7 +93,7 @@ DETAILS_CLOSE = "\n\n</details>"
 
 
 def build_plan_stage_body(metadata_body: str, plan_content: str) -> str:
-    """Build Stage 1 body: metadata + separator + details-wrapped plan.
+    """Build Stage 1 body: details-wrapped plan + metadata at bottom.
 
     The footer is NOT included here because it needs the PR number,
     which isn't known until after ``create_pr`` returns.
@@ -104,9 +105,7 @@ def build_plan_stage_body(metadata_body: str, plan_content: str) -> str:
     Returns:
         Combined PR body ready for ``create_pr`` (without footer)
     """
-    return (
-        metadata_body + "\n" + PLAN_CONTENT_SEPARATOR + DETAILS_OPEN + plan_content + DETAILS_CLOSE
-    )
+    return DETAILS_OPEN + plan_content + DETAILS_CLOSE + "\n\n" + metadata_body
 
 
 def build_original_plan_section(plan_content: str) -> str:
@@ -169,24 +168,3 @@ def extract_plan_content(pr_body: str) -> str:
     if "<!-- erk:metadata-block:" not in candidate_prefix:
         return pr_body
     return pr_body[separator_index + len(PLAN_CONTENT_SEPARATOR) :]
-
-
-def extract_plan_header_block(pr_body: str) -> str:
-    """Extract the plan-header metadata block + separator for preservation during stage transitions.
-
-    Returns everything up to and including the content separator.
-    If no separator is found, returns an empty string.
-
-    Args:
-        pr_body: Full PR body string
-
-    Returns:
-        Plan header block (metadata block + separator) or empty string
-    """
-    separator_index = pr_body.find(PLAN_CONTENT_SEPARATOR)
-    if separator_index == -1:
-        return ""
-    prefix = pr_body[: separator_index + len(PLAN_CONTENT_SEPARATOR)]
-    if "<!-- erk:metadata-block:" not in prefix:
-        return ""
-    return prefix

@@ -17,7 +17,7 @@ def test_get_pr_body_footer_outputs_combined_checkout_and_sync() -> None:
     result = runner.invoke(get_pr_body_footer, ["--pr-number", "1895"])
 
     assert result.exit_code == 0
-    assert 'source "$(erk pr checkout 1895 --script)" && erk pr sync --dangerous' in result.output
+    assert 'source "$(erk pr checkout 1895 --script)"' in result.output
     assert "---" in result.output
     assert "To checkout this PR" in result.output
 
@@ -39,23 +39,12 @@ def test_get_pr_body_footer_different_pr_numbers() -> None:
     result = runner.invoke(get_pr_body_footer, ["--pr-number", "42"])
 
     assert result.exit_code == 0
-    assert 'source "$(erk pr checkout 42 --script)" && erk pr sync --dangerous' in result.output
+    assert 'source "$(erk pr checkout 42 --script)"' in result.output
     assert "1895" not in result.output
 
 
-def test_get_pr_body_footer_with_plan_number() -> None:
-    """Test that footer includes Closes #N when plan-number is provided."""
-    runner = CliRunner()
-
-    result = runner.invoke(get_pr_body_footer, ["--pr-number", "1895", "--plan-number", "123"])
-
-    assert result.exit_code == 0
-    assert "Closes #123" in result.output
-    assert "erk pr checkout 1895" in result.output
-
-
-def test_get_pr_body_footer_without_plan_number() -> None:
-    """Test that footer does not include Closes #N when plan-number is not provided."""
+def test_get_pr_body_footer_never_includes_closes() -> None:
+    """Test that footer never includes Closes #N."""
     runner = CliRunner()
 
     result = runner.invoke(get_pr_body_footer, ["--pr-number", "1895"])

@@ -37,7 +37,7 @@ def _make_state(
         session_id="test-session",
         skip_description=False,
         quiet=False,
-        issue_number=None,
+        plan_id=None,
         pr_number=None,
         pr_url=None,
         was_created=False,

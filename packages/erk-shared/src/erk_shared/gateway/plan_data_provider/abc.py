@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from erk.tui.data.types import PlanFilters, PlanRowData
+from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
 from erk.tui.sorting.types import BranchActivity
 from erk_shared.gateway.browser.abc import BrowserLauncher
 from erk_shared.gateway.clipboard.abc import Clipboard
@@ -47,14 +47,14 @@ class PlanDataProvider(ABC):
         ...
 
     @abstractmethod
-    def fetch_plans(self, filters: PlanFilters) -> list[PlanRowData]:
+    def fetch_plans(self, filters: PlanFilters) -> tuple[list[PlanRowData], FetchTimings | None]:
         """Fetch plans matching the given filters.
 
         Args:
             filters: Filter options for the query
 
         Returns:
-            List of PlanRowData objects for display
+            Tuple of (list of PlanRowData for display, optional FetchTimings breakdown)
         """
         ...
 
@@ -72,11 +72,11 @@ class PlanDataProvider(ABC):
         ...
 
     @abstractmethod
-    def submit_to_queue(self, plan_id: int, plan_url: str) -> None:
-        """Submit a plan to the implementation queue.
+    def dispatch_to_queue(self, plan_id: int, plan_url: str) -> None:
+        """Dispatch a plan to the implementation queue.
 
         Args:
-            plan_id: The plan ID to submit
+            plan_id: The plan ID to dispatch
             plan_url: The plan URL for repository context
         """
         ...
@@ -125,10 +125,13 @@ class PlanDataProvider(ABC):
 
     @abstractmethod
     def fetch_plans_by_ids(self, plan_ids: set[int]) -> list[PlanRowData]:
-        """Fetch specific plans by their issue numbers.
+        """Fetch specific plans by their GitHub numbers.
+
+        Works for both issue-backed and PR-backed plans via the
+        issueOrPullRequest GraphQL query.
 
         Args:
-            plan_ids: Set of plan issue numbers to fetch
+            plan_ids: Set of plan numbers to fetch (issue or PR numbers)
 
         Returns:
             List of PlanRowData objects for the specified plans, sorted by plan_id
@@ -144,6 +147,21 @@ class PlanDataProvider(ABC):
 
         Returns:
             List of PlanRowData objects for plans linked to this objective
+        """
+        ...
+
+    @abstractmethod
+    def get_branch_stack(self, branch: str) -> list[str] | None:
+        """Get the Graphite stack containing a branch.
+
+        Returns the ordered list of branch names in the same stack,
+        or None if the branch is not part of a Graphite stack.
+
+        Args:
+            branch: The branch name to look up
+
+        Returns:
+            Ordered list of branch names in the stack, or None
         """
         ...
 

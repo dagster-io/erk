@@ -18,16 +18,13 @@ from erk.core.commit_message_generator import (
 )
 from erk.core.context import ErkContext
 from erk.core.plan_context_provider import PlanContext
+from erk_shared.gateway.github.metadata.core import find_metadata_block, render_metadata_block
 from erk_shared.gateway.github.metadata.schemas import LIFECYCLE_STAGE
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.pr.diff_extraction import execute_diff_extraction
 from erk_shared.plan_store.conversion import header_str
-from erk_shared.plan_store.planned_pr_lifecycle import (
-    PLAN_CONTENT_SEPARATOR,
-    build_original_plan_section,
-    extract_plan_header_block,
-)
+from erk_shared.plan_store.planned_pr_lifecycle import build_original_plan_section
 from erk_shared.plan_store.types import PlanNotFound
 
 # ---------------------------------------------------------------------------
@@ -212,8 +209,6 @@ def assemble_pr_body(
     body: str,
     plan_context: PlanContext | None,
     pr_number: int,
-    issue_number: int | None,
-    plans_repo: str | None,
     header: str,
     existing_pr_body: str,
 ) -> str:
@@ -223,8 +218,6 @@ def assemble_pr_body(
         body: AI-generated body content
         plan_context: Optional plan context for <details> section
         pr_number: PR number for footer checkout command
-        issue_number: Optional issue number for "Closes #N"
-        plans_repo: Optional plans repo for cross-repo references
         header: Existing PR header to preserve (may be empty)
         existing_pr_body: Full PR body captured before gt submit overwrites it.
             Used to extract plan-header metadata block. When the extracted block
@@ -234,28 +227,23 @@ def assemble_pr_body(
     Returns:
         Complete PR body ready for GitHub API
     """
-    plan_header_block = extract_plan_header_block(existing_pr_body)
+    plan_header = find_metadata_block(existing_pr_body, "plan-header")
 
     pr_body_content = body
     if plan_context is not None:
-        if plan_header_block:
+        if plan_header is not None:
             # Draft PR: use original-plan format (from lifecycle module)
             pr_body_content = body + build_original_plan_section(plan_context.plan_content)
         else:
             # Issue-based: use existing format
             pr_body_content = body + build_plan_details_section(plan_context)
 
-    footer = build_pr_body_footer(
-        pr_number,
-        issue_number=issue_number,
-        plans_repo=plans_repo,
-    )
+    footer = build_pr_body_footer(pr_number)
 
     # Place metadata and header below content, above footer
     suffix = ""
-    if plan_header_block:
-        # Strip the content separator that was used when metadata was at top
-        suffix = "\n\n" + plan_header_block.removesuffix(PLAN_CONTENT_SEPARATOR)
+    if plan_header is not None:
+        suffix = "\n\n" + render_metadata_block(plan_header)
     if header:
         suffix = "\n\n" + header.rstrip("\n") + suffix
 

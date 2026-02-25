@@ -31,36 +31,47 @@ from typing import NoReturn
 
 import click
 
-from erk_shared.impl_folder import read_plan_ref
+from erk_shared.context.helpers import require_cwd, require_git
+from erk_shared.impl_folder import read_plan_ref, resolve_impl_dir
 
 
 def _error(msg: str) -> NoReturn:
     """Output error message and exit with code 1."""
-    click.echo(f"❌ Error: {msg}", err=True)
+    click.echo(f"Error: {msg}", err=True)
     raise SystemExit(1)
 
 
-def _validate_impl_folder() -> Path:
-    """Validate .impl/ folder exists and has required files.
+def _validate_impl_folder(ctx: click.Context) -> Path:
+    """Validate implementation folder exists and has required files.
+
+    Uses resolve_impl_dir() for branch-scoped discovery.
+
+    Args:
+        ctx: Click context for dependency injection.
 
     Returns:
-        Path to .impl/ directory
+        Path to implementation directory
 
     Raises:
         SystemExit: If validation fails
     """
-    impl_dir = Path.cwd() / ".impl"
+    cwd = require_cwd(ctx)
+    git = require_git(ctx)
+    branch_name = git.branch.get_current_branch(cwd)
 
-    if not impl_dir.exists():
-        _error("No .impl/ folder found in current directory")
+    impl_dir = resolve_impl_dir(cwd, branch_name=branch_name)
+
+    if impl_dir is None:
+        click.echo("Error: No implementation folder found in current directory", err=True)
+        raise SystemExit(1)
 
     plan_file = impl_dir / "plan.md"
     if not plan_file.exists():
-        _error("No plan.md found in .impl/ folder")
+        _error(f"No plan.md found in {impl_dir.name}/ folder")
 
     progress_file = impl_dir / "progress.md"
     if not progress_file.exists():
-        _error("No progress.md found in .impl/ folder")
+        _error(f"No progress.md found in {impl_dir.name}/ folder")
 
     return impl_dir
 
@@ -124,16 +135,17 @@ The /erk:plan-implement slash command will:
 
 @click.command(name="check-impl")
 @click.option("--dry-run", is_flag=True, help="Validate and output JSON")
-def check_impl(dry_run: bool) -> None:
-    """Check .impl/ folder structure and validate prerequisites.
+@click.pass_context
+def check_impl(ctx: click.Context, dry_run: bool) -> None:
+    """Check implementation folder structure and validate prerequisites.
 
-    Validates that .impl/ folder exists with required files (plan.md, progress.md).
-    Checks for optional issue.json to enable GitHub progress tracking.
+    Validates that implementation folder exists with required files (plan.md, progress.md).
+    Checks for optional plan-ref.json to enable GitHub progress tracking.
 
     In dry-run mode, outputs JSON with validation status.
     In normal mode, outputs instructions for running the implementation.
     """
-    impl_dir = _validate_impl_folder()
+    impl_dir = _validate_impl_folder(ctx)
     # In dry-run mode, suppress info messages to keep JSON output clean
     plan_info = _get_plan_reference(impl_dir, silent=dry_run)
 

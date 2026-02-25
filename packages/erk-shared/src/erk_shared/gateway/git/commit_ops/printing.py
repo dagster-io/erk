@@ -31,10 +31,11 @@ class PrintingGitCommitOps(PrintingBase, GitCommitOps):
     # Mutation Operations (print before delegating)
     # ============================================================================
 
-    def stage_files(self, cwd: Path, paths: list[str]) -> None:
+    def stage_files(self, cwd: Path, paths: list[str], *, force: bool) -> None:
         """Stage files with printed output."""
-        self._emit(self._format_command(f"git add {' '.join(paths)}"))
-        self._wrapped.stage_files(cwd, paths)
+        flag = " -f" if force else ""
+        self._emit(self._format_command(f"git add{flag} {' '.join(paths)}"))
+        self._wrapped.stage_files(cwd, paths, force=force)
 
     def commit(self, cwd: Path, message: str) -> None:
         """Commit with printed output."""

@@ -12,6 +12,10 @@ tripwires:
     warning: "Textual's LSP reserves _render(). Use _refresh_display() instead (see ViewBar)."
   - action: "pushing PlanBodyScreen without explicit content_type"
     warning: "Content type must come from view_mode at push time, not derived inside the screen."
+  - action: "adding labels to ViewConfig.labels expecting OR semantics from GitHub API"
+    warning: "GitHub GraphQL uses AND semantics for label arrays. Multiple labels in a single ViewConfig.labels means items must have ALL listed labels. Use separate views for separate label types. See github-graphql-label-semantics.md."
+  - action: "adding the same label to multiple ViewConfig entries without exclude_labels"
+    warning: "Without exclude_labels, items matching the shared label appear in multiple views. Use exclude_labels for defense-in-depth deduplication (Plans view excludes erk-learn)."
 last_audited: "2026-02-17 00:00 PT"
 audit_result: edited
 ---
@@ -28,52 +32,47 @@ The TUI supports three views — Plans, Learn, and Objectives — with instant s
 
 **ViewConfig** frozen dataclass holds per-view configuration:
 
-| Field          | Type              | Description                         |
-| -------------- | ----------------- | ----------------------------------- |
-| `mode`         | `ViewMode`        | Which view this config describes    |
-| `display_name` | `str`             | Human-readable name (e.g., "Plans") |
-| `labels`       | `tuple[str, ...]` | GitHub labels for API queries       |
-| `key_hint`     | `str`             | Keyboard shortcut (e.g., "1")       |
+| Field            | Type              | Description                                         |
+| ---------------- | ----------------- | --------------------------------------------------- |
+| `mode`           | `ViewMode`        | Which view this config describes                    |
+| `display_name`   | `str`             | Human-readable name (e.g., "Plans")                 |
+| `labels`         | `tuple[str, ...]` | GitHub labels for API queries                       |
+| `key_hint`       | `str`             | Keyboard shortcut (e.g., "1")                       |
+| `exclude_labels` | `tuple[str, ...]` | Labels to exclude from results (client-side filter) |
 
 **VIEW_CONFIGS** tuple defines all three views:
 
-| View       | Labels               | Key |
-| ---------- | -------------------- | --- |
-| Plans      | `("erk-plan",)`      | `1` |
-| Learn      | `("erk-plan",)`      | `2` |
-| Objectives | `("erk-objective",)` | `3` |
+| View       | Labels               | Exclude Labels   | Key |
+| ---------- | -------------------- | ---------------- | --- |
+| Plans      | `("erk-plan",)`      | `("erk-learn",)` | `1` |
+| Learn      | `("erk-learn",)`     | `()`             | `2` |
+| Objectives | `("erk-objective",)` | `()`             | `3` |
 
-Plans and Learn share the same API label — this is intentional for the two-tier filtering strategy.
+Plans and Learn use **different** type-specific labels. Plans queries `erk-plan` and excludes `erk-learn` items. Learn queries `erk-learn` directly. Both share the BASE label `erk-planned-pr` on their issues but use different type labels for API queries.
 
-## Two-Tier Filtering
+## Label-Based Filtering
 
-The view system uses two levels of filtering because GitHub's GraphQL API doesn't support negative label filtering:
+Each view uses distinct type-specific labels for API queries:
 
-**Tier 1 — API labels**: The `labels` tuple in ViewConfig determines which issues are fetched from GitHub. Plans and Learn both fetch `erk-plan` issues; Objectives fetches `erk-objective` issues.
+- **Plans view**: Queries `erk-plan` label, then excludes items with `erk-learn` label (via `exclude_labels`)
+- **Learn view**: Queries `erk-learn` label directly
+- **Objectives view**: Queries `erk-objective` label
 
-**Tier 2 — Client-side `is_learn_plan`**: After fetching, `_filter_rows_for_view()` separates plans from learn plans:
-
-- **Plans view**: Excludes rows where `is_learn_plan == True`
-- **Learn view**: Includes only rows where `is_learn_plan == True`
-- **Objectives view**: Returns all rows unchanged
-
-<!-- Source: src/erk/tui/app.py:260-276 -->
-
-This design allows Plans and Learn views to share cached API data while displaying different subsets.
+The `exclude_labels` field on `ViewConfig` enables defense-in-depth: Plans view fetches `erk-plan` issues but filters out any that also have `erk-learn` (server-side label filter + client-side exclude).
 
 ## Cache Strategy
 
-<!-- Source: src/erk/tui/app.py:129 -->
+<!-- Source: src/erk/tui/app.py, _data_cache -->
 
 Data is cached by label tuple: `dict[tuple[str, ...], list[PlanRowData]]`.
 
-Since Plans and Learn share the label `("erk-plan",)`, switching between them is instant — the cached data is reused and only the client-side filter changes. Switching to Objectives requires a fresh API call (different label tuple) but the data is then cached for subsequent switches.
+Plans and Learn use different labels (`("erk-plan",)` vs `("erk-learn",)`), so switching between them requires separate API calls. Each label tuple's data is cached independently for subsequent switches back to the same view.
 
 Cache is populated in `_load_data()` after each successful fetch and looked up in `_switch_view()` before deciding whether to fetch.
 
 ## View Switching Flow
 
-<!-- Source: src/erk/tui/app.py:340-390 -->
+<!-- Source: src/erk/tui/app.py, _switch_view -->
 
 `_switch_view(mode)` orchestrates the transition:
 
@@ -86,7 +85,7 @@ Cache is populated in `_load_data()` after each successful fetch and looked up i
 
 ## PlanDataTable.reconfigure()
 
-<!-- Source: src/erk/tui/widgets/plan_table.py:103-123 -->
+<!-- Source: src/erk/tui/widgets/plan_table.py, reconfigure -->
 
 `reconfigure()` preserves the widget instance while rebuilding its columns:
 
@@ -106,9 +105,9 @@ Renders `1:Plans  2:Learn  3:Objectives` with the active view in bold white and 
 
 Left/right arrow keys cycle through views. This is delegated from `PlanDataTable` to the app:
 
-<!-- Source: src/erk/tui/widgets/plan_table.py:102-108 -->
+<!-- Source: src/erk/tui/widgets/plan_table.py, action_cursor_left, action_cursor_right -->
 
-`PlanDataTable` overrides `action_cursor_left` and `action_cursor_right` to delegate to `ErkDashApp.action_previous_view()` and `action_next_view()` respectively. See `src/erk/tui/widgets/plan_table.py:102-108` for the implementation.
+`PlanDataTable` overrides `action_cursor_left` and `action_cursor_right` to delegate to `ErkDashApp.action_previous_view()` and `action_next_view()` respectively.
 
 The app uses `get_next_view_mode()` and `get_previous_view_mode()` from `src/erk/tui/views/types.py` which cycle through `VIEW_CONFIGS` with wrapping (last -> first, first -> last).
 

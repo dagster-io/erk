@@ -1275,10 +1275,10 @@ def test_pr_submit_shows_found_message_for_existing_pr() -> None:
 
 
 def test_pr_submit_shows_plan_context_phase() -> None:
-    """Test that Phase 3 shows no plan found for P-prefix branches.
+    """Test that Phase 3 shows plan found for branches that have a PR.
 
-    Since extract_leading_issue_number() always returns None, P-prefix branches
-    cannot resolve to plan IDs. The submit command should show "No linked plan found".
+    With PlannedPRBackend, any branch with a PR resolves to that PR as its plan.
+    The submit command shows "Incorporating plan from issue #123" for the PR.
     """
     from datetime import UTC, datetime
 
@@ -1367,7 +1367,7 @@ plan_comment_id: 1000
             body=issue_body,
             state="OPEN",
             url="https://github.com/owner/repo/issues/5823",
-            labels=["erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -1418,16 +1418,16 @@ plan_comment_id: 1000
         result = runner.invoke(pr_group, ["submit", "--no-graphite"], obj=ctx)
 
         assert result.exit_code == 0
-        # Verify Phase 3 shows no plan found (branch-based resolution no longer works)
+        # Verify Phase 3 shows plan found (PR is the plan with PlannedPRBackend)
         assert "Phase 3: Fetching plan context" in result.output
-        assert "No linked plan found" in result.output
+        assert "Incorporating plan from issue #123" in result.output
 
 
 def test_pr_submit_shows_plan_context_with_objective() -> None:
-    """Test that Phase 3 shows no plan found for P-prefix branches.
+    """Test that Phase 3 shows plan found for branches that have a PR.
 
-    Since extract_leading_issue_number() always returns None, P-prefix branches
-    cannot resolve to plan IDs even when the plan is linked to an objective.
+    With PlannedPRBackend, any branch with a PR resolves to that PR as its plan,
+    even when the old issue had an objective linkage.
     """
     from datetime import UTC, datetime
 
@@ -1517,7 +1517,7 @@ objective_issue: 5000
             body=issue_body,
             state="OPEN",
             url="https://github.com/owner/repo/issues/5823",
-            labels=["erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -1582,16 +1582,16 @@ objective_issue: 5000
         result = runner.invoke(pr_group, ["submit", "--no-graphite"], obj=ctx)
 
         assert result.exit_code == 0
-        # Verify Phase 3 shows no plan found (branch-based resolution no longer works)
+        # Verify Phase 3 shows plan found (PR is the plan with PlannedPRBackend)
         assert "Phase 3: Fetching plan context" in result.output
-        assert "No linked plan found" in result.output
+        assert "Incorporating plan from issue #123" in result.output
 
 
 def test_pr_submit_shows_no_plan_message() -> None:
-    """Test that Phase 3 shows 'No linked plan found' for non-plan branches.
+    """Test that Phase 3 shows plan found when branch has a PR.
 
-    When a branch is not linked to an erk-plan issue (regular branch name),
-    the submit command should show a "No linked plan found" message.
+    With PlannedPRBackend, any branch with a PR resolves to that PR as its plan.
+    The submit command shows "Incorporating plan from issue #123".
     """
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -1674,15 +1674,15 @@ def test_pr_submit_shows_no_plan_message() -> None:
             github=github,
             graphite=graphite,
             prompt_executor=executor,
-            issues=FakeGitHubIssues(),  # Force GitHubPlanStore (no plan for "feature" branch)
+            issues=FakeGitHubIssues(),  # No plan for "feature" branch (empty issues)
         )
 
         result = runner.invoke(pr_group, ["submit"], obj=ctx)
 
         assert result.exit_code == 0
-        # Verify Phase 3 shows no linked plan
+        # Verify Phase 3 shows plan found (PR is the plan with PlannedPRBackend)
         assert "Phase 3: Fetching plan context" in result.output
-        assert "No linked plan found" in result.output
+        assert "Incorporating plan from issue #123" in result.output
 
 
 def test_pr_submit_graphite_flow_detects_remote_divergence() -> None:
@@ -1748,7 +1748,7 @@ def test_pr_submit_graphite_flow_detects_remote_divergence() -> None:
         assert result.exit_code != 0
         assert "behind remote by 2 commit(s)" in result.output
         assert "ahead by 1 commit(s)" in result.output
-        assert "erk pr sync-divergence" in result.output
+        assert "erk pr reconcile-with-remote" in result.output
         assert "erk pr submit -f" in result.output
         # gt submit should never have been called
         assert len(graphite.submit_stack_calls) == 0

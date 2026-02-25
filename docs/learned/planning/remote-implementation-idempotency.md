@@ -69,5 +69,4 @@ erk exec setup-impl-from-issue 77
 
 ## Related Topics
 
-- [Submit Branch Reuse](submit-branch-reuse.md) - Similar pattern in submit workflow
 - [Plan Lifecycle](lifecycle.md) - Full plan lifecycle including remote execution

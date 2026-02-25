@@ -229,13 +229,20 @@ def objective_apply_landed_update(
 
     # --- Build roadmap context ---
     roadmap = _build_roadmap_context(objective.body, plan_id)
-    matched_steps = list(node_ids)
+    pr_ref = f"#{pr_number}"
+
+    if node_ids:
+        matched_steps = list(node_ids)
+    else:
+        matched_steps = [
+            node["id"]
+            for phase in roadmap["phases"]
+            for node in phase["nodes"]
+            if node["pr"] == pr_ref
+        ]
 
     # --- Fetch objective prose content ---
     objective_content = _fetch_objective_content(objective.body, issues, repo_root)
-
-    # --- Update roadmap nodes to done ---
-    pr_ref = f"#{pr_number}"
 
     node_updates: list[NodeUpdateDict] = []
     if matched_steps:

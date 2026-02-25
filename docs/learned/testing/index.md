@@ -11,7 +11,7 @@
 - **[cli-testing.md](cli-testing.md)** — writing tests for erk CLI commands, using ErkContext.for_test(), testing Click commands with context
 - **[command-group-testing.md](command-group-testing.md)** — testing Click command groups with invoke_without_command=True, writing tests for commands that serve as both group and default action
 - **[devrun-agent.md](devrun-agent.md)** — using the devrun agent, running CI checks via Task tool, writing prompts for devrun, understanding the parent-agent fix cycle
-- **[dual-backend-testing.md](dual-backend-testing.md)** — writing tests that involve plan storage, testing plan-related features across both backends, creating test helpers for plan store operations
+- **[dual-backend-testing.md](dual-backend-testing.md)** — writing tests that involve plan storage, testing plan-related features, creating test helpers for plan store operations
 - **[env-overrides-pattern.md](env-overrides-pattern.md)** — writing tests that need custom environment variables, testing erk init commands that depend on HOME, using erk_isolated_fs_env fixture with env_overrides
 - **[environment-variable-isolation.md](environment-variable-isolation.md)** — debugging systematic test failures across many test files, working with ERK_PLAN_BACKEND in tests, understanding why tests behave differently based on environment, writing tests that involve plan backend selection
 - **[erk-package-info-pattern.md](erk-package-info-pattern.md)** — working with ErkPackageInfo or bundled paths, understanding is_in_erk_repo detection, writing tests that need ErkPackageInfo
@@ -20,6 +20,7 @@
 - **[exec-script-testing.md](exec-script-testing.md)** — testing exec CLI commands, writing integration tests for scripts, debugging 'Context not initialized' errors in tests, debugging flaky tests in parallel execution
 - **[fake-api-migration-pattern.md](fake-api-migration-pattern.md)** — writing tests that use FakePromptExecutor, choosing between the two FakePromptExecutor implementations, encountering old-style output=/should_fail= patterns in test code
 - **[fake-git-divergence.md](fake-git-divergence.md)** — testing branch divergence scenarios, configuring FakeGit for force-push tests, writing tests that involve ahead/behind commit counts
+- **[fake-github-api-reference.md](fake-github-api-reference.md)** — writing tests that need fake GitHub PR or issue data, understanding FakeGitHub.create_pr() auto-registration, using mutation tracking in GitHub fake tests
 - **[fake-github-mutation-tracking.md](fake-github-mutation-tracking.md)** — asserting against FakeGitHub mutations in tests, adding a new mutation tracking list to FakeGitHub or FakeGitHubIssues, understanding tuple formats in fake gateway tracking lists
 - **[fake-github-testing.md](fake-github-testing.md)** — setting up FakeGitHubIssues in a test, test fails with empty comments from FakeGitHubIssues, choosing between comments and comments_with_urls parameters
 - **[frozen-dataclass-test-doubles.md](frozen-dataclass-test-doubles.md)** — implementing a fake for an ABC interface, adding mutation tracking to a test double, choosing between frozen dataclass fakes and **init**-based fakes, writing tests that assert on method call parameters

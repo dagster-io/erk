@@ -71,6 +71,10 @@ class PrintingGitBranchOps(PrintingBase, GitBranchOps):
         """Get the commit SHA at the head of a branch."""
         return self._wrapped.get_branch_head(repo_root, branch)
 
+    def get_all_branch_heads(self, repo_root: Path) -> dict[str, str]:
+        """Get commit SHAs for all local branches."""
+        return self._wrapped.get_all_branch_heads(repo_root)
+
     def detect_trunk_branch(self, repo_root: Path) -> str:
         """Auto-detect the trunk branch name."""
         return self._wrapped.detect_trunk_branch(repo_root)
@@ -96,10 +100,6 @@ class PrintingGitBranchOps(PrintingBase, GitBranchOps):
     ) -> BranchDivergence:
         """Check if a local branch has diverged from its remote tracking branch."""
         return self._wrapped.is_branch_diverged_from_remote(cwd, branch, remote)
-
-    def get_branch_issue(self, repo_root: Path, branch: str) -> int | None:
-        """Extract GitHub issue number from branch name."""
-        return self._wrapped.get_branch_issue(repo_root, branch)
 
     def get_behind_commit_authors(self, cwd: Path, branch: str) -> list[str]:
         """Get authors of commits on remote that are not in local branch."""

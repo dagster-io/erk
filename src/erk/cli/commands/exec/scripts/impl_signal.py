@@ -43,6 +43,7 @@ import click
 from erk_shared.context.helpers import (
     require_claude_installation,
     require_cwd,
+    require_git,
     require_plan_backend,
     require_repo_root,
 )
@@ -50,6 +51,7 @@ from erk_shared.env import in_github_actions
 from erk_shared.gateway.github.metadata.core import render_erk_issue_event
 from erk_shared.impl_folder import (
     read_plan_ref,
+    resolve_impl_dir,
     write_local_run_state,
 )
 from erk_shared.plan_store.types import PlanNotFound
@@ -174,18 +176,18 @@ def _signal_started(ctx: click.Context, session_id: str | None) -> None:
     # Get cwd from context
     try:
         cwd = require_cwd(ctx)
+        git = require_git(ctx)
     except SystemExit:
         _output_error(event, "context-not-initialized", "Context not initialized")
         return
 
-    # Find impl directory (.impl/ or .erk/impl-context/)
-    impl_dir = cwd / ".impl"
-    if not impl_dir.exists():
-        impl_dir = cwd / ".erk" / "impl-context"
+    # Find impl directory via resolve_impl_dir
+    branch_name = git.branch.get_current_branch(cwd)
+    impl_dir = resolve_impl_dir(cwd, branch_name=branch_name)
 
     # Read plan reference FIRST (doesn't require context)
-    plan_ref = read_plan_ref(impl_dir)
-    if plan_ref is None:
+    plan_ref = read_plan_ref(impl_dir) if impl_dir is not None else None
+    if plan_ref is None or impl_dir is None:
         _output_error(event, "no-issue-reference", "No plan reference found")
         return
 
@@ -287,18 +289,18 @@ def _signal_ended(ctx: click.Context, session_id: str | None) -> None:
     # Get cwd from context
     try:
         cwd = require_cwd(ctx)
+        git = require_git(ctx)
     except SystemExit:
         _output_error(event, "context-not-initialized", "Context not initialized")
         return
 
-    # Find impl directory
-    impl_dir = cwd / ".impl"
-    if not impl_dir.exists():
-        impl_dir = cwd / ".erk" / "impl-context"
+    # Find impl directory via resolve_impl_dir
+    branch_name = git.branch.get_current_branch(cwd)
+    impl_dir = resolve_impl_dir(cwd, branch_name=branch_name)
 
     # Read plan reference FIRST (doesn't require context)
-    plan_ref = read_plan_ref(impl_dir)
-    if plan_ref is None:
+    plan_ref = read_plan_ref(impl_dir) if impl_dir is not None else None
+    if plan_ref is None or impl_dir is None:
         _output_error(event, "no-issue-reference", "No plan reference found")
         return
 
@@ -366,17 +368,17 @@ def _signal_submitted(ctx: click.Context, session_id: str | None) -> None:
     # Get cwd from context
     try:
         cwd = require_cwd(ctx)
+        git = require_git(ctx)
     except SystemExit:
         _output_error(event, "context-not-initialized", "Context not initialized")
         return
 
-    # Find impl directory
-    impl_dir = cwd / ".impl"
-    if not impl_dir.exists():
-        impl_dir = cwd / ".erk" / "impl-context"
+    # Find impl directory via resolve_impl_dir
+    branch_name = git.branch.get_current_branch(cwd)
+    impl_dir = resolve_impl_dir(cwd, branch_name=branch_name)
 
     # Read plan reference
-    plan_ref = read_plan_ref(impl_dir)
+    plan_ref = read_plan_ref(impl_dir) if impl_dir is not None else None
     if plan_ref is None:
         _output_error(event, "no-issue-reference", "No plan reference found")
         return

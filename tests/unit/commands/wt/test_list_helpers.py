@@ -81,17 +81,18 @@ def test_get_sync_status_none_branch() -> None:
 
 
 def test_get_impl_issue_from_impl_folder(tmp_path: Path) -> None:
-    """Test getting impl issue from .impl/issue.json."""
+    """Test getting impl issue from branch-scoped impl folder."""
     worktree_path = tmp_path / "worktree"
     worktree_path.mkdir()
-    impl_dir = worktree_path / ".impl"
-    impl_dir.mkdir()
+    branch = "feature"
+    impl_dir = worktree_path / ".erk" / "impl-context" / branch
+    impl_dir.mkdir(parents=True)
 
     # Create plan.md (required for get_impl_path to return path)
     plan_file = impl_dir / "plan.md"
     plan_file.write_text("# Plan", encoding="utf-8")
 
-    # Create issue.json
+    # Create issue.json (legacy format, still supported by read_plan_ref)
     issue_file = impl_dir / "issue.json"
     issue_file.write_text(
         '{"issue_number": 42, "issue_url": "https://github.com/owner/repo/issues/42", '
@@ -99,40 +100,22 @@ def test_get_impl_issue_from_impl_folder(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    git = FakeGit(existing_paths={plan_file})
+    git = FakeGit(existing_paths={plan_file}, current_branches={worktree_path: branch})
     ctx = create_test_context(git=git)
 
-    issue_text, issue_url = _get_impl_issue(ctx, worktree_path)
+    issue_text, issue_url = _get_impl_issue(ctx, worktree_path, branch=branch)
 
     assert issue_text == "#42"
     assert issue_url == "https://github.com/owner/repo/issues/42"
 
 
-def test_get_impl_issue_from_git_config() -> None:
-    """Test getting impl issue from git config fallback (no URL available)."""
-    worktree_path = Path("/repo/worktree")
-    git = FakeGit(
-        current_branches={worktree_path: "feature"},
-        branch_issues={"feature": 123},
-    )
-    ctx = create_test_context(git=git)
-
-    issue_text, issue_url = _get_impl_issue(ctx, worktree_path)
-
-    assert issue_text == "#123"
-    assert issue_url is None  # Git config doesn't have URL
-
-
 def test_get_impl_issue_none_when_not_found() -> None:
-    """Test getting impl issue returns (None, None) when no issue found."""
+    """Test getting impl issue returns (None, None) when no .impl/ folder exists."""
     worktree_path = Path("/repo/worktree")
-    git = FakeGit(
-        current_branches={worktree_path: "feature"},
-        # No branch_issues configured
-    )
+    git = FakeGit()
     ctx = create_test_context(git=git)
 
-    issue_text, issue_url = _get_impl_issue(ctx, worktree_path)
+    issue_text, issue_url = _get_impl_issue(ctx, worktree_path, branch="some-branch")
 
     assert issue_text is None
     assert issue_url is None

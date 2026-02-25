@@ -226,6 +226,18 @@ class GraphiteBranchManager(BranchManager):
         """
         self.graphite_branch_ops.track_branch(repo_root, branch_name, parent_branch)
 
+    def retrack_branch(self, repo_root: Path, branch_name: str) -> None:
+        """Re-track a branch to fix Graphite tracking divergence.
+
+        Delegates to GraphiteBranchOps.retrack_branch which runs
+        `gt track <branch> --no-interactive`.
+
+        Args:
+            repo_root: Repository root directory
+            branch_name: Name of the branch to re-track
+        """
+        self.graphite_branch_ops.retrack_branch(repo_root, branch_name)
+
     def get_parent_branch(self, repo_root: Path, branch: str) -> str | None:
         """Get parent branch from Graphite's cache.
 

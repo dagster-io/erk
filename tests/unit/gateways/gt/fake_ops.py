@@ -838,26 +838,6 @@ class FakeGtKitOps:
         self._git_instance = None
         return self
 
-    def with_continue_restack_failure(self, stderr: str = "") -> FakeGtKitOps:
-        """Configure continue_restack to fail.
-
-        Args:
-            stderr: Error message to include
-
-        Returns:
-            Self for chaining
-        """
-        # Configure main_graphite to raise RuntimeError for continue_restack
-        existing_branches: dict[str, BranchMetadata] = {}
-        if isinstance(self._main_graphite, FakeGraphite):
-            existing_branches = self._main_graphite._branches
-        error = RuntimeError(f"gt continue failed: {stderr}")
-        self._main_graphite = FakeGraphite(
-            continue_restack_raises=error,
-            branches=existing_branches,
-        )
-        return self
-
     def with_clean_working_tree(self) -> FakeGtKitOps:
         """Configure a clean working tree (no uncommitted changes).
 

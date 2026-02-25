@@ -274,12 +274,6 @@ def test_dryrun_graphite_operations(tmp_path: Path) -> None:
     prs = ctx.graphite.get_prs_from_graphite(git_ops, repo)
     assert isinstance(prs, dict)
 
-    # Test sync prints dry-run message without executing
-    # Note: sync is a write operation, so it should be blocked in dry-run mode
-    ctx.graphite.sync(repo, force=False, quiet=False)
-    # If sync was actually executed, it would require gt CLI to be installed
-    # In dry-run mode, it just prints a message
-
 
 # ============================================================================
 # DryRunGitHubIssues Tests

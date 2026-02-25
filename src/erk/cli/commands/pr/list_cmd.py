@@ -21,7 +21,12 @@ from erk_shared.gateway.browser.real import RealBrowserLauncher
 from erk_shared.gateway.clipboard.fake import FakeClipboard
 from erk_shared.gateway.clipboard.real import RealClipboard
 from erk_shared.gateway.github.emoji import get_pr_status_emoji
-from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo
+from erk_shared.gateway.github.types import (
+    GitHubRepoId,
+    GitHubRepoLocation,
+    IssueFilterState,
+    PullRequestInfo,
+)
 from erk_shared.gateway.http.auth import fetch_github_token
 from erk_shared.gateway.http.fake import FakeHttpClient
 from erk_shared.gateway.http.real import RealHttpClient
@@ -267,7 +272,7 @@ def _pr_list_impl(
             creator = username
 
     # Build labels - default to ["erk-plan"]
-    labels = label if label else ("erk-plan",)
+    labels = label if label else ("erk-pr", "erk-plan")
 
     # Construct RealPlanDataProvider
     # Only fetch_plans() and fetch_branch_activity() are used here;
@@ -282,20 +287,23 @@ def _pr_list_impl(
         http_client=FakeHttpClient(),
     )
 
+    effective_state: IssueFilterState = "closed" if state == "closed" else "open"
+
     filters = PlanFilters(
         labels=labels,
-        state=state,
+        state=effective_state,
         run_state=run_state,
         limit=limit,
         show_prs=True,
         show_runs=True,
+        exclude_labels=(),
         creator=creator,
         show_pr_column=False,
         lifecycle_stage=stage,
     )
 
     # Fetch data via provider
-    rows = provider.fetch_plans(filters)
+    rows, _timings = provider.fetch_plans(filters)
 
     # Apply --stage post-fetch filtering
     if stage is not None:
@@ -373,7 +381,7 @@ def _run_interactive_mode(
             creator = username
 
     # Build labels - default to ["erk-plan"]
-    labels = label if label else ("erk-plan",)
+    labels = label if label else ("erk-pr", "erk-plan")
 
     # Create data provider and filters
     location = GitHubRepoLocation(root=repo_root, repo_id=GitHubRepoId(owner, repo_name))
@@ -391,13 +399,16 @@ def _run_interactive_mode(
         browser=browser,
         http_client=http_client,
     )
+    effective_state: IssueFilterState = "closed" if state == "closed" else "open"
+
     filters = PlanFilters(
         labels=labels,
-        state=state,
+        state=effective_state,
         run_state=run_state,
         limit=limit,
         show_prs=prs,
         show_runs=runs,
+        exclude_labels=(),
         creator=creator,
         show_pr_column=False,
         lifecycle_stage=stage,

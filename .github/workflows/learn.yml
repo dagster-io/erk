@@ -26,7 +26,7 @@ on:
         required: true
         type: string
       plan_backend:
-        description: "Plan backend type (github or draft_pr)"
+        description: "Plan backend type (github or planned_pr)"
         required: false
         type: string
         default: "github"

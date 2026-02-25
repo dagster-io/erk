@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from erk.core.repo_discovery import RepoContext
+from erk.tui.data.types import FetchTimings
 from erk_shared.gateway.browser.fake import FakeBrowserLauncher
 from erk_shared.gateway.clipboard.fake import FakeClipboard
 from erk_shared.gateway.git.abc import WorktreeInfo
@@ -52,9 +53,8 @@ class TestBuildWorktreeMapping:
         """Pool-managed worktree with P-prefix branch no longer extracts issue number.
 
         The directory name is 'erk-slot-02' (no issue prefix), and the branch name
-        is 'P4280-add-required-kwargs-01-05-2230'. Since extract_leading_issue_number()
-        always returns None, the branch cannot provide an issue number and the worktree
-        is not added to the mapping.
+        is 'P4280-add-required-kwargs-01-05-2230'. P-prefix branches cannot be resolved
+        to plan IDs, so the worktree is not added to the mapping.
         """
         repo_root = tmp_path / "repo"
         repo_root.mkdir()
@@ -104,9 +104,8 @@ class TestBuildWorktreeMapping:
         """Issue-named worktree with P-prefix branch no longer extracts issue number.
 
         The directory name is 'P1234-feature-01-01-1200' (has issue prefix), and the
-        branch name matches. Since extract_leading_issue_number() always returns None,
-        the branch cannot provide an issue number and the worktree is not added to
-        the mapping.
+        branch name matches. P-prefix branches cannot be resolved to plan IDs, so
+        the worktree is not added to the mapping.
         """
         repo_root = tmp_path / "repo"
         repo_root.mkdir()
@@ -746,7 +745,6 @@ class TestCommentCountsDisplay:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-            learn_issue_states={},
         )
 
         assert row.resolved_comment_count == 3
@@ -827,7 +825,6 @@ class TestCommentCountsDisplay:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-            learn_issue_states={},
         )
 
         assert row.resolved_comment_count == 0
@@ -894,7 +891,6 @@ class TestCommentCountsDisplay:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-            learn_issue_states={},
         )
 
         assert row.resolved_comment_count == 0
@@ -964,7 +960,6 @@ class TestLearnStatusDisplay:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-            learn_issue_states={},
         )
 
         assert row.learn_status is None
@@ -1033,7 +1028,6 @@ class TestLearnStatusDisplay:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-            learn_issue_states={},
         )
 
         assert row.learn_status == "pending"
@@ -1100,7 +1094,6 @@ class TestLearnStatusDisplay:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-            learn_issue_states={},
         )
 
         assert row.learn_status == "completed_no_plan"
@@ -1169,7 +1162,6 @@ class TestLearnStatusDisplay:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-            learn_issue_states={},
         )
 
         assert row.learn_status == "completed_with_plan"
@@ -1240,7 +1232,6 @@ class TestLearnStatusDisplay:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-            learn_issue_states={},
         )
 
         assert row.learn_status == "plan_completed"
@@ -1304,7 +1295,6 @@ class TestLearnStatusDisplay:
             header_fields=_parse_header_fields(plan_body),
         )
 
-        # Learn issue 456 is closed
         row = provider._build_row_data(
             plan=plan,
             plan_id=123,
@@ -1312,14 +1302,14 @@ class TestLearnStatusDisplay:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-            learn_issue_states={456: True},
         )
 
         assert row.learn_status == "completed_with_plan"
         assert row.learn_plan_issue == 456
-        assert row.learn_plan_issue_closed is True
-        assert row.learn_display == "✅ #456"
-        assert row.learn_display_icon == "✅ #456"
+        # learn_plan_issue_closed is always None (not fetched for perf)
+        assert row.learn_plan_issue_closed is None
+        assert row.learn_display == "📋 #456"
+        assert row.learn_display_icon == "📋 #456"
 
     def test_learn_status_completed_with_plan_open_shows_clipboard(self, tmp_path: Path) -> None:
         """When learn plan issue is open, display clipboard emoji."""
@@ -1377,7 +1367,6 @@ class TestLearnStatusDisplay:
             header_fields=_parse_header_fields(plan_body),
         )
 
-        # Learn issue 456 is open
         row = provider._build_row_data(
             plan=plan,
             plan_id=123,
@@ -1385,12 +1374,12 @@ class TestLearnStatusDisplay:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-            learn_issue_states={456: False},
         )
 
         assert row.learn_status == "completed_with_plan"
         assert row.learn_plan_issue == 456
-        assert row.learn_plan_issue_closed is False
+        # learn_plan_issue_closed is always None (not fetched for perf)
+        assert row.learn_plan_issue_closed is None
         assert row.learn_display == "📋 #456"
         assert row.learn_display_icon == "📋 #456"
 
@@ -1494,7 +1483,6 @@ class TestBlockingDepsPlans:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-            learn_issue_states={},
         )
 
         assert row.objective_head_plans == ()
@@ -1503,18 +1491,16 @@ class TestBlockingDepsPlans:
         """When next node has a non-terminal dep with a plan, it appears in objective_head_plans."""
         provider = self._make_provider(tmp_path)
 
-        # Node 1.1 is in_progress with a plan, node 1.2 depends on it and is pending
+        # Node 1.1 is in_progress with a PR, node 1.2 depends on it and is pending
         body = _make_roadmap_body(
             "- id: '1.1'\n"
             "  description: First step\n"
             "  status: in_progress\n"
-            "  plan: '#100'\n"
-            "  pr: null\n"
+            "  pr: '#100'\n"
             "  depends_on: []\n"
             "- id: '1.2'\n"
             "  description: Second step\n"
             "  status: pending\n"
-            "  plan: null\n"
             "  pr: null\n"
             "  depends_on: ['1.1']\n"
         )
@@ -1540,30 +1526,27 @@ class TestBlockingDepsPlans:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-            learn_issue_states={},
         )
 
         assert len(row.objective_head_plans) == 1
         display, url = row.objective_head_plans[0]
         assert display == "#100"
-        assert url == "https://github.com/test/repo/issues/100"
+        assert url == "https://github.com/test/repo/pull/100"
 
-    def test_blocking_dep_without_plan_not_collected(self, tmp_path: Path) -> None:
-        """When next node has a non-terminal dep without a plan, it is not collected."""
+    def test_blocking_dep_without_pr_not_collected(self, tmp_path: Path) -> None:
+        """When next node has a non-terminal dep without a PR, it is not collected."""
         provider = self._make_provider(tmp_path)
 
-        # Node 1.1 is in_progress but has no plan
+        # Node 1.1 is in_progress but has no PR
         body = _make_roadmap_body(
             "- id: '1.1'\n"
             "  description: First step\n"
             "  status: in_progress\n"
-            "  plan: null\n"
             "  pr: null\n"
             "  depends_on: []\n"
             "- id: '1.2'\n"
             "  description: Second step\n"
             "  status: pending\n"
-            "  plan: null\n"
             "  pr: null\n"
             "  depends_on: ['1.1']\n"
         )
@@ -1589,7 +1572,6 @@ class TestBlockingDepsPlans:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-            learn_issue_states={},
         )
 
         assert row.objective_head_plans == ()
@@ -1598,24 +1580,21 @@ class TestBlockingDepsPlans:
         """Multiple non-terminal deps with plans are all collected."""
         provider = self._make_provider(tmp_path)
 
-        # Nodes 1.1 and 1.2 are in_progress with plans, node 1.3 depends on both
+        # Nodes 1.1 and 1.2 are in_progress with PRs, node 1.3 depends on both
         body = _make_roadmap_body(
             "- id: '1.1'\n"
             "  description: First step\n"
             "  status: in_progress\n"
-            "  plan: '#100'\n"
-            "  pr: null\n"
+            "  pr: '#100'\n"
             "  depends_on: []\n"
             "- id: '1.2'\n"
             "  description: Second step\n"
             "  status: in_progress\n"
-            "  plan: '#200'\n"
-            "  pr: null\n"
+            "  pr: '#200'\n"
             "  depends_on: []\n"
             "- id: '1.3'\n"
             "  description: Third step\n"
             "  status: pending\n"
-            "  plan: null\n"
             "  pr: null\n"
             "  depends_on: ['1.1', '1.2']\n"
         )
@@ -1641,7 +1620,6 @@ class TestBlockingDepsPlans:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-            learn_issue_states={},
         )
 
         assert len(row.objective_head_plans) == 2
@@ -1711,7 +1689,7 @@ class TestFetchPlansByIds:
                 body=body,
                 state="OPEN",
                 url="https://github.com/test/repo/issues/100",
-                labels=["erk-plan"],
+                labels=["erk-pr", "erk-plan"],
                 assignees=[],
                 created_at=datetime(2025, 1, 1, tzinfo=UTC),
                 updated_at=datetime(2025, 1, 2, tzinfo=UTC),
@@ -1723,7 +1701,7 @@ class TestFetchPlansByIds:
                 body=body,
                 state="CLOSED",
                 url="https://github.com/test/repo/issues/200",
-                labels=["erk-plan"],
+                labels=["erk-pr", "erk-plan"],
                 assignees=[],
                 created_at=datetime(2025, 1, 1, tzinfo=UTC),
                 updated_at=datetime(2025, 1, 2, tzinfo=UTC),
@@ -1747,7 +1725,7 @@ class TestFetchPlansByIds:
                 body=body,
                 state="OPEN",
                 url="https://github.com/test/repo/issues/300",
-                labels=["erk-plan"],
+                labels=["erk-pr", "erk-plan"],
                 assignees=[],
                 created_at=datetime(2025, 1, 1, tzinfo=UTC),
                 updated_at=datetime(2025, 1, 2, tzinfo=UTC),
@@ -1759,7 +1737,7 @@ class TestFetchPlansByIds:
                 body=body,
                 state="OPEN",
                 url="https://github.com/test/repo/issues/100",
-                labels=["erk-plan"],
+                labels=["erk-pr", "erk-plan"],
                 assignees=[],
                 created_at=datetime(2025, 1, 1, tzinfo=UTC),
                 updated_at=datetime(2025, 1, 2, tzinfo=UTC),
@@ -1770,3 +1748,90 @@ class TestFetchPlansByIds:
         result = provider.fetch_plans_by_ids({100, 300})
 
         assert [r.plan_id for r in result] == [100, 300]
+
+
+class TestAppendTimingLog:
+    """Tests for _append_timing_log method."""
+
+    def _make_provider(self, tmp_path: Path) -> RealPlanDataProvider:
+        """Create a RealPlanDataProvider for testing timing log."""
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir()
+
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=repo_root, branch="main", is_root=True),
+                ]
+            },
+            git_common_dirs={repo_root: repo_root / ".git"},
+        )
+
+        ctx = create_test_context(
+            git=git,
+            github=FakeGitHub(pr_issue_linkages={}),
+            cwd=repo_root,
+            repo=_make_repo_context(repo_root, tmp_path),
+        )
+
+        location = GitHubRepoLocation(
+            root=repo_root,
+            repo_id=GitHubRepoId(owner="test", repo="repo"),
+        )
+        return RealPlanDataProvider(
+            ctx=ctx,
+            location=location,
+            clipboard=FakeClipboard(),
+            browser=FakeBrowserLauncher(),
+            http_client=FakeHttpClient(),
+        )
+
+    def _make_timings(self) -> FetchTimings:
+        return FetchTimings(
+            rest_issues_ms=1000,
+            graphql_enrich_ms=500,
+            plan_parsing_ms=200,
+            workflow_runs_ms=300,
+            worktree_mapping_ms=50,
+            row_building_ms=20,
+            total_ms=2070,
+        )
+
+    def test_writes_timing_log_when_scratch_dir_exists(self, tmp_path: Path) -> None:
+        """Appends a timing line when .erk/scratch/ directory exists."""
+        provider = self._make_provider(tmp_path)
+        scratch_dir = tmp_path / "repo" / ".erk" / "scratch"
+        scratch_dir.mkdir()
+
+        provider._append_timing_log(self._make_timings(), row_count=5)
+
+        log_file = scratch_dir / "dash-timings.log"
+        assert log_file.exists()
+        content = log_file.read_text()
+        assert "rows=5" in content
+        assert "rest:1.0" in content
+
+    def test_skips_when_scratch_dir_missing(self, tmp_path: Path) -> None:
+        """Returns silently when .erk/scratch/ directory does not exist."""
+        provider = self._make_provider(tmp_path)
+        # Don't create scratch dir
+        provider._append_timing_log(self._make_timings(), row_count=3)
+        # Should not raise and no file created
+        assert not (tmp_path / "repo" / ".erk" / "scratch" / "dash-timings.log").exists()
+
+    def test_appends_multiple_entries(self, tmp_path: Path) -> None:
+        """Multiple calls append separate lines to the log file."""
+        provider = self._make_provider(tmp_path)
+        scratch_dir = tmp_path / "repo" / ".erk" / "scratch"
+        scratch_dir.mkdir()
+
+        provider._append_timing_log(self._make_timings(), row_count=5)
+        provider._append_timing_log(self._make_timings(), row_count=10)
+
+        log_file = scratch_dir / "dash-timings.log"
+        lines = log_file.read_text().strip().split("\n")
+        assert len(lines) == 2
+        assert "rows=5" in lines[0]
+        assert "rows=10" in lines[1]

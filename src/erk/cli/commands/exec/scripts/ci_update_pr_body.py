@@ -44,7 +44,6 @@ from typing import Literal
 
 import click
 
-from erk.cli.config import load_config
 from erk_shared.context.helpers import (
     require_git,
     require_github,
@@ -54,14 +53,13 @@ from erk_shared.context.helpers import (
 from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.metadata.core import find_metadata_block, render_metadata_block
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer, build_remote_execution_note
 from erk_shared.gateway.github.types import BodyText, PRNotFound
 from erk_shared.gateway.gt.prompts import get_commit_message_prompt, truncate_diff
 from erk_shared.plan_store.planned_pr_lifecycle import (
-    PLAN_CONTENT_SEPARATOR,
     build_original_plan_section,
     extract_plan_content,
-    extract_plan_header_block,
 )
 
 
@@ -135,20 +133,16 @@ def _build_pr_body(
     *,
     summary: str,
     pr_number: int,
-    plan_number: int | None,
     run_id: str | None,
     run_url: str | None,
-    plans_repo: str | None,
 ) -> str:
     """Build the full PR body with summary, optional workflow link, and footer.
 
     Args:
         summary: AI-generated PR summary
         pr_number: PR number for checkout instructions
-        plan_number: Plan number to close on merge, or None for planned-PR plans
         run_id: Optional workflow run ID
         run_url: Optional workflow run URL
-        plans_repo: Target repo in "owner/repo" format for cross-repo plans
 
     Returns:
         Formatted PR body markdown
@@ -160,9 +154,7 @@ def _build_pr_body(
         parts.append(build_remote_execution_note(run_id, run_url))
 
     # Add footer with checkout instructions
-    parts.append(
-        build_pr_body_footer(pr_number=pr_number, issue_number=plan_number, plans_repo=plans_repo)
-    )
+    parts.append(build_pr_body_footer(pr_number))
 
     return "\n".join(parts)
 
@@ -173,10 +165,8 @@ def _update_pr_body_impl(
     github: GitHub,
     executor: PromptExecutor,
     repo_root: Path,
-    plan_number: int,
     run_id: str | None,
     run_url: str | None,
-    plans_repo: str | None,
     is_planned_pr: bool,
 ) -> UpdateSuccess | UpdateError:
     """Implementation of PR body update.
@@ -186,11 +176,9 @@ def _update_pr_body_impl(
         github: GitHub interface
         executor: PromptExecutor for Claude
         repo_root: Repository root path
-        plan_number: Plan number to close on merge
         run_id: Optional workflow run ID
         run_url: Optional workflow run URL
-        plans_repo: Target repo in "owner/repo" format for cross-repo plans
-        is_planned_pr: True if this is a planned-PR plan (no Closes #N)
+        is_planned_pr: True if this is a planned-PR plan (preserves metadata)
 
     Returns:
         UpdateSuccess on success, UpdateError on failure
@@ -274,29 +262,25 @@ def _update_pr_body_impl(
     # Build full PR body
     if is_planned_pr:
         # For planned-PR plans: preserve metadata prefix, include original plan section
-        plan_header_block_raw = extract_plan_header_block(pr_result.body)
+        plan_header = find_metadata_block(pr_result.body, "plan-header")
         plan_content = extract_plan_content(pr_result.body)
         original_plan_section = build_original_plan_section(plan_content)
+
+        metadata_text = render_metadata_block(plan_header) if plan_header is not None else ""
 
         summary_body = _build_pr_body(
             summary=summary,
             pr_number=pr_number,
-            plan_number=None,
             run_id=run_id,
             run_url=run_url,
-            plans_repo=plans_repo,
         )
-        # Strip the content separator — no longer needed when metadata is at bottom
-        metadata_block = plan_header_block_raw.removesuffix(PLAN_CONTENT_SEPARATOR)
-        pr_body = summary_body + original_plan_section + "\n\n" + metadata_block
+        pr_body = summary_body + original_plan_section + "\n\n" + metadata_text
     else:
         pr_body = _build_pr_body(
             summary=summary,
             pr_number=pr_number,
-            plan_number=plan_number,
             run_id=run_id,
             run_url=run_url,
-            plans_repo=plans_repo,
         )
 
     # Update PR title and body
@@ -319,10 +303,10 @@ def _update_pr_body_impl(
 
 
 @click.command(name="ci-update-pr-body")
-@click.option("--plan-id", type=int, required=True, help="Plan identifier to close on merge")
+@click.option("--plan-id", type=int, required=True, help="Plan identifier (for context)")
 @click.option("--run-id", type=str, default=None, help="Optional workflow run ID")
 @click.option("--run-url", type=str, default=None, help="Optional workflow run URL")
-@click.option("--planned-pr", is_flag=True, default=False, help="Planned-PR plan (no Closes #N)")
+@click.option("--planned-pr", is_flag=True, default=False, help="Planned-PR plan")
 @click.pass_context
 def ci_update_pr_body(
     ctx: click.Context,
@@ -342,19 +326,13 @@ def ci_update_pr_body(
     executor = require_prompt_executor(ctx)
     repo_root = require_repo_root(ctx)
 
-    # Load config to get plans_repo
-    config = load_config(repo_root)
-    plans_repo = config.plans_repo
-
     result = _update_pr_body_impl(
         git=git,
         github=github,
         executor=executor,
         repo_root=repo_root,
-        plan_number=plan_id,
         run_id=run_id,
         run_url=run_url,
-        plans_repo=plans_repo,
         is_planned_pr=planned_pr,
     )
 

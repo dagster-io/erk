@@ -13,8 +13,9 @@ from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import find_metadata_block
-from erk_shared.plan_store.github import GitHubPlanStore
-from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from tests.test_utils.plan_helpers import format_plan_header_body_for_test, issue_info_to_pr_details
 
 
 def _make_plan_issue(*, number: int) -> IssueInfo:
@@ -31,7 +32,7 @@ def _make_plan_issue(*, number: int) -> IssueInfo:
         body=body,
         state="OPEN",
         url=f"https://github.com/test/repo/issues/{number}",
-        labels=["erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=now,
         updated_at=now,
@@ -120,6 +121,10 @@ def test_upload_session_with_issue_update(tmp_path: Path) -> None:
     repo_root.mkdir()
     issue = _make_plan_issue(number=42)
     fake_gh_issues = FakeGitHubIssues(issues={42: issue})
+    fake_github = FakeGitHub(
+        pr_details={42: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_gh_issues,
+    )
     fake_git = FakeGit(
         current_branches={repo_root: "plan/my-feature"},
         local_branches={repo_root: []},
@@ -139,11 +144,11 @@ def test_upload_session_with_issue_update(tmp_path: Path) -> None:
             "42",
         ],
         obj=ErkContext.for_test(
-            github=FakeGitHub(issues_gateway=fake_gh_issues),
+            github=fake_github,
             git=fake_git,
             repo_root=repo_root,
             cwd=repo_root,
-            plan_store=GitHubPlanStore(fake_gh_issues),
+            plan_store=PlannedPRBackend(fake_github, fake_gh_issues, time=FakeTime()),
         ),
     )
 
@@ -154,8 +159,8 @@ def test_upload_session_with_issue_update(tmp_path: Path) -> None:
     assert output["issue_updated"] is True
 
     # Verify the plan-header was updated with session branch info
-    assert len(fake_gh_issues.updated_bodies) == 1
-    _, updated_body = fake_gh_issues.updated_bodies[0]
+    assert len(fake_github.updated_pr_bodies) == 1
+    _, updated_body = fake_github.updated_pr_bodies[0]
     block = find_metadata_block(updated_body, "plan-header")
     assert block is not None
     assert block.data["last_session_branch"] == "async-learn/42"

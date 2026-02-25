@@ -14,12 +14,11 @@ from erk.core.display_utils import (
 )
 from erk.core.pr_utils import select_display_pr
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext, ensure_erk_metadata_dir
-from erk.tui.data.types import PlanFilters, PlanRowData
+from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
 from erk.tui.sorting.types import BranchActivity
 from erk_shared.gateway.browser.abc import BrowserLauncher
 from erk_shared.gateway.clipboard.abc import Clipboard
 from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
-from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
     extract_objective_from_comment,
     extract_objective_header_comment_id,
@@ -31,6 +30,7 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
     build_graph,
     build_state_sparkline,
     compute_graph_summary,
+    compute_objective_head_state,
     find_graph_next_node,
 )
 from erk_shared.gateway.github.metadata.plan_header import extract_plan_from_comment
@@ -60,10 +60,10 @@ from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
 from erk_shared.gateway.plan_data_provider.lifecycle import compute_status_indicators
 from erk_shared.impl_folder import read_plan_ref
 from erk_shared.plan_store.conversion import (
+    github_issue_to_plan,
     header_datetime,
     header_int,
     header_str,
-    issue_info_to_plan,
 )
 from erk_shared.plan_store.types import Plan
 
@@ -115,20 +115,35 @@ class RealPlanDataProvider(PlanDataProvider):
         """Get the browser launcher interface for opening URLs."""
         return self._browser
 
-    def fetch_plans(self, filters: PlanFilters) -> list[PlanRowData]:
+    def fetch_plans(self, filters: PlanFilters) -> tuple[list[PlanRowData], FetchTimings | None]:
         """Fetch plans and transform to TUI row format.
 
         Args:
             filters: Filter options for the query
 
         Returns:
-            List of PlanRowData objects for display
+            Tuple of (list of PlanRowData for display, optional FetchTimings breakdown)
         """
+        t_total_start = self._ctx.time.monotonic()
+
         # Determine if we need workflow runs
         needs_workflow_runs = filters.show_runs or filters.run_state is not None
 
         # Route to the appropriate service based on the view's labels
-        if "erk-plan" in filters.labels:
+        # Only pass http_client when it supports direct API calls (RealHttpClient)
+        http_for_service = self._http_client if self._http_client.supports_direct_api else None
+        # Objectives have their own dedicated service; all other queries
+        # (plans, learn plans, custom label combos) use the plan list service.
+        if "erk-objective" in filters.labels:
+            plan_data = self._ctx.objective_list_service.get_objective_list_data(
+                location=self._location,
+                state=filters.state,
+                limit=filters.limit,
+                skip_workflow_runs=not needs_workflow_runs,
+                creator=filters.creator,
+                exclude_labels=list(filters.exclude_labels) if filters.exclude_labels else None,
+            )
+        else:
             plan_data = self._ctx.plan_list_service.get_plan_list_data(
                 location=self._location,
                 labels=list(filters.labels),
@@ -136,37 +151,23 @@ class RealPlanDataProvider(PlanDataProvider):
                 limit=filters.limit,
                 skip_workflow_runs=not needs_workflow_runs,
                 creator=filters.creator,
-            )
-        else:
-            # Objectives use a dedicated service that always fetches via issues,
-            # regardless of the configured plan backend (draft PR vs issue)
-            plan_data = self._ctx.objective_list_service.get_objective_list_data(
-                location=self._location,
-                state=filters.state,
-                limit=filters.limit,
-                skip_workflow_runs=not needs_workflow_runs,
-                creator=filters.creator,
+                exclude_labels=list(filters.exclude_labels) if filters.exclude_labels else None,
+                http_client=http_for_service,
             )
 
         # Build local worktree mapping
+        t_wt_start = self._ctx.time.monotonic()
         worktree_by_plan_id = self._build_worktree_mapping()
+        t_wt_end = self._ctx.time.monotonic()
 
         # Use pre-converted Plan objects from PlanListData
         plans = plan_data.plans
 
-        # First pass: collect learn_plan_issue numbers for batch fetch
-        learn_issue_numbers: set[int] = set()
-        for plan in plans:
-            learn_plan_issue = header_int(plan.header_fields, LEARN_PLAN_ISSUE)
-            if learn_plan_issue is not None:
-                learn_issue_numbers.add(learn_plan_issue)
-
-        # Batch fetch learn issue states
-        learn_issue_states = self._fetch_learn_issue_states(learn_issue_numbers)
-
         # Transform to PlanRowData
+        t_rows_start = self._ctx.time.monotonic()
         rows: list[PlanRowData] = []
-        use_graphite = self._ctx.global_config.use_graphite if self._ctx.global_config else False
+        global_config = self._ctx.global_config
+        use_graphite = global_config.use_graphite if global_config is not None else False
 
         for plan in plans:
             plan_id = int(plan.plan_identifier)
@@ -189,33 +190,30 @@ class RealPlanDataProvider(PlanDataProvider):
                 workflow_run=workflow_run,
                 worktree_by_plan_id=worktree_by_plan_id,
                 use_graphite=use_graphite,
-                learn_issue_states=learn_issue_states,
             )
             rows.append(row)
+        t_rows_end = self._ctx.time.monotonic()
 
-        return rows
+        # Build timing breakdown
+        # api_ms covers REST + GraphQL enrichment from PlanListData
+        # plan_parsing_ms covers body parsing from PlanListData
+        # workflow_runs_ms covers workflow run fetching from PlanListData
+        timings = FetchTimings(
+            rest_issues_ms=plan_data.api_ms,
+            graphql_enrich_ms=0.0,
+            plan_parsing_ms=plan_data.plan_parsing_ms,
+            workflow_runs_ms=plan_data.workflow_runs_ms,
+            worktree_mapping_ms=(t_wt_end - t_wt_start) * 1000,
+            row_building_ms=(t_rows_end - t_rows_start) * 1000,
+            total_ms=(t_rows_end - t_total_start) * 1000,
+        )
 
-    def _fetch_learn_issue_states(
-        self,
-        issue_numbers: set[int],
-    ) -> dict[int, bool]:
-        """Batch fetch issue closed states for learn plan issues.
+        logger.info("fetch_plans timings: %s", timings.summary())
 
-        Args:
-            issue_numbers: Set of issue numbers to fetch
+        # Write timing to log file for post-execution analysis
+        self._append_timing_log(timings, len(rows))
 
-        Returns:
-            Mapping of issue number to is_closed (True if closed, False if open)
-        """
-        result: dict[int, bool] = {}
-        for issue_number in issue_numbers:
-            issue_info = self._ctx.github.issues.get_issue(self._location.root, issue_number)
-            if isinstance(issue_info, IssueNotFound):
-                # Issue not found - log and skip
-                logger.debug("Could not fetch learn issue %d: issue not found", issue_number)
-                continue
-            result[issue_number] = issue_info.state == "CLOSED"
-        return result
+        return (rows, timings)
 
     def close_plan(self, plan_id: int, plan_url: str) -> list[int]:
         """Close a plan and its linked PRs using direct HTTP calls.
@@ -303,14 +301,14 @@ class RealPlanDataProvider(PlanDataProvider):
 
         return closed_prs
 
-    def submit_to_queue(self, plan_id: int, plan_url: str) -> None:
-        """Submit a plan to the implementation queue.
+    def dispatch_to_queue(self, plan_id: int, plan_url: str) -> None:
+        """Dispatch a plan to the implementation queue.
 
         Runs 'erk pr dispatch' as a subprocess to handle the complex workflow
         of creating branches, PRs, and triggering GitHub Actions.
 
         Args:
-            plan_id: The plan ID to submit
+            plan_id: The plan ID to dispatch
             plan_url: The plan URL (unused, kept for interface consistency)
         """
         # Run erk pr dispatch command from the repository root
@@ -429,13 +427,14 @@ class RealPlanDataProvider(PlanDataProvider):
         return extract_objective_from_comment(comment_body)
 
     def fetch_plans_by_ids(self, plan_ids: set[int]) -> list[PlanRowData]:
-        """Fetch specific plans by their issue numbers.
+        """Fetch specific plans by their GitHub numbers.
 
-        Uses get_issues_by_numbers_with_pr_linkages for targeted fetching
-        instead of listing all plans and filtering.
+        Uses get_issues_by_numbers_with_pr_linkages (backed by the
+        issueOrPullRequest GraphQL query) for targeted fetching. Works
+        for both issue-backed and PR-backed plans.
 
         Args:
-            plan_ids: Set of plan issue numbers to fetch
+            plan_ids: Set of plan numbers to fetch (issue or PR numbers)
 
         Returns:
             List of PlanRowData objects sorted by plan_id
@@ -449,21 +448,14 @@ class RealPlanDataProvider(PlanDataProvider):
         )
 
         # Convert IssueInfo -> Plan
-        plans = [issue_info_to_plan(issue) for issue in issues]
+        plans = [github_issue_to_plan(issue) for issue in issues]
 
         # Build worktree mapping
         worktree_by_plan_id = self._build_worktree_mapping()
 
-        # Batch fetch learn issue states
-        learn_issue_numbers: set[int] = set()
-        for plan in plans:
-            learn_plan_issue = header_int(plan.header_fields, LEARN_PLAN_ISSUE)
-            if learn_plan_issue is not None:
-                learn_issue_numbers.add(learn_plan_issue)
-        learn_issue_states = self._fetch_learn_issue_states(learn_issue_numbers)
-
         # Build row data
-        use_graphite = self._ctx.global_config.use_graphite if self._ctx.global_config else False
+        global_config = self._ctx.global_config
+        use_graphite = global_config.use_graphite if global_config is not None else False
         rows: list[PlanRowData] = []
         for plan in plans:
             plan_id = int(plan.plan_identifier)
@@ -474,7 +466,6 @@ class RealPlanDataProvider(PlanDataProvider):
                 workflow_run=None,
                 worktree_by_plan_id=worktree_by_plan_id,
                 use_graphite=use_graphite,
-                learn_issue_states=learn_issue_states,
             )
             rows.append(row)
 
@@ -484,7 +475,8 @@ class RealPlanDataProvider(PlanDataProvider):
     def fetch_plans_for_objective(self, objective_issue: int) -> list[PlanRowData]:
         """Fetch plans associated with a specific objective.
 
-        Fetches all erk-plan issues (any state) and filters client-side by objective_issue.
+        Fetches erk-plan issues in both open and closed states, then filters
+        client-side by objective_issue.
 
         Args:
             objective_issue: The objective issue number to filter by
@@ -492,17 +484,34 @@ class RealPlanDataProvider(PlanDataProvider):
         Returns:
             List of PlanRowData objects for plans linked to this objective
         """
-        filters = PlanFilters(
-            labels=("erk-plan",),
-            state=None,
-            run_state=None,
-            limit=100,
-            show_prs=True,
-            show_runs=False,
-            creator=None,
-        )
-        all_plans = self.fetch_plans(filters)
+        all_plans: list[PlanRowData] = []
+        for state in ("open", "closed"):
+            filters = PlanFilters(
+                labels=("erk-plan",),
+                state=state,
+                run_state=None,
+                limit=100,
+                show_prs=True,
+                show_runs=False,
+                exclude_labels=(),
+                creator=None,
+            )
+            rows, _timings = self.fetch_plans(filters)
+            all_plans.extend(rows)
         return [row for row in all_plans if row.objective_issue == objective_issue]
+
+    def get_branch_stack(self, branch: str) -> list[str] | None:
+        """Get the Graphite stack containing a branch.
+
+        Delegates to BranchManager which reads local Graphite cache (no network).
+
+        Args:
+            branch: The branch name to look up
+
+        Returns:
+            Ordered list of branch names in the stack, or None
+        """
+        return self._ctx.branch_manager.get_branch_stack(self._location.root, branch)
 
     def fetch_unresolved_comments(self, pr_number: int) -> list[PRReviewThread]:
         """Fetch unresolved review threads for a pull request.
@@ -516,6 +525,28 @@ class RealPlanDataProvider(PlanDataProvider):
         return self._ctx.github.get_pr_review_threads(
             self._location.root, pr_number, include_resolved=False
         )
+
+    def _append_timing_log(self, timings: FetchTimings, row_count: int) -> None:
+        """Append timing data to .erk/scratch/dash-timings.log for post-execution analysis.
+
+        Silently ignores all errors (sentinel paths in tests, missing directory,
+        permissions, etc.) since timing logs are strictly informational.
+
+        Args:
+            timings: Timing breakdown for this fetch cycle
+            row_count: Number of rows returned
+        """
+        try:
+            log_dir = self._location.root / ".erk" / "scratch"
+            if not log_dir.is_dir():
+                return
+            log_file = log_dir / "dash-timings.log"
+            timestamp = self._ctx.time.now().strftime("%Y-%m-%d %H:%M:%S")
+            line = f"{timestamp}  rows={row_count}  {timings.summary()}\n"
+            with open(log_file, "a") as f:
+                f.write(line)
+        except Exception:
+            logger.debug("Failed to write timing log", exc_info=True)
 
     def _build_worktree_mapping(self) -> dict[int, tuple[str, str | None]]:
         """Build mapping of plan ID to (worktree name, branch).
@@ -550,7 +581,6 @@ class RealPlanDataProvider(PlanDataProvider):
         workflow_run: WorkflowRun | None,
         worktree_by_plan_id: dict[int, tuple[str, str | None]],
         use_graphite: bool,
-        learn_issue_states: dict[int, bool],
     ) -> PlanRowData:
         """Build a single PlanRowData from plan and related data."""
         full_title = plan.title
@@ -585,10 +615,9 @@ class RealPlanDataProvider(PlanDataProvider):
         # Extract objective_issue from pre-parsed header fields
         objective_issue = header_int(plan.header_fields, OBJECTIVE_ISSUE)
 
-        # Look up learn plan issue closed state
+        # Learn plan issue closed state is not fetched (too slow for N sequential calls).
+        # Falls back to open icon (📋) which is acceptable.
         learn_plan_issue_closed: bool | None = None
-        if learn_plan_issue is not None and learn_plan_issue in learn_issue_states:
-            learn_plan_issue_closed = learn_issue_states[learn_plan_issue]
 
         # Format learn display (full text for detail modal, icon-only for table)
         learn_display = _format_learn_display(
@@ -757,12 +786,7 @@ class RealPlanDataProvider(PlanDataProvider):
                     objective_next_node_display = next_node["id"]
                     node_status = next_node.get("status")
                     min_status = graph.min_dep_status(next_node["id"])
-                    if node_status == "planning":
-                        objective_head_state = "planning"
-                    elif min_status is None or min_status in _TERMINAL_STATUSES:
-                        objective_head_state = "ready"
-                    else:
-                        objective_head_state = min_status.replace("_", " ")
+                    objective_head_state = compute_objective_head_state(node_status, min_status)
 
                     # Collect blocking dep PR numbers for the next node
                     target = next((n for n in graph.nodes if n.id == next_node["id"]), None)
@@ -774,7 +798,7 @@ class RealPlanDataProvider(PlanDataProvider):
                                 if dep.status not in _TERMINAL_STATUSES and dep.pr is not None:
                                     num = dep.pr.lstrip("#")
                                     repo_id = self._location.repo_id
-                                    url = f"https://github.com/{repo_id.owner}/{repo_id.repo}/issues/{num}"
+                                    url = f"https://github.com/{repo_id.owner}/{repo_id.repo}/pull/{num}"
                                     objective_head_plans.append((dep.pr, url))
 
         # Format updated_at display

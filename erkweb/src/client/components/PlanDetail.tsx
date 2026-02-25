@@ -175,11 +175,11 @@ export function PlanDetail({plan, onClose}: PlanDetailProps) {
           <div className="detail-actions">
             <div className="detail-label">Actions</div>
             <ActionButton
-              label="Submit to Queue"
-              actionKey="submit"
-              status={actionStatuses['submit']}
+              label="Dispatch to Queue"
+              actionKey="dispatch"
+              status={actionStatuses['dispatch']}
               disabled={isMerged}
-              onClick={() => executeAction('submit')}
+              onClick={() => executeAction('dispatch')}
             />
             <ActionButton
               label="Address PR Remote"
@@ -220,7 +220,7 @@ export function PlanDetail({plan, onClose}: PlanDetailProps) {
                 code={`source "$(erk prepare ${plan.issue_number} --script)" && erk implement --dangerous`}
                 onCopy={showToast}
               />
-              <CodeSnippet code={`erk plan submit ${plan.issue_number}`} onCopy={showToast} />
+              <CodeSnippet code={`erk pr dispatch ${plan.issue_number}`} onCopy={showToast} />
             </div>
             {toast && <div className="detail-toast">{toast}</div>}
           </div>

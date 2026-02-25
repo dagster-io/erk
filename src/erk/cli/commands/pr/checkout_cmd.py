@@ -26,7 +26,6 @@ from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
-from erk_shared.gateway.branch_manager.types import SubmitBranchError
 from erk_shared.gateway.github.parsing import (
     parse_issue_number_from_url,
     parse_pr_number_from_url,
@@ -88,14 +87,53 @@ def _parse_checkout_reference(reference: str) -> _PrRef | _PlanRef:
     raise SystemExit(1)
 
 
+def _fetch_and_update_branch(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    branch_name: str,
+    pr_number: int,
+) -> None:
+    """Fetch a branch from remote and update the local copy.
+
+    Handles three cases:
+    - Remote branch exists, no local branch: create tracking branch
+    - Remote branch exists, local branch exists: force-update local to match remote
+    - No remote branch, no local branch: fetch via PR ref
+    """
+    local_branches = ctx.git.branch.list_local_branches(repo.root)
+    remote_branches = ctx.git.branch.list_remote_branches(repo.root)
+    remote_ref = f"origin/{branch_name}"
+    if remote_ref in remote_branches:
+        ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
+        if branch_name not in local_branches:
+            ctx.branch_manager.create_tracking_branch(repo.root, branch_name, remote_ref)
+        else:
+            # Force-update local branch to match remote.
+            # Uses ctx.git.branch directly because branch_manager.create_branch()
+            # doesn't support force=True — this is an alignment operation, not
+            # a new branch creation.
+            ctx.git.branch.create_branch(repo.root, branch_name, remote_ref, force=True)
+    elif branch_name not in local_branches:
+        ctx.git.remote.fetch_pr_ref(
+            repo_root=repo.root,
+            remote="origin",
+            pr_number=pr_number,
+            local_branch=branch_name,
+        )
+
+
 @alias("co")
 @click.command("checkout", cls=CommandWithHiddenOptions)
 @click.argument("reference")
 @click.option("--no-slot", is_flag=True, help="Create worktree without slot assignment")
 @click.option("-f", "--force", is_flag=True, help="Auto-unassign oldest branch if pool is full")
+@click.option("--sync", is_flag=True, help="Run gt submit after checkout to sync with Graphite")
 @script_option
 @click.pass_obj
-def pr_checkout(ctx: ErkContext, reference: str, no_slot: bool, force: bool, script: bool) -> None:
+def pr_checkout(
+    ctx: ErkContext, reference: str, no_slot: bool, force: bool, sync: bool, script: bool
+) -> None:
     """Checkout PR or plan into a worktree for review.
 
     REFERENCE can be:
@@ -131,7 +169,9 @@ def pr_checkout(ctx: ErkContext, reference: str, no_slot: bool, force: bool, scr
             ctx, repo, plan_number=ref.number, no_slot=no_slot, force=force, script=script
         )
     else:
-        _checkout_pr(ctx, repo, pr_number=ref.number, no_slot=no_slot, force=force, script=script)
+        _checkout_pr(
+            ctx, repo, pr_number=ref.number, no_slot=no_slot, force=force, sync=sync, script=script
+        )
 
 
 # =============================================================================
@@ -146,6 +186,7 @@ def _checkout_pr(
     pr_number: int,
     no_slot: bool,
     force: bool,
+    sync: bool,
     script: bool,
 ) -> None:
     """Checkout a pull request into a worktree."""
@@ -185,6 +226,7 @@ def _checkout_pr(
             new_message="",  # Not used when already_existed=True
             script_message_existing=f'echo "Went to existing worktree for PR #{pr_number}"',
             script_message_new="",  # Not used when already_existed=True
+            post_cd_commands=None,
         )
         # Print activation instructions for existing worktrees too
         if not script:
@@ -202,26 +244,13 @@ def _checkout_pr(
         return
 
     # For cross-repository PRs, always fetch via refs/pull/<n>/head
-    # For same-repo PRs, check if branch exists locally first
+    # For same-repo PRs, always fetch from remote and force-update local branch
     if pr.is_cross_repository:
         ctx.git.remote.fetch_pr_ref(
             repo_root=repo.root, remote="origin", pr_number=pr_number, local_branch=branch_name
         )
     else:
-        local_branches = ctx.git.branch.list_local_branches(repo.root)
-        if branch_name not in local_branches:
-            remote_branches = ctx.git.branch.list_remote_branches(repo.root)
-            remote_ref = f"origin/{branch_name}"
-            if remote_ref in remote_branches:
-                ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
-                ctx.branch_manager.create_tracking_branch(repo.root, branch_name, remote_ref)
-            else:
-                ctx.git.remote.fetch_pr_ref(
-                    repo_root=repo.root,
-                    remote="origin",
-                    pr_number=pr_number,
-                    local_branch=branch_name,
-                )
+        _fetch_and_update_branch(ctx, repo, branch_name=branch_name, pr_number=pr_number)
 
     # Create worktree using shared helper
     worktree_path, already_existed = ensure_branch_has_worktree(
@@ -251,25 +280,20 @@ def _checkout_pr(
                 f"Run: cd {worktree_path} && git rebase origin/{pr.base_ref_name}"
             )
 
-    # Graphite integration: Track and submit if enabled (for new worktrees only)
-    if (
+    # Graphite integration: Track or retrack if needed (for new worktrees only)
+    should_submit_to_graphite = (
         ctx.branch_manager.is_graphite_managed()
         and not already_existed
         and not pr.is_cross_repository
-    ):
+    )
+    if should_submit_to_graphite:
         parent = ctx.branch_manager.get_parent_branch(repo.root, branch_name)
         if parent is None:
             ctx.console.info("Tracking branch with Graphite...")
             ctx.branch_manager.track_branch(worktree_path, branch_name, pr.base_ref_name)
-            ctx.console.info("Submitting to link with Graphite...")
-            submit_result = ctx.branch_manager.submit_branch(worktree_path, branch_name)
-            if isinstance(submit_result, SubmitBranchError):
-                ctx.console.info(
-                    click.style("Warning: ", fg="yellow")
-                    + f"Failed to link with Graphite: {submit_result.message}"
-                )
-            else:
-                ctx.console.info(click.style("✓", fg="green") + " Branch linked with Graphite")
+        elif ctx.graphite.is_branch_diverged_from_tracking(ctx.git, repo.root, branch_name):
+            ctx.console.info("Retracking diverged branch with Graphite...")
+            ctx.branch_manager.retrack_branch(worktree_path, branch_name)
 
     # Navigate and display checkout result
     navigate_and_display_checkout(
@@ -283,6 +307,9 @@ def _checkout_pr(
         new_message=f"Created worktree for PR #{pr_number} at {{styled_path}}",
         script_message_existing=f'echo "Went to existing worktree for PR #{pr_number}"',
         script_message_new=f'echo "Checked out PR #{pr_number} at $(pwd)"',
+        post_cd_commands=["gt submit --no-interactive"]
+        if should_submit_to_graphite and sync
+        else None,
     )
 
     # Print activation instructions (non-script mode only)
@@ -393,24 +420,12 @@ def _checkout_plan_pr(
             new_message="",  # Not used when already_existed=True
             script_message_existing=f'echo "Went to worktree for plan #{plan_number}"',
             script_message_new="",  # Not used when already_existed=True
+            post_cd_commands=None,
         )
         return
 
-    # Fetch the branch from remote if not local
-    local_branches = ctx.git.branch.list_local_branches(repo.root)
-    if branch_name not in local_branches:
-        remote_branches = ctx.git.branch.list_remote_branches(repo.root)
-        remote_ref = f"origin/{branch_name}"
-        if remote_ref in remote_branches:
-            ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
-            ctx.branch_manager.create_tracking_branch(repo.root, branch_name, remote_ref)
-        else:
-            ctx.git.remote.fetch_pr_ref(
-                repo_root=repo.root,
-                remote="origin",
-                pr_number=pr_number,
-                local_branch=branch_name,
-            )
+    # Fetch from remote and force-update local branch
+    _fetch_and_update_branch(ctx, repo, branch_name=branch_name, pr_number=pr_number)
 
     # Create worktree and navigate
     worktree_path, already_existed = ensure_branch_has_worktree(
@@ -429,6 +444,7 @@ def _checkout_plan_pr(
         new_message=new_msg,
         script_message_existing=f'echo "Went to worktree for plan #{plan_number}"',
         script_message_new=f'echo "Checked out plan #{plan_number} (PR #{pr_number}) at $(pwd)"',
+        post_cd_commands=None,
     )
 
 

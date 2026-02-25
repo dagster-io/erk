@@ -3,9 +3,18 @@
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal, TypedDict
+
+from erk_shared.non_ideal_state import EnsurableResult
 
 PRState = Literal["OPEN", "MERGED", "CLOSED"]
+
+MergeableStatus = Literal["MERGEABLE", "CONFLICTING", "UNKNOWN"]
+
+
+class StatusCheckRollupData(TypedDict, total=False):
+    state: str
+    contexts: dict[str, Any]
 
 
 def _epoch_sentinel() -> datetime:
@@ -104,7 +113,7 @@ class PRNotFound:
 
 
 @dataclass(frozen=True)
-class PRDetails:
+class PRDetails(EnsurableResult):
     """Comprehensive PR information from a single GitHub API call.
 
     This dataclass contains all commonly-needed PR fields, allowing call sites
@@ -130,7 +139,7 @@ class PRDetails:
     is_cross_repository: bool
 
     # Mergeability
-    mergeable: str  # "MERGEABLE", "CONFLICTING", "UNKNOWN"
+    mergeable: MergeableStatus
     merge_state_status: str  # "CLEAN", "BLOCKED", "UNSTABLE", "DIRTY"
 
     # Metadata
@@ -174,6 +183,9 @@ WorkflowRunConclusion = Literal["success", "failure", "cancelled", "skipped"]
 
 # PR list filter state (lowercase, matches GitHub API)
 PRListState = Literal["open", "closed", "all"]
+
+# Issue/plan filter state (lowercase, no "all" - callers must specify explicitly)
+IssueFilterState = Literal["open", "closed"]
 
 
 @dataclass(frozen=True)

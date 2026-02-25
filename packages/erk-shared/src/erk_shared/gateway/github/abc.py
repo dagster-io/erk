@@ -10,6 +10,7 @@ from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import (
     BodyContent,
     GitHubRepoLocation,
+    IssueFilterState,
     MergeError,
     MergeResult,
     PRDetails,
@@ -325,7 +326,7 @@ class GitHub(ABC):
         *,
         location: GitHubRepoLocation,
         labels: list[str],
-        state: str | None = None,
+        state: IssueFilterState = "open",
         limit: int | None = None,
         creator: str | None = None,
     ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
@@ -338,7 +339,7 @@ class GitHub(ABC):
         Args:
             location: GitHub repository location (local root + repo identity)
             labels: Labels to filter by (e.g., ["erk-plan"])
-            state: Filter by state ("open", "closed", or None for all)
+            state: Filter by state ("open" or "closed")
             limit: Maximum issues to return (default: 100)
             creator: Filter by creator username (e.g., "octocat"). If provided,
                 only issues created by this user are returned.
@@ -415,23 +416,25 @@ class GitHub(ABC):
         location: GitHubRepoLocation,
         *,
         labels: list[str],
-        state: str | None,
+        state: IssueFilterState,
         limit: int | None,
         author: str | None,
+        exclude_labels: list[str] | None = None,
     ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
-        """List plan PRs with rich details via GraphQL.
+        """List plan PRs with rich details.
 
-        Returns PRDetails for plan content extraction and PullRequestInfo
-        with checks, review threads, and merge status for display.
-        Filters by labels and state server-side; draft and author filters
-        are applied client-side (GraphQL pullRequests doesn't support them).
+        Uses a two-step approach: REST issues endpoint for server-side
+        author/label filtering, then batched GraphQL enrichment for rich
+        PR fields (checks, review threads, merge status).
 
         Args:
             location: GitHub repository location
             labels: Labels to filter by (e.g., ["erk-plan"])
-            state: Filter by state ("open", "closed", or None for all)
+            state: Filter by state ("open" or "closed")
             limit: Maximum number of results (None for no limit)
-            author: Filter by PR author username (applied client-side)
+            author: Filter by PR author username (server-side via REST creator param)
+            exclude_labels: Labels to exclude from results (client-side filtering
+                applied before expensive GraphQL enrichment). None means no exclusion.
 
         Returns:
             Tuple of (pr_details_list, pr_linkages_by_pr_number)

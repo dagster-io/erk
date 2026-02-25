@@ -1,7 +1,7 @@
 ---
 title: Plan List Provider Pattern
 read_when:
-  - "modifying erk plan list output"
+  - "modifying erk pr list output"
   - "understanding how plan list and TUI share data providers"
   - "adding columns to plan list display"
 tripwires:
@@ -11,13 +11,13 @@ tripwires:
 
 # Plan List Provider Pattern
 
-Both `erk plan list` (CLI) and `erk dash` (TUI) use `RealPlanDataProvider` to fetch and display plan data. This shared provider pattern ensures consistent data across interfaces.
+Both `erk pr list` (CLI) and `erk dash` (TUI) use `RealPlanDataProvider` to fetch and display plan data. This shared provider pattern ensures consistent data across interfaces.
 
 ## Architecture
 
 ```
 RealPlanDataProvider
-  ├── erk plan list (CLI)     → Rich static table
+  ├── erk pr list (CLI)       → Rich static table
   └── erk dash (TUI/Textual)  → PlanDataTable widget
 ```
 
@@ -31,18 +31,18 @@ RealPlanDataProvider
 
 ### CLI-Specific Components
 
-| Component                 | Location                                | Purpose                      |
-| ------------------------- | --------------------------------------- | ---------------------------- |
-| `_build_static_table()`   | `src/erk/cli/commands/plan/list_cmd.py` | Builds Rich table from rows  |
-| `_row_to_static_values()` | `src/erk/cli/commands/plan/list_cmd.py` | Converts rows to cell values |
+| Component                 | Location                              | Purpose                      |
+| ------------------------- | ------------------------------------- | ---------------------------- |
+| `_build_static_table()`   | `src/erk/cli/commands/pr/list_cmd.py` | Builds Rich table from rows  |
+| `_row_to_static_values()` | `src/erk/cli/commands/pr/list_cmd.py` | Converts rows to cell values |
 
 ## Fake Dependencies for Non-Critical Services
 
 The CLI `list` command doesn't need clipboard, browser, or HTTP operations, so it injects fakes:
 
-<!-- Source: src/erk/cli/commands/plan/list_cmd.py, list_cmd -->
+<!-- Source: src/erk/cli/commands/pr/list_cmd.py, _pr_list_impl -->
 
-The CLI list command instantiates `RealPlanDataProvider` with fake implementations for clipboard, browser, and HTTP — services unused in the CLI context. See `list_cmd()` in `src/erk/cli/commands/plan/list_cmd.py` for the actual instantiation pattern. This is the fake-driven pattern: non-critical service dependencies get fakes in contexts where they're unused, avoiding unnecessary initialization.
+The CLI list command instantiates `RealPlanDataProvider` with fake implementations for clipboard, browser, and HTTP — services unused in the CLI context. See `_pr_list_impl()` in `src/erk/cli/commands/pr/list_cmd.py` for the actual instantiation pattern. This is the fake-driven pattern: non-critical service dependencies get fakes in contexts where they're unused, avoiding unnecessary initialization.
 
 ## Column Alignment
 

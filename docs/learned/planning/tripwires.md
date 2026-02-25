@@ -48,13 +48,15 @@ Rules triggered by matching actions in code.
 
 **assuming branch names always follow the P-prefix format** → Read [Branch Plan Resolution](branch-plan-resolution.md) first. Branch resolution supports multiple formats (P-prefix, objective). Use resolve_plan_id_for_branch() rather than manual parsing. See branch-plan-resolution.md.
 
-**assuming branch_name is always present in plan-header metadata** → Read [PR Discovery Strategies for Plans](pr-discovery.md) first. branch_name is null until Phase 2 (plan submit). Check the plan metadata field lifecycle in lifecycle.md.
+**assuming branch_name is always present in plan-header metadata** → Read [PR Discovery Strategies for Plans](pr-discovery.md) first. branch_name is null until Phase 2 (pr dispatch). Check the plan metadata field lifecycle in lifecycle.md.
 
 **assuming plan content is in the issue body** → Read [Plan Content Extraction Fallback](metadata-block-fallback.md) first. Schema v2 stores plan content in the FIRST COMMENT, not the issue body. The body contains only the plan-header metadata block. See extract_plan_from_comment() for the extraction logic.
 
 **assuming remote sessions skip local preprocessing** → Read [Async Learn Local Preprocessing](async-learn-local-preprocessing.md) first. Since PR #6974, remote sessions go through the same \_preprocess_session_direct() pipeline as local sessions. They are downloaded first, then preprocessed identically.
 
 **automatically removing .impl/ folder** → Read [.erk/impl-context/ vs .impl/ Cleanup Discipline](worktree-cleanup.md) first. NEVER auto-delete .impl/. It belongs to the user for plan-vs-implementation review. Only .erk/impl-context/ is auto-cleaned.
+
+**backfilling labels on existing issues without considering updated_at side effects** → Read [Plan Label Assignment Scheme](label-scheme.md) first. GitHub label operations change the issue's updated_at timestamp. This affects sort order in list views and may confuse users.
 
 **calling `create_impl_context()` without checking `impl_context_exists()` first** → Read [Impl-Context Staging Directory](impl-context.md) first. Both submit paths use LBYL: `if impl_context_exists(): remove_impl_context()` before creating. Stale .erk/impl-context/ from a prior failed submission causes errors.
 
@@ -72,7 +74,7 @@ Rules triggered by matching actions in code.
 
 **catching PlanHeaderNotFoundError** → Read [PlanBackend Migration Guide](plan-backend-migration.md) first. PlanHeaderNotFoundError is an exception; PlanNotFound is a result type - use LBYL for the latter
 
-**changing branch naming convention (P{issue}- or plnd/ prefix)** → Read [Branch Name Inference](branch-name-inference.md) first. The P{issue}- prefix (issue-based) and plnd/ prefix (planned-PR) are cross-cutting contracts used by branch creation, extraction functions, and PR recovery. Changing either prefix format requires updating all consumers.
+**changing branch naming convention (plnd/ prefix)** → Read [Branch Name Inference](branch-name-inference.md) first. The plnd/ prefix (planned-PR) is a cross-cutting contract used by branch creation, extraction functions, and PR recovery. Changing the prefix format requires updating all consumers. The legacy P{issue}- prefix has been fully removed.
 
 **changing how sessions are classified as planning vs impl** → Read [Learn Pipeline Workflow](learn-pipeline-workflow.md) first. Classification uses planning_session_id from GitHub metadata. The resulting prefix (planning- vs impl-) propagates into XML filenames and is used by downstream learn agents to weight insights differently.
 
@@ -90,7 +92,7 @@ Rules triggered by matching actions in code.
 
 **constructing a PR footer manually instead of using build_pr_body_footer()** → Read [PR Submission Patterns](pr-submission-patterns.md) first. The footer format includes checkout commands and closing references with specific patterns. Use the builder function to ensure validation passes.
 
-**creating a PR without first checking if one already exists for the branch** → Read [PR Submission Patterns](pr-submission-patterns.md) first. The submit pipeline is idempotent — it checks for existing PRs before creating. If building PR creation outside the pipeline, replicate this check to prevent duplicates.
+**creating a PR without first checking if one already exists for the branch** → Read [PR Submission Patterns](pr-submission-patterns.md) first. The dispatch pipeline is idempotent — it checks for existing PRs before creating. If building PR creation outside the pipeline, replicate this check to prevent duplicates.
 
 **creating a learn plan without setting learned_from_issue** → Read [Learn Plans vs. Implementation Plans](learn-vs-implementation-plans.md) first. Learn plans MUST set learned_from_issue to their parent implementation plan's issue number. Without it, base branch auto-detection fails and the learn plan lands on trunk instead of stacking on the parent.
 
@@ -108,7 +110,7 @@ Rules triggered by matching actions in code.
 
 **designing output routing for a multi-agent workflow** → Read [Agent Output Routing Strategies](agent-output-routing-strategies.md) first. Choose between embedded-prompt routing (in orchestrator Task prompts) and agent-file routing (in agent definitions). See this doc for the decision framework.
 
-**detecting plan backend by checking backend type directly** → Read [Planned PR Branch Sync](planned-pr-branch-sync.md) first. Use plan.header_fields.get(BRANCH_NAME) to detect planned-PR plans. This is backend-agnostic and works across all backends.
+**detecting plan backend by checking backend type directly** → Read [Planned PR Branch Sync](planned-pr-branch-sync.md) first. Use plan.header_fields.get(BRANCH_NAME) to detect planned-PR plans. There is only one backend (planned-PR).
 
 **editing plan body content in plan creation, replan, or one-shot dispatch** → Read [One-Shot Workflow](one-shot-workflow.md) first. One-shot metadata block preservation: the metadata block in the plan body (HTML comment with erk:metadata-block markers) must survive all edits. Never strip or overwrite HTML comment blocks that contain erk:metadata-block markers.
 
@@ -132,7 +134,7 @@ Rules triggered by matching actions in code.
 
 **importing functions directly from plan_header.py** → Read [Plan Header Privatization](plan-header-privatization.md) first. plan_header.py functions are being privatized. Use PlanBackend methods instead for metadata operations.
 
-**including impl-signal or plan-save-to-issue in a Task tool sub-agent prompt** → Read [Sub-Agent Context Limitations](sub-agent-context-limitations.md) first. Sub-agents cannot access ${CLAUDE_SESSION_ID}. Session-dependent commands must run in the root agent context. See sub-agent-context-limitations.md.
+**including impl-signal or plan-save in a Task tool sub-agent prompt** → Read [Sub-Agent Context Limitations](sub-agent-context-limitations.md) first. Sub-agents cannot access ${CLAUDE_SESSION_ID}. Session-dependent commands must run in the root agent context. See sub-agent-context-limitations.md.
 
 **launching a dependent agent that reads a file written by a prior agent** → Read [Agent Orchestration Safety Patterns](agent-orchestration-safety.md) first. Verify the file exists (ls) before launching. Write tool silently fails if the parent directory is missing, and the dependent agent wastes its entire context discovering the file isn't there.
 
@@ -142,7 +144,7 @@ Rules triggered by matching actions in code.
 
 **making objective-update-after-land exit non-zero** → Read [Objective Update After Land](objective-update-after-land.md) first. This script uses fail-open design. Failures must not block landing. See objective-update-after-land.md.
 
-**manually creating an erk-plan issue with gh issue create** → Read [Plan Lifecycle](lifecycle.md) first. Use `erk exec plan-save-to-issue --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section).
+**manually creating an erk-plan issue with gh issue create** → Read [Plan Lifecycle](lifecycle.md) first. Use `erk exec plan-save --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section).
 
 **manually setting the base branch for a learn plan submission** → Read [Learn Plans vs. Implementation Plans](learn-vs-implementation-plans.md) first. Learn plan base branch is auto-detected from learned_from_issue → parent branch. Only use --base to override if the parent branch is missing from the remote.
 
@@ -167,6 +169,8 @@ Rules triggered by matching actions in code.
 **prompting an agent to 'include findings in the plan' without structuring them first** → Read [Context Preservation Prompting Patterns](context-preservation-prompting.md) first. Unstructured prompts don't work — agents summarize at too high a level. Use the four-category gathering step instead.
 
 **pushing implementation commits after impl-context cleanup without git pull --rebase** → Read [Impl-Context Staging Directory](impl-context.md) first. After git rm + commit + push of .erk/impl-context/, the local branch may diverge from remote if other commits were pushed. Run git pull --rebase before pushing further implementation commits to avoid non-fast-forward push failures.
+
+**querying plans using only the erk-planned-pr base label** → Read [Plan Label Assignment Scheme](label-scheme.md) first. Use type-specific labels (erk-plan, erk-learn) for queries. The base label erk-planned-pr is for identification, not filtering. See github-graphql-label-semantics.md for AND-logic issues.
 
 **reading learn_plan_issue or learn_status** → Read [Learn Plan Metadata Preservation](learn-plan-metadata-fields.md) first. Verify field came through full pipeline. If null, check if filtered out earlier. Use gateway abstractions; never hand-construct Plan objects.
 

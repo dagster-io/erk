@@ -20,8 +20,6 @@ Rules triggered by matching actions in code.
 
 **accessing properties on a discriminated union result without isinstance() check** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Always check isinstance(result, ErrorType) before accessing success-variant properties. Without type narrowing, you may access .message on a success type or .data on an error type.
 
-**adding Closes #N for github-draft-pr backend** → Read [PR Body Assembly](pr-body-assembly.md) first. Set issue_number=None for github-draft-pr backend. The planned PR IS the plan — Closes #N would be self-referential.
-
 **adding HTML, badges, or GitHub-specific markup to commit messages** → Read [PR Body Formatting Pattern](pr-body-formatting.md) first. Use the two-target pattern: plain text pr_body for commits, enhanced pr_body_for_github for the PR. Never put GitHub-specific HTML into git commit messages.
 
 **adding LLM-dependent logic inside a Click @command function in exec/scripts/** → Read [Inference Hoisting Pattern](inference-hoisting.md) first. Inference hoisting violation: exec scripts run as subprocesses; they cannot nest LLM calls within a Claude Code session. Move reasoning to the calling skill.
@@ -34,6 +32,8 @@ Rules triggered by matching actions in code.
 
 **adding a field to a GraphQL query that uses ISSUE_PR_LINKAGE_FRAGMENT** → Read [GitHub Interface Patterns](github-interface-patterns.md) first. Check GET_PLAN_PRS_WITH_DETAILS_QUERY for divergence. Both queries fetch PR fields but are defined separately in graphql_queries.py. A field in one but not the other causes None values in some code paths.
 
+**adding a get_X() method to a gateway ABC without a corresponding X_exists() convenience method** → Read [LBYL Gateway Pattern](lbyl-gateway-pattern.md) first. Gateway ABCs pair fetch methods with lightweight existence checks. Add X_exists() alongside get_X() for LBYL compliance at CLI boundaries.
+
 **adding a new field to ErkContext dataclass** → Read [Erk Architecture Patterns](erk-architecture.md) first. Update ALL factory functions. Grep: `grep -r 'ErkContext(' packages/erk-shared/src/ src/erk/core/context.py` to find all construction sites. Missing a factory causes runtime errors or silent None values.
 
 **adding a new field to agent-produced JSON without updating normalization** → Read [Agent Schema Enforcement](agent-schema-enforcement.md) first. Add the field to CANONICAL_FIELDS and any aliases to FIELD_ALIASES in the normalization script. Without this, the field may be stripped during normalization.
@@ -43,6 +43,8 @@ Rules triggered by matching actions in code.
 **adding a new method to GitHub ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py.
 
 **adding a new method to Graphite ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py.
+
+**adding a new method to HttpClient ABC without implementing in all providers** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. HttpClient follows the gateway pattern. New methods must be added to abc.py, real.py, and fake.py at minimum.
 
 **adding a new setup path to a command with existing cleanup** → Read [Convergence Points Architecture](convergence-points.md) first. Ensure the new path calls the same convergence function. Multiple setup paths must converge at a single cleanup point to prevent resource leaks.
 
@@ -66,7 +68,7 @@ Rules triggered by matching actions in code.
 
 **adding subprocess.run or run_subprocess_with_context calls to a gateway real.py file** [pattern: `subprocess\.run\(|run_subprocess_with_context\(`] → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must add integration tests in tests/integration/test*real*\*.py. Real gateway methods with subprocess calls need tests that verify the actual subprocess behavior.
 
-**amending a commit when Graphite is enabled** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. After amending commits or running gt restack, Graphite's cache may not update, leaving branches diverged. Call retrack_branch() to fix tracking. The auto-fix is already implemented in sync_cmd and branch_manager.
+**amending a commit when Graphite is enabled** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. After amending commits or running gt restack, Graphite's cache may not update, leaving branches diverged. Call retrack_branch() to fix tracking. The auto-fix is already implemented in checkout_cmd, rewrite_cmd, submit_pipeline, and branch_manager.
 
 **archiving value to 'last\_' variant BEFORE clearing** → Read [Archive-on-Clear Metadata Pattern](metadata-archival-pattern.md) first. Order matters — clear-then-archive loses the value silently
 
@@ -75,6 +77,8 @@ Rules triggered by matching actions in code.
 **assuming cursor position will persist across DataTable.clear() calls** → Read [Selection Preservation by Value](selection-preservation-by-value.md) first. Save cursor position by row key before clear(), restore after repopulating. See textual/quirks.md for pattern.
 
 **auto-enabling a flag without informing the user** → Read [Derived Flags Pattern](derived-flags.md) first. When deriving a flag from auto-detection, always print a dim-styled informational message explaining why the behavior was activated. Users should never be surprised by automatic actions.
+
+**bypassing PlanListService for direct GitHub API plan queries** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. PlanListService handles the CLI-vs-HTTP path selection. Direct API calls bypass caching and error handling.
 
 **calling GraphiteBranchManager.create_branch() without explicit checkout** → Read [Erk Architecture Patterns](erk-architecture.md) first. GraphiteBranchManager.create_branch() restores the original branch after tracking. Always call branch_manager.checkout_branch() afterward if you need to be on the new branch.
 
@@ -138,6 +142,8 @@ Rules triggered by matching actions in code.
 
 **comparing worktree path to repo_root to detect root worktree** → Read [Erk Architecture Patterns](erk-architecture.md) first. Use WorktreeInfo.is_root instead of path comparison. Path comparison fails when running from within a non-root worktree because ctx.cwd resolves differently.
 
+**constructing PlannedPRBackend with positional arguments or wrong parameter order** → Read [Gateway vs Backend ABC Pattern](gateway-vs-backend.md) first. PlannedPRBackend constructor takes keyword-only gateway dependencies. Check the current **init** signature — it evolves as gateways are added. Use keyword arguments explicitly.
+
 **constructing gist raw URLs with hardcoded filenames** → Read [GitHub Gist URL Patterns](github-gist-api.md) first. Use /raw/ without filename - GitHub redirects to first file.
 
 **creating .erk/impl-context/ without using create_impl_context()** → Read [Impl-Context API](impl-context-api.md) first. Use the three-function API in impl_context.py. Manual folder creation skips validation and ref.json generation.
@@ -182,7 +188,7 @@ Rules triggered by matching actions in code.
 
 **implementing a cleanup operation that modifies metadata based on external API success** → Read [Fail-Open Pattern](fail-open-patterns.md) first. Use fail-open pattern. If critical step fails, do NOT execute dependent steps that modify persistent state.
 
-**implementing a new `erk pr` command** → Read [PR Body Assembly](pr-body-assembly.md) first. Compare feature parity with `submit_pipeline.py`. Check: issue discovery, closing reference preservation, learn plan labels, footer construction, and plan details section. Use shared utilities from `shared.py` (`assemble_pr_body`, `discover_issue_for_footer`).
+**implementing a new `erk pr` command** → Read [PR Body Assembly](pr-body-assembly.md) first. Compare feature parity with `submit_pipeline.py`. Check: learn plan labels, footer construction, and plan details section. Use shared utilities from `shared.py` (`assemble_pr_body`).
 
 **implementing idempotent operations that fail on missing resources** → Read [LBYL Gateway Pattern](lbyl-gateway-pattern.md) first. Use LBYL existence check to return early, making the operation truly idempotent.
 
@@ -191,6 +197,8 @@ Rules triggered by matching actions in code.
 **importing time module or calling time.sleep() or datetime.now()** [pattern: `\bimport time\b|time\.sleep\(|datetime\.now\(`] → Read [Erk Architecture Patterns](erk-architecture.md) first. Use context.time.sleep() and context.time.now() for testability. Direct time.sleep() makes tests slow and datetime.now() makes tests non-deterministic.
 
 **injecting Time dependency into gateway real.py for lock-waiting or retry logic** → Read [Erk Architecture Patterns](erk-architecture.md) first. Accept optional Time in **init** with default to RealTime(). Use injected dependency in methods. This enables testing with FakeTime without blocking. See packages/erk-shared/src/erk_shared/gateway/git/lock.py for pattern.
+
+**making N sequential gh api calls in a loop when a single GraphQL query could fetch all data** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Each gh subprocess call costs ~200-300ms overhead. Batch into a single GraphQL query with node fragments when fetching multiple items. See http-accelerated-plan-refresh.md for the dual-path pattern.
 
 **migrating a gateway method to return discriminated union** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Update ALL 5 implementations (ABC, real, fake, dry_run, printing) AND all call sites AND tests. Incomplete migrations break type safety.
 
@@ -216,11 +224,17 @@ Rules triggered by matching actions in code.
 
 **passing dry_run boolean flags through business logic function parameters** → Read [Erk Architecture Patterns](erk-architecture.md) first. Use dependency injection with DryRunGit/DryRunGitHub wrappers for multi-step workflows. Simple CLI preview flags at the command level are acceptable for single-action commands.
 
+**passing multiple labels to a GitHub GraphQL label filter expecting OR semantics** → Read [GitHub GraphQL Label Semantics](github-graphql-label-semantics.md) first. GitHub GraphQL uses AND semantics for label filters. Passing labels=['erk-plan', 'erk-learn'] returns only items with BOTH labels, not either. Query by type-specific labels separately.
+
 **passing secret values as command-line arguments** → Read [GitHub Admin Gateway](github-admin-gateway.md) first. Secret values must be passed via stdin (input= parameter) to avoid process list exposure. See github-admin-gateway.md.
 
 **passing variables to gh api graphql as JSON blob** [pattern: `gh\s+api\s+graphql`] → Read [GitHub GraphQL API Patterns](github-graphql.md) first. Variables must be passed individually with -f (strings) and -F (typed). The syntax `-f variables={...}` does NOT work.
 
+**piping JSON through bash heredoc to gh api or other commands** → Read [Heredoc Quoting and Escaping in Agent-Generated Bash](bash-python-integration.md) first. JSON with special characters ($, backticks, backslashes) gets silently corrupted by bash expansion in unquoted heredocs. Use <<'EOF' (quoted) or write to a temp file and pipe from that.
+
 **proposing branch-based session storage as a new idea** → Read [Session Storage Architecture](session-storage-revert-rationale.md) first. Session storage IS branch-based (async-learn/{plan_id} branches). An earlier attempt at a different branch-based approach was tried and reverted in PR #7757→#7765. The current branch-based approach (upload_session.py) is the stable implementation.
+
+**querying plans by base label erk-planned-pr instead of type-specific labels** → Read [GitHub GraphQL Label Semantics](github-graphql-label-semantics.md) first. Query by type-specific labels (erk-plan, erk-learn) not base label. AND semantics means querying erk-planned-pr + erk-plan returns only items with both, which may silently exclude items.
 
 **reading agent output with TaskOutput then writing it to a file with Write** → Read [Context Efficiency Patterns](context-efficiency.md) first. This is the 'content relay' anti-pattern — it causes 2x context duplication. Instead, have agents accept an output_path parameter and write directly. See /erk:learn for the canonical implementation.
 
@@ -233,6 +247,8 @@ Rules triggered by matching actions in code.
 **removing .erk/impl-context/ during implementation without git rm** → Read [Impl-Context API](impl-context-api.md) first. Use git rm -rf for committed impl-context (Step 2d of plan-implement). The remove_impl_context() function is for filesystem-only removal.
 
 **removing an abstract method from a gateway ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must remove from 5 places simultaneously: abc.py, real.py, fake.py, dry_run.py, printing.py. Partial removal causes type checker errors. Update all call sites to use subgateway property. Verify with grep across packages.
+
+**returning a collection (list, tuple, str) directly from a function with NonIdealState return type** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Raw built-ins can't inherit EnsurableResult. Wrap in a named frozen dataclass that inherits EnsurableResult and implements **iter** if needed. See 'The Wrapping Rule' section.
 
 **returning pre-rendered display strings from backend APIs** → Read [State Derivation Pattern](state-derivation-pattern.md) first. Return raw state fields instead. Derive display state in frontend pure functions for testability and reusability.
 
@@ -298,9 +314,11 @@ Rules triggered by matching actions in code.
 
 **using git merge on a Graphite-managed branch** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Merge commits break Graphite's linear stack model. Use git pull --rebase or gt sync. Merge commits cause gt squash divergence errors and broken parent tracking.
 
-**using git pull or git pull --rebase on a Graphite-managed branch** [pattern: `git\s+pull`] → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Use /erk:sync-divergence instead. git pull --rebase rewrites commit SHAs outside Graphite's tracking, causing stack divergence that requires manual cleanup with gt sync --restack and force-push.
+**using git pull or git pull --rebase on a Graphite-managed branch** [pattern: `git\s+pull`] → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Use /erk:reconcile-with-remote instead. git pull --rebase rewrites commit SHAs outside Graphite's tracking, causing stack divergence that requires manual cleanup with gt sync --restack and force-push.
 
 **using git stash in scripts that have running processes dependent on working tree state** → Read [Git Operation Patterns](git-operation-patterns.md) first. git stash changes working tree state which affects running processes. If code is executing from the working tree (e.g., Python scripts), stashing can cause import errors or missing file errors in the running process.
+
+**using if/else on a discriminated union without isinstance() for type narrowing** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Type checkers require isinstance() for narrowing. 'if result.is_error' or 'if not result' does not narrow. Use 'if isinstance(result, ErrorType):' for correct narrowing in both branches.
 
 **using mutable list fields directly for mutation tracking in fakes** → Read [Fake Mutation Tracking](fake-mutation-tracking.md) first. Expose mutation tracking via @property returning tuple or .copy(). Internal lists should be private. See fake-mutation-tracking.md.
 

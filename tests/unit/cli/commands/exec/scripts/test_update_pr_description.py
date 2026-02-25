@@ -19,7 +19,6 @@ from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
 from tests.fakes.prompt_executor import FakePromptExecutor
@@ -67,7 +66,7 @@ def _make_issue_info(
         body=body,
         state="OPEN",
         url=f"https://github.com/test-owner/test-repo/issues/{number}",
-        labels=["erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=now,
         updated_at=now,
@@ -349,14 +348,13 @@ def test_uses_graphite_parent() -> None:
 
 
 def test_no_plan_context_after_pxxxx_removal() -> None:
-    """Test that plan context is NOT embedded after removing P<N> branch naming.
+    """Test that plan content from old issue-comment mechanism is NOT embedded.
 
-    Since branch-based plan discovery is removed and GitHubPlanStore.get_plan_for_branch
-    always returns PlanNotFound (resolve_plan_id_for_branch returns None), plan context
-    is no longer available for PR description generation. This test verifies that
-    update-pr-description gracefully degrades when plan context is unavailable.
+    With PlannedPRBackend, get_plan_for_branch returns the feature PR on the branch
+    (PR #42 with empty body). The plan content from issue #123's comment is NOT used.
+    The "Fix the bug." text from comment #1000 should not appear in the PR description.
 
-    Note: plan-ref.json exists in .impl/ but GitHubPlanStore.get_plan_for_branch
+    Note: plan-ref.json exists in .impl/ but PlannedPRBackend.get_plan_for_branch
     doesn't read it. Future work may restore plan context via plan-ref.json lookup.
     """
     runner = CliRunner()
@@ -380,7 +378,7 @@ def test_no_plan_context_after_pxxxx_removal() -> None:
             fake_github_issues=fake_github_issues,
         )
 
-        # Create .impl/plan-ref.json (not currently used by GitHubPlanStore.get_plan_for_branch)
+        # Create .impl/plan-ref.json (not currently used by PlannedPRBackend.get_plan_for_branch)
         impl_dir = env.cwd / ".impl"
         impl_dir.mkdir(parents=True, exist_ok=True)
         from erk_shared.impl_folder import save_plan_ref
@@ -400,18 +398,18 @@ def test_no_plan_context_after_pxxxx_removal() -> None:
             graphite=graphite,
             github=github,
             prompt_executor=executor,
-            plan_store=GitHubPlanStore(fake_github_issues),
+            plan_store=PlannedPRBackend(github, fake_github_issues, time=FakeTime()),
         )
 
         result = runner.invoke(update_pr_description, [], obj=ctx)
 
         assert result.exit_code == 0
-        # Plan context is NOT available — should NOT see this message
+        # Old plan-context message should NOT appear (plan found via PR, not issue)
         assert "Incorporating plan from issue #123" not in result.output
 
-        # PR body should not contain plan details section
+        # PR body should not contain plan content from issue #123's comment
         _, updated_body = github.updated_pr_bodies[0]
-        assert "Implementation Plan" not in updated_body
+        assert "Fix the bug." not in updated_body
 
 
 def test_update_pr_description_planned_pr_backend_preserves_metadata() -> None:

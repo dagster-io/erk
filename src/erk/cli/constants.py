@@ -46,10 +46,8 @@ AUTOFIX_TRIGGER_WORKFLOWS = frozenset(
     }
 )
 
-# Documentation extraction tracking label
-DOCS_EXTRACTED_LABEL = "docs-extracted"
-DOCS_EXTRACTED_LABEL_DESCRIPTION = "Session logs analyzed for documentation improvements"
-DOCS_EXTRACTED_LABEL_COLOR = "5319E7"  # Purple
+# Shared label for all plan PRs (implementation + learn)
+ERK_PR_LABEL = "erk-pr"
 
 # Learn plan label (for plans that learn from sessions)
 ERK_LEARN_LABEL = "erk-learn"

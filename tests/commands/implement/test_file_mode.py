@@ -29,10 +29,10 @@ def test_implement_from_plan_file() -> None:
         result = runner.invoke(implement, [str(plan_file)], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created .impl/ folder" in result.output
+        assert "✓ Created impl folder" in result.output
 
-        # Verify .impl/ folder exists with plan content
-        impl_plan = env.cwd / ".impl" / "plan.md"
+        # Verify branch-scoped impl folder exists with plan content
+        impl_plan = env.cwd / ".erk" / "impl-context" / "current" / "plan.md"
         assert impl_plan.exists()
         assert impl_plan.read_text(encoding="utf-8") == plan_content
 
@@ -59,10 +59,10 @@ def test_implement_from_plan_file_creates_impl_folder() -> None:
         result = runner.invoke(implement, [str(plan_file)], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created .impl/ folder" in result.output
+        assert "✓ Created impl folder" in result.output
 
-        # Verify .impl/ was created in current directory
-        impl_dir = env.cwd / ".impl"
+        # Verify branch-scoped impl was created in current directory
+        impl_dir = env.cwd / ".erk" / "impl-context" / "current"
         assert impl_dir.exists()
         assert (impl_dir / "plan.md").exists()
 

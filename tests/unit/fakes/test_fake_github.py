@@ -398,7 +398,7 @@ def test_fake_github_get_issues_with_pr_linkages_empty() -> None:
 
     issues, pr_linkages = ops.get_issues_with_pr_linkages(
         location=TEST_LOCATION,
-        labels=["erk-plan"],
+        labels=["erk-pr", "erk-plan"],
     )
 
     assert issues == []
@@ -414,7 +414,7 @@ def test_fake_github_get_issues_with_pr_linkages_filters_by_labels() -> None:
         body="",
         state="OPEN",
         url="https://github.com/owner/repo/issues/1",
-        labels=["erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=now,
         updated_at=now,
@@ -436,7 +436,7 @@ def test_fake_github_get_issues_with_pr_linkages_filters_by_labels() -> None:
 
     issues, _ = ops.get_issues_with_pr_linkages(
         location=TEST_LOCATION,
-        labels=["erk-plan"],
+        labels=["erk-pr", "erk-plan"],
     )
 
     assert len(issues) == 1
@@ -452,7 +452,7 @@ def test_fake_github_get_issues_with_pr_linkages_filters_by_state() -> None:
         body="",
         state="OPEN",
         url="",
-        labels=["erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=now,
         updated_at=now,
@@ -464,7 +464,7 @@ def test_fake_github_get_issues_with_pr_linkages_filters_by_state() -> None:
         body="",
         state="CLOSED",
         url="",
-        labels=["erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=now,
         updated_at=now,
@@ -474,7 +474,7 @@ def test_fake_github_get_issues_with_pr_linkages_filters_by_state() -> None:
 
     issues, _ = ops.get_issues_with_pr_linkages(
         location=TEST_LOCATION,
-        labels=["erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         state="open",
     )
 
@@ -491,7 +491,7 @@ def test_fake_github_get_issues_with_pr_linkages_returns_pr_linkages() -> None:
         body="",
         state="OPEN",
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=now,
         updated_at=now,
@@ -514,7 +514,7 @@ def test_fake_github_get_issues_with_pr_linkages_returns_pr_linkages() -> None:
 
     issues, pr_linkages = ops.get_issues_with_pr_linkages(
         location=TEST_LOCATION,
-        labels=["erk-plan"],
+        labels=["erk-pr", "erk-plan"],
     )
 
     assert len(issues) == 1
@@ -532,7 +532,7 @@ def test_fake_github_get_issues_with_pr_linkages_respects_limit() -> None:
             body="",
             state="OPEN",
             url=f"https://github.com/owner/repo/issues/{i}",
-            labels=["erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -544,7 +544,7 @@ def test_fake_github_get_issues_with_pr_linkages_respects_limit() -> None:
 
     result_issues, _ = ops.get_issues_with_pr_linkages(
         location=TEST_LOCATION,
-        labels=["erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         limit=3,
     )
 
@@ -560,7 +560,7 @@ def test_fake_github_get_issues_with_pr_linkages_no_linkages_for_filtered_issues
         body="",
         state="OPEN",
         url="",
-        labels=["erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=now,
         updated_at=now,
@@ -596,7 +596,7 @@ def test_fake_github_get_issues_with_pr_linkages_no_linkages_for_filtered_issues
 
     issues, pr_linkages = ops.get_issues_with_pr_linkages(
         location=TEST_LOCATION,
-        labels=["erk-plan"],
+        labels=["erk-pr", "erk-plan"],
     )
 
     # Only issue 1 matches, so no PR linkages should be returned

@@ -18,17 +18,17 @@ audit_result: clean
 
 # Learn Plans vs. Implementation Plans
 
-Erk has two plan types that share the same issue infrastructure (`erk-plan` label, plan-header metadata, same lifecycle phases) but serve fundamentally different purposes. Understanding when to use each — and how they connect — prevents workflow mistakes and ensures documentation is created alongside the code it documents.
+Erk has two plan types that share the same issue infrastructure (`erk-pr` base label, plan-header metadata, same lifecycle phases) but serve fundamentally different purposes. Understanding when to use each — and how they connect — prevents workflow mistakes and ensures documentation is created alongside the code it documents.
 
 ## Decision Table
 
 **Ask: "Is the primary output code or documentation?"**
 
-| Signal                                    | Plan Type      | Label(s)                 | Typical Output              |
-| ----------------------------------------- | -------------- | ------------------------ | --------------------------- |
-| Adding features, fixing bugs, refactoring | Implementation | `erk-plan`               | Source code, tests, config  |
-| Extracting insights from completed work   | Learn          | `erk-plan` + `erk-learn` | Docs in `docs/learned/`     |
-| Consolidating learnings from multiple PRs | Learn          | `erk-plan` + `erk-learn` | Docs, tripwires, checklists |
+| Signal                                    | Plan Type      | Label(s)               | Typical Output              |
+| ----------------------------------------- | -------------- | ---------------------- | --------------------------- |
+| Adding features, fixing bugs, refactoring | Implementation | `erk-pr` + `erk-plan`  | Source code, tests, config  |
+| Extracting insights from completed work   | Learn          | `erk-pr` + `erk-learn` | Docs in `docs/learned/`     |
+| Consolidating learnings from multiple PRs | Learn          | `erk-pr` + `erk-learn` | Docs, tripwires, checklists |
 
 ## Why Two Types Exist
 
@@ -50,15 +50,15 @@ See the `LEARNED_FROM_ISSUE` constant and `PlanHeaderFieldName` type in `package
 
 This field drives three behaviors:
 
-1. **Base branch auto-detection** — During `erk plan submit`, the submit command reads `learned_from_issue`, fetches the parent issue, extracts its `branch_name`, and uses that as the base branch. This creates a stacked branch hierarchy: trunk → implementation branch → learn plan branch.
+1. **Base branch auto-detection** — During `erk pr dispatch`, the dispatch command reads `learned_from_issue`, fetches the parent issue, extracts its `branch_name`, and uses that as the base branch. This creates a stacked branch hierarchy: trunk → implementation branch → learn plan branch.
 
 2. **Learn status tracking** — When a learn plan's PR lands, `erk land` reads `learned_from_issue` to find the parent and updates the parent's `learn_status` to `plan_completed` with the learn plan's PR number.
 
 3. **Cycle detection** — `/erk:learn` checks for `erk-learn` label before proceeding, preventing learn-on-learn chains.
 
-<!-- Source: src/erk/cli/commands/submit.py, get_learn_plan_parent_branch -->
+<!-- Source: src/erk/cli/commands/pr/dispatch_cmd.py, get_learn_plan_parent_branch -->
 
-See `get_learn_plan_parent_branch()` in `src/erk/cli/commands/submit.py` for the base branch resolution logic with its fallback to trunk.
+See `get_learn_plan_parent_branch()` in `src/erk/cli/commands/pr/dispatch_cmd.py` for the base branch resolution logic with its fallback to trunk.
 
 <!-- Source: src/erk/cli/commands/land_cmd.py, _update_parent_learn_status_if_learn_plan -->
 
@@ -101,7 +101,7 @@ See `LearnStatusValue` in `packages/erk-shared/src/erk_shared/gateway/github/met
 
 **Running `/erk:learn` on a learn plan issue**: Creates a documentation cycle. The learn command rejects this with a clear error.
 
-**Overriding `--base` on learn plan submission without reason**: The auto-detected parent branch is almost always correct. Override only when the parent branch has been deleted from the remote.
+**Overriding `--base` on learn plan dispatch without reason**: The auto-detected parent branch is almost always correct. Override only when the parent branch has been deleted from the remote.
 
 ## Related Documentation
 

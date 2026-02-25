@@ -369,7 +369,7 @@ def test_branch_create_for_plan_creates_branch_and_impl_folder(tmp_path) -> None
             body="# Plan\nImplementation details",
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/123",
-            labels=["erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -405,12 +405,12 @@ def test_branch_create_for_plan_creates_branch_and_impl_folder(tmp_path) -> None
         assert "To activate and start implementation:" in result.output
         assert "erk implement" in result.output
 
-        # Verify .impl/ folder was created in the worktree
+        # Verify impl folder was created in the worktree (branch-scoped)
         worktree_path = repo_dir / "worktrees" / "erk-slot-01"
-        impl_folder = worktree_path / ".impl"
+        impl_folder = worktree_path / ".erk" / "impl-context" / "plan-123"
         assert impl_folder.exists()
         assert (impl_folder / "plan.md").exists()
-        assert (impl_folder / "plan-ref.json").exists()
+        assert (impl_folder / "ref.json").exists()
 
         # Verify activation script was created
         activate_script = worktree_path / ".erk" / "bin" / "activate.sh"
@@ -446,7 +446,7 @@ def test_branch_create_for_plan_with_issue_url(tmp_path) -> None:
             body="# Bug fix plan",
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/456",
-            labels=["erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -508,7 +508,7 @@ def test_branch_create_for_plan_with_no_slot_skips_impl() -> None:
             body="# Plan",
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/100",
-            labels=["erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -681,7 +681,7 @@ def test_branch_create_for_plan_stacks_on_current_branch() -> None:
             body="# Plan\nStacked implementation",
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/200",
-            labels=["erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -894,7 +894,7 @@ def test_branch_create_for_plan_stacks_in_place_creates_impl() -> None:
             body="# Plan\nStacked implementation",
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/300",
-            labels=["erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -930,8 +930,8 @@ def test_branch_create_for_plan_stacks_in_place_creates_impl() -> None:
         assert len(state.assignments) == 1
         assert "plan-300" in state.assignments[0].branch_name
 
-        # Verify .impl/ was created at cwd (the slot worktree)
-        impl_folder = env.cwd / ".impl"
+        # Verify impl folder was created at cwd (the slot worktree, branch-scoped)
+        impl_folder = env.cwd / ".erk" / "impl-context" / "plan-300"
         assert impl_folder.exists()
         assert (impl_folder / "plan.md").exists()
 

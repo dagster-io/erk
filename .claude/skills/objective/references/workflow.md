@@ -111,24 +111,7 @@ Spawn an erk-plan when:
 
 ```bash
 # Create an erk-plan for a specific objective node
-erk pr create \
-  --title "[Node description]" \
-  --body "$(cat <<'EOF'
-## Context
-
-Part of Objective #<issue-number>, Node <N.M>.
-
-[Link to objective]: https://github.com/<owner>/<repo>/issues/<issue-number>
-
-## Goal
-
-[Specific deliverable for this node]
-
-## Implementation
-
-[Plan details]
-EOF
-)"
+erk pr create --file plan.md --title "[Node description]"
 ```
 
 3. **Update objective** - Mark node as in-progress

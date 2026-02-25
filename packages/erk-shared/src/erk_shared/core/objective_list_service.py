@@ -7,7 +7,7 @@ are GitHub issues with the 'erk-objective' label. No labels parameter is exposed
 from abc import ABC, abstractmethod
 
 from erk_shared.core.plan_list_service import PlanListData
-from erk_shared.gateway.github.types import GitHubRepoLocation
+from erk_shared.gateway.github.types import GitHubRepoLocation, IssueFilterState
 
 
 class ObjectiveListService(ABC):
@@ -22,19 +22,21 @@ class ObjectiveListService(ABC):
         self,
         *,
         location: GitHubRepoLocation,
-        state: str | None = None,
+        state: IssueFilterState = "open",
         limit: int | None = None,
         skip_workflow_runs: bool = False,
         creator: str | None = None,
+        exclude_labels: list[str] | None = None,
     ) -> PlanListData:
         """Fetch all data needed for objective listing.
 
         Args:
             location: GitHub repository location (local root + repo identity)
-            state: Filter by state ("open", "closed", or None for all)
+            state: Filter by state ("open" or "closed")
             limit: Maximum number of objectives to return (None for no limit)
             skip_workflow_runs: If True, skip fetching workflow runs (for performance)
             creator: Filter by creator username
+            exclude_labels: Labels to exclude from results
 
         Returns:
             PlanListData containing objectives as plans, PR linkages, and workflow runs

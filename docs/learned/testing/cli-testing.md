@@ -197,16 +197,16 @@ def test_command_with_multiple_dependencies() -> None:
 
 ## Real-World Examples
 
-### Example 1: Testing plan-save-to-issue
+### Example 1: Testing plan-save
 
-From `tests/unit/cli/commands/exec/scripts/test_plan_save_to_issue.py`:
+From `tests/unit/cli/commands/exec/scripts/test_plan_save.py`:
 
 ```python
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 
-def test_plan_save_to_issue_success() -> None:
+def test_plan_save_success() -> None:
     """Test successful plan extraction and issue creation."""
     fake_gh = FakeGitHubIssues()
     plan_content = """# My Feature
@@ -219,8 +219,8 @@ This is a comprehensive feature plan that includes all the necessary details.
     runner = CliRunner()
 
     result = runner.invoke(
-        plan_save_to_issue,
-        ["--format", "json"],
+        plan_save,
+        ["--format", "json", "--branch-slug", "test-slug"],
         obj=ErkContext.for_test(
             github_issues=fake_gh,
             claude_installation=fake_store,
@@ -331,12 +331,12 @@ def test_command_with_fake_context() -> None:
 ```python
 def test_command_with_monkeypatch(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test command that internally creates dependencies."""
-    fake_store, _ = create_plan_store_with_plans({})
+    fake_backend, _ = create_plan_store_with_plans({})
 
     # Mock the factory that creates the dependency
     monkeypatch.setattr(
-        "my_module.GitHubPlanStore",
-        lambda github_issues: fake_store,
+        "my_module.PlannedPRBackend",
+        lambda github: fake_backend,
     )
 
     runner = CliRunner()

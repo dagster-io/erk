@@ -47,11 +47,11 @@ from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.impl_folder import create_impl_folder, read_plan_ref
 
 
-def _run_impl_init(cwd: Path) -> dict[str, object]:
+def _run_impl_init(ctx: click.Context) -> dict[str, object]:
     """Run impl-init validation and return the result.
 
     Args:
-        cwd: Working directory to search for .impl/ in.
+        ctx: Click context for dependency injection.
 
     Returns:
         Dict with 'valid' key and plan metadata.
@@ -59,7 +59,7 @@ def _run_impl_init(cwd: Path) -> dict[str, object]:
     Raises:
         SystemExit: If validation fails.
     """
-    impl_dir, impl_type = _validate_impl_folder(cwd)
+    impl_dir, impl_type = _validate_impl_folder(ctx)
     plan_ref = read_plan_ref(impl_dir)
     has_plan_tracking = plan_ref is not None
     if plan_ref is not None:
@@ -133,8 +133,10 @@ def _setup_from_file(
     branch_manager.create_branch(repo_root, branch_name, current_branch)
     branch_manager.checkout_branch(cwd, branch_name)
 
-    # Create .impl/ folder
-    create_impl_folder(worktree_path=cwd, plan_content=plan_content, overwrite=True)
+    # Create impl folder
+    create_impl_folder(
+        worktree_path=cwd, plan_content=plan_content, branch_name=branch_name, overwrite=True
+    )
 
     related_docs = _extract_related_docs(plan_content)
 
@@ -185,7 +187,7 @@ def setup_impl(ctx: click.Context, issue_number: int | None, file_path: Path | N
             raise SystemExit(1)
 
         # Run impl-init for validation
-        init_result = _run_impl_init(cwd)
+        init_result = _run_impl_init(ctx)
         result["related_docs"] = init_result.get("related_docs", {"skills": [], "docs": []})
         click.echo(json.dumps(result))
         return
@@ -207,7 +209,7 @@ def setup_impl(ctx: click.Context, issue_number: int | None, file_path: Path | N
 
         # File-based plan (no tracking) - just validate
         if (impl_dir / "plan.md").exists():
-            init_result = _run_impl_init(cwd)
+            init_result = _run_impl_init(ctx)
             # Run cleanup and output
             ctx.invoke(cleanup_impl_context)
             click.echo(
@@ -288,7 +290,7 @@ def _handle_issue_setup(ctx: click.Context, *, issue_number: int) -> None:
 
     # Run impl-init for validation and metadata
     try:
-        init_result = _run_impl_init(require_cwd(ctx))
+        init_result = _run_impl_init(ctx)
     except SystemExit:
         click.echo(
             json.dumps(

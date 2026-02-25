@@ -55,7 +55,7 @@ def test_get_issues_with_pr_linkages_uses_gh_array_syntax_for_labels(
 
         github.get_issues_with_pr_linkages(
             location=location,
-            labels=["erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             state="OPEN",
         )
 
@@ -111,7 +111,7 @@ def test_get_issues_with_pr_linkages_uses_gh_array_syntax_for_states(
 
         github.get_issues_with_pr_linkages(
             location=location,
-            labels=["erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             state="OPEN",
         )
 
@@ -171,7 +171,7 @@ def test_get_issues_with_pr_linkages_uses_gh_object_syntax_for_filterby(
 
         github.get_issues_with_pr_linkages(
             location=location,
-            labels=["erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             creator="testuser",  # This triggers filterBy variable
         )
 
@@ -226,7 +226,7 @@ def test_get_issues_with_pr_linkages_uses_string_flags_for_strings(
 
         github.get_issues_with_pr_linkages(
             location=location,
-            labels=["erk-plan"],
+            labels=["erk-pr", "erk-plan"],
         )
 
         assert len(created_commands) == 1
@@ -284,7 +284,7 @@ def test_get_issues_with_pr_linkages_uses_typed_flag_for_first(
 
         github.get_issues_with_pr_linkages(
             location=location,
-            labels=["erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             limit=50,
         )
 

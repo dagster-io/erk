@@ -6,11 +6,11 @@ Pure unit tests (Layer 3) - no dependencies on fakes or external systems.
 from erk_shared.gateway.github.plan_issues import get_erk_label_definitions, get_required_erk_labels
 
 
-def test_get_erk_label_definitions_returns_four_labels() -> None:
-    """Test that get_erk_label_definitions returns all four expected labels."""
+def test_get_erk_label_definitions_returns_five_labels() -> None:
+    """Test that get_erk_label_definitions returns all five expected labels."""
     labels = get_erk_label_definitions()
 
-    assert len(labels) == 4
+    assert len(labels) == 5
 
 
 def test_get_erk_label_definitions_contains_erk_plan() -> None:
@@ -52,6 +52,19 @@ def test_get_erk_label_definitions_contains_erk_objective() -> None:
     assert erk_objective.color == "5319E7"  # Purple
 
 
+def test_get_erk_label_definitions_contains_erk_pr() -> None:
+    """Test that erk-pr label is included with correct properties."""
+    labels = get_erk_label_definitions()
+
+    erk_pr_labels = [label for label in labels if label.name == "erk-pr"]
+    assert len(erk_pr_labels) == 1
+
+    erk_pr = erk_pr_labels[0]
+    assert erk_pr.name == "erk-pr"
+    assert erk_pr.description == "Plan managed as a draft PR"
+    assert erk_pr.color == "1D76DB"
+
+
 def test_get_erk_label_definitions_contains_no_changes() -> None:
     """Test that no-changes label is included with correct properties."""
     labels = get_erk_label_definitions()
@@ -80,11 +93,19 @@ def test_get_erk_label_definitions_returns_frozen_dataclasses() -> None:
 # Tests for get_required_erk_labels()
 
 
-def test_get_required_erk_labels_returns_two_labels() -> None:
-    """Test that get_required_erk_labels returns only two labels."""
+def test_get_required_erk_labels_returns_three_labels() -> None:
+    """Test that get_required_erk_labels returns three labels."""
     labels = get_required_erk_labels()
 
-    assert len(labels) == 2
+    assert len(labels) == 3
+
+
+def test_get_required_erk_labels_contains_erk_pr() -> None:
+    """Test that erk-pr label is included."""
+    labels = get_required_erk_labels()
+
+    label_names = [label.name for label in labels]
+    assert "erk-pr" in label_names
 
 
 def test_get_required_erk_labels_contains_erk_plan() -> None:

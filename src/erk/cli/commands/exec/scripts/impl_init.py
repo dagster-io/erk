@@ -28,7 +28,8 @@ from typing import NoReturn
 
 import click
 
-from erk_shared.impl_folder import read_plan_ref
+from erk_shared.context.helpers import require_cwd, require_git
+from erk_shared.impl_folder import IMPL_DIR_RELATIVE, read_plan_ref, resolve_impl_dir
 
 
 def _error_json(error_type: str, message: str) -> NoReturn:
@@ -38,11 +39,13 @@ def _error_json(error_type: str, message: str) -> NoReturn:
     raise SystemExit(1)
 
 
-def _validate_impl_folder(cwd: Path | None = None) -> tuple[Path, str]:
-    """Validate .impl/ or .erk/impl-context/ folder exists and has required files.
+def _validate_impl_folder(ctx: click.Context) -> tuple[Path, str]:
+    """Validate implementation folder exists and has required files.
+
+    Uses resolve_impl_dir() for branch-scoped discovery.
 
     Args:
-        cwd: Working directory to search in. Defaults to Path.cwd().
+        ctx: Click context for dependency injection.
 
     Returns:
         Tuple of (impl_dir Path, impl_type string)
@@ -50,26 +53,27 @@ def _validate_impl_folder(cwd: Path | None = None) -> tuple[Path, str]:
     Raises:
         SystemExit: If validation fails
     """
-    if cwd is None:
-        cwd = Path.cwd()
+    cwd = require_cwd(ctx)
+    git = require_git(ctx)
+    branch_name = git.branch.get_current_branch(cwd)
 
-    # Check .impl/ first, then .erk/impl-context/
-    impl_dir = cwd / ".impl"
-    impl_type = "impl"
+    impl_dir = resolve_impl_dir(cwd, branch_name=branch_name)
 
-    if not impl_dir.exists():
-        impl_dir = cwd / ".erk" / "impl-context"
-        impl_type = "impl-context"
-
-    if not impl_dir.exists():
-        _error_json(
-            "no_impl_folder",
-            "No .impl/ or .erk/impl-context/ folder found in current directory",
-        )
+    if impl_dir is None:
+        result = {
+            "valid": False,
+            "error_type": "no_impl_folder",
+            "message": "No implementation folder found in current directory",
+        }
+        click.echo(json.dumps(result))
+        raise SystemExit(1)
 
     plan_file = impl_dir / "plan.md"
     if not plan_file.exists():
         _error_json("no_plan_file", f"No plan.md found in {impl_dir.name}/ folder")
+
+    # Determine impl_type based on whether it's under IMPL_DIR_RELATIVE
+    impl_type = "impl-context" if IMPL_DIR_RELATIVE in str(impl_dir) else "impl"
 
     return impl_dir, impl_type
 
@@ -127,14 +131,15 @@ def _extract_related_docs(plan_content: str) -> dict[str, list[str]]:
 
 @click.command(name="impl-init")
 @click.option("--json", "json_output", is_flag=True, default=True, help="Output JSON (default)")
-def impl_init(json_output: bool) -> None:
+@click.pass_context
+def impl_init(ctx: click.Context, json_output: bool) -> None:
     """Initialize implementation by validating .impl/ folder.
 
     Validates .impl/ folder for /erk:plan-implement.
     Returns structured JSON with validation status and related documentation.
     """
     # Validate folder structure
-    impl_dir, impl_type = _validate_impl_folder()
+    impl_dir, impl_type = _validate_impl_folder(ctx)
 
     # Get plan reference info
     plan_ref = read_plan_ref(impl_dir)

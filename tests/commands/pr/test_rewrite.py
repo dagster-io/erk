@@ -358,7 +358,7 @@ def test_pr_rewrite_skips_lifecycle_when_plan_not_resolved() -> None:
             body=plan_body,
             state="OPEN",
             url="https://github.com/owner/repo/issues/100",
-            labels=["erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             assignees=[],
             created_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
             updated_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),

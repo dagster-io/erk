@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
+from erk_shared.gateway.github.types import IssueFilterState
+
 
 @dataclass(frozen=True)
 class PlanRowData:
@@ -74,10 +76,10 @@ class PlanRowData:
         objective_progress_display: Progress display (e.g., "3/7" or "-").
         objective_slug_display: Slug or stripped title fallback (max 25 chars).
         objective_state_display: Sparkline string (e.g., "✓✓✓▶▶○○○○").
-        objective_head_state: Head state of next node ("in progress", "ready", "-").
-        objective_head_plans: Tuple of (display, url) pairs for blocking head plans.
-            Each entry is a plan number like "#7911" paired with its GitHub URL.
-            Empty tuple when no blocking deps have associated plans.
+        objective_head_state: Head state of next node ("in-progress", "ready", "-").
+        objective_head_plans: Tuple of (display, url) pairs for blocking head PRs.
+            Each entry is a PR number like "#7911" paired with its GitHub PR URL.
+            Empty tuple when no blocking deps have linked PRs.
         objective_next_node_display: Next node ID display (e.g., "1.1" or "-").
 
         updated_at: Last update datetime of the issue.
@@ -147,6 +149,36 @@ class PlanRowData:
 
 
 @dataclass(frozen=True)
+class FetchTimings:
+    """Timing breakdown for a single fetch cycle.
+
+    All values are in milliseconds. The summary() method produces a
+    compact one-line string suitable for the status bar.
+    """
+
+    rest_issues_ms: float
+    graphql_enrich_ms: float
+    plan_parsing_ms: float
+    workflow_runs_ms: float
+    worktree_mapping_ms: float
+    row_building_ms: float
+    total_ms: float
+
+    def summary(self) -> str:
+        """One-line summary for status bar: 'rest:1.2 gql:2.3 wf:0.8 = 4.6s'."""
+        entries = [
+            ("rest", self.rest_issues_ms, 0),
+            ("gql", self.graphql_enrich_ms, 0),
+            ("parse", self.plan_parsing_ms, 100),
+            ("wf", self.workflow_runs_ms, 0),
+            ("wt", self.worktree_mapping_ms, 100),
+            ("rows", self.row_building_ms, 100),
+        ]
+        parts = [f"{label}:{ms / 1000:.1f}" for label, ms, threshold in entries if ms > threshold]
+        return " ".join(parts) + f" = {self.total_ms / 1000:.1f}s"
+
+
+@dataclass(frozen=True)
 class PlanFilters:
     """Filter options for plan list queries.
 
@@ -154,7 +186,7 @@ class PlanFilters:
 
     Attributes:
         labels: Labels to filter by (default: ["erk-plan"])
-        state: Filter by state ("open", "closed", or None for all)
+        state: Filter by state ("open" or "closed")
         run_state: Filter by workflow run state (e.g., "in_progress")
         limit: Maximum number of results (None for no limit)
         show_prs: Whether to include PR data
@@ -165,11 +197,12 @@ class PlanFilters:
     """
 
     labels: tuple[str, ...]
-    state: str | None
+    state: IssueFilterState
     run_state: str | None
     limit: int | None
     show_prs: bool
     show_runs: bool
+    exclude_labels: tuple[str, ...]
     creator: str | None = None
     show_pr_column: bool = True
     lifecycle_stage: str | None = None
@@ -179,10 +212,11 @@ class PlanFilters:
         """Create default filters (open erk-plan issues)."""
         return PlanFilters(
             labels=("erk-plan",),
-            state=None,
+            state="open",
             run_state=None,
             limit=None,
             show_prs=False,
             show_runs=False,
+            exclude_labels=(),
             creator=None,
         )

@@ -45,76 +45,6 @@ class RealGraphite(Graphite):
         """
         return f"https://app.graphite.com/github/pr/{repo_id.owner}/{repo_id.repo}/{pr_number}"
 
-    def sync(self, repo_root: Path, *, force: bool, quiet: bool) -> None:
-        """Run gt sync to synchronize with remote.
-
-        Error output (stderr) is always captured to ensure RuntimeError
-        includes complete error messages for debugging. In verbose mode (!quiet),
-        stderr is displayed to the user after successful execution.
-
-        Note: Uses try/except as an acceptable error boundary for handling gt CLI
-        availability. We cannot reliably check gt installation status a priori.
-
-        Args:
-            repo_root: Repository root directory
-            force: If True, pass --force flag to gt sync
-            quiet: If True, pass --quiet flag to gt sync for minimal output
-        """
-        cmd = ["gt", "sync", "--no-interactive"]
-        if force:
-            cmd.append("-f")
-        if quiet:
-            cmd.append("--quiet")
-
-        result = run_subprocess_with_context(
-            cmd=cmd,
-            operation_context="sync with Graphite (gt sync)",
-            cwd=repo_root,
-            stdout=DEVNULL if quiet else sys.stdout,
-            stderr=subprocess.PIPE,
-        )
-
-        # Display stderr in verbose mode after successful execution
-        if not quiet and result.stderr:
-            user_output(result.stderr, nl=False)
-
-        # Invalidate branches cache - gt sync modifies Graphite metadata
-        self._branches_cache = None
-
-    def restack(self, repo_root: Path, *, quiet: bool) -> None:
-        """Run gt restack to rebase the current stack.
-
-        More surgical than sync - only affects the current stack, not all branches
-        in the repository. Always runs with --no-interactive to prevent prompts
-        in automated workflows.
-
-        Error output (stderr) is always captured to ensure RuntimeError
-        includes complete error messages for debugging. In verbose mode (!quiet),
-        stderr is displayed to the user after successful execution.
-
-        Args:
-            repo_root: Repository root directory
-            quiet: If True, pass --quiet flag to gt restack for minimal output
-        """
-        cmd = ["gt", "restack", "--no-interactive"]
-        if quiet:
-            cmd.append("--quiet")
-
-        result = run_subprocess_with_context(
-            cmd=cmd,
-            operation_context="restack with Graphite (gt restack)",
-            cwd=repo_root,
-            stdout=DEVNULL if quiet else sys.stdout,
-            stderr=subprocess.PIPE,
-        )
-
-        # Display stderr in verbose mode after successful execution
-        if not quiet and result.stderr:
-            user_output(result.stderr, nl=False)
-
-        # Invalidate branches cache - gt restack modifies branch state
-        self._branches_cache = None
-
     def get_prs_from_graphite(self, git_ops: Git, repo_root: Path) -> dict[str, PullRequestInfo]:
         """Get PR information from Graphite's .git/.graphite_pr_info file."""
         git_dir = git_ops.repo.get_git_common_dir(repo_root)
@@ -160,14 +90,14 @@ class RealGraphite(Graphite):
         # Cache miss or stale - recompute
         data = read_graphite_json_file(cache_file, "Graphite cache")
 
-        # Get all branch heads from git for enrichment
-        git_branch_heads = {}
+        # Get all branch heads from git in a single call for enrichment
+        all_heads = git_ops.branch.get_all_branch_heads(repo_root)
         branches_data = data.get("branches", [])
-        for branch_name, _ in branches_data:
-            if isinstance(branch_name, str):
-                commit_sha = git_ops.branch.get_branch_head(repo_root, branch_name)
-                if commit_sha:
-                    git_branch_heads[branch_name] = commit_sha
+        git_branch_heads = {
+            branch_name: all_heads[branch_name]
+            for branch_name, _ in branches_data
+            if isinstance(branch_name, str) and branch_name in all_heads
+        }
 
         # parse_graphite_cache expects JSON string, so convert back
         self._branches_cache = parse_graphite_cache(json.dumps(data), git_branch_heads)
@@ -305,24 +235,33 @@ class RealGraphite(Graphite):
         if force:
             cmd.append("--force")
 
-        # Use 120-second timeout for network operations
+        # Use 90-second timeout to leave headroom before Bash tool's 120s timeout.
+        # Capture stdout so Python controls when output is written to the pipe,
+        # preventing loss of all output when the process is killed externally.
         try:
             result = subprocess.run(
                 cmd,
                 cwd=repo_root,
-                timeout=120,
-                stdout=DEVNULL if quiet else sys.stdout,
+                timeout=90,
+                stdout=DEVNULL if quiet else subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
                 check=True,
             )
+            if not quiet and result.stdout:
+                user_output(result.stdout, nl=False)
             if not quiet and result.stderr:
                 user_output(result.stderr, nl=False)
         except subprocess.TimeoutExpired as e:
+            if not quiet and e.stdout:
+                stdout = e.stdout if isinstance(e.stdout, str) else e.stdout.decode()
+                user_output(stdout, nl=False)
             raise RuntimeError(
-                "gt submit timed out after 120 seconds. Check network connectivity and try again."
+                "gt submit timed out after 90 seconds. Check network connectivity and try again."
             ) from e
         except subprocess.CalledProcessError as e:
+            if not quiet and e.stdout:
+                user_output(e.stdout, nl=False)
             raise RuntimeError(
                 f"gt submit failed (exit code {e.returncode}): {e.stderr or ''}"
             ) from e
@@ -344,21 +283,3 @@ class RealGraphite(Graphite):
             check=False,
         )
         return result.returncode == 0
-
-    def continue_restack(self, repo_root: Path, *, quiet: bool) -> None:
-        """Run gt continue to continue an in-progress restack."""
-        cmd = ["gt", "continue", "--no-interactive"]
-
-        result = run_subprocess_with_context(
-            cmd=cmd,
-            operation_context="continue restack with Graphite (gt continue)",
-            cwd=repo_root,
-            stdout=DEVNULL if quiet else subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-
-        if not quiet and result.stderr:
-            user_output(result.stderr, nl=False)
-
-        # Invalidate branches cache - gt continue modifies branch state
-        self._branches_cache = None

@@ -78,7 +78,7 @@ Launch a Task agent with:
 > Rules for VALIDATION:
 >
 > - FAIL if any issue does not exist
-> - FAIL if any issue is missing the erk-plan label
+> - FAIL if any issue is missing BOTH the erk-plan AND erk-learn labels (must have at least one)
 > - PASS otherwise (closed issues are warnings, not failures)
 
 **After the agent returns**, parse the structured summary:
@@ -86,7 +86,7 @@ Launch a Task agent with:
 1. **If VALIDATION is FAIL**: Display each error and abort:
 
    ```
-   Error: Issue #<number> is not an erk-plan issue (missing erk-plan label).
+   Error: Issue #<number> is not an erk plan issue (missing both erk-plan and erk-learn labels).
    ```
 
    ```
@@ -451,13 +451,13 @@ Next steps:
 
 ## Error Cases
 
-| Error                    | Message                                                                       |
-| ------------------------ | ----------------------------------------------------------------------------- |
-| Issue not found          | `Error: Issue #<number> not found.`                                           |
-| Not an erk-plan          | `Error: Issue #<number> is not an erk-plan issue (missing erk-plan label).`   |
-| No plan content          | `Error: No plan content found in issue #<number>.`                            |
-| GitHub CLI not available | `Error: GitHub CLI (gh) not available. Run: brew install gh && gh auth login` |
-| No network               | `Error: Unable to reach GitHub. Check network connectivity.`                  |
+| Error                    | Message                                                                                         |
+| ------------------------ | ----------------------------------------------------------------------------------------------- |
+| Issue not found          | `Error: Issue #<number> not found.`                                                             |
+| Not a plan               | `Error: Issue #<number> is not an erk plan issue (missing both erk-plan and erk-learn labels).` |
+| No plan content          | `Error: No plan content found in issue #<number>.`                                              |
+| GitHub CLI not available | `Error: GitHub CLI (gh) not available. Run: brew install gh && gh auth login`                   |
+| No network               | `Error: Unable to reach GitHub. Check network connectivity.`                                    |
 
 ---
 

@@ -142,6 +142,18 @@ class GitBranchOps(ABC):
         ...
 
     @abstractmethod
+    def get_all_branch_heads(self, repo_root: Path) -> dict[str, str]:
+        """Get commit SHAs for all local branches in a single call.
+
+        Args:
+            repo_root: Path to the git repository root
+
+        Returns:
+            Mapping of branch name to commit SHA.
+        """
+        ...
+
+    @abstractmethod
     def detect_trunk_branch(self, repo_root: Path) -> str:
         """Auto-detect the trunk branch name.
 
@@ -230,22 +242,6 @@ class GitBranchOps(ABC):
 
         Returns:
             BranchDivergence with is_diverged flag and ahead/behind counts.
-        """
-        ...
-
-    @abstractmethod
-    def get_branch_issue(self, repo_root: Path, branch: str) -> int | None:
-        """Extract GitHub issue number from branch name.
-
-        Deprecated: Branch names no longer encode issue numbers. This method
-        always returns None. Use plan-ref.json for plan-to-branch mapping.
-
-        Args:
-            repo_root: Path to the git repository root (unused)
-            branch: Branch name to parse (unused)
-
-        Returns:
-            Always None — issue numbers are not encoded in branch names
         """
         ...
 

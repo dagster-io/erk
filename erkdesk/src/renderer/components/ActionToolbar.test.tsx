@@ -44,7 +44,7 @@ describe("ActionToolbar", () => {
         onActionStart={mockOnActionStart}
       />,
     );
-    expect(screen.getByText("Submit")).toBeInTheDocument();
+    expect(screen.getByText("Dispatch")).toBeInTheDocument();
     expect(screen.getByText("Land")).toBeInTheDocument();
     expect(screen.getByText("Address")).toBeInTheDocument();
     expect(screen.getByText("Fix Conflicts")).toBeInTheDocument();
@@ -88,7 +88,7 @@ describe("ActionToolbar", () => {
       />,
     );
     expect(screen.getByText("Land")).toBeDisabled();
-    expect(screen.getByText("Submit")).not.toBeDisabled();
+    expect(screen.getByText("Dispatch")).not.toBeDisabled();
   });
 
   it("disables Land when run_url is null", () => {
@@ -114,7 +114,7 @@ describe("ActionToolbar", () => {
     expect(screen.getByText("Fix Conflicts")).toBeDisabled();
   });
 
-  it("disables Submit when no issue_url", () => {
+  it("disables Dispatch when no issue_url", () => {
     render(
       <ActionToolbar
         selectedPlan={makePlan({ issue_url: null })}
@@ -122,7 +122,7 @@ describe("ActionToolbar", () => {
         onActionStart={mockOnActionStart}
       />,
     );
-    expect(screen.getByText("Submit")).toBeDisabled();
+    expect(screen.getByText("Dispatch")).toBeDisabled();
   });
 
   it("Close is always enabled when plan selected", () => {
@@ -136,7 +136,7 @@ describe("ActionToolbar", () => {
     expect(screen.getByText("Close")).not.toBeDisabled();
   });
 
-  it("calls onActionStart with correct command for Submit", async () => {
+  it("calls onActionStart with correct command for Dispatch", async () => {
     render(
       <ActionToolbar
         selectedPlan={makePlan()}
@@ -145,11 +145,11 @@ describe("ActionToolbar", () => {
       />,
     );
     const user = userEvent.setup();
-    await user.click(screen.getByText("Submit"));
+    await user.click(screen.getByText("Dispatch"));
 
-    expect(mockOnActionStart).toHaveBeenCalledWith("submit_to_queue", "erk", [
-      "plan",
-      "submit",
+    expect(mockOnActionStart).toHaveBeenCalledWith("dispatch_to_queue", "erk", [
+      "pr",
+      "dispatch",
       "100",
     ]);
   });
@@ -233,12 +233,12 @@ describe("ActionToolbar", () => {
     render(
       <ActionToolbar
         selectedPlan={makePlan()}
-        runningActionId="submit_to_queue"
+        runningActionId="dispatch_to_queue"
         onActionStart={mockOnActionStart}
       />,
     );
 
-    expect(screen.getByText("Submit...")).toBeInTheDocument();
+    expect(screen.getByText("Dispatch...")).toBeInTheDocument();
     const buttons = screen.getAllByRole("button");
     for (const button of buttons) {
       expect(button).toBeDisabled();
@@ -255,6 +255,6 @@ describe("ActionToolbar", () => {
     );
 
     expect(screen.getByText("Land...")).toBeInTheDocument();
-    expect(screen.getByText("Submit")).toBeInTheDocument();
+    expect(screen.getByText("Dispatch")).toBeInTheDocument();
   });
 });

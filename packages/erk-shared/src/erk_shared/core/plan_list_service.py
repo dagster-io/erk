@@ -4,11 +4,22 @@ This module provides the abstract interface for efficiently fetching plan list d
 The real implementation remains in erk.core.services.plan_list_service.
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from erk_shared.gateway.github.types import GitHubRepoLocation, PullRequestInfo, WorkflowRun
+from erk_shared.gateway.github.types import (
+    GitHubRepoLocation,
+    IssueFilterState,
+    PullRequestInfo,
+    WorkflowRun,
+)
 from erk_shared.plan_store.types import Plan
+
+if TYPE_CHECKING:
+    from erk_shared.gateway.http.abc import HttpClient
 
 
 @dataclass(frozen=True)
@@ -19,11 +30,17 @@ class PlanListData:
         plans: List of Plan objects with enriched metadata
         pr_linkages: Mapping of issue_number -> list of PRs that close that issue
         workflow_runs: Mapping of issue_number -> most relevant WorkflowRun
+        api_ms: Milliseconds spent on REST+GraphQL API calls (issues/PRs fetch)
+        plan_parsing_ms: Milliseconds spent parsing plan bodies
+        workflow_runs_ms: Milliseconds spent fetching workflow runs
     """
 
     plans: list[Plan]
     pr_linkages: dict[int, list[PullRequestInfo]]
     workflow_runs: dict[int, WorkflowRun | None]
+    api_ms: float = 0.0
+    plan_parsing_ms: float = 0.0
+    workflow_runs_ms: float = 0.0
 
 
 class PlanListService(ABC):
@@ -40,21 +57,25 @@ class PlanListService(ABC):
         *,
         location: GitHubRepoLocation,
         labels: list[str],
-        state: str | None = None,
+        state: IssueFilterState = "open",
         limit: int | None = None,
         skip_workflow_runs: bool = False,
         creator: str | None = None,
+        exclude_labels: list[str] | None = None,
+        http_client: HttpClient | None,
     ) -> PlanListData:
         """Batch fetch all data needed for plan listing.
 
         Args:
             location: GitHub repository location (local root + repo identity)
             labels: Labels to filter issues by (e.g., ["erk-plan"])
-            state: Filter by state ("open", "closed", or None for all)
+            state: Filter by state ("open" or "closed")
             limit: Maximum number of issues to return (None for no limit)
             skip_workflow_runs: If True, skip fetching workflow runs (for performance)
             creator: Filter by creator username (e.g., "octocat"). If provided,
                 only issues created by this user are returned.
+            exclude_labels: Labels to exclude from results. Applied client-side before
+                expensive enrichment operations. None means no exclusion.
 
         Returns:
             PlanListData containing plans, PR linkages, and workflow runs

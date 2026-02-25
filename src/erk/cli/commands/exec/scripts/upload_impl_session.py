@@ -38,7 +38,7 @@ from erk_shared.context.helpers import (
     require_repo_root,
     require_time,
 )
-from erk_shared.impl_folder import read_plan_ref
+from erk_shared.impl_folder import read_plan_ref, resolve_impl_dir
 from erk_shared.plan_store.types import PlanNotFound
 
 
@@ -64,10 +64,12 @@ def upload_impl_session(ctx: click.Context, session_id: str) -> None:
     Always exits with code 0 (non-critical operation).
     """
     cwd = require_cwd(ctx)
+    git = require_git(ctx)
+    branch_name = git.branch.get_current_branch(cwd)
 
-    # Read plan reference from .impl/
-    impl_dir = cwd / ".impl"
-    if not impl_dir.exists():
+    # Read plan reference from resolved impl directory
+    impl_dir = resolve_impl_dir(cwd, branch_name=branch_name)
+    if impl_dir is None:
         _output_not_uploaded("no_impl_folder")
         return
 

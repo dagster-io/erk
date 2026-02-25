@@ -30,6 +30,7 @@ class FakeHttpClient(HttpClient):
         """Create FakeHttpClient with empty state."""
         self._requests: list[RecordedRequest] = []
         self._responses: dict[str, dict[str, Any]] = {}
+        self._list_responses: dict[str, list[dict[str, Any]]] = {}
         self._errors: dict[str, HttpError] = {}
 
     @property
@@ -55,6 +56,20 @@ class FakeHttpClient(HttpClient):
             response: The JSON response to return
         """
         self._responses[endpoint] = response
+
+    def set_list_response(
+        self,
+        endpoint: str,
+        *,
+        response: list[dict[str, Any]],
+    ) -> None:
+        """Configure a list response for an endpoint.
+
+        Args:
+            endpoint: The endpoint pattern to match
+            response: The JSON list response to return
+        """
+        self._list_responses[endpoint] = response
 
     def set_error(
         self,
@@ -149,3 +164,35 @@ class FakeHttpClient(HttpClient):
             Configured response dictionary
         """
         return self._get_response("GET", endpoint, None)
+
+    def get_list(
+        self,
+        endpoint: str,
+    ) -> list[dict[str, Any]]:
+        """Record GET request and return configured list response.
+
+        Args:
+            endpoint: API endpoint path
+
+        Returns:
+            Configured list response
+        """
+        self._get_response("GET", endpoint, None)
+        return self._list_responses.get(endpoint, [])
+
+    def graphql(
+        self,
+        *,
+        query: str,
+        variables: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Record GraphQL request and return configured response.
+
+        Args:
+            query: GraphQL query string
+            variables: Query variables
+
+        Returns:
+            Configured response dictionary
+        """
+        return self._get_response("POST", "graphql", {"query": query, "variables": variables})

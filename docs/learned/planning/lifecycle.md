@@ -8,7 +8,7 @@ read_when:
   - "understanding plan states"
 tripwires:
   - action: "manually creating an erk-plan issue with gh issue create"
-    warning: "Use `erk exec plan-save-to-issue --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section)."
+    warning: "Use `erk exec plan-save --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section)."
   - action: "saving a plan linked to an objective"
     warning: "Always verify the link was saved correctly with `erk exec get-plan-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives."
   - action: "implementing custom PR/plan relevance assessment logic"
@@ -103,7 +103,7 @@ When evaluating whether a plan should be implemented or closed, use the verdict 
 
 ### Session Idempotency
 
-Plan save operations are idempotent within a session. The `plan-save-to-issue` command:
+Plan save operations are idempotent within a session. The `plan-save` command:
 
 1. Checks if a plan issue was already created for this session ID
 2. If found, returns the existing issue instead of creating a duplicate
@@ -264,9 +264,9 @@ The `erk-plan` label marks issues as implementation plans:
 
 ## Phase 2: Plan Submission
 
-Submission prepares the plan for remote execution via `erk plan submit <issue_number>`.
+Submission prepares the plan for remote execution via `erk pr submit <issue_number>`.
 
-**Key responsibility**: `erk plan submit` is the **source of truth** for branch and PR creation. The workflow dispatch (Phase 3) expects these to already exist.
+**Key responsibility**: `erk pr submit` is the **source of truth** for branch and PR creation. The workflow dispatch (Phase 3) expects these to already exist.
 
 ### Pre-Submission Validation
 
@@ -278,17 +278,19 @@ Before submission, the command validates:
 
 ### Branch Reuse Detection
 
-Before creating a new branch, `erk plan submit` checks for existing local branches matching `P{issue_number}-*`:
+Before creating a new branch, `erk pr submit` checks for existing local branches matching the plan's branch pattern:
 
 ```
 Found existing local branch(es) for this issue:
-  • P123-feature-01-10-0900
-  • P123-feature-01-12-1430
+  • plnd/feature-01-10-0900
+  • plnd/feature-01-12-1430
 
-New branch would be: P123-feature-01-15-1600
+New branch would be: plnd/feature-01-15-1600
 
-Use existing branch 'P123-feature-01-12-1430'? [Y/n]
+Use existing branch 'plnd/feature-01-12-1430'? [Y/n]
 ```
+
+**Note:** Legacy issue-based plans may still use the `P{issue_number}-*` pattern. Current plans use the `plnd/` prefix.
 
 **User options:**
 
@@ -296,7 +298,7 @@ Use existing branch 'P123-feature-01-12-1430'? [Y/n]
 2. **Delete and create new**: Remove existing branches, start fresh
 3. **Abort**: Cancel submission
 
-This prevents branch proliferation when resubmitting plans. See [Branch Reuse in Plan Submit](submit-branch-reuse.md) for details.
+This prevents branch proliferation when resubmitting plans.
 
 ### Branch Creation
 
@@ -306,9 +308,11 @@ Branches are created directly via git:
 git branch <branch_name> <base_branch>
 ```
 
-**Branch naming**: Erk computes the branch name using `sanitize_worktree_name()` with a timestamp suffix. This ensures branch names match worktree naming conventions (31-char max + `-MM-DD-HHMM` suffix).
+**Branch naming**: Erk computes the branch name using `sanitize_worktree_name()` with a timestamp suffix. Branch names follow the pattern `plnd/{slug}-{timestamp}` where the slug is derived from the plan title.
 
-**Example**: Issue #123 "Add user authentication" → `123-add-user-authentic-11-30-1430`
+**Example**: Plan "Add user authentication" → `plnd/add-user-authentic-11-30-1430`
+
+**Legacy format**: Older plans may use the `P{issue}-{slug}-{timestamp}` format (e.g., `P123-add-user-authentic-11-30-1430`). The `P{issue}-` prefix is considered legacy; `plan-ref.json` is now the sole source of truth for plan-to-branch mapping.
 
 ### Learn Plan Base Branch Selection
 
@@ -323,13 +327,15 @@ This creates a branch hierarchy:
 
 ```
 trunk (main)
-    └── P123-feature-branch (parent implementation)
-            └── P456-docs-for-feature (learn plan)
+    └── plnd/feature-branch-01-15-1430 (parent implementation)
+            └── plnd/docs-for-feature-01-16-0900 (learn plan)
 ```
+
+**Note:** Legacy plans may still use the `P{issue}-` prefix pattern. Current plans use `plnd/` prefix.
 
 **Fallback**: If parent lookup fails (missing parent, no branch recorded), falls back to trunk.
 
-**Implementation**: See `get_learn_plan_parent_branch()` in `src/erk/cli/commands/submit.py`.
+**Implementation**: See `get_learn_plan_parent_branch()` in `src/erk/cli/commands/pr/dispatch_cmd.py`.
 
 ### `.erk/impl-context/` Folder Creation
 
@@ -430,7 +436,7 @@ This ensures only one implementation runs per issue at a time.
 
 #### Phase 3: Use Existing PR
 
-- Use existing PR (created by `erk plan submit`)
+- Use existing PR (created by `erk pr submit`)
 - Post `workflow-started` comment to issue
 - Update issue body with `last_dispatched_run_id`
 
@@ -668,15 +674,19 @@ Entities are connected through GitHub's native linking and deterministic metadat
 
 ### Branch → Issue
 
-Branches are named with the issue number prefix (e.g., `P123-feature-name-01-15-1430`), making the association clear but not relying on GitHub's native branch linking.
+Branches follow the pattern `plnd/{slug}-{timestamp}`. The association between branch and plan issue is tracked in `plan-ref.json`, which is the sole source of truth for plan-to-branch mapping.
+
+**Legacy format:** Older branches may use the `P{issue}-{slug}-{timestamp}` pattern (e.g., `P123-feature-name-01-15-1430`), where the issue number is encoded in the branch name. This format is considered legacy.
 
 #### Objective-Linked Branches
 
-When a plan is associated with an objective (via `plan.objective_id`), the branch name encodes both the plan and objective IDs:
+When a plan is associated with an objective (via `plan.objective_id`), the branch name encodes the objective ID:
 
-**Format**: `P{plan}-O{objective}-{slug}-{timestamp}`
+**Format**: `plnd/O{objective}-{slug}-{timestamp}`
 
-**Example**: `P6318-O6234-consolidated-do-01-30-1128`
+**Example**: `plnd/O6234-consolidated-do-01-30-1128`
+
+**Legacy format**: Older objective-linked branches may use `P{plan}-O{objective}-{slug}-{timestamp}` (e.g., `P6318-O6234-consolidated-do-01-30-1128`).
 
 This encoding enables:
 
@@ -687,10 +697,10 @@ This encoding enables:
 The objective ID is passed through the implementation pipeline:
 
 1. `plan.objective_id` is set when plan is created from an objective step
-2. `generate_issue_branch_name(..., objective_id=plan.objective_id)` encodes it into the branch name
+2. `generate_planned_pr_branch_name(..., objective_id=plan.objective_id)` encodes it into the branch name
 3. Downstream commands extract it via `extract_objective_number(current_branch)`
 
-**Backwards Compatibility**: All extraction functions work with both formats (`P123-O456-...` and `P123-...`).
+**Backwards Compatibility**: All extraction functions work with both current and legacy formats (`plnd/O456-...`, `P123-O456-...`, and `P123-...`).
 
 ### PR → Issue
 
@@ -930,7 +940,7 @@ During the planning stage:
 
 - Plan exists only as a GitHub issue with `erk-plan` label
 - No branch has been created yet
-- Branch is created during `erk plan submit` (Phase 2)
+- Branch is created during `erk pr submit` (Phase 2)
 
 **Implication:** Workflows that need branch information must verify the plan has been submitted (check for `branch_name` field).
 
@@ -987,7 +997,7 @@ Before dispatching a plan for implementation, validate:
 
 The `get-pr-for-plan` command becomes functional after:
 
-1. **Plan submission** completes (Phase 2: `erk plan submit`)
+1. **Plan submission** completes (Phase 2: `erk pr submit`)
 2. **Branch and PR creation** finishes
 3. **Metadata update** writes `branch_name` to plan-header
 
@@ -1013,7 +1023,7 @@ gh pr view "$PR_NUMBER"  # Fails if plan not submitted
 PR_NUMBER=$(erk exec get-pr-for-plan <issue_number>)
 
 if [ "$PR_NUMBER" = "no-branch-in-plan" ]; then
-  echo "Plan has not been submitted yet. Run: erk plan submit <number>"
+  echo "Plan has not been submitted yet. Run: erk pr submit <number>"
   exit 1
 fi
 
@@ -1043,12 +1053,12 @@ The field is nullable — plans created before this feature have `lifecycle_stag
 
 Each stage is set by specific commands at well-defined moments:
 
-| Stage      | Set By                                                                                                                         | When                                              |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------- |
-| `prompted` | `one_shot_dispatch`                                                                                                            | One-shot plan issue created                       |
-| `planning` | `one-shot.yml` workflow                                                                                                        | Agent begins writing plan                         |
-| `planned`  | `plan_save_to_issue`, `plan create`, `register_one_shot_plan`, `GitHubPlanBackend.create_plan`, `PlannedPRBackend.create_plan` | Plan saved to GitHub                              |
-| `impl`     | `mark-impl-started`, `impl-signal` (started/submitted), `handle-no-changes`, `pr/shared.py`                                    | Implementation begins, completes, or PR submitted |
+| Stage      | Set By                                                                                      | When                                              |
+| ---------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| `prompted` | `one_shot_dispatch`                                                                         | One-shot plan issue created                       |
+| `planning` | `one-shot.yml` workflow                                                                     | Agent begins writing plan                         |
+| `planned`  | `plan_save`, `plan create`, `register_one_shot_plan`, `PlannedPRBackend.create_plan`        | Plan saved to GitHub                              |
+| `impl`     | `mark-impl-started`, `impl-signal` (started/submitted), `handle-no-changes`, `pr/shared.py` | Implementation begins, completes, or PR submitted |
 
 ### Explicit Updates via Exec Command
 

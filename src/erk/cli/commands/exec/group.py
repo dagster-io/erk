@@ -50,7 +50,6 @@ from erk.cli.commands.exec.scripts.generate_pr_address_summary import (
     generate_pr_address_summary,
 )
 from erk.cli.commands.exec.scripts.generate_pr_summary import generate_pr_summary
-from erk.cli.commands.exec.scripts.get_closing_text import get_closing_text
 from erk.cli.commands.exec.scripts.get_embedded_prompt import get_embedded_prompt
 from erk.cli.commands.exec.scripts.get_issue_body import get_issue_body
 from erk.cli.commands.exec.scripts.get_issue_timeline_prs import (
@@ -68,6 +67,7 @@ from erk.cli.commands.exec.scripts.get_pr_context import get_pr_context
 from erk.cli.commands.exec.scripts.get_pr_discussion_comments import (
     get_pr_discussion_comments,
 )
+from erk.cli.commands.exec.scripts.get_pr_feedback import get_pr_feedback
 from erk.cli.commands.exec.scripts.get_pr_for_plan import get_pr_for_plan
 from erk.cli.commands.exec.scripts.get_pr_review_comments import (
     get_pr_review_comments,
@@ -110,7 +110,6 @@ from erk.cli.commands.exec.scripts.objective_update_after_land import (
     objective_update_after_land,
 )
 from erk.cli.commands.exec.scripts.plan_save import plan_save
-from erk.cli.commands.exec.scripts.plan_save_to_issue import plan_save_to_issue
 from erk.cli.commands.exec.scripts.plan_update_from_feedback import (
     plan_update_from_feedback,
 )
@@ -216,7 +215,6 @@ exec_group.add_command(find_project_dir, name="find-project-dir")
 exec_group.add_command(generate_node_slugs, name="generate-node-slugs")
 exec_group.add_command(generate_pr_address_summary, name="generate-pr-address-summary")
 exec_group.add_command(generate_pr_summary, name="generate-pr-summary")
-exec_group.add_command(get_closing_text, name="get-closing-text")
 exec_group.add_command(get_plan_info, name="get-plan-info")
 exec_group.add_command(get_plan_metadata, name="get-plan-metadata")
 exec_group.add_command(get_plans_for_objective, name="get-plans-for-objective")
@@ -231,6 +229,7 @@ exec_group.add_command(get_pr_context, name="get-pr-context")
 exec_group.add_command(handle_no_changes, name="handle-no-changes")
 exec_group.add_command(get_pr_commits, name="get-pr-commits")
 exec_group.add_command(get_pr_discussion_comments, name="get-pr-discussion-comments")
+exec_group.add_command(get_pr_feedback, name="get-pr-feedback")
 exec_group.add_command(get_pr_review_comments, name="get-pr-review-comments")
 exec_group.add_command(impl_init, name="impl-init")
 exec_group.add_command(impl_signal, name="impl-signal")
@@ -250,7 +249,6 @@ exec_group.add_command(objective_fetch_context, name="objective-fetch-context")
 exec_group.add_command(objective_update_after_land, name="objective-update-after-land")
 exec_group.add_command(objective_post_action_comment, name="objective-post-action-comment")
 exec_group.add_command(plan_save, name="plan-save")
-exec_group.add_command(plan_save_to_issue, name="plan-save-to-issue")
 exec_group.add_command(plan_update_from_feedback, name="plan-update-from-feedback")
 exec_group.add_command(plan_update_issue, name="plan-update-issue")
 exec_group.add_command(post_or_update_pr_summary, name="post-or-update-pr-summary")

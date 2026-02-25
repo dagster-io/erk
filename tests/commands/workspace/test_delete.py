@@ -385,7 +385,7 @@ def test_delete_blocks_when_pending_learn_marker_exists() -> None:
             result,
             1,
             "Worktree has pending learn",
-            "erk plan learn raw",
+            "erk learn",
         )
 
         # Verify worktree was NOT deleted
@@ -428,7 +428,7 @@ def test_delete_all_closes_pr_and_plan() -> None:
             body=_make_plan_body_with_worktree("test-feature"),
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/123",
-            labels=["erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -610,7 +610,7 @@ def test_delete_all_shows_closed_plan_status() -> None:
             body=_make_plan_body_with_worktree("test-feature"),
             state=PlanState.CLOSED,  # Already closed
             url="https://github.com/owner/repo/issues/456",
-            labels=["erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -658,7 +658,7 @@ def test_delete_all_shows_actual_pr_and_plan_numbers_in_confirmation() -> None:
             body=_make_plan_body_with_worktree("test-feature"),
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/789",
-            labels=["erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,

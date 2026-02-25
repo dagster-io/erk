@@ -19,10 +19,12 @@ from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
-from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+from tests.test_utils.plan_helpers import (
+    create_backend_from_issues,
+    format_plan_header_body_for_test,
+)
 
 
 def _make_state(
@@ -37,7 +39,7 @@ def _make_state(
     debug: bool = False,
     session_id: str = "test-session",
     skip_description: bool = False,
-    issue_number: int | None = None,
+    plan_id: str | None = None,
     pr_number: int | None = 42,
     pr_url: str | None = "https://github.com/owner/repo/pull/42",
     was_created: bool = True,
@@ -61,7 +63,7 @@ def _make_state(
         session_id=session_id,
         skip_description=skip_description,
         quiet=False,
-        issue_number=issue_number,
+        plan_id=plan_id,
         pr_number=pr_number,
         pr_url=pr_url,
         was_created=was_created,
@@ -329,8 +331,8 @@ def test_finalize_pr_planned_pr_backend_extracts_metadata(tmp_path: Path) -> Non
     result = finalize_pr(ctx, state)
 
     assert isinstance(result, SubmitState)
-    # Planned PR backend sets issue_number to None (no self-close)
-    assert result.issue_number is None
+    # Planned PR backend sets plan_id to None (no self-close)
+    assert result.plan_id is None
     # PR body should contain metadata prefix
     updated_body = fake_github.updated_pr_bodies[0][1]
     assert "plan-header" in updated_body
@@ -437,29 +439,23 @@ def test_updates_lifecycle_stage_for_linked_plan(tmp_path: Path) -> None:
         body=plan_body,
         state="OPEN",
         url="https://github.com/owner/repo/issues/321",
-        labels=["erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
         updated_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
         author="test-user",
     )
-    fake_issues = FakeGitHubIssues(issues={321: plan_issue})
+    backend, fake_github, fake_issues = create_backend_from_issues({321: plan_issue})
 
-    pr = _pr_details(number=42)
     fake_git = FakeGit(
         repository_roots={tmp_path: tmp_path},
         remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
-    )
-    fake_github = FakeGitHub(
-        prs_by_branch={"feature": pr},
-        pr_details={42: pr},
-        issues_gateway=fake_issues,
     )
     ctx = context_for_test(
         git=fake_git,
         github=fake_github,
         issues=fake_issues,
-        plan_store=GitHubPlanStore(fake_issues),
+        plan_store=backend,
         cwd=tmp_path,
     )
 
@@ -473,14 +469,15 @@ def test_updates_lifecycle_stage_for_linked_plan(tmp_path: Path) -> None:
     result = finalize_pr(ctx, state)
 
     assert isinstance(result, SubmitState)
-    # Verify lifecycle_stage was updated in the plan issue
-    assert len(fake_issues.updated_bodies) == 1
-    updated_body = fake_issues.updated_bodies[0][1]
-    assert "lifecycle_stage: impl" in updated_body
+    # Verify lifecycle_stage was updated in the plan PR (#321)
+    # Note: finalize_pr also updates the feature PR (#42) body, so there may be multiple entries
+    lifecycle_bodies = [b for n, b in fake_github.updated_pr_bodies if n == 321]
+    assert len(lifecycle_bodies) == 1
+    assert "lifecycle_stage: impl" in lifecycle_bodies[0]
 
 
-def test_no_lifecycle_update_with_only_issue_number(tmp_path: Path) -> None:
-    """finalize_pr does NOT update lifecycle when only issue_number is set (no plan_context)."""
+def test_no_lifecycle_update_with_only_plan_id(tmp_path: Path) -> None:
+    """finalize_pr does NOT update lifecycle when only plan_id is set (no plan_context)."""
     plan_body = format_plan_header_body_for_test(lifecycle_stage="planned")
     plan_issue = IssueInfo(
         number=321,
@@ -488,7 +485,7 @@ def test_no_lifecycle_update_with_only_issue_number(tmp_path: Path) -> None:
         body=plan_body,
         state="OPEN",
         url="https://github.com/owner/repo/issues/321",
-        labels=["erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
         updated_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
@@ -508,12 +505,12 @@ def test_no_lifecycle_update_with_only_issue_number(tmp_path: Path) -> None:
     )
     ctx = context_for_test(git=fake_git, github=fake_github, issues=fake_issues, cwd=tmp_path)
 
-    state = _make_state(cwd=tmp_path, issue_number=321, plan_context=None)
+    state = _make_state(cwd=tmp_path, plan_id="321", plan_context=None)
 
     result = finalize_pr(ctx, state)
 
     assert isinstance(result, SubmitState)
-    # issue_number alone should NOT trigger lifecycle update
+    # plan_id alone should NOT trigger lifecycle update
     assert len(fake_issues.updated_bodies) == 0
 
 
@@ -543,7 +540,7 @@ def test_updates_lifecycle_stage_for_draft_pr_backend(tmp_path: Path) -> None:
         title="Implement feature",
         body="Summary of work",
         plan_context=None,
-        issue_number=None,
+        plan_id=None,
         existing_pr_body=pr_body,
     )
 

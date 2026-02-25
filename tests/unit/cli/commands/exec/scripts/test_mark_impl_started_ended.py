@@ -1,7 +1,7 @@
 """Unit tests for mark_impl_started and mark_impl_ended commands.
 
 Tests implementation event tracking via PlanBackend.
-Uses real GitHubPlanStore with FakeGitHubIssues for testing.
+Uses real PlannedPRBackend with FakeGitHub/FakeGitHubIssues for testing.
 """
 
 import json
@@ -17,7 +17,10 @@ from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import find_metadata_block
-from erk_shared.plan_store.github import GitHubPlanStore
+from erk_shared.gateway.github.types import PRNotFound
+from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from tests.test_utils.plan_helpers import issue_info_to_pr_details
 
 
 def make_plan_header_body(
@@ -65,7 +68,7 @@ def make_issue_info(number: int, body: str) -> IssueInfo:
         body=body,
         state="OPEN",
         url=f"https://github.com/test-owner/test-repo/issues/{number}",
-        labels=["erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=now,
         updated_at=now,
@@ -107,7 +110,12 @@ def test_mark_impl_started_local_updates_metadata(tmp_path: Path, monkeypatch) -
         created_by="testuser",
         worktree_name="test-worktree",
     )
-    fake_gh = FakeGitHubIssues(issues={123: make_issue_info(123, body)})
+    issue = make_issue_info(123, body)
+    fake_gh = FakeGitHubIssues(issues={123: issue})
+    fake_github = FakeGitHub(
+        pr_details={123: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_gh,
+    )
     repo_root = Path("/fake/repo")
     runner = CliRunner()
 
@@ -117,8 +125,8 @@ def test_mark_impl_started_local_updates_metadata(tmp_path: Path, monkeypatch) -
         ["--session-id", "test-session-id"],
         obj=ErkContext.for_test(
             cwd=tmp_path,
-            github=FakeGitHub(issues_gateway=fake_gh),
-            plan_store=GitHubPlanStore(fake_gh),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
             repo_root=repo_root,
         ),
     )
@@ -129,8 +137,9 @@ def test_mark_impl_started_local_updates_metadata(tmp_path: Path, monkeypatch) -
     assert output["plan_number"] == 123
 
     # Verify metadata updated
-    updated_issue = fake_gh.get_issue(repo_root, 123)
-    block = find_metadata_block(updated_issue.body, "plan-header")
+    updated_pr = fake_github.get_pr(repo_root, 123)
+    assert not isinstance(updated_pr, PRNotFound)
+    block = find_metadata_block(updated_pr.body, "plan-header")
     assert block is not None
     assert block.data["last_local_impl_event"] == "started"
     assert block.data["last_local_impl_session"] == "test-session-id"
@@ -178,7 +187,12 @@ def test_mark_impl_started_remote_updates_metadata(tmp_path: Path, monkeypatch) 
         created_by="testuser",
         worktree_name="test-worktree",
     )
-    fake_gh = FakeGitHubIssues(issues={456: make_issue_info(456, body)})
+    issue = make_issue_info(456, body)
+    fake_gh = FakeGitHubIssues(issues={456: issue})
+    fake_github = FakeGitHub(
+        pr_details={456: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_gh,
+    )
     repo_root = Path("/fake/repo")
     runner = CliRunner()
 
@@ -187,8 +201,8 @@ def test_mark_impl_started_remote_updates_metadata(tmp_path: Path, monkeypatch) 
         mark_impl_started,
         obj=ErkContext.for_test(
             cwd=tmp_path,
-            github=FakeGitHub(issues_gateway=fake_gh),
-            plan_store=GitHubPlanStore(fake_gh),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
             repo_root=repo_root,
         ),
     )
@@ -198,8 +212,9 @@ def test_mark_impl_started_remote_updates_metadata(tmp_path: Path, monkeypatch) 
     assert output["success"] is True
 
     # Verify last_remote_impl_at updated (not local fields)
-    updated_issue = fake_gh.get_issue(repo_root, 456)
-    block = find_metadata_block(updated_issue.body, "plan-header")
+    updated_pr = fake_github.get_pr(repo_root, 456)
+    assert not isinstance(updated_pr, PRNotFound)
+    block = find_metadata_block(updated_pr.body, "plan-header")
     assert block is not None
     assert block.data["last_remote_impl_at"] is not None
     # Local impl fields should remain null in remote mode
@@ -212,6 +227,7 @@ def test_mark_impl_started_remote_updates_metadata(tmp_path: Path, monkeypatch) 
 def test_mark_impl_started_no_plan_ref(tmp_path: Path) -> None:
     """mark-impl-started gracefully handles missing plan-ref.json."""
     fake_gh = FakeGitHubIssues()
+    fake_github = FakeGitHub(issues_gateway=fake_gh)
     runner = CliRunner()
 
     # No .impl/ folder created
@@ -219,8 +235,8 @@ def test_mark_impl_started_no_plan_ref(tmp_path: Path) -> None:
         mark_impl_started,
         obj=ErkContext.for_test(
             cwd=tmp_path,
-            github=FakeGitHub(issues_gateway=fake_gh),
-            plan_store=GitHubPlanStore(fake_gh),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -264,7 +280,12 @@ def test_mark_impl_ended_local_updates_metadata(tmp_path: Path, monkeypatch) -> 
         created_by="testuser",
         worktree_name="test-worktree",
     )
-    fake_gh = FakeGitHubIssues(issues={789: make_issue_info(789, body)})
+    issue = make_issue_info(789, body)
+    fake_gh = FakeGitHubIssues(issues={789: issue})
+    fake_github = FakeGitHub(
+        pr_details={789: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_gh,
+    )
     repo_root = Path("/fake/repo")
     runner = CliRunner()
 
@@ -274,8 +295,8 @@ def test_mark_impl_ended_local_updates_metadata(tmp_path: Path, monkeypatch) -> 
         ["--session-id", "test-session-id-2"],
         obj=ErkContext.for_test(
             cwd=tmp_path,
-            github=FakeGitHub(issues_gateway=fake_gh),
-            plan_store=GitHubPlanStore(fake_gh),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
             repo_root=repo_root,
         ),
     )
@@ -286,8 +307,9 @@ def test_mark_impl_ended_local_updates_metadata(tmp_path: Path, monkeypatch) -> 
     assert output["plan_number"] == 789
 
     # Verify metadata updated
-    updated_issue = fake_gh.get_issue(repo_root, 789)
-    block = find_metadata_block(updated_issue.body, "plan-header")
+    updated_pr = fake_github.get_pr(repo_root, 789)
+    assert not isinstance(updated_pr, PRNotFound)
+    block = find_metadata_block(updated_pr.body, "plan-header")
     assert block is not None
     assert block.data["last_local_impl_event"] == "ended"
     assert block.data["last_local_impl_session"] == "test-session-id-2"
@@ -333,7 +355,12 @@ def test_mark_impl_ended_remote_updates_metadata(tmp_path: Path, monkeypatch) ->
         created_by="testuser",
         worktree_name="test-worktree",
     )
-    fake_gh = FakeGitHubIssues(issues={999: make_issue_info(999, body)})
+    issue = make_issue_info(999, body)
+    fake_gh = FakeGitHubIssues(issues={999: issue})
+    fake_github = FakeGitHub(
+        pr_details={999: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_gh,
+    )
     repo_root = Path("/fake/repo")
     runner = CliRunner()
 
@@ -342,8 +369,8 @@ def test_mark_impl_ended_remote_updates_metadata(tmp_path: Path, monkeypatch) ->
         mark_impl_ended,
         obj=ErkContext.for_test(
             cwd=tmp_path,
-            github=FakeGitHub(issues_gateway=fake_gh),
-            plan_store=GitHubPlanStore(fake_gh),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
             repo_root=repo_root,
         ),
     )
@@ -353,8 +380,9 @@ def test_mark_impl_ended_remote_updates_metadata(tmp_path: Path, monkeypatch) ->
     assert output["success"] is True
 
     # Verify last_remote_impl_at updated (not local fields)
-    updated_issue = fake_gh.get_issue(repo_root, 999)
-    block = find_metadata_block(updated_issue.body, "plan-header")
+    updated_pr = fake_github.get_pr(repo_root, 999)
+    assert not isinstance(updated_pr, PRNotFound)
+    block = find_metadata_block(updated_pr.body, "plan-header")
     assert block is not None
     assert block.data["last_remote_impl_at"] is not None
     # Local impl fields should remain null in remote mode
@@ -365,6 +393,7 @@ def test_mark_impl_ended_remote_updates_metadata(tmp_path: Path, monkeypatch) ->
 def test_mark_impl_ended_no_plan_ref(tmp_path: Path) -> None:
     """mark-impl-ended gracefully handles missing plan-ref.json."""
     fake_gh = FakeGitHubIssues()
+    fake_github = FakeGitHub(issues_gateway=fake_gh)
     runner = CliRunner()
 
     # No .impl/ folder created
@@ -372,8 +401,8 @@ def test_mark_impl_ended_no_plan_ref(tmp_path: Path) -> None:
         mark_impl_ended,
         obj=ErkContext.for_test(
             cwd=tmp_path,
-            github=FakeGitHub(issues_gateway=fake_gh),
-            plan_store=GitHubPlanStore(fake_gh),
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 

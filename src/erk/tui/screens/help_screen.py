@@ -5,6 +5,7 @@ from __future__ import annotations
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Vertical
+from textual.events import Key
 from textual.screen import ModalScreen
 from textual.widgets import Label
 
@@ -76,7 +77,6 @@ class HelpScreen(ModalScreen):
                 yield Label("Enter   View plan details", classes="help-binding")
                 yield Label("Ctrl+P  Commands (opens detail modal)", classes="help-binding")
                 yield Label("v       View plan text", classes="help-binding")
-                yield Label("o       Open PR (or issue if no PR)", classes="help-binding")
                 yield Label("p       Open PR in browser", classes="help-binding")
                 yield Label("i       Show implement command", classes="help-binding")
                 yield Label("c       View unresolved comments", classes="help-binding")
@@ -85,6 +85,8 @@ class HelpScreen(ModalScreen):
             with Vertical(classes="help-section"):
                 yield Label("Filter & Sort", classes="help-section-title")
                 yield Label("/       Start filter mode", classes="help-binding")
+                yield Label("t       Filter to Graphite stack", classes="help-binding")
+                yield Label("o       Filter to objective plans", classes="help-binding")
                 yield Label("Esc     Clear filter / exit filter", classes="help-binding")
                 yield Label("Enter   Return focus to table", classes="help-binding")
                 yield Label("s       Toggle sort mode", classes="help-binding")
@@ -97,3 +99,10 @@ class HelpScreen(ModalScreen):
 
             yield Label("")
             yield Label("Press any key to close", id="help-footer")
+
+    def on_key(self, event: Key) -> None:
+        """Consume all keys; dismiss on keys not handled by bindings."""
+        event.prevent_default()
+        event.stop()
+        if event.key in ("escape", "q", "question_mark"):
+            self.dismiss()

@@ -239,12 +239,16 @@ def test_create_ensures_label_exists(tmp_path) -> None:
         # Assert
         assert result.exit_code == 0
 
-        # Verify label was created
-        assert len(issues.created_labels) == 1
-        label, description, color = issues.created_labels[0]
-        assert label == "erk-plan"
-        assert description == "Implementation plan for manual execution"
-        assert color == "0E8A16"
+        # Verify labels were created (erk-pr + erk-plan)
+        assert len(issues.created_labels) == 2
+        label_0, description_0, color_0 = issues.created_labels[0]
+        assert label_0 == "erk-pr"
+        assert description_0 == "Plan managed as a draft PR"
+        assert color_0 == "1D76DB"
+        label_1, description_1, color_1 = issues.created_labels[1]
+        assert label_1 == "erk-plan"
+        assert description_1 == "Implementation plan for manual execution"
+        assert color_1 == "0E8A16"
 
 
 def test_create_uses_current_schema(tmp_path) -> None:

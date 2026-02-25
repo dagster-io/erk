@@ -49,7 +49,7 @@ class PlanDetailScreen(ModalScreen):
         Binding("1", "copy_prepare", "Prepare"),
         Binding("4", "copy_prepare_activate", "Activate"),
         Binding("2", "copy_implement_local", "Implement Local"),
-        Binding("3", "copy_submit", "Submit"),
+        Binding("3", "copy_dispatch", "Dispatch"),
         Binding("5", "fix_conflicts_remote", "Fix Conflicts"),
     ]
 
@@ -359,21 +359,21 @@ class PlanDetailScreen(ModalScreen):
             )
             self._copy_and_notify(cmd)
 
-    def action_copy_submit(self) -> None:
-        """Copy submit command to clipboard."""
+    def action_copy_dispatch(self) -> None:
+        """Copy dispatch command to clipboard."""
         cmd = f"erk pr dispatch {self._row.plan_id}"
         self._copy_and_notify(cmd)
 
     def action_fix_conflicts_remote(self) -> None:
         """Launch remote conflict resolution workflow."""
+        from erk.tui.app import ErkDashApp
 
         if self._row.pr_number is None or self._repo_root is None:
             return
-        self.run_streaming_command(
-            ["erk", "launch", "pr-fix-conflicts", "--pr", str(self._row.pr_number)],
-            cwd=self._repo_root,
-            title=f"Fix Conflicts Remote PR #{self._row.pr_number}",
-        )
+        self.dismiss()
+        if isinstance(self.app, ErkDashApp):
+            self.app.notify(f"Dispatching fix-conflicts for PR #{self._row.pr_number}...")
+            self.app._fix_conflicts_remote_async(self._row.pr_number)
 
     def action_copy_output_logs(self) -> None:
         """Copy command output logs to clipboard."""
@@ -664,7 +664,7 @@ class PlanDetailScreen(ModalScreen):
                 executor.copy_to_clipboard(cmd)
                 executor.notify(f"Copied: {cmd}", severity=None)
 
-        elif command_id == "copy_submit":
+        elif command_id == "copy_dispatch":
             cmd = f"erk pr dispatch {row.plan_id}"
             executor.copy_to_clipboard(cmd)
             executor.notify(f"Copied: {cmd}", severity=None)
@@ -698,12 +698,11 @@ class PlanDetailScreen(ModalScreen):
                 executor.notify(f"Copied: {cmd}", severity=None)
 
         elif command_id == "fix_conflicts_remote":
-            if row.pr_number is not None and self._repo_root is not None:
-                self.run_streaming_command(
-                    ["erk", "launch", "pr-fix-conflicts", "--pr", str(row.pr_number)],
-                    cwd=self._repo_root,
-                    title=f"Fix Conflicts Remote PR #{row.pr_number}",
-                )
+            if row.pr_number is not None:
+                self.dismiss()
+                if isinstance(self.app, ErkDashApp):
+                    self.app.notify(f"Dispatching fix-conflicts for PR #{row.pr_number}...")
+                    self.app._fix_conflicts_remote_async(row.pr_number)
 
         elif command_id == "address_remote":
             if row.pr_number is not None and self._repo_root is not None:
@@ -719,22 +718,29 @@ class PlanDetailScreen(ModalScreen):
                 self.dismiss()
                 # Access parent app and trigger async close with toast
                 if isinstance(self.app, ErkDashApp):
-                    self.app.notify(f"Closing plan #{row.plan_id}...")
-                    self.app._close_plan_async(row.plan_id, row.plan_url)
+                    op_id = f"close-plan-{row.plan_id}"
+                    self.app._start_operation(op_id=op_id, label=f"Closing plan #{row.plan_id}...")
+                    self.app._close_plan_async(op_id, row.plan_id, row.plan_url)
 
-        elif command_id == "submit_to_queue":
+        elif command_id == "dispatch_to_queue":
             if row.plan_url:
                 self.dismiss()
                 if isinstance(self.app, ErkDashApp):
-                    self.app.notify(f"Submitting plan #{row.plan_id} to queue...")
-                    self.app._submit_to_queue_async(row.plan_id)
+                    op_id = f"dispatch-plan-{row.plan_id}"
+                    self.app._start_operation(
+                        op_id=op_id, label=f"Dispatching plan #{row.plan_id} to queue..."
+                    )
+                    self.app._dispatch_to_queue_async(op_id, row.plan_id)
 
         elif command_id == "land_pr":
             if row.pr_number and row.pr_head_branch:
                 self.dismiss()
                 if isinstance(self.app, ErkDashApp):
-                    self.app.notify(f"Landing PR #{row.pr_number}...")
-                    self.app._land_pr_async(row.pr_number, row.pr_head_branch, row.objective_issue)
+                    op_id = f"land-pr-{row.pr_number}"
+                    self.app._start_operation(op_id=op_id, label=f"Landing PR #{row.pr_number}...")
+                    self.app._land_pr_async(
+                        op_id, row.pr_number, row.pr_head_branch, row.objective_issue
+                    )
 
     def compose(self) -> ComposeResult:
         """Create detail dialog content as an Action Hub."""

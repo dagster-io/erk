@@ -40,7 +40,7 @@ def get_plans_for_objective(ctx: click.Context, objective_number: int) -> None:
     try:
         all_plans = github.list_issues(
             repo_root=repo_root,
-            labels=["erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             state="all",
         )
     except RuntimeError as e:

@@ -15,6 +15,10 @@ tripwires:
     warning: "Always check isinstance(result, ErrorType) before accessing success-variant properties. Without type narrowing, you may access .message on a success type or .data on an error type."
   - action: "using None as a success return value in a validation function (ErrorType | None where None = success)"
     warning: "None-as-success is counterintuitive — None typically signals absence/failure, not success. Use ValidThing | InvalidThing so both outcomes are explicit named types."
+  - action: "using if/else on a discriminated union without isinstance() for type narrowing"
+    warning: "Type checkers require isinstance() for narrowing. 'if result.is_error' or 'if not result' does not narrow. Use 'if isinstance(result, ErrorType):' for correct narrowing in both branches."
+  - action: "returning a collection (list, tuple, str) directly from a function with NonIdealState return type"
+    warning: "Raw built-ins can't inherit EnsurableResult. Wrap in a named frozen dataclass that inherits EnsurableResult and implements __iter__ if needed. See 'The Wrapping Rule' section."
 ---
 
 # Discriminated Union Error Handling
@@ -85,6 +89,82 @@ if isinstance(push_result, PushError):
 ```
 
 Why empty success types? Because the operation itself (push succeeded, branch created) is the success signal. Additional data (like branch names or PR numbers) lives in the pipeline state, not the result type.
+
+## The Ensure Pattern: Uniform Unwrapping
+
+Both sides of a `T | NonIdealState` union implement `.ensure()`, enabling callers to unwrap the result in a single chained call:
+
+- **Error types** (`NonIdealState`): `.ensure()` raises `NonIdealStateError`
+- **Success types** (`EnsurableResult`): `.ensure()` returns `self` unchanged
+
+```python
+# One-liner: raises if error, returns the value if success
+pr_details = GitHubChecks.pr_by_number(github, repo_root, pr).ensure()
+
+# Chained from a future:
+comments = comments_future.result().ensure()
+```
+
+This replaces the old helper-function pattern:
+
+```python
+# Old: per-type helper functions
+def _ensure_comments(result: list[IssueComment] | GitHubAPIFailed) -> list[IssueComment]:
+    if isinstance(result, GitHubAPIFailed):
+        exit_with_error(result.error_type, result.message)
+    assert not isinstance(result, GitHubAPIFailed)
+    return result
+
+comments = _ensure_comments(GitHubChecks.issue_comments(...))
+```
+
+### The Wrapping Rule
+
+**Success types must be named classes, never raw built-ins.** Raw built-ins (`list`, `str`, `int`) cannot inherit from `EnsurableResult`, which breaks the uniform `.ensure()` pattern.
+
+```python
+# ❌ Wrong: raw built-in — can't call .ensure()
+def issue_comments(...) -> list[IssueComment] | GitHubAPIFailed: ...
+```
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/issues/types.py, IssueComments -->
+
+See `IssueComments` in `packages/erk-shared/src/erk_shared/gateway/github/issues/types.py` for the canonical implementation. The wrapper class:
+
+1. Inherits from `EnsurableResult` → gains `.ensure()` that returns `self`
+2. Uses `tuple[T, ...]` not `list[T]` — frozen dataclasses require immutable fields
+3. Implements `__iter__` so callers iterate it just like a list
+
+### When to Use `.ensure()` vs `isinstance()`
+
+| Scenario                                            | Use                            |
+| --------------------------------------------------- | ------------------------------ |
+| All error paths should raise (caller can't recover) | `.ensure()` one-liner          |
+| Caller branches on success vs error                 | `isinstance()` check           |
+| Caller branches on multiple error types             | `isinstance()` checks per type |
+
+```python
+# .ensure() — propagates to handle_non_ideal_exit decorator or test harness
+pr_details = GitHubChecks.pr_by_number(github, repo_root, pr).ensure()
+
+# isinstance() — when caller handles the error path explicitly
+result = GitHubChecks.issue_comments(issues, root, number)
+if isinstance(result, GitHubAPIFailed):
+    log_warning(result.message)
+    return default_comments
+for comment in result:
+    ...
+```
+
+### Implementation Reference
+
+<!-- Source: packages/erk-shared/src/erk_shared/non_ideal_state.py, EnsurableResult, NonIdealStateMixin -->
+
+See `EnsurableResult` and `NonIdealStateMixin` in `packages/erk-shared/src/erk_shared/non_ideal_state.py`.
+
+- **`EnsurableResult`**: Base class for success types. `.ensure()` returns `self`.
+- **`NonIdealStateMixin`**: Provides `.ensure()` for error types that use `message: str` as a field (frozen dataclass field conflicts with `NonIdealState` protocol's `@property message`). Used by `GitHubAPIFailed`.
+- **`NonIdealState`**: Protocol for error types with computed `message` properties. `.ensure()` raises `NonIdealStateError`.
 
 ## CLI Layer Consumption Pattern
 
@@ -220,17 +300,9 @@ def handle_error(result: Any) -> str:
 
 ### Error Types Are Frozen Dataclasses
 
-All error types use `@dataclass(frozen=True)` for immutability:
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/git/remote_ops/types.py, PushError -->
 
-```python
-@dataclass(frozen=True)
-class PushError:
-    message: str
-
-    @property
-    def error_type(self) -> str:
-        return "push-failed"
-```
+All error types use `@dataclass(frozen=True)` for immutability. See `PushError` in `packages/erk-shared/src/erk_shared/gateway/git/remote_ops/types.py` for the canonical pattern: a single `message: str` field and an `error_type` property returning a kebab-case string like `"push-failed"`.
 
 ### Include Domain Context
 
@@ -238,16 +310,7 @@ Error types should carry domain-meaningful fields for caller inspection:
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/types.py, PRNotFound -->
 
-See `PRNotFound` in `packages/erk-shared/src/erk_shared/gateway/github/types.py`.
-
-```python
-@dataclass(frozen=True)
-class PRNotFound:
-    pr_number: int | None = None  # Set when looking up by number
-    branch: str | None = None     # Set when looking up by branch
-```
-
-The caller can inspect these fields to construct better error messages or branch on specific failure modes.
+See `PRNotFound` in `packages/erk-shared/src/erk_shared/gateway/github/types.py`. It carries `pr_number: int | None` (set when looking up by number) and `branch: str | None` (set when looking up by branch), enabling callers to construct better error messages or branch on specific failure modes.
 
 ### Naming Conventions
 

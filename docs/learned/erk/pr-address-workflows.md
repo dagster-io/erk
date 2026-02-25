@@ -194,5 +194,4 @@ The `informational_count` field in classifier output covers **only** discussion 
 
 ## Related Topics
 
-- [PR Sync Workflow](pr-sync-workflow.md) - Syncing PR title/body from commits
 - [PR Submit Phases](../pr-operations/pr-submit-phases.md) - PR creation workflow

@@ -13,6 +13,7 @@ from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
 from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
 from erk_shared.gateway.console.abc import Console
 from erk_shared.gateway.git.abc import Git
+from erk_shared.impl_folder import IMPL_DIR_RELATIVE
 from erk_shared.output.output import user_output
 
 
@@ -493,17 +494,22 @@ def handle_pool_full_interactive(
 def cleanup_worktree_artifacts(worktree_path: Path) -> None:
     """Remove stale artifacts from a worktree before reuse.
 
-    Cleans up .impl/ and .erk/scratch/ folders which persist across
-    branch switches since they are in .gitignore.
+    Cleans up legacy .impl/, branch-scoped .erk/impl-context/, and
+    .erk/scratch/ folders which persist across branch switches since
+    they are in .gitignore.
 
     Args:
         worktree_path: Path to the worktree to clean up
     """
     impl_folder = worktree_path / ".impl"
+    impl_context_folder = worktree_path / IMPL_DIR_RELATIVE
     scratch_folder = worktree_path / ".erk" / "scratch"
 
     if impl_folder.exists():
         shutil.rmtree(impl_folder)
+
+    if impl_context_folder.exists():
+        shutil.rmtree(impl_context_folder)
 
     if scratch_folder.exists():
         shutil.rmtree(scratch_folder)

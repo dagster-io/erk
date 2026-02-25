@@ -34,8 +34,8 @@ from erk_shared.gateway.github_admin.abc import GitHubAdmin
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
+from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
-from erk_shared.plan_store.store import PlanStore
 
 
 def context_for_test(
@@ -50,7 +50,7 @@ def context_for_test(
     agent_docs: AgentDocs | None = None,
     prompt_executor: PromptExecutor | None = None,
     codespace: Codespace | None = None,
-    plan_store: PlanStore | None = None,
+    plan_store: PlanBackend | None = None,
     local_config: LoadedConfig | None = None,
     debug: bool = False,
     repo_root: Path | None = None,
@@ -78,7 +78,7 @@ def context_for_test(
         agent_docs: Optional AgentDocs. If None, creates FakeAgentDocs.
         prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
         codespace: Optional Codespace. If None, creates FakeCodespace.
-        plan_store: Optional PlanStore. If None, creates PlannedPRBackend.
+        plan_store: Optional PlanBackend. If None, creates PlannedPRBackend.
         local_config: Optional LoadedConfig. If None, uses LoadedConfig.test().
         debug: Whether to enable debug mode (default False).
         repo_root: Repository root path (defaults to Path("/fake/repo"))
@@ -173,7 +173,7 @@ def context_for_test(
     resolved_local_config = local_config if local_config is not None else LoadedConfig.test()
 
     # Resolve plan_store: explicit > PlannedPRBackend default
-    resolved_plan_store: PlanStore
+    resolved_plan_store: PlanBackend
     if plan_store is not None:
         resolved_plan_store = plan_store
     else:

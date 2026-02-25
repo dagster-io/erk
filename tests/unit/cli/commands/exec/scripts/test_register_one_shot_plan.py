@@ -12,7 +12,9 @@ from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.plan_store.github import GitHubPlanStore
+from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from tests.test_utils.plan_helpers import issue_info_to_pr_details
 
 RUN_URL = "https://github.com/test-owner/test-repo/actions/runs/99999"
 CLI_ARGS = [
@@ -60,7 +62,7 @@ def _issue(number: int, body: str) -> IssueInfo:
         body=body,
         state="OPEN",
         url=f"https://github.com/test-owner/test-repo/issues/{number}",
-        labels=["erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=now,
         updated_at=now,
@@ -90,13 +92,19 @@ def _ctx(tmp_path: Path, *, issues: FakeGitHubIssues, github: FakeGitHub) -> Erk
     (tmp_path / ".erk").mkdir(exist_ok=True)
     (tmp_path / ".erk" / "config.toml").write_text("", encoding="utf-8")
     return ErkContext.for_test(
-        github=github, plan_store=GitHubPlanStore(issues), repo_root=tmp_path
+        github=github,
+        plan_store=PlannedPRBackend(github, issues, time=FakeTime()),
+        repo_root=tmp_path,
     )
 
 
 def test_all_succeed(tmp_path: Path) -> None:
-    issues = FakeGitHubIssues(issues={123: _issue(123, _plan_header_body())})
-    github = FakeGitHub(issues_gateway=issues, pr_details={42: _pr(42, "Draft PR")})
+    issue = _issue(123, _plan_header_body())
+    issues = FakeGitHubIssues(issues={123: issue})
+    github = FakeGitHub(
+        issues_gateway=issues,
+        pr_details={42: _pr(42, "Draft PR"), 123: issue_info_to_pr_details(issue)},
+    )
     result = CliRunner().invoke(
         register_one_shot_plan, CLI_ARGS, obj=_ctx(tmp_path, issues=issues, github=github)
     )
@@ -104,7 +112,7 @@ def test_all_succeed(tmp_path: Path) -> None:
     output = json.loads(result.output)
     assert output["dispatch_metadata"]["success"] is True
     assert output["queued_comment"]["success"] is True
-    assert output["pr_closing_ref"]["success"] is True
+    assert output["lifecycle_stage"]["success"] is True
 
 
 def test_all_fail_when_issue_and_pr_missing(tmp_path: Path) -> None:
@@ -128,13 +136,17 @@ def test_all_fail_when_issue_and_pr_missing(tmp_path: Path) -> None:
     output = json.loads(result.output)
     assert output["dispatch_metadata"]["success"] is False
     assert output["queued_comment"]["success"] is False
-    assert output["pr_closing_ref"]["success"] is False
+    assert output["lifecycle_stage"]["success"] is False
 
 
 def test_dispatch_fails_others_succeed(tmp_path: Path) -> None:
-    """No plan-header block causes dispatch to fail; comment and PR update still work."""
-    issues = FakeGitHubIssues(issues={123: _issue(123, "# No plan-header")})
-    github = FakeGitHub(issues_gateway=issues, pr_details={42: _pr(42, "Draft PR")})
+    """No plan-header block causes dispatch and lifecycle_stage to fail; comment still works."""
+    issue = _issue(123, "# No plan-header")
+    issues = FakeGitHubIssues(issues={123: issue})
+    github = FakeGitHub(
+        issues_gateway=issues,
+        pr_details={42: _pr(42, "Draft PR"), 123: issue_info_to_pr_details(issue)},
+    )
     result = CliRunner().invoke(
         register_one_shot_plan, CLI_ARGS, obj=_ctx(tmp_path, issues=issues, github=github)
     )
@@ -142,60 +154,5 @@ def test_dispatch_fails_others_succeed(tmp_path: Path) -> None:
     output = json.loads(result.output)
     assert output["dispatch_metadata"]["success"] is False
     assert output["queued_comment"]["success"] is True
-    assert output["pr_closing_ref"]["success"] is True
-
-
-def test_pr_not_found_others_succeed(tmp_path: Path) -> None:
-    issues = FakeGitHubIssues(issues={123: _issue(123, _plan_header_body())})
-    result = CliRunner().invoke(
-        register_one_shot_plan,
-        [
-            "--plan-number",
-            "123",
-            "--run-id",
-            "99999",
-            "--pr-number",
-            "999",
-            "--submitted-by",
-            "alice",
-            "--run-url",
-            RUN_URL,
-        ],
-        obj=_ctx(tmp_path, issues=issues, github=FakeGitHub(issues_gateway=issues)),
-    )
-    assert result.exit_code == 0
-    output = json.loads(result.output)
-    assert output["dispatch_metadata"]["success"] is True
-    assert output["queued_comment"]["success"] is True
-    assert output["pr_closing_ref"]["success"] is False
-
-
-def test_self_referential_closes_skipped(tmp_path: Path) -> None:
-    """When issue_number == pr_number (draft_pr mode), skip Closes #N to avoid self-close."""
-    # In planned_pr mode, the PR IS the plan entity. issue_number and pr_number are the same.
-    pr_body = _plan_header_body()
-    issues = FakeGitHubIssues(issues={42: _issue(42, pr_body)})
-    github = FakeGitHub(issues_gateway=issues, pr_details={42: _pr(42, pr_body)})
-    result = CliRunner().invoke(
-        register_one_shot_plan,
-        [
-            "--plan-number",
-            "42",
-            "--run-id",
-            "99999",
-            "--pr-number",
-            "42",
-            "--submitted-by",
-            "alice",
-            "--run-url",
-            RUN_URL,
-        ],
-        obj=_ctx(tmp_path, issues=issues, github=github),
-    )
-    assert result.exit_code == 0
-    output = json.loads(result.output)
-    # PR closing ref should be skipped (not attempted), marked as self-referential
-    assert output["pr_closing_ref"]["success"] is True
-    assert output["pr_closing_ref"]["skipped"] == "self-referential"
-    # PR body should NOT have been updated with Closes #N
-    assert len(github.updated_pr_bodies) == 0
+    # lifecycle_stage also fails — update_metadata needs the plan-header block
+    assert output["lifecycle_stage"]["success"] is False

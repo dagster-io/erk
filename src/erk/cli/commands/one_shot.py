@@ -52,6 +52,12 @@ from erk_shared.output.output import user_output
     is_flag=True,
     help="Create a plan remotely without implementing it",
 )
+@click.option(
+    "--slug",
+    type=str,
+    default=None,
+    help="Pre-generated branch slug (skips LLM slug generation)",
+)
 @click.pass_obj
 def one_shot(
     ctx: ErkContext,
@@ -61,6 +67,7 @@ def one_shot(
     model: str | None,
     dry_run: bool,
     plan_only: bool,
+    slug: str | None,
 ) -> None:
     """Submit a task for fully autonomous remote execution.
 
@@ -105,6 +112,7 @@ def one_shot(
         prompt=prompt,
         model=model,
         extra_workflow_inputs=extra,
+        slug=slug,
     )
 
     dispatch_one_shot(ctx, params=params, dry_run=dry_run)

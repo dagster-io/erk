@@ -39,13 +39,13 @@ Two functions need the new parameter added (both use keyword-only args):
 
 Add the parameter to `create_plan_issue()` and pass it through to `format_plan_header_body()`. All parameters after the positional ones are keyword-only. Review the existing call site to see the current parameter threading pattern.
 
-### 4. plan_save_to_issue.py -- Add CLI Option (if CLI-exposed)
+### 4. plan_save.py -- Add CLI Option (if CLI-exposed)
 
-**File:** `src/erk/cli/commands/exec/scripts/plan_save_to_issue.py`
+**File:** `src/erk/cli/commands/exec/scripts/plan_save.py`
 
 Only needed if the field should be settable from the CLI. If so:
 
-- Add a `@click.option("--your-new-field", ...)` decorator to the `plan_save_to_issue` function
+- Add a `@click.option("--your-new-field", ...)` decorator to the `plan_save` function
 - Add the corresponding parameter to the function signature
 - Pass it through to `create_plan_issue()`
 

@@ -11,10 +11,10 @@ from erk_shared.gateway.github.metadata.schemas import (
 )
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.plan_store.conversion import (
+    github_issue_to_plan,
     header_datetime,
     header_int,
     header_str,
-    issue_info_to_plan,
     pr_details_to_plan,
 )
 from erk_shared.plan_store.types import PlanState
@@ -35,7 +35,7 @@ def _make_issue(
         body=body,
         state=state,
         url=f"https://github.com/test/repo/issues/{number}",
-        labels=["erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
         updated_at=datetime(2024, 1, 16, 12, 0, tzinfo=UTC),
@@ -43,26 +43,26 @@ def _make_issue(
     )
 
 
-class TestIssueInfoToPlan:
-    """Tests for issue_info_to_plan conversion."""
+class TestGithubIssueToPlan:
+    """Tests for github_issue_to_plan conversion."""
 
     def test_basic_fields_mapped(self) -> None:
         """Plan fields are populated from IssueInfo."""
         issue = _make_issue(number=42, title="My plan", state="OPEN")
-        plan = issue_info_to_plan(issue)
+        plan = github_issue_to_plan(issue)
 
         assert plan.plan_identifier == "42"
         assert plan.title == "My plan"
         assert plan.state == PlanState.OPEN
         assert plan.url == "https://github.com/test/repo/issues/42"
-        assert plan.labels == ["erk-plan"]
+        assert plan.labels == ["erk-pr", "erk-plan"]
         assert plan.metadata["number"] == 42
         assert plan.metadata["author"] == "test-user"
 
     def test_closed_state(self) -> None:
         """CLOSED state maps correctly."""
         issue = _make_issue(state="CLOSED")
-        plan = issue_info_to_plan(issue)
+        plan = github_issue_to_plan(issue)
         assert plan.state == PlanState.CLOSED
 
     def test_header_fields_populated_from_plan_header(self) -> None:
@@ -72,7 +72,7 @@ class TestIssueInfoToPlan:
             objective_issue=100,
         )
         issue = _make_issue(body=body)
-        plan = issue_info_to_plan(issue)
+        plan = github_issue_to_plan(issue)
 
         assert plan.header_fields.get(WORKTREE_NAME) == "my-worktree"
         assert plan.header_fields.get(OBJECTIVE_ISSUE) == 100
@@ -81,14 +81,14 @@ class TestIssueInfoToPlan:
         """objective_id is extracted from header_fields during conversion."""
         body = format_plan_header_body_for_test(objective_issue=200)
         issue = _make_issue(body=body)
-        plan = issue_info_to_plan(issue)
+        plan = github_issue_to_plan(issue)
 
         assert plan.objective_id == 200
 
     def test_empty_body_produces_empty_header_fields(self) -> None:
         """Empty body produces empty header_fields dict."""
         issue = _make_issue(body="")
-        plan = issue_info_to_plan(issue)
+        plan = github_issue_to_plan(issue)
 
         assert plan.header_fields == {}
         assert plan.objective_id is None
@@ -96,7 +96,7 @@ class TestIssueInfoToPlan:
     def test_body_without_plan_header_produces_empty_header_fields(self) -> None:
         """Body without plan-header block produces empty header_fields."""
         issue = _make_issue(body="Just a regular issue body")
-        plan = issue_info_to_plan(issue)
+        plan = github_issue_to_plan(issue)
 
         assert plan.header_fields == {}
         assert plan.objective_id is None
@@ -211,7 +211,7 @@ def _make_pr_details(
         merge_state_status="CLEAN",
         owner="test",
         repo="repo",
-        labels=("erk-plan",),
+        labels=("erk-pr", "erk-plan"),
         created_at=created_at or datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
         updated_at=updated_at or datetime(2024, 1, 16, 12, 0, tzinfo=UTC),
         author=author,

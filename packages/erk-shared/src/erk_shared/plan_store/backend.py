@@ -7,7 +7,8 @@ inject fake gateways into the real backend implementation.
 Example:
     # Testing with fake gateway
     fake_issues = FakeGitHubIssues()
-    backend = GitHubPlanBackend(fake_issues)  # Real backend, fake gateway
+    fake_github = FakeGitHub(issues_gateway=fake_issues)
+    backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
     result = backend.create_plan(...)
 
     # Assert on gateway mutations
@@ -19,7 +20,7 @@ for the full gateway vs backend architecture.
 
 from __future__ import annotations
 
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from pathlib import Path
 
@@ -39,7 +40,6 @@ from erk_shared.learn.impl_events import (
     extract_learn_sessions,
 )
 from erk_shared.plan_store.conversion import header_str
-from erk_shared.plan_store.store import PlanStore
 from erk_shared.plan_store.types import CreatePlanResult, Plan, PlanNotFound, PlanQuery
 from erk_shared.sessions.discovery import SessionsForPlan
 
@@ -48,23 +48,20 @@ from erk_shared.sessions.discovery import SessionsForPlan
 # ---------------------------------------------------------------------------
 
 
-class PlanBackend(PlanStore):
+class PlanBackend(ABC):
     """Abstract interface for plan storage operations.
 
-    Extends PlanStore to add write operations while maintaining backward
-    compatibility with code that only needs read operations.
-
+    Provides the full read/write interface for plan storage backends.
     Implementations provide backend-specific storage for plans.
-    Both read and write operations are supported.
 
-    Read operations (inherited from PlanStore):
+    Read operations:
         get_plan: Fetch a plan by identifier
         list_plans: Query plans by criteria
         get_provider_name: Get the provider name
         close_plan: Close a plan
         get_metadata_field: Get a single metadata field value
 
-    Write operations (added by PlanBackend):
+    Write operations:
         create_plan: Create a new plan
         update_metadata: Update plan metadata
         update_plan_content: Update plan content body
@@ -72,7 +69,7 @@ class PlanBackend(PlanStore):
         post_event: Combined metadata update + optional comment
     """
 
-    # Read operations (inherited from PlanStore, re-declared with updated param names)
+    # Read operations
 
     @abstractmethod
     def get_plan(self, repo_root: Path, plan_id: str) -> Plan | PlanNotFound:
@@ -351,7 +348,18 @@ class PlanBackend(PlanStore):
         """
         ...
 
-    # close_plan is inherited from PlanStore
+    @abstractmethod
+    def close_plan(self, repo_root: Path, plan_id: str) -> None:
+        """Close a plan by its identifier (issue number or GitHub URL).
+
+        Args:
+            repo_root: Repository root directory
+            plan_id: Plan identifier (issue number like "123" or GitHub URL)
+
+        Raises:
+            RuntimeError: If provider fails, plan not found, or invalid identifier
+        """
+        ...
 
     @abstractmethod
     def update_plan_title(

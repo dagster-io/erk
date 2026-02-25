@@ -18,6 +18,7 @@ import click
 from erk.cli.commands.pr.shared import require_claude_available
 from erk.cli.commands.pr.submit_pipeline import (
     SubmitError,
+    SubmitState,
     make_initial_state,
     run_submit_pipeline,
 )
@@ -61,6 +62,44 @@ def _wait_for_pr_in_cache(
             return True
         ctx.time.sleep(poll_interval)
     return False
+
+
+def _make_clickable(url: str) -> str:
+    """Wrap a URL in terminal hyperlink escape sequences."""
+    styled = click.style(url, fg="cyan", underline=True)
+    return f"\033]8;;{url}\033\\{styled}\033]8;;\033\\"
+
+
+def _format_field(label: str, value: str) -> str:
+    """Format a field with dimmed label and consistent width."""
+    label_width = 12
+    styled_label = click.style(f"{label}:".ljust(label_width), dim=True)
+    return f"  {styled_label} {value}"
+
+
+def _print_summary(result: SubmitState) -> None:
+    """Print structured summary after successful PR submission."""
+    action = "Created" if result.was_created else "Updated"
+    pr_label = f"PR #{result.pr_number}" if result.pr_number else "PR"
+
+    click.echo(click.style("✅ PR submitted", bold=True))
+    click.echo("")
+    click.echo(_format_field("Action", f"{action} {pr_label}"))
+
+    base = result.base_branch or result.parent_branch
+    click.echo(_format_field("Branch", f"{result.branch_name} → {base}"))
+
+    if result.title:
+        click.echo(_format_field("Title", result.title))
+
+    if result.pr_url:
+        click.echo(_format_field("PR", _make_clickable(result.pr_url)))
+
+    if result.graphite_url:
+        click.echo(_format_field("Graphite", _make_clickable(result.graphite_url)))
+
+    if result.plan_id:
+        click.echo(_format_field("Plan", f"#{result.plan_id}"))
 
 
 @click.command("submit")
@@ -156,14 +195,4 @@ def pr_submit(
             poll_interval=PR_CACHE_POLL_INTERVAL_SECONDS,
         )
 
-    # Success output with clickable URL
-    pr_url = result.pr_url or ""
-    styled_url = click.style(pr_url, fg="cyan", underline=True)
-    clickable_url = f"\033]8;;{pr_url}\033\\{styled_url}\033]8;;\033\\"
-    click.echo(f"✅ {clickable_url}")
-
-    # Show Graphite URL if available
-    if result.graphite_url:
-        styled_graphite = click.style(result.graphite_url, fg="cyan", underline=True)
-        clickable_graphite = f"\033]8;;{result.graphite_url}\033\\{styled_graphite}\033]8;;\033\\"
-        click.echo(f"📊 {clickable_graphite}")
+    _print_summary(result)

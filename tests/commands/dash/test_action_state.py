@@ -12,7 +12,10 @@ from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.commands.dash.conftest import plan_to_issue
-from tests.test_utils.context_builders import build_workspace_test_context
+from tests.test_utils.context_builders import (
+    build_fake_plan_list_service,
+    build_workspace_test_context,
+)
 from tests.test_utils.env_helpers import erk_inmem_env
 
 
@@ -25,7 +28,7 @@ def test_plan_list_shows_action_state_with_no_queue_label() -> None:
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/1001",
-        labels=["erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
@@ -37,7 +40,10 @@ def test_plan_list_shows_action_state_with_no_queue_label() -> None:
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1001: plan_to_issue(plan1)})
         github = FakeGitHub(issues_data=[plan_to_issue(plan1)])
-        ctx = build_workspace_test_context(env, issues=issues, github=github)
+        plan_service = build_fake_plan_list_service([plan1])
+        ctx = build_workspace_test_context(
+            env, issues=issues, github=github, plan_list_service=plan_service
+        )
 
         # Act
         result = runner.invoke(cli, ["pr", "list"], obj=ctx)
@@ -56,7 +62,7 @@ def test_plan_list_shows_pending_action_state() -> None:
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/1002",
-        labels=["erk-plan", "erk-queue"],
+        labels=["erk-pr", "erk-plan", "erk-queue"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
@@ -68,7 +74,10 @@ def test_plan_list_shows_pending_action_state() -> None:
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1002: plan_to_issue(plan1)}, comments={1002: []})
         github = FakeGitHub(issues_data=[plan_to_issue(plan1)])
-        ctx = build_workspace_test_context(env, issues=issues, github=github)
+        plan_service = build_fake_plan_list_service([plan1])
+        ctx = build_workspace_test_context(
+            env, issues=issues, github=github, plan_list_service=plan_service
+        )
 
         # Act
         result = runner.invoke(cli, ["pr", "list"], obj=ctx)
@@ -87,7 +96,7 @@ def test_plan_list_shows_running_action_state_with_workflow_started() -> None:
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/1003",
-        labels=["erk-plan", "erk-queue"],
+        labels=["erk-pr", "erk-plan", "erk-queue"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
@@ -116,7 +125,10 @@ issue_number: 1003
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1003: plan_to_issue(plan1)}, comments={1003: [comment]})
         github = FakeGitHub(issues_data=[plan_to_issue(plan1)])
-        ctx = build_workspace_test_context(env, issues=issues, github=github)
+        plan_service = build_fake_plan_list_service([plan1])
+        ctx = build_workspace_test_context(
+            env, issues=issues, github=github, plan_list_service=plan_service
+        )
 
         # Act
         result = runner.invoke(cli, ["pr", "list"], obj=ctx)
@@ -135,7 +147,7 @@ def test_plan_list_shows_complete_action_state() -> None:
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/1004",
-        labels=["erk-plan", "erk-queue"],
+        labels=["erk-pr", "erk-plan", "erk-queue"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
@@ -163,7 +175,10 @@ timestamp: "2024-11-23T12:00:00Z"
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1004: plan_to_issue(plan1)}, comments={1004: [comment]})
         github = FakeGitHub(issues_data=[plan_to_issue(plan1)])
-        ctx = build_workspace_test_context(env, issues=issues, github=github)
+        plan_service = build_fake_plan_list_service([plan1])
+        ctx = build_workspace_test_context(
+            env, issues=issues, github=github, plan_list_service=plan_service
+        )
 
         # Act
         result = runner.invoke(cli, ["pr", "list"], obj=ctx)
@@ -182,7 +197,7 @@ def test_plan_list_shows_failed_action_state() -> None:
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/1005",
-        labels=["erk-plan", "erk-queue"],
+        labels=["erk-pr", "erk-plan", "erk-queue"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
@@ -210,7 +225,10 @@ timestamp: "2024-11-23T12:00:00Z"
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1005: plan_to_issue(plan1)}, comments={1005: [comment]})
         github = FakeGitHub(issues_data=[plan_to_issue(plan1)])
-        ctx = build_workspace_test_context(env, issues=issues, github=github)
+        plan_service = build_fake_plan_list_service([plan1])
+        ctx = build_workspace_test_context(
+            env, issues=issues, github=github, plan_list_service=plan_service
+        )
 
         # Act
         result = runner.invoke(cli, ["pr", "list"], obj=ctx)

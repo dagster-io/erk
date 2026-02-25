@@ -9,6 +9,7 @@ from pathlib import Path
 
 from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.issues.types import IssueComments
 from erk_shared.gateway.github.types import PRDetails, PRNotFound
 from erk_shared.non_ideal_state import (
     BranchDetectionFailed,
@@ -114,7 +115,7 @@ class GitHubChecks:
         github_issues: GitHubIssues,
         repo_root: Path,
         issue_number: int,
-    ) -> list | GitHubAPIFailed:
+    ) -> IssueComments | GitHubAPIFailed:
         """Get issue/PR discussion comments.
 
         Args:
@@ -123,9 +124,10 @@ class GitHubChecks:
             issue_number: Issue or PR number
 
         Returns:
-            List of comments on success, or GitHubAPIFailed on error
+            IssueComments on success, or GitHubAPIFailed on error
         """
         try:
-            return github_issues.get_issue_comments_with_urls(repo_root, issue_number)
+            raw = github_issues.get_issue_comments_with_urls(repo_root, issue_number)
+            return IssueComments(comments=tuple(raw))
         except RuntimeError as e:
             return GitHubAPIFailed(message=str(e))

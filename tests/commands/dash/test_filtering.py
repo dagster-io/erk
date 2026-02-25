@@ -13,7 +13,10 @@ from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.commands.dash.conftest import plan_to_issue
-from tests.test_utils.context_builders import build_workspace_test_context
+from tests.test_utils.context_builders import (
+    build_fake_plan_list_service,
+    build_workspace_test_context,
+)
 from tests.test_utils.env_helpers import erk_inmem_env
 
 
@@ -26,7 +29,7 @@ def test_plan_list_no_filters() -> None:
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/1",
-        labels=["erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
@@ -39,7 +42,7 @@ def test_plan_list_no_filters() -> None:
         body="",
         state=PlanState.OPEN,  # Changed to OPEN to match default behavior
         url="https://github.com/owner/repo/issues/2",
-        labels=["erk-plan"],  # Must have erk-plan label to be returned by default
+        labels=["erk-pr", "erk-plan"],  # Must have erk-plan label to be returned by default
         assignees=[],
         created_at=datetime(2024, 1, 2, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -51,7 +54,10 @@ def test_plan_list_no_filters() -> None:
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan1), 2: plan_to_issue(plan2)})
         github = FakeGitHub(issues_data=[plan_to_issue(plan1), plan_to_issue(plan2)])
-        ctx = build_workspace_test_context(env, issues=issues, github=github)
+        plan_service = build_fake_plan_list_service([plan1, plan2])
+        ctx = build_workspace_test_context(
+            env, issues=issues, github=github, plan_list_service=plan_service
+        )
 
         # Act - Use erk plan list for static output
         result = runner.invoke(cli, ["pr", "list"], obj=ctx)
@@ -72,7 +78,7 @@ def test_plan_list_filter_by_state() -> None:
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/1",
-        labels=["erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
@@ -85,7 +91,7 @@ def test_plan_list_filter_by_state() -> None:
         body="",
         state=PlanState.CLOSED,
         url="https://github.com/owner/repo/issues/2",
-        labels=["erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=datetime(2024, 1, 2, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -99,7 +105,10 @@ def test_plan_list_filter_by_state() -> None:
             issues={1: plan_to_issue(open_plan), 2: plan_to_issue(closed_plan)}
         )
         github = FakeGitHub(issues_data=[plan_to_issue(open_plan), plan_to_issue(closed_plan)])
-        ctx = build_workspace_test_context(env, issues=issues, github=github)
+        plan_service = build_fake_plan_list_service([open_plan, closed_plan])
+        ctx = build_workspace_test_context(
+            env, issues=issues, github=github, plan_list_service=plan_service
+        )
 
         # Act - Filter for open issues
         result = runner.invoke(cli, ["pr", "list", "--state", "open"], obj=ctx)
@@ -120,7 +129,7 @@ def test_plan_list_filter_by_labels() -> None:
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/1",
-        labels=["erk-plan", "erk-queue"],
+        labels=["erk-pr", "erk-plan", "erk-queue"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
@@ -133,7 +142,7 @@ def test_plan_list_filter_by_labels() -> None:
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/2",
-        labels=["erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=datetime(2024, 1, 2, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -149,7 +158,10 @@ def test_plan_list_filter_by_labels() -> None:
         github = FakeGitHub(
             issues_data=[plan_to_issue(plan_with_both), plan_to_issue(plan_with_one)]
         )
-        ctx = build_workspace_test_context(env, issues=issues, github=github)
+        plan_service = build_fake_plan_list_service([plan_with_both, plan_with_one])
+        ctx = build_workspace_test_context(
+            env, issues=issues, github=github, plan_list_service=plan_service
+        )
 
         # Act - Filter for both labels (AND logic)
         result = runner.invoke(
@@ -170,6 +182,7 @@ def test_plan_list_with_limit() -> None:
     # Arrange
     plans_dict: dict[int, IssueInfo] = {}
     issues_list: list[IssueInfo] = []
+    all_plans: list[Plan] = []
     for i in range(1, 6):
         plan = Plan(
             plan_identifier=str(i),
@@ -177,7 +190,7 @@ def test_plan_list_with_limit() -> None:
             body="",
             state=PlanState.OPEN,
             url=f"https://github.com/owner/repo/issues/{i}",
-            labels=["erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             assignees=[],
             created_at=datetime(2024, 1, i, tzinfo=UTC),
             updated_at=datetime(2024, 1, i, tzinfo=UTC),
@@ -187,12 +200,16 @@ def test_plan_list_with_limit() -> None:
         issue = plan_to_issue(plan)
         plans_dict[i] = issue
         issues_list.append(issue)
+        all_plans.append(plan)
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues=plans_dict)
         github = FakeGitHub(issues_data=issues_list)
-        ctx = build_workspace_test_context(env, issues=issues, github=github)
+        plan_service = build_fake_plan_list_service(all_plans)
+        ctx = build_workspace_test_context(
+            env, issues=issues, github=github, plan_list_service=plan_service
+        )
 
         # Act
         result = runner.invoke(cli, ["pr", "list", "--limit", "2"], obj=ctx)
@@ -211,7 +228,7 @@ def test_plan_list_combined_filters() -> None:
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/1",
-        labels=["erk-plan", "bug"],
+        labels=["erk-pr", "erk-plan", "bug"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
@@ -224,7 +241,7 @@ def test_plan_list_combined_filters() -> None:
         body="",
         state=PlanState.CLOSED,
         url="https://github.com/owner/repo/issues/2",
-        labels=["erk-plan", "bug"],
+        labels=["erk-pr", "erk-plan", "bug"],
         assignees=[],
         created_at=datetime(2024, 1, 2, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -237,7 +254,7 @@ def test_plan_list_combined_filters() -> None:
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/3",
-        labels=["erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=datetime(2024, 1, 3, tzinfo=UTC),
         updated_at=datetime(2024, 1, 3, tzinfo=UTC),
@@ -261,7 +278,12 @@ def test_plan_list_combined_filters() -> None:
                 plan_to_issue(wrong_labels_plan),
             ]
         )
-        ctx = build_workspace_test_context(env, issues=issues, github=github)
+        plan_service = build_fake_plan_list_service(
+            [matching_plan, wrong_state_plan, wrong_labels_plan]
+        )
+        ctx = build_workspace_test_context(
+            env, issues=issues, github=github, plan_list_service=plan_service
+        )
 
         # Act
         result = runner.invoke(
@@ -294,7 +316,7 @@ def test_plan_list_empty_results() -> None:
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/1",
-        labels=["erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
@@ -306,7 +328,10 @@ def test_plan_list_empty_results() -> None:
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan)})
         github = FakeGitHub(issues_data=[plan_to_issue(plan)])
-        ctx = build_workspace_test_context(env, issues=issues, github=github)
+        plan_service = build_fake_plan_list_service([plan])
+        ctx = build_workspace_test_context(
+            env, issues=issues, github=github, plan_list_service=plan_service
+        )
 
         # Act
         result = runner.invoke(cli, ["pr", "list", "--state", "closed"], obj=ctx)

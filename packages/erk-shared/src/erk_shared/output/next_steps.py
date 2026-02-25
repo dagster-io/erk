@@ -19,7 +19,7 @@ class IssueNextSteps:
         return f"erk br co --for-plan {self.issue_number}"
 
     @property
-    def submit(self) -> str:
+    def dispatch(self) -> str:
         return f"erk pr dispatch {self.issue_number}"
 
     @property
@@ -54,7 +54,7 @@ class PlannedPRNextSteps:
         return self.url
 
     @property
-    def submit(self) -> str:
+    def dispatch(self) -> str:
         return f"erk pr dispatch {self.pr_number}"
 
     @property
@@ -85,7 +85,7 @@ class PlannedPRNextSteps:
 
 
 # Slash commands (static, don't need issue number)
-SUBMIT_SLASH_COMMAND = "/erk:pr-dispatch"
+DISPATCH_SLASH_COMMAND = "/erk:pr-dispatch"
 CHECKOUT_SLASH_COMMAND = "/erk:prepare"
 
 
@@ -97,12 +97,12 @@ def format_next_steps_plain(issue_number: int, *, url: str) -> str:
 View Issue: {s.view}
 
 In Claude Code:
-  Dispatch to queue: {SUBMIT_SLASH_COMMAND}
+  Dispatch to queue: {DISPATCH_SLASH_COMMAND}
 
 OR exit Claude Code first, then run one of:
   Checkout: {s.checkout}
   Implement: {s.checkout_and_implement}
-  Dispatch to Queue: {s.submit}"""
+  Dispatch to Queue: {s.dispatch}"""
 
 
 def format_planned_pr_next_steps_plain(pr_number: int, *, branch_name: str, url: str) -> str:
@@ -113,12 +113,12 @@ def format_planned_pr_next_steps_plain(pr_number: int, *, branch_name: str, url:
 View PR: {s.view}
 
 In Claude Code:
-  Dispatch to queue: {SUBMIT_SLASH_COMMAND}
+  Dispatch to queue: {DISPATCH_SLASH_COMMAND}
 
 OR exit Claude Code first, then run one of:
   Checkout: {s.checkout}
   Implement: {s.checkout_new_slot_and_implement}
-  Dispatch to Queue: {s.submit}"""
+  Dispatch to Queue: {s.dispatch}"""
 
 
 def format_next_steps_markdown(issue_number: int, *, url: str) -> str:
@@ -126,9 +126,9 @@ def format_next_steps_markdown(issue_number: int, *, url: str) -> str:
     s = IssueNextSteps(issue_number, url=url)
     return f"""## Execution Commands
 
-**Submit to Erk Queue:**
+**Dispatch to Erk Queue:**
 ```bash
-{s.submit}
+{s.dispatch}
 ```
 
 ---

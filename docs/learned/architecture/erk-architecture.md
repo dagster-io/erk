@@ -359,16 +359,15 @@ queued_at = ctx.time.now().replace(tzinfo=UTC).isoformat()
 
 **Source:** See `dispatch_one_shot()` in `src/erk/cli/commands/one_shot_dispatch.py`.
 
-## ctx.plan_backend vs ctx.plan_store
+## ctx.plan_backend
 
-- `ctx.plan_backend` — Write-side interface (PlanBackend ABC). Use for `update_metadata()`, `post_event()`, `create_plan()`
-- `ctx.plan_store` — Read-side interface (PlanStore ABC). Use for `get_plan()`, `list_plans()`
+- `ctx.plan_backend` — The PlanBackend ABC interface. Use for all plan operations including `update_metadata()`, `post_event()`, `create_plan()`, `get_plan()`, `list_plans()`
 
-PlanBackend extends PlanStore, so `ctx.plan_backend` can do reads too, but prefer the narrower type in signatures.
+After PR #8210, the `PlanStore` ABC was consolidated into `PlanBackend`. There is no separate read-side interface.
 
-<!-- Source: packages/erk-shared/src/erk_shared/plan_store/backend.py, PlanBackend, PlanStore -->
+<!-- Source: packages/erk-shared/src/erk_shared/plan_store/backend.py, PlanBackend -->
 
-**Source:** See `PlanBackend` and `PlanStore` in `packages/erk-shared/src/erk_shared/plan_store/backend.py`.
+**Source:** See `PlanBackend` in `packages/erk-shared/src/erk_shared/plan_store/backend.py`.
 
 ## TUI Exit-with-Command Pattern
 
@@ -1068,8 +1067,7 @@ ctx.graphite.track_branch(branch_name, parent)
 ```python
 parent = ctx.branch_manager.get_parent_branch(repo.root, branch_name)
 if parent is not None:  # Already tracked
-    ctx.graphite.sync(repo.root, force=True)
-    ctx.graphite.restack_idempotent(repo.root, no_interactive=True)
+    ctx.graphite.squash_branch_idempotent(repo.root, quiet=True)
 ```
 
 **Use when:** Re-running provides value (e.g., sync pulls latest changes, restack updates base).

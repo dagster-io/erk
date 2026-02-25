@@ -84,9 +84,10 @@ def test_connect_outputs_connecting_message_for_valid_codespace() -> None:
     assert fake_codespace.last_call is not None
     assert fake_codespace.last_call.gh_name == "user-mybox-abc123"
     assert fake_codespace.last_call.interactive is True
-    # Verify the command includes Claude setup
+    # Verify the command includes Claude setup (no tmux by default)
     assert "claude" in fake_codespace.last_call.remote_command
     assert "git pull" in fake_codespace.last_call.remote_command
+    assert "tmux" not in fake_codespace.last_call.remote_command
 
 
 def test_connect_with_explicit_name() -> None:
@@ -136,6 +137,7 @@ def test_connect_with_shell_flag_drops_to_shell() -> None:
     assert remote_command == "bash -l"
     assert "claude" not in remote_command
     assert "git pull" not in remote_command
+    assert "tmux" not in remote_command
 
 
 def test_connect_with_env_injects_export() -> None:

@@ -21,7 +21,7 @@ This document captures the design thinking around extending the roadmap table fo
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, RoadmapNode -->
 
-The `RoadmapNode` dataclass has five fields (`id`, `description`, `status`, `plan`, `pr`). The `plan` and `pr` fields are separate: `plan` holds a plan issue reference (`"#6464"`), while `pr` holds a landed PR reference (`"#123"`). Both are `str | None`.
+The `RoadmapNode` dataclass has six fields (`id`, `description`, `status`, `pr`, `depends_on`, `slug`). The `pr` field holds a PR reference (`"#123"`) and is `str | None`. The `depends_on` field holds explicit dependencies (`tuple[str, ...] | None`), and `slug` holds a kebab-case identifier (`str | None`).
 
 The canonical table format:
 
@@ -64,7 +64,7 @@ The original plan added three more columns: **Type** (task/milestone/research), 
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, update_node_in_frontmatter -->
 
-Status inference exists only at **write time** in `update_node_in_frontmatter()`: when no explicit status is provided, it infers `done` from a PR reference, `in_progress` from a plan reference, or preserves the existing status. The parser (`parse_roadmap()`) reads the explicit `status` field from YAML frontmatter with no inference — what's stored is what's returned.
+Status inference exists only at **write time** in `update_node_in_frontmatter()`: when no explicit status is provided, it infers `done` from a PR reference or preserves the existing status. The parser (`parse_roadmap()`) reads the explicit `status` field from YAML frontmatter with no inference — what's stored is what's returned.
 
 ## Related Documentation
 

@@ -26,7 +26,7 @@ from erk.tui.data.types import PlanFilters, PlanRowData
 from erk_shared.context.helpers import require_context
 from erk_shared.gateway.browser.real import RealBrowserLauncher
 from erk_shared.gateway.clipboard.real import RealClipboard
-from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, IssueFilterState
 from erk_shared.gateway.http.auth import fetch_github_token
 from erk_shared.gateway.http.real import RealHttpClient
 from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
@@ -51,7 +51,7 @@ def _serialize_plan_row(row: PlanRowData) -> dict[str, Any]:
 
 @click.command(name="dash-data")
 @click.option("--state", type=click.Choice(["open", "closed"]), default=None)
-@click.option("--label", multiple=True, default=("erk-plan",))
+@click.option("--label", multiple=True, default=("erk-pr", "erk-plan"))
 @click.option("--limit", type=int, default=None)
 @click.option("--show-prs/--no-show-prs", default=True)
 @click.option("--show-runs/--no-show-runs", default=False)
@@ -94,17 +94,20 @@ def dash_data(
         http_client=RealHttpClient(token=fetch_github_token(), base_url="https://api.github.com"),
     )
 
+    effective_state: IssueFilterState = "closed" if state == "closed" else "open"
+
     filters = PlanFilters(
         labels=label,
-        state=state,
+        state=effective_state,
         run_state=run_state,
         limit=limit,
         show_prs=show_prs,
         show_runs=show_runs,
+        exclude_labels=(),
         creator=creator,
     )
 
-    rows = provider.fetch_plans(filters)
+    rows, _timings = provider.fetch_plans(filters)
     plans = [_serialize_plan_row(row) for row in rows]
 
     click.echo(json.dumps({"success": True, "plans": plans, "count": len(plans)}))

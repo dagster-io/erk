@@ -51,7 +51,7 @@ WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs
 **CLI Usage**:
 
 ```bash
-erk exec plan-save-to-issue --created-from-workflow-run-url "$WORKFLOW_RUN_URL" ...
+erk exec plan-save --created-from-workflow-run-url "$WORKFLOW_RUN_URL" ...
 ```
 
 This field enables:

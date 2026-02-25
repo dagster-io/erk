@@ -1,6 +1,5 @@
 """Tests for ErkDashApp using Textual Pilot."""
 
-from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -189,6 +188,33 @@ class TestStatusBar:
         bar.set_message("Test message")
         bar.set_message(None)
         assert bar._message is None
+
+    def test_set_last_update_with_fetch_timings(self) -> None:
+        """Status bar stores fetch_timings when provided."""
+        from erk.tui.data.types import FetchTimings
+
+        bar = StatusBar()
+        timings = FetchTimings(
+            rest_issues_ms=1000,
+            graphql_enrich_ms=500,
+            plan_parsing_ms=200,
+            workflow_runs_ms=300,
+            worktree_mapping_ms=50,
+            row_building_ms=20,
+            total_ms=2070,
+        )
+        bar.set_last_update("14:30:45", duration_secs=2.1, fetch_timings=timings)
+        assert bar._last_update == "14:30:45"
+        assert bar._fetch_duration == 2.1
+        assert bar._fetch_timings is timings
+
+    def test_set_last_update_without_fetch_timings(self) -> None:
+        """Status bar works without fetch_timings (backwards compatibility)."""
+        bar = StatusBar()
+        bar.set_last_update("14:30:45", duration_secs=1.5)
+        assert bar._last_update == "14:30:45"
+        assert bar._fetch_duration == 1.5
+        assert bar._fetch_timings is None
 
 
 class TestClosePlanViaCommandPalette:
@@ -393,66 +419,6 @@ class TestFilterMode:
             assert app._rows[0].plan_id == 2
 
 
-class TestOpenRow:
-    """Tests for 'o' key open behavior (PR-first, then issue)."""
-
-    @pytest.mark.asyncio
-    async def test_o_opens_pr_when_available(self) -> None:
-        """'o' key opens PR URL when PR is available."""
-        provider = FakePlanDataProvider(
-            plans=[
-                make_plan_row(
-                    123,
-                    "Feature",
-                    pr_number=456,
-                    pr_url="https://github.com/test/repo/pull/456",
-                    plan_url="https://github.com/test/repo/issues/123",
-                )
-            ]
-        )
-        filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
-
-        async with app.run_test() as pilot:
-            await pilot.pause()
-            await pilot.pause()
-
-            # Press 'o' - should open PR (we can't actually open URL in test,
-            # but we can check the status bar message)
-            await pilot.press("o")
-            await pilot.pause()
-
-            status_bar = app.query_one(StatusBar)
-            # Message should indicate PR was opened, not issue
-            assert status_bar._message == "Opened PR #456"
-
-    @pytest.mark.asyncio
-    async def test_o_opens_issue_when_no_pr(self) -> None:
-        """'o' key opens issue URL when no PR is available."""
-        provider = FakePlanDataProvider(
-            plans=[
-                make_plan_row(
-                    123,
-                    "Feature",
-                    plan_url="https://github.com/test/repo/issues/123",
-                )
-            ]
-        )
-        filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
-
-        async with app.run_test() as pilot:
-            await pilot.pause()
-            await pilot.pause()
-
-            await pilot.press("o")
-            await pilot.pause()
-
-            status_bar = app.query_one(StatusBar)
-            # Message should indicate issue was opened
-            assert status_bar._message == "Opened issue #123"
-
-
 class TestPlanDetailScreen:
     """Tests for PlanDetailScreen modal."""
 
@@ -635,8 +601,8 @@ class TestPlanDetailScreenCopyActions:
             assert clipboard.last_copied == "erk br co --for-plan 123"
 
     @pytest.mark.asyncio
-    async def test_copy_submit_shortcut_3(self) -> None:
-        """Pressing '3' in detail screen copies submit command."""
+    async def test_copy_dispatch_shortcut_3(self) -> None:
+        """Pressing '3' in detail screen copies dispatch command."""
         clipboard = FakeClipboard()
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
@@ -720,6 +686,82 @@ class TestPlanDetailScreenCopyActions:
             await pilot.pause()
 
             assert clipboard.last_copied == "erk pr co 456"
+
+
+class TestPlanDetailScreenFixConflictsKeybinding:
+    """Tests for action_fix_conflicts_remote() triggered via keybinding '5'.
+
+    The keybinding action dismisses the detail screen and delegates to
+    the app's toast + async worker pattern.
+    """
+
+    @pytest.mark.asyncio
+    async def test_fix_conflicts_keybinding_uses_toast_pattern(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """Pressing '5' in detail screen triggers toast + async fix-conflicts."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        captured_pr: int | None = None
+
+        def mock_async(self_app: ErkDashApp, pr_number: int) -> None:
+            nonlocal captured_pr
+            captured_pr = pr_number
+
+        monkeypatch.setattr(ErkDashApp, "_fix_conflicts_remote_async", mock_async)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Open detail screen
+            await pilot.press("space")
+            await pilot.pause()
+            await pilot.pause()
+
+            initial_stack_len = len(app.screen_stack)
+
+            # Press '5' to trigger fix_conflicts_remote keybinding
+            await pilot.press("5")
+            await pilot.pause()
+
+            # Detail screen should have been dismissed (stack shrunk)
+            assert len(app.screen_stack) < initial_stack_len
+
+            # Should have called _fix_conflicts_remote_async with the PR number
+            assert captured_pr == 456
+
+    @pytest.mark.asyncio
+    async def test_fix_conflicts_keybinding_does_nothing_without_pr(self) -> None:
+        """Pressing '5' in detail screen does nothing if no PR number."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],  # No pr_number
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Open detail screen
+            await pilot.press("space")
+            await pilot.pause()
+            await pilot.pause()
+
+            initial_stack_len = len(app.screen_stack)
+
+            # Press '5' with no PR - should do nothing
+            await pilot.press("5")
+            await pilot.pause()
+
+            # Detail screen should still be open (not dismissed)
+            assert len(app.screen_stack) == initial_stack_len
 
 
 class TestCommandPaletteFromMain:
@@ -932,10 +974,10 @@ class TestExecutePaletteCommandFixConflictsRemote:
             assert len(app.screen_stack) == initial_stack_len
 
     @pytest.mark.asyncio
-    async def test_execute_palette_command_fix_conflicts_remote_pushes_screen_and_runs_command(
+    async def test_execute_palette_command_fix_conflicts_remote_uses_toast_pattern(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        """Execute palette command fix_conflicts_remote pushes screen and runs correct command."""
+        """Execute palette command fix_conflicts_remote uses toast, not modal."""
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456)],
             repo_root=tmp_path,
@@ -943,27 +985,14 @@ class TestExecutePaletteCommandFixConflictsRemote:
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
-        # Capture the command passed to run_streaming_command
-        captured_command = None
+        # Capture calls to _fix_conflicts_remote_async
+        captured_pr: int | None = None
 
-        def mock_run_streaming_command(
-            self: PlanDetailScreen,
-            command: list[str],
-            cwd: Path,
-            title: str,
-            *,
-            timeout: float = 30.0,
-            on_success: Callable[[], None] | None = None,
-        ) -> None:
-            nonlocal captured_command
-            captured_command = command
+        def mock_async(self_app: ErkDashApp, pr_number: int) -> None:
+            nonlocal captured_pr
+            captured_pr = pr_number
 
-        # Patch run_streaming_command to capture the command
-        monkeypatch.setattr(
-            PlanDetailScreen,
-            "run_streaming_command",
-            mock_run_streaming_command,
-        )
+        monkeypatch.setattr(ErkDashApp, "_fix_conflicts_remote_async", mock_async)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -971,25 +1000,14 @@ class TestExecutePaletteCommandFixConflictsRemote:
 
             initial_stack_len = len(app.screen_stack)
 
-            # Execute fix_conflicts_remote command
             app.execute_palette_command("fix_conflicts_remote")
             await pilot.pause()
 
-            # Should have pushed a new screen
-            assert len(app.screen_stack) == initial_stack_len + 1
+            # Should NOT have pushed a new screen
+            assert len(app.screen_stack) == initial_stack_len
 
-            detail_screen = app.screen_stack[-1]
-            assert isinstance(detail_screen, PlanDetailScreen)
-
-            # Verify correct command was prepared
-            assert captured_command is not None
-            assert captured_command == [
-                "erk",
-                "launch",
-                "pr-fix-conflicts",
-                "--pr",
-                "456",
-            ]
+            # Should have called _fix_conflicts_remote_async with the PR number
+            assert captured_pr == 456
 
 
 class TestStreamingCommandTimeout:
@@ -2481,14 +2499,14 @@ class TestLandPrAsync:
             assert len(captured_calls) == 1
 
 
-class TestSubmitToQueueAsync:
-    """Tests for _submit_to_queue_async subprocess behavior."""
+class TestDispatchToQueueAsync:
+    """Tests for _dispatch_to_queue_async subprocess behavior."""
 
     @pytest.mark.asyncio
-    async def test_submit_to_queue_runs_correct_command(
+    async def test_dispatch_to_queue_runs_correct_command(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        """_submit_to_queue_async should run correct subprocess command."""
+        """_dispatch_to_queue_async should run correct subprocess command."""
         import subprocess
 
         provider = FakePlanDataProvider(
@@ -2510,16 +2528,16 @@ class TestSubmitToQueueAsync:
             await pilot.pause()
             await pilot.pause()
 
-            app._submit_to_queue_async(123)
+            app._dispatch_to_queue_async(123)
             await pilot.pause(0.3)
 
-            assert captured_args == ["erk", "plan", "submit", "123", "-f"]
+            assert captured_args == ["erk", "pr", "dispatch", "123"]
 
     @pytest.mark.asyncio
-    async def test_submit_to_queue_triggers_refresh_on_success(
+    async def test_dispatch_to_queue_triggers_refresh_on_success(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        """_submit_to_queue_async should trigger refresh after success."""
+        """_dispatch_to_queue_async should trigger refresh after success."""
         import subprocess
 
         provider = FakePlanDataProvider(
@@ -2540,16 +2558,16 @@ class TestSubmitToQueueAsync:
 
             count_before = provider.fetch_count
 
-            app._submit_to_queue_async(123)
+            app._dispatch_to_queue_async(123)
             await pilot.pause(0.3)
 
             assert provider.fetch_count > count_before
 
     @pytest.mark.asyncio
-    async def test_submit_to_queue_no_refresh_on_failure(
+    async def test_dispatch_to_queue_no_refresh_on_failure(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        """_submit_to_queue_async should NOT refresh on failure."""
+        """_dispatch_to_queue_async should NOT refresh on failure."""
         import subprocess
 
         provider = FakePlanDataProvider(
@@ -2570,7 +2588,7 @@ class TestSubmitToQueueAsync:
 
             count_before = provider.fetch_count
 
-            app._submit_to_queue_async(123)
+            app._dispatch_to_queue_async(123)
             await pilot.pause(0.3)
 
             assert provider.fetch_count == count_before
@@ -2770,3 +2788,658 @@ class TestOneShotPlanAsync:
             await pilot.pause(0.3)
 
             assert provider.fetch_count > count_before
+
+
+class _FakePopen:
+    """Fake subprocess.Popen that yields configurable output lines."""
+
+    def __init__(self, *, lines: tuple[str, ...] = (), return_code: int = 0) -> None:
+        self._return_code = return_code
+        self.stdout: list[str] = [line + "\n" for line in lines]
+
+    def wait(self) -> int:
+        return self._return_code
+
+
+class TestOperationTracking:
+    """Tests for multi-operation status bar tracking.
+
+    Verifies that async operations register via start_operation, stream
+    progress via update_operation, and clean up via finish_operation.
+    """
+
+    @pytest.mark.asyncio
+    async def test_start_operation_sets_status_bar(self) -> None:
+        """_start_operation registers operation and adds running class."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            status_bar = app.query_one(StatusBar)
+            assert not status_bar._operations
+            assert not status_bar.has_class("running")
+
+            app._start_operation(op_id="test-op", label="Working...")
+            assert "test-op" in status_bar._operations
+            assert status_bar._operations["test-op"].label == "Working..."
+            assert status_bar.has_class("running")
+
+    @pytest.mark.asyncio
+    async def test_finish_operation_clears_status_bar(self) -> None:
+        """_finish_operation removes operation and clears running class."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            status_bar = app.query_one(StatusBar)
+            app._start_operation(op_id="test-op", label="Working...")
+            assert status_bar.has_class("running")
+
+            app._finish_operation(op_id="test-op")
+            assert "test-op" not in status_bar._operations
+            assert not status_bar.has_class("running")
+
+    @pytest.mark.asyncio
+    async def test_close_plan_starts_then_finishes_operation(self, tmp_path: Path) -> None:
+        """_close_plan_async finishes operation on success."""
+        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row(123, "Test Plan", plan_url="https://github.com/test/repo/issues/123")
+            ],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            status_bar = app.query_one(StatusBar)
+
+            op_id = "close-plan-123"
+            app._start_operation(op_id=op_id, label="Closing plan #123...")
+            assert op_id in status_bar._operations
+
+            app._close_plan_async(op_id, 123, "https://github.com/test/repo/issues/123")
+            await pilot.pause(0.3)
+
+            assert op_id not in status_bar._operations
+
+    @pytest.mark.asyncio
+    async def test_address_remote_finishes_operation_on_success(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_address_remote_async finishes operation on success."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            return _FakePopen(lines=("Updated dispatch metadata",), return_code=0)
+
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            status_bar = app.query_one(StatusBar)
+            op_id = "address-pr-456"
+            app._start_operation(op_id=op_id, label="Dispatching address for PR #456...")
+            assert op_id in status_bar._operations
+
+            app._address_remote_async(op_id, 456)
+            await pilot.pause(0.3)
+
+            assert op_id not in status_bar._operations
+
+    @pytest.mark.asyncio
+    async def test_address_remote_finishes_operation_on_failure(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_address_remote_async finishes operation on failure."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            return _FakePopen(lines=("dispatch failed",), return_code=1)
+
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            status_bar = app.query_one(StatusBar)
+            op_id = "address-pr-456"
+            app._start_operation(op_id=op_id, label="Dispatching address for PR #456...")
+
+            app._address_remote_async(op_id, 456)
+            await pilot.pause(0.3)
+
+            assert op_id not in status_bar._operations
+
+    @pytest.mark.asyncio
+    async def test_land_pr_finishes_operation_on_success(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_land_pr_async finishes operation on success."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            return _FakePopen(lines=("Merging branch",), return_code=0)
+
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            status_bar = app.query_one(StatusBar)
+            op_id = "land-pr-456"
+            app._start_operation(op_id=op_id, label="Landing PR #456...")
+
+            app._land_pr_async(op_id, 456, "test-branch", None)
+            await pilot.pause(0.3)
+
+            assert op_id not in status_bar._operations
+
+    @pytest.mark.asyncio
+    async def test_land_pr_finishes_operation_on_failure(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_land_pr_async finishes operation on failure."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            return _FakePopen(lines=("land failed",), return_code=1)
+
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            status_bar = app.query_one(StatusBar)
+            op_id = "land-pr-456"
+            app._start_operation(op_id=op_id, label="Landing PR #456...")
+
+            app._land_pr_async(op_id, 456, "test-branch", None)
+            await pilot.pause(0.3)
+
+            assert op_id not in status_bar._operations
+
+    @pytest.mark.asyncio
+    async def test_multi_operation_keeps_running_until_all_finish(self) -> None:
+        """Starting two operations, finishing one keeps running class."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            status_bar = app.query_one(StatusBar)
+            app._start_operation(op_id="op-1", label="Landing PR #1...")
+            app._start_operation(op_id="op-2", label="Dispatching plan #2...")
+            assert len(status_bar._operations) == 2
+            assert status_bar.has_class("running")
+
+            # Finish one - should still be running
+            app._finish_operation(op_id="op-1")
+            assert len(status_bar._operations) == 1
+            assert status_bar.has_class("running")
+            assert "op-2" in status_bar._operations
+
+            # Finish second - should clear running
+            app._finish_operation(op_id="op-2")
+            assert not status_bar._operations
+            assert not status_bar.has_class("running")
+
+    @pytest.mark.asyncio
+    async def test_update_operation_updates_progress(self) -> None:
+        """update_operation updates the progress text for an operation."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            status_bar = app.query_one(StatusBar)
+            app._start_operation(op_id="test-op", label="Landing PR #456...")
+            assert status_bar._operations["test-op"].progress == ""
+
+            app._update_operation(op_id="test-op", progress="Merging branch")
+            assert status_bar._operations["test-op"].progress == "Merging branch"
+            assert status_bar._last_updated_op_id == "test-op"
+
+    @pytest.mark.asyncio
+    async def test_update_operation_skips_unknown_op_id(self) -> None:
+        """update_operation is a no-op if op_id is not registered."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            status_bar = app.query_one(StatusBar)
+            # Should not crash
+            app._update_operation(op_id="nonexistent", progress="line")
+            assert not status_bar._operations
+
+
+class TestStackFilter:
+    """Tests for 't' stack filter functionality."""
+
+    @pytest.mark.asyncio
+    async def test_t_filters_to_stack_members(self) -> None:
+        """Pressing 't' filters table to rows sharing the same Graphite stack."""
+        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row(1, "Plan A", pr_head_branch="branch-a"),
+                make_plan_row(2, "Plan B", pr_head_branch="branch-b"),
+                make_plan_row(3, "Plan C", pr_head_branch="branch-c"),
+            ]
+        )
+        # Every branch in a stack maps to the full stack list (mirrors real Graphite)
+        stack_ac = ["branch-a", "branch-c"]
+        provider.set_branch_stack("branch-a", stack_ac)
+        provider.set_branch_stack("branch-c", stack_ac)
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            assert len(app._rows) == 3
+
+            # Rows are sorted descending by plan_id; row 0 is branch-c
+            await pilot.press("t")
+            await pilot.pause()
+
+            assert len(app._rows) == 2
+            plan_ids = {r.plan_id for r in app._rows}
+            assert plan_ids == {1, 3}
+
+    @pytest.mark.asyncio
+    async def test_t_toggles_off(self) -> None:
+        """Pressing 't' again restores all rows."""
+        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row(1, "Plan A", pr_head_branch="branch-a"),
+                make_plan_row(2, "Plan B", pr_head_branch="branch-b"),
+                make_plan_row(3, "Plan C", pr_head_branch="branch-c"),
+            ]
+        )
+        stack_ac = ["branch-a", "branch-c"]
+        provider.set_branch_stack("branch-a", stack_ac)
+        provider.set_branch_stack("branch-c", stack_ac)
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Activate stack filter
+            await pilot.press("t")
+            await pilot.pause()
+            assert len(app._rows) == 2
+
+            # Toggle off
+            await pilot.press("t")
+            await pilot.pause()
+            assert len(app._rows) == 3
+
+    @pytest.mark.asyncio
+    async def test_escape_clears_stack_filter_before_text_filter(self) -> None:
+        """Escape clears stack filter first, then text filter, then quits."""
+        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row(1, "Plan A", pr_head_branch="branch-a"),
+                make_plan_row(2, "Plan B", pr_head_branch="branch-b"),
+            ]
+        )
+        # Row 0 (selected) is branch-b due to descending sort
+        provider.set_branch_stack("branch-b", ["branch-b"])
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Activate stack filter
+            await pilot.press("t")
+            await pilot.pause()
+            assert app._stack_filter_branches is not None
+            assert len(app._rows) == 1
+
+            # Escape clears stack filter (not quit)
+            await pilot.press("escape")
+            await pilot.pause()
+            assert app._stack_filter_branches is None
+            assert len(app._rows) == 2
+
+    @pytest.mark.asyncio
+    async def test_t_on_row_without_branch_shows_message(self) -> None:
+        """Pressing 't' on row with no pr_head_branch shows status message."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(1, "Plan A")]  # No pr_head_branch
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("t")
+            await pilot.pause()
+
+            status_bar = app.query_one(StatusBar)
+            assert status_bar._message == "No branch for stack filter"
+            assert app._stack_filter_branches is None
+
+    @pytest.mark.asyncio
+    async def test_t_on_branch_not_in_stack_shows_message(self) -> None:
+        """Pressing 't' on branch not in a Graphite stack shows status message."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(1, "Plan A", pr_head_branch="solo-branch")]
+            # No stack configured for solo-branch -> get_branch_stack returns None
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("t")
+            await pilot.pause()
+
+            status_bar = app.query_one(StatusBar)
+            assert status_bar._message == "Not in a Graphite stack"
+            assert app._stack_filter_branches is None
+
+    @pytest.mark.asyncio
+    async def test_stack_filter_composes_with_text_filter(self) -> None:
+        """Stack filter and text filter compose -- stack first, then text narrows."""
+        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row(1, "Add feature alpha", pr_head_branch="branch-a"),
+                make_plan_row(2, "Fix bug beta", pr_head_branch="branch-b"),
+                make_plan_row(3, "Add feature gamma", pr_head_branch="branch-c"),
+            ]
+        )
+        # branch-a and branch-c share a stack (register both directions)
+        stack_ac = ["branch-a", "branch-c"]
+        provider.set_branch_stack("branch-a", stack_ac)
+        provider.set_branch_stack("branch-c", stack_ac)
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Activate stack filter first
+            await pilot.press("t")
+            await pilot.pause()
+            assert len(app._rows) == 2  # Plans 1 and 3
+
+            # Now activate text filter
+            await pilot.press("slash")
+            await pilot.pause()
+            await pilot.press("g", "a", "m", "m", "a")
+            await pilot.pause()
+
+            # Text filter narrows further
+            assert len(app._rows) == 1
+            assert app._rows[0].plan_id == 3
+
+    @pytest.mark.asyncio
+    async def test_view_switch_clears_stack_filter(self) -> None:
+        """Switching views clears the stack filter."""
+        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row(1, "Plan A", pr_head_branch="branch-a"),
+                make_plan_row(2, "Plan B", pr_head_branch="branch-b"),
+            ]
+        )
+        # Row 0 (selected) is branch-b due to descending sort
+        provider.set_branch_stack("branch-b", ["branch-b"])
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Activate stack filter
+            await pilot.press("t")
+            await pilot.pause()
+            assert app._stack_filter_branches is not None
+
+            # Switch view
+            await pilot.press("2")
+            await pilot.pause()
+
+            assert app._stack_filter_branches is None
+            assert app._stack_filter_label is None
+
+
+class TestObjectiveFilter:
+    """Tests for 'o' objective filter functionality."""
+
+    @pytest.mark.asyncio
+    async def test_o_filters_plans_by_objective(self) -> None:
+        """Pressing 'o' filters table to rows sharing the same objective_issue."""
+        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row(1, "Plan A", objective_issue=42),
+                make_plan_row(2, "Plan B", objective_issue=99),
+                make_plan_row(3, "Plan C", objective_issue=42),
+            ]
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            assert len(app._rows) == 3
+
+            # Row 0 (selected) is plan_id=3 (descending sort), objective_issue=42
+            await pilot.press("o")
+            await pilot.pause()
+
+            assert len(app._rows) == 2
+            plan_ids = {r.plan_id for r in app._rows}
+            assert plan_ids == {1, 3}
+
+    @pytest.mark.asyncio
+    async def test_o_toggles_off_objective_filter(self) -> None:
+        """Pressing 'o' again restores all rows."""
+        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row(1, "Plan A", objective_issue=42),
+                make_plan_row(2, "Plan B", objective_issue=99),
+                make_plan_row(3, "Plan C", objective_issue=42),
+            ]
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Activate objective filter
+            await pilot.press("o")
+            await pilot.pause()
+            assert len(app._rows) == 2
+
+            # Toggle off
+            await pilot.press("o")
+            await pilot.pause()
+            assert len(app._rows) == 3
+
+    @pytest.mark.asyncio
+    async def test_o_on_plan_without_objective_shows_message(self) -> None:
+        """Pressing 'o' on plan with no objective_issue shows status message."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(1, "Plan A")]  # No objective_issue
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("o")
+            await pilot.pause()
+
+            status_bar = app.query_one(StatusBar)
+            assert status_bar._message == "Plan not linked to an objective"
+            assert app._objective_filter_issue is None
+
+    @pytest.mark.asyncio
+    async def test_escape_clears_objective_filter(self) -> None:
+        """Escape clears objective filter."""
+        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row(1, "Plan A", objective_issue=42),
+                make_plan_row(2, "Plan B", objective_issue=99),
+            ]
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Row 0 (selected) is plan_id=2 (descending sort), objective_issue=99
+            await pilot.press("o")
+            await pilot.pause()
+            assert app._objective_filter_issue is not None
+            assert len(app._rows) == 1
+
+            # Escape clears objective filter
+            await pilot.press("escape")
+            await pilot.pause()
+            assert app._objective_filter_issue is None
+            assert len(app._rows) == 2
+
+    @pytest.mark.asyncio
+    async def test_view_switch_clears_objective_filter(self) -> None:
+        """Switching views clears the objective filter."""
+        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row(1, "Plan A", objective_issue=42),
+                make_plan_row(2, "Plan B", objective_issue=99),
+            ]
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Activate objective filter
+            await pilot.press("o")
+            await pilot.pause()
+            assert app._objective_filter_issue is not None
+
+            # Switch view
+            await pilot.press("2")
+            await pilot.pause()
+
+            assert app._objective_filter_issue is None
+            assert app._objective_filter_label is None
+
+    @pytest.mark.asyncio
+    async def test_objective_filter_composes_with_text_filter(self) -> None:
+        """Objective filter and text filter compose -- objective first, then text narrows."""
+        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row(1, "Add feature alpha", objective_issue=42),
+                make_plan_row(2, "Fix bug beta", objective_issue=99),
+                make_plan_row(3, "Add feature gamma", objective_issue=42),
+            ]
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Row 0 (selected) is plan_id=3, objective_issue=42
+            await pilot.press("o")
+            await pilot.pause()
+            assert len(app._rows) == 2  # Plans 1 and 3
+
+            # Now activate text filter
+            await pilot.press("slash")
+            await pilot.pause()
+            await pilot.press("g", "a", "m", "m", "a")
+            await pilot.pause()
+
+            # Text filter narrows further
+            assert len(app._rows) == 1
+            assert app._rows[0].plan_id == 3

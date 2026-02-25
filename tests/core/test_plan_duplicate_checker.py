@@ -20,7 +20,7 @@ def _make_plan(
         body=body,
         state=PlanState.OPEN,
         url=f"https://github.com/owner/repo/issues/{plan_identifier}",
-        labels=["erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=datetime(2025, 1, 1),
         updated_at=datetime(2025, 1, 1),

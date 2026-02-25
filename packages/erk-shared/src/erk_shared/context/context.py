@@ -50,7 +50,6 @@ from erk_shared.gateway.graphite.dry_run import DryRunGraphite
 from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.abc import Time
 from erk_shared.plan_store.backend import PlanBackend
-from erk_shared.plan_store.store import PlanStore
 
 
 @dataclass(frozen=True)
@@ -83,7 +82,7 @@ class ErkContext:
     erk_installation: ErkInstallation  # ~/.erk/ installation data (config, pool state)
     claude_installation: ClaudeInstallation  # ~/.claude/ installation data (sessions, settings)
     agent_docs: AgentDocs  # docs/learned/ file access
-    plan_store: PlanStore
+    plan_store: PlanBackend
     prompt_executor: PromptExecutor
 
     # Shell/CLI integrations (moved to erk_shared)
@@ -160,16 +159,9 @@ class ErkContext:
     def plan_backend(self) -> PlanBackend:
         """Access plan_store as PlanBackend (read/write interface).
 
-        GitHubPlanStore now extends PlanBackend, so this property provides
-        typed access to write operations (create_plan, update_metadata, add_comment)
-        while plan_store remains for backward compatibility.
+        Since plan_store is typed as PlanBackend, this is a direct alias.
+        Retained for call-site compatibility.
         """
-        # GitHubPlanStore extends PlanBackend, so this cast is safe
-        # At runtime, plan_store is always a GitHubPlanStore instance
-        if not isinstance(self.plan_store, PlanBackend):
-            raise RuntimeError(
-                f"plan_store must be a PlanBackend, got {type(self.plan_store).__name__}"
-            )
         return self.plan_store
 
     @property
@@ -209,7 +201,7 @@ class ErkContext:
         github_admin: GitHubAdmin | None = None,
         claude_installation: ClaudeInstallation | None = None,
         prompt_executor: PromptExecutor | None = None,
-        plan_store: PlanStore | None = None,
+        plan_store: PlanBackend | None = None,
         debug: bool = False,
         repo_root: Path | None = None,
         cwd: Path | None = None,
@@ -227,7 +219,7 @@ class ErkContext:
             github: Optional GitHub implementation. If None, creates FakeGitHub.
             claude_installation: ClaudeInstallation or None. Creates FakeClaudeInstallation if None.
             prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
-            plan_store: Optional PlanStore. If None, creates PlannedPRBackend.
+            plan_store: Optional PlanBackend. If None, creates PlannedPRBackend.
             debug: Whether to enable debug mode (default False).
             repo_root: Repository root path (defaults to Path("/fake/repo"))
             cwd: Current working directory (defaults to Path("/fake/worktree"))

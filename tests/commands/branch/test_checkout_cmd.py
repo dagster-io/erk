@@ -701,7 +701,7 @@ def test_checkout_for_plan_creates_impl_folder() -> None:
             body="# Plan\nImplementation details",
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/500",
-            labels=["erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             assignees=[],
             created_at=TEST_PLAN_TIMESTAMP,
             updated_at=TEST_PLAN_TIMESTAMP,
@@ -726,12 +726,12 @@ def test_checkout_for_plan_creates_impl_folder() -> None:
         assert result.exit_code == 0, f"Failed: {result.output}"
         assert "Created .impl/ folder from plan #500" in result.output
 
-        # Verify .impl/ folder was created in the worktree
+        # Verify branch-scoped impl folder was created in the worktree
         worktree_path = env.repo.worktrees_dir / "erk-slot-01"
-        impl_folder = worktree_path / ".impl"
+        impl_folder = worktree_path / ".erk" / "impl-context" / "plan-500"
         assert impl_folder.exists()
         assert (impl_folder / "plan.md").exists()
-        assert (impl_folder / "plan-ref.json").exists()
+        assert (impl_folder / "ref.json").exists()
 
 
 def test_checkout_for_plan_error_both_branch_and_for_plan() -> None:
@@ -840,6 +840,98 @@ def test_checkout_new_slot_and_no_slot_fails() -> None:
         assert "--new-slot and --no-slot cannot be used together" in result.output
 
 
+def test_checkout_new_slot_errors_when_branch_exists_in_worktree() -> None:
+    """Test that --new-slot errors when the branch is already checked out in a worktree."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        slot_worktree_path = env.repo.worktrees_dir / "erk-slot-01"
+        if not slot_worktree_path.exists():
+            slot_worktree_path.mkdir(parents=True)
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir, slot_worktree_path: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "existing-feature"]},
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=slot_worktree_path, branch="existing-feature"),
+                ]
+            },
+            existing_paths={env.cwd, env.repo.worktrees_dir, slot_worktree_path},
+        )
+        ctx = build_workspace_test_context(env, git=git)
+
+        result = runner.invoke(
+            branch_group, ["checkout", "--new-slot", "existing-feature"], obj=ctx
+        )
+
+        assert result.exit_code == 1
+        assert "already checked out" in result.output
+        assert "erk-slot-01" in result.output
+        assert "Cannot create a new slot" in result.output
+
+
+def test_checkout_new_slot_succeeds_when_branch_not_in_any_worktree() -> None:
+    """Test that --new-slot succeeds when the branch is not already in a worktree.
+
+    This verifies the normal --new-slot path still works (no regression).
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "fresh-branch"]},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
+        ctx = build_workspace_test_context(env, git=git)
+
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(
+                branch_group, ["checkout", "--new-slot", "fresh-branch"], obj=ctx
+            )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        assert "Assigned fresh-branch to" in result.output
+
+
+def test_checkout_without_new_slot_still_jumps_to_existing_worktree() -> None:
+    """Test that checkout without --new-slot still jumps to existing worktree (no regression)."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        slot_worktree_path = env.repo.worktrees_dir / "erk-slot-01"
+        if not slot_worktree_path.exists():
+            slot_worktree_path.mkdir(parents=True)
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir, slot_worktree_path: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "existing-feature"]},
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=slot_worktree_path, branch="existing-feature"),
+                ]
+            },
+            existing_paths={env.cwd, env.repo.worktrees_dir, slot_worktree_path},
+        )
+        ctx = build_workspace_test_context(env, git=git)
+
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(branch_group, ["checkout", "existing-feature"], obj=ctx)
+
+        # Should succeed without --new-slot
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        assert "Cannot create a new slot" not in result.output
+
+
 def test_checkout_stacks_in_place_from_assigned_slot() -> None:
     """Test that checkout from assigned slot stacks in place by default."""
     runner = CliRunner()
@@ -899,7 +991,7 @@ def test_checkout_stacks_in_place_for_plan_with_script() -> None:
             body="# Plan\nImplementation details",
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/500",
-            labels=["erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             assignees=[],
             created_at=TEST_PLAN_TIMESTAMP,
             updated_at=TEST_PLAN_TIMESTAMP,
@@ -946,8 +1038,8 @@ def test_checkout_stacks_in_place_for_plan_with_script() -> None:
         assert checkout_path == env.cwd
         assert checkout_branch == branch
 
-        # Verify .impl/ folder was created
-        impl_folder = env.cwd / ".impl"
+        # Verify branch-scoped impl folder was created
+        impl_folder = env.cwd / ".erk" / "impl-context" / "plan-500"
         assert impl_folder.exists()
         assert (impl_folder / "plan.md").exists()
 
@@ -964,7 +1056,7 @@ def test_checkout_for_plan_planned_pr_stacks_on_base_ref() -> None:
             body="# Plan\nStacking test",
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/600",
-            labels=["erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             assignees=[],
             created_at=TEST_PLAN_TIMESTAMP,
             updated_at=TEST_PLAN_TIMESTAMP,
@@ -1012,7 +1104,7 @@ def test_checkout_for_plan_planned_pr_falls_back_to_trunk_without_base_ref() -> 
             body="# Plan\nTrunk parent test",
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/601",
-            labels=["erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             assignees=[],
             created_at=TEST_PLAN_TIMESTAMP,
             updated_at=TEST_PLAN_TIMESTAMP,
