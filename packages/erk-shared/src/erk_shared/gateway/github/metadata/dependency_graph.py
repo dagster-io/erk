@@ -30,7 +30,7 @@ _STATUS_ORDER: dict[RoadmapNodeStatus, int] = {
 _STATUS_SYMBOLS: dict[RoadmapNodeStatus, str] = {
     "done": "✓",
     "in_progress": "▶",
-    "planning": "▶",
+    "planning": "◐",
     "pending": "○",
     "blocked": "⊘",
     "skipped": "-",
@@ -220,7 +220,7 @@ def compute_graph_summary(graph: DependencyGraph) -> dict[str, int]:
 def build_state_sparkline(nodes: tuple[ObjectiveNode, ...]) -> str:
     """Build a compact sparkline showing each node's status in position order.
 
-    Symbols: ✓ done, ▶ active (in_progress/planning), ○ pending, ⊘ blocked, - skipped.
+    Symbols: ✓ done, ▶ in_progress, ◐ planning, ○ pending, ⊘ blocked, - skipped.
 
     Args:
         nodes: Objective nodes in graph order
@@ -243,9 +243,9 @@ def find_graph_next_node(
 ) -> dict[str, str] | None:
     """Find the next actionable node by graph order, returning the dict format needed by JSON APIs.
 
-    Tries pending nodes first, then falls back to in_progress nodes. This ensures
-    objectives with only in_progress remaining steps still show a "next step" in the
-    TUI and JSON APIs, rather than returning None.
+    Tries pending nodes first, then planning, then in_progress. This ensures
+    objectives with only in_progress or planning remaining steps still show a
+    "next step" in the TUI and JSON APIs, rather than returning None.
 
     For dependency-aware selection (only unblocked nodes), use graph.next_node() directly.
 
@@ -254,9 +254,11 @@ def find_graph_next_node(
         phases: Phases for phase name lookup
 
     Returns:
-        Dict with {id, description, phase} or None if no pending or in_progress nodes.
+        Dict with {id, description, phase, status} or None if no actionable nodes.
     """
     target_node = _find_node_by_status(graph.nodes, "pending")
+    if target_node is None:
+        target_node = _find_node_by_status(graph.nodes, "planning")
     if target_node is None:
         target_node = _find_node_by_status(graph.nodes, "in_progress")
     if target_node is None:
@@ -273,6 +275,7 @@ def find_graph_next_node(
         "slug": target_node.slug or "",
         "description": target_node.description,
         "phase": phase_name,
+        "status": target_node.status,
     }
 
 

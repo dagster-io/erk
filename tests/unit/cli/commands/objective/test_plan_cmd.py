@@ -1,4 +1,4 @@
-"""Unit tests for erk objective plan command --all-unblocked flag."""
+"""Unit tests for erk objective plan command."""
 
 from datetime import UTC, datetime
 

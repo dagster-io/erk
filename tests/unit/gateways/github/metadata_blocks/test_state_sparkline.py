@@ -51,10 +51,10 @@ def test_mixed_statuses() -> None:
     assert build_state_sparkline(nodes) == "✓✓✓▶▶○○○○"
 
 
-def test_planning_maps_to_active() -> None:
-    """Planning status uses same symbol as in_progress."""
+def test_planning_maps_to_half_circle() -> None:
+    """Planning status uses ◐ symbol (distinct from in_progress ▶)."""
     nodes = (_node("planning"),)
-    assert build_state_sparkline(nodes) == "▶"
+    assert build_state_sparkline(nodes) == "◐"
 
 
 def test_blocked_symbol() -> None:
@@ -79,4 +79,4 @@ def test_all_status_types() -> None:
         _node("blocked"),
         _node("skipped"),
     )
-    assert build_state_sparkline(nodes) == "✓▶▶○⊘-"
+    assert build_state_sparkline(nodes) == "✓▶◐○⊘-"
