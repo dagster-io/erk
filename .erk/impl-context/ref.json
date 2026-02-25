@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Documentation Plan: Fix silent plan-header metadata loss during PR submit"
+}
