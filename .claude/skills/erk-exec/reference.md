@@ -1319,12 +1319,12 @@ Update node PR cells in an objective's roadmap table.
 
 **Options:**
 
-| Flag             | Type   | Required | Default        | Description                                                           |
-| ---------------- | ------ | -------- | -------------- | --------------------------------------------------------------------- |
-| `--node`         | TEXT   | Yes      | Sentinel.UNSET | Node ID(s) to update (e.g., '1.3')                                    |
-| `--pr`           | TEXT   | Yes      | Sentinel.UNSET | PR reference (e.g., '#456', or '' to clear)                           |
-| `--status`       | CHOICE | No       | -              | Explicit status to set (default: infer from PR value)                 |
-| `--include-body` | FLAG   | No       | -              | Include the fully-mutated issue body in JSON output as 'updated_body' |
+| Flag             | Type   | Required | Default        | Description                                                             |
+| ---------------- | ------ | -------- | -------------- | ----------------------------------------------------------------------- |
+| `--node`         | TEXT   | Yes      | Sentinel.UNSET | Node ID(s) to update (e.g., '1.3')                                      |
+| `--pr`           | TEXT   | No       | -              | PR reference (e.g., '#456', or '' to clear). Omit to preserve existing. |
+| `--status`       | CHOICE | No       | -              | Explicit status to set (default: infer from PR value)                   |
+| `--include-body` | FLAG   | No       | -              | Include the fully-mutated issue body in JSON output as 'updated_body'   |
 
 ### update-plan-header
 

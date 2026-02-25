@@ -174,7 +174,7 @@ If all nodes are complete or have plans in progress, report appropriately:
 - All complete: "All roadmap nodes are complete! Consider closing the objective."
 - All have plans: "All pending nodes have plans in progress. You can still select one via 'Other' to create a parallel plan."
 
-### Step 5: Create Roadmap Node Marker
+### Step 5: Create Roadmap Node Marker and Mark as Planning
 
 After the user selects a node, create a marker to store the selected node ID for later use by `plan-save`:
 
@@ -184,6 +184,14 @@ erk exec marker create --session-id "${CLAUDE_SESSION_ID}" \
 ```
 
 Replace `<step-id>` with the node ID selected by the user (e.g., "2A.1"). This marker enables `plan-save` to automatically update the objective's roadmap table with the plan issue number.
+
+Then mark the node as `planning` in the objective's roadmap so parallel sessions skip it:
+
+```bash
+erk exec update-objective-node <issue-number> --node <step-id> --status planning
+```
+
+Replace `<issue-number>` with the objective issue number and `<step-id>` with the selected node ID. This is a best-effort update — if it fails, continue with planning.
 
 ### Step 6: Gather Context
 

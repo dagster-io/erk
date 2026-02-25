@@ -721,3 +721,47 @@ def test_update_step_with_pr_and_explicit_done() -> None:
     updated_body = fake_gh.updated_bodies[0][1]
     assert "#500" in updated_body
     assert "status: done" in updated_body
+
+
+def test_status_only_without_pr() -> None:
+    """--status without --pr sets status while preserving existing PR."""
+    issue = _make_issue(6423, ROADMAP_BODY_V2)
+    fake_gh = FakeGitHubIssues(issues={6423: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_objective_node,
+        ["6423", "--node", "1.1", "--status", "planning"],
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["node_id"] == "1.1"
+    assert output["previous_pr"] == "#100"
+    assert output["new_pr"] is None
+
+    updated_body = fake_gh.updated_bodies[0][1]
+    assert "status: planning" in updated_body
+    # PR should be preserved
+    assert "#100" in updated_body
+
+
+def test_neither_pr_nor_status_returns_error() -> None:
+    """Omitting both --pr and --status returns a no_update error."""
+    issue = _make_issue(6423, ROADMAP_BODY_V2)
+    fake_gh = FakeGitHubIssues(issues={6423: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_objective_node,
+        ["6423", "--node", "1.1"],
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+    )
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["success"] is False
+    assert output["error"] == "no_update"
+    assert len(fake_gh.updated_bodies) == 0
