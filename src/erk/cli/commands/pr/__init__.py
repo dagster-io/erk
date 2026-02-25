@@ -8,6 +8,7 @@ from erk.cli.commands.pr.check_cmd import pr_check
 from erk.cli.commands.pr.checkout_cmd import pr_checkout
 from erk.cli.commands.pr.close_cmd import pr_close
 from erk.cli.commands.pr.create_cmd import pr_create
+from erk.cli.commands.pr.dispatch_cmd import pr_dispatch
 from erk.cli.commands.pr.fix_conflicts_cmd import fix_conflicts
 from erk.cli.commands.pr.list_cmd import pr_list
 from erk.cli.commands.pr.log_cmd import pr_log
@@ -30,6 +31,7 @@ pr_group.add_command(pr_check, name="check")
 register_with_aliases(pr_group, pr_checkout)
 pr_group.add_command(pr_close, name="close")
 pr_group.add_command(pr_create, name="create")
+pr_group.add_command(pr_dispatch, name="dispatch")
 pr_group.add_command(fix_conflicts, name="fix-conflicts")
 pr_group.add_command(pr_list, name="list")
 pr_group.add_command(pr_log, name="log")

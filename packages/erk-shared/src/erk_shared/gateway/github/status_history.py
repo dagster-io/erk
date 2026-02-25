@@ -93,7 +93,7 @@ def build_status_history(
                         {
                             "status": "queued",
                             "timestamp": queued_at,
-                            "reason": "erk plan submit executed",
+                            "reason": "erk pr dispatch executed",
                         }
                     )
 

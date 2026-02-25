@@ -108,7 +108,7 @@ def test_submit_stack_invalidates_branches_cache() -> None:
     """Verify submit_stack() invalidates the branches cache.
 
     This is a regression test for a bug where gt ls showed no branches
-    immediately after erk plan submit, because _branches_cache wasn't
+    immediately after erk pr dispatch, because _branches_cache wasn't
     invalidated after gt submit updated .graphite_cache_persist.
     """
     with patch("erk_shared.gateway.graphite.real.subprocess.run") as mock_run:

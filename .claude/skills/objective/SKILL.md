@@ -30,7 +30,7 @@ capture lessons learned along the way.
 | Body     | Machine-parseable metadata       | Human-readable markdown             |
 | Comments | Session context dumps            | Action logs + lessons               |
 | Label    | `erk-plan`                       | `erk-objective`                     |
-| Tooling  | `erk plan submit/implement`      | Manual updates via comments         |
+| Tooling  | `erk pr dispatch/implement`      | Manual updates via comments         |
 
 ## Key Design Principles
 

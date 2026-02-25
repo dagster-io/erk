@@ -361,7 +361,7 @@ class PlanDetailScreen(ModalScreen):
 
     def action_copy_submit(self) -> None:
         """Copy submit command to clipboard."""
-        cmd = f"erk plan submit {self._row.plan_id}"
+        cmd = f"erk pr dispatch {self._row.plan_id}"
         self._copy_and_notify(cmd)
 
     def action_fix_conflicts_remote(self) -> None:
@@ -665,7 +665,7 @@ class PlanDetailScreen(ModalScreen):
                 executor.notify(f"Copied: {cmd}", severity=None)
 
         elif command_id == "copy_submit":
-            cmd = f"erk plan submit {row.plan_id}"
+            cmd = f"erk pr dispatch {row.plan_id}"
             executor.copy_to_clipboard(cmd)
             executor.notify(f"Copied: {cmd}", severity=None)
 
@@ -860,10 +860,10 @@ class PlanDetailScreen(ModalScreen):
                 yield CopyableLabel(prepare_cmd, prepare_cmd)
 
             # Submit command
-            submit_cmd = f"erk plan submit {self._row.plan_id}"
+            dispatch_cmd = f"erk pr dispatch {self._row.plan_id}"
             with Container(classes="command-row"):
                 yield Label("[3]", classes="command-key")
-                yield CopyableLabel(submit_cmd, submit_cmd)
+                yield CopyableLabel(dispatch_cmd, dispatch_cmd)
 
             # Log entries (if any) - clickable timestamps
             if self._row.log_entries:

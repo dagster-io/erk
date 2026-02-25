@@ -1,4 +1,4 @@
-"""Tests for plan check command."""
+"""Tests for plan validation via pr check command."""
 
 from datetime import UTC, datetime
 from pathlib import Path
@@ -57,7 +57,7 @@ def test_check_valid_plan_passes() -> None:
         ctx = build_workspace_test_context(env, issues=issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "check", "42"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "check", "42"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -94,7 +94,7 @@ def test_check_missing_plan_header_fails() -> None:
         ctx = build_workspace_test_context(env, issues=issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "check", "42"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "check", "42"], obj=ctx)
 
         # Assert
         assert result.exit_code == 1
@@ -135,7 +135,7 @@ def test_check_missing_required_field_fails() -> None:
         ctx = build_workspace_test_context(env, issues=issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "check", "42"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "check", "42"], obj=ctx)
 
         # Assert
         assert result.exit_code == 1
@@ -178,7 +178,7 @@ def test_check_missing_first_comment_fails() -> None:
         ctx = build_workspace_test_context(env, issues=issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "check", "42"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "check", "42"], obj=ctx)
 
         # Assert
         assert result.exit_code == 1
@@ -220,7 +220,7 @@ def test_check_missing_plan_body_fails() -> None:
         ctx = build_workspace_test_context(env, issues=issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "check", "42"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "check", "42"], obj=ctx)
 
         # Assert
         assert result.exit_code == 1
@@ -270,7 +270,7 @@ def test_check_github_url_parsing() -> None:
         # Act - Use GitHub URL instead of number
         result = runner.invoke(
             cli,
-            ["plan", "check", "https://github.com/owner/repo/issues/42"],
+            ["pr", "check", "https://github.com/owner/repo/issues/42"],
             obj=ctx,
         )
 
@@ -323,7 +323,7 @@ def test_check_valid_draft_pr_plan_passes() -> None:
         ctx = build_workspace_test_context(env, issues=issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "check", "42"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "check", "42"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -342,7 +342,7 @@ def test_check_invalid_identifier_fails() -> None:
         ctx = build_workspace_test_context(env, issues=issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "check", "not-a-valid-identifier"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "check", "not-a-valid-identifier"], obj=ctx)
 
         # Assert
         assert result.exit_code == 1
@@ -357,7 +357,7 @@ def test_check_invalid_identifier_fails() -> None:
 
 def test_validate_plan_format_passes_valid_plan(tmp_path: Path) -> None:
     """Returns PlanValidationSuccess with passed=True for valid plan."""
-    from erk.cli.commands.plan.check_cmd import PlanValidationSuccess, validate_plan_format
+    from erk.cli.commands.pr.check_cmd import PlanValidationSuccess, validate_plan_format
 
     # Valid plan-header metadata
     plan_header_data = {
@@ -406,7 +406,7 @@ def test_validate_plan_format_passes_valid_plan(tmp_path: Path) -> None:
 
 def test_validate_plan_format_fails_missing_plan_header(tmp_path: Path) -> None:
     """Returns PlanValidationSuccess with passed=False when plan-header missing."""
-    from erk.cli.commands.plan.check_cmd import PlanValidationSuccess, validate_plan_format
+    from erk.cli.commands.pr.check_cmd import PlanValidationSuccess, validate_plan_format
 
     issue = IssueInfo(
         number=42,
@@ -438,7 +438,7 @@ def test_validate_plan_format_fails_missing_plan_header(tmp_path: Path) -> None:
 
 def test_validate_plan_format_fails_missing_first_comment(tmp_path: Path) -> None:
     """Returns PlanValidationSuccess with passed=False when no comments exist."""
-    from erk.cli.commands.plan.check_cmd import PlanValidationSuccess, validate_plan_format
+    from erk.cli.commands.pr.check_cmd import PlanValidationSuccess, validate_plan_format
 
     plan_header_data = {
         "schema_version": "2",
@@ -477,7 +477,7 @@ def test_validate_plan_format_fails_missing_first_comment(tmp_path: Path) -> Non
 
 def test_validate_plan_format_fails_missing_plan_body(tmp_path: Path) -> None:
     """Returns PlanValidationSuccess with passed=False when plan-body missing."""
-    from erk.cli.commands.plan.check_cmd import PlanValidationSuccess, validate_plan_format
+    from erk.cli.commands.pr.check_cmd import PlanValidationSuccess, validate_plan_format
 
     plan_header_data = {
         "schema_version": "2",
@@ -516,7 +516,7 @@ def test_validate_plan_format_fails_missing_plan_body(tmp_path: Path) -> None:
 
 def test_validate_plan_format_returns_error_on_github_failure(tmp_path: Path) -> None:
     """Returns PlanValidationError when GitHub API fails."""
-    from erk.cli.commands.plan.check_cmd import PlanValidationError, validate_plan_format
+    from erk.cli.commands.pr.check_cmd import PlanValidationError, validate_plan_format
 
     # FakeGitHubIssues with no issues configured will raise on get_issue
     issues = FakeGitHubIssues(issues={}, comments={})
@@ -529,7 +529,7 @@ def test_validate_plan_format_returns_error_on_github_failure(tmp_path: Path) ->
 
 def test_validate_plan_format_passes_draft_pr_plan(tmp_path: Path) -> None:
     """Returns PlanValidationSuccess with passed=True for draft-PR format plan."""
-    from erk.cli.commands.plan.check_cmd import PlanValidationSuccess, validate_plan_format
+    from erk.cli.commands.pr.check_cmd import PlanValidationSuccess, validate_plan_format
 
     plan_header_data = {
         "schema_version": "2",

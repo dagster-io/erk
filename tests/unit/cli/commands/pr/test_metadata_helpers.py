@@ -8,7 +8,7 @@ from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.time.fake import FakeTime
-from tests.commands.submit.conftest import create_plan, make_plan_body
+from tests.commands.dispatch.conftest import create_plan, make_plan_body
 from tests.test_utils.plan_helpers import create_plan_store_with_plans
 
 

@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from erk.cli.commands.submit import load_workflow_config
+from erk.cli.commands.pr.dispatch_cmd import load_workflow_config
 
 
 def test_load_workflow_config_file_not_found(tmp_path: Path) -> None:

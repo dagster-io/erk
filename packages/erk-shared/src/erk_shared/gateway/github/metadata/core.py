@@ -425,7 +425,7 @@ erk br co --for-plan {issue_number}
 ```
 
 ```bash
-erk plan submit {issue_number}
+erk pr dispatch {issue_number}
 ```"""
 
 

@@ -166,7 +166,7 @@ OR exit Claude Code first, then run one of:
     Local: erk br co --for-plan <plan_number>
     Implement: source "$(erk br co --for-plan <plan_number> --script)" && erk implement --dangerous
 
-  Submit to Queue: erk plan submit <plan_number>
+  Dispatch to Queue: erk pr dispatch <plan_number>
 ```
 
 If **on trunk = false**:
@@ -182,7 +182,7 @@ OR exit Claude Code first, then run one of:
     Local: erk br co --new-slot --for-plan <plan_number>
     Implement: source "$(erk br co --new-slot --for-plan <plan_number> --script)" && erk implement --dangerous
 
-  Submit to Queue: erk plan submit <plan_number>
+  Dispatch to Queue: erk pr dispatch <plan_number>
 ```
 
 **If `plan_backend` is `"draft_pr"`:**
@@ -193,11 +193,11 @@ Next steps:
 View PR: <plan_url>
 
 In Claude Code:
-  Submit to queue: /erk:plan-submit — Submit plan for remote agent implementation
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
 
 OR exit Claude Code first, then run one of:
   Checkout: erk br co --for-plan <plan_number>
-  Submit to Queue: erk plan submit <plan_number>
+  Dispatch to Queue: erk pr dispatch <plan_number>
 ```
 
 **If `plan_backend` is `"github"` (or absent):**
@@ -208,12 +208,12 @@ Next steps:
 View Issue: <plan_url>
 
 In Claude Code:
-  Submit to queue: /erk:plan-submit — Submit plan for remote agent implementation
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
   Plan review: /erk:plan-review — Submit plan as PR for human review before implementation
 
 OR exit Claude Code first, then run one of:
   Checkout: erk br co --for-plan <plan_number>
-  Submit to Queue: erk plan submit <plan_number>
+  Dispatch to Queue: erk pr dispatch <plan_number>
 ```
 
 If objective was verified, also display: `Verified objective link: #<objective-number>`

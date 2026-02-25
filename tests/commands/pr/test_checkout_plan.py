@@ -1,4 +1,4 @@
-"""Tests for erk plan co command."""
+"""Tests for plan checkout via pr checkout command (P-prefix routing)."""
 
 import json
 import os
@@ -48,7 +48,7 @@ def test_parse_issue_identifier_plain_number_still_works() -> None:
 
 
 # ============================================================================
-# Tests for erk plan co command
+# Tests for plan checkout via pr checkout command
 # ============================================================================
 
 
@@ -121,14 +121,14 @@ def test_checkout_local_branch_exists() -> None:
         ctx = build_workspace_test_context(env, git=git, github=github)
 
         with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
-            result = runner.invoke(cli, ["plan", "co", "P123"], obj=ctx)
+            result = runner.invoke(cli, ["pr", "checkout", "P123"], obj=ctx)
 
         assert result.exit_code == 0
         assert "already checked out" in result.output
 
 
 def test_checkout_with_plain_number() -> None:
-    """Test checkout using plain number falls through to PR lookup."""
+    """Test checkout using plain number (now requires P-prefix for plan checkout)."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
@@ -154,7 +154,7 @@ def test_checkout_with_plain_number() -> None:
         ctx = build_workspace_test_context(env, git=git, github=github, issues=fake_issues)
 
         with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
-            result = runner.invoke(cli, ["plan", "co", "456"], obj=ctx)
+            result = runner.invoke(cli, ["pr", "checkout", "P456"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Created worktree for plan #456 (PR #200)" in result.output
@@ -187,7 +187,7 @@ def test_checkout_branch_already_in_worktree() -> None:
         ctx = build_workspace_test_context(env, git=git, github=github)
 
         with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
-            result = runner.invoke(cli, ["plan", "co", "P789"], obj=ctx)
+            result = runner.invoke(cli, ["pr", "checkout", "P789"], obj=ctx)
 
         assert result.exit_code == 0
         assert "already checked out" in result.output
@@ -227,7 +227,7 @@ def test_checkout_multiple_local_branches_shows_table() -> None:
         github = FakeGitHub()
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(cli, ["plan", "co", "P100"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "checkout", "P100"], obj=ctx)
 
         assert result.exit_code == 0  # Should exit cleanly after showing table
         assert "Multiple branches found" in result.output
@@ -262,7 +262,7 @@ def test_checkout_no_local_branch_fetches_pr() -> None:
         ctx = build_workspace_test_context(env, git=git, github=github, issues=fake_issues)
 
         with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
-            result = runner.invoke(cli, ["plan", "co", "P42"], obj=ctx)
+            result = runner.invoke(cli, ["pr", "checkout", "P42"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Created worktree for plan #42 (PR #200)" in result.output
@@ -294,7 +294,7 @@ def test_checkout_multiple_open_prs_shows_table() -> None:
         github = FakeGitHub(issues_gateway=fake_issues)
         ctx = build_workspace_test_context(env, git=git, github=github, issues=fake_issues)
 
-        result = runner.invoke(cli, ["plan", "co", "P50"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "checkout", "P50"], obj=ctx)
 
         assert result.exit_code == 0  # Should exit cleanly after showing table
         assert "Multiple open PRs found" in result.output
@@ -337,7 +337,7 @@ def test_checkout_filters_to_open_prs_only() -> None:
         ctx = build_workspace_test_context(env, git=git, github=github, issues=fake_issues)
 
         with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
-            result = runner.invoke(cli, ["plan", "co", "P60"], obj=ctx)
+            result = runner.invoke(cli, ["pr", "checkout", "P60"], obj=ctx)
 
         # Should checkout the single OPEN PR, not show table
         assert result.exit_code == 0
@@ -360,7 +360,7 @@ def test_checkout_no_branch_no_pr_shows_help() -> None:
         github = FakeGitHub(issues_gateway=fake_issues)
         ctx = build_workspace_test_context(env, git=git, github=github, issues=fake_issues)
 
-        result = runner.invoke(cli, ["plan", "co", "P999"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "checkout", "P999"], obj=ctx)
 
         assert result.exit_code == 1
         assert "No local branch or open PR found for plan #999" in result.output
@@ -380,10 +380,11 @@ def test_checkout_invalid_identifier() -> None:
         )
         ctx = build_workspace_test_context(env, git=git)
 
-        result = runner.invoke(cli, ["plan", "co", "invalid-input"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "checkout", "invalid-input"], obj=ctx)
 
         assert result.exit_code == 1
-        assert "Invalid issue number or URL" in result.output
+        assert "Invalid PR number, plan ID, or URL" in result.output
+        assert "P123" in result.output  # Should mention P-prefix format
 
 
 def test_checkout_with_github_url() -> None:
@@ -416,7 +417,7 @@ def test_checkout_with_github_url() -> None:
         with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
             result = runner.invoke(
                 cli,
-                ["plan", "co", "https://github.com/owner/repo/issues/555"],
+                ["pr", "checkout", "https://github.com/owner/repo/issues/555"],
                 obj=ctx,
             )
 
@@ -452,7 +453,7 @@ def test_checkout_worktree_with_plan_ref_json() -> None:
         ctx = build_workspace_test_context(env, git=git, github=github)
 
         with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
-            result = runner.invoke(cli, ["plan", "co", "777"], obj=ctx)
+            result = runner.invoke(cli, ["pr", "checkout", "P777"], obj=ctx)
 
         assert result.exit_code == 0
         assert "already checked out" in result.output

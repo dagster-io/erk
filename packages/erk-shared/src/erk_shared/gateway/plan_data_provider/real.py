@@ -305,17 +305,17 @@ class RealPlanDataProvider(PlanDataProvider):
     def submit_to_queue(self, plan_id: int, plan_url: str) -> None:
         """Submit a plan to the implementation queue.
 
-        Runs 'erk plan submit' as a subprocess to handle the complex workflow
+        Runs 'erk pr dispatch' as a subprocess to handle the complex workflow
         of creating branches, PRs, and triggering GitHub Actions.
 
         Args:
             plan_id: The plan ID to submit
             plan_url: The plan URL (unused, kept for interface consistency)
         """
-        # Run erk plan submit command from the repository root
+        # Run erk pr dispatch command from the repository root
         # -f flag prevents blocking on existing branch prompts in TUI context
         subprocess.run(
-            ["erk", "plan", "submit", str(plan_id), "-f"],
+            ["erk", "pr", "dispatch", str(plan_id), "-f"],
             cwd=self._location.root,
             check=True,
             capture_output=True,

@@ -47,7 +47,7 @@ Issue #123: "Add feature X [erk-plan]"
 │
 │   ## Commands
 │   - `erk implement 123`
-│   - `erk plan submit 123`
+│   - `erk pr dispatch 123`
 │
 └── Comment #456789 (first comment, plan content):
     <!-- erk:metadata-block:plan-body -->

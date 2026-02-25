@@ -1,4 +1,4 @@
-"""Helper functions for submit command."""
+"""Helper functions for dispatch command."""
 
 import click
 
@@ -36,7 +36,7 @@ def ensure_trunk_synced(ctx: ErkContext, repo: RepoContext) -> None:
         user_output(
             click.style("Error: ", fg="red")
             + f"Root worktree is on '{root_worktree.branch}', not '{trunk}'.\n\n"
-            f"erk plan submit requires the root worktree to have {trunk} checked out.\n"
+            f"erk pr dispatch requires the root worktree to have {trunk} checked out.\n"
             f"This ensures {trunk} can be kept in sync with origin/{trunk}.\n\n"
             f"To fix:\n"
             f"  cd {repo.root}\n"
@@ -48,7 +48,7 @@ def ensure_trunk_synced(ctx: ErkContext, repo: RepoContext) -> None:
     if ctx.git.status.has_uncommitted_changes(repo.root):
         user_output(
             click.style("Error: ", fg="red") + "Root worktree has uncommitted changes.\n\n"
-            "Please commit or stash changes before running erk plan submit."
+            "Please commit or stash changes before running erk pr dispatch."
         )
         raise SystemExit(1)
 
@@ -76,7 +76,7 @@ def ensure_trunk_synced(ctx: ErkContext, repo: RepoContext) -> None:
         user_output(
             click.style("Error: ", fg="red")
             + f"Local {trunk} has commits not pushed to origin/{trunk}.\n\n"
-            f"Please push your local commits before running erk plan submit:\n"
+            f"Please push your local commits before running erk pr dispatch:\n"
             f"  git push origin {trunk}"
         )
         raise SystemExit(1)

@@ -428,7 +428,7 @@ Display final summary:
 
 Next steps:
 - Review the new plan: gh issue view <new_number>
-- Submit for implementation: erk plan submit <new_number>
+- Dispatch for implementation: erk pr dispatch <new_number>
 ```
 
 **Consolidated plans:**
@@ -444,7 +444,7 @@ Source plans consolidated:
 
 Next steps:
 - Review the consolidated plan: gh issue view <new_number>
-- Submit for implementation: erk plan submit <new_number>
+- Dispatch for implementation: erk pr dispatch <new_number>
 ```
 
 ---
