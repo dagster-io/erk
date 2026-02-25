@@ -37,7 +37,11 @@ erk exec plan-update-issue --plan-number <plan> --format display --session-id="$
 
 ### Step 3: Display Results
 
-On success, display the command output verbatim.
+On success with `--format display`, display the command output verbatim. On success with `--format json`, parse the JSON and display:
+
+- If `branch_updated` is true: `"Plan updated on PR #N (branch synced)"`
+- If `branch_name` is null (issue-backed plan): `"Plan updated on issue #N"`
+- If `branch_name` is set but `branch_updated` is false: `"Plan updated on PR #N (warning: branch push failed)"`
 
 On failure, display the error and suggest:
 
