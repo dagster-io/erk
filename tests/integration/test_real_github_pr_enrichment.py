@@ -16,7 +16,6 @@ from erk_shared.gateway.github.real import RealGitHub
 from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
 from tests.integration.test_helpers import mock_subprocess_run
 
-
 # ============================================================================
 # _enrich_prs_via_graphql() Tests
 # ============================================================================
@@ -53,9 +52,7 @@ def _make_graphql_pr_node(
         },
         "reviewThreads": {
             "totalCount": total_threads,
-            "nodes": [
-                {"isResolved": i < resolved_threads} for i in range(total_threads)
-            ],
+            "nodes": [{"isResolved": i < resolved_threads} for i in range(total_threads)],
         },
         "reviewDecision": review_decision,
     }
@@ -211,9 +208,7 @@ def test_merge_rest_graphql_single_pr() -> None:
     enrichment = {42: _make_graphql_pr_node(head_ref_name="fix-branch", mergeable="MERGEABLE")}
 
     ops = RealGitHub.for_test()
-    pr_details_list, pr_linkages = ops._merge_rest_graphql_pr_data(
-        rest_items, enrichment, repo_id
-    )
+    pr_details_list, pr_linkages = ops._merge_rest_graphql_pr_data(rest_items, enrichment, repo_id)
 
     assert len(pr_details_list) == 1
     pr = pr_details_list[0]
@@ -242,9 +237,7 @@ def test_merge_rest_graphql_without_enrichment() -> None:
     enrichment: dict[int, dict[str, Any]] = {}
 
     ops = RealGitHub.for_test()
-    pr_details_list, pr_linkages = ops._merge_rest_graphql_pr_data(
-        rest_items, enrichment, repo_id
-    )
+    pr_details_list, pr_linkages = ops._merge_rest_graphql_pr_data(rest_items, enrichment, repo_id)
 
     assert len(pr_details_list) == 1
     pr = pr_details_list[0]
@@ -272,9 +265,7 @@ def test_merge_rest_graphql_multiple_prs() -> None:
     }
 
     ops = RealGitHub.for_test()
-    pr_details_list, pr_linkages = ops._merge_rest_graphql_pr_data(
-        rest_items, enrichment, repo_id
-    )
+    pr_details_list, pr_linkages = ops._merge_rest_graphql_pr_data(rest_items, enrichment, repo_id)
 
     assert len(pr_details_list) == 2
     assert pr_details_list[0].number == 10
@@ -293,9 +284,7 @@ def test_merge_rest_graphql_labels_parsed() -> None:
     enrichment = {42: _make_graphql_pr_node()}
 
     ops = RealGitHub.for_test()
-    pr_details_list, _ = ops._merge_rest_graphql_pr_data(
-        rest_items, enrichment, repo_id
-    )
+    pr_details_list, _ = ops._merge_rest_graphql_pr_data(rest_items, enrichment, repo_id)
 
     assert pr_details_list[0].labels == ("erk-plan", "bug")
 
@@ -307,9 +296,7 @@ def test_merge_rest_graphql_timestamps_parsed() -> None:
     enrichment = {42: _make_graphql_pr_node()}
 
     ops = RealGitHub.for_test()
-    pr_details_list, _ = ops._merge_rest_graphql_pr_data(
-        rest_items, enrichment, repo_id
-    )
+    pr_details_list, _ = ops._merge_rest_graphql_pr_data(rest_items, enrichment, repo_id)
 
     pr = pr_details_list[0]
     assert pr.created_at == datetime(2024, 1, 15, 10, 0, 0, tzinfo=UTC)
@@ -323,9 +310,7 @@ def test_merge_rest_graphql_review_thread_counts() -> None:
     enrichment = {42: _make_graphql_pr_node(resolved_threads=3, total_threads=5)}
 
     ops = RealGitHub.for_test()
-    _, pr_linkages = ops._merge_rest_graphql_pr_data(
-        rest_items, enrichment, repo_id
-    )
+    _, pr_linkages = ops._merge_rest_graphql_pr_data(rest_items, enrichment, repo_id)
 
     pr_info = pr_linkages[42][0]
     assert pr_info.review_thread_counts == (3, 5)
