@@ -161,6 +161,25 @@ class RealGitBranchOps(GitBranchOps):
 
         return result.stdout.strip()
 
+    def get_all_branch_heads(self, repo_root: Path) -> dict[str, str]:
+        """Get commit SHAs for all local branches in a single call."""
+        fmt = "%(refname:short)\t%(objectname:short)"
+        result = subprocess.run(
+            ["git", "for-each-ref", f"--format={fmt}", "refs/heads/"],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            return {}
+        heads: dict[str, str] = {}
+        for line in result.stdout.strip().split("\n"):
+            if "\t" in line:
+                branch, sha = line.split("\t", 1)
+                heads[branch] = sha
+        return heads
+
     def detect_trunk_branch(self, repo_root: Path) -> str:
         """Auto-detect the trunk branch name.
 
