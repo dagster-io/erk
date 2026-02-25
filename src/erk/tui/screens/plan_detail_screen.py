@@ -366,14 +366,14 @@ class PlanDetailScreen(ModalScreen):
 
     def action_fix_conflicts_remote(self) -> None:
         """Launch remote conflict resolution workflow."""
-        from erk.tui.app import ErkDashApp
 
-        if self._row.pr_number is None:
+        if self._row.pr_number is None or self._repo_root is None:
             return
-        self.dismiss()
-        if isinstance(self.app, ErkDashApp):
-            self.app.notify(f"Dispatching: erk launch pr-fix-conflicts --pr {self._row.pr_number}")
-            self.app._fix_conflicts_remote_async(self._row.pr_number)
+        self.run_streaming_command(
+            ["erk", "launch", "pr-fix-conflicts", "--pr", str(self._row.pr_number)],
+            cwd=self._repo_root,
+            title=f"Fix Conflicts Remote PR #{self._row.pr_number}",
+        )
 
     def action_copy_output_logs(self) -> None:
         """Copy command output logs to clipboard."""
@@ -698,19 +698,20 @@ class PlanDetailScreen(ModalScreen):
                 executor.notify(f"Copied: {cmd}", severity=None)
 
         elif command_id == "fix_conflicts_remote":
-            if row.pr_number is not None:
-                self.dismiss()
-                if isinstance(self.app, ErkDashApp):
-                    msg = f"Dispatching: erk launch pr-fix-conflicts --pr {row.pr_number}"
-                    self.app.notify(msg)
-                    self.app._fix_conflicts_remote_async(row.pr_number)
+            if row.pr_number is not None and self._repo_root is not None:
+                self.run_streaming_command(
+                    ["erk", "launch", "pr-fix-conflicts", "--pr", str(row.pr_number)],
+                    cwd=self._repo_root,
+                    title=f"Fix Conflicts Remote PR #{row.pr_number}",
+                )
 
         elif command_id == "address_remote":
-            if row.pr_number is not None:
-                self.dismiss()
-                if isinstance(self.app, ErkDashApp):
-                    self.app.notify(f"Dispatching address for PR #{row.pr_number}...")
-                    self.app._address_remote_async(row.pr_number)
+            if row.pr_number is not None and self._repo_root is not None:
+                self.run_streaming_command(
+                    ["erk", "launch", "pr-address", "--pr", str(row.pr_number)],
+                    cwd=self._repo_root,
+                    title=f"Address Remote PR #{row.pr_number}",
+                )
 
         elif command_id == "close_plan":
             if row.plan_url:

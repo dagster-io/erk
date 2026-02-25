@@ -69,12 +69,6 @@ class DryRunGitHub(GitHub):
         # Do nothing - prevents actual PR merge
         return MergeResult(pr_number=pr_number)
 
-    def dispatch_workflow(
-        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None
-    ) -> None:
-        """No-op for dispatching workflow in dry-run mode."""
-        pass
-
     def trigger_workflow(
         self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None
     ) -> str:
