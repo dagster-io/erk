@@ -1,0 +1,368 @@
+<session>
+  <meta branch="plnd/fetch-plans-by-number-02-25-0459" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Skill" id="toolu_01299vBA5osT5isB1HPzke1Y">
+    <param name="skill">erk:pr-submit</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="131" cache_read_input_tokens="124959" output_tokens="71" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 131}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01299vBA5osT5isB1HPzke1Y">
+Launching skill: erk:pr-submit
+  </tool_result>
+  <user># Submit PR
+
+Automatically create a git commit with a helpful summary message and submit the current branch as a pull request.
+
+**Note:** This command squashes commits and rebases the stack. If you prefer a simpler workflow that preserves your commit history, use `/erk:git-pr-push` instead.
+
+## Usage
+
+```bash
+# Invoke the command (description argument is optional but recommended)
+/erk:pr-submit "Add user authentication feature"
+
+# Without argument (will analyze changes automatically)
+/erk:pr-submit
+```
+
+## Implementation
+
+This command uses a three-step flow to avoid nested Claude subprocess calls:
+
+1. **Push + create PR** (no AI) via `erk exec push-and-create-pr`
+2. **Gather context** via `erk exec get-pr-context` (returns JSON)
+3. **Generate title + body** natively (you are the agent — no subprocess)
+4. **Apply description** via `erk exec set-pr-description`
+
+### Step 1: Push and Create PR
+
+```bash
+erk exec push-and-create-pr
+```
+
+This pushes the branch, creates/finds the PR via Graphite, but skips AI description generation. The PR is created with a placeholder title. Outputs JSON with `pr.number` and `pr.url`.
+
+If this fails (exit code 1), display the error from the JSON output and stop.
+
+### Step 2: Get PR Context
+
+```bash
+erk exec get-pr-context
+```
+
+This outputs JSON to stdout with:
+
+- `branch.current` and `branch.parent`
+- `pr.number` and `pr.url`
+- `diff_file` path to the diff content
+- `commit_messages` array
+- `plan_context` (nullable) with `plan_id`, `plan_content`, `objective_summary`
+
+Parse the JSON output. If this fails, display the error and stop.
+
+### Step 3: Generate Title and Body
+
+1. Read the diff file from the `diff_file` path in the JSON
+2. Load the `erk-diff-analysis` skill for the commit message prompt format
+3. Consider the `commit_messages` and `plan_context` from the JSON
+4. If the user provided a `` argument, use it to guide the description
+5. Generate a PR title (first line) and body following the diff analysis format
+
+### Step 4: Apply Description
+
+Write the generated body to a temp file, then apply:
+
+```bash
+erk exec set-pr-description --title "&lt;generated title&gt;" --body-file "&lt;temp file path&gt;"
+```
+
+If this fails, display the error and stop.
+
+### Step 5: Report Results
+
+Report:
+
+- PR URL (from step 2 JSON)
+- Success message
+
+### Refresh Status Line
+
+After reporting results, output the following to trigger a status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+## Error Handling
+
+If any step fails, display the error and stop. Do NOT attempt to auto-resolve errors. Let the user fix issues and re-run.
+
+Common errors:
+
+- Authentication issues (Graphite/GitHub)
+- Merge conflicts
+- No commits to submit
+- No PR found for branch
+</user>
+  <assistant>
+
+I'll submit the PR now.
+
+### Step 1: Push and Create PR</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="831" cache_read_input_tokens="125090" cache_creation="{'ephemeral_5m_input_tokens': 831, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TowL6dCCzK43oKD94HzuJi">
+    <param name="command">erk exec push-and-create-pr 2&gt;&amp;1</param>
+    <param name="description">Push branch and create PR via Graphite</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="831" cache_read_input_tokens="125090" cache_creation="{'ephemeral_5m_input_tokens': 831, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TowL6dCCzK43oKD94HzuJi">
+Running in non-interactive mode. Inline prompts to fill PR fields will be skipped.
+
+🥞 Validating that this Graphite stack is ready to submit...
+
+✏️ Preparing to submit PRs for the following branches...
+▸ plnd/fetch-plans-by-number-02-25-0459 (Update code)
+
+🚀 Pushing branches to remote...
+
+📨 Creating/updating PRs...
+plnd/fetch-plans-by-number-02-25-0459: https://app.graphite.com/github/pr/dagster-io/erk/8163 (updated)
+WARNING: Branch plnd/fetch-plans-by-number-02-25-0459 has been updated remotely. Force submitting local version to remote...
+{
+  "success": true,
+  "branch": "plnd/fetch-plans-by-number-02-25-0459",
+  "pr": {
+    "number": 8163,
+    "url": "https://github.com/dagster-io/erk/pull/8163",
+    "was_created": true
+  },
+  "graphite_url": "https://app.graphite.com/github/pr/dagster-io/erk/8163",
+  "issue_number": 8163
+}
+  </tool_result>
+  <assistant>### Step 2: Get PR Context</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="453" cache_read_input_tokens="125921" cache_creation="{'ephemeral_5m_input_tokens': 453, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Aw1JZWNeywVNuR5pUUdBSh">
+    <param name="command">erk exec get-pr-context 2&gt;&amp;1</param>
+    <param name="description">Gather PR context for description generation</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="453" cache_read_input_tokens="125921" cache_creation="{'ephemeral_5m_input_tokens': 453, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Aw1JZWNeywVNuR5pUUdBSh">
+{
+  "branch": {
+    "current": "plnd/fetch-plans-by-number-02-25-0459",
+    "parent": "master"
+  },
+  "pr": {
+    "number": 8163,
+    "url": "https://github.com/dagster-io/erk/pull/8163"
+  },
+  "diff_file": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.erk/scratch/sessions/5bd3e5e6-f2e9-40b9-9497-0a389065d551/pr-diff-f740d7e9.diff",
+  "commit_messages": [
+    "Add plan: Plan: Targeted plan fetching by issue number for objective plans modal",
+    "Remove .erk/impl-context/ before implementation",
+    "WIP: Prepare for PR submission"
+  ],
+  "plan_context": {
+    "plan_id": "8163",
+    "plan_content": "# Plan: Targeted plan fetching by issue number for objective plans modal\n\n## Context\n\nThe ObjectivePlansScreen modal shows plans linked to an objective, but currently uses broad list queries (fetch_plans with limit=200) and filters client-side. With 3,538+ closed erk-plan issues, limit=200 misses most closed plans \u2014 causing the modal to show only 1 plan for objective #8036 despite 6 roadmap-referenced plans.\n\nThe fix: extract plan IDs from the objective's roadmap frontmatter (already done), then fetch ONLY those specific issues by number using a batched GraphQL query. No more listing all plans and filtering.\n\nKey discovery: Must use issueOrPullRequest(number: N) instead of issue(number: N) because some plans (#8070, #8087, etc.) are merged PRs, not issues.\n\n## Changes\n\n### 1. GitHub Gateway \u2014 get_issues_by_numbers_with_pr_linkages\n\nNew method to fetch specific issues by number with full PR linkage data.\n\n`packages/erk-shared/src/erk_shared/gateway/github/abc.py` \u2014 Add abstract method:\n```python\n@abstractmethod\ndef get_issues_by_numbers_with_pr_linkages(\n    self,\n    *,\n    location: GitHubRepoLocation,\n    issue_numbers: list[int],\n) -&gt; tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:\n```\n\n`packages/erk-shared/src/erk_shared/gateway/github/real.py` \u2014 Implement with batched alias query:\n- New private method `_build_issues_by_numbers_query(issue_numbers, repo_id)` \u2014 builds GraphQL query using aliases (same pattern as existing `_build_issue_pr_linkage_query` at line 688, but includes full issue fields: title, body, state, url, author, labels, assignees, createdAt, updatedAt, plus timeline/PR linkages)\n- New private method `_parse_issues_by_numbers_response(response, repo_id)` \u2014 iterates over aliased keys (issue_8070, etc.), reuses existing `_parse_issue_node` and `_parse_pr_from_timeline_event` per node\n- Main method: handle empty list \u2192 ([], {}), else build query \u2192 execute_gh_command_with_retry \u2192 parse response\n- The ISSUE_PR_LINKAGE_FRAGMENT from graphql_queries.py is reused for the timeline fields\n\n`packages/erk-shared/src/erk_shared/gateway/github/fake.py` \u2014 Filter self._issues_data by number, build matching pr_linkages subset\n\n`packages/erk-shared/src/erk_shared/gateway/github/dry_run.py` \u2014 Delegate to self._wrapped\n\n`packages/erk-shared/src/erk_shared/gateway/github/printing.py` \u2014 Delegate to self._wrapped\n\n### 2. PlanDataProvider \u2014 fetch_plans_by_ids\n\n`packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py` \u2014 Add abstract method:\n```python\n@abstractmethod\ndef fetch_plans_by_ids(self, plan_ids: set[int]) -&gt; list[PlanRowData]:\n```\n\n`packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py` \u2014 Implement:\n- Call `self._ctx.github.get_issues_by_numbers_with_pr_linkages(location=self._location, issue_numbers=list(plan_ids))`\n- Convert each IssueInfo \u2192 Plan via `issue_info_to_plan()` (import from `erk_shared.plan_store.conversion`)\n- Build worktree mapping via `self._build_worktree_mapping()`\n- Batch fetch learn issue states via `self._fetch_learn_issue_states()`\n- Call `self._build_row_data()` for each plan (pass workflow_run=None)\n- Return sorted by plan_id\n\n`packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py` \u2014 Filter:\n```python\ndef fetch_plans_by_ids(self, plan_ids: set[int]) -&gt; list[PlanRowData]:\n    return [p for p in self._plans if p.plan_id in plan_ids]\n```\n\n### 3. Screen \u2014 Simplify _fetch_plans\n\n`src/erk/tui/screens/objective_plans_screen.py` \u2014 Replace the current fetch with:\n```python\n@work(thread=True)\ndef _fetch_plans(self) -&gt; None:\n    plans: list[PlanRowData] = []\n    error: str | None = None\n    try:\n        roadmap_plan_ids = _extract_plan_ids_from_roadmap(self._objective_body)\n        if roadmap_plan_ids:\n            plans = self._provider.fetch_plans_by_ids(roadmap_plan_ids)\n        else:\n            plans = self._provider.fetch_plans_for_objective(self._objective_id)\n    except Exception as e:\n        error = str(e)\n    self.app.call_from_thread(self._on_plans_loaded, plans, error)\n```\n\n### 4. Tests\n\n`tests/tui/screens/test_objective_plans_screen.py` \u2014 Update test_roadmap_based_plan_discovery:\n- The test currently relies on fetch_plans_for_objective + fetch_plans calls\n- After the change, it uses fetch_plans_by_ids on the fake, which filters by plan_id\n- Existing tests for empty state, error state, and non-roadmap paths still pass\n\n## Verification\n\n1. devrun: `uv run ruff check` on all changed files\n2. devrun: `uv run ty check` on all changed files\n3. devrun: `uv run pytest tests/tui/screens/test_objective_plans_screen.py -x`\n4. devrun: `uv run pytest tests/tui/ -x`\n",
+    "objective_summary": null
+  }
+}
+  </tool_result>
+  <assistant>### Step 3: Generate Title and Body</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2129" cache_read_input_tokens="126374" cache_creation="{'ephemeral_5m_input_tokens': 2129, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01X8KqbrHZRHvGSWkT8f5yQa">
+    <param name="skill">erk-diff-analysis</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2129" cache_read_input_tokens="126374" output_tokens="67" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 2129}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01X8KqbrHZRHvGSWkT8f5yQa">
+Launching skill: erk-diff-analysis
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.claude/skills/erk-diff-analysis
+
+# Diff Analysis
+
+This skill provides the commit message generation prompt used by PR submission commands.
+
+## When to Use
+
+Only load this skill when:
+
+- Explicitly requested by name (`erk-diff-analysis`)
+- Invoked by commands like `/erk:git-pr-push`
+
+## Usage
+
+Load `references/commit-message-prompt.md` when analyzing a diff, then apply its principles to generate output.
+
+## Key Principles
+
+- Be concise and strategic - focus on significant changes
+- Use component-level descriptions - reference modules/components, not individual functions
+- Highlight breaking changes prominently
+- Note test coverage patterns
+- Use relative paths from repository root
+</user>
+  <tool_use name="Read" id="toolu_01UD1Hisg9xfkoqmgUr1HNpT">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.claude/skills/erk-diff-analysis/references/commit-message-prompt.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="285" cache_read_input_tokens="128503" cache_creation="{'ephemeral_5m_input_tokens': 285, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UD1Hisg9xfkoqmgUr1HNpT">
+     1→You are a commit message generator. Analyze the provided git diff and return ONLY a commit message.
+     2→
+     3→## Analysis Principles
+     4→
+     5→Analyze the diff following these principles:
+     6→
+     7→- **Be concise and strategic** - focus on significant changes
+     8→- **Use component-level descriptions** - reference modules/components, not individual functions
+     9→- **Highlight breaking changes prominently**
+    10→- **Note test coverage patterns**
+    11→- **Use relative paths from repository root**
+    12→
+    13→## Level of Detail
+    14→
+    15→- Focus on architectural and component-level impact
+    16→- Keep "Key Changes" to 3-5 major items
+    17→- Group related changes together
+    18→- Skip minor refactoring, formatting, or trivial updates
+    19→
+    20→## Output Format
+    21→
+    22→```
+    23→[Clear one-line PR title describing the change]
+    24→
+    25→[2-3 sentence summary explaining what changed and why. State what the branch does (feature/fix/refactor) and highlight key changes briefly.]
+    26→
+    27→## Files Changed
+    28→
+    29→&lt;details&gt;
+    30→&lt;summary&gt;Files Changed&lt;/summary&gt;
+
+... [54 lines omitted] ...
+
+    69→[Only if there are breaking changes, security concerns, or important warnings - 1-2 bullets max]
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UjD7aTMc9CrXyYpaHQExdK">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.erk/scratch/sessions/5bd3e5e6-f2e9-40b9-9497-0a389065d551/pr-diff-f740d7e9.diff</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="285" cache_read_input_tokens="128503" output_tokens="208" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 285}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UjD7aTMc9CrXyYpaHQExdK">
+     1→diff --git a/packages/erk-shared/src/erk_shared/gateway/github/abc.py b/packages/erk-shared/src/erk_shared/gateway/github/abc.py
+     2→index 2c4d1b9af..5daf212b3 100644
+     3→--- a/packages/erk-shared/src/erk_shared/gateway/github/abc.py
+     4→+++ b/packages/erk-shared/src/erk_shared/gateway/github/abc.py
+     5→@@ -739,6 +739,30 @@ class GitHub(ABC):
+     6→         """
+     7→         ...
+     8→ 
+     9→+    @abstractmethod
+    10→+    def get_issues_by_numbers_with_pr_linkages(
+    11→+        self,
+    12→+        *,
+    13→+        location: GitHubRepoLocation,
+    14→+        issue_numbers: list[int],
+    15→+    ) -&gt; tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+    16→+        """Fetch specific issues by number with full PR linkage data.
+    17→+
+    18→+        Uses issueOrPullRequest(number: N) to handle both issues and merged PRs.
+    19→+        Returns issue data and PR linkages in the same format as
+    20→+        get_issues_with_pr_linkages for compatibility.
+    21→+
+    22→+        Args:
+    23→+            location: GitHub repository location (local root + repo identity)
+    24→+            issue_numbers: List of issue/PR numbers to fetch
+    25→+
+    26→+        Returns:
+    27→+            Tuple of (issues, pr_linkages) where:
+    28→+            - issues: List of IssueInfo objects for found issues
+    29→+            - pr_linkages: Mapping of issue_number -&gt; list of linked PRs
+    30→+        """
+
+... [436 lines omitted] ...
+
+   124→         except RuntimeError:
+   416→+    phases, _errors = parse_roadmap(body)
+   454→         # Error boundary: catch all exceptions from API operations to display
+   463→         except Exception as e:
+   464→             error = str(e)
+  </tool_result>
+  <assistant>Now I'll generate the title and body, then write the body to a temp file.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8345" cache_read_input_tokens="128788" cache_creation="{'ephemeral_5m_input_tokens': 8345, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WMUnBU5dbdzdGhEQxbp1U9">
+    <param name="command">cat &gt; /tmp/pr-body-8163.md &lt;&lt; 'BODY_EOF'
+Add targeted plan fetching by issue number for ob...[truncated 2403 chars]...odal shows all 6 plans (fetched directly by issue number)
+```
+BODY_EOF
+echo "Body written"</param>
+    <param name="description">Write PR body to temp file</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8345" cache_read_input_tokens="128788" output_tokens="881" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 8345}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WMUnBU5dbdzdGhEQxbp1U9">
+Body written
+  </tool_result>
+  <assistant>### Step 4: Apply Description</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="895" cache_read_input_tokens="137133" cache_creation="{'ephemeral_5m_input_tokens': 895, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UNxtx25ZkaF3ZEd3GhqQx7">
+    <param name="command">erk exec set-pr-description --title "Add targeted plan fetching by issue number for objective plans modal (#8163)" --body-file "/tmp/pr-body-8163.md" 2&gt;&amp;1</param>
+    <param name="description">Apply PR title and body</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="895" cache_read_input_tokens="137133" cache_creation="{'ephemeral_5m_input_tokens': 895, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UNxtx25ZkaF3ZEd3GhqQx7">
+PR #8163 updated: Add targeted plan fetching by issue number for objective plans modal (#8163)
+  </tool_result>
+  <assistant>### Step 5: Post-submit signals</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="179" cache_read_input_tokens="138028" cache_creation="{'ephemeral_5m_input_tokens': 179, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BTzbXkXw8kjoALYLvdbrYr">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="179" cache_read_input_tokens="138028" output_tokens="95" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 179}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BTzbXkXw8kjoALYLvdbrYr">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 8163
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01KUGVv2xzun1v4kc54mrPY8">
+    <param name="command">erk pr check --stage=impl 2&gt;&amp;1 || true</param>
+    <param name="description">Validate PR completion invariants</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="244" cache_read_input_tokens="138207" output_tokens="88" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 244}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KUGVv2xzun1v4kc54mrPY8">
+Checking PR #8163 for branch plnd/fetch-plans-by-number-02-25-0459...
+
+[PASS] .erk/impl-context/ not present (cleaned up)
+[PASS] Plan reference found (#8163)
+[PASS] Draft PR plan — no closing reference needed
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <assistant>Plan execution complete.
+
+**PR:** https://github.com/dagster-io/erk/pull/8163
+
+**Summary of changes:**
+
+1. **GitHub Gateway** — New `get_issues_by_numbers_with_pr_linkages` method across all 5 implementations (ABC, real, fake, dry_run, printing). Uses `issueOrPullRequest(number: N)` GraphQL aliases to handle both issues and merged PRs.
+
+2. **PlanDataProvider** — New `fetch_plans_by_ids` method across all 3 implementations (ABC, real, fake) for targeted plan fetching by issue number.
+
+3. **ObjectivePlansScreen** — Extracts plan IDs from roadmap frontmatter via `_extract_plan_ids_from_roadmap`, then fetches only those specific plans. Falls back to `fetch_plans_for_objective` when no roadmap IDs found.
+
+4. **Verification** — ruff check, ty check, and 377 TUI tests pass. 3 pre-existing test failures (unrelated to this PR) were confirmed.
+
+🔄 Status line refreshed</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="185" cache_read_input_tokens="138451" cache_creation="{'ephemeral_5m_input_tokens': 185, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Catch you later!&lt;/local-command-stdout&gt;</user>
+</session>

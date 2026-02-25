@@ -1,0 +1,760 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-save&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-save&lt;/command-name&gt;
+&lt;command-args&gt;
+
+Plan: Targeted plan fetching by issue number for objective plans modal
+
+  Context
+
+  The ObjectivePlansScreen modal shows plans linked to an objective, but currently uses broad list queries (fetch_plans with limit=200) and filters
+  client-side. With 3,538+ closed erk-plan issues, limit=200 misses most closed plans — causing the modal to show only 1 plan for objective #8036 despite 6
+  roadmap-referenced plans.
+
+  The fix: extract plan IDs from the objective's roadmap frontmatter (already done), then fetch ONLY those specific issues by number using a batched GraphQL
+  query. No more listing all plans and filtering.
+
+  Key discovery: Must use issueOrPullRequest(number: N) instead of issue(number: N) because some plans (#8070, #8087, etc.) are merged PRs, not issues.
+
+  Changes
+
+  1. GitHub Gateway — get_issues_by_numbers_with_pr_linkages
+
+  New method to fetch specific issues by number with full PR linkage data.
+
+  packages/erk-shared/src/erk_shared/gateway/github/abc.py — Add abstract method:
+  @abstractmethod
+  def get_issues_by_numbers_with_pr_linkages(
+      self,
+      *,
+      location: GitHubRepoLocation,
+      issue_numbers: list[int],
+  ) -&gt; tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+
+  packages/erk-shared/src/erk_shared/gateway/github/real.py — Implement with batched alias query:
+  - New private method _build_issues_by_numbers_query(issue_numbers, repo_id) — builds GraphQL query using aliases (same pattern as existing
+  _build_issue_pr_linkage_query at line 688, but includes full issue fields: title, body, state, url, author, labels, assignees, createdAt, updatedAt, plus
+  timeline/PR linkages)
+  - New private method _parse_issues_by_numbers_response(response, repo_id) — iterates over aliased keys (issue_8070, etc.), reuses existing
+  _parse_issue_node and _parse_pr_from_timeline_event per node
+  - Main method: handle empty list → ([], {}), else build query → execute_gh_command_with_retry → parse response
+  - The ISSUE_PR_LINKAGE_FRAGMENT from graphql_queries.py is reused for the timeline fields
+
+  packages/erk-shared/src/erk_shared/gateway/github/fake.py — Filter self._issues_data by number, build matching pr_linkages subset
+
+  packages/erk-shared/src/erk_shared/gateway/github/dry_run.py — Delegate to self._wrapped
+
+  packages/erk-shared/src/erk_shared/gateway/github/printing.py — Delegate to self._wrapped
+
+  2. PlanDataProvider — fetch_plans_by_ids
+
+  packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py — Add abstract method:
+  @abstractmethod
+  def fetch_plans_by_ids(self, plan_ids: set[int]) -&gt; list[PlanRowData]:
+
+  packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py — Implement:
+  - Call self._ctx.github.get_issues_by_numbers_with_pr_linkages(location=self._location, issue_numbers=list(plan_ids))
+  - Convert each IssueInfo → Plan via issue_info_to_plan() (import from erk_shared.plan_store.conversion)
+  - Build worktree mapping via self._build_worktree_mapping()
+  - Batch fetch learn issue states via self._fetch_learn_issue_states()
+  - Call self._build_row_data() for each plan (pass workflow_run=None)
+  - Return sorted by plan_id
+
+  packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py — Filter:
+  def fetch_plans_by_ids(self, plan_ids: set[int]) -&gt; list[PlanRowData]:
+      return [p for p in self._plans if p.plan_id in plan_ids]
+
+  3. Screen — Simplify _fetch_plans
+
+  src/erk/tui/screens/objective_plans_screen.py — Replace the current fetch with:
+  @work(thread=True)
+  def _fetch_plans(self) -&gt; None:
+      plans: list[PlanRowData] = []
+      error: str | None = None
+      try:
+          roadmap_plan_ids = _extract_plan_ids_from_roadmap(self._objective_body)
+          if roadmap_plan_ids:
+              plans = self._provider.fetch_plans_by_ids(roadmap_plan_ids)
+          else:
+              plans = self._provider.fetch_plans_for_objective(self._objective_id)
+      except Exception as e:
+          error = str(e)
+      self.app.call_from_thread(self._on_plans_loaded, plans, error)
+
+  4. Tests
+
+  tests/tui/screens/test_objective_plans_screen.py — Update test_roadmap_based_plan_discovery:
+  - The test currently relies on fetch_plans_for_objective + fetch_plans calls
+  - After the change, it uses fetch_plans_by_ids on the fake, which filters by plan_id
+  - Existing tests for empty state, error state, and non-roadmap paths still pass
+
+  Verification
+
+  1. devrun: uv run ruff check on all changed files
+  2. devrun: uv run ty check on all changed files
+  3. devrun: uv run pytest tests/tui/screens/test_objective_plans_screen.py -x
+  4. devrun: uv run pytest tests/tui/ -x
+
+save the above&lt;/command-args&gt;</user>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+```
+
+Objective linking is automatic: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command.
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+- **Issue backend** (`PLAN_BACKEND = "github"`): Creates a GitHub issue. Metadata in the issue body, plan content in the first comment.
+
+The JSON output contract is the same for both backends (`plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`).
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `
+
+Plan: Targeted plan fetching by issue number for objective plans modal
+
+  Context
+
+  The ObjectivePlansScreen modal shows plans linked to an objective, but currently uses broad list queries (fetch_plans with limit=200) and filters
+  client-side. With 3,538+ closed erk-plan issues, limit=200 misses most closed plans — causing the modal to show only 1 plan for objective #8036 despite 6
+  roadmap-referenced plans.
+
+  The fix: extract plan IDs from the objective's roadmap frontmatter (already done), then fetch ONLY those specific issues by number using a batched GraphQL
+  query. No more listing all plans and filtering.
+
+  Key discovery: Must use issueOrPullRequest(number: N) instead of issue(number: N) because some plans (#8070, #8087, etc.) are merged PRs, not issues.
+
+  Changes
+
+  1. GitHub Gateway — get_issues_by_numbers_with_pr_linkages
+
+  New method to fetch specific issues by number with full PR linkage data.
+
+  packages/erk-shared/src/erk_shared/gateway/github/abc.py — Add abstract method:
+  @abstractmethod
+  def get_issues_by_numbers_with_pr_linkages(
+      self,
+      *,
+      location: GitHubRepoLocation,
+      issue_numbers: list[int],
+  ) -&gt; tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+
+  packages/erk-shared/src/erk_shared/gateway/github/real.py — Implement with batched alias query:
+  - New private method _build_issues_by_numbers_query(issue_numbers, repo_id) — builds GraphQL query using aliases (same pattern as existing
+  _build_issue_pr_linkage_query at line 688, but includes full issue fields: title, body, state, url, author, labels, assignees, createdAt, updatedAt, plus
+  timeline/PR linkages)
+  - New private method _parse_issues_by_numbers_response(response, repo_id) — iterates over aliased keys (issue_8070, etc.), reuses existing
+  _parse_issue_node and _parse_pr_from_timeline_event per node
+  - Main method: handle empty list → ([], {}), else build query → execute_gh_command_with_retry → parse response
+  - The ISSUE_PR_LINKAGE_FRAGMENT from graphql_queries.py is reused for the timeline fields
+
+  packages/erk-shared/src/erk_shared/gateway/github/fake.py — Filter self._issues_data by number, build matching pr_linkages subset
+
+  packages/erk-shared/src/erk_shared/gateway/github/dry_run.py — Delegate to self._wrapped
+
+  packages/erk-shared/src/erk_shared/gateway/github/printing.py — Delegate to self._wrapped
+
+  2. PlanDataProvider — fetch_plans_by_ids
+
+  packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py — Add abstract method:
+  @abstractmethod
+  def fetch_plans_by_ids(self, plan_ids: set[int]) -&gt; list[PlanRowData]:
+
+  packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py — Implement:
+  - Call self._ctx.github.get_issues_by_numbers_with_pr_linkages(location=self._location, issue_numbers=list(plan_ids))
+  - Convert each IssueInfo → Plan via issue_info_to_plan() (import from erk_shared.plan_store.conversion)
+  - Build worktree mapping via self._build_worktree_mapping()
+  - Batch fetch learn issue states via self._fetch_learn_issue_states()
+  - Call self._build_row_data() for each plan (pass workflow_run=None)
+  - Return sorted by plan_id
+
+  packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py — Filter:
+  def fetch_plans_by_ids(self, plan_ids: set[int]) -&gt; list[PlanRowData]:
+      return [p for p in self._plans if p.plan_id in plan_ids]
+
+  3. Screen — Simplify _fetch_plans
+
+  src/erk/tui/screens/objective_plans_screen.py — Replace the current fetch with:
+  @work(thread=True)
+  def _fetch_plans(self) -&gt; None:
+      plans: list[PlanRowData] = []
+      error: str | None = None
+      try:
+          roadmap_plan_ids = _extract_plan_ids_from_roadmap(self._objective_body)
+          if roadmap_plan_ids:
+              plans = self._provider.fetch_plans_by_ids(roadmap_plan_ids)
+          else:
+              plans = self._provider.fetch_plans_for_objective(self._objective_id)
+      except Exception as e:
+          error = str(e)
+      self.app.call_from_thread(self._on_plans_loaded, plans, error)
+
+  4. Tests
+
+  tests/tui/screens/test_objective_plans_screen.py — Update test_roadmap_based_plan_discovery:
+  - The test currently relies on fetch_plans_for_objective + fetch_plans calls
+  - After the change, it uses fetch_plans_by_ids on the fake, which filters by plan_id
+  - Existing tests for empty state, error state, and non-roadmap paths still pass
+
+  Verification
+
+  1. devrun: uv run ruff check on all changed files
+  2. devrun: uv run ty check on all changed files
+  3. devrun: uv run pytest tests/tui/screens/test_objective_plans_screen.py -x
+  4. devrun: uv run pytest tests/tui/ -x
+
+save the above` for the `--plan-type` flag:
+
+```
+If 
+
+Plan: Targeted plan fetching by issue number for objective plans modal
+
+  Context
+
+  The ObjectivePlansScreen modal shows plans linked to an objective, but currently uses broad list queries (fetch_plans with limit=200) and filters
+  client-side. With 3,538+ closed erk-plan issues, limit=200 misses most closed plans — causing the modal to show only 1 plan for objective #8036 despite 6
+  roadmap-referenced plans.
+
+  The fix: extract plan IDs from the objective's roadmap frontmatter (already done), then fetch ONLY those specific issues by number using a batched GraphQL
+  query. No more listing all plans and filtering.
+
+  Key discovery: Must use issueOrPullRequest(number: N) instead of issue(number: N) because some plans (#8070, #8087, etc.) are merged PRs, not issues.
+
+  Changes
+
+  1. GitHub Gateway — get_issues_by_numbers_with_pr_linkages
+
+  New method to fetch specific issues by number with full PR linkage data.
+
+  packages/erk-shared/src/erk_shared/gateway/github/abc.py — Add abstract method:
+  @abstractmethod
+  def get_issues_by_numbers_with_pr_linkages(
+      self,
+      *,
+      location: GitHubRepoLocation,
+      issue_numbers: list[int],
+  ) -&gt; tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+
+  packages/erk-shared/src/erk_shared/gateway/github/real.py — Implement with batched alias query:
+  - New private method _build_issues_by_numbers_query(issue_numbers, repo_id) — builds GraphQL query using aliases (same pattern as existing
+  _build_issue_pr_linkage_query at line 688, but includes full issue fields: title, body, state, url, author, labels, assignees, createdAt, updatedAt, plus
+  timeline/PR linkages)
+  - New private method _parse_issues_by_numbers_response(response, repo_id) — iterates over aliased keys (issue_8070, etc.), reuses existing
+  _parse_issue_node and _parse_pr_from_timeline_event per node
+  - Main method: handle empty list → ([], {}), else build query → execute_gh_command_with_retry → parse response
+  - The ISSUE_PR_LINKAGE_FRAGMENT from graphql_queries.py is reused for the timeline fields
+
+  packages/erk-shared/src/erk_shared/gateway/github/fake.py — Filter self._issues_data by number, build matching pr_linkages subset
+
+  packages/erk-shared/src/erk_shared/gateway/github/dry_run.py — Delegate to self._wrapped
+
+  packages/erk-shared/src/erk_shared/gateway/github/printing.py — Delegate to self._wrapped
+
+  2. PlanDataProvider — fetch_plans_by_ids
+
+  packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py — Add abstract method:
+  @abstractmethod
+  def fetch_plans_by_ids(self, plan_ids: set[int]) -&gt; list[PlanRowData]:
+
+  packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py — Implement:
+  - Call self._ctx.github.get_issues_by_numbers_with_pr_linkages(location=self._location, issue_numbers=list(plan_ids))
+  - Convert each IssueInfo → Plan via issue_info_to_plan() (import from erk_shared.plan_store.conversion)
+  - Build worktree mapping via self._build_worktree_mapping()
+  - Batch fetch learn issue states via self._fetch_learn_issue_states()
+  - Call self._build_row_data() for each plan (pass workflow_run=None)
+  - Return sorted by plan_id
+
+  packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py — Filter:
+  def fetch_plans_by_ids(self, plan_ids: set[int]) -&gt; list[PlanRowData]:
+      return [p for p in self._plans if p.plan_id in plan_ids]
+
+  3. Screen — Simplify _fetch_plans
+
+  src/erk/tui/screens/objective_plans_screen.py — Replace the current fetch with:
+  @work(thread=True)
+  def _fetch_plans(self) -&gt; None:
+      plans: list[PlanRowData] = []
+      error: str | None = None
+      try:
+          roadmap_plan_ids = _extract_plan_ids_from_roadmap(self._objective_body)
+          if roadmap_plan_ids:
+              plans = self._provider.fetch_plans_by_ids(roadmap_plan_ids)
+          else:
+              plans = self._provider.fetch_plans_for_objective(self._objective_id)
+      except Exception as e:
+          error = str(e)
+      self.app.call_from_thread(self._on_plans_loaded, plans, error)
+
+  4. Tests
+
+  tests/tui/screens/test_objective_plans_screen.py — Update test_roadmap_based_plan_discovery:
+  - The test currently relies on fetch_plans_for_objective + fetch_plans calls
+  - After the change, it uses fetch_plans_by_ids on the fake, which filters by plan_id
+  - Existing tests for empty state, error state, and non-roadmap paths still pass
+
+  Verification
+
+  1. devrun: uv run ruff check on all changed files
+  2. devrun: uv run ty check on all changed files
+  3. devrun: uv run pytest tests/tui/screens/test_objective_plans_screen.py -x
+  4. devrun: uv run pytest tests/tui/ -x
+
+save the above contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+```
+
+### Step 1.5: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 2: Run Save Command
+
+Run this command with the session ID, branch slug, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="fcfd4e71-2ea9-46bc-b2ef-d68fe00a7ba2" --branch-slug="${BRANCH_SLUG}" ${PLAN_TYPE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 3.
+
+If the command fails, display the error and stop.
+
+### Step 3: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 2.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close &lt;"draft PR" if plan_backend=="draft_pr", else "issue"&gt; #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 3.5: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "fcfd4e71-2ea9-46bc-b2ef-d68fe00a7ba2" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "" --status in_progress
+```
+
+This atomically fetches the issue body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 4: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below (using the `plan_backend` field to choose the correct format).
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 3, 3.5 above if not already executed).
+
+**Otherwise, on success**, display based on `plan_backend` from JSON output:
+
+**Header (both backends):**
+
+```
+Plan "&lt;title&gt;" saved as &lt;"draft PR" if plan_backend=="draft_pr", else "issue"&gt; #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block (used by both backends below):**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**If `plan_backend` is `"draft_pr"`:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**If `plan_backend` is `"github"` (or absent):**
+
+```
+Next steps:
+
+View Issue: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+  Plan review: /erk:plan-review — Submit plan as PR for human review before implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+## Session Tracking
+
+After successfully saving a plan, the issue number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved issue number:**
+
+```bash
+erk exec marker read --session-id "fcfd4e71-2ea9-46bc-b2ef-d68fe00a7ba2" plan-saved-issue
+```
+
+This returns the issue number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <thinking>The user wants to save a plan to GitHub. Let me follow the skill instructions step by step.
+
+Step 1: Parse Arguments - No `--plan-type` flag specified, so PLAN_TYPE_FLAG is empty.
+
+Step 1.5: Generate Branch Slug - The plan title is "Targeted plan fetching by issue number for objective plans modal". Let me generate a slug:
+- "fetch-plans-by-number" - captures the essence nicely, 22 chars
+
+Step 2: Run the save command.
+
+Let me also check if we're on trunk to determine the slot recommendation later.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="16010" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 16010, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SqiQxdqM9u43bgnK2HqRhU">
+    <param name="command">git rev-parse --abbrev-ref HEAD</param>
+    <param name="description">Check current branch</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="16010" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 16010, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SqiQxdqM9u43bgnK2HqRhU">
+master
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01SG6nfxQWvAF1Dk9b7tQeSP">
+    <param name="command">erk exec plan-save --format json --session-id="fcfd4e71-2ea9-46bc-b2ef-d68fe00a7ba2" --branch-slug="fetch-plans-by-number"</param>
+    <param name="description">Save plan to GitHub</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="239" cache_read_input_tokens="35124" cache_creation="{'ephemeral_5m_input_tokens': 239, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SG6nfxQWvAF1Dk9b7tQeSP">
+{"success": true, "plan_number": 8162, "plan_url": "https://github.com/dagster-io/erk/pull/8162", "title": "[erk-plan] Plan: Address PR #8156 Review Comments", "branch_name": "plnd/fetch-plans-by-number-02-25-0456", "plan_backend": "planned_pr", "objective_issue": null}
+  </tool_result>
+  <thinking>Wait, something seems off. The title is "[erk-plan] Plan: Address PR #8156 Review Comments" but the plan content was about "Targeted plan fetching by issue number for objective plans modal". Let me check the JSON more carefully.
+
+The plan was saved. The title seems to have come from the session's plan file content, which might be stale or from a different plan. But the command succeeded.
+
+Let me re-read the output:
+- plan_number: 8162
+- plan_url: https://github.com/dagster-io/erk/pull/8162
+- title: "[erk-plan] Plan: Address PR #8156 Review Comments"
+
+
+- branch_name: plnd/fetch-plans-by-number-02-25-0456
+- plan_backend: "planned_pr"
+- objective_issue: null
+
+I see the issue now—the plan-save command is reading from the session's plan file rather than using the content from the command arguments, which is why the title doesn't match what I intended to save.
+
+Since `objective_issue` is null, I'll skip those steps, and since `plan_backend` is "planned_pr", I can proceed with reporting the results.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="253" cache_read_input_tokens="35363" cache_creation="{'ephemeral_5m_input_tokens': 253, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Plan saved successfully.
+
+**Plan "Address PR #8156 Review Comments" saved as draft PR #8162**
+URL: https://github.com/dagster-io/erk/pull/8162
+
+**Next steps:**
+
+View PR: https://github.com/dagster-io/erk/pull/8162
+
+In Claude Code:
+- Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+New slot (recommended — you're on trunk):
+- Local: `erk br co --new-slot --for-plan 8162`
+- Implement: `source "$(erk br co --new-slot --for-plan 8162 --script)" &amp;&amp; erk implement --dangerous`
+
+Same slot:
+- Local: `erk br co --for-plan 8162`
+- Implement: `source "$(erk br co --for-plan 8162 --script)" &amp;&amp; erk implement --dangerous`
+
+Dispatch to Queue: `erk pr dispatch 8162`
+
+&gt; **Note:** The saved title shows "Address PR #8156 Review Comments" — this may have been picked up from the session's plan file rather than the plan text you provided. You may want to verify the PR body contains the correct plan content at the URL above.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="253" cache_read_input_tokens="35363" cache_creation="{'ephemeral_5m_input_tokens': 253, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/plan&lt;/command-name&gt;
+            &lt;command-message&gt;plan&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Enabled plan mode&lt;/local-command-stdout&gt;</user>
+  <user>close that plan</user>
+  <tool_use name="Bash" id="toolu_016CcPwMZ9XK2cBn4YhD99Vg">
+    <param name="command">erk exec plan-save --format json --session-id="fcfd4e71-2ea9-46bc-b2ef-d68fe00a7ba2" --branch-slug="fetch-plans-by-number"</param>
+    <param name="description">Save plan to GitHub</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2341" cache_read_input_tokens="35616" cache_creation="{'ephemeral_5m_input_tokens': 2341, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016CcPwMZ9XK2cBn4YhD99Vg">
+{"success": true, "plan_number": 8162, "skipped_duplicate": true, "message": "Session already saved plan #8162", "plan_backend": "planned_pr", "branch_name": "plnd/fetch-plans-by-number-02-25-0456"}
+  </tool_result>
+  <thinking>The plan was already saved as #8162 (duplicate skipped). The user said "close that plan" - they want to close the plan issue/PR. But wait, we're in plan mode, and I'm told not to make any edits or run non-readonly tools. However, the user is asking me to close a GitHub PR, which is a destructive action.
+
+Actually, let me re-read the instruction. The user said "close that plan". They want me to close the PR #8162 that was just created. But I'm in plan mode, which means I shouldn't be making changes. However, the user's intent is clear - they want to close the plan.
+
+
+I'm realizing there's a conflict here: plan mode prevents me from making changes to the system, but the user explicitly wants me to close the PR. I need to either ask them to exit plan mode first, or exit it myself before taking that action.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="225" cache_read_input_tokens="37957" cache_creation="{'ephemeral_5m_input_tokens': 225, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The plan was already saved as PR #8162 (duplicate detected). Let me write a quick plan to close it, then we can proceed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="225" cache_read_input_tokens="37957" cache_creation="{'ephemeral_5m_input_tokens': 225, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01UvxcJCj6mZb32yZLMuHQ1W">
+    <param name="file_path">/Users/schrockn/.claude/plans/curious-dazzling-twilight.md</param>
+    <param name="content"># Close Plan PR #8162
+
+## Context
+The plan PR #8162 was saved with the wrong title ("Addre...[truncated 35 chars]...an content). User wants to close it.
+
+## Steps
+1. Close PR #8162 using `gh pr close 8162`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="225" cache_read_input_tokens="37957" cache_creation="{'ephemeral_5m_input_tokens': 225, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UvxcJCj6mZb32yZLMuHQ1W">
+File created successfully at: /Users/schrockn/.claude/plans/curious-dazzling-twilight.md
+  </tool_result>
+  <user>[Request interrupted by user]</user>
+  <user>save the plan i copied and paste in as a file and then pass that to save plan</user>
+  <thinking>The user wants me to:
+1. Save the plan content they pasted earlier as a file
+2. Pass that file to `erk exec plan-save`
+
+Let me first close PR #8162 since it had the wrong content, then save the correct plan content as a file and re-save it.
+
+Actually, let me re-read the user's request. They want me to save the plan text they pasted earlier (the "Targeted plan fetching by issue number for objective plans modal" plan) as a file, and then pass that file to the plan-save command.
+
+Let me check if plan-save accepts a file path. Let me look at the command's help.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="364" cache_read_input_tokens="38832" cache_creation="{'ephemeral_5m_input_tokens': 364, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me first close the incorrect PR #8162, then save your plan content as a file and re-save it properly.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="364" cache_read_input_tokens="38832" cache_creation="{'ephemeral_5m_input_tokens': 364, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Gy2F1f7MdJVBrmfwtKRu97">
+    <param name="command">gh pr close 8162 --repo dagster-io/erk</param>
+    <param name="description">Close incorrect plan PR #8162</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="364" cache_read_input_tokens="38832" cache_creation="{'ephemeral_5m_input_tokens': 364, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017CpCS3JAthiHhYv6ZZcP9C">
+    <param name="command">erk exec plan-save --help 2&gt;&amp;1 | head -40</param>
+    <param name="description">Check plan-save help for file flag</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="364" cache_read_input_tokens="38832" cache_creation="{'ephemeral_5m_input_tokens': 364, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Gy2F1f7MdJVBrmfwtKRu97">
+✓ Closed pull request dagster-io/erk#8162 ([erk-plan] Plan: Address PR #8156 Review Comments)
+  </tool_result>
+  <tool_result tool="toolu_017CpCS3JAthiHhYv6ZZcP9C">
+Usage: erk exec plan-save [OPTIONS]
+
+  Save plan as a draft PR.
+
+Options:
+  --format [json|display]         Output format: json (default) or display
+                                  (formatted text)
+  --plan-file PATH                Path to specific plan file (highest
+                                  priority)
+  --session-id TEXT               Session ID for scoped plan lookup
+  --plan-type [standard|learn]    Plan type: standard (default) or learn
+  --learned-from-issue INTEGER    Parent plan issue number (for learn plans)
+  --created-from-workflow-run-url TEXT
+                                  GitHub Actions workflow run URL
+  --branch-slug TEXT              Pre-generated branch slug (skips LLM call
+                                  when provided)
+  -h, --help                      Show this message and exit.
+  </tool_result>
+  <assistant>There's a `--plan-file` flag. Let me save your plan content to a file and pass it.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="639" cache_read_input_tokens="39196" cache_creation="{'ephemeral_5m_input_tokens': 639, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01AofhbZbwLrptwKWkerEUea">
+    <param name="file_path">/Users/schrockn/code/erk/.erk/scratch/targeted-plan-fetch.md</param>
+    <param name="content"># Plan: Targeted plan fetching by issue number for objective plans modal
+
+## Context
+
+The ...[truncated 4422 chars]...s/tui/screens/test_objective_plans_screen.py -x`
+4. devrun: `uv run pytest tests/tui/ -x`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="639" cache_read_input_tokens="39196" output_tokens="1578" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 639}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AofhbZbwLrptwKWkerEUea">
+File created successfully at: /Users/schrockn/code/erk/.erk/scratch/targeted-plan-fetch.md
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01PnrczD1xdwjVaWzA7F5Vj7">
+    <param name="command">erk exec plan-save --format json --plan-file /Users/schrockn/code/erk/.erk/scratch/targeted-plan-fetch.md --session-id="fcfd4e71-2ea9-46bc-b2ef-d68fe00a7ba2" --branch-slug="fetch-plans-by-number"</param>
+    <param name="description">Save plan from file to GitHub</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1730" cache_read_input_tokens="39835" cache_creation="{'ephemeral_5m_input_tokens': 1730, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PnrczD1xdwjVaWzA7F5Vj7">
+{"success": true, "plan_number": 8162, "skipped_duplicate": true, "message": "Session already saved plan #8162", "plan_backend": "planned_pr", "branch_name": "plnd/fetch-plans-by-number-02-25-0456"}
+  </tool_result>
+  <thinking>It's still detecting the duplicate because it's keyed off the session ID. I need to clear the plan-saved marker first, then re-save. Let me check if there's a way to clear it or force a new save.
+
+Actually, the PR #8162 was closed. Let me check if I need to delete the marker.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="253" cache_read_input_tokens="41565" cache_creation="{'ephemeral_5m_input_tokens': 253, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The duplicate detection is blocking because the session marker still records #8162. Let me clear that marker and retry.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="253" cache_read_input_tokens="41565" cache_creation="{'ephemeral_5m_input_tokens': 253, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HRynEPWuLSrCtPTfPvsVSD">
+    <param name="command">erk exec marker delete --session-id="fcfd4e71-2ea9-46bc-b2ef-d68fe00a7ba2" plan-saved-issue 2&gt;&amp;1</param>
+    <param name="description">Clear the plan-saved marker</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="253" cache_read_input_tokens="41565" cache_creation="{'ephemeral_5m_input_tokens': 253, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HRynEPWuLSrCtPTfPvsVSD">
+{"success": true, "message": "Deleted marker: plan-saved-issue"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Y19D8AhYWKxiBAJfNZqEeD">
+    <param name="command">erk exec plan-save --format json --plan-file /Users/schrockn/code/erk/.erk/scratch/targeted-plan-fetch.md --session-id="fcfd4e71-2ea9-46bc-b2ef-d68fe00a7ba2" --branch-slug="fetch-plans-by-number"</param>
+    <param name="description">Save plan from file to GitHub</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="260" cache_read_input_tokens="41818" cache_creation="{'ephemeral_5m_input_tokens': 260, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Y19D8AhYWKxiBAJfNZqEeD">
+{"success": true, "plan_number": 8163, "plan_url": "https://github.com/dagster-io/erk/pull/8163", "title": "[erk-plan] Plan: Targeted plan fetching by issue number for objective plans modal", "branch_name": "plnd/fetch-plans-by-number-02-25-0459", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/fcfd4e71-2ea9-46bc-b2ef-d68fe00a7ba2/plan_snapshots/000001-835cf36b"}
+  </tool_result>
+  <assistant>**Plan "Targeted plan fetching by issue number for objective plans modal" saved as draft PR #8163**
+URL: https://github.com/dagster-io/erk/pull/8163
+
+**Next steps:**
+
+View PR: https://github.com/dagster-io/erk/pull/8163
+
+In Claude Code:
+- Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+New slot (recommended — you're on trunk):
+- Local: `erk br co --new-slot --for-plan 8163`
+- Implement: `source "$(erk br co --new-slot --for-plan 8163 --script)" &amp;&amp; erk implement --dangerous`
+
+Same slot:
+- Local: `erk br co --for-plan 8163`
+- Implement: `source "$(erk br co --for-plan 8163 --script)" &amp;&amp; erk implement --dangerous`
+
+Dispatch to Queue: `erk pr dispatch 8163`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="353" cache_read_input_tokens="42078" cache_creation="{'ephemeral_5m_input_tokens': 353, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
