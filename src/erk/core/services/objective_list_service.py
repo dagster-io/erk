@@ -11,6 +11,7 @@ from erk_shared.core.plan_list_service import PlanListData
 from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.types import GitHubRepoLocation, IssueFilterState
+from erk_shared.gateway.http.abc import HttpClient
 from erk_shared.gateway.time.abc import Time
 
 _OBJECTIVE_LABEL = "erk-objective"
@@ -23,8 +24,11 @@ class RealObjectiveListService(ObjectiveListService):
     because objectives are GitHub issues regardless of the plan backend.
     """
 
-    def __init__(self, github: GitHub, github_issues: GitHubIssues, *, time: Time) -> None:
+    def __init__(
+        self, github: GitHub, github_issues: GitHubIssues, *, time: Time, http_client: HttpClient
+    ) -> None:
         self._plan_list_service = RealPlanListService(github, github_issues, time=time)
+        self._http_client = http_client
 
     def get_objective_list_data(
         self,
@@ -44,5 +48,5 @@ class RealObjectiveListService(ObjectiveListService):
             skip_workflow_runs=skip_workflow_runs,
             creator=creator,
             exclude_labels=exclude_labels,
-            http_client=None,
+            http_client=self._http_client,
         )

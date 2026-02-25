@@ -12,6 +12,8 @@ from erk.core.context import ErkContext
 from erk.core.plan_duplicate_checker import PlanDuplicateChecker
 from erk.core.plan_relevance_checker import PlanRelevanceChecker
 from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+from erk_shared.gateway.http.auth import fetch_github_token
+from erk_shared.gateway.http.real import RealHttpClient
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import PlanNotFound
 
@@ -107,12 +109,13 @@ def duplicate_check_plan(
         root=repo_root,
         repo_id=GitHubRepoId(repo.github.owner, repo.github.repo),
     )
+    http_client = RealHttpClient(token=fetch_github_token(), base_url="https://api.github.com")
     plan_data = ctx.plan_list_service.get_plan_list_data(
         location=location,
         labels=["erk-planned-pr", "erk-plan"],
         state="open",
         skip_workflow_runs=True,
-        http_client=None,
+        http_client=http_client,
     )
     existing_plans = plan_data.plans
 

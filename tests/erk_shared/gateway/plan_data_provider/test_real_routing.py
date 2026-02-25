@@ -17,12 +17,21 @@ def _make_provider(
 ) -> RealPlanDataProvider:
     """Create a RealPlanDataProvider with mocked services."""
     mock_ctx = MagicMock()
+    mock_ctx.time.monotonic.return_value = 0.0
     mock_objective_service = objective_service or MagicMock()
     mock_plan_service = plan_service or MagicMock()
     mock_ctx.objective_list_service = mock_objective_service
     mock_ctx.plan_list_service = mock_plan_service
-    mock_objective_service.get_objective_list_data.return_value = MagicMock(plans=[])
-    mock_plan_service.get_plan_list_data.return_value = MagicMock(plans=[])
+    _empty_plan_data = MagicMock(
+        plans=[],
+        pr_linkages={},
+        workflow_runs={},
+        api_ms=0.0,
+        plan_parsing_ms=0.0,
+        workflow_runs_ms=0.0,
+    )
+    mock_objective_service.get_objective_list_data.return_value = _empty_plan_data
+    mock_plan_service.get_plan_list_data.return_value = _empty_plan_data
 
     return RealPlanDataProvider(
         mock_ctx,
@@ -43,7 +52,14 @@ class TestPlanDataProviderRouting:
         # Arrange
         mock_objective_service = MagicMock()
         mock_plan_service = MagicMock()
-        mock_objective_service.get_objective_list_data.return_value = MagicMock(plans=[])
+        mock_objective_service.get_objective_list_data.return_value = MagicMock(
+            plans=[],
+            pr_linkages={},
+            workflow_runs={},
+            api_ms=0.0,
+            plan_parsing_ms=0.0,
+            workflow_runs_ms=0.0,
+        )
         provider = _make_provider(
             objective_service=mock_objective_service, plan_service=mock_plan_service
         )
