@@ -1,0 +1,1258 @@
+<session>
+  <meta branch="plnd/fix-learn-pr-ephemeral-bas-02-25-1449" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from a GitHub issue, a markdown file, an existing `.impl/` folder, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the `.impl/` folder (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - An issue number, URL, or file path argument
+  - An existing `.impl/` folder
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use .impl/, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement issue #2521
+/erk:plan-implement https://github.com/owner/repo/issues/2521  # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.impl/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub issue/PR (draft-PR or issue-based)
+- Setting up from a local markdown file
+- Auto-detecting from existing `.impl/` folder
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating `.impl/` folder with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title` (for draft-PR plans) or `gh issue view &lt;ISSUE_ARG&gt; --json title -q .title` (for issue plans). Try PR first, fall back to issue.
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the issue number:
+
+```bash
+erk exec plan-save --format json --session-id="e3aec60f-2005-4b3e-9a0a-0f9e535a8730" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `issue_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;issue_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `.impl/plan.md` to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="e3aec60f-2005-4b3e-9a0a-0f9e535a8730" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub issue
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `.impl/plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="e3aec60f-2005-4b3e-9a0a-0f9e535a8730" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="e3aec60f-2005-4b3e-9a0a-0f9e535a8730" 2&gt;/dev/null || true
+```
+
+This reads plan reference from `.impl/`, captures session info, and uploads for async learn processing.
+
+### Step 11: Verify .impl/ Preserved
+
+**CRITICAL GUARDRAIL**: Verify the .impl/ folder was NOT deleted.
+
+```bash
+erk exec impl-verify
+```
+
+If this fails, you have violated instructions. The .impl/ folder must be preserved for user review.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**CRITICAL**: Never delete `.impl/` - leave for user review (no auto-commit).
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan from issue #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing issue with current codebase state
+</user>
+  <thinking>The user has invoked `/erk:plan-implement` but hasn't provided any argument. According to the instructions, this command can be used in several ways:
+
+1. With a GitHub issue number: `/erk:plan-implement 2521`
+2. With a GitHub URL
+3. With a file path
+4. With no arguments (uses `.impl/`, detects from branch, or saves current plan)
+
+Since no argument was provided, I need to follow the "Step 1: Set Up Implementation" instructions for the empty case. Let me check what the current state is.
+
+According to the git status provided at the start, the current branch is `plnd/fix-learn-pr-ephemeral-bas-02-25-1449`, which looks like a plan branch.
+
+When no argument is provided, I should:
+1. Run `erk exec setup-impl` (auto-detects from `.impl/`, branch, or fails)
+2. This will handle auto-detecting from the branch name
+
+Let me start by running this command to set up the implementation.</thinking>
+  <usage input_tokens="9" cache_creation_input_tokens="31966" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 31966}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll help you implement the plan. Since no argument was provided, I'll auto-detect the plan from your current branch.</assistant>
+  <usage input_tokens="9" cache_creation_input_tokens="31966" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 31966}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JmBNPx52NvVnjz8tFaC8Wk">
+    <param name="command">erk exec setup-impl</param>
+    <param name="description">Set up implementation, auto-detecting from branch</param>
+  </tool_use>
+  <usage input_tokens="9" cache_creation_input_tokens="31966" cache_read_input_tokens="0" output_tokens="381" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 31966, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JmBNPx52NvVnjz8tFaC8Wk">
+Found existing .impl/ for plan #8178, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/.impl", "plan_number": 8178, "plan_url": "https://github.com/dagster-io/erk/pull/8178", "branch": "plnd/fix-learn-pr-ephemeral-bas-02-25-1449", "plan_title": "", "no_impl": false}
+{"cleaned": true}
+{"success": true, "source": "issue", "plan_number": 8178, "has_plan_tracking": true, "valid": true, "impl_type": "impl", "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <thinking>Good! The setup succeeded. The system found an existing `.impl/` folder for plan #8178. Now I need to:
+1. Read the plan from `.impl/plan.md`
+2. Load any related skills/docs (there are none in this case)
+3. Create TodoWrite entries for each phase
+4. Signal GitHub that implementation has started
+5. Execute each phase
+6. Signal GitHub when done
+7. Run CI
+8. Submit the PR
+
+Let me start by reading the plan file.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="562" cache_read_input_tokens="31966" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 562}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Great! I found the existing implementation setup for plan #8178. Let me read the plan to understand what needs to be implemented.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="562" cache_read_input_tokens="31966" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 562}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KdX2e64KKxctLWdX6Aavj4">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/.impl/plan.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="562" cache_read_input_tokens="31966" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 562}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KdX2e64KKxctLWdX6Aavj4">
+     1→# Fix: Learn PRs closed immediately due to ephemeral base branch
+     2→
+     3→## Context
+     4→
+     5→The learn workflow (`learn.yml`) checks out ephemeral `learn/XXXX` branches, runs `/erk:learn` which calls `plan-save`. The `plan-save` logic in `plan_save.py:185` treats any non-trunk branch as a feature branch and uses it as the PR base ref. The workflow's cleanup step then deletes the `learn/XXXX` branch (`git push origin --delete`), and GitHub auto-closes all PRs whose base was that deleted branch.
+     6→
+     7→**Result:** Every learn plan PR is created and immediately closed without merging. All recent learn PRs (#8174, #8172, #8166, #8158, #8151, etc.) have `mergedAt: null`.
+     8→
+     9→## Fix
+    10→
+    11→**File:** `src/erk/cli/commands/exec/scripts/plan_save.py` (line 185)
+    12→
+    13→Add a check to exclude `learn/` prefixed branches from being used as a PR base, so they fall through to the trunk code path:
+    14→
+    15→```python
+    16→is_ephemeral_branch = current_branch is not None and current_branch.startswith("learn/")
+    17→if current_branch is not None and current_branch != trunk and not is_ephemeral_branch:
+    18→```
+    19→
+    20→This is the minimal correct fix because:
+    21→- `learn/` branches are ephemeral by design (deleted by the workflow cleanup step)
+    22→- The dispatch step (`dispatch_cmd.py:59-80`) already has separate logic (`get_learn_plan_parent_branch`) for stacking learn implementation PRs on parent branches
+    23→- No new CLI flags or workflow changes needed
+    24→
+    25→## Test
+    26→
+    27→**File:** `tests/unit/cli/commands/exec/scripts/test_plan_save.py`
+    28→
+    29→Add one test: `test_planned_pr_learn_branch_uses_trunk_as_base` — configures `FakeGit` with `current_branch="learn/8163"` and asserts the PR base is `"master"` (trunk), not `"learn/8163"`.
+    30→
+
+... [10 lines omitted] ...
+  </tool_result>
+  <thinking>Perfect! The plan is clear and straightforward. Let me break it down:
+
+**Goal**: Fix the issue where learn PRs are created and immediately closed due to ephemeral `learn/` branches being deleted by the workflow.
+
+**The Fix**: Add a check in `plan_save.py` line 185 to exclude `learn/` prefixed branches from being used as PR bases.
+
+**Test**: Add a test case to verify this behavior.
+
+**Verification**: Run the test suite to ensure everything passes.
+
+Let me create TodoWrite entries for the phases and then start implementing.
+
+The plan has these phases:
+1. Fix the code in `src/erk/cli/commands/exec/scripts/plan_save.py`
+2. Add a test in `tests/unit/cli/commands/exec/scripts/test_plan_save.py`
+3. Run tests to verify
+
+Let me signal GitHub that I'm starting, then proceed with the implementation.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="1000" cache_read_input_tokens="32528" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1000}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <assistant>Perfect! The plan is clear and straightforward. Let me signal GitHub that I'm starting the implementation, then execute the fix.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1000" cache_read_input_tokens="32528" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1000}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SzPEuX6TVUoBohUBbdmL6E">
+    <param name="command">erk exec impl-signal started --session-id="e3aec60f-2005-4b3e-9a0a-0f9e535a8730" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub that implementation has started</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1000" cache_read_input_tokens="32528" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1000}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SzPEuX6TVUoBohUBbdmL6E">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8178
+}
+  </tool_result>
+  <thinking>Good! GitHub has been signaled. Now let me start with phase 1: fixing the code in plan_save.py. I need to read the file first to understand the context around line 185.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="406" cache_read_input_tokens="33528" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 406}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the file to understand the context and make the fix:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="406" cache_read_input_tokens="33528" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 406}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VjtiSuPpq768W7SVFdRQRw">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="406" cache_read_input_tokens="33528" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 406}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VjtiSuPpq768W7SVFdRQRw">
+     1→"""Plan save: creates a draft PR with the plan content.
+     2→
+     3→Usage:
+     4→    erk exec plan-save [OPTIONS]
+     5→
+     6→Options:
+     7→    --format json|display: Output format (default: json)
+     8→    --plan-file PATH: Use specific plan file (highest priority)
+     9→    --session-id ID: Session ID for scoped plan lookup
+    10→    --plan-type standard|learn: Plan type (default: standard)
+    11→    --learned-from-issue INT: Parent plan issue (for learn plans)
+    12→    --created-from-workflow-run-url URL: Workflow run URL
+    13→
+    14→Objective linking is automatic via the objective-context session marker
+    15→(created by /erk:objective-plan). No CLI flag needed.
+    16→
+    17→Exit Codes:
+    18→    0: Success
+    19→    1: Error
+    20→    2: Validation failed
+    21→"""
+    22→
+    23→import json
+    24→from pathlib import Path
+    25→
+    26→import click
+    27→
+    28→from erk.cli.commands.exec.scripts.validate_plan_content import _validate_plan_content
+    29→from erk_shared.context.helpers import (
+    30→    get_repo_identifier,
+
+... [449 lines omitted] ...
+
+   150→            click.echo(f"Error: {title_validation.message}", err=True)
+   156→                        "error": f"Plan title validation failed: {title_validation.reason}",
+   157→                        "error_type": "validation_failed",
+   166→            "Error: --branch-slug is required. "
+   195→        click.echo(f"Error: {create_result.message}", err=True)
+   259→        raise RuntimeError(msg)
+   373→            click.echo("Error: No plan found in ~/.claude/plans/", err=True)
+   375→            click.echo(json.dumps({"success": False, "error": "No plan found in ~/.claude/plans/"}))
+   379→    valid, error, details = _validate_plan_content(plan)
+   382→            click.echo(f"Error: Plan validation failed: {error}", err=True)
+   388→                        "error": f"Plan validation failed: {error}",
+   389→                        "error_type": "validation_failed",
+  </tool_result>
+  <thinking>Perfect! I can see the issue. Looking at line 185:
+
+```python
+if current_branch is not None and current_branch != trunk:
+    # Stack plan branch on current feature branch for natural Graphite stacking
+    base_branch = current_branch
+    create_result = branch_manager.create_branch(repo_root, branch_name, current_branch)
+```
+
+This logic treats any non-trunk branch as a feature branch and uses it as the PR base. However, `learn/` branches are ephemeral and deleted by the workflow, so PRs created with these as bases will be auto-closed by GitHub.
+
+The fix is to add a check to exclude `learn/` prefixed branches. I need to modify line 185 to:
+
+```python
+is_ephemeral_branch = current_branch is not None and current_branch.startswith("learn/")
+if current_branch is not None and current_branch != trunk and not is_ephemeral_branch:
+```
+
+This will cause `learn/` branches to fall through to the else clause that uses trunk as the base.
+
+Let me make this fix now.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="7205" cache_read_input_tokens="33934" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7205}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I'll apply the fix. The issue is on line 185 where `learn/` branches should be excluded from being used as PR bases.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="7205" cache_read_input_tokens="33934" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7205}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_015avAnqf2429pLp5Qp6D5C7">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="old_string">    # Determine base branch: use current branch if on a feature branch, otherwise trunk
+  ...[truncated 586 chars]...   create_result = branch_manager.create_branch(repo_root, branch_name, f"origin/{trunk}")</param>
+    <param name="new_string">    # Determine base branch: use current branch if on a feature branch, otherwise trunk
+  ...[truncated 707 chars]...   create_result = branch_manager.create_branch(repo_root, branch_name, f"origin/{trunk}")</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7205" cache_read_input_tokens="33934" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7205}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015avAnqf2429pLp5Qp6D5C7">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/src/erk/cli/commands/exec/scripts/plan_save.py has been updated successfully.
+  </tool_result>
+  <thinking>Great! The fix is applied. Now I need to add the test. Let me read the test file to understand its structure and where to add the new test.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="1080" cache_read_input_tokens="41139" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1080}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good! Now let me read the test file to add the test case:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1080" cache_read_input_tokens="41139" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1080}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018FAYNLEScX3s9SZY8EeAis">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1080" cache_read_input_tokens="41139" output_tokens="155" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1080, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018FAYNLEScX3s9SZY8EeAis">
+     1→"""Unit tests for plan-save command (draft PR creation)."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→
+     6→import pytest
+     7→from click.testing import CliRunner
+     8→
+     9→from erk.cli.commands.exec.scripts.plan_save import plan_save
+    10→from erk_shared.context.context import ErkContext
+    11→from erk_shared.context.testing import context_for_test
+    12→from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
+    13→from erk_shared.gateway.git.fake import FakeGit
+    14→from erk_shared.gateway.github.fake import FakeGitHub
+    15→from erk_shared.gateway.graphite.fake import FakeGraphite
+    16→from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+    17→
+    18→# Valid plan content that passes validation (100+ chars with structure)
+    19→VALID_PLAN_CONTENT = """# Feature Plan
+    20→
+    21→This plan describes the implementation of a new feature.
+    22→
+    23→- Step 1: Set up the environment
+    24→- Step 2: Implement the core logic
+    25→- Step 3: Add tests and documentation"""
+    26→
+    27→
+    28→def _planned_pr_context(
+    29→    *,
+    30→    tmp_path: Path,
+
+... [463 lines omitted] ...
+
+    61→    assert result.exit_code == 0, f"Failed: {result.output}"
+    79→    assert result.exit_code == 0, f"Failed: {result.output}"
+   101→    assert "No plan found" in output["error"]
+   104→def test_planned_pr_validation_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+   105→    """Short plan: exit code 2, error_type='validation_failed'."""
+   119→    assert output["error_type"] == "validation_failed"
+   134→    assert result1.exit_code == 0, f"First call failed: {result1.output}"
+   145→    assert result2.exit_code == 0, f"Second call failed: {result2.output}"
+   172→    assert result.exit_code == 0, f"Failed: {result.output}"
+   198→    assert result.exit_code == 0, f"Failed: {result.output}"
+   222→    assert result.exit_code == 0, f"Failed: {result.output}"
+   238→    assert result.exit_code == 0, f"Failed: {result.output}"
+   252→    assert result.exit_code == 0, f"Failed: {result.output}"
+   287→    assert result.exit_code == 0, f"Failed: {result.output}"
+   310→    assert result.exit_code == 0, f"Failed: {result.output}"
+   344→    assert result.exit_code == 0, f"Failed: {result.output}"
+   376→    assert result.exit_code == 0, f"Failed: {result.output}"
+   420→    assert output["error_type"] == "validation_failed"
+   440→    assert output["error_type"] == "validation_failed"
+   446→    """Planned-PR save shows error message for invalid title in display format."""
+   471→    assert result.exit_code == 0, f"Failed: {result.output}"
+   477→def test_planned_pr_branch_slug_missing_errors(
+   480→    """When --branch-slug is not provided, exits with error and remediation message."""
+  </tool_result>
+  <thinking>Good! I can see the test structure. Looking at the test file, I need to add a test that verifies that when the current branch is a `learn/` branch, it's excluded from being used as a PR base and instead falls through to use `trunk` as the base.
+
+Looking at the existing tests, particularly `test_planned_pr_feature_branch_creates_correct_pr_base`, I can see how to structure the test. The pattern is:
+1. Create a FakeGit with the desired current_branch
+2. Create a FakeGitHub 
+3. Call plan_save 
+4. Assert that the PR base is what we expect
+
+For the learn branch test, I need to:
+1. Create FakeGit with current_branch="learn/8163" and trunk="master"
+2. Verify that the PR base is "master", not "learn/8163"
+
+Let me add this test after the existing feature branch test.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="12073" cache_read_input_tokens="42219" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12073}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I'll add the test for the learn branch scenario:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="12073" cache_read_input_tokens="42219" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12073}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01DGomZZV8XKUUe2f3C8yY2j">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="old_string">def test_planned_pr_feature_branch_creates_correct_pr_base(
+    tmp_path: Path, monkeypatc...[truncated 803 chars]...ake_github.created_prs) == 1
+    assert fake_github.created_prs[0][3] == "feature/my-work"</param>
+    <param name="new_string">def test_planned_pr_feature_branch_creates_correct_pr_base(
+    tmp_path: Path, monkeypatc...[truncated 1802 chars]...ert len(fake_github.created_prs) == 1
+    assert fake_github.created_prs[0][3] == "master"</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="12073" cache_read_input_tokens="42219" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12073}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DGomZZV8XKUUe2f3C8yY2j">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/exec/scripts/test_plan_save.py has been updated successfully.
+  </tool_result>
+  <thinking>Great! I've added the test. Now I need to run the tests to verify that both the new test and the existing tests pass. According to the plan verification section, I need to:
+1. Run `uv run pytest tests/unit/cli/commands/exec/scripts/test_plan_save.py -v`
+2. Ensure all tests pass, including the new one
+
+Let me run the tests using the devrun agent (since pytest is a development tool mentioned in the hooks warning).</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="1484" cache_read_input_tokens="54292" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1484}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Perfect! Now let me run the tests to verify everything passes:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1484" cache_read_input_tokens="54292" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1484}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01UcrWUShubPCi6D4EvfHeZm">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run plan_save tests to verify fix</param>
+    <param name="prompt">Run the test suite for plan_save: `uv run pytest tests/unit/cli/commands/exec/scripts/test_plan_save.py -v`. Report all results including which tests pass/fail.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1484" cache_read_input_tokens="54292" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1484}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UcrWUShubPCi6D4EvfHeZm">
+pytest passed: All 20 tests in test_plan_save.py passed in 0.63s
+
+The test suite executed successfully with all tests passing:
+
+- **Test file**: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/exec/scripts/test_plan_save.py`
+- **Total tests**: 20
+- **Result**: All passed
+- **Execution time**: 0.63s
+agentId: a62e0353bdbce8641 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13910
+tool_uses: 1
+duration_ms: 4778&lt;/usage&gt;
+  </tool_result>
+  <thinking>Excellent! All 20 tests passed, including the new test `test_planned_pr_learn_branch_uses_trunk_as_base`. This confirms that:
+
+1. The fix I applied to `plan_save.py` is correct
+2. The new test correctly validates the behavior
+3. All existing tests still pass (including `test_planned_pr_feature_branch_creates_correct_pr_base`, which verifies that non-learn feature branches still stack on the current branch)
+
+Now I should:1. Verify that the .impl/ folder is preserved
+2. Signal GitHub that implementation is done
+3. Run the broader CI to ensure nothing else broke
+4. Submit the PRLet me continue with the next steps.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="457" cache_read_input_tokens="55776" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 457}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <assistant>Excellent! All 20 tests passed, including the new test. Let me verify the `.impl/` folder is still preserved:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="457" cache_read_input_tokens="55776" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 457}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018sR8BWGdcEv78LQkcGNgn9">
+    <param name="command">erk exec impl-verify</param>
+    <param name="description">Verify .impl/ folder is preserved</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="457" cache_read_input_tokens="55776" output_tokens="280" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 457, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018sR8BWGdcEv78LQkcGNgn9">
+{"valid": true, "impl_dir": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/.impl"}
+  </tool_result>
+  <thinking>Perfect! The `.impl/` folder is preserved. Now let me signal GitHub that the implementation is done, then run the broader CI to ensure everything works.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="336" cache_read_input_tokens="56233" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 336}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Great! Now let me signal GitHub that implementation is complete:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="336" cache_read_input_tokens="56233" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 336}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HUKGWsEhj1JSGHqPsZetf8">
+    <param name="command">erk exec impl-signal ended --session-id="e3aec60f-2005-4b3e-9a0a-0f9e535a8730" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub that implementation is complete</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="336" cache_read_input_tokens="56233" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 336}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HUKGWsEhj1JSGHqPsZetf8">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8178
+}
+  </tool_result>
+  <thinking>Good! GitHub has been signaled. Now I should run the broader CI to ensure nothing broke in other parts of the system. Let me use the fast-ci command to run relevant tests.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="331" cache_read_input_tokens="56569" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 331}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me run the broader CI suite to ensure no other tests were affected by this change:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="331" cache_read_input_tokens="56569" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 331}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01TguKV6zzeakzAStjLyDk9N">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run relevant tests for plan_save changes</param>
+    <param name="prompt">Run tests scoped to the plan_save module and related plan functionality to ensure the chan...[truncated 23 chars]...st tests/unit/cli/commands/exec/scripts/ -v --tb=short`. Report which tests passed/failed.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="331" cache_read_input_tokens="56569" output_tokens="218" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 331, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TguKV6zzeakzAStjLyDk9N">
+Perfect! All tests passed.
+
+**pytest passed: 1035 tests in 2.84s**
+
+The test suite for the plan_save module and all related plan functionality executed successfully with no failures. All 1035 tests passed, confirming that the changes didn't break any existing functionality across:
+
+- `test_plan_save.py` - Plan save functionality
+- `test_plan_save_to_issue.py` - Issue creation from plans
+- `test_plan_update_from_feedback.py` - Plan feedback handling
+- `test_plan_update_issue.py` - Plan issue updates
+- Plus all other related tests for plan operations (objective plans, PR operations, etc.)
+agentId: af0fd776aa76ece75 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 17040
+tool_uses: 1
+duration_ms: 7371&lt;/usage&gt;
+  </tool_result>
+  <thinking>Perfect! All 1035 tests passed. This is a good sign - the change didn't break anything in related plan functionality. Now I need to submit the PR. Let me use the `erk pr submit` command to create/update the PR.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="447" cache_read_input_tokens="56900" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 447}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Perfect! All tests pass. Now let me submit the PR:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="447" cache_read_input_tokens="56900" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 447}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PXuNvve2v9pntPRucGTTMr">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR with Graphite</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="447" cache_read_input_tokens="56900" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 447}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PXuNvve2v9pntPRucGTTMr">
+
+  </tool_result>
+  <thinking>The command ran with no output. Let me check the status to see if it was submitted successfully.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="185" cache_read_input_tokens="57347" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 185}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the PR status to confirm submission:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="185" cache_read_input_tokens="57347" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 185}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0172c9JL4xTmVZaby2qJSRnX">
+    <param name="command">erk pr check --stage=impl</param>
+    <param name="description">Check PR submission status</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="185" cache_read_input_tokens="57347" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 185}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0172c9JL4xTmVZaby2qJSRnX">
+Checking PR #8178 for branch plnd/fix-learn-pr-ephemeral-bas-02-25-1449...
+
+[PASS] .erk/impl-context/ not present (cleaned up)
+[PASS] Plan reference found (#8178)
+[PASS] Draft PR plan — no closing reference needed
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <thinking>Great! The PR submission checks passed. Now let me signal GitHub that the PR was submitted.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="226" cache_read_input_tokens="57532" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 226}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <assistant>Excellent! Let me signal GitHub that the PR has been submitted:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="226" cache_read_input_tokens="57532" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 226}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Dj1RHPxnMtvYKsuV5oPkpo">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub that PR was submitted</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="226" cache_read_input_tokens="57532" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 226}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Dj1RHPxnMtvYKsuV5oPkpo">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 8178
+}
+  </tool_result>
+  <thinking>Perfect! The PR has been submitted and GitHub has been signaled. Now I should upload the session for async learn processing.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="175" cache_read_input_tokens="57758" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 175}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me upload the session for async learning:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="175" cache_read_input_tokens="57758" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 175}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XWsrZd1L9BEACTS4v7AqPS">
+    <param name="command">erk exec upload-impl-session --session-id="e3aec60f-2005-4b3e-9a0a-0f9e535a8730" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn processing</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="175" cache_read_input_tokens="57758" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 175}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XWsrZd1L9BEACTS4v7AqPS">
+{"uploaded": true, "plan_id": 8178}
+  </tool_result>
+  <thinking>Excellent! The session has been uploaded for async learning. Now let me verify everything one final time and provide a summary of what was done.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="310" cache_read_input_tokens="57933" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 310}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Perfect! Let me verify the PR is ready and get the final details:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="310" cache_read_input_tokens="57933" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 310}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Tw9N52AU6g2n3c1eabV3aY">
+    <param name="command">gh pr view 8178 --json number,title,url,statusCheckRollup,draft</param>
+    <param name="description">Verify PR #8178 submission details</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="310" cache_read_input_tokens="57933" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 310}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Tw9N52AU6g2n3c1eabV3aY">
+Exit code 1
+Unknown JSON field: "draft"
+Available fields:
+  additions
+  assignees
+  author
+  autoMergeRequest
+  baseRefName
+  baseRefOid
+  body
+  changedFiles
+  closed
+  closedAt
+  closingIssuesReferences
+  comments
+  commits
+  createdAt
+  deletions
+  files
+  fullDatabaseId
+  headRefName
+  headRefOid
+  headRepository
+  headRepositoryOwner
+  id
+  isCrossRepository
+  isDraft
+  labels
+  latestReviews
+  maintainerCanModify
+
+... [68 lines omitted] ...
+  </tool_result>
+  <thinking>Let me fix the field name - it should be `isDraft` instead of `draft`.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="642" cache_read_input_tokens="58243" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 642}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me correct the field name:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="642" cache_read_input_tokens="58243" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 642}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01QPUvGoiQt4SAm9pQmgootU">
+    <param name="command">gh pr view 8178 --json number,title,url,isDraft</param>
+    <param name="description">Verify PR #8178 details</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="642" cache_read_input_tokens="58243" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 642}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QPUvGoiQt4SAm9pQmgootU">
+{"isDraft":false,"number":8178,"title":"Fix learn plan PRs being auto-closed when ephemeral base branch is deleted","url":"https://github.com/dagster-io/erk/pull/8178"}
+  </tool_result>
+  <thinking>Perfect! The PR has been successfully submitted as a non-draft PR. Let me provide a final summary of what was accomplished.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="198" cache_read_input_tokens="58885" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Perfect! Implementation is complete. Here's a summary of what was accomplished:
+
+## Summary
+
+### ✅ Plan Execution Complete
+
+**Fix**: Learn PRs closed immediately due to ephemeral base branch (#8178)
+
+### Changes Made
+
+1. **Fixed `src/erk/cli/commands/exec/scripts/plan_save.py`** (line 185)
+   - Added logic to exclude `learn/` prefixed branches from being used as PR bases
+   - Ephemeral learn branches now fall through to use trunk as the base instead
+   - This prevents GitHub from auto-closing PRs when the base branch is deleted
+
+2. **Added test in `tests/unit/cli/commands/exec/scripts/test_plan_save.py`**
+   - New test: `test_planned_pr_learn_branch_uses_trunk_as_base`
+   - Verifies that when on a `learn/XXXX` branch, the PR base is set to trunk (`master`), not the ephemeral branch
+
+### Test Results
+
+✅ All 20 tests in `test_plan_save.py` pass
+✅ All 1035 related tests pass (no regressions)
+✅ Existing feature branch stacking test still passes (non-learn branches unaffected)
+
+### PR Submitted
+
+- **PR #8178**: [Fix learn plan PRs being auto-closed when ephemeral base branch is deleted](https://github.com/dagster-io/erk/pull/8178)
+- Status: Ready for review
+- `.impl/` folder: Preserved for your review
+
+The fix is minimal and surgical - it only affects the specific case of `learn/` branches while preserving the existing behavior for regular feature branches.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="198" cache_read_input_tokens="58885" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>Unknown skill: rer</user>
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>Unknown skill: rer</user>
+  <user>&lt;command-message&gt;local:statusline-refresh&lt;/command-message&gt;
+&lt;command-name&gt;/local:statusline-refresh&lt;/command-name&gt;</user>
+  <user># /statusline-refresh
+
+Triggers an immediate status line refresh by generating conversation activity.
+
+## Usage
+
+```bash
+/statusline-refresh
+```
+
+## When to Use
+
+Use this command after external changes that affect the status line:
+
+- Git operations (branch switches, commits)
+- Worktree switches
+- External file modifications
+
+The command exploits Claude Code's automatic 300ms refresh mechanism by generating minimal conversation activity.
+
+---
+
+## Agent Instructions
+
+Output the following message to trigger the status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+Do not include timestamps or additional context. The minimal output is intentional to avoid cluttering the conversation.
+</user>
+  <thinking>The user ran the `/local:statusline-refresh` command. According to the instructions, I should output a simple message to trigger the status line refresh.</thinking>
+  <usage input_tokens="8" cache_creation_input_tokens="59976" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 59976}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>🔄 Status line refreshed</assistant>
+  <usage input_tokens="8" cache_creation_input_tokens="59976" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 59976}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/model&lt;/command-name&gt;
+            &lt;command-message&gt;model&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Set model to [1mDefault (Opus 4.6 · Most capable for complex work)[22m&lt;/local-command-stdout&gt;</user>
+  <user>&lt;command-message&gt;erk:pr-preview-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-preview-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-preview-address
+
+## Description
+
+Fetches unresolved PR review comments and discussion comments, displays a summary of what `/erk:pr-address` would do. This is a read-only preview command that makes no changes.
+
+## Usage
+
+```bash
+/erk:pr-preview-address
+/erk:pr-preview-address --all               # Include resolved threads
+/erk:pr-preview-address --pr 6631           # Target specific PR
+/erk:pr-preview-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Agent Instructions
+
+&gt; **IMPORTANT: This is a READ-ONLY preview command.**
+&gt;
+&gt; Do NOT make any code changes, resolve any threads, reply to any comments, or create any commits.
+
+### Phase 1: Classify Feedback
+
+Invoke the pr-feedback-classifier skill to fetch and classify all PR feedback:
+
+```
+/pr-feedback-classifier [--pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+```
+
+Parse the JSON response.
+
+### Phase 2: Display Results
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If `actionable_threads` is empty and `discussion_actions` is empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+**Format the results** as a human-readable summary:
+
+```
+## PR #5944: "Feature: Add new API endpoint"
+
+### Actionable Items (N total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | foo.py:42 | actionable | Use LBYL pattern | local |
+| 2 | review | bar.py:15 | actionable | Add type annotation | local |
+| 3 | discussion | - | actionable | Update documentation | cross_cutting |
+
+### Informational Items (N total)
+
+| # | Type | Location | Summary | Complexity |
+|---|------|----------|---------|------------|
+| 4 | review | utils.py:10 | Bot suggestion: extract helper (optional) | local |
+
+### Execution Plan Preview
+
+**Batch 1: Local Fixes** (auto-proceed)
+- Item #1: foo.py:42 - Use LBYL pattern
+- Item #2: bar.py:15 - Add type annotation
+
+**Batch 2: Cross-Cutting** (user confirmation)
+- Item #3: Update documentation
+
+**Batch 3: Informational** (user decides: act or dismiss)
+- Item #4: utils.py:10 - Bot suggestion: extract helper (optional)
+
+### Statistics
+- Actionable items: 3
+- Informational items: 1
+- Informational discussion comments: 12
+- Estimated batches: 3
+- Auto-proceed batches: 1
+- User confirmation batches: 2
+```
+
+**Note:** Items in `actionable_threads` are split into two sections based on their `classification` field: `"actionable"` items appear under "Actionable Items", `"informational"` items appear under "Informational Items". Both sections use the same item numbering (continuous across sections).
+
+Add footer:
+
+```
+To address these comments, run: /erk:pr-address
+```
+
+### Phase 3: Exit (NO ACTIONS)
+
+**CRITICAL**: This is a preview-only command. Do NOT:
+
+- Make any code changes
+- Resolve any threads
+- Reply to any comments
+- Create any commits
+- Push anything to remote
+- Run any CI commands
+
+Simply display the summary and exit.
+
+## Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+</user>
+  <tool_use name="Skill" id="toolu_01JCML1U9VfAjX5TrNUUWaZZ">
+    <param name="skill">pr-feedback-classifier</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="41993" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 41993}" output_tokens="27" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JCML1U9VfAjX5TrNUUWaZZ">
+Skill "pr-feedback-classifier" completed (forked execution).
+
+Result:
+{"success":true,"pr_number":8178,"pr_title":"Fix learn plan PRs being auto-closed when ephemeral base branch is deleted","pr_url":"https://github.com/dagster-io/erk/pull/8178","actionable_threads":[{"thread_id":"PRRT_kwDOPxC3hc5wsnM1","type":"review","path":"src/erk/cli/commands/exec/scripts/plan_save.py","line":185,"is_outdated":false,"classification":"actionable","action_summary":"Bot suggestion: inline `is_ephemeral_branch` check directly into the if condition rather than extracting as a single-use variable","complexity":"local","original_comment":"**Dignified Code Simplifier Review**: Variable `is_ephemeral_branch` is extracted and used only once immediately on the next line. Per 'Declare Variables Close to Use', consider inlining this check directly into the if condition to reduce intermediate variable declarat"}],"discussion_actions":[],"informational_count":5,"batches":[{"name":"Local Fixes","complexity":"local","auto_proceed":true,"item_indices":[0]}],"error":null}
+  </tool_result>
+  <thinking>The PR feedback classifier found 1 actionable review thread. Let me display the preview summary.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="367" cache_read_input_tokens="61107" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 367}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>## PR #8178: "Fix learn plan PRs being auto-closed when ephemeral base branch is deleted"
+
+### Actionable Items (1 total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | plan_save.py:185 | actionable | Inline `is_ephemeral_branch` check directly into the if condition (single-use variable) | local |
+
+### Execution Plan Preview
+
+**Batch 1: Local Fixes** (auto-proceed)
+- Item #1: plan_save.py:185 - Inline `is_ephemeral_branch` into the if condition
+
+### Statistics
+- Actionable items: 1
+- Informational items: 5
+- Discussion comments: 0
+- Estimated batches: 1
+- Auto-proceed batches: 1
+- User confirmation batches: 0
+
+---
+
+To address these comments, run: `/erk:pr-address`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="367" cache_read_input_tokens="61107" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 367}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <user>&lt;command-message&gt;erk:pr-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-address
+
+## Description
+
+Fetches unresolved PR review comments AND PR discussion comments from the current branch's PR and addresses them using holistic analysis with smart batching. Comments are grouped by complexity and relationship, then processed batch-by-batch with incremental commits and resolution.
+
+## Usage
+
+```bash
+/erk:pr-address
+/erk:pr-address --all               # Include resolved threads (for reference)
+/erk:pr-address --pr 6631           # Target specific PR
+/erk:pr-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Prerequisite
+
+**Load the `pr-operations` skill first** for complete command reference and common mistake patterns.
+
+## Agent Instructions
+
+&gt; **Prerequisite**: Load `pr-operations` skill first for command reference.
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands**
+&gt;
+&gt; See `pr-operations` skill for the complete command reference. Never use raw `gh api` calls for thread operations.
+
+### Phase 1: Classify Feedback
+
+Use the Task tool (NOT a `/pr-feedback-classifier` skill invocation) to run the classifier. The skill's `context: fork` metadata does not create true subagent isolation in `--print` mode, so we must use an explicit Task tool call to guarantee the classifier runs in a separate agent context:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Classify PR feedback",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+Parse the JSON response. The skill returns:
+
+- `success`: Whether the operation succeeded
+- `pr_number`, `pr_title`, `pr_url`: PR metadata
+- `actionable_threads`: Array with `thread_id`, `path`, `line`, `classification`, `action_summary`, `complexity`
+  - `classification`: `"actionable"` (code changes needed) or `"informational"` (user decides to act or dismiss)
+- `discussion_actions`: Array with `comment_id`, `action_summary`, `complexity`
+- `batches`: Execution order with `item_indices` referencing the arrays above
+  - Includes an **Informational** batch (last) for `classification: "informational"` threads
+- `error`: Error message if `success` is false
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If both `actionable_threads` and `discussion_actions` are empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+### Phase 2: Display Batched Plan
+
+Show the user the batched execution plan from the classifier output:
+
+```
+## Execution Plan
+
+### Batch 1: Local Fixes (3 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 1 | foo.py:42 | Use LBYL pattern |
+| 2 | bar.py:15 | Add type annotation |
+| 3 | baz.py:99 | Fix typo |
+
+### Batch 2: Single-File Changes (1 comment)
+| # | Location | Summary |
+|---|----------|---------|
+| 4 | impl.py (multiple) | Rename `old_name` to `new_name` throughout |
+
+### Batch 3: Cross-Cutting Changes (2 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 5 | Multiple files | Update all callers of deprecated function |
+| 6 | docs/ | Update documentation per reviewer request |
+
+### Batch 4: Complex Changes (2 comments -&gt; 1 unified change)
+| # | Location | Summary |
+|---|----------|---------|
+| 7 | impl.py:50 | Fold validate into prepare with union types |
+| 8 | cmd.py:100 | (related to #7 - same refactor) |
+```
+
+**User confirmation flow:**
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval before executing
+
+### Phase 3: Execute by Batch
+
+For each batch, execute this workflow using the thread IDs from the classifier JSON:
+
+#### Step 1: Address All Comments in the Batch
+
+For each comment in the batch:
+
+**For Informational Review Threads** (`classification: "informational"`):
+
+Present the user with a choice using AskUserQuestion:
+
+- **Act**: Make the suggested change, then resolve the thread
+- **Dismiss**: Resolve the thread without code changes (reply with a brief message like "Acknowledged, not acting on this suggestion")
+
+If the user chooses **Act**, proceed as a normal review thread (read file, make fix, track change). If the user chooses **Dismiss**, skip to Step 4 to resolve the thread with a dismissal reply.
+
+**For Actionable Review Threads** (`classification: "actionable"`):
+
+1. Read the file to understand context:
+   - If `line` is specified: Read around that line number
+   - If `line` is null (outdated thread): Read the entire file or search for relevant code mentioned in the comment
+2. Make the fix following the reviewer's feedback
+3. Track the change for the batch commit message
+
+**For Discussion Comments:**
+
+1. Determine if action is needed:
+   - If it's a request (e.g., "Please update docs"), take the requested action
+   - If it's a question, provide an answer or make clarifying changes
+   - If it's architectural feedback/suggestion, investigate the codebase to understand implications
+   - If it's just acknowledgment/thanks, note it and move on
+2. **Investigate the codebase** when the comment requires understanding existing code:
+   - Search for relevant patterns, existing implementations, or related code
+   - Note any interesting findings that inform your decision
+   - Record these findings - they become permanent documentation in the reply
+3. Take action if needed
+
+**Handling False Positives from Automated Reviewers:**
+
+Automated review bots (like `dignified-python-review`, linters, or security scanners) can flag false positives. Before making code changes:
+
+1. **Read the flagged code carefully** - understand what the bot is complaining about
+2. **Verify if it's a false positive** by checking:
+   - Is the pattern the bot wants already implemented nearby? (e.g., LBYL check already exists on a preceding line)
+   - Is the bot misunderstanding the code structure?
+   - Is the bot applying a rule that doesn't fit this specific context?
+3. **If it's a false positive**, do NOT make unnecessary code changes. Instead:
+   - Reply to the comment explaining why it's a false positive
+   - Reference specific line numbers where the correct pattern already exists
+   - Resolve the thread
+
+**For Outdated Review Threads** (`is_outdated: true`):
+
+Outdated threads have `line: null` because the code has changed since the comment was made.
+
+1. **Read the file** at the path (ignore line number - search for relevant code)
+2. **Check if the issue is already fixed** in the current code
+3. **Take action:**
+   - If already fixed -&gt; Proceed directly to Step 4 to resolve the thread
+   - If not fixed -&gt; Apply the fix, then proceed to Step 4
+
+**IMPORTANT**: Outdated threads MUST still be resolved via `erk exec resolve-review-thread`.
+Do not skip resolution just because no code change was needed.
+
+#### Step 2: Run CI Checks
+
+After making all changes in the batch:
+
+```bash
+# Run relevant CI checks for changed files
+# (This may vary by project - use project's test commands)
+```
+
+If CI fails, fix the issues before proceeding.
+
+#### Step 3: Commit the Batch
+
+Create a single commit for all changes in the batch:
+
+```bash
+git add &lt;changed files&gt;
+git commit -m "Address PR review comments (batch N/M)
+
+- &lt;summary of comment 1&gt;
+- &lt;summary of comment 2&gt;
+..."
+```
+
+#### Step 4: Resolve All Threads in the Batch (MANDATORY)
+
+**This step is NOT optional.** Every thread must be resolved using the thread IDs from the classifier JSON.
+
+After committing, resolve review threads and mark discussion comments.
+
+**For Review Threads** - use the batch command `erk exec resolve-review-threads` to resolve all review threads in a single call. Pipe a JSON array via stdin:
+
+```bash
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed in commit abc1234"}, {"thread_id": "PRRT_def", "comment": "Applied suggestion"}]' | erk exec resolve-review-threads
+```
+
+Each item has `thread_id` (required) and `comment` (optional). Build the JSON array from the batch's thread IDs and resolution messages, then pipe it in one call.
+
+**For Discussion Comments** - use `erk exec reply-to-discussion-comment` with the `comment_id` from the JSON, with a substantive reply that quotes the original comment and explains what action was taken.
+
+#### Step 5: Report Progress
+
+After completing the batch, report:
+
+```
+## Batch N Complete
+
+Addressed:
+- foo.py:42 - Used LBYL pattern
+- bar.py:15 - Added type annotation
+
+Committed: abc1234 "Address PR review comments (batch 1/3)"
+
+Resolved threads: 2
+Remaining batches: 2
+```
+
+Then proceed to the next batch.
+
+### Phase 4: Final Verification
+
+After all batches complete, re-invoke the classifier to verify all threads are resolved. Use Task tool (NOT skill invocation) for the same `--print` mode isolation reason as Phase 1:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Verify PR feedback resolved",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if originally specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+If `actionable_threads` or `discussion_actions` are non-empty, warn about remaining unresolved items. Both `actionable` and `informational` classified threads should be resolved (either by code changes or by dismissal).
+
+#### Report Final Summary
+
+```
+## All PR Comments Addressed
+
+Total comments: 8
+Batches: 4
+Commits: 4
+
+All review threads resolved.
+All discussion comments marked with reaction.
+
+Next steps:
+1. Push changes:
+   - **Graphite repos**: `gt submit` (or `gt ss`)
+   - **Plain git repos**: `git push`
+   - If push is rejected (non-fast-forward): Run `/erk:sync-divergence` to resolve. Do NOT use `git pull --rebase`.
+2. Wait for CI to pass
+3. Request re-review if needed
+```
+
+#### Handle Any Skipped Comments
+
+If the user explicitly skipped any comments during the process, list them:
+
+```
+## Skipped Comments (user choice)
+- #5: src/legacy.py:100 - "Refactor this module" (user deferred)
+```
+
+### Phase 5: Update PR Title and Body
+
+After all review comments have been addressed, update the PR to reflect the full scope of changes.
+
+Run:
+
+```bash
+erk exec update-pr-description --session-id "e3aec60f-2005-4b3e-9a0a-0f9e535a8730"
+```
+
+This generates an AI-powered title and body from the full PR diff, preserving existing header and footer metadata.
+
+### Common Mistakes
+
+See `pr-operations` skill for the complete table of common mistakes and correct approaches.
+
+### Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+
+**CI failure during batch:** Stop, display the failure, and let the user decide whether to fix and continue or abort
+</user>
+  <tool_use name="Skill" id="toolu_01CfxQmTU3dYChcSwVbCrkJZ">
+    <param name="skill">pr-operations</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3099" cache_read_input_tokens="61746" output_tokens="55" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3099, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CfxQmTU3dYChcSwVbCrkJZ">
+Launching skill: pr-operations
+  </tool_result>
+</session>

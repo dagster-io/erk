@@ -1,0 +1,848 @@
+<session>
+  <meta branch="plnd/fix-learn-pr-ephemeral-bas-02-25-1449" />
+  <meta model="claude-opus-4-6" />
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/.claude/skills/pr-operations
+
+# PR Operations Skill
+
+## Core Rule
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands for PR Thread Operations**
+&gt;
+&gt; - ❌ DO NOT use raw `gh api` calls for thread operations
+&gt; - ❌ DO NOT use `gh pr` commands directly for thread resolution
+&gt; - ✅ ONLY use `erk exec` commands listed below
+&gt;
+&gt; The `erk exec` commands handle thread resolution correctly. Raw API calls only reply without resolving.
+
+## Quick Reference
+
+| Command                       | Purpose                           | Key Point                          |
+| ----------------------------- | --------------------------------- | ---------------------------------- |
+| `get-pr-review-comments`      | Fetch unresolved review threads   | Returns threads with line info     |
+| `get-pr-discussion-comments`  | Fetch PR discussion comments      | Returns top-level comments         |
+| `resolve-review-thread`       | Reply AND resolve a single thread | Does both in one operation         |
+| `resolve-review-threads`      | Batch resolve multiple threads    | JSON stdin, one call for N threads |
+| `reply-to-discussion-comment` | Reply to discussion comment       | For non-code feedback              |
+| `post-pr-inline-comment`      | Post new inline comment           | Creates new review thread          |
+
+## When to Use Each Command
+
+### Fetching Comments
+
+```bash
+# Get all unresolved review threads (code comments)
+erk exec get-pr-review-comments
+
+# Get all discussion comments (top-level PR comments)
+erk exec get-pr-discussion-comments
+
+# Include resolved threads (for reference)
+erk exec get-pr-review-comments --all
+```
+
+### Resolving Review Threads
+
+```bash
+# Resolve a single thread
+erk exec resolve-review-thread --thread-id "PRRT_abc123" --comment "Fixed in commit abc1234"
+
+# Batch resolve multiple threads (preferred for pr-address batches)
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed"}, {"thread_id": "PRRT_def", "comment": "Applied"}]' | erk exec resolve-review-threads
+```
+
+### Replying to Discussion Comments
+
+```bash
+# For PR discussion comments (not code review threads)
+erk exec reply-to-discussion-comment --comment-id 12345 --reply "**Action taken:** Updated the docs as requested."
+```
+
+## Common Mistakes
+
+| Mistake                                        | Why It's Wrong                | Correct Approach                      |
+| ---------------------------------------------- | ----------------------------- | ------------------------------------- |
+| Using `gh api repos/.../comments/{id}/replies` | Only replies, doesn't resolve | Use `erk exec resolve-review-thread`  |
+| Using `gh pr comment`                          | Doesn't resolve threads       | Use `erk exec resolve-review-thread`  |
+| Skipping resolution for outdated threads       | Threads stay open in PR       | Always resolve, even if already fixed |
+| Generic replies like "Noted"                   | Not useful for PR history     | Include investigation findings        |
+
+## Replying vs Resolving
+
+&gt; **IMPORTANT: Replying ≠ Resolving**
+&gt;
+&gt; - **Replying** (via raw `gh api .../replies`): Adds a comment but thread stays OPEN
+&gt; - **Resolving** (via `erk exec resolve-review-thread`): Adds a comment AND marks thread as RESOLVED
+&gt;
+&gt; Always use `erk exec resolve-review-thread` (single) or `erk exec resolve-review-threads` (batch) - they do both in one operation.
+
+## Comment Classification Model
+
+When analyzing PR feedback, classify comments by complexity and group into batches.
+
+### Complexity Categories
+
+- **Local fix**: Single comment → single location change (e.g., "Fix typo", "Add type annotation")
+- **Multi-location**: Single comment → changes in multiple spots in one file
+- **Cross-cutting**: Single comment → changes across multiple files
+- **Related**: Multiple comments that inform a single unified change
+
+### Batch Ordering
+
+Process batches from simplest to most complex:
+
+| Batch | Complexity                 | Description                         | Example                                                   |
+| ----- | -------------------------- | ----------------------------------- | --------------------------------------------------------- |
+| 1     | Local fixes                | One file, one location per comment  | "Use LBYL pattern at line 42"                             |
+| 2     | Single-file multi-location | One file, multiple locations        | "Rename this variable everywhere in this file"            |
+| 3     | Cross-cutting              | Multiple files affected             | "Update all callers of this function"                     |
+| 4     | Complex/Related            | Multiple comments inform one change | "Fold validate into prepare" + "Use union types for this" |
+
+**Note**: Discussion comments requiring doc updates go in Batch 3 (cross-cutting).
+
+### Batch Confirmation Flow
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval
+
+## Inline Comment Deduplication
+
+When posting inline review comments, always deduplicate to prevent re-posting existing comments:
+
+1. **Build dedup key**: `(file_path, line_number, body_prefix)` where prefix is first 80 characters of comment body
+2. **Check proximity**: Match within 2-line tolerance (line 42 matches existing comments at lines 40–44)
+3. **Skip duplicates**: If a matching key exists, do not post the comment
+
+This prevents the same feedback from appearing multiple times across review iterations. See [Inline Comment Deduplication](../../docs/learned/review/inline-comment-deduplication.md) for full algorithm details.
+
+## Detailed Documentation
+
+For complete command documentation including JSON output formats, options, and examples:
+
+@references/commands.md
+</user>
+  <assistant>
+
+Now let me run the classifier in a separate agent context:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1502" cache_read_input_tokens="64845" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1502}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01XnqwPfKVccUCXZHawBvdSf">
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="description">Classify PR feedback</param>
+    <param name="prompt">Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+Return the complete JSON output as your final message.</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1502" cache_read_input_tokens="64845" output_tokens="157" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1502, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XnqwPfKVccUCXZHawBvdSf">
+**Step 3: Classify each comment**
+
+Now I'll classify the comments according to the Comment Classification Model:
+
+1. **Review Thread** (PRRT_kwDOPxC3hc5wsnM1):
+   - Author: github-actions (bot)
+   - Message: Suggests inlining the `is_ephemeral_branch` variable
+   - Classification: **Actionable** (bot suggestion to improve code clarity - optional/could)
+   - Complexity: **local** (single line change at specified location)
+
+2. **Discussion Comments**:
+   - Comment 3959796322 (schrockn): "Starting implementation" - **Informational** (acknowledgment)
+   - Comment 3959811914 (schrockn): Graphite stack comment - **Informational** (stack management)
+   - Comment 3959820538 (github-actions): Test Coverage Review - **Informational** (CI status)
+   - Comment 3959820989 (github-actions): Dignified Python Review - **Informational** (CI status)
+   - Comment 3959824123 (github-actions): Code Simplifier Review - **Actionable** (redundant variable extraction, optional refactoring)
+   - Comment 3959845475 (github-actions): Tripwires Review - **Informational** (CI status)
+
+**Step 4 &amp; 5: Group into batches and output JSON**
+
+```json
+{
+  "success": true,
+  "pr_number": 8178,
+  "pr_title": "Fix learn plan PRs being auto-closed when ephemeral base branch is deleted",
+  "pr_url": "https://github.com/dagster-io/erk/pull/8178",
+  "actionable_threads": [
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5wsnM1",
+      "type": "review",
+
+... [26 lines omitted] ...
+
+  "error": null
+  </tool_result>
+  <assistant>
+
+Got the classifier results. There's 1 actionable review thread (local fix, auto-proceed).
+
+## Execution Plan
+
+### Batch 1: Local Fixes (1 comment)
+| # | Location | Summary |
+|---|----------|---------|
+| 1 | plan_save.py:185 | Inline `is_ephemeral_branch` variable directly into if condition |
+
+Auto-proceeding with Batch 1...
+
+### Addressing Item #1
+
+The suggestion is to inline `is_ephemeral_branch` since it's only used once. Let me apply this:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1030" cache_read_input_tokens="66347" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1030}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01A9xq3qn7t3Stv9zgUxr4dj">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="offset">180</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1030" cache_read_input_tokens="66347" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1030}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01A9xq3qn7t3Stv9zgUxr4dj">
+   180→    # Determine base branch: use current branch if on a feature branch, otherwise trunk
+   181→    branch_manager = require_branch_manager(ctx)
+   182→    trunk = git.branch.detect_trunk_branch(repo_root)
+   183→    current_branch = git.branch.get_current_branch(repo_root)
+   184→
+   185→    is_ephemeral_branch = current_branch is not None and current_branch.startswith("learn/")
+   186→    if current_branch is not None and current_branch != trunk and not is_ephemeral_branch:
+   187→        # Stack plan branch on current feature branch for natural Graphite stacking
+   188→        base_branch = current_branch
+   189→        create_result = branch_manager.create_branch(repo_root, branch_name, current_branch)
+   190→    else:
+   191→        # On trunk or detached HEAD: create from origin/trunk
+   192→        base_branch = trunk
+   193→        git.remote.fetch_branch(repo_root, "origin", trunk)
+   194→        create_result = branch_manager.create_branch(repo_root, branch_name, f"origin/{trunk}")
+  </tool_result>
+  <tool_use name="Edit" id="toolu_015xDWUy4tdWeRHXzah26BV3">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="old_string">    is_ephemeral_branch = current_branch is not None and current_branch.startswith("learn/")
+    if current_branch is not None and current_branch != trunk and not is_ephemeral_branch:</param>
+    <param name="new_string">    if current_branch is not None and current_branch != trunk and not current_branch.startswith("learn/"):</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="575" cache_read_input_tokens="67377" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 575}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015xDWUy4tdWeRHXzah26BV3">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/src/erk/cli/commands/exec/scripts/plan_save.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me verify the tests still pass:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="291" cache_read_input_tokens="67952" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 291}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_011CXHcDjXnLps3cHtQ8L5o3">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run plan_save tests after inline fix</param>
+    <param name="prompt">Run `uv run pytest tests/unit/cli/commands/exec/scripts/test_plan_save.py -v --tb=short` and report results.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="291" cache_read_input_tokens="67952" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 291}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011CXHcDjXnLps3cHtQ8L5o3">
+pytest passed: 20 tests passed in 0.40s
+
+All tests in the plan_save test suite are passing.
+agentId: af05957c68c492f0e (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13708
+tool_uses: 1
+duration_ms: 3530&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 20 tests pass. Now let me commit and resolve the thread:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="235" cache_read_input_tokens="68243" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 235}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01QpqvRoSGvgK8osr6wnkaVo">
+    <param name="command">git add src/erk/cli/commands/exec/scripts/plan_save.py &amp;&amp; git commit -m "$(cat &lt;&lt;'EOF'
+Add...[truncated 16 chars]..._ephemeral_branch variable
+
+Co-Authored-By: Claude Opus 4.6 &lt;noreply@anthropic.com&gt;
+EOF
+)"</param>
+    <param name="description">Commit the inline variable fix</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="235" cache_read_input_tokens="68243" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 235}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QpqvRoSGvgK8osr6wnkaVo">
+[plnd/fix-learn-pr-ephemeral-bas-02-25-1449 8104267c2] Address PR review: inline single-use is_ephemeral_branch variable
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_011mbkj6AAeha9GYEJNcN1ec">
+    <param name="command">echo '[{"thread_id": "PRRT_kwDOPxC3hc5wsnM1", "comment": "Inlined single-use variable into the if condition."}]' | erk exec resolve-review-threads</param>
+    <param name="description">Resolve the review thread</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="245" cache_read_input_tokens="68478" output_tokens="127" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 245, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011mbkj6AAeha9GYEJNcN1ec">
+{
+  "success": true,
+  "results": [
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5wsnM1",
+      "comment_added": true
+    }
+  ]
+}
+  </tool_result>
+  <assistant>## Batch 1 Complete
+
+Addressed:
+- plan_save.py:185 - Inlined `is_ephemeral_branch` into the if condition
+
+Committed: `8104267c2` "Address PR review: inline single-use is_ephemeral_branch variable"
+
+Resolved threads: 1
+Remaining batches: 0
+
+### Phase 4: Final Verification</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="204" cache_read_input_tokens="68723" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 204}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01UhAb2zemTLGRXWTr6XrvGj">
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="description">Verify PR feedback resolved</param>
+    <param name="prompt">Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+Return the complete JSON output as your final message.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="204" cache_read_input_tokens="68723" output_tokens="236" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 204, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UhAb2zemTLGRXWTr6XrvGj">
+Now I'll classify the feedback according to the skill instructions:
+
+**Analysis:**
+
+1. **Review Comments**: There are no unresolved review threads (empty threads array)
+2. **Discussion Comments**: All 6 discussion comments are informational:
+   - Comment 1: Implementation start notification (informational)
+   - Comment 2: Graphite stack management comment (informational)
+   - Comment 3: Test coverage review bot - CI-generated acknowledgment (informational)
+   - Comment 4: Dignified Python review bot - no violations found (informational)
+   - Comment 5: Dignified Code Simplifier bot - found 1 violation but this is a review suggestion, not an actionable thread (informational)
+   - Comment 6: Tripwires review bot - no violations found (informational)
+
+Since there are no unresolved code review threads (which would be in `actionable_threads`), and all discussion comments are CI/bot acknowledgments (informational), the PR has no actionable feedback threads to classify.
+
+```json
+{
+  "success": true,
+  "pr_number": 8178,
+  "pr_title": "Fix learn plan PRs being auto-closed when ephemeral base branch is deleted",
+  "pr_url": "https://github.com/dagster-io/erk/pull/8178",
+  "actionable_threads": [],
+  "discussion_actions": [],
+  "informational_count": 6,
+  "batches": [],
+  "error": null
+}
+```
+agentId: a765d4e446240ba4f (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 25434
+
+... [2 lines omitted] ...
+  </tool_result>
+  <assistant>
+
+All threads resolved. Now let me push and update the PR:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="769" cache_read_input_tokens="68927" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 769}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GMooQepaG2zAVUNKXewxf7">
+    <param name="command">erk pr submit</param>
+    <param name="description">Push changes and update PR</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="769" cache_read_input_tokens="68927" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 769}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GMooQepaG2zAVUNKXewxf7">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01X1c4cxBu9sX4C5tNJcpNiv">
+    <param name="command">erk exec update-pr-description --session-id "e3aec60f-2005-4b3e-9a0a-0f9e535a8730"</param>
+    <param name="description">Update PR title and body from diff</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="120" cache_read_input_tokens="69696" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 120}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01X1c4cxBu9sX4C5tNJcpNiv">
+
+  </tool_result>
+  <assistant>## All PR Comments Addressed
+
+- **Total comments**: 1 actionable review thread
+- **Batches**: 1
+- **Commits**: 1
+
+All review threads resolved.
+
+**PR**: https://github.com/dagster-io/erk/pull/8178</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="142" cache_read_input_tokens="69816" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 142}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;local:all-ci&lt;/command-message&gt;
+&lt;command-name&gt;/local:all-ci&lt;/command-name&gt;</user>
+  <user>You are an implementation finalizer for comprehensive validation. Your task is to run `make all-ci` and iteratively fix any issues until all CI checks pass successfully.
+
+## Your Mission
+
+Run the full CI pipeline (`make all-ci`) from the repository root and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**Fast CI vs All CI**: The `all-ci` target runs both unit and integration tests, providing comprehensive validation before submitting code. Use `/fast-ci` for rapid development feedback with unit tests only.
+
+## CI Pipeline (make all-ci)
+
+The `make all-ci` target runs these checks in order:
+
+1. **lint** - Ruff linting checks
+2. **format-check** - Ruff code formatting checks
+3. **prettier-check** - Markdown formatting checks
+4. **md-check** - AGENTS.md standard compliance validation
+5. **ty** - Type checking
+6. **test-all** - Pytest test suite (unit + integration tests)
+7. **check** - Artifact synchronization validation
+
+## Iteration Process
+
+Load the `ci-iteration` skill for the iterative fix workflow.
+
+## Begin Now
+
+Start by using the Task tool with the devrun agent to run `make all-ci` from the repository root and begin the iterative fix process. Track your progress with TodoWrite and report your final status clearly.
+
+**Remember**:
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <tool_use name="Skill" id="toolu_01EyJMTqBcBBAYA4XbXydEpV">
+    <param name="skill">ci-iteration</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="580" cache_read_input_tokens="70023" output_tokens="55" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 580, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EyJMTqBcBBAYA4XbXydEpV">
+Launching skill: ci-iteration
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/.claude/skills/ci-iteration
+
+# CI Iteration
+
+## Overview
+
+Run the specified CI target and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**IMPORTANT**: All `make` commands must be run from the repository root directory. The Makefile is located at the root of the repository, not in subdirectories.
+
+## Sub-Agent Policy
+
+**CRITICAL**: When spawning sub-agents to run `make`, `pytest`, `ty`, `ruff`, `prettier`, or `gt` commands, you MUST use `devrun`:
+
+```
+Task tool with:
+- subagent_type: devrun  &lt;- MUST be devrun, NEVER general-purpose
+```
+
+**Why**: devrun has hard tool constraints (no Edit/Write) preventing destructive changes. The parent agent (you) processes reports and applies fixes - sub-agents only report.
+
+**FORBIDDEN**:
+
+- Spawning general-purpose or other sub-agents for make/pytest/ty/ruff/prettier/gt
+- Giving sub-agents prompts like "fix issues" or "iterate until passing"
+
+**REQUIRED**:
+
+- Sub-agents run ONE command and report results
+- Parent agent decides what to fix based on reports
+
+## Core Workflow
+
+### 1. Initial Run
+
+Use the devrun agent to run the specified make target from the repository root:
+
+```
+Task tool with:
+- subagent_type: devrun
+- description: "Run [make target] from repo root"
+- prompt: "Change to repository root and execute: [make target]"
+```
+
+### 2. Parse Failures
+
+Analyze the output to identify which check(s) failed:
+
+- **Ruff lint failures**: "ruff check" errors
+- **Format failures**: "ruff format --check" or files needing reformatting
+- **Prettier failures**: Markdown files needing formatting
+- **MD-check failures**: CLAUDE.md files not properly referencing AGENTS.md
+- **ty failures**: Type errors with file paths and line numbers
+- **Test failures**: pytest failures with test names and assertion errors
+
+### 3. Apply Targeted Fixes
+
+Based on failure type, apply appropriate fixes:
+
+| Failure Type | Fix Command                                 |
+| ------------ | ------------------------------------------- |
+| Ruff lint    | `make fix` via devrun                       |
+| Ruff format  | `make format` via devrun                    |
+| Prettier     | `make prettier` via devrun                  |
+| Sync-Kit     | `erk sync` directly                         |
+| MD-check     | Edit CLAUDE.md to contain only `@AGENTS.md` |
+| ty           | Edit files to fix type annotations          |
+| Tests        | Read and edit source/test files             |
+
+### 4. Verify and Repeat
+
+After applying fixes, run the make target again via devrun. Continue the cycle: run -&gt; identify failures -&gt; fix -&gt; verify.
+
+## Iteration Control
+
+**Safety Limits:**
+
+- **Maximum iterations**: 10 attempts
+- **Stuck detection**: If the same error appears 3 times in a row, stop
+- **Progress tracking**: Use TodoWrite to show iteration progress
+
+## Progress Reporting
+
+Use TodoWrite to track progress:
+
+```
+Iteration 1: Fixing lint errors
+Iteration 2: Fixing format errors
+Iteration 3: Fixing type errors in src/erk/cli/commands/switch.py
+Iteration 4: All checks passed
+```
+
+## When to Stop
+
+**SUCCESS**: Stop when the make target exits with code 0 (all checks passed)
+
+**STUCK**: Stop and report to user if:
+
+1. You've completed 10 iterations without success
+2. The same error persists after 3 fix attempts
+3. You encounter an error you cannot automatically fix
+
+## Reporting Formats
+
+### Success Format
+
+```markdown
+## Finalization Status: SUCCESS
+
+All CI checks passed after N iteration(s):
+
+(check) **Lint (ruff check)**: PASSED
+
+(check) **Format (ruff format --check)**: PASSED
+
+(check) **Prettier**: PASSED
+
+(check) **AGENTS.md Standard (md-check)**: PASSED
+
+(check) **ty**: PASSED
+
+(check) **Tests**: PASSED
+
+(check) **Sync-Kit (erk check)**: PASSED
+
+The code is ready for commit/PR.
+```
+
+**IMPORTANT**: Each check line MUST be separated by a blank line in the markdown output to render properly in the CLI.
+
+### Stuck Format
+
+```markdown
+## Finalization Status: STUCK
+
+I was unable to resolve the following issue after N attempts:
+
+**Check**: [lint/format/prettier/md-check/ty/test]
+
+**Error**:
+[Exact error message]
+
+**File**: [file path if applicable]
+
+**Attempted Fixes**:
+
+1. [What you tried first]
+2. [What you tried second]
+3. [What you tried third]
+
+**Next Steps**:
+[Suggest what needs to be done manually]
+```
+
+## Guidelines
+
+1. **Be systematic**: Fix one type of error at a time
+2. **Run full CI**: Always run the full make target, not individual checks
+3. **Use devrun agent**: Always use the Task tool with devrun agent for ALL make commands
+4. **Run from repo root**: Always ensure make commands execute from repository root
+5. **Track progress**: Use TodoWrite for every iteration
+6. **Don't guess**: Read files before making changes
+7. **Follow standards**: Adhere to AGENTS.md coding standards
+8. **Fail gracefully**: Report clearly when stuck
+9. **Be efficient**: Use targeted fixes (don't reformat everything for one lint error)
+
+## Example Flow
+
+```
+Iteration 1:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 5 lint errors, 2 files need formatting
+- Fix: Use Task tool with devrun agent to run make fix, then make format from repo root
+- Result: 3 lint errors remain
+
+Iteration 2:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 3 lint errors (imports)
+- Fix: Edit files to fix import issues
+- Result: All lint/format pass, 2 type errors
+
+Iteration 3:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 2 ty errors in switch.py:45 and switch.py:67
+- Fix: Add type annotations
+- Result: All checks pass
+
+SUCCESS
+```
+
+## Important Reminders
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <assistant>
+
+Let me run the full CI pipeline:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1701" cache_read_input_tokens="70603" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1701}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01NhGWVgzfDVViMbZ6iCwbgX">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run make all-ci from repo root</param>
+    <param name="prompt">Change to /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39 and run: make all-ci. Report the full output, especially any failures.</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1701" cache_read_input_tokens="70603" output_tokens="151" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1701, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NhGWVgzfDVViMbZ6iCwbgX">
+**make all-ci failed with exit code 2.**
+
+## Summary of Failures
+
+Two issues found during CI checks:
+
+### 1. **Lint Error: Line Too Long (E501)**
+**File:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/src/erk/cli/commands/exec/scripts/plan_save.py`
+
+**Location:** Line 185, column 101 (exceeds 100-character limit)
+
+```python
+if current_branch is not None and current_branch != trunk and not current_branch.startswith("learn/"):
+                                                                                                ^^^^^^
+```
+
+**Message:** Line too long (106 &gt; 100)
+
+### 2. **Format Check: File Needs Reformatting**
+**File:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/src/erk/cli/commands/exec/scripts/plan_save.py`
+
+**Message:** Would reformat: 1 file would be reformatted, 1567 files already formatted
+
+## Passing Checks
+- ✓ Prettier Check (all files properly formatted)
+- ✓ Markdown Check (AGENTS.md standard passed)
+- ✓ Docs Check (frontmatter and generated files in sync)
+- ✓ Exec Reference Check
+- ✓ Type Check (ty - all checks passed)
+- ✓ Unit Tests (114 passed, 3 warnings)
+
+... [6 lines omitted] ...
+
+The primary blocker is the linting error in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/src/erk/cli/commands/exec/scripts/plan_save.py` at line 185, which exceeds the 100-character line length limit.
+  </tool_result>
+  <assistant>The inlined condition exceeds the 100-character line limit. Let me fix that:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="656" cache_read_input_tokens="72304" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 656}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JHDCqExGhRFYsfu5PyVXz5">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="offset">183</param>
+    <param name="limit">8</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="656" cache_read_input_tokens="72304" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 656}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JHDCqExGhRFYsfu5PyVXz5">
+   183→    current_branch = git.branch.get_current_branch(repo_root)
+   184→
+   185→    if current_branch is not None and current_branch != trunk and not current_branch.startswith("learn/"):
+   186→        # Stack plan branch on current feature branch for natural Graphite stacking
+   187→        base_branch = current_branch
+   188→        create_result = branch_manager.create_branch(repo_root, branch_name, current_branch)
+   189→    else:
+   190→        # On trunk or detached HEAD: create from origin/trunk
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01ELZJi9h9qBCt6iWj1WUbWq">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="old_string">    if current_branch is not None and current_branch != trunk and not current_branch.startswith("learn/"):</param>
+    <param name="new_string">    is_stackable_branch = (
+        current_branch is not None
+        and current_branch != trunk
+        and not current_branch.startswith("learn/")
+    )
+    if is_stackable_branch:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="305" cache_read_input_tokens="72960" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 305}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ELZJi9h9qBCt6iWj1WUbWq">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/src/erk/cli/commands/exec/scripts/plan_save.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me re-run CI:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="403" cache_read_input_tokens="73265" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 403}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01TKJEgqSHQU7ho6aNW3uKd1">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Re-run make all-ci after line fix</param>
+    <param name="prompt">Change to /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39 and run: make all-ci. Report the full output, especially any failures.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="403" cache_read_input_tokens="73265" output_tokens="152" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 403, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TKJEgqSHQU7ho6aNW3uKd1">
+## make all-ci Results
+
+The CI pipeline **FAILED** due to a type checking error. Here's the summary:
+
+### Failures
+
+**ty (Type Checking) - 1 CRITICAL FAILURE**
+
+File: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/src/erk/cli/commands/exec/scripts/plan_save.py` at line 193
+
+```
+error[invalid-argument-type]: Argument to bound method `create_branch` is incorrect
+   --&gt; src/erk/cli/commands/exec/scripts/plan_save.py:193:78
+    |
+193 |         create_result = branch_manager.create_branch(repo_root, branch_name, current_branch)
+    |                                                                              ^^^^^^^^^^^^^^ Expected `str`, found `str | None`
+```
+
+**Root Cause:** The variable `current_branch` is typed as `str | None`, but the `create_branch` method requires a non-optional `str` parameter.
+
+**Method Signature:** 
+```python
+def create_branch(self, repo_root: Path, branch_name: str, base_branch: str) -&gt; BranchCreated | BranchAlreadyExists:
+```
+
+### Passing Checks
+
+- ✅ Lint: All checks passed
+- ✅ Format Check: 1568 files already formatted
+- ✅ Prettier Check: All matched files use Prettier code style
+
+... [10 lines omitted] ...
+
+- ✅ Unit Tests (erk): 114 passed, 3 warnings
+  </tool_result>
+  <assistant>Type error — `current_branch` is `str | None` but the extracted boolean doesn't narrow the type. I need to add an `assert` to satisfy the type checker:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="666" cache_read_input_tokens="73668" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 666}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EQiU3moUG1MNdQnCC2vcvz">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="offset">184</param>
+    <param name="limit">12</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="666" cache_read_input_tokens="73668" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 666}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EQiU3moUG1MNdQnCC2vcvz">
+   184→
+   185→    is_stackable_branch = (
+   186→        current_branch is not None
+   187→        and current_branch != trunk
+   188→        and not current_branch.startswith("learn/")
+   189→    )
+   190→    if is_stackable_branch:
+   191→        # Stack plan branch on current feature branch for natural Graphite stacking
+   192→        base_branch = current_branch
+   193→        create_result = branch_manager.create_branch(repo_root, branch_name, current_branch)
+   194→    else:
+   195→        # On trunk or detached HEAD: create from origin/trunk
+  </tool_result>
+  <assistant>The type checker can't narrow through a boolean variable. I need to restructure so the `is not None` check is directly in the `if`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="342" cache_read_input_tokens="74334" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 342}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GWYUSQgRHbYHeddFN8xd3f">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="old_string">    is_stackable_branch = (
+        current_branch is not None
+        and current_branch ...[truncated 198 chars]...      create_result = branch_manager.create_branch(repo_root, branch_name, current_branch)</param>
+    <param name="new_string">    if (
+        current_branch is not None
+        and current_branch != trunk
+        an...[truncated 152 chars]...      create_result = branch_manager.create_branch(repo_root, branch_name, current_branch)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="342" cache_read_input_tokens="74334" output_tokens="374" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 342, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GWYUSQgRHbYHeddFN8xd3f">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/src/erk/cli/commands/exec/scripts/plan_save.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Task" id="toolu_01KMrvQfdfLjbnoeDNjiH9xY">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Re-run make all-ci after type fix</param>
+    <param name="prompt">Change to /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39 and run: make all-ci. Report the full output, especially any failures.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="437" cache_read_input_tokens="74676" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 437}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KMrvQfdfLjbnoeDNjiH9xY">
+All CI checks passed successfully!
+
+**Summary:**
+
+- **Lint**: Passed
+- **Format Check**: 1568 files already formatted
+- **Prettier Check**: All matched files pass
+- **Markdown Check**: PASSED (CLAUDE.md/AGENTS.md files properly paired, 0 violations)
+- **Docs Check**: PASSED (521 files validated, 56 generated files in sync)
+- **Exec Reference Check**: OK
+- **Type Checking (ty)**: All checks passed
+- **Unit Tests (erk)**: 5383 passed in 10.82s
+- **Integration Tests (erk)**: 355 passed, 4 skipped in 8.68s
+- **Tests (erk-dev)**: 136 passed in 2.44s
+- **Tests (erk-statusline)**: 124 passed in 0.66s
+- **Tests (erkbot)**: 114 passed, 3 warnings in 0.86s (warnings are unawaited coroutines in test mocks, not actual failures)
+
+The entire test suite and CI pipeline completed successfully with no failures.
+agentId: ae1d7ab987d49bb59 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 17565
+tool_uses: 1
+duration_ms: 44946&lt;/usage&gt;
+  </tool_result>
+  <assistant>## Finalization Status: SUCCESS
+
+All CI checks passed after 3 iterations:
+
+✅ **Lint (ruff check)**: PASSED
+
+✅ **Format (ruff format --check)**: PASSED
+
+✅ **Prettier**: PASSED
+
+✅ **AGENTS.md Standard (md-check)**: PASSED
+
+✅ **Docs Check**: PASSED
+
+✅ **ty**: PASSED
+
+✅ **Unit Tests**: 5,383 passed
+
+✅ **Integration Tests**: 355 passed
+
+✅ **Dev/Statusline/Bot Tests**: 374 passed
+
+The code is ready. Let me commit and push the fix:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="473" cache_read_input_tokens="75113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 473}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XG7gkZYBGzHKVdV3NLvJ9J">
+    <param name="command">git add src/erk/cli/commands/exec/scripts/plan_save.py &amp;&amp; git commit -m "$(cat &lt;&lt;'EOF'
+Fix...[truncated 4 chars]...line if for type narrowing
+
+Co-Authored-By: Claude Opus 4.6 &lt;noreply@anthropic.com&gt;
+EOF
+)"</param>
+    <param name="description">Commit the line length and type fix</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="473" cache_read_input_tokens="75113" output_tokens="307" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 473, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XG7gkZYBGzHKVdV3NLvJ9J">
+[plnd/fix-learn-pr-ephemeral-bas-02-25-1449 f771a4cd9] Fix line length: use multi-line if for type narrowing
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01YaCvRXGEudQjjL91u2GXYR">
+    <param name="command">erk pr submit</param>
+    <param name="description">Push changes to PR</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="381" cache_read_input_tokens="75586" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 381}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YaCvRXGEudQjjL91u2GXYR">
+
+  </tool_result>
+  <assistant>All CI checks pass and changes are pushed. PR #8178 is ready for review.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="195" cache_read_input_tokens="75967" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 195}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;bash-input&gt;gt pr&lt;/bash-input&gt;</user>
+  <user>&lt;bash-stdout&gt;https://app.graphite.dev/github/pr/dagster-io/erk/8178&lt;/bash-stdout&gt;&lt;bash-stderr&gt;&lt;/bash-stderr&gt;</user>
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Goodbye!&lt;/local-command-stdout&gt;</user>
+</session>

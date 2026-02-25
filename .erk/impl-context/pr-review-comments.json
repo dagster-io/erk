@@ -1,0 +1,24 @@
+{
+  "success": true,
+  "pr_number": 8178,
+  "threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5wsnM1",
+      "path": "src/erk/cli/commands/exec/scripts/plan_save.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: Variable `is_ephemeral_branch` is extracted and used only once immediately on the next line. Per 'Declare Variables Close to Use', consider inlining this check directly into the if condition to reduce intermediate variable declarations and improve clarity.",
+          "created_at": "2026-02-25T14:53:06Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Inlined single-use variable into the if condition.\n\n_Addressed via `/erk:pr-address` at 2026-02-25 08:16 PST_",
+          "created_at": "2026-02-25T16:16:45Z"
+        }
+      ]
+    }
+  ]
+}
