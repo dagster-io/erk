@@ -9,7 +9,7 @@ read_when:
 tripwires:
   - action: "manually creating an erk-plan issue with gh issue create"
     warning: "Use `erk exec plan-save-to-issue --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section)."
-  - action: "saving a plan with --objective-issue flag"
+  - action: "saving a plan linked to an objective"
     warning: "Always verify the link was saved correctly with `erk exec get-plan-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives."
   - action: "implementing custom PR/plan relevance assessment logic"
     warning: "Reference `/local:check-relevance` verdict classification system first. Use SUPERSEDED (80%+ overlap), PARTIALLY_IMPLEMENTED (30-80% overlap), DIFFERENT_APPROACH, STILL_RELEVANT, NEEDS_REVIEW categories for consistency."
@@ -642,7 +642,7 @@ When implementing a plan that corresponds to an objective roadmap step, the work
 ### Marker-Based State Management
 
 1. **Create markers during planning:**
-   - `objective-context` marker: stores objective issue number (triggers exit-plan-mode hook to suggest correct save command)
+   - `objective-context` marker: stores objective issue number (read by plan-save to link the plan to its parent objective)
    - `roadmap-step` marker: stores step ID (e.g., "1C.2") for automatic roadmap updates
 
 2. **Automatic roadmap update on plan save:**

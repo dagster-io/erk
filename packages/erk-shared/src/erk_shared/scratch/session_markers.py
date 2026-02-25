@@ -52,8 +52,8 @@ def read_objective_context_marker(session_id: str, repo_root: Path) -> int | Non
     """Read objective issue number from session's objective-context marker.
 
     This reads the marker created by /erk:objective-plan to determine which
-    objective a plan is associated with. Used as a fallback in plan-save when
-    --objective-issue is not explicitly provided.
+    objective a plan is associated with. Both plan-save backends read this
+    marker as the sole mechanism for objective linking.
 
     Args:
         session_id: The session ID for the scratch directory.

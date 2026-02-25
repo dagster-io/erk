@@ -175,29 +175,54 @@ def test_planned_pr_plan_file_priority(tmp_path: Path, monkeypatch: pytest.Monke
     assert output["title"] == "[erk-plan] Custom Plan"
 
 
-def test_planned_pr_objective_issue_metadata(
+def test_planned_pr_objective_issue_from_marker(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """--objective-issue 123 includes in branch name, metadata, and ref.json."""
+    """Objective context marker links plan to objective via branch name, metadata, and ref.json."""
     fake_git = FakeGit(current_branches={tmp_path: "main"})
     ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
     runner = CliRunner()
 
+    # Create objective-context marker
+    session_id = "marker-session"
+    marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+    marker_dir.mkdir(parents=True)
+    (marker_dir / "objective-context.marker").write_text("123", encoding="utf-8")
+
     result = runner.invoke(
         plan_save,
-        ["--format", "json", "--objective-issue", "123", "--branch-slug", "test-slug"],
+        ["--format", "json", "--session-id", session_id, "--branch-slug", "test-slug"],
         obj=ctx,
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
-    output = json.loads(result.output)
+    # Parse JSON from output (skip stderr lines mixed in by CliRunner)
+    json_line = next(line for line in result.output.strip().splitlines() if line.startswith("{"))
+    output = json.loads(json_line)
     assert output["success"] is True
     # Branch name should include objective ID
     assert "O123" in output["branch_name"]
+    # objective_issue in JSON output
+    assert output["objective_issue"] == 123
     # ref.json content should include objective_id (via branch commit, no filesystem)
     assert len(fake_git.branch_commits) == 1
     ref_json = json.loads(fake_git.branch_commits[0].files[f"{IMPL_CONTEXT_DIR}/ref.json"])
     assert ref_json["objective_id"] == 123
+
+
+def test_planned_pr_no_objective_without_marker(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Without a marker, objective_issue is null in output."""
+    ctx = _planned_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
+    runner = CliRunner()
+
+    result = runner.invoke(plan_save, ["--format", "json", "--branch-slug", "test-slug"], obj=ctx)
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["objective_issue"] is None
 
 
 def test_planned_pr_does_not_checkout_branch(

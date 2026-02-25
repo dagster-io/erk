@@ -215,45 +215,34 @@ Enter plan mode to create the implementation plan:
 
 After the plan is approved in plan mode, the `exit-plan-mode-hook` will prompt to save or implement.
 
-**If the objective-context marker was created in Step 2:**
-The hook will automatically suggest the correct command with `--objective-issue=<objective-number>`. Simply follow the hook's suggestion.
+The objective-context marker created in Step 2 is automatically read by `/erk:plan-save`. Simply run `/erk:plan-save` and it will link the plan to the objective.
 
 **If the marker was not created (fallback):**
-Use the objective-aware save command manually:
+Create it manually before saving:
 
 ```bash
-/erk:plan-save --objective-issue=<objective-number>
+erk exec marker create --session-id "${CLAUDE_SESSION_ID}" --associated-objective <objective-number> objective-context
 ```
 
-Replace `<objective-number>` with the objective issue number from Step 2.
+Then run `/erk:plan-save`.
 
 This will:
 
 - Create a GitHub issue with the erk-plan label
-- Link it to the parent objective (stored in metadata)
+- Link it to the parent objective (stored in metadata, read from session marker)
 - Enable objective-aware landing via `/erk:land`
 
 ### Step 9: Verify Objective Link
 
-After the plan is approved in plan mode, the `exit-plan-mode-hook` will prompt to save or implement.
+After saving, the JSON output includes `objective_issue`. Check that it matches the expected objective number.
 
-**If the objective-context marker was created in Step 2:**
-The hook will automatically suggest `/erk:plan-save --objective-issue=<objective-number>`.
-
-When you run this command, it will:
-
-- Save the plan to GitHub with objective metadata
-- Automatically verify the objective link was saved correctly
-- Display "Verified objective link: #<number>" on success
-- Fail with remediation steps if verification fails
-
-**Note:** If using `erk exec plan-save` directly (not recommended), you must verify manually:
+If verification is needed:
 
 ```bash
-erk exec get-issue-body <new-issue-number>
+erk exec get-plan-metadata <new-issue-number> objective_issue
 ```
 
-Check the `body` field in the JSON response contains `objective_issue`.
+Check that `value` matches the expected objective number.
 
 ---
 

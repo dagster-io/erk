@@ -106,12 +106,12 @@ Reminders are opt-in via capability marker files in `.erk/capabilities/`.
 
 The exit-plan-mode hook uses marker files in `.erk/scratch/sessions/<session-id>/` for state management:
 
-| Marker                                     | Created By                     | Lifecycle | Effect When Present          |
-| ------------------------------------------ | ------------------------------ | --------- | ---------------------------- |
-| `exit-plan-mode-hook.plan-saved.marker`    | `plan-save-to-issue`           | Reusable  | Block exit, show "complete"  |
-| `exit-plan-mode-hook.implement-now.marker` | Agent (`erk exec marker`)      | One-time  | Allow exit                   |
-| `objective-context.marker`                 | `/erk:objective-plan`          | One-time  | Suggests `--objective-issue` |
-| `incremental-plan.marker`                  | `/local:incremental-plan-mode` | One-time  | Allow exit, skip save        |
+| Marker                                     | Created By                     | Lifecycle | Effect When Present                 |
+| ------------------------------------------ | ------------------------------ | --------- | ----------------------------------- |
+| `exit-plan-mode-hook.plan-saved.marker`    | `plan-save-to-issue`           | Reusable  | Block exit, show "complete"         |
+| `exit-plan-mode-hook.implement-now.marker` | Agent (`erk exec marker`)      | One-time  | Allow exit                          |
+| `objective-context.marker`                 | `/erk:objective-plan`          | One-time  | Read by plan-save to link objective |
+| `incremental-plan.marker`                  | `/local:incremental-plan-mode` | One-time  | Allow exit, skip save               |
 
 **Lifecycle semantics:**
 

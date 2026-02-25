@@ -386,10 +386,13 @@ After the user approves the plan in Plan Mode:
 1. Exit Plan Mode
 2. Run `/erk:plan-save` to create the new GitHub issue:
    - **If any source plan(s) had `erk-learn` label** (`IS_LEARN_PLAN=true`): Add `--plan-type=learn` to the command
-   - **If the source plan(s) had an `objective_issue`**: Pass it with `--objective-issue=<objective_number>`
+   - **If the source plan(s) had an `objective_issue`**: Create the objective-context marker before saving:
+     ```bash
+     erk exec marker create --session-id "${CLAUDE_SESSION_ID}" --associated-objective <objective_number> objective-context
+     ```
    - **If consolidating with conflicting objectives**: Use the objective chosen by the user in Step 2
    - **Otherwise**: Run `/erk:plan-save` without flags
-3. **If `--objective-issue` was used**, verify the link was saved correctly:
+3. **If an objective was linked** (marker was created), verify the link was saved correctly:
    ```bash
    erk exec get-plan-metadata <new_issue_number> objective_issue
    ```

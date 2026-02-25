@@ -57,13 +57,19 @@ Parse the JSON output. If `success` is not `true`, stop and report the error. Ot
 
 **If `$PLAN_ISSUE_NUMBER` is not set (empty):** Fall back to creating a new issue (backwards compatible for direct `erk one-shot` calls without pre-created skeleton):
 
+If the `$OBJECTIVE_ISSUE` environment variable is set (non-empty), create the objective-context marker before saving:
+
 ```bash
-erk exec plan-save --plan-file .impl/plan.md --format json --created-from-workflow-run-url "$WORKFLOW_RUN_URL"
+erk exec marker create --session-id "${CLAUDE_SESSION_ID}" --associated-objective $OBJECTIVE_ISSUE objective-context
+```
+
+Then run the save command:
+
+```bash
+erk exec plan-save --plan-file .impl/plan.md --format json --session-id="${CLAUDE_SESSION_ID}" --created-from-workflow-run-url "$WORKFLOW_RUN_URL"
 ```
 
 If the `WORKFLOW_RUN_URL` environment variable is not set, omit the `--created-from-workflow-run-url` flag.
-
-If the `$OBJECTIVE_ISSUE` environment variable is set (non-empty), add `--objective-issue $OBJECTIVE_ISSUE` to the command above to link the plan to its parent objective.
 
 Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, extract `plan_number` and `title` from the output.
 
