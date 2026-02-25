@@ -379,6 +379,33 @@ def test_planned_pr_feature_branch_creates_correct_pr_base(
     assert fake_github.created_prs[0][3] == "feature/my-work"
 
 
+def test_planned_pr_learn_branch_uses_trunk_as_base(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """When on a learn/ branch, the PR base is trunk (not the learn branch)."""
+    fake_git = FakeGit(
+        current_branches={tmp_path: "learn/8163"},
+        trunk_branches={tmp_path: "master"},
+    )
+    fake_github = FakeGitHub()
+    monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
+    ctx = context_for_test(
+        git=fake_git,
+        github=fake_github,
+        claude_installation=FakeClaudeInstallation.for_test(plans={"plan": VALID_PLAN_CONTENT}),
+        cwd=tmp_path,
+        repo_root=tmp_path,
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(plan_save, ["--format", "json", "--branch-slug", "test-slug"], obj=ctx)
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    # PR base should be trunk (master), not the ephemeral learn branch
+    assert len(fake_github.created_prs) == 1
+    assert fake_github.created_prs[0][3] == "master"
+
+
 # --- Title validation rejection tests (planned-PR path) ---
 
 # Plan content with no H1 heading → extract_title_from_plan returns "Untitled Plan"
