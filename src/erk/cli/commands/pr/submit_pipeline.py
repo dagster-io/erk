@@ -91,6 +91,7 @@ class SubmitState:
     plan_context: PlanContext | None
     title: str | None
     body: str | None
+    metadata_prefix: str
 
 
 @dataclass(frozen=True)
@@ -179,6 +180,17 @@ def commit_wip(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError
         ctx.git.commit.add_all(state.cwd)
         ctx.git.commit.commit(state.cwd, "WIP: Prepare for PR submission")
     return state
+
+
+def capture_metadata_prefix(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
+    """Extract plan-header metadata prefix from existing PR body before gt submit overwrites it."""
+    pr_result = ctx.github.get_pr_for_branch(state.repo_root, state.branch_name)
+    if isinstance(pr_result, PRNotFound):
+        return state
+    prefix = extract_metadata_prefix(pr_result.body)
+    if not prefix:
+        return state
+    return dataclasses.replace(state, metadata_prefix=prefix)
 
 
 def push_and_create_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
@@ -687,12 +699,8 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
     pr_body = state.body or ""
     pr_title = state.title or "Update"
 
-    # Extract metadata prefix from draft PR body
-    metadata_prefix = ""
-    if state.pr_number is not None:
-        existing_pr = ctx.github.get_pr(state.repo_root, state.pr_number)
-        if not isinstance(existing_pr, PRNotFound):
-            metadata_prefix = extract_metadata_prefix(existing_pr.body)
+    # Use pre-captured metadata prefix (captured before gt submit overwrites PR body)
+    metadata_prefix = state.metadata_prefix
 
     # Check learn plan label
     impl_dir = state.cwd / ".impl"
@@ -803,6 +811,7 @@ def _push_and_create_pipeline() -> tuple[SubmitStep, ...]:
     return (
         prepare_state,
         commit_wip,
+        capture_metadata_prefix,
         push_and_create_pr,
     )
 
@@ -831,6 +840,7 @@ def _submit_pipeline() -> tuple[SubmitStep, ...]:
     return (
         prepare_state,
         commit_wip,
+        capture_metadata_prefix,
         push_and_create_pr,
         extract_diff,
         fetch_plan_context,
@@ -896,4 +906,5 @@ def make_initial_state(
         plan_context=None,
         title=None,
         body=None,
+        metadata_prefix="",
     )

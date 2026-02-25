@@ -21,7 +21,10 @@ from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
-from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+from erk_shared.plan_store.planned_pr_lifecycle import (
+    build_plan_stage_body,
+    extract_metadata_prefix,
+)
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 
@@ -47,6 +50,7 @@ def _make_state(
     plan_context: PlanContext | None = None,
     title: str | None = "My PR Title",
     body: str | None = "My PR body",
+    metadata_prefix: str = "",
 ) -> SubmitState:
     return SubmitState(
         cwd=cwd,
@@ -70,6 +74,7 @@ def _make_state(
         plan_context=plan_context,
         title=title,
         body=body,
+        metadata_prefix=metadata_prefix,
     )
 
 
@@ -317,7 +322,12 @@ def test_finalize_pr_planned_pr_backend_extracts_metadata(tmp_path: Path) -> Non
         plan_store=PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime()),
         cwd=tmp_path,
     )
-    state = _make_state(cwd=tmp_path, title="Implement feature", body="Summary of work")
+    state = _make_state(
+        cwd=tmp_path,
+        title="Implement feature",
+        body="Summary of work",
+        metadata_prefix=extract_metadata_prefix(pr_body),
+    )
 
     result = finalize_pr(ctx, state)
 
@@ -537,6 +547,7 @@ def test_updates_lifecycle_stage_for_draft_pr_backend(tmp_path: Path) -> None:
         body="Summary of work",
         plan_context=None,
         issue_number=None,
+        metadata_prefix=extract_metadata_prefix(pr_body),
     )
 
     result = finalize_pr(ctx, state)
