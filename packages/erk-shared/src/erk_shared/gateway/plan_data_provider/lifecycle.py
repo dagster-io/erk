@@ -207,6 +207,10 @@ def _build_indicators(
     # Build indicator suffix — all emojis go on the right for consistency
     indicators: list[str] = []
 
+    # Stacked PR indicator — first, before all other indicators
+    if is_stacked is True:
+        indicators.append("🥞")
+
     # Draft/published indicator for active stages
     if is_active_stage and is_draft is not None:
         indicators.append("🚧" if is_draft else "👀")
@@ -223,13 +227,11 @@ def _build_indicators(
                 indicators.append("❌")
 
     # Ready-to-land indicator for impl stage:
-    # draft, conflicts and changes-requested mean the PR is not landable
-    if (
-        is_impl
-        and is_draft is not True
-        and has_conflicts is not True
-        and review_decision != "CHANGES_REQUESTED"
-    ):
+    # shown only when checks pass, no unresolved comments, and no blocking indicators
+    # (🥞, 👀, and ✔ are informational and should not block 🚀)
+    _non_blocking = {"🥞", "👀", "✔"}
+    has_blocking_indicators = any(i not in _non_blocking for i in indicators)
+    if is_impl and not has_blocking_indicators:
         if checks_passing is True and has_unresolved_comments is not True:
             indicators.append("🚀")
 
