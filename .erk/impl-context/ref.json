@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Documentation Plan: Remove plan CLI group and relocate duplicate-check to pr group"
+}
