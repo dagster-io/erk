@@ -1,0 +1,384 @@
+{
+  "success": true,
+  "pr_number": 8128,
+  "threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5wkDzz",
+      "path": "docs/learned/architecture/roadmap-mutation-semantics.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: \"`--pr \"#123\"` \u2192 Written Status: `done`\"\nReality: The `update_node_in_frontmatter()` function infers `in_progress` when a PR is set (not `done`). The code at `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py:340` shows: `new_status = cast(RoadmapNodeStatus, \"in_progress\")` \u2014 this is the elif branch triggered when `resolved_pr` is truthy. Setting `--status done` explicitly is required to get `done` status.\n\nSource: `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py:338-340`\n\nSuggested fix: Change the table row to show `in_progress` for `--pr \"#123\"` without explicit status. The `done` status only occurs when `--status done` is passed explicitly. This also contradicts `roadmap-status-system.md` line 47 which correctly says PR inference \u2192 `in_progress`.",
+          "created_at": "2026-02-25T03:02:28Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed in 7ab7c465a: Updated inference rule description from done to in_progress to match update_node_in_frontmatter() source.\n\n_Addressed via `/erk:pr-address` at 2026-02-25 03:24 UTC_",
+          "created_at": "2026-02-25T03:24:15Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wkD3f",
+      "path": "docs/learned/architecture/roadmap-mutation-semantics.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: \"2. **PR is set** \u2192 status = `\"done\"`\"\nReality: The source code at `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py:340` explicitly sets `new_status = cast(RoadmapNodeStatus, \"in_progress\")` when a PR is set without an explicit status. The inferred status is `in_progress`, not `done`.\n\nSource: `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py:338-342`\n\nSuggested fix: Change to: \"2. **PR is set** \u2192 status = `\"in_progress\"`\"",
+          "created_at": "2026-02-25T03:02:35Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed in 7ab7c465a: Changed \"done\" to \"in_progress\" to match source code at roadmap.py:340.\n\n_Addressed via `/erk:pr-address` at 2026-02-25 03:24 UTC_",
+          "created_at": "2026-02-25T03:24:13Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wkD7A",
+      "path": "docs/learned/architecture/roadmap-mutation-semantics.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: \"update-objective-node `--pr \"#123\"` \u2192 Result Status: `done`\"\nReality: Per `update_node_in_frontmatter()` in `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py:340`, setting `--pr \"#123\"` without explicit `--status` infers `in_progress`, not `done`.\n\nSource: `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py:338-340`\n\nSuggested fix: Change `done` to `in_progress` in this row. This table directly contradicts `roadmap-status-system.md` line 47 which correctly documents the inference as `in_progress`.",
+          "created_at": "2026-02-25T03:02:45Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed in 7ab7c465a: Corrected table row \u2014 --pr \"#123\" now shows in_progress, not done.\n\n_Addressed via `/erk:pr-address` at 2026-02-25 03:24 UTC_",
+          "created_at": "2026-02-25T03:24:17Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wkP0u",
+      "path": "docs/learned/architecture/roadmap-mutation-semantics.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: Table row showing `--status in_progress` (without `--pr`) as a valid usage pattern.\nReality: The `--pr` flag is `required=True` in the Click command at `src/erk/cli/commands/exec/scripts/update_objective_node.py:195`. The command will fail with a missing option error if `--pr` is omitted. This table row implies `--status` can be used standalone, which is incorrect.\n\nSource: `src/erk/cli/commands/exec/scripts/update_objective_node.py:192-197`\n\nSuggested fix: Remove the `--status in_progress` standalone row, or note that `--pr` is always required (even if set to `'''`).",
+          "created_at": "2026-02-25T03:31:44Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed: replaced standalone `--status in_progress` row with `--pr \"#123\" --status in_progress` since --pr is required=True\n\n_Addressed via `/erk:pr-address` at 2026-02-24 21:03 PST_",
+          "created_at": "2026-02-25T05:03:26Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wk8JZ",
+      "path": "docs/learned/architecture/roadmap-mutation-semantics.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Drift risk \u2014 private function name in prose.\n\nClaim: \"The update command uses `_replace_node_refs_in_body()` to update the YAML frontmatter\"\nIssue: Per learned-docs-core.md content rules: \"Private `_underscore` methods must never appear \u2014 they are the most volatile identifiers in a codebase and their behavior belongs in docstrings, not learned docs.\"\n\nSource: `src/erk/cli/commands/exec/scripts/update_objective_node.py, _replace_node_refs_in_body`\n\nSuggested fix: Remove the private function name from prose. Replace with: \"The update command updates the YAML frontmatter (source of truth), then re-renders the comment table via `rerender_comment_roadmap()`\" \u2014 `rerender_comment_roadmap` is a public function and appropriate to name.",
+          "created_at": "2026-02-25T05:07:17Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed in b7d83ffbc \u2014 removed private `_replace_node_refs_in_body()` from prose, now describes the operation and references public `rerender_comment_roadmap()`.\n\n_Addressed via `/erk:pr-address` at 2026-02-24 21:13 PST_",
+          "created_at": "2026-02-25T05:13:27Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wlRlN",
+      "path": "docs/learned/architecture/roadmap-mutation-semantics.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: `--pr \"\"` \u2192 Written Status: `pending`\nReality: When `pr=\"\"` is passed, `update_node_in_frontmatter()` resolves `resolved_pr = None` (clears it), then falls to `else: new_status = step.status` \u2014 preserving the **existing** status, not forcing `pending`. A node with `status: done` that has its PR cleared would remain `done`.\n\nSource: `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, update_node_in_frontmatter` (lines 335-342)\n\nSuggested fix: Change table row to: `--pr \"\"` \u2192 `(preserved)` | `(cleared)`. If the intent is to set `pending` when clearing PR, add `elif pr == \"\" and resolved_pr is None: new_status = \"pending\"` to the gateway code and update the test `test_clear_pr_reference` accordingly.",
+          "created_at": "2026-02-25T05:45:32Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed in 082f15fbc \u2014 changed `pending` to `(preserved)` in the status table to match actual code behavior (line 342 of roadmap.py: `new_status = step.status`).\n\n_Addressed via `/erk:pr-address` at 2026-02-25 01:39 PST_",
+          "created_at": "2026-02-25T09:39:56Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wkECN",
+      "path": "docs/learned/architecture/roadmap-mutation-semantics.md",
+      "line": 14,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Tripwires Review**: Tripwire removed from frontmatter without running `erk docs sync` - The PR removes a tripwire from the `tripwires:` section in frontmatter (the \"setting PR reference without providing --plan\" tripwire), but did not regenerate the category tripwire files. According to docs/learned/documentation/frontmatter-tripwire-format.md: \"Any change to title, read_when, or tripwires fields in frontmatter affects generated files. The sync pipeline must run before committing.\" Please run `erk docs sync` to regenerate docs/learned/architecture/tripwires.md and docs/learned/tripwires-index.md.",
+          "created_at": "2026-02-25T03:03:03Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Verified: erk docs sync was already run in commit dde73fc91. Re-ran to confirm \u2014 all files up to date.\n\n_Addressed via `/erk:pr-address` at 2026-02-25 03:24 UTC_",
+          "created_at": "2026-02-25T03:24:11Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wkD-Q",
+      "path": "docs/learned/cli/commands/update-objective-node.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: \"`--pr #123` \u2192 Written Status: `done`, Why: PR reference indicates landed work\"\nReality: `update_node_in_frontmatter()` infers `in_progress` (not `done`) when a PR is set. See `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py:339-340`:\n`elif resolved_pr: new_status = cast(RoadmapNodeStatus, \"in_progress\")`\n\nThis also contradicts:\n- `roadmap-status-system.md` line 47: \"PR reference means work is in flight (use --status done to confirm merged)\"\n- `roadmap-status-system.md` line 70: \"PR reference alone infers `in_progress` (not `done`)\\",
+          "created_at": "2026-02-25T03:02:53Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed in 7ab7c465a: Updated table to show in-progress for --pr #123 and changed \"landed work\" to \"active work\" in description.\n\n_Addressed via `/erk:pr-address` at 2026-02-25 03:24 UTC_",
+          "created_at": "2026-02-25T03:24:19Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wkPsd",
+      "path": "docs/learned/cli/commands/update-objective-node.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: `erk exec update-objective-node <ISSUE_NUMBER> --node <STEP_ID> --status in_progress` (without --pr)\nReality: The `--pr` flag is `required=True` in the Click command definition at `src/erk/cli/commands/exec/scripts/update_objective_node.py:195`. Running this command without `--pr` will fail with a Click missing option error.\n\nSource: `src/erk/cli/commands/exec/scripts/update_objective_node.py:192-197`\n\nSuggested fix: Remove the \"set status only\" example, or update it to include `--pr` (e.g., `--pr '' --status in_progress` if clearing PR while setting status, or just `--pr '#123'` to set both PR and status).",
+          "created_at": "2026-02-25T03:31:29Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed: updated usage pattern and examples to always include --pr (required=True). Removed set-status-only example.\n\n_Addressed via `/erk:pr-address` at 2026-02-24 21:03 PST_",
+          "created_at": "2026-02-25T05:03:29Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wkPwD",
+      "path": "docs/learned/cli/commands/update-objective-node.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: \"Both `update-objective-node` and `erk objective check` use `parse_roadmap_frontmatter()` from `erk_shared.gateway.github.metadata.roadmap`\"\nReality: `update_objective_node.py` imports and uses `parse_roadmap()`, not `parse_roadmap_frontmatter()`. See the import at line 58 and usage at lines 122, 243.\n\nSource: `src/erk/cli/commands/exec/scripts/update_objective_node.py:58`\n\nSuggested fix: Change `parse_roadmap_frontmatter()` to `parse_roadmap()`.",
+          "created_at": "2026-02-25T03:31:37Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed: changed parse_roadmap_frontmatter() to parse_roadmap() to match actual import in update_objective_node.py\n\n_Addressed via `/erk:pr-address` at 2026-02-24 21:03 PST_",
+          "created_at": "2026-02-25T05:03:30Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wlRsI",
+      "path": "docs/learned/cli/commands/update-objective-node.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: `--pr \"\"` \u2192 Written Status: `pending` / \"Clear PR reference resets status\"\nReality: Per `update_node_in_frontmatter()` in `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py` (lines 335-342): when PR is cleared (`resolved_pr = None`), the status inference falls to `else: new_status = step.status` \u2014 **preserving existing status**, not forcing `pending`.\n\nSource: `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, update_node_in_frontmatter`\n\nSame issue also appears at lines 72-73, 140. Suggested fix: Update all three table rows and the comment `# Clear PR reference (resets to pending)` to reflect that status is preserved, not reset to pending. If `pending` is the intended behavior, the gateway code should be updated to force it.",
+          "created_at": "2026-02-25T05:45:44Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed in 082f15fbc \u2014 updated all three locations (lines 39, 72-73, 140) to show `(preserved)` instead of `pending` and corrected the comment from \"resets to pending\" to \"preserves existing status\".\n\n_Addressed via `/erk:pr-address` at 2026-02-25 01:39 PST_",
+          "created_at": "2026-02-25T09:39:59Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5woseX",
+      "path": "docs/learned/cli/commands/update-objective-node.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: `# Single step -- set PR reference (marks done)`\nReality: Setting `--pr <ref>` without `--status done` marks the step `in_progress`, not done. The status computation table immediately above (lines 36-39) correctly shows this: `--pr #123` \u2192 `in-progress`. Only `--pr #123 --status done` produces `done`.\n\nSource: `src/erk/cli/commands/exec/scripts/update_objective_node.py`\n\nSuggested fix: Change the comment to `# Single step -- link PR reference (marks in_progress)` or `# Single step -- set PR reference`.",
+          "created_at": "2026-02-25T10:29:45Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed in f5b907f: Changed comment to \"marks in_progress\" since --pr without --status done marks the step in_progress, not done.\n\n_Addressed via `/erk:pr-address` at 2026-02-25 10:31 UTC_",
+          "created_at": "2026-02-25T10:31:55Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5woWaI",
+      "path": "docs/learned/objectives/objective-lifecycle.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: \"Calls `erk exec update-objective-node <objective> --node <step-id> --pr \"#<plan-number>\" --status planning`\"\nReality: The current `.claude/commands/erk/plan-save.md` uses `--pr \"\" --status in_progress` (empty PR, clearing the field, with in_progress status) \u2014 not `--pr \"#<plan-number>\" --status planning`.\n\nSource: `.claude/commands/erk/plan-save.md`\n\nSuggested fix: Update to reflect the actual plan-save command:\n```\nCalls `erk exec update-objective-node <objective> --node <step-id> --pr \"\" --status in_progress`\n```",
+          "created_at": "2026-02-25T10:06:54Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed in c5135d0c0 \u2014 updated to `--pr \"\" --status in_progress` to match actual plan-save.md command.\n\n_Addressed via `/erk:pr-address` at 2026-02-25 02:24 PST_",
+          "created_at": "2026-02-25T10:24:25Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5woWjA",
+      "path": "docs/learned/objectives/objective-lifecycle.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: \"update-objective-node: set pr=\"#N\" --status planning\" and \"Roadmap shows plan # in PR column\"\nReality: The current `.claude/commands/erk/plan-save.md` uses `--pr \"\" --status in_progress`, which clears the PR field rather than setting a plan number. The PR column is not used to store plan references in the new model.\n\nSource: `.claude/commands/erk/plan-save.md`\n\nSuggested fix: Update the data flow diagram step to:\n```\nupdate-objective-node: --pr \"\" --status in_progress\n  \u2193\nRoadmap shows in_progress status for the step\n```",
+          "created_at": "2026-02-25T10:07:02Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed in c5135d0c0 \u2014 updated data flow diagram to `--pr \"\" --status in_progress` and changed description to \"Roadmap shows in-progress status\".\n\n_Addressed via `/erk:pr-address` at 2026-02-25 02:24 PST_",
+          "created_at": "2026-02-25T10:24:28Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wosqm",
+      "path": "docs/learned/objectives/objective-lifecycle.md",
+      "line": 265,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected (pre-existing issue surfaced by full-doc audit on touch).\n\nClaim at line 278: \"Mutations update both atomically via `update-roadmap-step`\"\nReality: The command is `update-objective-node` (not `update-roadmap-step`). `update-roadmap-step` was a prior name that no longer exists \u2014 confirmed by grep across the codebase.\n\nSource: `src/erk/cli/commands/exec/scripts/update_objective_node.py`\n\nSuggested fix: Change `update-roadmap-step` to `update-objective-node` at line 278.",
+          "created_at": "2026-02-25T10:29:57Z"
+        },
+        {
+          "author": "github-actions",
+          "body": "Fixed in f5b907f: Changed stale \"update-roadmap-step\" to \"update-objective-node\".\n\n_Addressed via `/erk:pr-address` at 2026-02-25 10:31 UTC_",
+          "created_at": "2026-02-25T10:31:57Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wlQfL",
+      "path": "docs/learned/objectives/objective-lifecycle.md",
+      "line": 295,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claims detected in this document (pre-existing issues surfaced by full-doc audit on touch).\n\nMultiple sections describe a `plan` field on roadmap nodes that no longer exists in the PR-only model:\n- Lines 118, 123, 128: YAML examples include `plan: null`\n- Line 200 (Surgical Update flow): \"Update `plan`/`pr` fields\"\n- Lines 211, 213: Usage examples with `--pr \"plan #6464\"` and status inference from `plan #`\n- Line 250: `plan-save.md Step 3.5` still uses `--pr \"plan #<plan-number>\"`\n- Line 266: Frontmatter schema includes `plan: null # Optional...`\n- Line 362: Flow diagram shows `set pr=\"plan #N\"`\n\nReality: `RoadmapNode` no longer has a `plan` field (removed in this PR). The schema is now 4-column (Node/Description/Status/PR).\n\nSource: `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, RoadmapNode`\n\nSuggested fix: Remove all `plan:` field references from YAML examples, update the surgical update flow to remove step 4's \"plan\" mention, update usage examples and flow diagram.",
+          "created_at": "2026-02-25T05:43:27Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed in 082f15fbc \u2014 removed all stale `plan:` field references: YAML examples (lines 118/123/128), mutation flow step 4, usage examples (replaced `plan #` with `--status planning`), frontmatter schema, and data flow diagram.\n\n_Addressed via `/erk:pr-address` at 2026-02-25 01:40 PST_",
+          "created_at": "2026-02-25T09:40:02Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wlQjy",
+      "path": "docs/learned/objectives/objective-lifecycle.md",
+      "line": 433,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: Output format includes `\"matched_steps\": [...]` removed in this diff, but the JSON example still shows the output format without updating the prose description fully.\n\nThis section was updated in this PR (`-    \"matched_steps\": [...],`) \u2014 the deletion is correct. No further action needed on this specific hunk.\n\nHowever, see the broader comment at line 299 about other stale `plan`-field references in this document that were not addressed in this PR.",
+          "created_at": "2026-02-25T05:43:36Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Acknowledged \u2014 the matched_steps removal is intentional as part of the PR-only model simplification.\n\n_Addressed via `/erk:pr-address` at 2026-02-25 01:41 PST_",
+          "created_at": "2026-02-25T09:41:03Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wkQMM",
+      "path": "docs/learned/objectives/roadmap-mutation-patterns.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: \"2. Updates the `_replace_node_refs_in_body()` regex pattern in the YAML block\"\nReality: This step description is garbled. `_replace_node_refs_in_body()` is not a \"regex pattern in the YAML block\" \u2014 it is the function called to update the YAML frontmatter (which internally calls `update_node_in_frontmatter()`). Step 1 already covers the YAML update. This step reads like an editing artifact.\n\nSource: `src/erk/cli/commands/exec/scripts/update_objective_node.py:130-186`\n\nSuggested fix: Remove step 2 entirely, or replace with something accurate like \"2. Serializes updated YAML back into the metadata block and replaces it in the issue body\".",
+          "created_at": "2026-02-25T03:32:22Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed: replaced garbled step 2 with accurate description: \"Serializes the updated YAML back into the metadata block and replaces it in the issue body\"\n\n_Addressed via `/erk:pr-address` at 2026-02-24 21:03 PST_",
+          "created_at": "2026-02-25T05:03:32Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5woVfd",
+      "path": "docs/learned/objectives/roadmap-mutation-patterns.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Tripwires Review**: Private function `_replace_table_in_text` referenced in prose\n\nPer docs/learned/architecture/roadmap-mutation-semantics.md tripwire (line 239 of docs/learned/architecture/tripwires.md): 'Private `_underscore` methods must never appear in learned docs \u2014 they are the most volatile identifiers in a codebase.'\n\nThis line reads: 'This replaced the previous approach of per-node regex patching (`_replace_table_in_text`), which was fragile...'\n\nSuggested fix: Remove the function name entirely. Replace with: 'This replaced the previous approach of per-node regex patching, which was fragile and couldn't handle column layout changes.'",
+          "created_at": "2026-02-25T10:05:58Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed in c5135d0c0 \u2014 removed private function name `_replace_table_in_text` from prose.\n\n_Addressed via `/erk:pr-address` at 2026-02-25 02:24 PST_",
+          "created_at": "2026-02-25T10:24:21Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wlHC0",
+      "path": "docs/learned/objectives/roadmap-status-system.md",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Drift risk \u2014 private function name in source pointer.\n\nSource: `src/erk/cli/commands/exec/scripts/update_objective_node.py, _replace_node_refs_in_body`\n\nPer learned-docs-core.md: \"Private `_underscore` methods must never appear \u2014 they are the most volatile identifiers in a codebase and their behavior belongs in docstrings, not learned docs.\"\n\nThe source pointer at this line names the private function `_replace_node_refs_in_body`. While the function still exists, private functions are the most volatile identifiers and should never appear in docs.\n\nSuggested fix: Replace with a name-based pointer to the public function or module level:\n```markdown\n<!-- Source: src/erk/cli/commands/exec/scripts/update_objective_node.py, update_objective_node -->\n```",
+          "created_at": "2026-02-25T05:26:21Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed \u2014 replaced private `_replace_node_refs_in_body` with public `update_objective_node` in source pointer.\n\n_Addressed via `/erk:pr-address` at 2026-02-24 21:31 PST_",
+          "created_at": "2026-02-25T05:31:38Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5woViB",
+      "path": "tests/unit/cli/commands/exec/scripts/test_update_objective_node.py",
+      "line": null,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Tripwires Review**: Private function `_replace_node_refs_in_body` referenced in test docstring\n\nPer docs/learned/architecture/roadmap-mutation-semantics.md guidance: 'Private `_underscore` methods must never appear in learned docs \u2014 they are the most volatile identifiers in a codebase.'\n\nWhile test code has more flexibility than learned docs, test docstrings should describe behavior, not implementation details. This docstring reads: '`_replace_node_refs_in_body` with new_pr=None preserves existing PR.'\n\nSuggested fix: Replace with behavior-focused description: 'Passing new_pr=None to the update function preserves existing PR reference.' This remains accurate even if the internal function is renamed or refactored.",
+          "created_at": "2026-02-25T10:06:00Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed in c5135d0c0 \u2014 replaced private function name `_replace_node_refs_in_body` with behavior-focused description: \"Passing new_pr=None to the update function preserves existing PR reference.\"\n\n_Addressed via `/erk:pr-address` at 2026-02-25 02:24 PST_",
+          "created_at": "2026-02-25T10:24:23Z"
+        }
+      ]
+    }
+  ]
+}
