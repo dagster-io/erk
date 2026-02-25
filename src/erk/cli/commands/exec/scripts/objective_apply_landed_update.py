@@ -32,7 +32,6 @@ from erk.cli.commands.exec.scripts.objective_post_action_comment import (
 from erk.cli.commands.exec.scripts.update_objective_node import (
     _find_node_refs,
     _replace_node_refs_in_body,
-    _replace_table_in_text,
 )
 from erk_shared.context.helpers import (
     require_cwd,
@@ -48,6 +47,7 @@ from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
     extract_metadata_value,
 )
+from erk_shared.gateway.github.metadata.roadmap import rerender_comment_roadmap
 from erk_shared.gateway.github.types import BodyText, PRNotFound
 from erk_shared.objective_apply_landed_update_result import (
     ApplyLandedUpdateErrorDict,
@@ -71,7 +71,6 @@ def _update_nodes_in_body(
     body: str,
     matched_steps: list[str],
     *,
-    plan_ref: str,
     pr_ref: str,
 ) -> tuple[str, list[NodeUpdateDict]]:
     """Update all matched nodes to done with PR reference.
@@ -82,14 +81,13 @@ def _update_nodes_in_body(
     updated_body = body
 
     for node_id in matched_steps:
-        previous_plan, previous_pr, found = _find_node_refs(updated_body, node_id)
+        previous_pr, found = _find_node_refs(updated_body, node_id)
         if not found:
             continue
 
         new_body = _replace_node_refs_in_body(
             updated_body,
             node_id,
-            new_plan=plan_ref,
             new_pr=pr_ref,
             explicit_status="done",
         )
@@ -100,7 +98,6 @@ def _update_nodes_in_body(
         node_updates.append(
             NodeUpdateDict(
                 node_id=node_id,
-                previous_plan=previous_plan,
                 previous_pr=previous_pr,
             )
         )
@@ -112,12 +109,8 @@ def _update_comment_table(
     issues: GitHubIssues,
     repo_root: Path,
     updated_body: str,
-    matched_steps: list[str],
-    *,
-    plan_ref: str,
-    pr_ref: str,
 ) -> None:
-    """Update the markdown table in the objective-body comment (v2 format)."""
+    """Re-render the markdown table in the objective-body comment from YAML (v2 format)."""
     objective_comment_id = extract_metadata_value(
         updated_body, "objective-header", "objective_comment_id"
     )
@@ -125,19 +118,9 @@ def _update_comment_table(
         return
 
     comment_body = issues.get_comment_by_id(repo_root, objective_comment_id)
-    updated_comment = comment_body
-    for node_id in matched_steps:
-        result = _replace_table_in_text(
-            updated_comment,
-            node_id,
-            new_plan=plan_ref,
-            new_pr=pr_ref,
-            explicit_status="done",
-        )
-        if result is not None:
-            updated_comment = result
+    updated_comment = rerender_comment_roadmap(updated_body, comment_body)
 
-    if updated_comment != comment_body:
+    if updated_comment is not None and updated_comment != comment_body:
         issues.update_comment(repo_root, objective_comment_id, updated_comment)
 
 
@@ -166,6 +149,12 @@ def _update_comment_table(
     default=None,
     help="Plan number (direct lookup, skips branch-based discovery)",
 )
+@click.option(
+    "--node",
+    "node_ids",
+    multiple=True,
+    help="Node ID(s) to mark as done (e.g., --node 1.1 --node 1.2)",
+)
 @click.pass_context
 def objective_apply_landed_update(
     ctx: click.Context,
@@ -174,6 +163,7 @@ def objective_apply_landed_update(
     objective_number: int | None,
     branch_name: str | None,
     plan_number: int | None,
+    node_ids: tuple[str, ...],
 ) -> None:
     """Apply mechanical updates to an objective after landing a PR.
 
@@ -239,13 +229,12 @@ def objective_apply_landed_update(
 
     # --- Build roadmap context ---
     roadmap = _build_roadmap_context(objective.body, plan_id)
-    matched_steps = roadmap["matched_steps"]
+    matched_steps = list(node_ids)
 
     # --- Fetch objective prose content ---
     objective_content = _fetch_objective_content(objective.body, issues, repo_root)
 
     # --- Update roadmap nodes to done ---
-    plan_ref = f"#{plan_id}"
     pr_ref = f"#{pr_number}"
 
     node_updates: list[NodeUpdateDict] = []
@@ -253,22 +242,14 @@ def objective_apply_landed_update(
         updated_body, node_updates = _update_nodes_in_body(
             objective.body,
             matched_steps,
-            plan_ref=plan_ref,
             pr_ref=pr_ref,
         )
 
         # Write updated body to GitHub (single API call)
         issues.update_issue_body(repo_root, objective_number, BodyText(content=updated_body))
 
-        # Update v2 comment table
-        _update_comment_table(
-            issues,
-            repo_root,
-            updated_body,
-            matched_steps,
-            plan_ref=plan_ref,
-            pr_ref=pr_ref,
-        )
+        # Re-render v2 comment table from updated YAML
+        _update_comment_table(issues, repo_root, updated_body)
 
         # Rebuild roadmap from the updated body
         roadmap = _build_roadmap_context(updated_body, plan_id)

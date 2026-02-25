@@ -242,8 +242,6 @@ Rules triggered by matching actions in code.
 
 **scanning derived display output (emoji lists, formatted strings) to determine state** → Read [Direct Condition vs Derived Output](direct-condition-vs-derived-output.md) first. Check original boolean conditions directly instead. Scanning derived output couples decision logic to display formatting. See direct-condition-vs-derived-output.md.
 
-**setting PR reference without providing --plan** → Read [Roadmap Mutation Semantics](roadmap-mutation-semantics.md) first. The CLI requires --plan when --pr is set (error: plan_required_with_pr). Use --plan '#NNN' to preserve or --plan '' to explicitly clear. Read roadmap-mutation-semantics.md for the None/empty/value semantics.
-
 **silently transforming agent output (sanitize/normalize) instead of rejecting invalid values** → Read [Agent Back Pressure via Gates](agent-backpressure-gates.md) first. Silent transformation masks mistakes and prevents the agent from learning. Use a validation gate that rejects invalid input with actionable feedback so the agent can self-correct.
 
 **skipping fallback strategies when the selected item might disappear** → Read [Selection Preservation by Value](selection-preservation-by-value.md) first. Always provide fallback behavior when selected item not found in refreshed data (reset to 0, preserve index clamped, or clear selection).

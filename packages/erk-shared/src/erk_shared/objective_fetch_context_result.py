@@ -41,7 +41,6 @@ class RoadmapContextDict(TypedDict):
     """Parsed roadmap context from the objective body."""
 
     phases: list[dict]
-    matched_steps: list[str]
     summary: dict[str, int]
     next_node: dict[str, str] | None
     all_complete: bool

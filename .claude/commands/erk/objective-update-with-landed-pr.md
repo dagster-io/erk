@@ -38,13 +38,19 @@ Run a single command that fetches context, updates roadmap nodes to done, and po
 erk exec objective-apply-landed-update [--pr <number>] [--objective <number>] [--plan <number>] [--branch <name>]
 ```
 
+Pass `--node` flags to specify which roadmap nodes to mark as done. These are the nodes that were implemented by this PR:
+
+```bash
+erk exec objective-apply-landed-update [--pr <number>] [--objective <number>] [--plan <number>] [--branch <name>] --node <id1> [--node <id2> ...]
+```
+
 This returns JSON with:
 
 - `objective`: Issue body, title, labels, URL, `objective_content` (prose from first comment)
 - `plan`: Plan issue body and title
 - `pr`: PR title, body, URL
-- `roadmap`: Parsed roadmap with `matched_steps`, `summary`, `next_node`, `all_complete`
-- `node_updates`: List of nodes updated to done (with `previous_plan`, `previous_pr`)
+- `roadmap`: Parsed roadmap with `summary`, `next_node`, `all_complete`
+- `node_updates`: List of nodes updated to done (with `previous_pr`)
 - `action_comment_id`: ID of the posted action comment
 
 If this returns `success: false`, display the error and stop.

@@ -1,7 +1,7 @@
 ---
 title: Roadmap Mutation Semantics
-last_audited: "2026-02-17 12:00 PT"
-audit_result: clean
+last_audited: "2026-02-25 18:00 PT"
+audit_result: edited
 read_when:
   - "modifying objective roadmap update logic"
   - "understanding status inference when updating roadmap steps"
@@ -11,8 +11,6 @@ tripwires:
     warning: "The update-objective-node command computes display status from the PR value and writes it directly into the status cell. Status inference only happens during parsing when status is '-' or empty."
   - action: "expecting status to auto-update after manual PR edits"
     warning: "Only the update-objective-node command writes computed status. Manual GitHub edits or direct body mutations leave status at its current value — you must explicitly set status to '-' to enable inference on next parse."
-  - action: "setting PR reference without providing --plan"
-    warning: "The CLI requires --plan when --pr is set (error: plan_required_with_pr). Use --plan '#NNN' to preserve or --plan '' to explicitly clear. Read roadmap-mutation-semantics.md for the None/empty/value semantics."
 ---
 
 # Roadmap Mutation Semantics
@@ -32,21 +30,22 @@ This split means the command produces human-readable tables (status always refle
 
 ### What It Does
 
-When you run `erk exec update-objective-node 6423 --node 1.3 --plan "#6464"`, the command:
+When you run `erk exec update-objective-node 6423 --node 1.3 --pr "#123"`, the command:
 
-1. Computes display status from the plan/PR values
-2. Writes **status, plan, and PR cells** in a single atomic update
+1. Computes display status from the PR value
+2. Writes **status and PR** in the YAML frontmatter atomically
+3. Re-renders the comment table from the updated YAML
 
-| Flag Provided                             | Written Status | Written Plan Cell | Written PR Cell |
-| ----------------------------------------- | -------------- | ----------------- | --------------- |
-| `--pr "#123" --plan "#456"`               | `in-progress`  | `#456`            | `#123`          |
-| `--pr "#123" --plan "#456" --status done` | `done`         | `#456`            | `#123`          |
-| `--plan "#456"`                           | `in-progress`  | `#456`            | `(preserved)`   |
-| `--pr "" --plan ""`                       | `pending`      | `-`               | `-`             |
+| Flag Provided                      | Written Status | Written PR Cell |
+| ---------------------------------- | -------------- | --------------- |
+| `--pr "#123"`                      | `in-progress`  | `#123`          |
+| `--pr "#123" --status done`        | `done`         | `#123`          |
+| `--pr "#123" --status in_progress` | `in-progress`  | `#123`          |
+| `--pr ""`                          | `(preserved)`  | `(cleared)`     |
 
 ### None vs Empty-String vs Value Semantics
 
-The `update_node_in_frontmatter()` function uses a three-way convention for its `plan` and `pr` parameters:
+The `update_node_in_frontmatter()` function uses a three-way convention for its `pr` parameter:
 
 | Value    | Meaning                             |
 | -------- | ----------------------------------- |
@@ -54,21 +53,7 @@ The `update_node_in_frontmatter()` function uses a three-way convention for its 
 | `""`     | Clear the field (set to `None`)     |
 | `"#123"` | Set to the specified value          |
 
-This allows callers to update one field without affecting the other. For example, `--plan "#456"` without `--pr` preserves the existing PR value.
-
-### --plan Is Required When --pr Is Set
-
-When `--pr` is explicitly set (non-None, non-empty), `--plan` **must** also be provided. The CLI rejects `--pr` without `--plan` with error `plan_required_with_pr` to prevent accidental loss of the plan reference. The caller must explicitly choose to preserve (`--plan "#NNN"`) or clear (`--plan ""`) the plan field.
-
-<!-- Source: src/erk/cli/commands/exec/scripts/update_objective_node.py -->
-
-| Flags Provided              | Plan Result | PR Result | Notes                      |
-| --------------------------- | ----------- | --------- | -------------------------- |
-| `--pr "#123"`               | **Error**   | —         | `plan_required_with_pr`    |
-| `--pr "#123" --plan "#456"` | `"#456"`    | `"#123"`  | Explicit plan preserved    |
-| `--pr "#123" --plan ""`     | Cleared     | `"#123"`  | Explicit clear             |
-| `--plan "#456"`             | `"#456"`    | Preserved | PR not provided, preserved |
-| `--pr "" --plan ""`         | Cleared     | Cleared   | Both explicitly cleared    |
+This allows callers to update status without affecting the PR value.
 
 ### Why Both Cells Are Written
 
@@ -82,20 +67,19 @@ By writing computed status directly, the table is always human-readable.
 
 ### Implementation Detail
 
-<!-- Source: src/erk/cli/commands/exec/scripts/update_objective_node.py, _replace_node_refs_in_body -->
+<!-- Source: src/erk/cli/commands/exec/scripts/update_objective_node.py -->
 
-The update command uses two functions in `src/erk/cli/commands/exec/scripts/update_objective_node.py`: `_replace_node_refs_in_body()` updates the YAML frontmatter (source of truth), while `_replace_table_in_text()` updates the rendered 5-column markdown table in the objective-body comment.
+The update command updates the YAML frontmatter (source of truth), then re-renders the comment table via `rerender_comment_roadmap()`.
 
 ### Status Inference Is Write-Time Only
 
-Status is computed by `update_node_in_frontmatter()` at mutation time. There is no read-time inference in the v2 YAML path — `parse_roadmap()` reads the `status` field directly from YAML. The inference logic (explicit > infer from PR/plan > preserve) runs only during writes:
+Status is computed by `update_node_in_frontmatter()` at mutation time. There is no read-time inference in the v2 YAML path — `parse_roadmap()` reads the `status` field directly from YAML. The inference logic runs only during writes:
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, update_node_in_frontmatter -->
 
 1. **Explicit status provided** → use it directly
 2. **PR is set** → status = `"in_progress"`
-3. **Plan is set** → status = `"in_progress"`
-4. **Neither** → preserve existing status
+3. **Neither** → preserve existing status
 
 ## Parse: Status Inference at Read Time (Legacy Tables Only)
 
@@ -107,30 +91,30 @@ The key point for mutation semantics: inference only fires when the status cell 
 
 If you update PR via direct body mutation (not using the command), status won't auto-update:
 
-| Action                                                          | Result Status | Why                                                                    |
-| --------------------------------------------------------------- | ------------- | ---------------------------------------------------------------------- |
-| update-objective-node `--plan "#456" --pr "#123"`               | `in-progress` | Command writes computed status (PR ≠ done without explicit `--status`) |
-| update-objective-node `--plan "#456" --pr "#123" --status done` | `done`        | Explicit `--status done` confirms PR is merged                         |
-| update-objective-node `--plan "#456"`                           | `in-progress` | Command writes computed status                                         |
-| Manual GitHub edit: change PR cell to `#123`                    | (unchanged)   | Status cell not touched, parser reads explicit value                   |
-| Script sets PR but leaves status at `in-progress`               | `in_progress` | Parser sees explicit value, doesn't infer                              |
+| Action                                                   | Result Status | Why                                                  |
+| -------------------------------------------------------- | ------------- | ---------------------------------------------------- |
+| update-objective-node `--pr "#123"`                      | `in_progress` | Command writes computed status                       |
+| update-objective-node `--pr "#123" --status done`        | `done`        | Explicit `--status done` confirms PR is merged       |
+| update-objective-node `--pr "#123" --status in_progress` | `in-progress` | Explicit status overrides PR-based inference         |
+| Manual GitHub edit: change PR cell to `#123`             | (unchanged)   | Status cell not touched, parser reads explicit value |
+| Script sets PR but leaves status at `in-progress`        | `in_progress` | Parser sees explicit value, doesn't infer            |
 
 To enable inference after manual/script edits, you must explicitly set status to `-`.
 
 ## Decision Table: Command vs Direct Mutation
 
-| Context                                   | Use Command                     | Direct Body Mutation                           |
-| ----------------------------------------- | ------------------------------- | ---------------------------------------------- |
-| Normal workflow (plan-save, PR landing)   | ✅ Atomic PR + status update    | ❌ Would leave status stale                    |
-| Batch updates across multiple steps       | ✅ One call per step            | ⚠️ Possible, but must compute status           |
-| Setting explicit status (blocked/skipped) | ❌ Command doesn't support this | ✅ Write status column directly                |
-| Quick fix in GitHub UI                    | N/A                             | ⚠️ Must update both cells or set status to `-` |
+| Context                                   | Use Command                    | Direct Body Mutation                        |
+| ----------------------------------------- | ------------------------------ | ------------------------------------------- |
+| Normal workflow (plan-save, PR landing)   | Yes: Atomic PR + status update | No: Would leave status stale                |
+| Batch updates across multiple steps       | Yes: One call per step         | Possible, but must compute status           |
+| Setting explicit status (blocked/skipped) | Yes: --status flag supports it | Also works: Write status column directly    |
+| Quick fix in GitHub UI                    | N/A                            | Must update both cells or set status to `-` |
 
-The command is designed for **normal workflow integration** (skills, hooks, scripts). For special cases like marking steps as `blocked`, direct body mutation is still required.
+The command is designed for **normal workflow integration** (skills, hooks, scripts).
 
 ## LBYL Pattern in Update Command
 
-The command follows erk's LBYL discipline throughout, using discriminated union checks before each operation. See the `update_objective_node()` function in `src/erk/cli/commands/exec/scripts/update_objective_node.py:329` for the full pattern. For the general approach, see [Discriminated Union Error Handling](discriminated-union-error-handling.md).
+The command follows erk's LBYL discipline throughout, using discriminated union checks before each operation. See the `update_objective_node()` function in `src/erk/cli/commands/exec/scripts/update_objective_node.py` for the full pattern. For the general approach, see [Discriminated Union Error Handling](discriminated-union-error-handling.md).
 
 ## Cross-Document Knowledge
 

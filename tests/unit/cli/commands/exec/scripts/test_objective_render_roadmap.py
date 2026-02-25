@@ -143,8 +143,8 @@ def test_render_roadmap_single_phase() -> None:
     assert "## Roadmap" in result
     assert "### Phase 1: Foundation (1 PR)" in result
     assert "Set up infrastructure." in result
-    assert "| 1.1 | Create base module | pending | - | - |" in result
-    assert "| 1.2 | Add core types | pending | - | - |" in result
+    assert "| 1.1 | Create base module | pending | - |" in result
+    assert "| 1.2 | Add core types | pending | - |" in result
     assert "**Test:** Module imports and types are available" in result
     assert "erk:metadata-block:objective-roadmap" in result
 
@@ -208,7 +208,6 @@ def test_render_roadmap_metadata_block_parseable() -> None:
     assert steps[0].id == "1.1"
     assert steps[0].description == "First step"
     assert steps[0].status == "pending"
-    assert steps[0].plan is None
     assert steps[0].pr is None
     assert steps[1].id == "1.2"
     assert steps[2].id == "2.1"
@@ -241,7 +240,7 @@ def test_render_roadmap_no_optional_fields() -> None:
     result = _render_roadmap(phases)
 
     assert "### Phase 1: Phase (1 PR)" in result
-    assert "| 1.1 | Do thing | pending | - | - |" in result
+    assert "| 1.1 | Do thing | pending | - |" in result
     assert "**Test:**" not in result
 
 
@@ -268,7 +267,7 @@ def test_cli_valid_input() -> None:
     assert result.exit_code == 0
     assert "## Roadmap" in result.output
     assert "### Phase 1: Steelthread (1 PR)" in result.output
-    assert "| 1.1 | First step | pending | - | - |" in result.output
+    assert "| 1.1 | First step | pending | - |" in result.output
     assert "erk:metadata-block:objective-roadmap" in result.output
 
 
@@ -381,9 +380,9 @@ def test_render_roadmap_with_depends_on() -> None:
 
     result = _render_roadmap(phases)
 
-    assert "| Node | Description | Depends On | Status | Plan | PR |" in result
-    assert "| 1.1 | Base setup | - | pending | - | - |" in result
-    assert "| 1.2 | Wire up | 1.1 | pending | - | - |" in result
+    assert "| Node | Description | Depends On | Status | PR |" in result
+    assert "| 1.1 | Base setup | - | pending | - |" in result
+    assert "| 1.2 | Wire up | 1.1 | pending | - |" in result
 
 
 def test_render_roadmap_without_depends_on_unchanged() -> None:
@@ -399,9 +398,9 @@ def test_render_roadmap_without_depends_on_unchanged() -> None:
 
     result = _render_roadmap(phases)
 
-    assert "| Node | Description | Status | Plan | PR |" in result
+    assert "| Node | Description | Status | PR |" in result
     assert "Depends On" not in result
-    assert "| 1.1 | Do thing | pending | - | - |" in result
+    assert "| 1.1 | Do thing | pending | - |" in result
 
 
 def test_render_roadmap_depends_on_metadata_roundtrip() -> None:

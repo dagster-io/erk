@@ -30,10 +30,6 @@ Rules triggered by matching actions in code.
 
 **calling update-objective-node or plan-save inside objective-plan workflow without creating roadmap-step marker first** → Read [Objective Lifecycle](objective-lifecycle.md) first. The roadmap-step marker must be created before entering plan mode. If missing, plan-save cannot call update-objective-node, and the objective roadmap table silently fails to update. Create the marker immediately after the user selects a node (step 5 of objective-plan), before gathering code context.
 
-**calling update-objective-node with --pr but without --plan** → Read [Plan Reference Preservation in Roadmap Updates](plan-reference-preservation.md) first. CLI validation requires --plan when --pr is set. Omitting --plan would silently lose the plan reference. Use --plan '#NNN' to preserve or --plan '' to explicitly clear.
-
-**changing update_node_in_frontmatter() semantics for plan=None** → Read [Plan Reference Preservation in Roadmap Updates](plan-reference-preservation.md) first. plan=None means 'preserve existing value', not 'clear'. This three-state pattern (None=preserve, ''=clear, '#NNN'=set) is used by both CLI and gateway. Changing it breaks preservation.
-
 **checking allowed-status tuples without terminal states** → Read [Objective Check Command — Semantic Validation](objective-roadmap-check.md) first. Always include `done` and `skipped` in allowed-status checks. Omitting terminal states produces false positives for completed nodes.
 
 **creating a learned doc that rephrases an objective's action comment lessons** → Read [Documentation Capture from Objective Work](research-documentation-integration.md) first. Objectives already capture lessons in action comments. Only create a learned doc when the insight is reusable beyond this specific objective.
@@ -84,7 +80,7 @@ Rules triggered by matching actions in code.
 
 **using find_next_node() for dependency-aware traversal** → Read [Dependency Graph Architecture](dependency-graph.md) first. Use DependencyGraph.next_node() instead. find_next_node() is position-based and ignores dependencies.
 
-**using full-body update for single-cell changes** → Read [Roadmap Mutation Patterns](roadmap-mutation-patterns.md) first. Full-body updates replace the entire table. For single-cell PR updates, use surgical update (update-objective-node) to preserve other cells and avoid race conditions.
+**using full-body update for single-cell changes** → Read [Roadmap Mutation Patterns](roadmap-mutation-patterns.md) first. Full-body updates replace the entire table. For single-node PR updates, use surgical update (update-objective-node) to preserve other cells and avoid race conditions.
 
 **using graph_from_phases() when nodes have explicit depends_on fields** → Read [Dependency Status Resolution](dependency-status-resolution.md) first. Prefer build_graph() over graph_from_phases(). build_graph() detects explicit depends_on and delegates to graph_from_nodes() when appropriate.
 
@@ -92,8 +88,6 @@ Rules triggered by matching actions in code.
 
 **using plan-\* metadata block names for objective data** → Read [Objective v2 Storage Format](objective-storage-format.md) first. Metadata block names must match their entity type: plan-header/plan-body for plans, objective-header/objective-roadmap/objective-body for objectives.
 
-**using surgical update for complete table rewrites** → Read [Roadmap Mutation Patterns](roadmap-mutation-patterns.md) first. Surgical updates only change one cell. For rewriting roadmaps after landing PRs (status + layout changes), use full-body update (objective-update-with-landed-pr).
+**using surgical update for complete table rewrites** → Read [Roadmap Mutation Patterns](roadmap-mutation-patterns.md) first. Surgical updates only change one node. For rewriting roadmaps after landing PRs (status + layout changes), use full-body update (objective-update-with-landed-pr).
 
 **writing objective content directly to issue body** → Read [Objective Create Workflow](objective-create-workflow.md) first. Issue body holds only metadata blocks. Full content goes in the first comment (objective-body block). See the 3-layer storage model.
-
-**writing regex patterns to match roadmap table rows without ^ and $ anchors** → Read [Roadmap Mutation Patterns](roadmap-mutation-patterns.md) first. All roadmap table row regex patterns MUST use ^...$ anchors with re.MULTILINE. Without anchors, patterns can match partial lines or span rows.

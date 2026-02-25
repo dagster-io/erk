@@ -7,7 +7,6 @@ import click
 
 from erk.cli.commands.exec.scripts.update_objective_node import (
     _replace_node_refs_in_body,
-    _replace_table_in_text,
 )
 from erk.cli.commands.implement_shared import normalize_model_name
 from erk.cli.commands.objective.check_cmd import (
@@ -34,6 +33,7 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
 from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapPhase,
     enrich_phase_names,
+    rerender_comment_roadmap,
 )
 from erk_shared.gateway.github.types import BodyText
 from erk_shared.output.output import user_output
@@ -313,7 +313,6 @@ def _update_objective_node(
     updated_body = _replace_node_refs_in_body(
         issue.body,
         node_id,
-        new_plan=None,
         new_pr=f"#{pr_number}",
         explicit_status="planning",
     )
@@ -323,19 +322,13 @@ def _update_objective_node(
 
     issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
 
-    # v2 format: also update the markdown table in the objective-body comment
+    # v2 format: re-render the comment table from updated YAML
     objective_comment_id = extract_metadata_value(
         updated_body, "objective-header", "objective_comment_id"
     )
     if objective_comment_id is not None:
         comment_body = issues.get_comment_by_id(repo_root, objective_comment_id)
-        updated_comment = _replace_table_in_text(
-            comment_body,
-            node_id,
-            new_plan=None,
-            new_pr=f"#{pr_number}",
-            explicit_status="planning",
-        )
+        updated_comment = rerender_comment_roadmap(updated_body, comment_body)
         if updated_comment is not None and updated_comment != comment_body:
             issues.update_comment(repo_root, objective_comment_id, updated_comment)
 
@@ -372,7 +365,6 @@ def _batch_update_objective_nodes(
         new_body = _replace_node_refs_in_body(
             updated_body,
             node_id,
-            new_plan=None,
             new_pr=f"#{pr_number}",
             explicit_status="planning",
         )
@@ -384,24 +376,14 @@ def _batch_update_objective_nodes(
     if body_changed:
         issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
 
-    # v2 format: accumulate all comment changes, then write once
+    # v2 format: re-render comment table from updated YAML (single write)
     objective_comment_id = extract_metadata_value(
         updated_body, "objective-header", "objective_comment_id"
     )
     if objective_comment_id is not None:
         comment_body = issues.get_comment_by_id(repo_root, objective_comment_id)
-        updated_comment = comment_body
-        for node_id, pr_number in node_updates:
-            new_comment = _replace_table_in_text(
-                updated_comment,
-                node_id,
-                new_plan=None,
-                new_pr=f"#{pr_number}",
-                explicit_status="planning",
-            )
-            if new_comment is not None:
-                updated_comment = new_comment
-        if updated_comment != comment_body:
+        updated_comment = rerender_comment_roadmap(updated_body, comment_body)
+        if updated_comment is not None and updated_comment != comment_body:
             issues.update_comment(repo_root, objective_comment_id, updated_comment)
 
 

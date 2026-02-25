@@ -42,11 +42,10 @@ The `planning` status indicates a step has been dispatched for autonomous planni
 
 When the Status column is `-` or empty (or any unrecognized value), the parser falls through to infer status from the PR column:
 
-| Plan Column  | PR Column    | Inferred Status | Reasoning                                                                    |
-| ------------ | ------------ | --------------- | ---------------------------------------------------------------------------- |
-| any          | `#123`       | in_progress     | A PR reference means work is in flight (use --status done to confirm merged) |
-| `#456`       | `-` or empty | in_progress     | A plan issue means work is underway                                          |
-| `-` or empty | `-` or empty | pending         | No references means work hasn't started                                      |
+| PR Column    | Inferred Status | Reasoning                                                                    |
+| ------------ | --------------- | ---------------------------------------------------------------------------- |
+| `#123`       | in_progress     | A PR reference means work is in flight (use --status done to confirm merged) |
+| `-` or empty | pending         | No references means work hasn't started                                      |
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, parse_roadmap -->
 
@@ -54,22 +53,21 @@ See the status resolution logic in `parse_roadmap()` in `packages/erk-shared/src
 
 ## Resolution Examples
 
-| Status Column | PR Column  | Final Status | Why                                             |
-| ------------- | ---------- | ------------ | ----------------------------------------------- |
-| `done`        | `-`        | done         | Explicit — no inference needed                  |
-| `-`           | `#123`     | in_progress  | Tier 2 inference from PR (not confirmed merged) |
-| `blocked`     | `#123`     | blocked      | Explicit overrides PR (step blocked despite PR) |
-| `-`           | `plan #45` | in_progress  | Tier 2 inference from plan reference            |
-| `pending`     | `#123`     | pending      | Explicit overrides PR (intentional hold)        |
-| `-`           | `-`        | pending      | Both empty — default                            |
+| Status Column | PR Column | Final Status | Why                                             |
+| ------------- | --------- | ------------ | ----------------------------------------------- |
+| `done`        | `-`       | done         | Explicit — no inference needed                  |
+| `-`           | `#123`    | in_progress  | Tier 2 inference from PR (not confirmed merged) |
+| `blocked`     | `#123`    | blocked      | Explicit overrides PR (step blocked despite PR) |
+| `pending`     | `#123`    | pending      | Explicit overrides PR (intentional hold)        |
+| `-`           | `-`       | pending      | Both empty — default                            |
 
 ## The Write/Read Asymmetry
 
 The most important cross-cutting insight: **mutation writes both cells, but parsing only infers from one**. This asymmetry is intentional.
 
-<!-- Source: src/erk/cli/commands/exec/scripts/update_objective_node.py, _replace_node_refs_in_body -->
+<!-- Source: src/erk/cli/commands/exec/scripts/update_objective_node.py, update_objective_node -->
 
-The `update-objective-node` command computes display status from the plan/PR values and writes both the Status and PR cells atomically. PR reference alone infers `in_progress` (not `done`); callers that know the PR is merged must pass `--status done` explicitly. This prevents premature "done" status when a PR exists but hasn't been confirmed as merged. But `parse_roadmap()` only falls through to PR inference when the Status cell is `-` or empty.
+The `update-objective-node` command computes display status from the PR value and writes both the Status and PR cells atomically. PR reference alone infers `in_progress` (not `done`); callers that know the PR is merged must pass `--status done` explicitly. This prevents premature "done" status when a PR exists but hasn't been confirmed as merged. But `parse_roadmap()` only falls through to PR inference when the Status cell is `-` or empty.
 
 This creates a subtle trap: if you update the PR cell **without using the command** (e.g., manual GitHub edit or direct body mutation), the Status cell retains its old value and the parser will respect that stale explicit value. To re-enable inference after manual edits, set the Status cell to `-`.
 
@@ -81,21 +79,10 @@ The `erk objective check` command validates status/PR consistency after parsing.
 
 ## Inference Rules vs Validity Constraints
 
-Status inference (Tier 2) determines what status _should be_ from PR/plan columns. Validity constraints (check command) determine what combinations are _allowed_. These are distinct:
+Status inference (Tier 2) determines what status _should be_ from PR columns. Validity constraints (check command) determine what combinations are _allowed_. These are distinct:
 
 - **Inference**: "Status is `-`, PR is `#123` → infer `in_progress`"
-- **Validity**: "Status is `done` with `plan: #456` → flag as potentially inconsistent"
-
-### Valid Plan Reference States
-
-A node with a plan reference (`plan: #NNN`) can validly be in these statuses:
-
-- `in_progress` — actively being worked on
-- `done` — PR has landed (this is the expected end state after `objective-update-with-landed-pr`)
-- `planning` — dispatched for autonomous planning
-- `skipped` — explicitly marked as no longer needed
-
-A `done` node with a plan reference is normal — it means the plan produced a PR that has since landed.
+- **Validity**: "Status is `pending` with PR `#123` → flag as potentially inconsistent"
 
 ## When to Use Each Tier
 

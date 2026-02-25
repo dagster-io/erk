@@ -684,18 +684,18 @@ class RealPlanDataProvider(PlanDataProvider):
                     else:
                         objective_head_state = min_status.replace("_", " ")
 
-                    # Collect blocking dep plan numbers for the next node
+                    # Collect blocking dep PR numbers for the next node
                     target = next((n for n in graph.nodes if n.id == next_node["id"]), None)
                     if target is not None and target.depends_on:
                         node_map = {n.id: n for n in graph.nodes}
                         for dep_id in target.depends_on:
                             if dep_id in node_map:
                                 dep = node_map[dep_id]
-                                if dep.status not in _TERMINAL_STATUSES and dep.plan is not None:
-                                    num = dep.plan.lstrip("#")
+                                if dep.status not in _TERMINAL_STATUSES and dep.pr is not None:
+                                    num = dep.pr.lstrip("#")
                                     repo_id = self._location.repo_id
                                     url = f"https://github.com/{repo_id.owner}/{repo_id.repo}/issues/{num}"
-                                    objective_head_plans.append((dep.plan, url))
+                                    objective_head_plans.append((dep.pr, url))
 
         # Format updated_at display
         updated_display = format_relative_time(plan.updated_at.isoformat()) or "-"

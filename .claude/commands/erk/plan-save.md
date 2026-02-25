@@ -117,10 +117,10 @@ If the marker doesn't exist (command fails), skip this step - the plan wasn't cr
 2. **Update the roadmap table** using the dedicated command:
 
 ```bash
-erk exec update-objective-node <objective-issue> --node "$step_id" --plan "#<plan_number>"
+erk exec update-objective-node <objective-issue> --node "$step_id" --pr "" --status in_progress
 ```
 
-This atomically fetches the issue body, finds the matching node row, updates the Plan cell, sets the Status cell to `in-progress`, and writes the updated body back.
+This atomically fetches the issue body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
 
 3. **Report the update:**
 

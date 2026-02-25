@@ -115,17 +115,14 @@ steps:
 - id: "1.1"
   description: "Add user model"
   status: "pending"
-  plan: null
   pr: null
 - id: "1.2"
   description: "Add JWT library"
   status: "pending"
-  plan: null
   pr: null
 - id: "2.1"
   description: "Implement login"
   status: "pending"
-  plan: null
   pr: null
 
 ---
@@ -200,7 +197,7 @@ Mutations update YAML frontmatter in the issue body (source of truth) and the ma
 1. Fetch issue body
 2. Check for `objective-roadmap` metadata block
 3. Parse YAML frontmatter, find step by ID
-4. Update `plan`/`pr` fields and recompute `status`
+4. Update `pr` field and recompute `status`
 5. Serialize back to YAML and replace metadata block in body
 6. Write updated body to GitHub
 7. Also update markdown table in objective-body comment (v2 rendered view)
@@ -208,16 +205,16 @@ Mutations update YAML frontmatter in the issue body (source of truth) and the ma
 **Usage**:
 
 ```bash
-erk exec update-objective-node 6423 --node 1.3 --pr "plan #6464"
 erk exec update-objective-node 6423 --node 1.3 --pr "#6500"
+erk exec update-objective-node 6423 --node 1.3 --pr "#6500" --status done
 erk exec update-objective-node 6423 --node 1.3 --pr ""  # Clear
 ```
 
-**Status computation** (table mode):
+**Status computation**:
 
-- `pr` starts with `#` → status = `done`
-- `pr` starts with `plan #` → status = `in_progress`
-- `pr` is empty → status = `pending`
+- Explicit `--status` provided → use it directly
+- PR is set (no explicit status) → status = `in_progress`
+- Neither → preserve existing status
 
 ### Full-Body Update: `objective-update-with-landed-pr`
 
@@ -247,7 +244,7 @@ erk exec update-objective-node 6423 --node 1.3 --pr ""  # Clear
 
 When saving a plan that's part of an objective:
 
-- Calls `erk exec update-objective-node <objective> --node <step-id> --pr "plan #<plan-number>"`
+- Calls `erk exec update-objective-node <objective> --node <step-id> --pr "" --status in_progress`
 - Inherits frontmatter support from `update-objective-node`
 
 ## Frontmatter Format
@@ -263,8 +260,7 @@ steps:
   - id: "1.1" # Required: step identifier
     description: "..." # Required: human-readable description
     status: "pending" # Required: pending|planning|done|in_progress|blocked|skipped
-    plan: null # Optional: null or string like "#6464" (plan issue number)
-    pr: null # Optional: null or string like "#123" (landed PR number)
+    pr: null # Optional: null or string like "#123" (PR number)
 ---
 ```
 
@@ -296,7 +292,7 @@ Objective body sections fall into three tiers based on how they're updated:
 
 1. **After every PR landing** (primary trigger): The `objective-update-with-landed-pr` agent performs prose reconciliation after mechanical step updates. It compares the objective body against what the PR actually implemented and corrects stale information.
 
-1. **After plan closure** (secondary trigger): The `objective-update-with-closed-plan` agent resets affiliated nodes to pending (clearing plan references) and reconciles prose that referenced the abandoned plan's approach.
+1. **After plan closure** (secondary trigger): The `objective-update-with-closed-plan` agent resets affiliated nodes to pending and reconciles prose that referenced the abandoned plan's approach.
 
 1. **At next-step pickup** (lighter touch): When `objective-plan` runs, the agent scans the objective body for context that may be stale from other work in the codebase.
 
@@ -359,9 +355,9 @@ All roadmap steps completed:
 │                                                          │
 │ erk plan save (with objective ref)                       │
 │   ↓                                                      │
-│ update-objective-node: set pr="plan #N"                    │
+│ update-objective-node: --pr "" --status in_progress        │
 │   ↓                                                      │
-│ Roadmap shows plan # in PR column                        │
+│ Roadmap shows in-progress status                         │
 └─────────────────────────────────────────────────────────┘
                           ↓
 ┌─────────────────────────────────────────────────────────┐
@@ -432,15 +428,9 @@ erk exec objective-fetch-context --pr 6517 --objective 6423 --branch P6513-...
 3. **Objective**: extracted from plan issue metadata (`plan-header.objective_issue` field)
 4. **PR number**: discovered from branch via `github.get_pr_for_branch()`
 
-### Deterministic Step Matching
+### Explicit Node Selection
 
-Steps are matched to plans using exact string comparison against YAML frontmatter plan references:
-
-<!-- Source: src/erk/cli/commands/exec/scripts/objective_fetch_context.py, step.plan matching -->
-
-See the `step.plan == f"#{plan_number}"` comparison in `src/erk/cli/commands/exec/scripts/objective_fetch_context.py`.
-
-No LLM inference or heuristics are involved. Only steps explicitly tagged with the plan reference appear in `matched_steps`.
+When landing a PR, the caller explicitly specifies which nodes were completed via `--node` flags on `objective-apply-landed-update`. There is no automatic matching — the agent or skill decides which nodes a PR implements.
 
 ### Output Format
 
@@ -452,7 +442,6 @@ No LLM inference or heuristics are involved. Only steps explicitly tagged with t
   "pr": {"number": 6517, "title": "...", "body": "..."},
   "roadmap": {
     "phases": [...],
-    "matched_steps": [...],
     "summary": "...",
     "next_node": "1.3",
     "all_complete": false

@@ -209,14 +209,8 @@ I've identified <N> proposed updates for objective #<number>. Would you like me 
 
 **For DONE nodes** — update node status via exec script.
 
-> **CRITICAL: `--plan` is required when `--pr` is set.** The CLI rejects `--pr` without `--plan` (see `docs/learned/objectives/plan-reference-preservation.md`). For each DONE node, check its current `plan` field from the Phase 1 roadmap data:
->
-> - If the node already has a `plan` reference in the roadmap YAML, pass `--plan "#<existing-plan>"` to preserve it
-> - If the node has no plan reference, pass `--plan ""` to explicitly indicate no plan
-> - **Never omit `--plan` when `--pr` is set** — the CLI will reject it
-
 ```bash
-erk exec update-objective-node <objective-number> --node <node-id> --status done --pr "#<pr-number>" --plan "#<existing-plan-or-empty>" --include-body
+erk exec update-objective-node <objective-number> --node <node-id> --status done --pr "#<pr-number>" --include-body
 ```
 
 Pass all completed nodes as multiple `--node` flags in ONE command if multiple nodes are being marked done.

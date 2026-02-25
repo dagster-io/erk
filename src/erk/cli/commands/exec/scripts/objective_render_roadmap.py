@@ -27,8 +27,8 @@ Output:
     Complete ## Roadmap section including:
     - Phase headers (### Phase 1: Name (1 PR))
     - Phase descriptions
-    - 5-column markdown tables (Step | Description | Status | Plan | PR)
-      or 6-column when depends_on present (Step | Description | Depends On | Status | Plan | PR)
+    - 4-column markdown tables (Step | Description | Status | PR)
+      or 5-column when depends_on present (Step | Description | Depends On | Status | PR)
     - Test sections per phase
     - Metadata block (auto-generated, guaranteed in sync)
 
@@ -142,11 +142,11 @@ def _render_roadmap(phases: list[dict[str, Any]]) -> str:
 
         # Table header (conditional Depends On column)
         if any_has_depends_on:
-            sections.append("| Node | Description | Depends On | Status | Plan | PR |")
-            sections.append("|------|-------------|------------|--------|------|----|")
+            sections.append("| Node | Description | Depends On | Status | PR |")
+            sections.append("|------|-------------|------------|--------|----|")
         else:
-            sections.append("| Node | Description | Status | Plan | PR |")
-            sections.append("|------|-------------|--------|------|----|")
+            sections.append("| Node | Description | Status | PR |")
+            sections.append("|------|-------------|--------|----|")
 
         # Table rows
         for step_data in phase["steps"]:
@@ -166,18 +166,15 @@ def _render_roadmap(phases: list[dict[str, Any]]) -> str:
 
             if any_has_depends_on:
                 depends_display = ", ".join(depends_on) if depends_on else "-"
-                sections.append(
-                    f"| {step_id} | {step_desc} | {depends_display} | pending | - | - |"
-                )
+                sections.append(f"| {step_id} | {step_desc} | {depends_display} | pending | - |")
             else:
-                sections.append(f"| {step_id} | {step_desc} | pending | - | - |")
+                sections.append(f"| {step_id} | {step_desc} | pending | - |")
 
             all_steps.append(
                 RoadmapNode(
                     id=step_id,
                     description=step_desc,
                     status="pending",
-                    plan=None,
                     pr=None,
                     depends_on=depends_on,
                     slug=slug,

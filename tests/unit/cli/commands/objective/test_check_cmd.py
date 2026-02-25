@@ -594,52 +594,6 @@ def test_v2_missing_comment_id_fails_check_6() -> None:
     assert "objective-header missing objective_comment_id" in result.output
 
 
-def test_plan_ref_missing_hash_prefix_fails() -> None:
-    """Test that plan reference without '#' prefix is flagged by Check 7."""
-    body = """\
-# Objective: Bad Ref
-
-## Roadmap
-
-### Phase 1: Work
-
-<!-- erk:metadata-block:objective-roadmap -->
-<details>
-<summary><code>objective-roadmap</code></summary>
-
-```yaml
-schema_version: '2'
-steps:
-- id: '1.1'
-  description: First step
-  status: in_progress
-  plan: '7146'
-  pr: null
-- id: '1.2'
-  description: Second step
-  status: done
-  plan: null
-  pr: '#100'
-```
-
-</details>
-<!-- /erk:metadata-block:objective-roadmap -->
-"""
-    issue = _make_issue(1700, "Objective: Bad Ref", body)
-    fake_gh = FakeGitHubIssues(issues={1700: issue})
-    runner = CliRunner()
-
-    result = runner.invoke(
-        check_objective,
-        ["1700"],
-        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
-    )
-
-    assert result.exit_code == 1
-    assert "[FAIL]" in result.output
-    assert "missing '#' prefix" in result.output
-
-
 def test_pr_ref_missing_hash_prefix_fails() -> None:
     """Test that PR reference without '#' prefix is flagged by Check 7."""
     body = """\
@@ -735,7 +689,7 @@ def test_valid_hash_prefix_refs_pass() -> None:
     )
 
     assert result.exit_code == 0
-    assert "Plan/PR references use '#' prefix" in result.output
+    assert "PR references use '#' prefix" in result.output
 
 
 # --- fan-out/fan-in tests (schema v3 with explicit depends_on) ---

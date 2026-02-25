@@ -68,17 +68,14 @@ ROADMAP_BODY = textwrap.dedent("""\
     - id: "1.1"
       description: "Add user model"
       status: "done"
-      plan: "#6513"
       pr: "#6517"
     - id: "1.2"
       description: "Add JWT library"
       status: "in_progress"
-      plan: "#6513"
       pr: null
     - id: "2.1"
       description: "Implement login"
       status: "pending"
-      plan: null
       pr: null
     ```
 
@@ -156,7 +153,6 @@ ROADMAP_BODY_WITH_COMMENT_ID = textwrap.dedent("""\
     - id: "1.1"
       description: "Add user model"
       status: "done"
-      plan: "#6513"
       pr: "#6517"
     ```
 
@@ -259,7 +255,6 @@ class TestObjectiveFetchContext:
         assert result.exit_code == 0, result.output
         data = json.loads(result.output)
         roadmap = data["roadmap"]
-        assert roadmap["matched_steps"] == ["1.1", "1.2"]
         assert roadmap["summary"]["total_nodes"] == 3
         assert roadmap["summary"]["done"] == 1
         assert roadmap["summary"]["in_progress"] == 1
@@ -282,12 +277,10 @@ class TestObjectiveFetchContext:
             - id: "1.1"
               description: "Step 1"
               status: "done"
-              plan: "#100"
               pr: "#200"
             - id: "1.2"
               description: "Step 2"
               status: "skipped"
-              plan: null
               pr: null
             ```
 
@@ -363,7 +356,6 @@ class TestObjectiveFetchContext:
         assert result.exit_code == 0, result.output
         data = json.loads(result.output)
         assert data["roadmap"]["phases"] == []
-        assert data["roadmap"]["matched_steps"] == []
         assert data["roadmap"]["all_complete"] is False
 
     def test_objective_not_found(self, tmp_path: Path) -> None:
@@ -663,7 +655,7 @@ class TestDiscoveryMode:
         assert data["objective"]["number"] == 6423
         assert data["plan"]["number"] == "6513"
         assert data["pr"]["number"] == 6517
-        assert data["roadmap"]["matched_steps"] == ["1.1", "1.2"]
+        assert data["roadmap"]["summary"]["total_nodes"] >= 2
 
     def test_discover_branch_detached_head_error(self, tmp_path: Path) -> None:
         """Returns error when branch discovery finds detached HEAD."""

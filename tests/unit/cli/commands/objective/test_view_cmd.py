@@ -55,27 +55,22 @@ steps:
 - id: '1.1'
   description: Setup infrastructure
   status: done
-  plan: null
   pr: '#123'
 - id: '1.2'
   description: Add basic tests
   status: in_progress
-  plan: '#124'
   pr: null
 - id: '1.3'
   description: Update docs
   status: pending
-  plan: null
   pr: null
 - id: 2A.1
   description: Build main feature
   status: done
-  plan: null
   pr: '#125'
 - id: 2A.2
   description: Add integration tests
   status: blocked
-  plan: null
   pr: null
 ```
 
@@ -322,12 +317,12 @@ def test_view_objective_status_emojis() -> None:
         assert "🔄 in_progress" in result.output  # in_progress status
         assert "⏳ pending" in result.output  # pending status
         assert "🚫 blocked" in result.output  # blocked status
-        # in_progress status shows plan reference
-        assert "in_progress plan #124" in result.output
+        # in_progress status renders
+        assert "in_progress" in result.output
 
 
-def test_view_objective_plan_pr_columns() -> None:
-    """Test that plan and PR are shown as separate columns."""
+def test_view_objective_pr_column() -> None:
+    """Test that PR references are shown in output."""
     issue = _make_issue(950, "Objective: Columns", OBJECTIVE_WITH_ROADMAP)
     fake_gh = FakeGitHubIssues(issues={950: issue})
     runner = CliRunner()
@@ -342,10 +337,10 @@ def test_view_objective_plan_pr_columns() -> None:
 
         assert result.exit_code == 0, f"Failed: {result.output}"
         output = strip_ansi(result.output)
-        # Step 1.1 has no plan but has PR #123
+        # Step 1.1 has PR #123
         assert "#123" in output
-        # Step 1.2 has plan #124 but no PR
-        assert "#124" in output
+        # Step 2A.1 has PR #125
+        assert "#125" in output
 
 
 def test_view_objective_legacy_format_rejected() -> None:
@@ -635,34 +630,29 @@ nodes:
 - id: '1.1'
   description: Root step
   status: done
-  plan: null
   pr: '#100'
   depends_on: []
 - id: '2.1'
   description: Branch A
   status: planning
-  plan: '#201'
   pr: null
   depends_on:
   - '1.1'
 - id: '2.2'
   description: Branch B
   status: in_progress
-  plan: '#202'
   pr: null
   depends_on:
   - '1.1'
 - id: '2.3'
   description: Branch C
   status: pending
-  plan: null
   pr: null
   depends_on:
   - '1.1'
 - id: '3.1'
   description: Merge step
   status: pending
-  plan: null
   pr: null
   depends_on:
   - '2.1'
@@ -676,7 +666,7 @@ nodes:
 
 
 def test_view_planning_status_renders() -> None:
-    """Test that planning status shows rocket emoji and plan reference."""
+    """Test that planning status shows rocket emoji."""
     issue = _make_issue(1800, "Objective: Planning", OBJECTIVE_WITH_PARALLEL_DISPATCH)
     fake_gh = FakeGitHubIssues(issues={1800: issue})
     runner = CliRunner()
@@ -691,7 +681,6 @@ def test_view_planning_status_renders() -> None:
 
         assert result.exit_code == 0, f"Failed: {result.output}"
         assert "🚀 planning" in result.output
-        assert "planning plan #201" in result.output
 
 
 def test_view_in_flight_line_in_summary() -> None:

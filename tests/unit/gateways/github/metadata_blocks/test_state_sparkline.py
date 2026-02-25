@@ -12,7 +12,6 @@ def _node(status: str) -> ObjectiveNode:
         id="1.1",
         description="test",
         status=status,
-        plan=None,
         pr=None,
         depends_on=(),
         slug=None,

@@ -84,17 +84,14 @@ ROADMAP_BODY = textwrap.dedent("""\
     - id: "1.1"
       description: "Add user model"
       status: "in_progress"
-      plan: "#6513"
       pr: null
     - id: "1.2"
       description: "Add JWT library"
       status: "in_progress"
-      plan: "#6513"
       pr: null
     - id: "2.1"
       description: "Implement login"
       status: "pending"
-      plan: null
       pr: null
     ```
 
@@ -169,6 +166,10 @@ class TestApplyLandedUpdateHappyPath:
                 "plnd/some-branch",
                 "--plan",
                 "6513",
+                "--node",
+                "1.1",
+                "--node",
+                "1.2",
             ],
             obj=context_for_test(
                 github=fake_github,
@@ -236,6 +237,10 @@ class TestApplyLandedUpdateHappyPath:
                 "plnd/some-branch",
                 "--plan",
                 "6513",
+                "--node",
+                "1.1",
+                "--node",
+                "1.2",
             ],
             obj=context_for_test(
                 github=fake_github,
@@ -251,35 +256,23 @@ class TestApplyLandedUpdateHappyPath:
         assert "Design Decisions" in data["objective"]["objective_content"]
 
 
-class TestApplyLandedUpdateNoMatchedSteps:
-    def test_no_matched_steps_still_posts_comment(self, tmp_path: Path) -> None:
-        """When plan has no matched nodes, still posts action comment."""
-        # Roadmap with no nodes matching plan #6513
-        body_no_match = textwrap.dedent("""\
-            <!-- erk:metadata-block:objective-roadmap -->
-
-            <details>
-            <summary><code>objective-roadmap</code></summary>
-
-            ```yaml
-            schema_version: "2"
-            steps:
-            - id: "1.1"
-              description: "Unrelated step"
-              status: "pending"
-              plan: null
-              pr: null
-            ```
-
-            </details>
-
-            <!-- /erk:metadata-block:objective-roadmap -->
-        """)
-        objective = _make_issue(number=6423, title="My Objective", body=body_no_match)
+class TestApplyLandedUpdateNoNodes:
+    def test_no_node_flags_still_posts_comment(self, tmp_path: Path) -> None:
+        """When no --node flags are passed, still posts action comment."""
+        objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY)
         plan = _make_issue(number=6513, title="My Plan", body=PLAN_BODY_WITH_OBJECTIVE)
         pr = _make_pr_details(number=6517, title="PR Title", body="pr body")
 
-        fake_issues = FakeGitHubIssues(issues={6423: objective, 6513: plan})
+        comment = IssueComment(
+            body=OBJECTIVE_COMMENT_BODY,
+            url="https://github.com/owner/repo/issues/6423#issuecomment-55555",
+            id=55555,
+            author="testuser",
+        )
+        fake_issues = FakeGitHubIssues(
+            issues={6423: objective, 6513: plan},
+            comments_with_urls={6423: [comment]},
+        )
         fake_github = FakeGitHub(issues_gateway=fake_issues, pr_details={6517: pr})
 
         runner = CliRunner()
@@ -430,7 +423,18 @@ class TestApplyLandedUpdateDiscovery:
         runner = CliRunner()
         result = runner.invoke(
             objective_apply_landed_update,
-            ["--pr", "6517", "--objective", "6423", "--plan", "6513"],
+            [
+                "--pr",
+                "6517",
+                "--objective",
+                "6423",
+                "--plan",
+                "6513",
+                "--node",
+                "1.1",
+                "--node",
+                "1.2",
+            ],
             obj=context_for_test(
                 github=fake_github,
                 plan_store=GitHubPlanStore(fake_issues),
