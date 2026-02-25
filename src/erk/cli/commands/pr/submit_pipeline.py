@@ -39,7 +39,7 @@ from erk_shared.impl_folder import (
     save_plan_ref,
     validate_plan_linkage,
 )
-from erk_shared.plan_store.planned_pr_lifecycle import extract_metadata_prefix
+from erk_shared.plan_store.planned_pr_lifecycle import extract_plan_header_block
 from erk_shared.scratch.scratch import write_scratch_file
 
 # ---------------------------------------------------------------------------
@@ -91,7 +91,7 @@ class SubmitState:
     plan_context: PlanContext | None
     title: str | None
     body: str | None
-    metadata_prefix: str
+    plan_header_block: str
 
 
 @dataclass(frozen=True)
@@ -182,15 +182,15 @@ def commit_wip(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError
     return state
 
 
-def capture_metadata_prefix(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
-    """Extract plan-header metadata prefix from existing PR body before gt submit overwrites it."""
+def capture_plan_header_block(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
+    """Extract plan-header metadata block from existing PR body before gt submit overwrites it."""
     pr_result = ctx.github.get_pr_for_branch(state.repo_root, state.branch_name)
     if isinstance(pr_result, PRNotFound):
         return state
-    prefix = extract_metadata_prefix(pr_result.body)
-    if not prefix:
+    block = extract_plan_header_block(pr_result.body)
+    if not block:
         return state
-    return dataclasses.replace(state, metadata_prefix=prefix)
+    return dataclasses.replace(state, plan_header_block=block)
 
 
 def push_and_create_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
@@ -699,8 +699,8 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
     pr_body = state.body or ""
     pr_title = state.title or "Update"
 
-    # Use pre-captured metadata prefix (captured before gt submit overwrites PR body)
-    metadata_prefix = state.metadata_prefix
+    # Use pre-captured plan header block (captured before gt submit overwrites PR body)
+    plan_header_block = state.plan_header_block
 
     # Check learn plan label
     impl_dir = state.cwd / ".impl"
@@ -714,7 +714,7 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
         issue_number=None,
         plans_repo=None,
         header="",
-        metadata_prefix=metadata_prefix,
+        plan_header_block=plan_header_block,
     )
 
     # Update PR metadata
@@ -811,7 +811,7 @@ def _push_and_create_pipeline() -> tuple[SubmitStep, ...]:
     return (
         prepare_state,
         commit_wip,
-        capture_metadata_prefix,
+        capture_plan_header_block,
         push_and_create_pr,
     )
 
@@ -840,7 +840,7 @@ def _submit_pipeline() -> tuple[SubmitStep, ...]:
     return (
         prepare_state,
         commit_wip,
-        capture_metadata_prefix,
+        capture_plan_header_block,
         push_and_create_pr,
         extract_diff,
         fetch_plan_context,
@@ -906,5 +906,5 @@ def make_initial_state(
         plan_context=None,
         title=None,
         body=None,
-        metadata_prefix="",
+        plan_header_block="",
     )

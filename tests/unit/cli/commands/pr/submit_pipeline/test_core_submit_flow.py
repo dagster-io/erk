@@ -36,7 +36,7 @@ def _make_state(
     plan_context: None = None,
     title: str | None = None,
     body: str | None = None,
-    metadata_prefix: str = "",
+    plan_header_block: str = "",
 ) -> SubmitState:
     return SubmitState(
         cwd=cwd,
@@ -60,7 +60,7 @@ def _make_state(
         plan_context=plan_context,
         title=title,
         body=body,
-        metadata_prefix=metadata_prefix,
+        plan_header_block=plan_header_block,
     )
 
 

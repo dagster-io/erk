@@ -748,13 +748,13 @@ def test_impl_planned_pr_preserves_metadata_and_adds_plan_section(tmp_path: Path
     git = FakeGit(current_branches={tmp_path: "plan-test-01-01"})
 
     # Build a PR body with metadata prefix and plan content (planned-PR format)
-    metadata_prefix = (
+    plan_header_block = (
         "<!-- erk:metadata-block:plan-header -->\n"
         "plan-header metadata\n"
         "<!-- /erk:metadata-block -->\n\n---\n\n"
     )
     plan_content = "# My Plan\n\n## Steps\n\n1. Do thing"
-    pr_body = metadata_prefix + plan_content
+    pr_body = plan_header_block + plan_content
 
     pr_details = PRDetails(
         number=42,
@@ -840,13 +840,13 @@ def test_cli_planned_pr_flag(tmp_path: Path) -> None:
     git = FakeGit(current_branches={tmp_path: "plan-test-01-01"})
 
     # Build a PR body with metadata prefix and plan content (planned-PR format)
-    metadata_prefix = (
+    plan_header_block = (
         "<!-- erk:metadata-block:plan-header -->\n"
         "plan-header metadata\n"
         "<!-- /erk:metadata-block -->\n\n---\n\n"
     )
     plan_content = "# My Plan\n\n## Steps\n\n1. Do thing"
-    pr_body = metadata_prefix + plan_content
+    pr_body = plan_header_block + plan_content
 
     pr_details = PRDetails(
         number=42,

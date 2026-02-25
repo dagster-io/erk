@@ -7,8 +7,8 @@ from erk_shared.plan_store.planned_pr_lifecycle import (
     PLAN_CONTENT_SEPARATOR,
     build_original_plan_section,
     build_plan_stage_body,
-    extract_metadata_prefix,
     extract_plan_content,
+    extract_plan_header_block,
 )
 
 # =============================================================================
@@ -96,11 +96,11 @@ def test_extract_plan_content_no_separator() -> None:
 
 
 # =============================================================================
-# extract_metadata_prefix
+# extract_plan_header_block
 # =============================================================================
 
 
-def test_extract_metadata_prefix() -> None:
+def test_extract_plan_header_block() -> None:
     """Extracts metadata block + separator."""
     body = (
         "<!-- erk:metadata-block:plan-header -->\n"
@@ -108,25 +108,25 @@ def test_extract_metadata_prefix() -> None:
         "<!-- /erk:metadata-block -->\n\n---\n\n"
         "rest of content"
     )
-    prefix = extract_metadata_prefix(body)
+    prefix = extract_plan_header_block(body)
     assert "<!-- erk:metadata-block:plan-header -->" in prefix
     assert prefix.endswith(PLAN_CONTENT_SEPARATOR)
 
 
-def test_extract_metadata_prefix_no_separator() -> None:
+def test_extract_plan_header_block_no_separator() -> None:
     """Returns empty string when no separator found."""
     body = "no separator here"
-    assert extract_metadata_prefix(body) == ""
+    assert extract_plan_header_block(body) == ""
 
 
-def test_extract_metadata_prefix_ignores_footer_separator() -> None:
+def test_extract_plan_header_block_ignores_footer_separator() -> None:
     """Returns empty when separator exists but no metadata block."""
     body = (
         "## Summary\n\nSome content\n\n"
         "**Remotely executed:** [Run #123](url)\n\n---\n\n"
         "To checkout..."
     )
-    assert extract_metadata_prefix(body) == ""
+    assert extract_plan_header_block(body) == ""
 
 
 def test_extract_plan_content_ignores_footer_separator() -> None:

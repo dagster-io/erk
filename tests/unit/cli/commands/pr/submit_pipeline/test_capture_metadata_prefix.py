@@ -1,10 +1,10 @@
-"""Unit tests for capture_metadata_prefix pipeline step."""
+"""Unit tests for capture_plan_header_block pipeline step."""
 
 from pathlib import Path
 
 from erk.cli.commands.pr.submit_pipeline import (
     SubmitState,
-    capture_metadata_prefix,
+    capture_plan_header_block,
 )
 from erk.core.context import context_for_test
 from erk_shared.gateway.github.fake import FakeGitHub
@@ -24,7 +24,7 @@ def _make_state(
     *,
     cwd: Path,
     branch_name: str = "feature",
-    metadata_prefix: str = "",
+    plan_header_block: str = "",
 ) -> SubmitState:
     return SubmitState(
         cwd=cwd,
@@ -48,7 +48,7 @@ def _make_state(
         plan_context=None,
         title=None,
         body=None,
-        metadata_prefix=metadata_prefix,
+        plan_header_block=plan_header_block,
     )
 
 
@@ -72,7 +72,7 @@ def _pr_with_metadata(*, number: int = 42, branch: str = "feature") -> PRDetails
 
 
 def test_captures_metadata_from_existing_pr(tmp_path: Path) -> None:
-    """Metadata prefix is captured from PR body containing a metadata block."""
+    """Plan header block is captured from PR body containing a metadata block."""
     pr = _pr_with_metadata(number=42, branch="feature")
     fake_github = FakeGitHub(
         prs_by_branch={"feature": pr},
@@ -80,11 +80,11 @@ def test_captures_metadata_from_existing_pr(tmp_path: Path) -> None:
     ctx = context_for_test(github=fake_github, cwd=tmp_path)
     state = _make_state(cwd=tmp_path)
 
-    result = capture_metadata_prefix(ctx, state)
+    result = capture_plan_header_block(ctx, state)
 
     assert isinstance(result, SubmitState)
-    assert "<!-- erk:metadata-block:start -->" in result.metadata_prefix
-    assert result.metadata_prefix.endswith(_SEPARATOR)
+    assert "<!-- erk:metadata-block:start -->" in result.plan_header_block
+    assert result.plan_header_block.endswith(_SEPARATOR)
 
 
 def test_no_pr_returns_state_unchanged(tmp_path: Path) -> None:
@@ -93,10 +93,10 @@ def test_no_pr_returns_state_unchanged(tmp_path: Path) -> None:
     ctx = context_for_test(github=fake_github, cwd=tmp_path)
     state = _make_state(cwd=tmp_path)
 
-    result = capture_metadata_prefix(ctx, state)
+    result = capture_plan_header_block(ctx, state)
 
     assert isinstance(result, SubmitState)
-    assert result.metadata_prefix == ""
+    assert result.plan_header_block == ""
 
 
 def test_pr_without_metadata_returns_state_unchanged(tmp_path: Path) -> None:
@@ -122,7 +122,7 @@ def test_pr_without_metadata_returns_state_unchanged(tmp_path: Path) -> None:
     ctx = context_for_test(github=fake_github, cwd=tmp_path)
     state = _make_state(cwd=tmp_path)
 
-    result = capture_metadata_prefix(ctx, state)
+    result = capture_plan_header_block(ctx, state)
 
     assert isinstance(result, SubmitState)
-    assert result.metadata_prefix == ""
+    assert result.plan_header_block == ""

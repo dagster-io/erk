@@ -31,7 +31,7 @@ from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_LEARN_LABEL, is_learn_plan
 from erk_shared.gateway.gt.operations.squash import execute_squash
 from erk_shared.gateway.gt.types import SquashError
-from erk_shared.plan_store.planned_pr_lifecycle import extract_metadata_prefix
+from erk_shared.plan_store.planned_pr_lifecycle import extract_plan_header_block
 
 
 @click.command("rewrite")
@@ -157,7 +157,7 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
 
     # Extract metadata prefix from draft PR body
     impl_dir = cwd / ".impl"
-    metadata_prefix = extract_metadata_prefix(pr_info.body)
+    plan_header_block = extract_plan_header_block(pr_info.body)
 
     final_body = assemble_pr_body(
         body=body,
@@ -166,7 +166,7 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
         issue_number=None,
         plans_repo=None,
         header="",
-        metadata_prefix=metadata_prefix,
+        plan_header_block=plan_header_block,
     )
 
     ctx.github.update_pr_title_and_body(

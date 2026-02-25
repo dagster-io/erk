@@ -36,8 +36,8 @@ from erk_shared.plan_store.conversion import pr_details_to_plan
 from erk_shared.plan_store.planned_pr_lifecycle import (
     PLAN_CONTENT_SEPARATOR,
     build_plan_stage_body,
-    extract_metadata_prefix,
     extract_plan_content,
+    extract_plan_header_block,
 )
 from erk_shared.plan_store.types import (
     CreatePlanResult,
@@ -505,10 +505,10 @@ class PlannedPRBackend(PlanBackend):
             raise RuntimeError(msg)
 
         # Preserve metadata prefix and replace plan content
-        metadata_prefix = extract_metadata_prefix(result.body)
-        if metadata_prefix:
+        plan_header_block = extract_plan_header_block(result.body)
+        if plan_header_block:
             updated_body = build_plan_stage_body(
-                metadata_prefix[: -len(PLAN_CONTENT_SEPARATOR)], content
+                plan_header_block[: -len(PLAN_CONTENT_SEPARATOR)], content
             )
         else:
             # No separator found - just set the content

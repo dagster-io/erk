@@ -35,7 +35,7 @@ from erk.core.context import ErkContext
 from erk.core.plan_context_provider import PlanContextProvider
 from erk_shared.context.helpers import require_context
 from erk_shared.gateway.github.types import BodyText, PRNotFound
-from erk_shared.plan_store.planned_pr_lifecycle import extract_metadata_prefix
+from erk_shared.plan_store.planned_pr_lifecycle import extract_plan_header_block
 
 
 @click.command(name="update-pr-description")
@@ -142,7 +142,7 @@ def _execute_update_description(ctx: ErkContext, *, debug: bool, session_id: str
     pr_body = msg_result.body or ""
 
     # Extract metadata prefix from draft PR body
-    metadata_prefix = extract_metadata_prefix(existing_body)
+    plan_header_block = extract_plan_header_block(existing_body)
 
     final_body = assemble_pr_body(
         body=pr_body,
@@ -151,7 +151,7 @@ def _execute_update_description(ctx: ErkContext, *, debug: bool, session_id: str
         issue_number=None,
         plans_repo=None,
         header="",
-        metadata_prefix=metadata_prefix,
+        plan_header_block=plan_header_block,
     )
 
     ctx.github.update_pr_title_and_body(
