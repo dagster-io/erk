@@ -1,5 +1,5 @@
 ---
-title: Four-Path Branch Cleanup in Land
+title: Multi-Path Branch Cleanup in Land
 read_when:
   - "modifying land_cmd.py cleanup logic"
   - "adding a new cleanup path for branch deletion"
@@ -10,9 +10,9 @@ tripwires:
     score: 6
 ---
 
-# Four-Path Branch Cleanup in Land
+# Multi-Path Branch Cleanup in Land
 
-The `erk land` command (`src/erk/cli/commands/land_cmd.py`) has five distinct cleanup paths, each handling a different worktree/slot scenario. All paths that delete branches must call `_ensure_branch_not_checked_out()` as a defensive check.
+The `erk land` command (`src/erk/cli/commands/land_cmd.py`) has six distinct cleanup paths, each handling a different worktree/slot scenario. All paths that delete branches must call `_ensure_branch_not_checked_out()` as a defensive check.
 
 ## Cleanup Paths
 
@@ -44,7 +44,16 @@ For slot worktrees without assignment (orphaned state):
 - Calls `_ensure_branch_not_checked_out()`
 - Deletes the feature branch
 
-### 5. `_cleanup_non_slot_worktree`
+### 5. `_cleanup_root_worktree`
+
+For the root worktree (not a slot, cannot be removed):
+
+- Checks out trunk branch in the root worktree
+- Calls `_ensure_branch_not_checked_out()`
+- Deletes the feature branch (force)
+- Preserves the worktree itself (root worktree cannot be removed)
+
+### 6. `_cleanup_non_slot_worktree`
 
 For non-slot (standalone) worktrees:
 
