@@ -149,6 +149,36 @@ class PlanRowData:
 
 
 @dataclass(frozen=True)
+class FetchTimings:
+    """Timing breakdown for a single fetch cycle.
+
+    All values are in milliseconds. The summary() method produces a
+    compact one-line string suitable for the status bar.
+    """
+
+    rest_issues_ms: float
+    graphql_enrich_ms: float
+    plan_parsing_ms: float
+    workflow_runs_ms: float
+    worktree_mapping_ms: float
+    row_building_ms: float
+    total_ms: float
+
+    def summary(self) -> str:
+        """One-line summary for status bar: 'rest:1.2 gql:2.3 wf:0.8 = 4.6s'."""
+        entries = [
+            ("rest", self.rest_issues_ms, 0),
+            ("gql", self.graphql_enrich_ms, 0),
+            ("parse", self.plan_parsing_ms, 100),
+            ("wf", self.workflow_runs_ms, 0),
+            ("wt", self.worktree_mapping_ms, 100),
+            ("rows", self.row_building_ms, 100),
+        ]
+        parts = [f"{label}:{ms / 1000:.1f}" for label, ms, threshold in entries if ms > threshold]
+        return " ".join(parts) + f" = {self.total_ms / 1000:.1f}s"
+
+
+@dataclass(frozen=True)
 class PlanFilters:
     """Filter options for plan list queries.
 

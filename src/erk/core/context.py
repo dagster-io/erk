@@ -364,10 +364,10 @@ def context_for_test(
     if plan_list_service is None:
         # If github and issues were provided, wire them up via RealPlanListService
         # so that tests get realistic behavior when testing plan list functionality
-        plan_list_service = RealPlanListService(github, issues)
+        plan_list_service = RealPlanListService(github, issues, time=time)
 
     if objective_list_service is None:
-        objective_list_service = RealObjectiveListService(github, issues)
+        objective_list_service = RealObjectiveListService(github, issues, time=time)
 
     if codespace_registry is None:
         codespace_registry = FakeCodespaceRegistry()
@@ -612,10 +612,10 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     github: GitHub = RealGitHub(time, repo_info, issues=issues)
 
     plan_store: PlanStore = PlannedPRBackend(github, issues, time=RealTime())
-    plan_list_service: PlanListService = PlannedPRPlanListService(github)
+    plan_list_service: PlanListService = PlannedPRPlanListService(github, time=time)
 
     # Objectives are always issue-based regardless of plan backend
-    objective_list_service: ObjectiveListService = RealObjectiveListService(github, issues)
+    objective_list_service: ObjectiveListService = RealObjectiveListService(github, issues, time=time)
 
     # 9. Apply dry-run wrappers if needed
     # Note: DryRunGitHub composes DryRunGitHubIssues internally,

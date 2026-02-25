@@ -2,6 +2,8 @@
 
 from textual.widgets import Static
 
+from erk.tui.data.types import FetchTimings
+
 
 class StatusBar(Static):
     """Footer status bar showing plan count, refresh status, and messages.
@@ -32,6 +34,7 @@ class StatusBar(Static):
         self._seconds_remaining = 0
         self._last_update: str | None = None
         self._fetch_duration: float | None = None
+        self._fetch_timings: FetchTimings | None = None
         self._message: str | None = None
         self._sort_mode: str | None = None
 
@@ -64,15 +67,23 @@ class StatusBar(Static):
         self._message = message
         self._update_display()
 
-    def set_last_update(self, time_str: str, duration_secs: float | None = None) -> None:
+    def set_last_update(
+        self,
+        time_str: str,
+        duration_secs: float | None = None,
+        *,
+        fetch_timings: FetchTimings | None = None,
+    ) -> None:
         """Set the last update time.
 
         Args:
             time_str: Formatted time string (e.g., "14:30:45")
             duration_secs: Duration of the fetch in seconds, or None
+            fetch_timings: Optional timing breakdown for each fetch phase
         """
         self._last_update = time_str
         self._fetch_duration = duration_secs
+        self._fetch_timings = fetch_timings
         self._update_display()
 
     def set_sort_mode(self, mode: str) -> None:
@@ -95,11 +106,13 @@ class StatusBar(Static):
         if self._sort_mode:
             parts.append(f"sorted {self._sort_mode}")
 
-        # Last update time with optional duration
+        # Last update time with optional duration and timing breakdown
         if self._last_update:
             update_str = f"updated: {self._last_update}"
             if self._fetch_duration is not None:
                 update_str += f" ({self._fetch_duration:.1f}s)"
+            if self._fetch_timings is not None:
+                update_str += f" {self._fetch_timings.summary()}"
             parts.append(update_str)
 
         # Refresh countdown

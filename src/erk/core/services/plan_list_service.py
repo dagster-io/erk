@@ -20,6 +20,7 @@ from erk_shared.gateway.github.types import (
     IssueFilterState,
     WorkflowRun,
 )
+from erk_shared.gateway.time.abc import Time
 from erk_shared.plan_store.conversion import issue_info_to_plan, pr_details_to_plan
 from erk_shared.plan_store.planned_pr_lifecycle import (
     extract_plan_content,
@@ -35,13 +36,15 @@ class PlannedPRPlanListService(PlanListService):
     results to PlanListData with fully populated PullRequestInfo for display.
     """
 
-    def __init__(self, github: GitHub) -> None:
+    def __init__(self, github: GitHub, *, time: Time) -> None:
         """Initialize with GitHub gateway.
 
         Args:
             github: GitHub gateway implementation
+            time: Time gateway for monotonic timing
         """
         self._github = github
+        self._time = time
 
     def get_plan_list_data(
         self,
@@ -73,6 +76,7 @@ class PlannedPRPlanListService(PlanListService):
             PlanListData with plans from draft PRs
         """
         # REST+GraphQL two-step: server-side filtering then enrichment
+        t0 = self._time.monotonic()
         pr_details_list, pr_linkages = self._github.list_plan_prs_with_details(
             location,
             labels=labels,
@@ -81,6 +85,7 @@ class PlannedPRPlanListService(PlanListService):
             author=creator,
             exclude_labels=exclude_labels,
         )
+        t1 = self._time.monotonic()
 
         plans = []
         node_id_to_plan: dict[str, int] = {}
@@ -100,6 +105,7 @@ class PlannedPRPlanListService(PlanListService):
             _, node_id, _ = extract_plan_header_dispatch_info(pr_details.body)
             if node_id is not None:
                 node_id_to_plan[node_id] = pr_details.number
+        t2 = self._time.monotonic()
 
         workflow_runs: dict[int, WorkflowRun | None] = {}
         if not skip_workflow_runs and node_id_to_plan:
@@ -112,11 +118,19 @@ class PlannedPRPlanListService(PlanListService):
                     workflow_runs[node_id_to_plan[node_id]] = run
             except Exception as e:
                 logging.warning("Failed to fetch workflow runs: %s", e)
+        t3 = self._time.monotonic()
+
+        api_ms = (t1 - t0) * 1000
+        plan_parsing_ms = (t2 - t1) * 1000
+        workflow_runs_ms = (t3 - t2) * 1000
 
         return PlanListData(
             plans=plans,
             pr_linkages=pr_linkages,
             workflow_runs=workflow_runs,
+            api_ms=api_ms,
+            plan_parsing_ms=plan_parsing_ms,
+            workflow_runs_ms=workflow_runs_ms,
         )
 
 
@@ -128,15 +142,17 @@ class RealPlanListService(PlanListService):
     batch lookup of workflow runs by node_id.
     """
 
-    def __init__(self, github: GitHub, github_issues: GitHubIssues) -> None:
+    def __init__(self, github: GitHub, github_issues: GitHubIssues, *, time: Time) -> None:
         """Initialize PlanListService with required integrations.
 
         Args:
             github: GitHub integration for PR and workflow operations
             github_issues: GitHub issues integration for issue operations
+            time: Time gateway for monotonic timing
         """
         self._github = github
         self._github_issues = github_issues
+        self._time = time
 
     def get_plan_list_data(
         self,
@@ -166,6 +182,7 @@ class RealPlanListService(PlanListService):
             PlanListData containing plans, PR linkages, and workflow runs
         """
         # Always use unified path: issues + PR linkages in one API call (~600ms)
+        t0 = self._time.monotonic()
         issues, pr_linkages = self._github.get_issues_with_pr_linkages(
             location=location,
             labels=labels,
@@ -173,9 +190,11 @@ class RealPlanListService(PlanListService):
             limit=limit,
             creator=creator,
         )
+        t1 = self._time.monotonic()
 
         # Convert IssueInfo to Plan with enriched metadata
         plans = [issue_info_to_plan(issue) for issue in issues]
+        t2 = self._time.monotonic()
 
         # Conditionally fetch workflow runs (skip for performance when not needed)
         workflow_runs: dict[int, WorkflowRun | None] = {}
@@ -201,9 +220,17 @@ class RealPlanListService(PlanListService):
                     # Network/API failure - continue without workflow run data
                     # Dashboard will show "-" for run columns, which is acceptable
                     logging.warning("Failed to fetch workflow runs: %s", e)
+        t3 = self._time.monotonic()
+
+        api_ms = (t1 - t0) * 1000
+        plan_parsing_ms = (t2 - t1) * 1000
+        workflow_runs_ms = (t3 - t2) * 1000
 
         return PlanListData(
             plans=plans,
             pr_linkages=pr_linkages,
             workflow_runs=workflow_runs,
+            api_ms=api_ms,
+            plan_parsing_ms=plan_parsing_ms,
+            workflow_runs_ms=workflow_runs_ms,
         )

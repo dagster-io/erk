@@ -11,8 +11,10 @@ Error Handling Philosophy:
 """
 
 import json
+import logging
 import secrets
 import string
+import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -60,6 +62,14 @@ from erk_shared.gateway.github.types import (
 from erk_shared.gateway.time.abc import Time
 from erk_shared.output.output import user_output
 from erk_shared.subprocess_utils import _GH_COMMAND_TIMEOUT, run_subprocess_with_context
+
+_logger = logging.getLogger(__name__)
+
+
+def _elapsed_ms(start: float, end: float) -> float:
+    """Convert monotonic clock interval to milliseconds."""
+    return (end - start) * 1000
+
 
 # Feature flag to control whether PR mutations use REST API or gh CLI commands.
 # When True: Use REST API (gh api) - uses REST quota, preserves GraphQL quota
@@ -1657,10 +1667,12 @@ query {{
         # GH-API-AUDIT: REST - GET issues (with creator + label filtering)
         cmd = ["gh", "api", endpoint]
 
+        t_rest_start = time.monotonic()
         try:
             stdout = execute_gh_command_with_retry(cmd, location.root, self._time)
         except RuntimeError:
             return ([], {})
+        t_rest_end = time.monotonic()
 
         issues_data = json.loads(stdout)
 
@@ -1677,11 +1689,26 @@ query {{
             ]
 
         if not pr_items:
+            rest_ms = _elapsed_ms(t_rest_start, t_rest_end)
+            _logger.info("list_plan_prs_with_details: REST=%.0fms (0 PRs after filter)", rest_ms)
             return ([], {})
 
         # Step 2: Batched GraphQL enrichment for rich PR fields
         pr_numbers = [item["number"] for item in pr_items]
+        t_gql_start = time.monotonic()
         enrichment_data = self._enrich_prs_via_graphql(location, pr_numbers)
+        t_gql_end = time.monotonic()
+
+        rest_ms = _elapsed_ms(t_rest_start, t_rest_end)
+        gql_ms = _elapsed_ms(t_gql_start, t_gql_end)
+        merge_ms = _elapsed_ms(t_gql_end, time.monotonic())
+        _logger.info(
+            "list_plan_prs_with_details: REST=%.0fms GraphQL=%.0fms merge=%.0fms (%d PRs)",
+            rest_ms,
+            gql_ms,
+            merge_ms,
+            len(pr_numbers),
+        )
 
         # Merge REST + GraphQL data into PRDetails and PullRequestInfo
         return self._merge_rest_graphql_pr_data(pr_items, enrichment_data, repo_id)
