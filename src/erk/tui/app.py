@@ -23,6 +23,7 @@ from erk.tui.filtering.logic import filter_plans
 from erk.tui.filtering.types import FilterMode, FilterState
 from erk.tui.screens.help_screen import HelpScreen
 from erk.tui.screens.launch_screen import LaunchScreen
+from erk.tui.screens.objective_plans_screen import ObjectivePlansScreen
 from erk.tui.screens.plan_body_screen import PlanBodyScreen
 from erk.tui.screens.plan_detail_screen import PlanDetailScreen
 from erk.tui.screens.unresolved_comments_screen import UnresolvedCommentsScreen
@@ -95,6 +96,7 @@ class ErkDashApp(App):
         Binding("1", "switch_view_plans", "Plans", show=False),
         Binding("2", "switch_view_learn", "Learn", show=False),
         Binding("3", "switch_view_objectives", "Objectives", show=False),
+        Binding("d", "drill_down", "Drill Down", show=False),
         Binding("right", "next_view", "Next View", show=False, priority=True),
         Binding("left", "previous_view", "Previous View", show=False, priority=True),
     ]
@@ -826,6 +828,22 @@ class ErkDashApp(App):
                 full_title=row.full_title,
                 resolved_count=row.resolved_comment_count,
                 total_count=row.total_comment_count,
+            )
+        )
+
+    def action_drill_down(self) -> None:
+        """Show plans for selected objective (Objectives view only)."""
+        if self._view_mode != ViewMode.OBJECTIVES:
+            return
+        row = self._get_selected_row()
+        if row is None:
+            return
+        self.push_screen(
+            ObjectivePlansScreen(
+                provider=self._provider,
+                objective_id=row.plan_id,
+                objective_title=row.full_title,
+                progress_display=row.objective_progress_display,
             )
         )
 

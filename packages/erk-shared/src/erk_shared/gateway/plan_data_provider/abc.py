@@ -124,6 +124,18 @@ class PlanDataProvider(ABC):
         ...
 
     @abstractmethod
+    def fetch_plans_for_objective(self, objective_issue: int) -> list[PlanRowData]:
+        """Fetch plans associated with a specific objective.
+
+        Args:
+            objective_issue: The objective issue number to filter by
+
+        Returns:
+            List of PlanRowData objects for plans linked to this objective
+        """
+        ...
+
+    @abstractmethod
     def fetch_unresolved_comments(self, pr_number: int) -> list[PRReviewThread]:
         """Fetch unresolved review threads for a pull request.
 
