@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Add fetch timing instrumentation to `erk dash`"
+}
