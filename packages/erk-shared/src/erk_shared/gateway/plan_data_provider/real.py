@@ -14,7 +14,7 @@ from erk.core.display_utils import (
 )
 from erk.core.pr_utils import select_display_pr
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext, ensure_erk_metadata_dir
-from erk.tui.data.types import PlanFilters, PlanRowData
+from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
 from erk.tui.sorting.types import BranchActivity
 from erk_shared.gateway.browser.abc import BrowserLauncher
 from erk_shared.gateway.clipboard.abc import Clipboard
@@ -114,15 +114,17 @@ class RealPlanDataProvider(PlanDataProvider):
         """Get the browser launcher interface for opening URLs."""
         return self._browser
 
-    def fetch_plans(self, filters: PlanFilters) -> list[PlanRowData]:
+    def fetch_plans(self, filters: PlanFilters) -> tuple[list[PlanRowData], FetchTimings | None]:
         """Fetch plans and transform to TUI row format.
 
         Args:
             filters: Filter options for the query
 
         Returns:
-            List of PlanRowData objects for display
+            Tuple of (list of PlanRowData for display, optional FetchTimings breakdown)
         """
+        t_total_start = self._ctx.time.monotonic()
+
         # Determine if we need workflow runs
         needs_workflow_runs = filters.show_runs or filters.run_state is not None
 
@@ -149,12 +151,15 @@ class RealPlanDataProvider(PlanDataProvider):
             )
 
         # Build local worktree mapping
+        t_wt_start = self._ctx.time.monotonic()
         worktree_by_plan_id = self._build_worktree_mapping()
+        t_wt_end = self._ctx.time.monotonic()
 
         # Use pre-converted Plan objects from PlanListData
         plans = plan_data.plans
 
         # Transform to PlanRowData
+        t_rows_start = self._ctx.time.monotonic()
         rows: list[PlanRowData] = []
         global_config = self._ctx.global_config
         use_graphite = global_config.use_graphite if global_config is not None else False
@@ -182,8 +187,28 @@ class RealPlanDataProvider(PlanDataProvider):
                 use_graphite=use_graphite,
             )
             rows.append(row)
+        t_rows_end = self._ctx.time.monotonic()
 
-        return rows
+        # Build timing breakdown
+        # api_ms covers REST + GraphQL enrichment from PlanListData
+        # plan_parsing_ms covers body parsing from PlanListData
+        # workflow_runs_ms covers workflow run fetching from PlanListData
+        timings = FetchTimings(
+            rest_issues_ms=plan_data.api_ms,
+            graphql_enrich_ms=0.0,
+            plan_parsing_ms=plan_data.plan_parsing_ms,
+            workflow_runs_ms=plan_data.workflow_runs_ms,
+            worktree_mapping_ms=(t_wt_end - t_wt_start) * 1000,
+            row_building_ms=(t_rows_end - t_rows_start) * 1000,
+            total_ms=(t_rows_end - t_total_start) * 1000,
+        )
+
+        logger.info("fetch_plans timings: %s", timings.summary())
+
+        # Write timing to log file for post-execution analysis
+        self._append_timing_log(timings, len(rows))
+
+        return (rows, timings)
 
     def close_plan(self, plan_id: int, plan_url: str) -> list[int]:
         """Close a plan and its linked PRs using direct HTTP calls.
@@ -465,7 +490,8 @@ class RealPlanDataProvider(PlanDataProvider):
                 exclude_labels=(),
                 creator=None,
             )
-            all_plans.extend(self.fetch_plans(filters))
+            rows, _timings = self.fetch_plans(filters)
+            all_plans.extend(rows)
         return [row for row in all_plans if row.objective_issue == objective_issue]
 
     def fetch_unresolved_comments(self, pr_number: int) -> list[PRReviewThread]:
@@ -480,6 +506,28 @@ class RealPlanDataProvider(PlanDataProvider):
         return self._ctx.github.get_pr_review_threads(
             self._location.root, pr_number, include_resolved=False
         )
+
+    def _append_timing_log(self, timings: FetchTimings, row_count: int) -> None:
+        """Append timing data to .erk/scratch/dash-timings.log for post-execution analysis.
+
+        Silently ignores all errors (sentinel paths in tests, missing directory,
+        permissions, etc.) since timing logs are strictly informational.
+
+        Args:
+            timings: Timing breakdown for this fetch cycle
+            row_count: Number of rows returned
+        """
+        try:
+            log_dir = self._location.root / ".erk" / "scratch"
+            if not log_dir.is_dir():
+                return
+            log_file = log_dir / "dash-timings.log"
+            timestamp = self._ctx.time.now().strftime("%Y-%m-%d %H:%M:%S")
+            line = f"{timestamp}  rows={row_count}  {timings.summary()}\n"
+            with open(log_file, "a") as f:
+                f.write(line)
+        except Exception:
+            logger.debug("Failed to write timing log", exc_info=True)
 
     def _build_worktree_mapping(self) -> dict[int, tuple[str, str | None]]:
         """Build mapping of plan ID to (worktree name, branch).

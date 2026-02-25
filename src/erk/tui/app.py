@@ -18,7 +18,7 @@ from textual.widgets import Header, Input, Label
 
 from erk.tui.commands.provider import MainListCommandProvider
 from erk.tui.commands.types import CommandContext
-from erk.tui.data.types import PlanFilters, PlanRowData
+from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
 from erk.tui.filtering.logic import filter_plans
 from erk.tui.filtering.types import FilterMode, FilterState
 from erk.tui.screens.help_screen import HelpScreen
@@ -219,10 +219,13 @@ class ErkDashApp(App):
             exclude_labels=view_config.exclude_labels,
         )
 
+        fetch_timings: FetchTimings | None = None
         try:
             # Run sync fetch in executor to avoid blocking
             loop = asyncio.get_running_loop()
-            rows = await loop.run_in_executor(None, self._provider.fetch_plans, active_filters)
+            rows, fetch_timings = await loop.run_in_executor(
+                None, self._provider.fetch_plans, active_filters
+            )
 
             # If sorting by activity, also fetch activity data
             if self._sort_state.key == SortKey.BRANCH_ACTIVITY:
@@ -241,7 +244,9 @@ class ErkDashApp(App):
         update_time = datetime.now().strftime("%H:%M:%S")
 
         # Update UI directly since we're in async context
-        self._update_table(rows, update_time, duration, fetched_mode=fetched_mode)
+        self._update_table(
+            rows, update_time, duration, fetched_mode=fetched_mode, fetch_timings=fetch_timings
+        )
 
     def _update_table(
         self,
@@ -250,6 +255,7 @@ class ErkDashApp(App):
         duration: float | None,
         *,
         fetched_mode: ViewMode,
+        fetch_timings: FetchTimings | None = None,
     ) -> None:
         """Update table with new data.
 
@@ -260,6 +266,7 @@ class ErkDashApp(App):
             fetched_mode: The view mode that was active when the fetch started.
                 Data is cached under that mode's labels and the display is only
                 updated if it still matches the current view.
+            fetch_timings: Optional timing breakdown for each fetch phase
         """
         # Cache under the FETCHED view's labels (always correct)
         fetched_config = get_view_config(fetched_mode)
@@ -287,7 +294,7 @@ class ErkDashApp(App):
             self._status_bar.set_plan_count(len(self._rows), noun=noun)
             self._status_bar.set_sort_mode(self._sort_state.display_label)
             if update_time is not None:
-                self._status_bar.set_last_update(update_time, duration)
+                self._status_bar.set_last_update(update_time, duration, fetch_timings=fetch_timings)
 
     def _apply_filter_and_sort(self, rows: list[PlanRowData]) -> list[PlanRowData]:
         """Apply current filter and sort to rows.

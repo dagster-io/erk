@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from erk.core.repo_discovery import RepoContext
+from erk.tui.data.types import FetchTimings
 from erk_shared.gateway.browser.fake import FakeBrowserLauncher
 from erk_shared.gateway.clipboard.fake import FakeClipboard
 from erk_shared.gateway.git.abc import WorktreeInfo
@@ -1770,3 +1771,90 @@ class TestFetchPlansByIds:
         result = provider.fetch_plans_by_ids({100, 300})
 
         assert [r.plan_id for r in result] == [100, 300]
+
+
+class TestAppendTimingLog:
+    """Tests for _append_timing_log method."""
+
+    def _make_provider(self, tmp_path: Path) -> RealPlanDataProvider:
+        """Create a RealPlanDataProvider for testing timing log."""
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir()
+
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=repo_root, branch="main", is_root=True),
+                ]
+            },
+            git_common_dirs={repo_root: repo_root / ".git"},
+        )
+
+        ctx = create_test_context(
+            git=git,
+            github=FakeGitHub(pr_issue_linkages={}),
+            cwd=repo_root,
+            repo=_make_repo_context(repo_root, tmp_path),
+        )
+
+        location = GitHubRepoLocation(
+            root=repo_root,
+            repo_id=GitHubRepoId(owner="test", repo="repo"),
+        )
+        return RealPlanDataProvider(
+            ctx=ctx,
+            location=location,
+            clipboard=FakeClipboard(),
+            browser=FakeBrowserLauncher(),
+            http_client=FakeHttpClient(),
+        )
+
+    def _make_timings(self) -> FetchTimings:
+        return FetchTimings(
+            rest_issues_ms=1000,
+            graphql_enrich_ms=500,
+            plan_parsing_ms=200,
+            workflow_runs_ms=300,
+            worktree_mapping_ms=50,
+            row_building_ms=20,
+            total_ms=2070,
+        )
+
+    def test_writes_timing_log_when_scratch_dir_exists(self, tmp_path: Path) -> None:
+        """Appends a timing line when .erk/scratch/ directory exists."""
+        provider = self._make_provider(tmp_path)
+        scratch_dir = tmp_path / "repo" / ".erk" / "scratch"
+        scratch_dir.mkdir()
+
+        provider._append_timing_log(self._make_timings(), row_count=5)
+
+        log_file = scratch_dir / "dash-timings.log"
+        assert log_file.exists()
+        content = log_file.read_text()
+        assert "rows=5" in content
+        assert "rest:1.0" in content
+
+    def test_skips_when_scratch_dir_missing(self, tmp_path: Path) -> None:
+        """Returns silently when .erk/scratch/ directory does not exist."""
+        provider = self._make_provider(tmp_path)
+        # Don't create scratch dir
+        provider._append_timing_log(self._make_timings(), row_count=3)
+        # Should not raise and no file created
+        assert not (tmp_path / "repo" / ".erk" / "scratch" / "dash-timings.log").exists()
+
+    def test_appends_multiple_entries(self, tmp_path: Path) -> None:
+        """Multiple calls append separate lines to the log file."""
+        provider = self._make_provider(tmp_path)
+        scratch_dir = tmp_path / "repo" / ".erk" / "scratch"
+        scratch_dir.mkdir()
+
+        provider._append_timing_log(self._make_timings(), row_count=5)
+        provider._append_timing_log(self._make_timings(), row_count=10)
+
+        log_file = scratch_dir / "dash-timings.log"
+        lines = log_file.read_text().strip().split("\n")
+        assert len(lines) == 2
+        assert "rows=5" in lines[0]
+        assert "rows=10" in lines[1]

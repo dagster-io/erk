@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from erk.tui.data.types import PlanFilters, PlanRowData
+from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
 from erk.tui.sorting.types import BranchActivity
 from erk_shared.gateway.browser.abc import BrowserLauncher
 from erk_shared.gateway.clipboard.abc import Clipboard
@@ -47,14 +47,14 @@ class PlanDataProvider(ABC):
         ...
 
     @abstractmethod
-    def fetch_plans(self, filters: PlanFilters) -> list[PlanRowData]:
+    def fetch_plans(self, filters: PlanFilters) -> tuple[list[PlanRowData], FetchTimings | None]:
         """Fetch plans matching the given filters.
 
         Args:
             filters: Filter options for the query
 
         Returns:
-            List of PlanRowData objects for display
+            Tuple of (list of PlanRowData for display, optional FetchTimings breakdown)
         """
         ...
 
