@@ -63,3 +63,21 @@ class DryRunHttpClient(HttpClient):
         """
         user_output(f"[DRY RUN] Would GET {endpoint}")
         return {}
+
+    def get_list(
+        self,
+        endpoint: str,
+    ) -> list[dict[str, Any]]:
+        """No-op for GET list request in dry-run mode."""
+        user_output(f"[DRY RUN] Would GET {endpoint}")
+        return []
+
+    def graphql(
+        self,
+        *,
+        query: str,
+        variables: dict[str, Any],
+    ) -> dict[str, Any]:
+        """No-op for GraphQL request in dry-run mode."""
+        user_output("[DRY RUN] Would POST graphql")
+        return {}
