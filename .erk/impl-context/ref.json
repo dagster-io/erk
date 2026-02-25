@@ -1,4 +1,9 @@
 {
   "provider": "github-draft-pr",
-  "title": "Make `erk pr sync` resilient to other-worktree gt sync failures"
+  "plan_id": "8217",
+  "url": "https://github.com/dagster-io/erk/pull/8217",
+  "created_at": "2026-02-25T21:57:54.266659",
+  "synced_at": "2026-02-25T21:57:54.266659",
+  "labels": [],
+  "objective_id": null
 }
