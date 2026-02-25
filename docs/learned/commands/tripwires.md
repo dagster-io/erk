@@ -14,6 +14,8 @@ Rules triggered by matching actions in code.
 
 **adding allowed-tools to a command or agent frontmatter** → Read [Tool Restriction Safety Pattern](tool-restriction-safety.md) first. ALWAYS apply the minimal-set principle — only allow tools the command actually needs
 
+**creating a destructive slash command without a preview variant** → Read [Preview Command Pattern](preview-command-pattern.md) first. Consider pairing with a preview command (e.g., pr-address + pr-preview-address). Preview commands show planned actions without executing, reducing costly mistakes.
+
 **creating commands that delegate to subagents** → Read [Tool Restriction Safety Pattern](tool-restriction-safety.md) first. NEVER omit Task from allowed-tools if the command delegates to subagents
 
 **modifying collateral finding categories or auto-apply behavior in audit-doc** → Read [Audit-Doc Design Decisions](audit-doc.md) first. CRITICAL: Read this doc first to understand the conceptual vs mechanical finding distinction

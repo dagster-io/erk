@@ -245,6 +245,19 @@ assert fake_time.sleep_calls == [2.0]
 
 ### Real-World Examples
 
+**Timestamp injection via `now_iso` parameter**: Functions that need timestamps accept `now_iso: str` instead of calling `datetime.now()` directly. This makes tests deterministic:
+
+```python
+# Production: caller provides current time
+create_impl_context(..., now_iso=datetime.now(UTC).isoformat())
+
+# Tests: caller provides fixed time
+FAKE_NOW_ISO = "2026-01-15T10:00:00+00:00"
+create_impl_context(..., now_iso=FAKE_NOW_ISO)
+```
+
+See `packages/erk-shared/src/erk_shared/impl_context.py` for the canonical `now_iso` pattern.
+
 **Retry with exponential backoff**: Use `context.time.sleep(delay)` in retry loops for instant test execution. See `src/erk/cli/commands/land_cmd.py` and `src/erk/cli/commands/land_pipeline.py` for production patterns.
 
 **GitHub API stabilization**:

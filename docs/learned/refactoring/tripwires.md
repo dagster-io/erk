@@ -20,6 +20,8 @@ Rules triggered by matching actions in code.
 
 **manually updating imports across 10+ files** → Read [LibCST Systematic Import Refactoring](libcst-systematic-imports.md) first. Use LibCST via the libcst-refactor agent or a one-off script. Manual editing misses call sites and creates partial migration states.
 
+**removing a feature without checking all artifact categories** → Read [Feature Removal Checklist](feature-removal-checklist.md) first. Feature removal leaves scattered artifacts. Use this checklist to verify complete removal across source code, tests, constants, documentation, workflows, CLI commands, and glossary entries.
+
 **renaming display strings without checking test assertions** → Read [Systematic Terminology Renames](systematic-terminology-renames.md) first. After display-string renames, search test assertions: `grep -r '"old_term"' tests/`. Not caught by linters or type checkers.
 
 **running targeted edits after replace_all operations in the same file** → Read [LibCST Systematic Import Refactoring](libcst-systematic-imports.md) first. During type migrations, complete all rename operations before attempting targeted edits. replace_all operations change strings that later edits expect to find.

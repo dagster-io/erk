@@ -140,6 +140,8 @@ Rules triggered by matching actions in code.
 
 **constructing gist raw URLs with hardcoded filenames** → Read [GitHub Gist URL Patterns](github-gist-api.md) first. Use /raw/ without filename - GitHub redirects to first file.
 
+**creating .erk/impl-context/ without using create_impl_context()** → Read [Impl-Context API](impl-context-api.md) first. Use the three-function API in impl_context.py. Manual folder creation skips validation and ref.json generation.
+
 **creating Protocol with bare attributes for frozen dataclasses** → Read [Protocol vs ABC Interface Design Guide](protocol-vs-abc.md) first. Use @property decorators in Protocol for frozen dataclass compatibility. Bare attributes cause type errors.
 
 **creating a new ABC without deciding gateway vs backend pattern** → Read [Gateway vs Backend ABC Pattern](gateway-vs-backend.md) first. Read gateway-vs-backend.md first. Gateways wrap external tools (5-place: abc, real, fake, dry_run, printing). Backends abstract business logic (3-place: abc, real, fake). Wrong choice creates unnecessary boilerplate or missing test support.
@@ -163,8 +165,6 @@ Rules triggered by matching actions in code.
 **detecting mode after Phase 0 has already executed** → Read [Phase 0 Detection Pattern](phase-zero-detection-pattern.md) first. Late detection wastes work and creates scattered conditionals across all phases
 
 **duplicating environment setup in remote commands** → Read [Composable Remote Commands Pattern](composable-remote-commands.md) first. build_codespace_ssh_command() bootstraps the environment - don't duplicate setup
-
-**editing local plan files without syncing to GitHub** → Read [Plan File Sync Pattern](plan-file-sync-pattern.md) first. Sync is NOT automatic — GitHub issue will show stale content without explicit sync
 
 **execute_interactive() never returns in production** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. it replaces the process via os.execvp
 
@@ -222,7 +222,11 @@ Rules triggered by matching actions in code.
 
 **reading from or writing to ~/.claude/ paths using Path.home() directly** [pattern: `Path\.home\(\).*\.claude`] → Read [ClaudeInstallation Gateway](claude-installation-gateway.md) first. Use ClaudeInstallation gateway instead. All ~/.claude/ filesystem operations must go through this gateway for testability and storage abstraction.
 
+**reading plan reference without using read_plan_ref()** → Read [Ref JSON Migration](ref-json-migration.md) first. Use read_plan_ref() which handles the three-file fallback chain: plan-ref.json → ref.json → issue.json (legacy). Manual JSON parsing skips fallback and field mapping.
+
 **relying solely on agent-level enforcement for critical rules** → Read [Defense-in-Depth Enforcement](defense-in-depth-enforcement.md) first. Add skill-level and PR-level enforcement layers. Only workflow/CI enforcement is truly reliable.
+
+**removing .erk/impl-context/ during implementation without git rm** → Read [Impl-Context API](impl-context-api.md) first. Use git rm -rf for committed impl-context (Step 2d of plan-implement). The remove_impl_context() function is for filesystem-only removal.
 
 **removing an abstract method from a gateway ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must remove from 5 places simultaneously: abc.py, real.py, fake.py, dry_run.py, printing.py. Partial removal causes type checker errors. Update all call sites to use subgateway property. Verify with grep across packages.
 
@@ -303,6 +307,8 @@ Rules triggered by matching actions in code.
 **using this pattern** → Read [SSH Command Execution Patterns](ssh-command-execution.md) first. SSH command must be a single string argument, not multiple shell words
 
 **using this pattern** → Read [SSH Command Execution Patterns](ssh-command-execution.md) first. Missing -t flag prevents TTY allocation and breaks interactive programs
+
+**using try/except KeyError for JSON field access** → Read [JSON Parsing Patterns](json-parsing-patterns.md) first. Use LBYL pattern: check field presence with `any(f not in data for f in _REQUIRED_FIELDS)` before accessing. Never use try/except for control flow.
 
 **using unquoted heredoc delimiters (<<EOF) when the body contains $, \, or backticks** [pattern: `<<\s*EOF\b`] → Read [Heredoc Quoting and Escaping in Agent-Generated Bash](bash-python-integration.md) first. bash silently expands them
 

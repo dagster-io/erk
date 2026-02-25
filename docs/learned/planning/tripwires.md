@@ -170,6 +170,8 @@ Rules triggered by matching actions in code.
 
 **reading parallel agent output without verifying files exist** → Read [Parallel Agent Orchestration for Bulk Operations](parallel-audit-pattern.md) first. Always verify output files exist (ls -la) before reading. Agent failures may produce empty or missing files.
 
+**recovering a branch name from a PR number using UI or truncated display** → Read [Branch Name Inference](branch-name-inference.md) first. Use `gh pr view <pr-number> --json headRefName` to recover exact branch names. UI display may truncate long branch names.
+
 **relying on agent instructions as the sole enforcement for a critical operation** → Read [Workflow Reliability Patterns](reliability-patterns.md) first. Agent behavior is non-deterministic. Critical operations need a deterministic workflow step as the final safety net.
 
 **removing .erk/impl-context/ during implementation (before CI passes)** → Read [.erk/impl-context/ vs .impl/ Cleanup Discipline](worktree-cleanup.md) first. The folder is load-bearing during implementation — Claude reads from it (via copy to .impl/). Only remove after implementation succeeds and CI passes.

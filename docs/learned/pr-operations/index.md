@@ -7,6 +7,7 @@
 - **[checkout-footer-syntax.md](checkout-footer-syntax.md)** — building or modifying PR body footer content, debugging erk pr check validation failures, working on the submit pipeline or git-pr-push command
 - **[commit-message-generation.md](commit-message-generation.md)** — understanding how PR descriptions are generated, working with plan context in PR summaries, customizing commit message generation
 - **[draft-pr-handling.md](draft-pr-handling.md)** — creating or working with draft PRs, understanding when to use draft status, converting between draft and ready for review, debugging why CI didn't run on a PR, working with orphaned or duplicate PRs for a plan
+- **[feedback-classification.md](feedback-classification.md)** — working with PR review comment classification, understanding how pr-address categorizes feedback, implementing feedback handling workflows
 - **[large-diff-recovery.md](large-diff-recovery.md)** — debugging PR submission failures with large diffs, modifying diff extraction for PR descriptions, understanding why local git diff is used instead of GitHub API
 - **[plan-embedding-in-pr.md](plan-embedding-in-pr.md)** — embedding plan content in a PR body, debugging missing or malformed plan sections in pull requests, modifying how plan context flows through PR submission
 - **[plan-implementation-auto-force.md](plan-implementation-auto-force.md)** — debugging why erk pr submit force-pushed when --force was not specified, understanding force-push behavior for plan implementation branches, working with the submit pipeline for plan branches

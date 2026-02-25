@@ -45,28 +45,15 @@ This creates a decision tree at the entry point rather than conditionals scatter
 
 <!-- Source: .claude/commands/erk/pr-address.md, Phase 0 section -->
 
-The `/erk:pr-address` command handles two distinct modes:
-
-- **Code review mode**: Address code review feedback (Phases 1-4)
-- **Plan review mode**: Address plan document feedback (separate flow)
-
-Phase 0 determines which path to follow by checking for the `erk-plan-review` label on the PR. If the label exists, the command skips normal Phases 1-4 entirely and enters a separate plan review flow that edits `PLAN-REVIEW-{issue}.md` instead of source code.
-
-See Phase 0 implementation in `.claude/commands/erk/pr-address.md` (lines 32-50).
+The `/erk:pr-address` command uses Phase 0 detection to determine which workflow to follow based on PR labels. Phase 0 checks for mode-determining labels and branches the entire execution flow accordingly.
 
 ### Why This Works
 
-**Single decision point**: Mode logic lives in Phase 0. Phases 1-4 don't check the mode — they simply don't run if plan review mode is active.
+**Single decision point**: Mode logic lives in Phase 0. Later phases don't check the mode — they simply don't run if an alternative mode is active.
 
-**Complete separation**: The command document has distinct sections:
+**Complete separation**: The command document has distinct sections for each mode. Anyone reading the command knows exactly which phases run in which mode without tracking conditionals.
 
-- Phase 0: Detection logic
-- Phases 1-4: Code review mode (standard flow)
-- Separate section: Plan review mode (alternative flow)
-
-Anyone reading the command knows exactly which phases run in which mode without tracking conditionals.
-
-**No mode leakage**: Code review phases never see plan review context. Plan review phases never see code review logic.
+**No mode leakage**: Each mode's phases never see another mode's context or logic.
 
 ## Detection Mechanisms
 
@@ -80,11 +67,7 @@ gh pr view --json labels -q '.labels[].name'
 
 If the label exists in the output, switch to alternative mode.
 
-<!-- Source: src/erk/cli/constants.py:52 -->
-
-Example: The `PLAN_REVIEW_LABEL` constant defines `"erk-plan-review"` as the label that triggers plan review mode.
-
-**Why labels work**: Labels are applied by automated workflows (e.g., `erk exec plan-create-review-pr`) and remain stable throughout the PR lifecycle. They're a durable signal of PR intent.
+**Why labels work**: Labels are applied by automated workflows and remain stable throughout the PR lifecycle. They're a durable signal of PR intent.
 
 ### Flag-Based Detection
 
@@ -199,9 +182,7 @@ Skip Phase 0 when:
 
 ### Label-Driven Branching
 
-<!-- Source: .claude/commands/erk/pr-address.md, Phase 0 detection -->
-
-Phase 0 detection often uses GitHub PR labels as feature switches. Labels represent mode variants and are applied automatically by workflows (e.g., `erk exec plan-create-review-pr` applies `erk-plan-review` label).
+Phase 0 detection often uses GitHub PR labels as feature switches. Labels represent mode variants and are applied automatically by workflows.
 
 **Why labels**: They're durable (don't change during PR lifecycle) and workflow-controlled (no user decision needed).
 
@@ -230,8 +211,3 @@ When adding Phase 0 detection to a command:
 
 - [Workflow Gating Patterns](../ci/workflow-gating-patterns.md) — Conditional execution in CI contexts
 - [PR Address Workflows](../erk/pr-address-workflows.md) — Complete pr-address workflow including both modes
-- [Plan Review Workflow](../planning/pr-review-workflow.md) — The plan review mode triggered by Phase 0 detection
-
-## Attribution
-
-Pattern formalized during PR #6237 implementation (plan review mode for pr-address).
