@@ -305,24 +305,33 @@ class RealGraphite(Graphite):
         if force:
             cmd.append("--force")
 
-        # Use 120-second timeout for network operations
+        # Use 90-second timeout to leave headroom before Bash tool's 120s timeout.
+        # Capture stdout so Python controls when output is written to the pipe,
+        # preventing loss of all output when the process is killed externally.
         try:
             result = subprocess.run(
                 cmd,
                 cwd=repo_root,
-                timeout=120,
-                stdout=DEVNULL if quiet else sys.stdout,
+                timeout=90,
+                stdout=DEVNULL if quiet else subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
                 check=True,
             )
+            if not quiet and result.stdout:
+                user_output(result.stdout, nl=False)
             if not quiet and result.stderr:
                 user_output(result.stderr, nl=False)
         except subprocess.TimeoutExpired as e:
+            if not quiet and e.stdout:
+                stdout = e.stdout if isinstance(e.stdout, str) else e.stdout.decode()
+                user_output(stdout, nl=False)
             raise RuntimeError(
-                "gt submit timed out after 120 seconds. Check network connectivity and try again."
+                "gt submit timed out after 90 seconds. Check network connectivity and try again."
             ) from e
         except subprocess.CalledProcessError as e:
+            if not quiet and e.stdout:
+                user_output(e.stdout, nl=False)
             raise RuntimeError(
                 f"gt submit failed (exit code {e.returncode}): {e.stderr or ''}"
             ) from e
