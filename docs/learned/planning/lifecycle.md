@@ -642,7 +642,7 @@ When implementing a plan that corresponds to an objective roadmap step, the work
 ### Marker-Based State Management
 
 1. **Create markers during planning:**
-   - `objective-context` marker: stores objective issue number (triggers exit-plan-mode hook to suggest correct save command)
+   - `objective-context` marker: stores objective issue number (read by plan-save to link the plan to its parent objective)
    - `roadmap-step` marker: stores step ID (e.g., "1C.2") for automatic roadmap updates
 
 2. **Automatic roadmap update on plan save:**

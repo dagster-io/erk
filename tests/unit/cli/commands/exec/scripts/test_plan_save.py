@@ -197,7 +197,7 @@ def test_planned_pr_objective_issue_from_marker(
 
     assert result.exit_code == 0, f"Failed: {result.output}"
     # Parse JSON from output (skip stderr lines mixed in by CliRunner)
-    json_line = [line for line in result.output.strip().splitlines() if line.startswith("{")][0]
+    json_line = next(line for line in result.output.strip().splitlines() if line.startswith("{"))
     output = json.loads(json_line)
     assert output["success"] is True
     # Branch name should include objective ID
