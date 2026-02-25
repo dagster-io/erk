@@ -1,0 +1,42 @@
+{
+  "success": true,
+  "pr_number": 8130,
+  "threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5wj7eT",
+      "path": "tests/unit/cli/commands/exec/scripts/test_setup_impl.py",
+      "line": 95,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Python**: EAFP anti-pattern - Using `next()` on generator without default value raises implicit `StopIteration`. Use LBYL: check if list has matching line first, or provide default to `next()`.",
+          "created_at": "2026-02-25T02:41:43Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed: replaced next() with LBYL list check + assert\n\n_Addressed via `/erk:pr-address` at 2026-02-24 18:46 PST_",
+          "created_at": "2026-02-25T02:46:14Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5wj7v-",
+      "path": "tests/unit/cli/commands/exec/scripts/test_setup_impl.py",
+      "line": 95,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Dignified Code Simplifier Review**: EAFP anti-pattern detected - `next()` without default value raises implicit StopIteration exception. Use LBYL: provide a default to `next()` or check the list first before calling it. See [dignified-python-core.md](https://github.com/dagster-io/erk/blob/main/.claude/skills/dignified-python/dignified-python-core.md#the-cornerstone-lbyl-over-eafp) - LBYL over EAFP.",
+          "created_at": "2026-02-25T02:42:22Z"
+        },
+        {
+          "author": "schrockn",
+          "body": "Fixed: replaced next() with LBYL list check + assert\n\n_Addressed via `/erk:pr-address` at 2026-02-24 18:46 PST_",
+          "created_at": "2026-02-25T02:46:16Z"
+        }
+      ]
+    }
+  ]
+}
