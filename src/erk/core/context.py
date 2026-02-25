@@ -615,7 +615,9 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     plan_list_service: PlanListService = PlannedPRPlanListService(github, time=time)
 
     # Objectives are always issue-based regardless of plan backend
-    objective_list_service: ObjectiveListService = RealObjectiveListService(github, issues, time=time)
+    objective_list_service: ObjectiveListService = RealObjectiveListService(
+        github, issues, time=time
+    )
 
     # 9. Apply dry-run wrappers if needed
     # Note: DryRunGitHub composes DryRunGitHubIssues internally,
