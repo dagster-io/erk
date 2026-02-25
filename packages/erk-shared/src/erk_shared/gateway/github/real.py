@@ -14,7 +14,6 @@ import json
 import logging
 import secrets
 import string
-import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -1667,12 +1666,12 @@ query {{
         # GH-API-AUDIT: REST - GET issues (with creator + label filtering)
         cmd = ["gh", "api", endpoint]
 
-        t_rest_start = time.monotonic()
+        t_rest_start = self._time.monotonic()
         try:
             stdout = execute_gh_command_with_retry(cmd, location.root, self._time)
         except RuntimeError:
             return ([], {})
-        t_rest_end = time.monotonic()
+        t_rest_end = self._time.monotonic()
 
         issues_data = json.loads(stdout)
 
@@ -1695,13 +1694,13 @@ query {{
 
         # Step 2: Batched GraphQL enrichment for rich PR fields
         pr_numbers = [item["number"] for item in pr_items]
-        t_gql_start = time.monotonic()
+        t_gql_start = self._time.monotonic()
         enrichment_data = self._enrich_prs_via_graphql(location, pr_numbers)
-        t_gql_end = time.monotonic()
+        t_gql_end = self._time.monotonic()
 
         rest_ms = _elapsed_ms(t_rest_start, t_rest_end)
         gql_ms = _elapsed_ms(t_gql_start, t_gql_end)
-        merge_ms = _elapsed_ms(t_gql_end, time.monotonic())
+        merge_ms = _elapsed_ms(t_gql_end, self._time.monotonic())
         _logger.info(
             "list_plan_prs_with_details: REST=%.0fms GraphQL=%.0fms merge=%.0fms (%d PRs)",
             rest_ms,
