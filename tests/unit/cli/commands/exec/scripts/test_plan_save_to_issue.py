@@ -1044,7 +1044,9 @@ def test_plan_save_links_objective_from_marker(tmp_path: Path) -> None:
         assert "Linked to objective #7823 from session context" in result.output
 
         # Parse JSON from output (skip stderr lines mixed in by CliRunner)
-        json_line = next(line for line in result.output.strip().splitlines() if line.startswith("{"))
+        json_line = next(
+            line for line in result.output.strip().splitlines() if line.startswith("{")
+        )
         output = json.loads(json_line)
         assert output["success"] is True
 
