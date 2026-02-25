@@ -174,11 +174,20 @@ def _save_as_planned_pr(
         objective_id=objective_issue,
     )
 
-    # Create branch from origin/trunk (not current branch) to avoid false stacking
+    # Determine base branch: use current branch if on a feature branch, otherwise trunk
     branch_manager = require_branch_manager(ctx)
     trunk = git.branch.detect_trunk_branch(repo_root)
-    git.remote.fetch_branch(repo_root, "origin", trunk)
-    create_result = branch_manager.create_branch(repo_root, branch_name, f"origin/{trunk}")
+    current_branch = git.branch.get_current_branch(repo_root)
+
+    if current_branch is not None and current_branch != trunk:
+        # Stack plan branch on current feature branch for natural Graphite stacking
+        base_branch = current_branch
+        create_result = branch_manager.create_branch(repo_root, branch_name, current_branch)
+    else:
+        # On trunk or detached HEAD: create from origin/trunk
+        base_branch = trunk
+        git.remote.fetch_branch(repo_root, "origin", trunk)
+        create_result = branch_manager.create_branch(repo_root, branch_name, f"origin/{trunk}")
     if isinstance(create_result, BranchAlreadyExists):
         click.echo(f"Error: {create_result.message}", err=True)
         raise SystemExit(1) from None
@@ -205,8 +214,8 @@ def _save_as_planned_pr(
     )
     git.remote.push_to_remote(cwd, "origin", branch_name, set_upstream=True, force=False)
 
-    # Build metadata
-    metadata: dict[str, object] = {"branch_name": branch_name, "trunk_branch": trunk}
+    # Build metadata — base_ref_name sets the PR base ref
+    metadata: dict[str, object] = {"branch_name": branch_name, "base_ref_name": base_branch}
 
     if config.plans_repo is not None:
         metadata["source_repo"] = get_repo_identifier(ctx)
