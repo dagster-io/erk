@@ -6,6 +6,9 @@ from pathlib import Path
 def _load_prompt(filename: str) -> str:
     """Load prompt from resources directory."""
     prompt_path = Path(__file__).parent / "resources" / filename
+    if not prompt_path.exists():
+        msg = f"Bundled prompt resource not found: {prompt_path}"
+        raise FileNotFoundError(msg)
     return prompt_path.read_text(encoding="utf-8")
 
 

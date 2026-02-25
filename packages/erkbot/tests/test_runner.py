@@ -15,8 +15,7 @@ class TestRunErkPlanList(unittest.IsolatedAsyncioTestCase):
             "     \x1b[36mimpl\x1b[0m"
         )
         invoke_result = MagicMock()
-        invoke_result.output = ""
-        invoke_result.stderr = ansi_output
+        invoke_result.output = ansi_output
         invoke_result.exit_code = 0
         mock_runner_cls.return_value.invoke.return_value = invoke_result
 
@@ -32,7 +31,6 @@ class TestRunErkPlanList(unittest.IsolatedAsyncioTestCase):
         """plan list is invoked with --all-users so the bot shows all plans."""
         invoke_result = MagicMock()
         invoke_result.output = "No plans found matching the criteria."
-        invoke_result.stderr = ""
         invoke_result.exit_code = 0
         mock_runner_cls.return_value.invoke.return_value = invoke_result
 
@@ -42,20 +40,18 @@ class TestRunErkPlanList(unittest.IsolatedAsyncioTestCase):
         cli_args = _call_args[0][1]
         self.assertIn("--all-users", cli_args)
 
-    @patch("erkbot.runner.CliRunner")
-    async def test_uses_mix_stderr_false(self, mock_runner_cls: MagicMock) -> None:
-        """CliRunner is constructed with mix_stderr=False to capture stderr separately."""
+    @patch("click.testing.CliRunner.invoke")
+    async def test_run_erk_plan_list_constructs_cli_runner(self, mock_invoke: MagicMock) -> None:
+        """Real CliRunner() constructor is called — catches incompatible kwargs."""
         invoke_result = MagicMock()
-        invoke_result.output = "stdout"
-        invoke_result.stderr = "stderr"
+        invoke_result.output = "plan output"
         invoke_result.exit_code = 0
-        mock_runner_cls.return_value.invoke.return_value = invoke_result
+        mock_invoke.return_value = invoke_result
 
         result = await run_erk_plan_list()
 
-        mock_runner_cls.assert_called_once_with(mix_stderr=False)
-        self.assertIn("stdout", result.output)
-        self.assertIn("stderr", result.output)
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn("plan output", result.output)
 
 
 class TestRunErkOneShot(unittest.IsolatedAsyncioTestCase):

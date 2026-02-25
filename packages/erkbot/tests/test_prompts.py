@@ -1,5 +1,6 @@
 # NOTE: @patch usage is deliberate here. erkbot is a standalone package that
 # tests third-party Slack SDK wiring and does not use erk's gateway layer.
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -18,21 +19,17 @@ class TestErkSystemPrompt(unittest.TestCase):
         self.assertIn("objective view", ERK_SYSTEM_PROMPT)
 
     def test_get_erk_system_prompt_returns_default(self) -> None:
-        import tempfile
-
         with tempfile.TemporaryDirectory() as tmp_dir:
             result = get_erk_system_prompt(repo_root=Path(tmp_dir))
             self.assertEqual(result, ERK_SYSTEM_PROMPT)
 
     def test_get_erk_system_prompt_uses_custom_when_present(self) -> None:
-        import tempfile
-
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_path = Path(tmp_dir)
             custom_dir = tmp_path / ".erk" / "prompt-hooks"
             custom_dir.mkdir(parents=True)
             custom_file = custom_dir / "erk-system-prompt.md"
-            custom_file.write_text("Custom erk prompt for testing.")
+            custom_file.write_text("Custom erk prompt for testing.", encoding="utf-8")
 
             result = get_erk_system_prompt(repo_root=tmp_path)
             self.assertEqual(result, "Custom erk prompt for testing.")
