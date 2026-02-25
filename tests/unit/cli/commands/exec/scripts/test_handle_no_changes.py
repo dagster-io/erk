@@ -283,11 +283,10 @@ def test_cli_updates_pr_title_and_body(tmp_path: Path) -> None:
 
     # Verify PR body was updated for the impl PR
     # PlannedPRBackend.update_metadata also updates the plan PR body
-    no_changes_bodies = [(n, b) for n, b in github.updated_pr_bodies if n == 123]
-    assert len(no_changes_bodies) == 1
-    pr_number, body = no_changes_bodies[0]
-    assert "No Code Changes" in body
-    assert "Close this PR" in body
+    matching_bodies = [b for n, b in github.updated_pr_bodies if n == 123]
+    assert len(matching_bodies) == 1
+    assert "No Code Changes" in matching_bodies[0]
+    assert "Close this PR" in matching_bodies[0]
 
 
 def test_cli_adds_label_to_pr(tmp_path: Path) -> None:
