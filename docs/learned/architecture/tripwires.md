@@ -246,6 +246,8 @@ Rules triggered by matching actions in code.
 
 **suppressing F401 (unused import) warnings** → Read [Re-Export Pattern](re-export-pattern.md) first. Use # noqa: F401 comment per-import with reason, not global ruff config. Indicates intentional re-export vs actual unused import.
 
+**swallowing errors silently in a deterministic code path** → Read [Error Handling Patterns](error-handling-patterns.md) first. Never suppress errors deterministically. Use best-effort (catch + log warning) only for truly optional operations. Use error-first (check + fail with remediation) for required operations.
+
 **threading state through pipeline steps with mutable dataclasses** → Read [Land State Threading Pattern](land-state-threading.md) first. Use frozen dataclasses (@dataclass(frozen=True)) for pipeline state. Update fields with dataclasses.replace() to create new instances. Immutability enables caching, testability, and replay.
 
 **tracking selection by array index when the array can be mutated** → Read [Selection Preservation by Value](selection-preservation-by-value.md) first. Track selection by unique identifier (issue_number, row key), not array position. Array indices become unstable when rows are added, removed, or reordered.
@@ -261,6 +263,8 @@ Rules triggered by matching actions in code.
 **using LiveDisplay in watch loops without try/finally blocks** → Read [LiveDisplay Gateway](live-display-gateway.md) first. guard with try/finally to ensure stop() is called even on KeyboardInterrupt
 
 **using None as a success return value in a validation function (ErrorType | None where None = success)** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. None-as-success is counterintuitive — None typically signals absence/failure, not success. Use ValidThing | InvalidThing so both outcomes are explicit named types.
+
+**using Path.cwd() directly in an exec script without CWD injection** → Read [Command Composition Pattern](command-composition.md) first. Use `cwd: Path | None = None` parameter defaulting to `Path.cwd()` for testability. This allows tests to override the working directory.
 
 **using PlanContextProvider** → Read [Plan Context Integration](plan-context-integration.md) first. Read this doc first. PlanContextProvider returns None on any failure (graceful degradation). Always handle the None case.
 

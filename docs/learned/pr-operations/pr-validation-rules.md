@@ -88,8 +88,23 @@ Draft-PR plans skip the closing reference check entirely. This is handled at two
 
 **Rationale**: A draft PR _is_ the plan. The plan's `plan_id` is the PR's own number. Adding `Closes #N` would be self-referential — when the PR merges, it would close itself. Issue-based plans need `Closes #N` because the plan issue and implementation PR are separate entities.
 
+## Stage-Specific Checks
+
+### `--stage=impl`
+
+When `erk pr check --stage=impl` is run, an additional validation check is included:
+
+| Check                        | What it validates                    | Why it exists                                              |
+| ---------------------------- | ------------------------------------ | ---------------------------------------------------------- |
+| `.erk/impl-context/` cleanup | Directory must not exist in the repo | Transient artifacts cause CI formatter failures (Prettier) |
+
+This check verifies that the `.erk/impl-context/` staging directory was properly removed after implementation. The check returns a `PrCheck(passed: bool, description: str)` result like all other checks.
+
+**Source:** `src/erk/cli/commands/pr/check_cmd.py` — the `--stage` option accepts `click.Choice(["impl"])`.
+
 ## Related Documentation
 
 - [Checkout Footer Syntax](checkout-footer-syntax.md) — Two-phase create-then-update pattern, footer format details
 - [PR Body Formatting](../architecture/pr-body-formatting.md) — Overall PR body structure (header/content/footer)
 - [Plan Embedding in PR](plan-embedding-in-pr.md) — How plans are embedded in PR bodies
+- [erk exec Commands](../cli/erk-exec-commands.md) — Full command reference including `erk pr check`

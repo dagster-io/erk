@@ -2,11 +2,11 @@
 title: Next Steps Output Formatting
 read_when:
   - "modifying next-steps output after plan save or submit"
-  - "understanding IssueNextSteps vs DraftPRNextSteps"
+  - "understanding IssueNextSteps vs PlannedPRNextSteps"
   - "adding new next-steps commands to plan output"
 tripwires:
   - action: "hardcoding next-steps command strings instead of using the dataclass properties"
-    warning: "Use IssueNextSteps or DraftPRNextSteps dataclasses from erk_shared.output.next_steps. They are the single source of truth for command formatting."
+    warning: "Use IssueNextSteps or PlannedPRNextSteps dataclasses from erk_shared.output.next_steps. They are the single source of truth for command formatting."
 ---
 
 # Next Steps Output Formatting
@@ -21,15 +21,32 @@ After saving a plan, erk displays next-steps commands to the user. The formattin
 
 ### `IssueNextSteps`
 
-For issue-based plans. Takes `issue_number: int` and `url: str`. Properties provide canonical command strings for view, checkout, submit, and implement operations.
+For issue-based plans. Takes `issue_number: int` and `url: str`.
 
-See source for all properties: `packages/erk-shared/src/erk_shared/output/next_steps.py` (`IssueNextSteps` class, line 7).
+| Property                          | Returns                                                                                 |
+| --------------------------------- | --------------------------------------------------------------------------------------- |
+| `view`                            | URL string                                                                              |
+| `checkout`                        | `erk br co --for-plan {issue_number}`                                                   |
+| `submit`                          | `erk plan submit {issue_number}`                                                        |
+| `checkout_and_implement`          | `source "$(erk br co --for-plan {N} --script)" && erk implement --dangerous`            |
+| `checkout_new_slot`               | `erk br co --new-slot --for-plan {issue_number}`                                        |
+| `checkout_new_slot_and_implement` | `source "$(erk br co --new-slot --for-plan {N} --script)" && erk implement --dangerous` |
 
-### `DraftPRNextSteps`
+### `PlannedPRNextSteps`
 
-For draft-PR plans. Takes `pr_number: int`, `branch_name: str`, and `url: str`. Properties provide canonical command strings for view, checkout, submit, and implement operations.
+For draft-PR plans. Takes `pr_number: int`, `branch_name: str`, and `url: str`.
 
-See source for all properties: `packages/erk-shared/src/erk_shared/output/next_steps.py` (`DraftPRNextSteps` class, line 44).
+| Property                          | Returns                                                                                 |
+| --------------------------------- | --------------------------------------------------------------------------------------- |
+| `view`                            | URL string                                                                              |
+| `checkout`                        | `erk br co --for-plan {pr_number}`                                                      |
+| `submit`                          | `erk plan submit {pr_number}`                                                           |
+| `checkout_branch_and_implement`   | `source "$(erk br co {branch_name} --script)" && erk implement --dangerous`             |
+| `checkout_and_implement`          | `source "$(erk br co --for-plan {N} --script)" && erk implement --dangerous`            |
+| `checkout_new_slot`               | `erk br co --new-slot --for-plan {pr_number}`                                           |
+| `checkout_new_slot_and_implement` | `source "$(erk br co --new-slot --for-plan {N} --script)" && erk implement --dangerous` |
+
+**Note:** `PlannedPRNextSteps` has `checkout_branch_and_implement` (using direct branch name) which `IssueNextSteps` does not.
 
 ## Shell Activation Pattern
 
@@ -39,11 +56,11 @@ See [Shell Activation Pattern](../cli/shell-activation-pattern.md) for the full 
 
 ## Format Functions
 
-| Function                             | Context           | Output format |
-| ------------------------------------ | ----------------- | ------------- |
-| `format_next_steps_plain()`          | CLI (issue plans) | Plain text    |
-| `format_draft_pr_next_steps_plain()` | CLI (draft plans) | Plain text    |
-| `format_next_steps_markdown()`       | Issue body        | Markdown      |
+| Function                               | Context           | Output format |
+| -------------------------------------- | ----------------- | ------------- |
+| `format_next_steps_plain()`            | CLI (issue plans) | Plain text    |
+| `format_planned_pr_next_steps_plain()` | CLI (draft plans) | Plain text    |
+| `format_next_steps_markdown()`         | Issue body        | Markdown      |
 
 ## Slash Command Constants
 

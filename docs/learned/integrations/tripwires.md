@@ -53,3 +53,5 @@ Rules triggered by matching actions in code.
 **using --system-prompt or --allowedTools with codex** → Read [Codex CLI Reference for Erk Integration](codex/codex-cli-reference.md) first. Codex has no --system-prompt or --allowedTools. Prepend system prompt to user prompt. Tool restriction is not available — this affects execute_prompt() porting.
 
 **using issue number from .impl/plan-ref.json for a checkout footer** → Read [Issue-PR Closing Integration](issue-pr-closing-integration.md) first. The checkout footer requires the PR number, not the issue number. These are different values — the issue is the plan, the PR is the implementation.
+
+**using shell=True in subprocess calls for the Slack bot** → Read [Slack Bot Patterns](slack-bot-patterns.md) first. Never use shell=True for security. Pass arguments as a list to prevent shell injection. See runner.py for the pattern.

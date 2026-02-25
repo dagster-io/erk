@@ -19,16 +19,16 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 | [checklists](checklists/tripwires.md)       | 1         | `checklists/` code                                 |
 | [ci](ci/tripwires.md)                       | 48        | `.github/workflows/`, `.github/actions/`           |
 | [claude-code](claude-code/tripwires.md)     | 3         | Claude Code configuration, settings                |
-| [cli](cli/tripwires.md)                     | 66        | `src/erk/cli/`                                     |
+| [cli](cli/tripwires.md)                     | 68        | `src/erk/cli/`                                     |
 | [commands](commands/tripwires.md)           | 7         | `.claude/commands/`, slash commands                |
 | [config](config/tripwires.md)               | 2         | `config/` code                                     |
 | [configuration](configuration/tripwires.md) | 1         | `configuration/` code                              |
 | [desktop-dash](desktop-dash/tripwires.md)   | 58        | `desktop-dash/` code                               |
 | [documentation](documentation/tripwires.md) | 26        | `documentation/` code                              |
-| [erk](erk/tripwires.md)                     | 19        | `erk/` code                                        |
+| [erk](erk/tripwires.md)                     | 20        | `erk/` code                                        |
 | [gateway](gateway/tripwires.md)             | 5         | `gateway/` code                                    |
 | [hooks](hooks/tripwires.md)                 | 4         | `.claude/hooks/`, hook development                 |
-| [integrations](integrations/tripwires.md)   | 21        | `integrations/` code                               |
+| [integrations](integrations/tripwires.md)   | 22        | `integrations/` code                               |
 | [objectives](objectives/tripwires.md)       | 43        | `objectives/` code                                 |
 | [planning](planning/tripwires.md)           | 110       | `.impl/`, `.erk/impl-context/`, planning workflows |
 | [pr-operations](pr-operations/tripwires.md) | 18        | `pr-operations/` code                              |
@@ -41,4 +41,4 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 | [textual](textual/tripwires.md)             | 1         | Textual framework code                             |
 | [tui](tui/tripwires.md)                     | 38        | `src/erk/tui/`                                     |
 | [uncategorized](uncategorized/tripwires.md) | 15        | `uncategorized/` code                              |
-| [workflows](workflows/tripwires.md)         | 5         | `workflows/` code                                  |
+| [workflows](workflows/tripwires.md)         | 6         | `workflows/` code                                  |

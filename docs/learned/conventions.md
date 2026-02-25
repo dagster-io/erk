@@ -194,6 +194,18 @@ field(default_factory=lambda: [])
 field(default_factory=list)
 ```
 
+## API Naming: Internal/External Alignment
+
+Property names should match user-facing output labels. When the CLI displays a label like "Checkout:", the corresponding property should be named `checkout`, not an internal-only term.
+
+**Example:** The `prepare` to `checkout` rename in `next_steps.py`:
+
+- Properties were renamed from `prepare` to `checkout`, `checkout_and_implement`, `checkout_new_slot`, `checkout_new_slot_and_implement`
+- The output label "Checkout:" matches the property name
+- The constant `CHECKOUT_SLASH_COMMAND` value intentionally remains `"/erk:prepare"` because the slash command `/erk:prepare` still exists
+
+**Source:** `packages/erk-shared/src/erk_shared/output/next_steps.py`
+
 ## Single-Use Locals Line-Length Exception
 
 When a single-use local variable is introduced solely to avoid a line-length violation, prefer shortening the variable name rather than ignoring the single-use locals rule. A shorter but still descriptive name keeps the code compact without introducing an unnecessary intermediate binding:
