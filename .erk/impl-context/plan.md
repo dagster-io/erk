@@ -18,6 +18,7 @@ Flat structure for now — subdirectories will be created in Phase 2 when scenar
 tests/scenarios/
   README.md
   template.md
+  objective-check.md    # example scenario to evaluate format design
 ```
 
 ### 2. Create `tests/scenarios/README.md`
@@ -69,7 +70,90 @@ Capture [the value] **as $VAR_NAME**.
 
 **Variable binding:** `$UPPER_SNAKE` syntax, bound with "**as $VAR**" after command blocks. Human extracts value from output.
 
-### 4. Create `docs/learned/testing/scenario-format.md`
+### 4. Create `tests/scenarios/objective-check.md` (example scenario)
+
+A real scenario to evaluate the format design. Tests the `erk objective check` command against a known objective in the test repo.
+
+```markdown
+---
+title: Objective Check Validation
+workflow: objective-lifecycle
+commands:
+  - "erk objective check"
+prerequisites:
+  - "erk CLI installed and configured"
+  - "GitHub CLI authenticated (`gh auth status`)"
+estimated_duration: "2 minutes"
+---
+
+# Objective Check Validation
+
+Verifies that `erk objective check` correctly validates an objective's format, roadmap parsing, status/PR consistency, and phase numbering. Exercises both the human-readable and JSON output modes.
+
+## Variables
+
+| Variable | Description |
+|----------|-------------|
+| `$OBJ` | A known open objective issue number with a valid roadmap |
+
+## Setup
+
+### 1. Identify a target objective
+
+Find an open objective to validate against:
+
+```bash
+erk objective list
+```
+
+Pick any open objective number **as $OBJ**.
+
+## Steps
+
+### 1. Run check in human-readable mode
+
+```bash
+erk objective check $OBJ
+```
+
+**Expected:** Command exits 0. Output shows a series of check results (label, roadmap parsing, status consistency, etc.) with pass/fail indicators. All checks should pass for a well-formed objective.
+
+### 2. Run check in JSON mode
+
+```bash
+erk objective check $OBJ --json-output
+```
+
+**Expected:** Command exits 0. Output is valid JSON containing:
+- `"valid": true`
+- `"checks"` array with individual check results
+- `"roadmap"` object with parsed node data
+- `"next_step"` field indicating the recommended next node (or null if all complete)
+
+### 3. Run check against an invalid reference
+
+```bash
+erk objective check 999999
+```
+
+**Expected:** Command exits non-zero. Error message indicates the issue was not found or is not an objective.
+
+### 4. Run check against a plan issue (not an objective)
+
+Find any open erk-plan issue number and use it:
+
+```bash
+erk objective check <plan-issue-number>
+```
+
+**Expected:** Command exits non-zero or reports a validation failure indicating this is an erk-plan, not an erk-objective.
+
+## Cleanup
+
+No cleanup needed — this scenario is read-only.
+```
+
+### 5. Create `docs/learned/testing/scenario-format.md`
 
 Agent-discoverable format reference with proper frontmatter:
 
@@ -92,7 +176,7 @@ audit_result: clean
 
 Documents: frontmatter schema, body structure, step format, variable binding, naming conventions, anti-patterns.
 
-### 5. Update `tests/AGENTS.md`
+### 6. Update `tests/AGENTS.md`
 
 Add after the "Other Test Directories" section (~5 lines):
 
@@ -104,7 +188,7 @@ Add after the "Other Test Directories" section (~5 lines):
 - See [tests/scenarios/README.md](scenarios/README.md) for format and usage
 ```
 
-### 6. Run `erk docs sync`
+### 7. Run `erk docs sync`
 
 Regenerate index and tripwire files after creating the learned doc.
 
@@ -112,6 +196,7 @@ Regenerate index and tripwire files after creating the learned doc.
 
 - `tests/scenarios/README.md` — **new** — scenario system overview
 - `tests/scenarios/template.md` — **new** — copyable scenario template
+- `tests/scenarios/objective-check.md` — **new** — example scenario to evaluate format design
 - `docs/learned/testing/scenario-format.md` — **new** — agent-discoverable format reference
 - `tests/AGENTS.md` — **edit** — add scenarios reference
 
