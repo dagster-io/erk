@@ -178,7 +178,7 @@ def dispatch_one_shot(
         objective_issue_str = params.extra_workflow_inputs.get("objective_issue")
         objective_id = int(objective_issue_str) if objective_issue_str else None
 
-        plan_issue_number: int | None = None
+        plan_number: int | None = None
 
         # Generate branch name with LLM-generated slug
         current_step = "Generating branch name"
@@ -291,9 +291,9 @@ def dispatch_one_shot(
         # Add erk-plan label
         ctx.github.add_label_to_pr(repo.root, pr_number, "erk-plan")
 
-        # Key: set plan_issue_number = pr_number so downstream code
+        # Key: set plan_number = pr_number so downstream code
         # (workflow inputs, metadata writing, comments) targets the PR
-        plan_issue_number = pr_number
+        plan_number = pr_number
         user_output(click.style(f"  \u2192 PR #{pr_number}", dim=True))
 
         # Build workflow inputs
@@ -312,8 +312,8 @@ def dispatch_one_shot(
         }
         if params.model is not None:
             inputs["model_name"] = params.model
-        if plan_issue_number is not None:
-            inputs["plan_number"] = str(plan_issue_number)
+        if plan_number is not None:
+            inputs["plan_number"] = str(plan_number)
 
         # Merge extra workflow inputs
         inputs.update(params.extra_workflow_inputs)
@@ -337,14 +337,14 @@ def dispatch_one_shot(
 
         # Write dispatch metadata and post queued comment (best-effort)
         current_step = "Writing dispatch metadata"
-        if plan_issue_number is not None:
+        if plan_number is not None:
             # Write dispatch metadata to plan entity (PR)
             try:
                 write_dispatch_metadata(
                     plan_backend=ctx.plan_backend,
                     github=ctx.github,
                     repo_root=repo.root,
-                    issue_number=plan_issue_number,
+                    issue_number=plan_number,
                     run_id=run_id,
                     dispatched_at=queued_at,
                 )
@@ -361,7 +361,7 @@ def dispatch_one_shot(
                 metadata_block = create_submission_queued_block(
                     queued_at=queued_at,
                     submitted_by=submitted_by,
-                    issue_number=plan_issue_number,
+                    issue_number=plan_number,
                     validation_results={"issue_is_open": True, "has_erk_plan_label": True},
                     expected_workflow="one-shot",
                 )
@@ -374,7 +374,7 @@ def dispatch_one_shot(
                         f"**Prompt:** {params.prompt}"
                     ),
                 )
-                ctx.issues.add_comment(repo.root, plan_issue_number, comment_body)
+                ctx.issues.add_comment(repo.root, plan_number, comment_body)
                 user_output(click.style("\u2713", fg="green") + " Queued event comment posted")
             except Exception as e:
                 user_output(
