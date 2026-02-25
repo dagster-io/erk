@@ -1,0 +1,1073 @@
+<session>
+  <meta branch="plnd/fix-three-dot-diff-02-25-1242" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from a GitHub issue, a markdown file, an existing `.impl/` folder, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the `.impl/` folder (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - An issue number, URL, or file path argument
+  - An existing `.impl/` folder
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use .impl/, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement issue #2521
+/erk:plan-implement https://github.com/owner/repo/issues/2521  # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.impl/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub issue/PR (draft-PR or issue-based)
+- Setting up from a local markdown file
+- Auto-detecting from existing `.impl/` folder
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating `.impl/` folder with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title` (for draft-PR plans) or `gh issue view &lt;ISSUE_ARG&gt; --json title -q .title` (for issue plans). Try PR first, fall back to issue.
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the issue number:
+
+```bash
+erk exec plan-save --format json --session-id="d24a2240-770f-4b0e-b56b-3ce67cba46ee" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `issue_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;issue_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `.impl/plan.md` to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="d24a2240-770f-4b0e-b56b-3ce67cba46ee" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub issue
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `.impl/plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="d24a2240-770f-4b0e-b56b-3ce67cba46ee" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="d24a2240-770f-4b0e-b56b-3ce67cba46ee" 2&gt;/dev/null || true
+```
+
+This reads plan reference from `.impl/`, captures session info, and uploads for async learn processing.
+
+### Step 11: Verify .impl/ Preserved
+
+**CRITICAL GUARDRAIL**: Verify the .impl/ folder was NOT deleted.
+
+```bash
+erk exec impl-verify
+```
+
+If this fails, you have violated instructions. The .impl/ folder must be preserved for user review.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**CRITICAL**: Never delete `.impl/` - leave for user review (no auto-commit).
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan from issue #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing issue with current codebase state
+</user>
+  <thinking>The user has invoked `/erk:plan-implement` without any arguments. Let me follow the instructions:
+
+1. First, I need to run `erk exec setup-impl` (no arguments since empty) to auto-detect from `.impl/`, branch, or fail.
+
+The current branch is `plnd/fix-three-dot-diff-02-25-1242`, which looks like a plan branch. Let me run the setup command.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="31810" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 31810, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="31810" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 31810, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JgVVxpxaq1iZn7dDhdpn3W">
+    <param name="command">erk exec setup-impl</param>
+    <param name="description">Auto-detect plan from branch and set up .impl/</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="31810" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 31810, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JgVVxpxaq1iZn7dDhdpn3W">
+Found existing .impl/ for plan #8159, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-47/.impl", "plan_number": 8159, "plan_url": "https://github.com/dagster-io/erk/pull/8159", "branch": "plnd/fix-three-dot-diff-02-25-1242", "plan_title": "", "no_impl": false}
+{"cleaned": true}
+{"success": true, "source": "issue", "plan_number": 8159, "has_plan_tracking": true, "valid": true, "impl_type": "impl", "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <assistant>Implementation environment ready for plan #8159. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="420" cache_read_input_tokens="31810" cache_creation="{'ephemeral_5m_input_tokens': 420, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Q3bzJobzZSBqu9V2W5M2cq">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-47/.impl/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="420" cache_read_input_tokens="31810" output_tokens="100" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 420}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Q3bzJobzZSBqu9V2W5M2cq">
+     1→# Fix get_diff_to_branch: two-dot to three-dot git diff
+     2→
+     3→## Context
+     4→
+     5→`get_diff_to_branch` uses `git diff {branch}..HEAD` (two-dot), which compares tree states at the two tips directly. When a feature branch hasn't been rebased onto latest master, this includes the inverse of commits on master that the branch doesn't have — producing a noisy diff with files unrelated to the PR (observed: 45 spurious files vs 3 actual changed files).
+     6→
+     7→Three-dot (`git diff {branch}...HEAD`) diffs from the merge-base to HEAD, showing only changes introduced on the feature branch. This matches GitHub's PR diff behavior. The review prompt assembly already uses three-dot syntax, and the `large-diff-recovery.md` doc already shows three-dot — only the implementation is wrong.
+     8→
+     9→The existing docstring's reasoning ("two-dot avoids rebased commits with different SHAs") confuses `git log` three-dot semantics with `git diff` three-dot semantics. For `git diff`, three-dot simply uses the merge-base as the comparison point.
+    10→
+    11→## Changes
+    12→
+    13→### 1. Fix git command and docstring in `real.py`
+    14→
+    15→**File:** `packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py`
+    16→
+    17→- Line 71: `f"{branch}..HEAD"` → `f"{branch}...HEAD"`
+    18→- Lines 63-68: Update docstring to explain three-dot merge-base semantics
+    19→
+    20→### 2. Update ABC docstring in `abc.py`
+    21→
+    22→**File:** `packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py`
+    23→
+    24→- Lines 69-70: Update docstring from "two-dot" to "three-dot" with correct explanation
+    25→
+    26→## No changes needed
+    27→
+    28→- `fake.py`, `dry_run.py`, `printing.py` — no syntax awareness, transparent delegation
+    29→- `count_commits_ahead`/`count_commits_behind` (rev-list) — two-dot is correct for commit counting
+    30→- `commit_ops/real.py` (git log) — two-dot is correct for log
+
+... [12 lines omitted] ...
+  </tool_result>
+  <thinking>This is a simple two-file change: fix a two-dot diff to three-dot diff in a git command and update docstrings. Let me create tasks, signal started, and implement.
+
+Let me first read the relevant files.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="905" cache_read_input_tokens="32230" cache_creation="{'ephemeral_5m_input_tokens': 905, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Clear plan — two files to change, fixing `..` to `...` in a git diff command. Let me set up tasks and get started.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="905" cache_read_input_tokens="32230" cache_creation="{'ephemeral_5m_input_tokens': 905, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01QA6gwqioqv6THiRucQLvDU">
+    <param name="subject">Fix git diff command and docstring in real.py</param>
+    <param name="description">Change `f"{branch}..HEAD"` to `f"{branch}...HEAD"` at line 71, and update docstring (lines 63-68) to explain three-dot merge-base semantics.</param>
+    <param name="activeForm">Fixing git diff command in real.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="905" cache_read_input_tokens="32230" cache_creation="{'ephemeral_5m_input_tokens': 905, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QA6gwqioqv6THiRucQLvDU">
+Task #1 created successfully: Fix git diff command and docstring in real.py
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01RZT4FwmrgBwyhg2RFr7PKY">
+    <param name="subject">Update ABC docstring in abc.py</param>
+    <param name="description">Update docstring at lines 69-70 from "two-dot" to "three-dot" with correct explanation of merge-base semantics.</param>
+    <param name="activeForm">Updating ABC docstring in abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="905" cache_read_input_tokens="32230" cache_creation="{'ephemeral_5m_input_tokens': 905, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RZT4FwmrgBwyhg2RFr7PKY">
+Task #2 created successfully: Update ABC docstring in abc.py
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01CkjWXJ7MmsXu9zHLWrzvV5">
+    <param name="subject">Run CI and submit PR</param>
+    <param name="description">Run CI checks iteratively and submit the PR via erk pr submit.</param>
+    <param name="activeForm">Running CI and submitting PR</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="905" cache_read_input_tokens="32230" output_tokens="454" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 905}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CkjWXJ7MmsXu9zHLWrzvV5">
+Task #3 created successfully: Run CI and submit PR
+  </tool_result>
+  <tool_use name="Bash" id="toolu_011A1ENwuEhBXynCUyv58eFw">
+    <param name="command">erk exec impl-signal started --session-id="d24a2240-770f-4b0e-b56b-3ce67cba46ee" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="583" cache_read_input_tokens="33135" cache_creation="{'ephemeral_5m_input_tokens': 583, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015Kwjfig3Pr7VTjvzMtV6qu">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-47/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="583" cache_read_input_tokens="33135" cache_creation="{'ephemeral_5m_input_tokens': 583, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HvtPtcMgXpKaFtEtzXWcFW">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-47/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="583" cache_read_input_tokens="33135" cache_creation="{'ephemeral_5m_input_tokens': 583, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011A1ENwuEhBXynCUyv58eFw">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8159
+}
+  </tool_result>
+  <tool_result tool="toolu_015Kwjfig3Pr7VTjvzMtV6qu">
+     1→"""Real implementation of git analysis operations."""
+     2→
+     3→import subprocess
+     4→from pathlib import Path
+     5→
+     6→from erk_shared.gateway.git.analysis_ops.abc import GitAnalysisOps
+     7→from erk_shared.subprocess_utils import run_subprocess_with_context
+     8→
+     9→
+    10→class RealGitAnalysisOps(GitAnalysisOps):
+    11→    """Real implementation of Git analysis operations using subprocess."""
+    12→
+    13→    # ============================================================================
+    14→    # Query Operations
+    15→    # ============================================================================
+    16→
+    17→    def count_commits_ahead(self, cwd: Path, base_branch: str) -&gt; int:
+    18→        """Count commits in HEAD that are not in base_branch."""
+    19→        result = subprocess.run(
+    20→            ["git", "rev-list", "--count", f"{base_branch}..HEAD"],
+    21→            cwd=cwd,
+    22→            capture_output=True,
+    23→            text=True,
+    24→            check=False,
+    25→        )
+    26→        if result.returncode != 0:
+    27→            return 0
+    28→        count_str = result.stdout.strip()
+    29→        if not count_str:
+    30→            return 0
+
+... [46 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01HvtPtcMgXpKaFtEtzXWcFW">
+     1→"""Abstract interface for git analysis operations."""
+     2→
+     3→from abc import ABC, abstractmethod
+     4→from pathlib import Path
+     5→
+     6→
+     7→class GitAnalysisOps(ABC):
+     8→    """Abstract interface for Git branch analysis operations.
+     9→
+    10→    This interface contains query operations for comparing branches and commits.
+    11→    All implementations (real, fake, dry-run, printing) must implement this interface.
+    12→    """
+    13→
+    14→    # ============================================================================
+    15→    # Query Operations
+    16→    # ============================================================================
+    17→
+    18→    @abstractmethod
+    19→    def count_commits_ahead(self, cwd: Path, base_branch: str) -&gt; int:
+    20→        """Count commits in HEAD that are not in base_branch.
+    21→
+    22→        Uses `git rev-list --count {base_branch}..HEAD`.
+    23→
+    24→        Args:
+    25→            cwd: Working directory
+    26→            base_branch: Branch to compare against
+    27→
+    28→        Returns:
+    29→            Number of commits ahead, or 0 on error
+    30→        """
+
+... [50 lines omitted] ...
+
+    61→            Number of commits behind, or 0 on error
+  </tool_result>
+  <assistant>Good, I can see both files. Let me implement the changes.
+
+**Phase 1: Fix git diff command and docstring in real.py**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2172" cache_read_input_tokens="33718" cache_creation="{'ephemeral_5m_input_tokens': 2172, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01Q7UbLMZRqtVbqQ8WFhnpnS">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2172" cache_read_input_tokens="33718" output_tokens="105" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 2172}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Q7UbLMZRqtVbqQ8WFhnpnS">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01NEWzyjaqF6Yvg1YYMwgJ2Q">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-47/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py</param>
+    <param name="old_string">    def get_diff_to_branch(self, cwd: Path, branch: str) -&gt; str:
+        """Get diff betwe...[truncated 321 chars]... result = run_subprocess_with_context(
+            cmd=["git", "diff", f"{branch}..HEAD"],</param>
+    <param name="new_string">    def get_diff_to_branch(self, cwd: Path, branch: str) -&gt; str:
+        """Get diff betwe...[truncated 296 chars]...result = run_subprocess_with_context(
+            cmd=["git", "diff", f"{branch}...HEAD"],</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="123" cache_read_input_tokens="35890" cache_creation="{'ephemeral_5m_input_tokens': 123, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NEWzyjaqF6Yvg1YYMwgJ2Q">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-47/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01TJd5BvQWX9GhcjNLh3YXBo">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="493" cache_read_input_tokens="36013" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 493}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TJd5BvQWX9GhcjNLh3YXBo">
+Updated task #1 status
+  </tool_result>
+  <assistant>**Phase 2: Update ABC docstring in abc.py**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="36506" cache_creation="{'ephemeral_5m_input_tokens': 88, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01NeMCHrB72Ssmxt9RNz5ZoR">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="36506" output_tokens="87" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 88}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NeMCHrB72Ssmxt9RNz5ZoR">
+Updated task #2 status
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01K9BZEdWFrB3kXNKonMg64g">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-47/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py</param>
+    <param name="old_string">        """Get diff between branch and HEAD.
+
+        Uses two-dot syntax `git diff {branch}..HEAD` to show what will
+        change when merged.</param>
+    <param name="new_string">        """Get diff between branch and HEAD.
+
+        Uses three-dot syntax `git diff {branch}...HEAD` to diff from the
+        merge-base to HEAD, showing only changes introduced on the branch.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="105" cache_read_input_tokens="36594" output_tokens="237" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 105}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01K9BZEdWFrB3kXNKonMg64g">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-47/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01S1FnQey1vbFw9nt6XbF6XV">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="307" cache_read_input_tokens="36699" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 307}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01S1FnQey1vbFw9nt6XbF6XV">
+Updated task #2 status
+  </tool_result>
+  <assistant>Both code changes complete. Let me signal ended, upload session, verify `.impl/`, then run CI.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="37006" cache_creation="{'ephemeral_5m_input_tokens': 88, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DDX9UvzuF4S6hU4rw2apnF">
+    <param name="command">erk exec impl-signal ended --session-id="d24a2240-770f-4b0e-b56b-3ce67cba46ee" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="37006" cache_creation="{'ephemeral_5m_input_tokens': 88, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01B6BA8QjVvViNeK5kTNNrLp">
+    <param name="command">erk exec upload-impl-session --session-id="d24a2240-770f-4b0e-b56b-3ce67cba46ee" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="37006" cache_creation="{'ephemeral_5m_input_tokens': 88, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_015h4TwnpSN84EbQNTU8Jtxg">
+    <param name="command">erk exec impl-verify</param>
+    <param name="description">Verify .impl/ folder preserved</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="37006" cache_creation="{'ephemeral_5m_input_tokens': 88, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DDX9UvzuF4S6hU4rw2apnF">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8159
+}
+  </tool_result>
+  <tool_result tool="toolu_01B6BA8QjVvViNeK5kTNNrLp">
+{"uploaded": true, "plan_id": 8159}
+  </tool_result>
+  <tool_result tool="toolu_015h4TwnpSN84EbQNTU8Jtxg">
+{"valid": true, "impl_dir": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-47/.impl"}
+  </tool_result>
+  <assistant>All good. Now let me check for post-plan-implement CI hooks and run CI.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="467" cache_read_input_tokens="37094" cache_creation="{'ephemeral_5m_input_tokens': 467, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01Hgys7LPoPVwNLUwp5wEVyx">
+    <param name="pattern">.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="467" cache_read_input_tokens="37094" output_tokens="88" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 467}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Hgys7LPoPVwNLUwp5wEVyx">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-47/.erk/prompt-hooks/post-plan-implement-ci.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SFb2h8npNfwcMybx5S3Roy">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-47/.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="142" cache_read_input_tokens="37561" cache_creation="{'ephemeral_5m_input_tokens': 142, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SFb2h8npNfwcMybx5S3Roy">
+     1→# Post-Implementation CI
+     2→
+     3→Run CI validation after plan implementation using `make fast-ci`.
+     4→
+     5→Load the `ci-iteration` skill for the iterative fix workflow.
+     6→
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_011V3cvqKFHLUMNx3dwkL8YG">
+    <param name="taskId">3</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="163" cache_read_input_tokens="37703" cache_creation="{'ephemeral_5m_input_tokens': 163, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011V3cvqKFHLUMNx3dwkL8YG">
+Updated task #3 status
+  </tool_result>
+  <tool_use name="Task" id="toolu_01Ut1Vh9spQXmciTmdxbcm14">
+    <param name="description">Run make fast-ci checks</param>
+    <param name="prompt">Run `make fast-ci` in the repo root at /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-47 and report all results. This is a CI check after a code change.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="37866" cache_creation="{'ephemeral_5m_input_tokens': 90, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ut1Vh9spQXmciTmdxbcm14">
+**make fast-ci failed: 1 critical issue found**
+
+**Failing Check:**
+
+- **Exec Reference Check**: `.claude/skills/erk-exec/reference.md` is out of date
+  - Required action: Run `erk-dev gen-exec-reference-docs` to regenerate it
+
+**All Other Checks Passed:**
+
+- Lint (all checks passed)
+- Format Check (1562 files already formatted)
+- Prettier Check (all matched files properly formatted)
+- Markdown Check (AGENTS.md and CLAUDE.md files valid)
+- Type Checking (ty - all checks passed)
+- Unit Tests (114 passed, 3 warnings)
+
+**Summary:**
+
+The CI failure is due to an outdated generated reference file. The reference documentation for erk-exec skills needs to be regenerated. This is a housekeeping issue where generated documentation has drifted from the current code state.
+
+To fix this, you need to run:
+```
+erk-dev gen-exec-reference-docs
+```
+
+This will regenerate the `.claude/skills/erk-exec/reference.md` file to match the current state of the code.
+agentId: ac752db55d6b8d1f5 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 16430
+tool_uses: 1
+duration_ms: 37555&lt;/usage&gt;
+  </tool_result>
+  <thinking>The CI failure is about an outdated reference doc. This is unrelated to my changes - it's a pre-existing issue. Let me regenerate the reference docs and re-run CI.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="482" cache_read_input_tokens="37956" cache_creation="{'ephemeral_5m_input_tokens': 482, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>CI mostly passes — only issue is an outdated generated reference doc (unrelated to my changes). Let me fix that.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="482" cache_read_input_tokens="37956" cache_creation="{'ephemeral_5m_input_tokens': 482, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UhiANLC87zGHTkot9e5TGM">
+    <param name="command">erk-dev gen-exec-reference-docs</param>
+    <param name="description">Regenerate exec reference docs</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="482" cache_read_input_tokens="37956" cache_creation="{'ephemeral_5m_input_tokens': 482, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UhiANLC87zGHTkot9e5TGM">
+Generated .claude/skills/erk-exec/reference.md (formatted)
+  94 top-level commands documented
+  </tool_result>
+  <tool_use name="Task" id="toolu_01M2njf9j4UyU6ta2SgSwyiD">
+    <param name="description">Re-run make fast-ci</param>
+    <param name="prompt">Run `make fast-ci` in the repo root at /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-47 and report results.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="221" cache_read_input_tokens="38438" cache_creation="{'ephemeral_5m_input_tokens': 221, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01M2njf9j4UyU6ta2SgSwyiD">
+make fast-ci passed: All checks passed
+
+**Summary:**
+- Lint: Passed
+- Format check: 1562 files already formatted
+- Prettier check: All matched files use Prettier code style
+- Markdown check: AGENTS.md and CLAUDE.md files properly paired
+- Exec reference check: reference.md is up to date
+- Type checking (ty): Passed
+- Unit tests (erk): 5357 passed in 6.72s
+- Unit tests (erk-dev): 136 passed in 2.69s
+- Unit tests (erk-statusline): 124 passed in 0.71s
+- Unit tests (erkbot): 114 passed in 0.89s (3 warnings about unawaited coroutines, but all tests passed)
+
+Total test coverage: 5,731 tests passed with no failures.
+agentId: af918ca625733c144 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 17385
+tool_uses: 1
+duration_ms: 23099&lt;/usage&gt;
+  </tool_result>
+  <assistant>All CI checks pass — 5,731 tests green. Now let me submit the PR.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3577" cache_read_input_tokens="38659" cache_creation="{'ephemeral_5m_input_tokens': 3577, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01E8weRGtDTw2R9qh8ekqGj3">
+    <param name="skill">erk:pr-submit</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3577" cache_read_input_tokens="38659" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 3577}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01E8weRGtDTw2R9qh8ekqGj3">
+Launching skill: erk:pr-submit
+  </tool_result>
+  <user># Submit PR
+
+Automatically create a git commit with a helpful summary message and submit the current branch as a pull request.
+
+**Note:** This command squashes commits and rebases the stack. If you prefer a simpler workflow that preserves your commit history, use `/erk:git-pr-push` instead.
+
+## Usage
+
+```bash
+# Invoke the command (description argument is optional but recommended)
+/erk:pr-submit "Add user authentication feature"
+
+# Without argument (will analyze changes automatically)
+/erk:pr-submit
+```
+
+## Implementation
+
+This command uses a three-step flow to avoid nested Claude subprocess calls:
+
+1. **Push + create PR** (no AI) via `erk exec push-and-create-pr`
+2. **Gather context** via `erk exec get-pr-context` (returns JSON)
+3. **Generate title + body** natively (you are the agent — no subprocess)
+4. **Apply description** via `erk exec set-pr-description`
+
+### Step 1: Push and Create PR
+
+```bash
+erk exec push-and-create-pr
+```
+
+This pushes the branch, creates/finds the PR via Graphite, but skips AI description generation. The PR is created with a placeholder title. Outputs JSON with `pr.number` and `pr.url`.
+
+If this fails (exit code 1), display the error from the JSON output and stop.
+
+### Step 2: Get PR Context
+
+```bash
+erk exec get-pr-context
+```
+
+This outputs JSON to stdout with:
+
+- `branch.current` and `branch.parent`
+- `pr.number` and `pr.url`
+- `diff_file` path to the diff content
+- `commit_messages` array
+- `plan_context` (nullable) with `plan_id`, `plan_content`, `objective_summary`
+
+Parse the JSON output. If this fails, display the error and stop.
+
+### Step 3: Generate Title and Body
+
+1. Read the diff file from the `diff_file` path in the JSON
+2. Load the `erk-diff-analysis` skill for the commit message prompt format
+3. Consider the `commit_messages` and `plan_context` from the JSON
+4. If the user provided a `` argument, use it to guide the description
+5. Generate a PR title (first line) and body following the diff analysis format
+
+### Step 4: Apply Description
+
+Write the generated body to a temp file, then apply:
+
+```bash
+erk exec set-pr-description --title "&lt;generated title&gt;" --body-file "&lt;temp file path&gt;"
+```
+
+If this fails, display the error and stop.
+
+### Step 5: Report Results
+
+Report:
+
+- PR URL (from step 2 JSON)
+- Success message
+
+### Refresh Status Line
+
+After reporting results, output the following to trigger a status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+## Error Handling
+
+If any step fails, display the error and stop. Do NOT attempt to auto-resolve errors. Let the user fix issues and re-run.
+
+Common errors:
+
+- Authentication issues (Graphite/GitHub)
+- Merge conflicts
+- No commits to submit
+- No PR found for branch
+</user>
+  <thinking>Let me follow the pr-submit workflow step by step.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="840" cache_read_input_tokens="42236" cache_creation="{'ephemeral_5m_input_tokens': 840, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>### Step 1: Push and Create PR</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="840" cache_read_input_tokens="42236" cache_creation="{'ephemeral_5m_input_tokens': 840, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01A3KKU5Kmgg8FuwD4FTVmAx">
+    <param name="command">erk exec push-and-create-pr</param>
+    <param name="description">Push branch and create PR via Graphite</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="840" cache_read_input_tokens="42236" cache_creation="{'ephemeral_5m_input_tokens': 840, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01A3KKU5Kmgg8FuwD4FTVmAx">
+Running in non-interactive mode. Inline prompts to fill PR fields will be skipped.
+
+🥞 Validating that this Graphite stack is ready to submit...
+
+✏️ Preparing to submit PRs for the following branches...
+▸ plnd/fix-three-dot-diff-02-25-1242 (Update code)
+
+🚀 Pushing branches to remote...
+
+📨 Creating/updating PRs...
+plnd/fix-three-dot-diff-02-25-1242: https://app.graphite.com/github/pr/dagster-io/erk/8159 (updated)
+WARNING: Branch plnd/fix-three-dot-diff-02-25-1242 has been updated remotely. Force submitting local version to remote...
+{
+  "success": true,
+  "branch": "plnd/fix-three-dot-diff-02-25-1242",
+  "pr": {
+    "number": 8159,
+    "url": "https://github.com/dagster-io/erk/pull/8159",
+    "was_created": true
+  },
+  "graphite_url": "https://app.graphite.com/github/pr/dagster-io/erk/8159",
+  "issue_number": 8159
+}
+  </tool_result>
+  <assistant>### Step 2: Get PR Context</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="466" cache_read_input_tokens="43076" cache_creation="{'ephemeral_5m_input_tokens': 466, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Ws74Yr8rd6sBHev7eUYFJe">
+    <param name="command">erk exec get-pr-context</param>
+    <param name="description">Get PR context for description generation</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="466" cache_read_input_tokens="43076" output_tokens="108" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 466}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ws74Yr8rd6sBHev7eUYFJe">
+{
+  "branch": {
+    "current": "plnd/fix-three-dot-diff-02-25-1242",
+    "parent": "master"
+  },
+  "pr": {
+    "number": 8159,
+    "url": "https://github.com/dagster-io/erk/pull/8159"
+  },
+  "diff_file": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-47/.erk/scratch/sessions/c64d9b47-c1ab-448e-a4e3-86c7308b2f66/pr-diff-b199cd91.diff",
+  "commit_messages": [
+    "Add plan: Fix get_diff_to_branch: two-dot to three-dot git diff",
+    "Remove .erk/impl-context/ before implementation",
+    "WIP: Prepare for PR submission"
+  ],
+  "plan_context": {
+    "plan_id": "8159",
+    "plan_content": "# Fix get_diff_to_branch: two-dot to three-dot git diff\n\n## Context\n\n`get_diff_to_branch` uses `git diff {branch}..HEAD` (two-dot), which compares tree states at the two tips directly. When a feature branch hasn't been rebased onto latest master, this includes the inverse of commits on master that the branch doesn't have \u2014 producing a noisy diff with files unrelated to the PR (observed: 45 spurious files vs 3 actual changed files).\n\nThree-dot (`git diff {branch}...HEAD`) diffs from the merge-base to HEAD, showing only changes introduced on the feature branch. This matches GitHub's PR diff behavior. The review prompt assembly already uses three-dot syntax, and the `large-diff-recovery.md` doc already shows three-dot \u2014 only the implementation is wrong.\n\nThe existing docstring's reasoning (\"two-dot avoids rebased commits with different SHAs\") confuses `git log` three-dot semantics with `git diff` three-dot semantics. For `git diff`, three-dot simply uses the merge-base as the comparison point.\n\n## Changes\n\n### 1. Fix git command and docstring in `real.py`\n\n**File:** `packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py`\n\n- Line 71: `f\"{branch}..HEAD\"` \u2192 `f\"{branch}...HEAD\"`\n- Lines 63-68: Update docstring to explain three-dot merge-base semantics\n\n### 2. Update ABC docstring in `abc.py`\n\n**File:** `packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py`\n\n- Lines 69-70: Update docstring from \"two-dot\" to \"three-dot\" with correct explanation\n\n## No changes needed\n\n- `fake.py`, `dry_run.py`, `printing.py` \u2014 no syntax awareness, transparent delegation\n- `count_commits_ahead`/`count_commits_behind` (rev-list) \u2014 two-dot is correct for commit counting\n- `commit_ops/real.py` (git log) \u2014 two-dot is correct for log\n- `large-diff-recovery.md` \u2014 already shows correct three-dot syntax\n- `review/prompt_assembly.py` \u2014 already uses three-dot\n- Callers (`submit_pipeline.py`, `diff_extraction.py`) \u2014 no syntax awareness\n- No tests directly exercise `get_diff_to_branch`; fake is dict-based\n\n## Verification\n\nAfter the change, on a branch that has diverged from master:\n- `git diff master...HEAD` should show only feature branch changes\n- `git diff master..HEAD` (old behavior) would show spurious files from divergence\n- Run CI to confirm no regressions\n",
+    "objective_summary": null
+  }
+}
+  </tool_result>
+  <assistant>### Step 3: Generate Title and Body</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1300" cache_read_input_tokens="43542" cache_creation="{'ephemeral_5m_input_tokens': 1300, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LaZrt5ya7BRS9UkpPSB1Sx">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-47/.erk/scratch/sessions/c64d9b47-c1ab-448e-a4e3-86c7308b2f66/pr-diff-b199cd91.diff</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1300" cache_read_input_tokens="43542" cache_creation="{'ephemeral_5m_input_tokens': 1300, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LaZrt5ya7BRS9UkpPSB1Sx">
+     1→diff --git a/.claude/skills/erk-exec/reference.md b/.claude/skills/erk-exec/reference.md
+     2→index 37962846e..634be92d4 100644
+     3→--- a/.claude/skills/erk-exec/reference.md
+     4→+++ b/.claude/skills/erk-exec/reference.md
+     5→@@ -106,7 +106,7 @@ Quick reference for all `erk exec` subcommands.
+     6→ | `trigger-async-learn`             | Trigger async learn workflow for a plan.                                   |
+     7→ | `tripwires-reminder-hook`         | Output tripwires reminder for UserPromptSubmit hook.                       |
+     8→ | `update-issue-body`               | Update an issue's body using REST API (avoids GraphQL rate limits).        |
+     9→-| `update-objective-node`           | Update node plan/PR cells in an objective's roadmap table.                 |
+    10→+| `update-objective-node`           | Update node PR cells in an objective's roadmap table.                      |
+    11→ | `update-plan-header`              | Update plan-header metadata fields on a plan.                              |
+    12→ | `update-pr-description`           | Update PR title and body with AI-generated description.                    |
+    13→ | `upload-impl-session`             | Upload current implementation session for async learn.                     |
+    14→@@ -835,12 +835,13 @@ Apply mechanical updates to an objective after landing a PR.
+    15→ 
+    16→ **Options:**
+    17→ 
+    18→-| Flag          | Type    | Required | Default | Description                                               |
+    19→-| ------------- | ------- | -------- | ------- | --------------------------------------------------------- |
+    20→-| `--pr`        | INTEGER | No       | -       | PR number (auto-discovered if omitted)                    |
+    21→-| `--objective` | INTEGER | No       | -       | Objective issue (auto-discovered if omitted)              |
+    22→-| `--branch`    | TEXT    | No       | -       | Branch name (auto-discovered if omitted)                  |
+    23→-| `--plan`      | INTEGER | No       | -       | Plan number (direct lookup, skips branch-based discovery) |
+    24→+| Flag          | Type    | Required | Default        | Description                                               |
+    25→+| ------------- | ------- | -------- | -------------- | --------------------------------------------------------- |
+    26→+| `--pr`        | INTEGER | No       | -              | PR number (auto-discovered if omitted)                    |
+    27→+| `--objective` | INTEGER | No       | -              | Objective issue (auto-discovered if omitted)              |
+    28→+| `--branch`    | TEXT    | No       | -              | Branch name (auto-discovered if omitted)                  |
+    29→+| `--plan`      | INTEGER | No       | -              | Plan number (direct lookup, skips branch-based discovery) |
+    30→+| `--node`      | TEXT    | No       | Sentinel.UNSET | Node ID(s) to mark as done (e.g., --node 1.1 --node 1.2)  |
+
+... [63 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me load the diff analysis skill and generate the description.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2327" cache_read_input_tokens="44842" cache_creation="{'ephemeral_5m_input_tokens': 2327, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01Pb9E4ZuhdvfvogW27ujBwd">
+    <param name="skill">erk-diff-analysis</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2327" cache_read_input_tokens="44842" output_tokens="71" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 2327}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Pb9E4ZuhdvfvogW27ujBwd">
+Launching skill: erk-diff-analysis
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-47/.claude/skills/erk-diff-analysis
+
+# Diff Analysis
+
+This skill provides the commit message generation prompt used by PR submission commands.
+
+## When to Use
+
+Only load this skill when:
+
+- Explicitly requested by name (`erk-diff-analysis`)
+- Invoked by commands like `/erk:git-pr-push`
+
+## Usage
+
+Load `references/commit-message-prompt.md` when analyzing a diff, then apply its principles to generate output.
+
+## Key Principles
+
+- Be concise and strategic - focus on significant changes
+- Use component-level descriptions - reference modules/components, not individual functions
+- Highlight breaking changes prominently
+- Note test coverage patterns
+- Use relative paths from repository root
+</user>
+  <tool_use name="Read" id="toolu_0192mtovcNk6GuX4nJt5jVYi">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-47/.claude/skills/erk-diff-analysis/references/commit-message-prompt.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="289" cache_read_input_tokens="47169" output_tokens="100" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 289}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0192mtovcNk6GuX4nJt5jVYi">
+     1→You are a commit message generator. Analyze the provided git diff and return ONLY a commit message.
+     2→
+     3→## Analysis Principles
+     4→
+     5→Analyze the diff following these principles:
+     6→
+     7→- **Be concise and strategic** - focus on significant changes
+     8→- **Use component-level descriptions** - reference modules/components, not individual functions
+     9→- **Highlight breaking changes prominently**
+    10→- **Note test coverage patterns**
+    11→- **Use relative paths from repository root**
+    12→
+    13→## Level of Detail
+    14→
+    15→- Focus on architectural and component-level impact
+    16→- Keep "Key Changes" to 3-5 major items
+    17→- Group related changes together
+    18→- Skip minor refactoring, formatting, or trivial updates
+    19→
+    20→## Output Format
+    21→
+    22→```
+    23→[Clear one-line PR title describing the change]
+    24→
+    25→[2-3 sentence summary explaining what changed and why. State what the branch does (feature/fix/refactor) and highlight key changes briefly.]
+    26→
+    27→## Files Changed
+    28→
+    29→&lt;details&gt;
+    30→&lt;summary&gt;Files Changed&lt;/summary&gt;
+
+... [54 lines omitted] ...
+
+    69→[Only if there are breaking changes, security concerns, or important warnings - 1-2 bullets max]
+  </tool_result>
+  <assistant>### Step 4: Apply Description</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1007" cache_read_input_tokens="47458" cache_creation="{'ephemeral_5m_input_tokens': 1007, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019CH4gC2bWSyBToKT8ds6Zh">
+    <param name="command">cat &gt; /tmp/pr-body.md &lt;&lt; 'BODY'
+Fix `get_diff_to_branch` to use three-dot (`...`) instead ...[truncated 1155 chars]... changed on the feature branch appear in the diff
+# Matches GitHub's PR diff view
+```
+BODY</param>
+    <param name="description">Write PR body to temp file</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1007" cache_read_input_tokens="47458" output_tokens="460" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 1007}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019CH4gC2bWSyBToKT8ds6Zh">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01PJFNa5h2TvpTKP1DXj8cvv">
+    <param name="command">erk exec set-pr-description --title "Fix get_diff_to_branch: use three-dot diff to match GitHub PR behavior" --body-file /tmp/pr-body.md</param>
+    <param name="description">Set PR title and body</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="486" cache_read_input_tokens="48465" cache_creation="{'ephemeral_5m_input_tokens': 486, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PJFNa5h2TvpTKP1DXj8cvv">
+PR #8159 updated: Fix get_diff_to_branch: use three-dot diff to match GitHub PR behavior
+  </tool_result>
+  <assistant>### Step 5: Signal and finalize</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="171" cache_read_input_tokens="48951" cache_creation="{'ephemeral_5m_input_tokens': 171, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DAwhhXoUA2j4v54uRRsGdX">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="171" cache_read_input_tokens="48951" cache_creation="{'ephemeral_5m_input_tokens': 171, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XG7tWXxB45PuL41p2HDZEj">
+    <param name="command">erk pr check --stage=impl 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR completion invariants</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="171" cache_read_input_tokens="48951" cache_creation="{'ephemeral_5m_input_tokens': 171, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DAwhhXoUA2j4v54uRRsGdX">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 8159
+}
+  </tool_result>
+  <tool_result tool="toolu_01XG7tWXxB45PuL41p2HDZEj">
+
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01U9PJQqnhM1Ao98S1VwXSSu">
+    <param name="taskId">3</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="416" cache_read_input_tokens="49122" cache_creation="{'ephemeral_5m_input_tokens': 416, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01U9PJQqnhM1Ao98S1VwXSSu">
+Updated task #3 status
+  </tool_result>
+  <assistant>PR submitted: https://github.com/dagster-io/erk/pull/8159
+
+**Summary:** Fixed `get_diff_to_branch` to use three-dot git diff syntax (`branch...HEAD`) instead of two-dot (`branch..HEAD`). This diffs from the merge-base, showing only changes introduced on the feature branch — matching GitHub's PR diff behavior and eliminating spurious files when branches diverge from master.
+
+🔄 Status line refreshed</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="49538" cache_creation="{'ephemeral_5m_input_tokens': 88, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;bash-input&gt;gt pr&lt;/bash-input&gt;</user>
+  <user>&lt;bash-stdout&gt;https://app.graphite.dev/github/pr/dagster-io/erk/8159&lt;/bash-stdout&gt;&lt;bash-stderr&gt;&lt;/bash-stderr&gt;</user>
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;bash-input&gt;gt pr&lt;/bash-input&gt;</user>
+  <user>&lt;bash-stdout&gt;https://app.graphite.dev/github/pr/dagster-io/erk/8159&lt;/bash-stdout&gt;&lt;bash-stderr&gt;&lt;/bash-stderr&gt;</user>
+  <user>write a test that would have failed before this change</user>
+  <thinking>The user wants me to write a test that would have failed before the change (when using two-dot `..` syntax) and passes after (with three-dot `...` syntax). Let me first understand the testing patterns in this codebase by checking the fake-driven testing approach and looking at existing tests for the analysis_ops.
+
+Let me first check for existing tests and the fake implementation.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="30992" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 30992, 'ephemeral_1h_input_tokens': 0}" output_tokens="14" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at the existing test patterns and fake implementation for analysis ops.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="30992" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 30992, 'ephemeral_1h_input_tokens': 0}" output_tokens="14" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01VQXiUKVDZjsi4iLhWD8sE1">
+    <param name="pattern">get_diff_to_branch</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="30992" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 30992, 'ephemeral_1h_input_tokens': 0}" output_tokens="14" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VQXiUKVDZjsi4iLhWD8sE1">
+Found 9 files
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py
+src/erk/cli/commands/pr/submit_pipeline.py
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/printing.py
+docs/learned/pr-operations/tripwires.md
+docs/learned/pr-operations/large-diff-recovery.md
+packages/erk-shared/src/erk_shared/gateway/pr/diff_extraction.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01EXHLp2Rggz65xBssGtrk4A">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-47/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/fake.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="30992" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 30992, 'ephemeral_1h_input_tokens': 0}" output_tokens="14" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EXHLp2Rggz65xBssGtrk4A">
+     1→"""Fake implementation of git analysis operations for testing."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk_shared.gateway.git.analysis_ops.abc import GitAnalysisOps
+     6→
+     7→
+     8→class FakeGitAnalysisOps(GitAnalysisOps):
+     9→    """In-memory fake implementation for testing.
+    10→
+    11→    Constructor Injection: pre-configured state passed via constructor.
+    12→    """
+    13→
+    14→    def __init__(
+    15→        self,
+    16→        *,
+    17→        commits_ahead: dict[tuple[Path, str], int] | None = None,
+    18→        commits_behind: dict[tuple[Path, str], int] | None = None,
+    19→        merge_bases: dict[tuple[str, str], str] | None = None,
+    20→        diffs: dict[tuple[Path, str], str] | None = None,
+    21→    ) -&gt; None:
+    22→        """Create FakeGitAnalysisOps with pre-configured state.
+    23→
+    24→        Args:
+    25→            commits_ahead: Mapping of (cwd, base_branch) -&gt; commit count
+    26→            commits_behind: Mapping of (cwd, target_branch) -&gt; commit count
+    27→            merge_bases: Mapping of (ref1, ref2) -&gt; merge base SHA
+    28→            diffs: Mapping of (cwd, branch) -&gt; diff string
+    29→        """
+    30→        self._commits_ahead: dict[tuple[Path, str], int] = (
+
+... [62 lines omitted] ...
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01CD2YYacP5EXXmmT2DL562H">
+    <param name="pattern">tests/**/test_*analysis*</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="30992" cache_read_input_tokens="19114" cache_creation="{'ephemeral_5m_input_tokens': 30992, 'ephemeral_1h_input_tokens': 0}" output_tokens="14" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CD2YYacP5EXXmmT2DL562H">
+No files found
+  </tool_result>
+  <thinking>The fake is dict-based and doesn't exercise the actual git command. This is an integration-level test that needs to test the real implementation against an actual git repo. Let me look at how other real git operations are tested to find the pattern.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1904" cache_read_input_tokens="50106" cache_creation="{'ephemeral_5m_input_tokens': 1904, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The fake is dict-based — it can't catch this bug. I need an integration test against a real git repo. Let me find the pattern for testing real git operations.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1904" cache_read_input_tokens="50106" cache_creation="{'ephemeral_5m_input_tokens': 1904, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_018xgdqU23ZF1sR1rkNZzqoB">
+    <param name="pattern">tests/**/test_real_*analysis*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1904" cache_read_input_tokens="50106" cache_creation="{'ephemeral_5m_input_tokens': 1904, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018xgdqU23ZF1sR1rkNZzqoB">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01DarXDGYXv48CB47vG4Q8Tk">
+    <param name="pattern">RealGitAnalysisOps</param>
+    <param name="path">tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1904" cache_read_input_tokens="50106" cache_creation="{'ephemeral_5m_input_tokens': 1904, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DarXDGYXv48CB47vG4Q8Tk">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_016gvLamkG4VkherrvJ2Pm4m">
+    <param name="pattern">class.*Test.*RealGit|def test.*real.*git|def test.*git.*diff</param>
+    <param name="path">tests</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="-i">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1904" cache_read_input_tokens="50106" cache_creation="{'ephemeral_5m_input_tokens': 1904, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016gvLamkG4VkherrvJ2Pm4m">
+Found 3 files
+tests/unit/gateways/github/metadata_blocks/test_integration.py
+tests/unit/fakes/test_fake_github.py
+tests/integration/AGENTS.md
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01TDZnpdjhzujUHCRQswdVZW">
+    <param name="pattern">subprocess.run.*git|tmp_path.*git init|git_repo|RealGit</param>
+    <param name="path">tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="501" cache_read_input_tokens="52010" cache_creation="{'ephemeral_5m_input_tokens': 501, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+</session>
