@@ -55,7 +55,7 @@ def test_close_issue_with_comment_success() -> None:
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["issue_number"] == 42
+    assert output["plan_number"] == 42
     # PlanBackend.add_comment returns string ID
     assert output["comment_id"] == "1000"
 
@@ -115,7 +115,7 @@ See #1234 for details."""
     assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["issue_number"] == 100
+    assert output["plan_number"] == 100
 
     # Verify the full comment was preserved
     _, comment_body, _ = fake_gh.added_comments[0]

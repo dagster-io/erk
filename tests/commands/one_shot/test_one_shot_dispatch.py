@@ -78,7 +78,7 @@ def test_dispatch_happy_path() -> None:
         assert workflow == "one-shot.yml"
         assert inputs["prompt"] == "fix the import in config.py"
         assert inputs["plan_backend"] == "planned_pr"
-        assert inputs["plan_issue_number"] == str(pr_number)
+        assert inputs["plan_number"] == str(pr_number)
 
         # Verify we're back on original branch
         assert git.branch.get_current_branch(env.cwd) == "main"

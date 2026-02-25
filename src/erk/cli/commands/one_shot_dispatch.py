@@ -313,7 +313,7 @@ def dispatch_one_shot(
         if params.model is not None:
             inputs["model_name"] = params.model
         if plan_issue_number is not None:
-            inputs["plan_issue_number"] = str(plan_issue_number)
+            inputs["plan_number"] = str(plan_issue_number)
 
         # Merge extra workflow inputs
         inputs.update(params.extra_workflow_inputs)

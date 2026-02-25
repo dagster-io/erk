@@ -137,7 +137,7 @@ class HookInput:
     current_branch: str | None
     worktree_name: str | None  # Directory name of current worktree
     pr_number: int | None  # PR number if exists for current branch
-    plan_issue_number: int | None  # Issue number from .impl/issue.json
+    plan_number: int | None  # Plan number from .impl/plan-ref.json
     editor: str | None  # Value of EDITOR env var for TUI detection
 
     @classmethod
@@ -156,7 +156,7 @@ class HookInput:
         current_branch: str | None = "feature-branch",
         worktree_name: str | None = None,
         pr_number: int | None = None,
-        plan_issue_number: int | None = None,
+        plan_number: int | None = None,
         editor: str | None = None,
     ) -> Self:
         """Create a HookInput with test defaults.
@@ -171,7 +171,7 @@ class HookInput:
         - current_branch: "feature-branch"
         - worktree_name: None
         - pr_number: None
-        - plan_issue_number: None
+        - plan_number: None
         - editor: None
         """
         return cls(
@@ -187,7 +187,7 @@ class HookInput:
             current_branch=current_branch,
             worktree_name=worktree_name,
             pr_number=pr_number,
-            plan_issue_number=plan_issue_number,
+            plan_number=plan_number,
             editor=editor,
         )
 
@@ -251,7 +251,7 @@ def build_blocking_message(
     plan_title: str | None,
     worktree_name: str | None,
     pr_number: int | None,
-    plan_issue_number: int | None,
+    plan_number: int | None,
     editor: str | None,
 ) -> str:
     """Build the blocking message with AskUserQuestion instructions.
@@ -265,7 +265,7 @@ def build_blocking_message(
         plan_title: Title extracted from plan file, if available.
         worktree_name: Directory name of current worktree.
         pr_number: PR number if exists for current branch.
-        plan_issue_number: Issue number from .impl/issue.json.
+        plan_number: Plan number from .impl/plan-ref.json.
         editor: Value of EDITOR env var for TUI detection.
     """
     # Build context lines for the question
@@ -283,8 +283,8 @@ def build_blocking_message(
         statusline_parts.append(f"br:{current_branch}")
     if pr_number is not None:
         statusline_parts.append(f"pr:#{pr_number}")
-    if plan_issue_number is not None:
-        statusline_parts.append(f"plan:#{plan_issue_number}")
+    if plan_number is not None:
+        statusline_parts.append(f"plan:#{plan_number}")
 
     if statusline_parts:
         statusline = " ".join(f"({part})" for part in statusline_parts)
@@ -456,7 +456,7 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
             plan_title=hook_input.plan_title,
             worktree_name=hook_input.worktree_name,
             pr_number=hook_input.pr_number,
-            plan_issue_number=hook_input.plan_issue_number,
+            plan_number=hook_input.plan_number,
             editor=hook_input.editor,
         ),
     )
@@ -661,7 +661,7 @@ def _gather_inputs(
     current_branch: str | None = None
     worktree_name: str | None = None
     pr_number: int | None = None
-    plan_issue_number: int | None = None
+    plan_number: int | None = None
 
     needs_blocking_message = (
         session_id is not None
@@ -676,7 +676,7 @@ def _gather_inputs(
         current_branch = git.branch.get_current_branch(repo_root)
         worktree_name = _get_worktree_name(git, repo_root)
         plan_ref = read_plan_ref(repo_root / ".impl")
-        plan_issue_number = (
+        plan_number = (
             int(plan_ref.plan_id) if plan_ref is not None and plan_ref.plan_id.isdigit() else None
         )
         editor = os.environ.get("EDITOR")
@@ -697,7 +697,7 @@ def _gather_inputs(
         current_branch=current_branch,
         worktree_name=worktree_name,
         pr_number=pr_number,
-        plan_issue_number=plan_issue_number,
+        plan_number=plan_number,
         editor=editor,
     )
 

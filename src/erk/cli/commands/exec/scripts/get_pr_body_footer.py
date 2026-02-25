@@ -6,7 +6,7 @@ creating PRs from remote implementations.
 
 Usage:
     erk exec get-pr-body-footer --pr-number 123
-    erk exec get-pr-body-footer --pr-number 123 --issue-number 456
+    erk exec get-pr-body-footer --pr-number 123 --plan-number 456
 
 Output:
     Markdown footer with checkout command and optional issue closing reference
@@ -26,7 +26,7 @@ Examples:
     source "$(erk pr checkout 1895 --script)" && erk pr sync --dangerous
     ```
 
-    $ erk exec get-pr-body-footer --pr-number 1895 --issue-number 123
+    $ erk exec get-pr-body-footer --pr-number 1895 --plan-number 123
 
     ---
 
@@ -46,25 +46,25 @@ from erk_shared.gateway.github.pr_footer import build_pr_body_footer
 
 @click.command(name="get-pr-body-footer")
 @click.option("--pr-number", type=int, required=True, help="PR number for checkout command")
-@click.option("--issue-number", type=int, required=False, help="Issue number to close")
+@click.option("--plan-number", type=int, required=False, help="Plan number to close")
 @click.option(
     "--plans-repo", type=str, required=False, help="Target repo in owner/repo format (cross-repo)"
 )
-def get_pr_body_footer(pr_number: int, issue_number: int | None, plans_repo: str | None) -> None:
+def get_pr_body_footer(pr_number: int, plan_number: int | None, plans_repo: str | None) -> None:
     """Generate PR body footer with checkout command.
 
     Outputs a markdown footer section that includes the `erk pr checkout` command,
     allowing users to easily checkout the PR in a fresh worktree locally.
 
-    When issue_number is provided, includes "Closes #N" (or "Closes owner/repo#N"
-    for cross-repo plans) to auto-close the issue when the PR is merged.
+    When plan_number is provided, includes "Closes #N" (or "Closes owner/repo#N"
+    for cross-repo plans) to auto-close the plan when the PR is merged.
 
     Args:
         pr_number: The PR number to include in the checkout command
-        issue_number: Optional issue number to close when PR is merged
+        plan_number: Optional plan number to close when PR is merged
         plans_repo: Optional target repo in "owner/repo" format for cross-repo
     """
     output = build_pr_body_footer(
-        pr_number=pr_number, issue_number=issue_number, plans_repo=plans_repo
+        pr_number=pr_number, issue_number=plan_number, plans_repo=plans_repo
     )
     click.echo(output, nl=False)

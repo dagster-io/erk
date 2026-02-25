@@ -45,7 +45,7 @@ def test_track_learn_evaluation_posts_comment_and_updates_header(tmp_path: Path)
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["issue_number"] == 42
+    assert output["plan_number"] == 42
     assert output["tracked"] is True
 
     # Verify comment was posted
@@ -87,7 +87,7 @@ def test_track_learn_evaluation_without_session_id(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["issue_number"] == 100
+    assert output["plan_number"] == 100
 
     # Verify comment was posted
     assert len(fake_issues.added_comments) == 1
@@ -128,7 +128,7 @@ def test_track_learn_evaluation_infers_from_branch(tmp_path: Path) -> None:
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert "No issue specified" in output["message"]
+    assert "No plan specified" in output["message"]
 
 
 def test_track_learn_evaluation_with_url_format(tmp_path: Path) -> None:
@@ -155,7 +155,7 @@ def test_track_learn_evaluation_with_url_format(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["issue_number"] == 789
+    assert output["plan_number"] == 789
 
 
 # ============================================================================
@@ -188,7 +188,7 @@ def test_track_learn_evaluation_fails_without_issue(tmp_path: Path) -> None:
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert "No issue specified" in output["message"]
+    assert "No plan specified" in output["message"]
 
 
 def test_track_learn_evaluation_fails_with_invalid_issue(tmp_path: Path) -> None:
@@ -213,7 +213,7 @@ def test_track_learn_evaluation_fails_with_invalid_issue(tmp_path: Path) -> None
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert "Invalid issue identifier" in output["message"]
+    assert "Invalid plan identifier" in output["message"]
 
 
 # ============================================================================
@@ -247,12 +247,12 @@ def test_json_output_structure_success(tmp_path: Path) -> None:
 
     # Verify required fields
     assert "success" in output
-    assert "issue_number" in output
+    assert "plan_number" in output
     assert "tracked" in output
 
     # Verify types
     assert isinstance(output["success"], bool)
-    assert isinstance(output["issue_number"], int)
+    assert isinstance(output["plan_number"], int)
     assert isinstance(output["tracked"], bool)
 
 

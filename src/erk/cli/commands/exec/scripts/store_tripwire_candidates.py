@@ -45,13 +45,13 @@ class StoreError:
 
 
 @click.command(name="store-tripwire-candidates")
-@click.option("--issue", "issue_number", required=True, type=int, help="Plan issue number")
+@click.option("--issue", "plan_number", required=True, type=int, help="Plan number")
 @click.option("--candidates-file", required=True, help="Path to tripwire-candidates.json")
 @click.pass_context
 def store_tripwire_candidates(
     ctx: click.Context,
     *,
-    issue_number: int,
+    plan_number: int,
     candidates_file: str,
 ) -> None:
     """Store tripwire candidates as a metadata comment on a plan issue."""
@@ -100,7 +100,7 @@ def store_tripwire_candidates(
     comment_body = render_tripwire_candidates_comment(candidates)
 
     # Post comment to issue
-    issues.add_comment(repo_root, issue_number, comment_body)
+    issues.add_comment(repo_root, plan_number, comment_body)
 
     success_response = StoreSuccess(success=True, count=len(candidates))
     click.echo(json.dumps(asdict(success_response)))

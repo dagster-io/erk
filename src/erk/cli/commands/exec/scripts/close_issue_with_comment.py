@@ -1,10 +1,10 @@
 """Close a plan with a comment.
 
 Usage:
-    erk exec close-issue-with-comment <ISSUE_NUMBER> --comment "Closing because..."
+    erk exec close-issue-with-comment <PLAN_NUMBER> --comment "Closing because..."
 
 Output:
-    JSON with {success, issue_number, comment_id}
+    JSON with {success, plan_number, comment_id}
 
 Exit Codes:
     0: Success - plan closed with comment
@@ -22,7 +22,7 @@ from erk_shared.context.helpers import (
 
 
 @click.command(name="close-issue-with-comment")
-@click.argument("issue_number", type=int)
+@click.argument("plan_number", type=int)
 @click.option(
     "--comment",
     required=True,
@@ -31,14 +31,14 @@ from erk_shared.context.helpers import (
 @click.pass_context
 def close_issue_with_comment(
     ctx: click.Context,
-    issue_number: int,
+    plan_number: int,
     *,
     comment: str,
 ) -> None:
     """Close a plan with a comment."""
     backend = require_plan_backend(ctx)
     repo_root = require_repo_root(ctx)
-    plan_id = str(issue_number)
+    plan_id = str(plan_number)
 
     # Add the comment first
     try:
@@ -48,7 +48,7 @@ def close_issue_with_comment(
             json.dumps(
                 {
                     "success": False,
-                    "error": f"Failed to add comment to issue #{issue_number}: {e}",
+                    "error": f"Failed to add comment to plan #{plan_number}: {e}",
                 }
             )
         )
@@ -62,7 +62,7 @@ def close_issue_with_comment(
             json.dumps(
                 {
                     "success": False,
-                    "error": f"Failed to close issue #{issue_number}: {e}",
+                    "error": f"Failed to close plan #{plan_number}: {e}",
                     "comment_id": comment_id,
                 }
             )
@@ -73,7 +73,7 @@ def close_issue_with_comment(
         json.dumps(
             {
                 "success": True,
-                "issue_number": issue_number,
+                "plan_number": plan_number,
                 "comment_id": comment_id,
             }
         )

@@ -43,7 +43,7 @@ def create_plan_from_context(ctx: click.Context) -> None:
         1: Error (empty plan, gh failure, etc.)
 
     Output:
-        JSON object: {"success": true, "issue_number": 123, "issue_url": "..."}
+        JSON object: {"success": true, "plan_number": 123, "plan_url": "..."}
     """
     # Get GitHub Issues from context (LBYL check in helper)
     github = require_github_issues(ctx)
@@ -60,7 +60,7 @@ def create_plan_from_context(ctx: click.Context) -> None:
     # Extract title (pure function call)
     title = extract_title_from_plan(plan)
 
-    # Initial body: just the plan content (without commands, since we don't have issue number yet)
+    # Initial body: just the plan content (without commands, since we don't have plan number yet)
     # We'll update it after creation with the full formatted body including commands
     initial_body = plan.strip()
 
@@ -87,10 +87,10 @@ def create_plan_from_context(ctx: click.Context) -> None:
         click.echo(f"Error: Failed to create GitHub issue: {e}", err=True)
         raise SystemExit(1) from e
 
-    # Now that we have the issue number, format the complete body with commands
+    # Now that we have the plan number, format the complete body with commands
     formatted_body = format_plan_issue_body(plan.strip(), result.number, url=result.url)
 
-    # Update the issue body with the formatted version
+    # Update the plan issue body with the formatted version
     try:
         github.update_issue_body(repo_root, result.number, BodyText(content=formatted_body))
     except RuntimeError as e:
@@ -100,7 +100,7 @@ def create_plan_from_context(ctx: click.Context) -> None:
     # Output structured JSON
     output = {
         "success": True,
-        "issue_number": result.number,
-        "issue_url": result.url,
+        "plan_number": result.number,
+        "plan_url": result.url,
     }
     click.echo(json.dumps(output))

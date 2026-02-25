@@ -39,7 +39,7 @@ on:
         required: false
         type: string
         default: ""
-      plan_issue_number:
+      plan_number:
         description: "Plan entity number: issue number (github backend) or PR number (draft_pr backend)"
         required: false
         type: string
@@ -125,12 +125,12 @@ jobs:
           echo "trunk_branch=$(echo "$result" | jq -r '.trunk_branch')" >> $GITHUB_OUTPUT
 
       - name: Update lifecycle stage to planning
-        if: inputs.plan_issue_number != ''
+        if: inputs.plan_number != ''
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
-          PLAN_ISSUE_NUMBER: ${{ inputs.plan_issue_number }}
+          PLAN_NUMBER: ${{ inputs.plan_number }}
         run: |
-          erk exec update-plan-header "$PLAN_ISSUE_NUMBER" lifecycle_stage=planning
+          erk exec update-plan-header "$PLAN_NUMBER" lifecycle_stage=planning
 
       - name: Run one-shot planning
         id: plan
@@ -141,7 +141,7 @@ jobs:
             --output-format stream-json \
             --dangerously-skip-permissions \
             --verbose \
-            "/erk:one-shot-plan $PLAN_ISSUE_NUMBER"
+            "/erk:one-shot-plan $PLAN_NUMBER"
           EXIT_CODE=$?
           echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
           if [ $EXIT_CODE -eq 0 ]; then
@@ -157,7 +157,7 @@ jobs:
           WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           OBJECTIVE_ISSUE: ${{ inputs.objective_issue }}
           NODE_ID: ${{ inputs.node_id }}
-          PLAN_ISSUE_NUMBER: ${{ inputs.plan_issue_number }}
+          PLAN_NUMBER: ${{ inputs.plan_number }}
 
       - name: Verify plan outputs exist
         if: steps.plan.outputs.plan_success == 'true'
@@ -196,7 +196,7 @@ jobs:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
         run: |
           erk exec register-one-shot-plan \
-            --issue-number "${{ steps.read_result.outputs.plan_id }}" \
+            --plan-number "${{ steps.read_result.outputs.plan_id }}" \
             --run-id "${{ github.run_id }}" \
             --pr-number "${{ inputs.pr_number }}" \
             --submitted-by "${{ inputs.submitted_by }}" \

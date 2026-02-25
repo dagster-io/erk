@@ -59,7 +59,7 @@ def get_closing_text(ctx: click.Context) -> None:
     # Get current branch name for validation and fallback
     branch_name = get_current_branch(ctx)
     if branch_name is None:
-        # Not on a branch (detached HEAD) - can't determine issue number
+        # Not on a branch (detached HEAD) - can't determine plan number
         return
 
     # Check .impl/ first, then .erk/impl-context/
@@ -75,7 +75,7 @@ def get_closing_text(ctx: click.Context) -> None:
         raise SystemExit(1) from None
 
     if plan_id is None:
-        # No issue to close (neither branch nor .impl/ has one)
+        # No plan to close (neither branch nor .impl/ has one)
         return
 
     # Draft-PR plans close themselves on merge - no closing keyword needed
