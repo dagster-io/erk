@@ -1,5 +1,9 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Objective #7724, Node 5.1+5.2 \u2014 Rename issue_number \u2192 plan_number in plan CLI commands",
+  "plan_id": "8139",
+  "url": "https://github.com/dagster-io/erk/pull/8139",
+  "created_at": "2026-02-25T05:17:39.140536",
+  "synced_at": "2026-02-25T05:17:39.140536",
+  "labels": [],
   "objective_id": 7724
 }
