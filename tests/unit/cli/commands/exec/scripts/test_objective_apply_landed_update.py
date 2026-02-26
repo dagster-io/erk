@@ -319,6 +319,111 @@ class TestApplyLandedUpdateNoNodes:
         assert len(fake_issues.updated_bodies) == 0
 
 
+ROADMAP_BODY_WITH_PR_REF = textwrap.dedent("""\
+    # My Objective
+
+    <!-- erk:metadata-block:objective-header -->
+
+    <details>
+    <summary><code>objective-header</code></summary>
+
+    ```yaml
+    created_at: '2026-01-01T00:00:00Z'
+    created_by: testuser
+    objective_comment_id: 55555
+    slug: null
+    ```
+
+    </details>
+
+    <!-- /erk:metadata-block:objective-header -->
+
+    <!-- erk:metadata-block:objective-roadmap -->
+
+    <details>
+    <summary><code>objective-roadmap</code></summary>
+
+    ```yaml
+    schema_version: "2"
+    steps:
+    - id: "1.1"
+      description: "Add user model"
+      status: "in_progress"
+      pr: "#6517"
+    - id: "1.2"
+      description: "Add JWT library"
+      status: "in_progress"
+      pr: null
+    - id: "2.1"
+      description: "Implement login"
+      status: "pending"
+      pr: null
+    ```
+
+    </details>
+
+    <!-- /erk:metadata-block:objective-roadmap -->
+
+    ## Roadmap
+""")
+
+
+class TestApplyLandedUpdateAutoMatch:
+    def test_auto_matches_nodes_by_pr_ref(self, tmp_path: Path) -> None:
+        """When no --node flags are passed, auto-matches nodes whose pr field references the PR."""
+        objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY_WITH_PR_REF)
+        plan = _make_issue(number=6513, title="My Plan", body=PLAN_BODY_WITH_OBJECTIVE)
+        pr = _make_pr_details(number=6517, title="Add auth system", body="pr body")
+
+        comment = IssueComment(
+            body=OBJECTIVE_COMMENT_BODY,
+            url="https://github.com/owner/repo/issues/6423#issuecomment-55555",
+            id=55555,
+            author="testuser",
+        )
+        fake_issues = FakeGitHubIssues(
+            issues={6423: objective, 6513: plan},
+            comments_with_urls={6423: [comment]},
+        )
+        fake_github = FakeGitHub(
+            issues_gateway=fake_issues,
+            pr_details={6517: pr, 6513: issue_info_to_pr_details(plan)},
+        )
+
+        runner = CliRunner()
+        result = runner.invoke(
+            objective_apply_landed_update,
+            [
+                "--pr",
+                "6517",
+                "--objective",
+                "6423",
+                "--branch",
+                "plnd/some-branch",
+                "--plan",
+                "6513",
+            ],
+            obj=context_for_test(
+                github=fake_github,
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                repo_root=tmp_path,
+                cwd=tmp_path,
+            ),
+        )
+
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert data["success"] is True
+
+        # Node 1.1 was auto-matched (its pr field is "#6517")
+        node_updates = data["node_updates"]
+        assert len(node_updates) == 1
+        assert node_updates[0]["node_id"] == "1.1"
+
+        # Issue body was updated
+        assert len(fake_issues.updated_bodies) == 1
+
+
 class TestApplyLandedUpdateErrors:
     def test_objective_not_found(self, tmp_path: Path) -> None:
         """Returns error when objective issue not found."""
