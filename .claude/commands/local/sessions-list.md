@@ -1,5 +1,8 @@
 ---
 description: List recent sessions for the current worktree
+context: fork
+agent: general-purpose
+model: haiku
 ---
 
 # /erk:sessions-list

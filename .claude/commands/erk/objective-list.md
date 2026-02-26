@@ -1,5 +1,8 @@
 ---
 description: List open objectives
+context: fork
+agent: general-purpose
+model: haiku
 ---
 
 # /erk:objective-list

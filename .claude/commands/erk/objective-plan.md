@@ -94,7 +94,7 @@ If no default found from current branch, prompt user using AskUserQuestion with 
 
 ### Step 2: Launch Task Agent for Data Fetching
 
-Use the Task tool with `subagent_type: "general-purpose"` and `model: "sonnet"` to fetch and parse objective data:
+Use the Task tool with `subagent_type: "general-purpose"` and `model: "haiku"` to fetch and parse objective data:
 
 **Task Prompt:**
 
