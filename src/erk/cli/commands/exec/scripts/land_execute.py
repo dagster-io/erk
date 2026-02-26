@@ -142,6 +142,12 @@ def land_execute(
     # Resolve --up to target child branch at execution time
     resolved_target_child = target_child
     repo_root = erk_ctx.git.repo.get_repository_root(erk_ctx.cwd)
+
+    # Compute main repo root BEFORE execution pipeline deletes the worktree.
+    # get_git_common_dir() returns the shared .git dir even from a worktree,
+    # so .parent gives the main repo root that always exists after cleanup.
+    common_dir = erk_ctx.git.repo.get_git_common_dir(erk_ctx.cwd)
+    main_repo_root = common_dir.parent if common_dir is not None else repo_root
     if up_flag and target_child is None:
         children = erk_ctx.branch_manager.get_child_branches(repo_root, branch)
         if not children:
@@ -183,6 +189,7 @@ def land_execute(
             pr=pr_number,
             branch=branch,
             plan=plan_number,
+            worktree_path=main_repo_root,
         )
 
     if exit_after is not None:
