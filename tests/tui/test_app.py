@@ -1,6 +1,5 @@
 """Tests for ErkDashApp using Textual Pilot."""
 
-from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -689,6 +688,82 @@ class TestPlanDetailScreenCopyActions:
             assert clipboard.last_copied == "erk pr co 456"
 
 
+class TestPlanDetailScreenFixConflictsKeybinding:
+    """Tests for action_fix_conflicts_remote() triggered via keybinding '5'.
+
+    The keybinding action dismisses the detail screen and delegates to
+    the app's toast + async worker pattern.
+    """
+
+    @pytest.mark.asyncio
+    async def test_fix_conflicts_keybinding_uses_toast_pattern(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """Pressing '5' in detail screen triggers toast + async fix-conflicts."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        captured_pr: int | None = None
+
+        def mock_async(self_app: ErkDashApp, pr_number: int) -> None:
+            nonlocal captured_pr
+            captured_pr = pr_number
+
+        monkeypatch.setattr(ErkDashApp, "_fix_conflicts_remote_async", mock_async)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Open detail screen
+            await pilot.press("space")
+            await pilot.pause()
+            await pilot.pause()
+
+            initial_stack_len = len(app.screen_stack)
+
+            # Press '5' to trigger fix_conflicts_remote keybinding
+            await pilot.press("5")
+            await pilot.pause()
+
+            # Detail screen should have been dismissed (stack shrunk)
+            assert len(app.screen_stack) < initial_stack_len
+
+            # Should have called _fix_conflicts_remote_async with the PR number
+            assert captured_pr == 456
+
+    @pytest.mark.asyncio
+    async def test_fix_conflicts_keybinding_does_nothing_without_pr(self) -> None:
+        """Pressing '5' in detail screen does nothing if no PR number."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],  # No pr_number
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Open detail screen
+            await pilot.press("space")
+            await pilot.pause()
+            await pilot.pause()
+
+            initial_stack_len = len(app.screen_stack)
+
+            # Press '5' with no PR - should do nothing
+            await pilot.press("5")
+            await pilot.pause()
+
+            # Detail screen should still be open (not dismissed)
+            assert len(app.screen_stack) == initial_stack_len
+
+
 class TestCommandPaletteFromMain:
     """Tests for command palette from main list view.
 
@@ -899,10 +974,10 @@ class TestExecutePaletteCommandFixConflictsRemote:
             assert len(app.screen_stack) == initial_stack_len
 
     @pytest.mark.asyncio
-    async def test_execute_palette_command_fix_conflicts_remote_pushes_screen_and_runs_command(
+    async def test_execute_palette_command_fix_conflicts_remote_uses_toast_pattern(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        """Execute palette command fix_conflicts_remote pushes screen and runs correct command."""
+        """Execute palette command fix_conflicts_remote uses toast, not modal."""
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456)],
             repo_root=tmp_path,
@@ -910,27 +985,14 @@ class TestExecutePaletteCommandFixConflictsRemote:
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
-        # Capture the command passed to run_streaming_command
-        captured_command = None
+        # Capture calls to _fix_conflicts_remote_async
+        captured_pr: int | None = None
 
-        def mock_run_streaming_command(
-            self: PlanDetailScreen,
-            command: list[str],
-            cwd: Path,
-            title: str,
-            *,
-            timeout: float = 30.0,
-            on_success: Callable[[], None] | None = None,
-        ) -> None:
-            nonlocal captured_command
-            captured_command = command
+        def mock_async(self_app: ErkDashApp, pr_number: int) -> None:
+            nonlocal captured_pr
+            captured_pr = pr_number
 
-        # Patch run_streaming_command to capture the command
-        monkeypatch.setattr(
-            PlanDetailScreen,
-            "run_streaming_command",
-            mock_run_streaming_command,
-        )
+        monkeypatch.setattr(ErkDashApp, "_fix_conflicts_remote_async", mock_async)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -938,25 +1000,14 @@ class TestExecutePaletteCommandFixConflictsRemote:
 
             initial_stack_len = len(app.screen_stack)
 
-            # Execute fix_conflicts_remote command
             app.execute_palette_command("fix_conflicts_remote")
             await pilot.pause()
 
-            # Should have pushed a new screen
-            assert len(app.screen_stack) == initial_stack_len + 1
+            # Should NOT have pushed a new screen
+            assert len(app.screen_stack) == initial_stack_len
 
-            detail_screen = app.screen_stack[-1]
-            assert isinstance(detail_screen, PlanDetailScreen)
-
-            # Verify correct command was prepared
-            assert captured_command is not None
-            assert captured_command == [
-                "erk",
-                "launch",
-                "pr-fix-conflicts",
-                "--pr",
-                "456",
-            ]
+            # Should have called _fix_conflicts_remote_async with the PR number
+            assert captured_pr == 456
 
 
 class TestStreamingCommandTimeout:
