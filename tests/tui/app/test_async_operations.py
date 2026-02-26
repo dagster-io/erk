@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from erk.tui.app import ErkDashApp, _should_trigger_learn
+from erk.tui.app import ErkDashApp
 from erk.tui.data.types import PlanFilters
 from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
 
@@ -224,9 +224,6 @@ class TestLandPrAsync:
                 456,
                 "test-branch",
                 None,
-                plan_id=123,
-                is_learn_plan=True,
-                learn_status="completed_with_plan",
             )
             await pilot.pause(0.3)
 
@@ -270,9 +267,6 @@ class TestLandPrAsync:
                 456,
                 "test-branch",
                 None,
-                plan_id=123,
-                is_learn_plan=True,
-                learn_status="completed_with_plan",
             )
             await pilot.pause(0.3)
 
@@ -308,9 +302,6 @@ class TestLandPrAsync:
                 456,
                 "test-branch",
                 None,
-                plan_id=123,
-                is_learn_plan=True,
-                learn_status="completed_with_plan",
             )
             await pilot.pause(0.3)
 
@@ -356,9 +347,6 @@ class TestLandPrAsync:
                 456,
                 "test-branch",
                 789,
-                plan_id=123,
-                is_learn_plan=True,
-                learn_status="completed_with_plan",
             )
             await pilot.pause(0.3)
 
@@ -404,215 +392,11 @@ class TestLandPrAsync:
                 456,
                 "test-branch",
                 None,
-                plan_id=123,
-                is_learn_plan=True,
-                learn_status="completed_with_plan",
             )
             await pilot.pause(0.3)
 
             # Only the land command, no objective update
             assert len(captured_calls) == 1
-
-    @pytest.mark.asyncio
-    async def test_land_pr_chains_learn_trigger(
-        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-    ) -> None:
-        """_land_pr_async should trigger learn when learn_status is None."""
-        import subprocess
-
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
-            repo_root=tmp_path,
-        )
-        filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
-
-        captured_calls: list[list[str]] = []
-
-        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
-            if args:
-                captured_calls.append(list(args[0]))  # type: ignore[arg-type]
-            return _FakePopen(return_code=0)
-
-        monkeypatch.setattr(subprocess, "Popen", fake_popen)
-
-        async with app.run_test() as pilot:
-            await pilot.pause()
-            await pilot.pause()
-
-            app._land_pr_async(
-                "test-op",
-                456,
-                "test-branch",
-                None,
-                plan_id=123,
-                is_learn_plan=False,
-                learn_status=None,
-            )
-            await pilot.pause(0.3)
-
-            assert len(captured_calls) == 2
-            assert captured_calls[1] == [
-                "erk",
-                "exec",
-                "trigger-async-learn",
-                "123",
-            ]
-
-    @pytest.mark.asyncio
-    async def test_land_pr_skips_learn_for_learn_plan(
-        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-    ) -> None:
-        """_land_pr_async should skip learn when is_learn_plan is True."""
-        import subprocess
-
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
-            repo_root=tmp_path,
-        )
-        filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
-
-        captured_calls: list[list[str]] = []
-
-        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
-            if args:
-                captured_calls.append(list(args[0]))  # type: ignore[arg-type]
-            return _FakePopen(return_code=0)
-
-        monkeypatch.setattr(subprocess, "Popen", fake_popen)
-
-        async with app.run_test() as pilot:
-            await pilot.pause()
-            await pilot.pause()
-
-            app._land_pr_async(
-                "test-op",
-                456,
-                "test-branch",
-                None,
-                plan_id=123,
-                is_learn_plan=True,
-                learn_status=None,
-            )
-            await pilot.pause(0.3)
-
-            # Only the land command, no learn trigger
-            assert len(captured_calls) == 1
-
-    @pytest.mark.asyncio
-    async def test_land_pr_skips_learn_when_already_completed(
-        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-    ) -> None:
-        """_land_pr_async should skip learn when status is already completed."""
-        import subprocess
-
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
-            repo_root=tmp_path,
-        )
-        filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
-
-        captured_calls: list[list[str]] = []
-
-        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
-            if args:
-                captured_calls.append(list(args[0]))  # type: ignore[arg-type]
-            return _FakePopen(return_code=0)
-
-        monkeypatch.setattr(subprocess, "Popen", fake_popen)
-
-        async with app.run_test() as pilot:
-            await pilot.pause()
-            await pilot.pause()
-
-            app._land_pr_async(
-                "test-op",
-                456,
-                "test-branch",
-                None,
-                plan_id=123,
-                is_learn_plan=False,
-                learn_status="completed_with_plan",
-            )
-            await pilot.pause(0.3)
-
-            # Only the land command, no learn trigger
-            assert len(captured_calls) == 1
-
-    @pytest.mark.asyncio
-    async def test_land_pr_learn_failure_does_not_affect_land(
-        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-    ) -> None:
-        """Learn trigger failure should show warning but not affect land success."""
-        import subprocess
-
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
-            repo_root=tmp_path,
-        )
-        filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
-
-        call_count = 0
-
-        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
-            nonlocal call_count
-            call_count += 1
-            if args and "trigger-async-learn" in args[0]:  # type: ignore[operator]
-                return _FakePopen(lines=("learn failed",), return_code=1)
-            return _FakePopen(return_code=0)
-
-        monkeypatch.setattr(subprocess, "Popen", fake_popen)
-
-        async with app.run_test() as pilot:
-            await pilot.pause()
-            await pilot.pause()
-
-            count_before = provider.fetch_count
-
-            app._land_pr_async(
-                "test-op",
-                456,
-                "test-branch",
-                None,
-                plan_id=123,
-                is_learn_plan=False,
-                learn_status=None,
-            )
-            await pilot.pause(0.3)
-
-            # Land still refreshed successfully
-            assert provider.fetch_count > count_before
-            # Both land and learn were called
-            assert call_count == 2
-
-
-class TestShouldTriggerLearn:
-    """Tests for _should_trigger_learn pure function."""
-
-    def test_skip_learn_plans(self) -> None:
-        assert _should_trigger_learn(is_learn_plan=True, learn_status=None) is False
-
-    def test_skip_completed_no_plan(self) -> None:
-        assert _should_trigger_learn(is_learn_plan=False, learn_status="completed_no_plan") is False
-
-    def test_skip_completed_with_plan(self) -> None:
-        result = _should_trigger_learn(is_learn_plan=False, learn_status="completed_with_plan")
-        assert result is False
-
-    def test_skip_plan_completed(self) -> None:
-        assert _should_trigger_learn(is_learn_plan=False, learn_status="plan_completed") is False
-
-    def test_skip_pending(self) -> None:
-        assert _should_trigger_learn(is_learn_plan=False, learn_status="pending") is False
-
-    def test_trigger_on_none(self) -> None:
-        assert _should_trigger_learn(is_learn_plan=False, learn_status=None) is True
-
-    def test_trigger_on_not_started(self) -> None:
-        assert _should_trigger_learn(is_learn_plan=False, learn_status="not_started") is True
 
 
 class TestDispatchToQueueAsync:
