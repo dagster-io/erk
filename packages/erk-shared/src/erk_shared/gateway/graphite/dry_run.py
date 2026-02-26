@@ -50,16 +50,6 @@ class DryRunGraphite(Graphite):
 
     # Destructive operations: print dry-run message instead of executing
 
-    def sync(self, repo_root: Path, *, force: bool, quiet: bool) -> None:
-        """No-op for gt sync in dry-run mode."""
-        # Do nothing - prevents actual gt sync execution
-        pass
-
-    def restack(self, repo_root: Path, *, quiet: bool) -> None:
-        """No-op for gt restack in dry-run mode."""
-        # Do nothing - prevents actual gt restack execution
-        pass
-
     def check_auth_status(self) -> tuple[bool, str | None, str | None]:
         """Check authentication status (read-only, delegates to wrapped)."""
         return self._wrapped.check_auth_status()
@@ -83,7 +73,3 @@ class DryRunGraphite(Graphite):
     def is_branch_tracked(self, repo_root: Path, branch: str) -> bool:
         """Delegate to wrapped implementation for tracking check (read-only)."""
         return self._wrapped.is_branch_tracked(repo_root, branch)
-
-    def continue_restack(self, repo_root: Path, *, quiet: bool) -> None:
-        """No-op for gt continue in dry-run mode."""
-        pass

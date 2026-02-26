@@ -28,14 +28,11 @@ class FakeGraphite(Graphite):
     def __init__(
         self,
         *,
-        sync_raises: Exception | None = None,
-        restack_raises: Exception | None = None,
         submit_branch_raises: Exception | None = None,
         track_branch_raises: Exception | None = None,
         retrack_branch_raises: Exception | None = None,
         squash_branch_raises: Exception | None = None,
         submit_stack_raises: Exception | None = None,
-        continue_restack_raises: Exception | None = None,
         delete_branch_raises: Exception | None = None,
         pr_info: dict[str, PullRequestInfo] | None = None,
         branches: dict[str, BranchMetadata] | None = None,
@@ -47,14 +44,11 @@ class FakeGraphite(Graphite):
         """Create FakeGraphite with pre-configured state.
 
         Args:
-            sync_raises: Exception to raise when sync() is called (for testing error cases)
-            restack_raises: Exception to raise when restack() is called
             submit_branch_raises: Exception to raise when submit_branch() is called
             track_branch_raises: Exception to raise when track_branch() is called
             retrack_branch_raises: Exception to raise when retrack_branch() is called
             squash_branch_raises: Exception to raise when squash_branch() is called
             submit_stack_raises: Exception to raise when submit_stack() is called
-            continue_restack_raises: Exception to raise when continue_restack() is called
             delete_branch_raises: Exception to raise when delete_branch() is called
             pr_info: Mapping of branch name -> PullRequestInfo for get_prs_from_graphite()
             branches: Mapping of branch name -> BranchMetadata for get_all_branches()
@@ -63,23 +57,17 @@ class FakeGraphite(Graphite):
             auth_username: Username returned by check_auth_status() (default "test-user")
             auth_repo_info: Repo info returned by check_auth_status() (default "owner/repo")
         """
-        self._sync_raises = sync_raises
-        self._restack_raises = restack_raises
         self._submit_branch_raises = submit_branch_raises
         self._track_branch_raises = track_branch_raises
         self._retrack_branch_raises = retrack_branch_raises
         self._squash_branch_raises = squash_branch_raises
         self._submit_stack_raises = submit_stack_raises
-        self._continue_restack_raises = continue_restack_raises
         self._delete_branch_raises = delete_branch_raises
-        self._sync_calls: list[tuple[Path, bool, bool]] = []
-        self._restack_calls: list[tuple[Path, bool]] = []
         self._submit_branch_calls: list[tuple[Path, str, bool]] = []
         self._track_branch_calls: list[tuple[Path, str, str]] = []
         self._retrack_branch_calls: list[tuple[Path, str]] = []
         self._squash_branch_calls: list[tuple[Path, bool]] = []
         self._submit_stack_calls: list[tuple[Path, bool, bool, bool, bool]] = []
-        self._continue_restack_calls: list[tuple[Path, bool]] = []
         self._delete_branch_calls: list[tuple[Path, str]] = []
         # Ordered log of all mutation operations for testing operation ordering
         self._operation_log: list[tuple[str, ...]] = []
@@ -94,26 +82,6 @@ class FakeGraphite(Graphite):
     def get_graphite_url(self, repo_id: GitHubRepoId, pr_number: int) -> str:
         """Get Graphite PR URL (constructs URL directly)."""
         return f"https://app.graphite.com/github/pr/{repo_id.owner}/{repo_id.repo}/{pr_number}"
-
-    def sync(self, repo_root: Path, *, force: bool, quiet: bool) -> None:
-        """Fake sync operation.
-
-        Tracks calls for verification and raises configured exception if set.
-        """
-        self._sync_calls.append((repo_root, force, quiet))
-
-        if self._sync_raises is not None:
-            raise self._sync_raises
-
-    def restack(self, repo_root: Path, *, quiet: bool) -> None:
-        """Fake restack operation.
-
-        Tracks calls for verification and raises configured exception if set.
-        """
-        self._restack_calls.append((repo_root, quiet))
-
-        if self._restack_raises is not None:
-            raise self._restack_raises
 
     def get_prs_from_graphite(self, git_ops: Git, repo_root: Path) -> dict[str, PullRequestInfo]:
         """Return pre-configured PR info for tests."""
@@ -199,26 +167,6 @@ class FakeGraphite(Graphite):
                     is_trunk=parent_metadata.is_trunk,
                     commit_sha=parent_metadata.commit_sha,
                 )
-
-    @property
-    def sync_calls(self) -> list[tuple[Path, bool, bool]]:
-        """Get the list of sync() calls that were made.
-
-        Returns list of (repo_root, force, quiet) tuples.
-
-        This property is for test assertions only.
-        """
-        return self._sync_calls
-
-    @property
-    def restack_calls(self) -> list[tuple[Path, bool]]:
-        """Get the list of restack() calls that were made.
-
-        Returns list of (repo_root, quiet) tuples.
-
-        This property is for test assertions only.
-        """
-        return self._restack_calls
 
     def check_auth_status(self) -> tuple[bool, str | None, str | None]:
         """Return pre-configured authentication status.
@@ -328,20 +276,6 @@ class FakeGraphite(Graphite):
     def is_branch_tracked(self, repo_root: Path, branch: str) -> bool:
         """Return True if branch is in configured branches."""
         return branch in self._branches
-
-    def continue_restack(self, repo_root: Path, *, quiet: bool) -> None:
-        """Track continue_restack calls and optionally raise."""
-        self._continue_restack_calls.append((repo_root, quiet))
-        if self._continue_restack_raises is not None:
-            raise self._continue_restack_raises
-
-    @property
-    def continue_restack_calls(self) -> list[tuple[Path, bool]]:
-        """Get the list of continue_restack() calls.
-
-        Returns list of (repo_root, quiet) tuples.
-        """
-        return self._continue_restack_calls
 
     @property
     def operation_log(self) -> list[tuple[str, ...]]:
