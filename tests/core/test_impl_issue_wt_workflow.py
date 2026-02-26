@@ -11,6 +11,7 @@ import pytest
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.impl_folder import (
     create_impl_folder,
+    get_impl_dir,
     has_plan_ref,
     read_plan_ref,
     save_plan_ref,
@@ -24,8 +25,8 @@ BRANCH = "feature/test-branch"
 
 def test_save_and_read_plan_ref(tmp_path: Path) -> None:
     """Test saving and reading plan reference from impl folder."""
-    impl_folder = tmp_path / ".impl"
-    impl_folder.mkdir()
+    impl_folder = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_folder.mkdir(parents=True)
 
     # Save plan reference
     save_plan_ref(
@@ -53,7 +54,7 @@ def test_save_and_read_plan_ref(tmp_path: Path) -> None:
 
 def test_save_plan_ref_dir_must_exist(tmp_path: Path) -> None:
     """Test that save_plan_ref raises if impl dir doesn't exist."""
-    impl_folder = tmp_path / ".impl"  # Doesn't exist
+    impl_folder = get_impl_dir(tmp_path, branch_name=BRANCH)  # Doesn't exist
 
     with pytest.raises(FileNotFoundError, match="Implementation directory does not exist"):
         save_plan_ref(
@@ -69,16 +70,16 @@ def test_save_plan_ref_dir_must_exist(tmp_path: Path) -> None:
 
 def test_has_plan_ref_false_when_no_file(tmp_path: Path) -> None:
     """Test has_plan_ref returns False when no ref.json or issue.json exists."""
-    impl_folder = tmp_path / ".impl"
-    impl_folder.mkdir()
+    impl_folder = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_folder.mkdir(parents=True)
 
     assert has_plan_ref(impl_folder) is False
 
 
 def test_has_plan_ref_true_when_file_exists(tmp_path: Path) -> None:
     """Test has_plan_ref returns True when ref.json exists."""
-    impl_folder = tmp_path / ".impl"
-    impl_folder.mkdir()
+    impl_folder = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_folder.mkdir(parents=True)
 
     save_plan_ref(
         impl_folder,
