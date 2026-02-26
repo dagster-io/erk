@@ -59,5 +59,10 @@ def objective_update_after_land(
     """
     erk_ctx = require_context(ctx)
     run_objective_update_after_land(
-        erk_ctx, objective=objective, pr=pr, branch=branch, plan=plan_number
+        erk_ctx,
+        objective=objective,
+        pr=pr,
+        branch=branch,
+        plan=plan_number,
+        worktree_path=erk_ctx.cwd,
     )
