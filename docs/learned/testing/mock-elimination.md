@@ -95,12 +95,12 @@ from unittest.mock import patch  # Remove if no longer used
 
 ## Real-World Example
 
-The `plan_save_to_issue.py` command was refactored to eliminate 12 mocks:
+The `plan_save.py` command was refactored to eliminate 12 mocks:
 
 ### Before (with mocks)
 
 ```python
-# Source code
+# Source code (historical — function and module path no longer exist)
 def _get_session_id_from_file() -> str | None:
     """Read session ID from .erk/scratch/session-id file."""
     session_id_file = Path(".erk/scratch/session-id")
@@ -108,10 +108,10 @@ def _get_session_id_from_file() -> str | None:
         return session_id_file.read_text().strip()
     return None
 
-# Test code
+# Test code (historical — shows the mock pattern that was eliminated)
 def test_uses_session_id_from_file(tmp_path: Path) -> None:
     with patch(
-        "erk_kits.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue._get_session_id_from_file",
+        "erk.cli.commands.exec.scripts.plan_save._get_session_id_from_file",
         return_value="file-session-id",
     ):
         result = runner.invoke(command, obj=ErkContext.for_test())

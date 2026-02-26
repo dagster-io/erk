@@ -34,12 +34,11 @@ Not all erk exec commands support the `--format` flag. Always check with `erk ex
 
 ### Commands with `--format json` Support
 
-| Command              | `--format json` | Notes                           |
-| -------------------- | --------------- | ------------------------------- |
-| `plan-save-to-issue` | ✓               | Returns `{issue_number, title}` |
-| `impl-init`          | ✓               | Returns validation result       |
-| `get-plan-metadata`  | ✓               | Returns specific field value    |
-| `list-sessions`      | ✓               | Returns session list            |
+| Command             | `--format json` | Notes                        |
+| ------------------- | --------------- | ---------------------------- |
+| `impl-init`         | ✓               | Returns validation result    |
+| `get-plan-metadata` | ✓               | Returns specific field value |
+| `list-sessions`     | ✓               | Returns session list         |
 
 ### Commands Without Format Flag
 
@@ -71,7 +70,6 @@ See the `erk-exec` skill for complete workflow guidance and the full command ref
 
 ### Plan Operations
 
-- `plan-save-to-issue` - Save plan to GitHub
 - `get-plan-metadata` - Read plan issue metadata
 - `setup-impl-from-issue` - Prepare .impl/ folder
 

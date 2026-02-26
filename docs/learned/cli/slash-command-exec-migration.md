@@ -63,7 +63,7 @@ The slash command becomes a thin orchestration layer that calls `erk exec`, pars
 
 <!-- Source: .claude/commands/erk/plan-save.md, Steps 2-4 -->
 
-See `.claude/commands/erk/plan-save.md` for a multi-step orchestration example: it chains `plan-save-to-issue`, `get-plan-metadata`, and `update-objective-node` calls with error handling between steps.
+See `.claude/commands/erk/plan-save.md` for a multi-step orchestration example: it chains `plan-save`, `get-plan-metadata`, and `update-objective-node` calls with error handling between steps.
 
 <!-- Source: .claude/commands/local/quick-submit.md -->
 

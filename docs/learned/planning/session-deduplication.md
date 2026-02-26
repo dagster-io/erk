@@ -35,7 +35,7 @@ The `exit-plan-mode-hook` uses markers to track state:
 
 | Marker                              | Created By                         | Effect                              | Lifecycle |
 | ----------------------------------- | ---------------------------------- | ----------------------------------- | --------- |
-| `exit-plan-mode-hook.plan-saved`    | `plan-save-to-issue`               | Block exit, msg shown               | Reusable  |
+| `exit-plan-mode-hook.plan-saved`    | `plan-save`                        | Block exit, msg shown               | Reusable  |
 | `exit-plan-mode-hook.implement-now` | Agent via `erk exec marker create` | Allow exit                          | One-time  |
 | `objective-context`                 | `/erk:objective-plan`              | Read by plan-save to link objective | One-time  |
 
@@ -44,7 +44,7 @@ The `exit-plan-mode-hook` uses markers to track state:
 
 ### Layer 2: Command-Level Deduplication
 
-Even if hooks fail, `plan-save-to-issue` checks for existing saved issues:
+Even if hooks fail, `plan-save` checks for existing saved issues:
 
 1. Before creating an issue, check if this session already saved a plan
 2. Use `_get_existing_saved_issue()` helper to query GitHub

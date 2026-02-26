@@ -145,7 +145,6 @@ def validate_plan_title(title: str) -> ValidPlanTitle | InvalidPlanTitle:
     (rules, actual value, examples) so the agent can self-correct and retry.
 
     Agent-facing callers:
-        - ``plan_save_to_issue`` (exec script)
         - ``plan_save`` (exec script)
         - ``issue_title_to_filename`` (exec script)
 
