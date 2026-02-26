@@ -196,4 +196,5 @@ pull_master:
 	git -C /Users/schrockn/code/erk pull origin master
 
 clear_impl_context:
+	rm -rf .impl
 	rm -rf .erk/impl-context
