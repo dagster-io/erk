@@ -847,7 +847,8 @@ def test_checkout_new_slot_errors_when_branch_exists_in_worktree() -> None:
         env.setup_repo_structure()
 
         slot_worktree_path = env.repo.worktrees_dir / "erk-slot-01"
-        slot_worktree_path.mkdir(parents=True)
+        if not slot_worktree_path.exists():
+            slot_worktree_path.mkdir(parents=True)
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir, slot_worktree_path: env.git_dir},
@@ -906,7 +907,8 @@ def test_checkout_without_new_slot_still_jumps_to_existing_worktree() -> None:
         env.setup_repo_structure()
 
         slot_worktree_path = env.repo.worktrees_dir / "erk-slot-01"
-        slot_worktree_path.mkdir(parents=True)
+        if not slot_worktree_path.exists():
+            slot_worktree_path.mkdir(parents=True)
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir, slot_worktree_path: env.git_dir},
