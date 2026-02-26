@@ -57,20 +57,6 @@ def _last_output_line(result: _OperationResult) -> str:
     return next((ln for ln in reversed(result.output_lines) if ln), "Unknown error")
 
 
-def _should_trigger_learn(*, is_learn_plan: bool, learn_status: str | None) -> bool:
-    """Determine if async learn should be triggered after landing a PR.
-
-    Mirrors the decision logic in land_cmd._check_learn_status_and_prompt
-    but without config checks or session lookups.
-    """
-    return not is_learn_plan and learn_status not in {
-        "completed_no_plan",
-        "completed_with_plan",
-        "plan_completed",
-        "pending",
-    }
-
-
 def _build_github_url(plan_url: str, resource_type: str, number: int) -> str:
     """Build a GitHub URL for a PR or issue from an existing plan URL.
 
@@ -808,10 +794,6 @@ class ErkDashApp(App):
         pr_number: int,
         branch: str,
         objective_issue: int | None,
-        *,
-        plan_id: int,
-        is_learn_plan: bool,
-        learn_status: str | None,
     ) -> None:
         """Land PR in background thread with toast."""
         result = self._run_streaming_operation(
@@ -866,30 +848,6 @@ class ErkDashApp(App):
                     self.notify,
                     f"Failed to update objective #{objective_issue}: {error_msg}",
                     severity="error",
-                    timeout=5,
-                )
-
-        # Step 3: Trigger async learn (fire-and-forget)
-        if _should_trigger_learn(is_learn_plan=is_learn_plan, learn_status=learn_status):
-            self.call_from_thread(
-                self._update_operation,
-                op_id=op_id,
-                progress=f"Triggering learn for plan #{plan_id}...",
-            )
-            learn_result = self._run_streaming_operation(
-                op_id=op_id,
-                command=["erk", "exec", "trigger-async-learn", str(plan_id)],
-            )
-            if learn_result.success:
-                self.call_from_thread(
-                    self.notify, f"Learn triggered for plan #{plan_id}", timeout=3
-                )
-            else:
-                error_msg = _last_output_line(learn_result)
-                self.call_from_thread(
-                    self.notify,
-                    f"Learn trigger failed for plan #{plan_id}: {error_msg}",
-                    severity="warning",
                     timeout=5,
                 )
 
@@ -1314,9 +1272,6 @@ class ErkDashApp(App):
                     row.pr_number,
                     row.pr_head_branch,
                     row.objective_issue,
-                    plan_id=row.plan_id,
-                    is_learn_plan=row.is_learn_plan,
-                    learn_status=row.learn_status,
                 )
 
         elif command_id == "copy_replan":
