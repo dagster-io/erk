@@ -5,10 +5,27 @@ consistent error handling that outputs structured JSON rather than raising
 exceptions, supporting shell scripting patterns.
 """
 
+import functools
 import json
-from typing import NoReturn
+from collections.abc import Callable
+from typing import Any, NoReturn
 
 import click
+
+from erk_shared.non_ideal_state import NonIdealStateError
+
+
+def handle_non_ideal_exit(func: Callable[..., Any]) -> Callable[..., Any]:
+    """Click command decorator: catches NonIdealStateError and exits with JSON error."""
+
+    @functools.wraps(func)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        try:
+            return func(*args, **kwargs)
+        except NonIdealStateError as e:
+            exit_with_error(e.error_type, str(e))
+
+    return wrapper
 
 
 def exit_with_error(error_type: str, message: str) -> NoReturn:
