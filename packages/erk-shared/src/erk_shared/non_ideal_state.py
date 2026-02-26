@@ -26,7 +26,7 @@ Usage:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import NoReturn, Protocol, runtime_checkable
+from typing import NoReturn, Protocol, Self, runtime_checkable
 
 
 class NonIdealStateError(Exception):
@@ -47,6 +47,23 @@ class NonIdealStateMixin:
 
     def ensure(self) -> NoReturn:
         raise NonIdealStateError(self)  # type: ignore[arg-type]
+
+
+class EnsurableResult:
+    """Mixin that provides ensure() for success types in T | NonIdealState unions.
+
+    Enables one-liner unwrapping: result = operation_returning_union().ensure()
+    - If result is an EnsurableResult (success): returns self (the value)
+    - If result is a NonIdealState (error): raises NonIdealStateError
+
+    Usage:
+        @dataclass(frozen=True)
+        class MyResult(EnsurableResult):
+            value: str
+    """
+
+    def ensure(self) -> Self:
+        return self
 
 
 @runtime_checkable

@@ -2,8 +2,11 @@
 
 import pytest
 
+from dataclasses import dataclass
+
 from erk_shared.non_ideal_state import (
     BranchDetectionFailed,
+    EnsurableResult,
     GitHubAPIFailed,
     NonIdealState,
     NonIdealStateError,
@@ -113,3 +116,19 @@ def test_concrete_ensure_raises_non_ideal_state_error() -> None:
     with pytest.raises(NonIdealStateError) as exc_info:
         state.ensure()
     assert exc_info.value.error_type == "pr-not-found"
+
+
+# ============================================================================
+# EnsurableResult
+# ============================================================================
+
+
+@dataclass(frozen=True)
+class _SampleResult(EnsurableResult):
+    value: str
+
+
+def test_ensurable_result_ensure_returns_self() -> None:
+    """EnsurableResult.ensure() returns self for one-liner unwrapping."""
+    result = _SampleResult(value="ok")
+    assert result.ensure() is result

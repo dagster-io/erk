@@ -37,8 +37,6 @@ from erk_shared.gateway.github.types import PRReviewThread
 from erk_shared.non_ideal_state import (
     BranchDetectionFailed,
     GitHubAPIFailed,
-    NoPRForBranch,
-    PRNotFoundError,
 )
 
 # --- JSON output types ---
@@ -123,13 +121,9 @@ def get_pr_feedback(ctx: click.Context, pr: int | None, include_resolved: bool) 
         branch = GitHubChecks.branch(get_current_branch(ctx))
         if isinstance(branch, BranchDetectionFailed):
             branch.ensure()
-        pr_details = GitHubChecks.pr_for_branch(github, repo_root, branch)
-        if isinstance(pr_details, NoPRForBranch):
-            pr_details.ensure()
+        pr_details = GitHubChecks.pr_for_branch(github, repo_root, branch).ensure()
     else:
-        pr_details = GitHubChecks.pr_by_number(github, repo_root, pr)
-        if isinstance(pr_details, PRNotFoundError):
-            pr_details.ensure()
+        pr_details = GitHubChecks.pr_by_number(github, repo_root, pr).ensure()
 
     # Parallel fetch of review threads and discussion comments
     with ThreadPoolExecutor(max_workers=2) as executor:
