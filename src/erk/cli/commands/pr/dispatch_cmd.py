@@ -296,7 +296,7 @@ def _dispatch_planned_pr_plan(
     )
 
     # Stage, commit, and push
-    ctx.git.commit.stage_files(repo.root, [IMPL_CONTEXT_DIR])
+    ctx.git.commit.stage_files(repo.root, [IMPL_CONTEXT_DIR], force=True)
     ctx.git.commit.commit(repo.root, f"Add plan for PR #{plan_number}")
     push_result = ctx.git.remote.push_to_remote(
         repo.root, "origin", branch_name, set_upstream=False, force=False

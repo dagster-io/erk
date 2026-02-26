@@ -104,7 +104,7 @@ class FakeGitCommitOps(GitCommitOps):
     # Mutation Operations
     # ============================================================================
 
-    def stage_files(self, cwd: Path, paths: list[str]) -> None:
+    def stage_files(self, cwd: Path, paths: list[str], *, force: bool) -> None:
         """Record staged files for commit."""
         self._staged_files.extend(paths)
 

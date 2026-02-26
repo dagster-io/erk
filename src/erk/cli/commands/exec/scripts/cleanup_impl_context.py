@@ -52,7 +52,7 @@ def cleanup_impl_context(ctx: click.Context) -> None:
     remove_impl_context(repo_root)
 
     # Phase 2: Stage deletions, commit, and push
-    git.commit.stage_files(repo_root, [".erk/impl-context/"])
+    git.commit.stage_files(repo_root, [".erk/impl-context/"], force=True)
     git.commit.commit(repo_root, "Remove .erk/impl-context/ before implementation")
 
     current_branch = git.branch.get_current_branch(cwd)

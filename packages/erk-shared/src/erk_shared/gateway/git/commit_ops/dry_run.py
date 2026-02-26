@@ -39,7 +39,7 @@ class DryRunGitCommitOps(GitCommitOps):
     # Mutation Operations (no-ops in dry-run mode)
     # ============================================================================
 
-    def stage_files(self, cwd: Path, paths: list[str]) -> None:
+    def stage_files(self, cwd: Path, paths: list[str], *, force: bool) -> None:
         """No-op for staging files in dry-run mode."""
         # Do nothing - prevents actual file staging
         pass
