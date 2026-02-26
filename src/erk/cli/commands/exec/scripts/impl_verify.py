@@ -1,8 +1,11 @@
-"""Verify .impl/ folder still exists after implementation.
+"""Verify implementation folder still exists after implementation.
 
 This exec command is a guardrail for /erk:plan-implement to ensure the agent
-did not delete .impl/ during implementation. The .impl/ folder MUST be preserved
-for user review.
+did not delete the implementation folder during implementation. The implementation
+folder MUST be preserved for user review.
+
+The canonical location is .erk/impl-context/<branch>/, with legacy .impl/ as
+a fallback. Resolution is handled by resolve_impl_dir().
 
 Usage:
     erk exec impl-verify
@@ -11,15 +14,15 @@ Output:
     JSON with validation status
 
 Exit Codes:
-    0: .impl/ folder exists
-    1: .impl/ folder was deleted (violation of instructions)
+    0: Implementation folder exists
+    1: Implementation folder was deleted (violation of instructions)
 
 Examples:
     $ erk exec impl-verify
-    {"valid": true, "impl_dir": "/path/to/.impl"}
+    {"valid": true, "impl_dir": "/path/to/.erk/impl-context/feature--branch"}
 
-    $ erk exec impl-verify  # when .impl/ is missing
-    {"valid": false, "error": ".impl/ folder was deleted during implementation...", ...}
+    $ erk exec impl-verify  # when implementation folder is missing
+    {"valid": false, "error": "Implementation folder was deleted during implementation...", ...}
 """
 
 import json
