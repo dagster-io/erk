@@ -74,7 +74,7 @@ Rules triggered by matching actions in code.
 
 **catching PlanHeaderNotFoundError** → Read [PlanBackend Migration Guide](plan-backend-migration.md) first. PlanHeaderNotFoundError is an exception; PlanNotFound is a result type - use LBYL for the latter
 
-**changing branch naming convention (P{issue}- or plnd/ prefix)** → Read [Branch Name Inference](branch-name-inference.md) first. The P{issue}- prefix (issue-based) and plnd/ prefix (planned-PR) are cross-cutting contracts used by branch creation, extraction functions, and PR recovery. Changing either prefix format requires updating all consumers.
+**changing branch naming convention (plnd/ prefix)** → Read [Branch Name Inference](branch-name-inference.md) first. The plnd/ prefix (planned-PR) is a cross-cutting contract used by branch creation, extraction functions, and PR recovery. Changing the prefix format requires updating all consumers. The legacy P{issue}- prefix has been fully removed.
 
 **changing how sessions are classified as planning vs impl** → Read [Learn Pipeline Workflow](learn-pipeline-workflow.md) first. Classification uses planning_session_id from GitHub metadata. The resulting prefix (planning- vs impl-) propagates into XML filenames and is used by downstream learn agents to weight insights differently.
 
@@ -110,7 +110,7 @@ Rules triggered by matching actions in code.
 
 **designing output routing for a multi-agent workflow** → Read [Agent Output Routing Strategies](agent-output-routing-strategies.md) first. Choose between embedded-prompt routing (in orchestrator Task prompts) and agent-file routing (in agent definitions). See this doc for the decision framework.
 
-**detecting plan backend by checking backend type directly** → Read [Planned PR Branch Sync](planned-pr-branch-sync.md) first. Use plan.header_fields.get(BRANCH_NAME) to detect planned-PR plans. This is backend-agnostic and works across all backends.
+**detecting plan backend by checking backend type directly** → Read [Planned PR Branch Sync](planned-pr-branch-sync.md) first. Use plan.header_fields.get(BRANCH_NAME) to detect planned-PR plans. There is only one backend (planned-PR).
 
 **editing plan body content in plan creation, replan, or one-shot dispatch** → Read [One-Shot Workflow](one-shot-workflow.md) first. One-shot metadata block preservation: the metadata block in the plan body (HTML comment with erk:metadata-block markers) must survive all edits. Never strip or overwrite HTML comment blocks that contain erk:metadata-block markers.
 
