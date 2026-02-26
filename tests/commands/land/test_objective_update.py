@@ -168,10 +168,12 @@ def test_land_execute_triggers_objective_update() -> None:
         worktree_path_used = executor.executed_commands[0][1]
         assert worktree_path_used == env.cwd, (
             f"Expected main repo root {env.cwd!r}, got {worktree_path_used!r}. "
-            "worktree_path must be derived from get_git_common_dir(), not the feature worktree path."
+            "worktree_path must be derived from get_git_common_dir(), "
+            "not the feature worktree path."
         )
         assert worktree_path_used != feature_worktree_path, (
-            "worktree_path must not be the feature worktree path, which is deleted during land-execute."
+            "worktree_path must not be the feature worktree path, "
+            "which is deleted during land-execute."
         )
 
         # Should show objective update messages
