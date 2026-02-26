@@ -36,7 +36,6 @@ from erk_shared.plan_store.conversion import pr_details_to_plan
 from erk_shared.plan_store.planned_pr_lifecycle import (
     build_plan_stage_body,
     extract_plan_content,
-    extract_plan_header_block,
 )
 from erk_shared.plan_store.types import (
     CreatePlanResult,

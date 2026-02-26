@@ -14,6 +14,7 @@ from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.planned_pr_lifecycle import (
     DETAILS_CLOSE,
     DETAILS_OPEN,
+    PLAN_CONTENT_SEPARATOR,
 )
 from erk_shared.plan_store.types import Plan, PlanState
 
