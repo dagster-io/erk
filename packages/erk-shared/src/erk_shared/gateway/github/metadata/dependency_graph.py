@@ -104,6 +104,20 @@ class DependencyGraph:
         return all(node.status in _TERMINAL_STATUSES for node in self.nodes)
 
 
+def compute_objective_head_state(
+    node_status: str | None,
+    min_dep_status: str | None,
+) -> str:
+    """Determine objective head state display string from node and dep statuses."""
+    if node_status == "planning":
+        return "planning"
+    if node_status == "in_progress":
+        return "in-progress"
+    if min_dep_status is None or min_dep_status in _TERMINAL_STATUSES:
+        return "ready"
+    return min_dep_status.replace("_", "-")
+
+
 def graph_from_phases(phases: list[RoadmapPhase]) -> DependencyGraph:
     """Convert phases into a DependencyGraph, inferring sequential dependencies.
 
