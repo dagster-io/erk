@@ -187,10 +187,10 @@ def _trigger_learn(
     issue: int,
 ) -> None:
     """Trigger learn workflow."""
-    user_output(f"Triggering learn workflow for issue #{issue}...")
+    user_output(f"Triggering learn workflow for plan #{issue}...")
 
     inputs: dict[str, str] = {
-        "issue_number": str(issue),
+        "plan_number": str(issue),
     }
 
     run_id = ctx.github.trigger_workflow(
@@ -240,10 +240,10 @@ def _trigger_plan_implement(
     help="PR number (required for pr-fix-conflicts and pr-address)",
 )
 @click.option(
-    "--issue",
-    "issue_number",
+    "--plan",
+    "plan_number",
     type=int,
-    help="Issue number (required for learn)",
+    help="Plan number (required for learn)",
 )
 @click.option(
     "--no-squash",
@@ -261,7 +261,7 @@ def launch(
     workflow_name: str,
     *,
     pr_number: int | None,
-    issue_number: int | None,
+    plan_number: int | None,
     no_squash: bool,
     model: str | None,
 ) -> None:
@@ -328,13 +328,13 @@ def launch(
         _trigger_pr_address(ctx, repo, pr_number=pr_number, model=model)
     elif workflow_name == "learn":
         Ensure.invariant(
-            issue_number is not None,
-            "--issue is required for learn workflow",
+            plan_number is not None,
+            "--plan is required for learn workflow",
         )
-        assert issue_number is not None
-        _trigger_learn(ctx, repo, issue=issue_number)
+        assert plan_number is not None
+        _trigger_learn(ctx, repo, issue=plan_number)
     elif workflow_name == "plan-implement":
-        _trigger_plan_implement(ctx, repo, issue=issue_number or 0, model=model)
+        _trigger_plan_implement(ctx, repo, issue=plan_number or 0, model=model)
     else:
         # Should never reach here due to _get_workflow_file validation
         raise click.UsageError(f"Unknown workflow: {workflow_name}")
