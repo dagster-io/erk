@@ -235,8 +235,7 @@ def test_pr_check_passes_when_branch_and_plan_ref_match(tmp_path: Path) -> None:
         env.setup_repo_structure()
 
         # Create branch-scoped impl dir with ref.json for plan 456
-        _branch = "plnd/add-feature-01-04-1234"
-        impl_dir = get_impl_dir(env.cwd, branch_name=_branch)
+        impl_dir = get_impl_dir(env.cwd, branch_name="plnd/add-feature-01-04-1234")
         impl_dir.mkdir(parents=True)
         plan_ref_json = impl_dir / "ref.json"
         plan_ref_json.write_text(
@@ -557,7 +556,6 @@ def test_pr_check_stage_impl_all_checks_pass(tmp_path: Path) -> None:
         # Create impl dir with ref.json at legacy .impl/ path.
         # Using .impl/ avoids creating .erk/impl-context/ as a parent dir,
         # so the --stage=impl check for ".erk/impl-context/ not present" passes.
-        _branch = "plnd/add-feature-01-04-1234"
         impl_dir = env.cwd / ".impl"
         impl_dir.mkdir(parents=True)
         plan_ref_json = impl_dir / "ref.json"
