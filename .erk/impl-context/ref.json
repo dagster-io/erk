@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: plan-header metadata block lost silently in CI update flow"
+}
