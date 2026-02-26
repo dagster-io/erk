@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: `gt track` fails during `erk pr checkout` in worktree context"
+}
