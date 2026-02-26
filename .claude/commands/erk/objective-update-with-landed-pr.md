@@ -38,10 +38,14 @@ Run a single command that fetches context, updates roadmap nodes to done, and po
 erk exec objective-apply-landed-update [--pr <number>] [--objective <number>] [--plan <number>] [--branch <name>]
 ```
 
-Pass `--node` flags to specify which roadmap nodes to mark as done. These are the nodes that were implemented by this PR:
+Optionally pass `--node` flags to specify which roadmap nodes to mark as done. When omitted, the command auto-matches nodes whose `pr` field references the landing PR (e.g., `pr: "#6517"`):
 
 ```bash
+# Explicit node specification:
 erk exec objective-apply-landed-update [--pr <number>] [--objective <number>] [--plan <number>] [--branch <name>] --node <id1> [--node <id2> ...]
+
+# Auto-match (no --node flags needed when nodes already have pr references):
+erk exec objective-apply-landed-update [--pr <number>] [--objective <number>] [--plan <number>] [--branch <name>]
 ```
 
 This returns JSON with:
