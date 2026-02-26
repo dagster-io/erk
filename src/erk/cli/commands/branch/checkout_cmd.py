@@ -124,7 +124,7 @@ def _ensure_graphite_tracking(
         return
 
     # Track the branch with trunk as parent
-    ctx.branch_manager.track_branch(target_path, branch, trunk_branch)
+    ctx.branch_manager.track_branch(repo_root, branch, trunk_branch)
     user_output(f"Tracked '{branch}' with Graphite (parent: {trunk_branch})")
 
 

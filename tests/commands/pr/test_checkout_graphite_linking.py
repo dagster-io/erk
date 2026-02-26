@@ -15,6 +15,7 @@ from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.types import PRDetails
+from erk_shared.gateway.graphite.fake import FakeGraphite
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -50,6 +51,9 @@ def test_pr_checkout_tracks_untracked_branch_with_graphite() -> None:
     When Graphite is enabled and checking out a PR into a new worktree,
     checkout should track the branch with Graphite (gt track) but NOT
     submit (force-push is unnecessary at checkout time).
+
+    The track_branch call must use the repo root as cwd (not the worktree path),
+    because Graphite resolves branch refs via .git/ which differs in worktrees.
     """
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -69,7 +73,10 @@ def test_pr_checkout_tracks_untracked_branch_with_graphite() -> None:
             remote_branches={env.cwd: ["origin/main", "origin/feature-graphite"]},
             existing_paths={env.cwd, env.repo.worktrees_dir},
         )
-        ctx = build_workspace_test_context(env, git=git, github=github, use_graphite=True)
+        graphite = FakeGraphite()
+        ctx = build_workspace_test_context(
+            env, git=git, github=github, graphite=graphite, use_graphite=True
+        )
 
         with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
             result = runner.invoke(pr_group, ["checkout", "100"], obj=ctx)
@@ -79,6 +86,14 @@ def test_pr_checkout_tracks_untracked_branch_with_graphite() -> None:
         # Should track but NOT submit
         assert "Tracking branch with Graphite" in result.output
         assert "Submitting to link with Graphite" not in result.output
+        # track_branch must be called with repo root, not worktree path
+        assert len(graphite.track_branch_calls) == 1
+        track_cwd, track_branch, track_parent = graphite.track_branch_calls[0]
+        assert track_cwd == env.cwd, (
+            f"track_branch cwd should be repo root ({env.cwd}), not worktree path ({track_cwd})"
+        )
+        assert track_branch == "feature-graphite"
+        assert track_parent == "main"
 
 
 def test_pr_checkout_skips_graphite_for_existing_worktree() -> None:
@@ -150,7 +165,6 @@ def test_pr_checkout_skips_graphite_for_already_tracked_not_diverged() -> None:
 
         # Use FakeGraphite with pre-configured parent branch (branch is already tracked)
         # tracked_revision matches commit_sha = not diverged
-        from erk_shared.gateway.graphite.fake import FakeGraphite
         from erk_shared.gateway.graphite.types import BranchMetadata
 
         graphite = FakeGraphite(
@@ -242,7 +256,6 @@ def test_pr_checkout_retracks_diverged_graphite_branch() -> None:
         )
 
         # Branch is tracked but SHA diverged (tracked_revision != commit_sha)
-        from erk_shared.gateway.graphite.fake import FakeGraphite
         from erk_shared.gateway.graphite.types import BranchMetadata
 
         graphite = FakeGraphite(
@@ -269,6 +282,13 @@ def test_pr_checkout_retracks_diverged_graphite_branch() -> None:
         # Should retrack instead of tracking fresh
         assert "Retracking diverged branch with Graphite" in result.output
         assert "Tracking branch with Graphite" not in result.output
+        # retrack_branch must be called with repo root, not worktree path
+        assert len(graphite.retrack_branch_calls) == 1
+        retrack_cwd, retrack_branch = graphite.retrack_branch_calls[0]
+        assert retrack_cwd == env.cwd, (
+            f"retrack_branch cwd should be repo root ({env.cwd}), not worktree path ({retrack_cwd})"
+        )
+        assert retrack_branch == "diverged-branch"
 
 
 def test_pr_checkout_script_mode_includes_gt_submit_for_new_graphite_worktree() -> None:
