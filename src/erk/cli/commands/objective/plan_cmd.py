@@ -255,6 +255,7 @@ def _handle_all_unblocked(
                 "objective_issue": str(resolved.issue_number),
                 "node_id": node.id,
             },
+            slug=None,
         )
 
         dispatch_result = dispatch_one_shot(ctx, params=params, dry_run=dry_run)
@@ -712,6 +713,7 @@ def _handle_one_shot(
             "objective_issue": str(issue_number),
             "node_id": target_node.id,
         },
+        slug=None,
     )
 
     dispatch_result = dispatch_one_shot(ctx, params=params, dry_run=dry_run)
