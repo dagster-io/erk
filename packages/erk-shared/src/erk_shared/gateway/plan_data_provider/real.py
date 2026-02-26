@@ -128,8 +128,6 @@ class RealPlanDataProvider(PlanDataProvider):
         needs_workflow_runs = filters.show_runs or filters.run_state is not None
 
         # Route to the appropriate service based on the view's labels
-        # Only pass http_client when it supports direct API calls (RealHttpClient)
-        http_for_service = self._http_client if self._http_client.supports_direct_api else None
         # Objectives have their own dedicated service; all other queries
         # (plans, learn plans, custom label combos) use the plan list service.
         if "erk-objective" in filters.labels:
@@ -140,6 +138,7 @@ class RealPlanDataProvider(PlanDataProvider):
                 skip_workflow_runs=not needs_workflow_runs,
                 creator=filters.creator,
                 exclude_labels=list(filters.exclude_labels) if filters.exclude_labels else None,
+                http_client=self._http_client,
             )
         else:
             plan_data = self._ctx.plan_list_service.get_plan_list_data(
@@ -150,7 +149,7 @@ class RealPlanDataProvider(PlanDataProvider):
                 skip_workflow_runs=not needs_workflow_runs,
                 creator=filters.creator,
                 exclude_labels=list(filters.exclude_labels) if filters.exclude_labels else None,
-                http_client=http_for_service,
+                http_client=self._http_client,
             )
 
         # Build local worktree mapping

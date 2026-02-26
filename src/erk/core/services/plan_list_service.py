@@ -17,6 +17,7 @@ from erk_shared.core.plan_list_service import PlanListData as PlanListData
 from erk_shared.core.plan_list_service import PlanListService
 from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.graphql_queries import GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY
+from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_dispatch_info
 from erk_shared.gateway.github.pr_data_parsing import (
     merge_rest_graphql_pr_data,
@@ -28,7 +29,7 @@ from erk_shared.gateway.github.types import (
     WorkflowRun,
 )
 from erk_shared.gateway.time.abc import Time
-from erk_shared.plan_store.conversion import pr_details_to_plan
+from erk_shared.plan_store.conversion import github_issue_to_plan, pr_details_to_plan
 from erk_shared.plan_store.planned_pr_lifecycle import (
     extract_plan_content,
     has_original_plan_section,
@@ -66,13 +67,9 @@ class PlannedPRPlanListService(PlanListService):
         skip_workflow_runs: bool = False,
         creator: str | None = None,
         exclude_labels: list[str] | None = None,
-        http_client: HttpClient | None,
+        http_client: HttpClient,
     ) -> PlanListData:
-        """Fetch plan list data from draft PRs via REST+GraphQL.
-
-        When http_client is provided, uses direct HTTP calls instead of
-        subprocess-based gh CLI, saving ~600-900ms per refresh cycle.
-        Falls back to subprocess path when http_client is None.
+        """Fetch plan list data from draft PRs via direct HTTP calls.
 
         Args:
             location: GitHub repository location
@@ -82,53 +79,20 @@ class PlannedPRPlanListService(PlanListService):
             skip_workflow_runs: If True, skip fetching workflow runs
             creator: Filter by PR author username
             exclude_labels: Labels to exclude from results
-            http_client: Optional HTTP client for direct API calls
+            http_client: HTTP client for direct API calls
 
         Returns:
             PlanListData with plans from draft PRs
         """
-        if http_client is not None:
-            return self._get_plan_list_data_http(
-                http_client,
-                location=location,
-                labels=labels,
-                state=state,
-                limit=limit,
-                skip_workflow_runs=skip_workflow_runs,
-                creator=creator,
-                exclude_labels=exclude_labels,
-            )
-
-        # Subprocess path: REST+GraphQL two-step via gh CLI
-        t0 = self._time.monotonic()
-        pr_details_list, pr_linkages, unenriched_count = self._github.list_plan_prs_with_details(
-            location,
+        return self._get_plan_list_data_http(
+            http_client,
+            location=location,
             labels=labels,
             state=state,
             limit=limit,
-            author=creator,
+            skip_workflow_runs=skip_workflow_runs,
+            creator=creator,
             exclude_labels=exclude_labels,
-        )
-        t1 = self._time.monotonic()
-
-        plans, node_id_to_plan = self._parse_pr_details(pr_details_list)
-        t2 = self._time.monotonic()
-
-        workflow_runs = self._fetch_workflow_runs_subprocess(
-            location, node_id_to_plan, skip_workflow_runs=skip_workflow_runs
-        )
-        t3 = self._time.monotonic()
-
-        warnings = _build_enrichment_warnings(unenriched_count, len(pr_details_list))
-
-        return PlanListData(
-            plans=plans,
-            pr_linkages=pr_linkages,
-            workflow_runs=workflow_runs,
-            api_ms=(t1 - t0) * 1000,
-            plan_parsing_ms=(t2 - t1) * 1000,
-            workflow_runs_ms=(t3 - t2) * 1000,
-            warnings=warnings,
         )
 
     def _get_plan_list_data_http(
@@ -362,3 +326,108 @@ def _build_enrichment_warnings(unenriched_count: int, total_count: int) -> tuple
         f"GraphQL enrichment failed for {unenriched_count}/{total_count} PRs "
         "— branch, draft status, and check indicators may be missing",
     )
+
+
+class RealPlanListService(PlanListService):
+    """Service for efficiently fetching plan list data.
+
+    Composes GitHub and GitHubIssues integrations to batch fetch all data
+    needed for plan listing. Uses GraphQL nodes(ids: [...]) for efficient
+    batch lookup of workflow runs by node_id.
+    """
+
+    def __init__(self, github: GitHub, github_issues: GitHubIssues, *, time: Time) -> None:
+        """Initialize PlanListService with required integrations.
+
+        Args:
+            github: GitHub integration for PR and workflow operations
+            github_issues: GitHub issues integration for issue operations
+            time: Time gateway for monotonic timing
+        """
+        self._github = github
+        self._github_issues = github_issues
+        self._time = time
+
+    def get_plan_list_data(
+        self,
+        *,
+        location: GitHubRepoLocation,
+        labels: list[str],
+        state: IssueFilterState = "open",
+        limit: int | None = None,
+        skip_workflow_runs: bool = False,
+        creator: str | None = None,
+        exclude_labels: list[str] | None = None,
+        http_client: HttpClient,
+    ) -> PlanListData:
+        """Batch fetch all data needed for plan listing.
+
+        Args:
+            location: GitHub repository location (local root + repo identity)
+            labels: Labels to filter issues by (e.g., ["erk-plan"])
+            state: Filter by state ("open" or "closed")
+            limit: Maximum number of issues to return (None for no limit)
+            skip_workflow_runs: If True, skip fetching workflow runs (for performance)
+            creator: Filter by creator username (e.g., "octocat"). If provided,
+                only issues created by this user are returned.
+            exclude_labels: Labels to exclude from results (unused for issue-based
+                plans — label filtering is handled server-side by GraphQL)
+            http_client: HTTP client (unused for issue-based plans, accepted
+                for interface consistency)
+
+        Returns:
+            PlanListData containing plans, PR linkages, and workflow runs
+        """
+        # Always use unified path: issues + PR linkages in one API call (~600ms)
+        t0 = self._time.monotonic()
+        issues, pr_linkages = self._github.get_issues_with_pr_linkages(
+            location=location,
+            labels=labels,
+            state=state,
+            limit=limit,
+            creator=creator,
+        )
+        t1 = self._time.monotonic()
+
+        # Convert IssueInfo to Plan with enriched metadata
+        plans = [github_issue_to_plan(issue) for issue in issues]
+        t2 = self._time.monotonic()
+
+        # Conditionally fetch workflow runs (skip for performance when not needed)
+        workflow_runs: dict[int, WorkflowRun | None] = {}
+        if not skip_workflow_runs:
+            # Extract node_ids from plan-header metadata (still from issue body)
+            node_id_to_issue: dict[str, int] = {}
+            for issue in issues:
+                _, node_id, _ = extract_plan_header_dispatch_info(issue.body)
+                if node_id is not None:
+                    node_id_to_issue[node_id] = issue.number
+
+            # Batch fetch workflow runs via GraphQL nodes(ids: [...])
+            if node_id_to_issue:
+                try:
+                    runs_by_node_id = self._github.get_workflow_runs_by_node_ids(
+                        location.root,
+                        list(node_id_to_issue.keys()),
+                    )
+                    for node_id, run in runs_by_node_id.items():
+                        issue_number = node_id_to_issue[node_id]
+                        workflow_runs[issue_number] = run
+                except Exception as e:
+                    # Network/API failure - continue without workflow run data
+                    # Dashboard will show "-" for run columns, which is acceptable
+                    logging.warning("Failed to fetch workflow runs: %s", e)
+        t3 = self._time.monotonic()
+
+        api_ms = (t1 - t0) * 1000
+        plan_parsing_ms = (t2 - t1) * 1000
+        workflow_runs_ms = (t3 - t2) * 1000
+
+        return PlanListData(
+            plans=plans,
+            pr_linkages=pr_linkages,
+            workflow_runs=workflow_runs,
+            api_ms=api_ms,
+            plan_parsing_ms=plan_parsing_ms,
+            workflow_runs_ms=workflow_runs_ms,
+        )

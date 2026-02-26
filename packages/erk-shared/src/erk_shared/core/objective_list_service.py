@@ -4,10 +4,16 @@ Symmetric with PlanListService but encapsulates the knowledge that objectives
 are GitHub issues with the 'erk-objective' label. No labels parameter is exposed.
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
 
 from erk_shared.core.plan_list_service import PlanListData
 from erk_shared.gateway.github.types import GitHubRepoLocation, IssueFilterState
+
+if TYPE_CHECKING:
+    from erk_shared.gateway.http.abc import HttpClient
 
 
 class ObjectiveListService(ABC):
@@ -27,6 +33,7 @@ class ObjectiveListService(ABC):
         skip_workflow_runs: bool = False,
         creator: str | None = None,
         exclude_labels: list[str] | None = None,
+        http_client: HttpClient,
     ) -> PlanListData:
         """Fetch all data needed for objective listing.
 

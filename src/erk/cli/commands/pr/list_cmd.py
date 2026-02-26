@@ -27,9 +27,6 @@ from erk_shared.gateway.github.types import (
     IssueFilterState,
     PullRequestInfo,
 )
-from erk_shared.gateway.http.auth import fetch_github_token
-from erk_shared.gateway.http.fake import FakeHttpClient
-from erk_shared.gateway.http.real import RealHttpClient
 from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
 from erk_shared.output.output import user_output
 
@@ -275,16 +272,19 @@ def _pr_list_impl(
     labels = label if label else ("erk-pr", "erk-plan")
 
     # Construct RealPlanDataProvider
-    # Only fetch_plans() and fetch_branch_activity() are used here;
-    # neither requires clipboard, browser, or http_client, so use fakes.
     location = GitHubRepoLocation(root=repo_root, repo_id=GitHubRepoId(owner, repo_name))
+
+    http_client = ctx.http_client
+    if http_client is None:
+        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+        raise SystemExit(1)
 
     provider = RealPlanDataProvider(
         ctx,
         location=location,
         clipboard=FakeClipboard(),
         browser=FakeBrowserLauncher(),
-        http_client=FakeHttpClient(),
+        http_client=http_client,
     )
 
     effective_state: IssueFilterState = "closed" if state == "closed" else "open"
@@ -393,9 +393,10 @@ def _run_interactive_mode(
     clipboard = RealClipboard()
     browser = RealBrowserLauncher()
 
-    # Fetch GitHub token once at startup for fast HTTP client
-    token = fetch_github_token()
-    http_client = RealHttpClient(token=token, base_url="https://api.github.com")
+    http_client = ctx.http_client
+    if http_client is None:
+        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+        raise SystemExit(1)
 
     provider = RealPlanDataProvider(
         ctx,

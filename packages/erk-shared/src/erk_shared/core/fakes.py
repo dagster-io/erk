@@ -4,10 +4,12 @@ These fakes are used in tests and in contexts (like erk-kits) that
 don't need the real erk implementations.
 """
 
+from __future__ import annotations
+
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
 
 from erk_shared.context.types import PermissionMode
 from erk_shared.core.objective_list_service import ObjectiveListService
@@ -21,6 +23,9 @@ from erk_shared.core.script_writer import ScriptResult, ScriptWriter
 from erk_shared.gateway.codespace_registry.abc import CodespaceRegistry, RegisteredCodespace
 from erk_shared.gateway.github.types import GitHubRepoLocation, IssueFilterState
 from erk_shared.plan_store.types import PlanState
+
+if TYPE_CHECKING:
+    from erk_shared.gateway.http.abc import HttpClient
 
 
 class InteractiveCall(NamedTuple):
@@ -276,7 +281,7 @@ class FakePlanListService(PlanListService):
         skip_workflow_runs: bool = False,
         creator: str | None = None,
         exclude_labels: list[str] | None = None,
-        http_client: object | None,
+        http_client: HttpClient,
     ) -> PlanListData:
         plans = list(self._data.plans)
 
@@ -325,5 +330,6 @@ class FakeObjectiveListService(ObjectiveListService):
         skip_workflow_runs: bool = False,
         creator: str | None = None,
         exclude_labels: list[str] | None = None,
+        http_client: HttpClient,
     ) -> PlanListData:
         return self._data

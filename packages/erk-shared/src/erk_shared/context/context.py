@@ -24,6 +24,7 @@ from erk_shared.context.types import (
 if TYPE_CHECKING:
     from erk.artifacts.paths import ErkPackageInfo
     from erk_shared.core.objective_list_service import ObjectiveListService
+
 from erk_shared.core.plan_list_service import PlanListService
 from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.core.script_writer import ScriptWriter
@@ -47,6 +48,7 @@ from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
 from erk_shared.gateway.graphite.dry_run import DryRunGraphite
+from erk_shared.gateway.http.abc import HttpClient
 from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.abc import Time
 from erk_shared.plan_store.backend import PlanBackend
@@ -111,6 +113,9 @@ class ErkContext:
 
     # Package info (only needed by artifact commands; None for most commands)
     package_info: ErkPackageInfo | None = None
+
+    # HTTP client for GitHub REST/GraphQL API
+    http_client: HttpClient | None = None
 
     # Mode flags
     dry_run: bool = False
