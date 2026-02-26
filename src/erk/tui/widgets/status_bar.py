@@ -124,6 +124,6 @@ class StatusBar(Static):
             parts.append(self._message)
 
         # Key hints
-        parts.append("1-3:views  Enter:open  /:filter  t:stack  s:sort  r:refresh  q:quit  ?:help")
+        parts.append("1-3:views Enter:open /:filter t:stack o:obj s:sort r:refresh q:quit ?:help")
 
         self.update(" │ ".join(parts))
