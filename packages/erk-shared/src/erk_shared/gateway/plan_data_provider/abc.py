@@ -148,6 +148,21 @@ class PlanDataProvider(ABC):
         ...
 
     @abstractmethod
+    def get_branch_stack(self, branch: str) -> list[str] | None:
+        """Get the Graphite stack containing a branch.
+
+        Returns the ordered list of branch names in the same stack,
+        or None if the branch is not part of a Graphite stack.
+
+        Args:
+            branch: The branch name to look up
+
+        Returns:
+            Ordered list of branch names in the stack, or None
+        """
+        ...
+
+    @abstractmethod
     def fetch_unresolved_comments(self, pr_number: int) -> list[PRReviewThread]:
         """Fetch unresolved review threads for a pull request.
 

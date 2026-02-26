@@ -97,6 +97,7 @@ class ErkDashApp(App):
         Binding("2", "switch_view_learn", "Learn", show=False),
         Binding("3", "switch_view_objectives", "Objectives", show=False),
         Binding("d", "drill_down", "Drill Down", show=False),
+        Binding("t", "toggle_stack_filter", "Stack", show=False),
         Binding("right", "next_view", "Next View", show=False, priority=True),
         Binding("left", "previous_view", "Previous View", show=False, priority=True),
     ]
@@ -143,6 +144,8 @@ class ErkDashApp(App):
         self._refresh_task: asyncio.Task | None = None
         self._loading = True
         self._filter_state = FilterState.initial()
+        self._stack_filter_branches: frozenset[str] | None = None
+        self._stack_filter_label: str | None = None
         self._sort_state = initial_sort if initial_sort is not None else SortState.initial()
         self._activity_by_plan: dict[int, BranchActivity] = {}
         self._activity_loading = False
@@ -299,13 +302,23 @@ class ErkDashApp(App):
     def _apply_filter_and_sort(self, rows: list[PlanRowData]) -> list[PlanRowData]:
         """Apply current filter and sort to rows.
 
+        Filter pipeline: stack filter → text filter → sort.
+
         Args:
             rows: Raw rows to process
 
         Returns:
             Filtered and sorted rows
         """
-        # Apply filter first
+        # Apply stack filter first
+        if self._stack_filter_branches is not None:
+            rows = [
+                r
+                for r in rows
+                if r.pr_head_branch is not None and r.pr_head_branch in self._stack_filter_branches
+            ]
+
+        # Apply text filter
         if self._filter_state.mode == FilterMode.ACTIVE and self._filter_state.query:
             filtered = filter_plans(rows, self._filter_state.query)
         else:
@@ -371,7 +384,13 @@ class ErkDashApp(App):
             self._seconds_remaining = int(self._refresh_interval)
 
     def action_exit_app(self) -> None:
-        """Quit the application or handle progressive escape from filter mode."""
+        """Quit the application or handle progressive escape from filter mode.
+
+        Progressive escape order: stack filter → text content → text mode → quit.
+        """
+        if self._stack_filter_branches is not None:
+            self._clear_stack_filter()
+            return
         if self._filter_state.mode == FilterMode.ACTIVE:
             self._filter_state = self._filter_state.handle_escape()
             if self._filter_state.mode == FilterMode.INACTIVE:
@@ -428,6 +447,10 @@ class ErkDashApp(App):
         if mode == self._view_mode:
             return
 
+        # Clear stack filter when switching views
+        self._stack_filter_branches = None
+        self._stack_filter_label = None
+
         self._view_mode = mode
         view_config = get_view_config(mode)
 
@@ -476,6 +499,46 @@ class ErkDashApp(App):
     def action_previous_view(self) -> None:
         """Cycle to the previous view (left arrow)."""
         self._switch_view(get_previous_view_mode(self._view_mode))
+
+    def action_toggle_stack_filter(self) -> None:
+        """Toggle stack filter for the focused row's Graphite stack.
+
+        If stack filter is active, clears it (toggle off).
+        If no row selected or row has no branch, shows status message.
+        If branch is not in a Graphite stack, shows status message.
+        Otherwise, filters table to only show rows in the same stack.
+        """
+        # Toggle off if already active
+        if self._stack_filter_branches is not None:
+            self._clear_stack_filter()
+            return
+
+        row = self._get_selected_row()
+        if row is None or row.pr_head_branch is None:
+            if self._status_bar is not None:
+                self._status_bar.set_message("No branch for stack filter")
+            return
+
+        stack = self._provider.get_branch_stack(row.pr_head_branch)
+        if stack is None:
+            if self._status_bar is not None:
+                self._status_bar.set_message("Not in a Graphite stack")
+            return
+
+        self._stack_filter_branches = frozenset(stack)
+        self._stack_filter_label = row.pr_head_branch
+        self._apply_filter()
+
+        if self._status_bar is not None:
+            self._status_bar.set_message(f"Stack: {row.pr_head_branch} ({len(stack)})")
+
+    def _clear_stack_filter(self) -> None:
+        """Clear the stack filter and restore all rows."""
+        self._stack_filter_branches = None
+        self._stack_filter_label = None
+        self._apply_filter()
+        if self._status_bar is not None:
+            self._status_bar.set_message(None)
 
     def action_toggle_sort(self) -> None:
         """Toggle between sort modes."""
