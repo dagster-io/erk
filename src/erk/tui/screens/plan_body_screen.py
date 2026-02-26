@@ -190,5 +190,5 @@ class PlanBodyScreen(ModalScreen):
         """Consume all keys while modal is open; dismiss on escape, q, or space."""
         event.prevent_default()
         event.stop()
-        if event.key not in ("escape", "q", "space"):
+        if event.key in ("escape", "q", "space"):
             self.dismiss()
