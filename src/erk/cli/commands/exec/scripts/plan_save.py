@@ -240,7 +240,7 @@ def _save_as_planned_pr(
         metadata["created_from_workflow_run_url"] = created_from_workflow_run_url
 
     # Build labels
-    labels = ["erk-planned-pr"]
+    labels = ["erk-pr"]
     if plan_type == "learn":
         labels.append("erk-learn")
     else:

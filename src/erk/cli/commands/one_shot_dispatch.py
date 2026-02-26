@@ -289,7 +289,7 @@ def dispatch_one_shot(
         footer = build_pr_body_footer(pr_number, issue_number=None, plans_repo=None)
         ctx.github.update_pr_body(repo.root, pr_number, pr_body_initial + footer)
         # Add plan labels
-        ctx.github.add_label_to_pr(repo.root, pr_number, "erk-planned-pr")
+        ctx.github.add_label_to_pr(repo.root, pr_number, "erk-pr")
         ctx.github.add_label_to_pr(repo.root, pr_number, "erk-plan")
 
         # Key: set plan_issue_number = pr_number so downstream code

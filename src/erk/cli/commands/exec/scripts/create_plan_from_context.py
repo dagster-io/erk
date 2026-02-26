@@ -68,7 +68,7 @@ def create_plan_from_context(ctx: click.Context) -> None:
     try:
         github.ensure_label_exists(
             repo_root=repo_root,
-            label="erk-planned-pr",
+            label="erk-pr",
             description="Plan managed as a draft PR",
             color="1D76DB",
         )
@@ -90,7 +90,7 @@ def create_plan_from_context(ctx: click.Context) -> None:
             repo_root=repo_root,
             title=issue_title,
             body=initial_body,
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
         )
     except RuntimeError as e:
         click.echo(f"Error: Failed to create GitHub issue: {e}", err=True)

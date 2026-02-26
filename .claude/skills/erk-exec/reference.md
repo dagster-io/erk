@@ -280,7 +280,7 @@ Serialize plan dashboard data to JSON.
 | Flag          | Type    | Required | Default                        | Description |
 | ------------- | ------- | -------- | ------------------------------ | ----------- |
 | `--state`     | CHOICE  | No       | -                              | -           |
-| `--label`     | TEXT    | No       | ('erk-planned-pr', 'erk-plan') | -           |
+| `--label`     | TEXT    | No       | ('erk-pr', 'erk-plan') | -           |
 | `--limit`     | INTEGER | No       | -                              | -           |
 | `--show-prs`  | FLAG    | No       | -                              | -           |
 | `--show-runs` | FLAG    | No       | -                              | -           |

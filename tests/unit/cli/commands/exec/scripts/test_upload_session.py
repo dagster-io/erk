@@ -32,7 +32,7 @@ def _make_plan_issue(*, number: int) -> IssueInfo:
         body=body,
         state="OPEN",
         url=f"https://github.com/test/repo/issues/{number}",
-        labels=["erk-planned-pr", "erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=now,
         updated_at=now,

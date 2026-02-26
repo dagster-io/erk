@@ -18,7 +18,7 @@ audit_result: clean
 
 # Learn Plans vs. Implementation Plans
 
-Erk has two plan types that share the same issue infrastructure (`erk-planned-pr` base label, plan-header metadata, same lifecycle phases) but serve fundamentally different purposes. Understanding when to use each — and how they connect — prevents workflow mistakes and ensures documentation is created alongside the code it documents.
+Erk has two plan types that share the same issue infrastructure (`erk-pr` base label, plan-header metadata, same lifecycle phases) but serve fundamentally different purposes. Understanding when to use each — and how they connect — prevents workflow mistakes and ensures documentation is created alongside the code it documents.
 
 ## Decision Table
 
@@ -26,9 +26,9 @@ Erk has two plan types that share the same issue infrastructure (`erk-planned-pr
 
 | Signal                                    | Plan Type      | Label(s)                       | Typical Output              |
 | ----------------------------------------- | -------------- | ------------------------------ | --------------------------- |
-| Adding features, fixing bugs, refactoring | Implementation | `erk-planned-pr` + `erk-plan`  | Source code, tests, config  |
-| Extracting insights from completed work   | Learn          | `erk-planned-pr` + `erk-learn` | Docs in `docs/learned/`     |
-| Consolidating learnings from multiple PRs | Learn          | `erk-planned-pr` + `erk-learn` | Docs, tripwires, checklists |
+| Adding features, fixing bugs, refactoring | Implementation | `erk-pr` + `erk-plan`  | Source code, tests, config  |
+| Extracting insights from completed work   | Learn          | `erk-pr` + `erk-learn` | Docs in `docs/learned/`     |
+| Consolidating learnings from multiple PRs | Learn          | `erk-pr` + `erk-learn` | Docs, tripwires, checklists |
 
 ## Why Two Types Exist
 

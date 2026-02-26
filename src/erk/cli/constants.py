@@ -47,7 +47,7 @@ AUTOFIX_TRIGGER_WORKFLOWS = frozenset(
 )
 
 # Shared label for all plan PRs (implementation + learn)
-ERK_PLANNED_PR_LABEL = "erk-planned-pr"
+ERK_PR_LABEL = "erk-pr"
 
 # Learn plan label (for plans that learn from sessions)
 ERK_LEARN_LABEL = "erk-learn"

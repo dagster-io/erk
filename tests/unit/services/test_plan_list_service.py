@@ -38,7 +38,7 @@ class TestPlanListService:
             body="Plan body",
             state="OPEN",
             url="https://github.com/owner/repo/issues/42",
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -50,7 +50,7 @@ class TestPlanListService:
         service = RealPlanListService(fake_github, fake_issues, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             http_client=None,
         )
 
@@ -68,7 +68,7 @@ class TestPlanListService:
             body="",
             state="OPEN",
             url="https://github.com/owner/repo/issues/42",
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -94,7 +94,7 @@ class TestPlanListService:
         service = RealPlanListService(fake_github, fake_issues, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             http_client=None,
         )
 
@@ -113,7 +113,7 @@ class TestPlanListService:
         service = RealPlanListService(fake_github, fake_issues, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             http_client=None,
         )
 
@@ -130,7 +130,7 @@ class TestPlanListService:
             body="",
             state="OPEN",
             url="https://github.com/owner/repo/issues/1",
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -142,7 +142,7 @@ class TestPlanListService:
             body="",
             state="CLOSED",
             url="https://github.com/owner/repo/issues/2",
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -155,7 +155,7 @@ class TestPlanListService:
         service = RealPlanListService(fake_github, fake_issues, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             state="open",
             http_client=None,
         )
@@ -172,7 +172,7 @@ class TestPlanListService:
             body="",
             state="OPEN",
             url="https://github.com/owner/repo/issues/1",
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -184,7 +184,7 @@ class TestPlanListService:
             body="",
             state="CLOSED",
             url="https://github.com/owner/repo/issues/2",
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -196,7 +196,7 @@ class TestPlanListService:
         service = RealPlanListService(fake_github, fake_issues, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             state="closed",
             http_client=None,
         )
@@ -238,7 +238,7 @@ last_dispatched_at: '2024-01-15T11:00:00Z'
             body=issue_body,
             state="OPEN",
             url="https://github.com/owner/repo/issues/42",
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -264,7 +264,7 @@ last_dispatched_at: '2024-01-15T11:00:00Z'
         service = RealPlanListService(fake_github, fake_issues, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             http_client=None,
         )
 
@@ -294,7 +294,7 @@ last_dispatched_node_id: 'WFR_abc123'
             body=issue_body,
             state="OPEN",
             url="https://github.com/owner/repo/issues/42",
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -316,7 +316,7 @@ last_dispatched_node_id: 'WFR_abc123'
         service = RealPlanListService(fake_github, fake_issues, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             skip_workflow_runs=True,
             http_client=None,
         )
@@ -333,7 +333,7 @@ last_dispatched_node_id: 'WFR_abc123'
             body="Plain body without metadata",
             state="OPEN",
             url="https://github.com/owner/repo/issues/42",
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -345,7 +345,7 @@ last_dispatched_node_id: 'WFR_abc123'
         service = RealPlanListService(fake_github, fake_issues, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             http_client=None,
         )
 
@@ -373,7 +373,7 @@ last_dispatched_node_id: 'WFR_nonexistent'
             body=issue_body,
             state="OPEN",
             url="https://github.com/owner/repo/issues/42",
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -386,7 +386,7 @@ last_dispatched_node_id: 'WFR_nonexistent'
         service = RealPlanListService(fake_github, fake_issues, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             http_client=None,
         )
 
@@ -415,7 +415,7 @@ last_dispatched_node_id: 'WFR_abc123'
             body=issue_body,
             state="OPEN",
             url="https://github.com/owner/repo/issues/42",
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -431,7 +431,7 @@ last_dispatched_node_id: 'WFR_abc123'
         service = RealPlanListService(fake_github, fake_issues, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             http_client=None,
         )
 
@@ -466,7 +466,7 @@ class TestPlanListData:
                 body="",
                 state=PlanState.OPEN,
                 url="",
-                labels=["erk-planned-pr", "erk-plan"],
+                labels=["erk-pr", "erk-plan"],
                 assignees=[],
                 created_at=now,
                 updated_at=now,
@@ -613,7 +613,7 @@ class TestPlannedPRPlanListService:
         service = PlannedPRPlanListService(fake_github, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             http_client=None,
         )
 
@@ -627,7 +627,7 @@ class TestPlannedPRPlanListService:
         service = PlannedPRPlanListService(fake_github, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             http_client=None,
         )
 
@@ -657,7 +657,7 @@ class TestPlannedPRPlanListService:
         service = PlannedPRPlanListService(fake_github, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             http_client=None,
         )
 
@@ -696,7 +696,7 @@ class TestPlannedPRPlanListService:
         service = PlannedPRPlanListService(fake_github, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             http_client=None,
         )
 
@@ -720,7 +720,7 @@ class TestPlannedPRPlanListService:
         service = PlannedPRPlanListService(fake_github, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             http_client=None,
         )
 
@@ -764,7 +764,7 @@ last_dispatched_at: '2024-06-01T10:00:00Z'
         service = PlannedPRPlanListService(fake_github, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             http_client=None,
         )
 
@@ -802,7 +802,7 @@ last_dispatched_node_id: 'WFR_draft456'
         service = PlannedPRPlanListService(fake_github, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             skip_workflow_runs=True,
             http_client=None,
         )
@@ -846,7 +846,7 @@ last_dispatched_node_id: 'WFR_draft456'
         service = PlannedPRPlanListService(fake_github, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             http_client=None,
         )
 
@@ -885,7 +885,7 @@ last_dispatched_node_id: 'WFR_draft456'
         service = PlannedPRPlanListService(fake_github, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             http_client=None,
         )
 
@@ -918,7 +918,7 @@ last_dispatched_node_id: 'WFR_draft789'
         service = PlannedPRPlanListService(fake_github, time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-planned-pr", "erk-plan"],
+            labels=["erk-pr", "erk-plan"],
             http_client=None,
         )
 
