@@ -34,7 +34,7 @@ def test_extract_pr_metadata_returns_all_fields() -> None:
             "pr_url": "https://github.com/user/repo/pull/123",
             "pr_number": 123,
             "pr_title": "Fix bug in feature",
-            "issue_number": 456,
+            "plan_number": 456,
         }
     )
     result = extract_pr_metadata(content)
@@ -42,7 +42,7 @@ def test_extract_pr_metadata_returns_all_fields() -> None:
         "pr_url": "https://github.com/user/repo/pull/123",
         "pr_number": 123,
         "pr_title": "Fix bug in feature",
-        "issue_number": 456,
+        "plan_number": 456,
     }
 
 
@@ -54,7 +54,7 @@ def test_extract_pr_metadata_handles_missing_fields() -> None:
         "pr_url": "https://github.com/user/repo/pull/123",
         "pr_number": None,
         "pr_title": None,
-        "issue_number": None,
+        "plan_number": None,
     }
 
 
@@ -62,7 +62,7 @@ def test_extract_pr_metadata_returns_none_for_invalid_json() -> None:
     """Test that extract_pr_metadata returns None fields for invalid JSON."""
     content = "not json"
     result = extract_pr_metadata(content)
-    assert result == {"pr_url": None, "pr_number": None, "pr_title": None, "issue_number": None}
+    assert result == {"pr_url": None, "pr_number": None, "pr_title": None, "plan_number": None}
 
 
 def test_extract_pr_metadata_validates_field_types() -> None:
@@ -81,7 +81,7 @@ def test_extract_pr_metadata_validates_field_types() -> None:
         "pr_url": "https://github.com/user/repo/pull/123",
         "pr_number": None,  # Invalid type, should be None
         "pr_title": "Fix bug",
-        "issue_number": None,
+        "plan_number": None,
     }
 
 
@@ -89,4 +89,4 @@ def test_extract_pr_metadata_handles_empty_string() -> None:
     """Test that extract_pr_metadata handles empty string."""
     content = ""
     result = extract_pr_metadata(content)
-    assert result == {"pr_url": None, "pr_number": None, "pr_title": None, "issue_number": None}
+    assert result == {"pr_url": None, "pr_number": None, "pr_title": None, "plan_number": None}
