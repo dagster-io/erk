@@ -1,0 +1,8 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Eliminate .impl/ from one-shot workflow",
+  "objective_id": 8365,
+  "node_ids": [
+    "2.2"
+  ]
+}
