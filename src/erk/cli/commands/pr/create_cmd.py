@@ -102,9 +102,9 @@ def pr_create(
             # Partial success - issue created but comment failed
             user_output(
                 click.style("Warning: ", fg="yellow")
-                + f"Issue created but failed to add plan comment: {result.error}"
+                + f"Plan created but failed to add plan comment: {result.error}"
             )
-            user_output(f"Issue #{result.issue_number} created but incomplete.")
+            user_output(f"Plan #{result.issue_number} created but incomplete.")
             user_output(f"URL: {result.issue_url}")
         else:
             user_output(click.style("Error: ", fg="red") + str(result.error))
