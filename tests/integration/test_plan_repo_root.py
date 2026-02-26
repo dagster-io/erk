@@ -15,11 +15,12 @@ from click.testing import CliRunner
 
 from erk.cli.commands.pr.list_cmd import dash
 from erk.cli.commands.pr.view_cmd import pr_view
-from erk.core.services.plan_list_service import RealPlanListService
+from erk.core.services.plan_list_service import PlannedPRPlanListService
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import (
     GitHubRepoLocation,
+    IssueFilterState,
     PRDetails,
     PRNotFound,
     PullRequestInfo,
@@ -53,22 +54,22 @@ def test_plan_issue_list_uses_repo_root_not_metadata_dir() -> None:
         captured_repo_root: Path | None = None
 
         class TrackingGitHub(FakeGitHub):
-            def get_issues_with_pr_linkages(
+            def list_plan_prs_with_details(
                 self,
                 location: GitHubRepoLocation,
+                *,
                 labels: list[str],
-                state: str = "open",
-                limit: int | None = None,
-                creator: str | None = None,
-            ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+                state: IssueFilterState,
+                limit: int | None,
+                author: str | None,
+                exclude_labels: list[str] | None = None,
+            ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
                 nonlocal captured_repo_root
                 captured_repo_root = location.root
                 return [], {}  # Return empty results
 
         github = TrackingGitHub()
-        from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-
-        plan_list_service = RealPlanListService(github, FakeGitHubIssues(), time=FakeTime())
+        plan_list_service = PlannedPRPlanListService(github, time=FakeTime())
         ctx = env.build_context(github=github, plan_list_service=plan_list_service)
 
         # Act: Run the dash command
@@ -97,9 +98,15 @@ def test_plan_issue_list_uses_repo_root_not_metadata_dir() -> None:
                 if captured_provider and captured_filters:
                     captured_provider.fetch_plans(captured_filters)
 
+        from erk_shared.gateway.http.fake import FakeHttpClient
+
         with (
             patch("erk.cli.commands.pr.list_cmd.ErkDashApp", MockApp),
             patch("erk.cli.commands.pr.list_cmd.fetch_github_token", return_value="fake-token"),
+            patch(
+                "erk.cli.commands.pr.list_cmd.RealHttpClient",
+                lambda **kwargs: FakeHttpClient(),
+            ),
         ):
             result = runner.invoke(dash, obj=ctx)
 
