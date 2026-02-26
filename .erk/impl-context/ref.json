@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Documentation Plan: Add force parameter to stage_files gateway for gitignored paths"
+}
