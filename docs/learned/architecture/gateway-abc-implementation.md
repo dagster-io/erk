@@ -792,11 +792,9 @@ for branch in branches:
 
 ### 2. Add batch method to ABC
 
-```python
-@abstractmethod
-def get_all_branch_heads(self, repo_root: Path) -> dict[str, str]:
-    """Return mapping of all branch names to their HEAD commit SHAs."""
-```
+Add an `@abstractmethod` that returns bulk data (e.g., `dict[str, str]` mapping names to values).
+
+> **Source pointer:** See `get_all_branch_heads` in `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py` for a canonical example.
 
 ### 3. Implement in Real with single batched command
 
@@ -804,10 +802,9 @@ Use commands that return bulk data: `git for-each-ref`, GraphQL aliased queries,
 
 ### 4. Implement in Fake returning pre-configured bulk data
 
-```python
-def get_all_branch_heads(self, repo_root: Path) -> dict[str, str]:
-    return dict(self._branch_heads)  # Return copy of pre-configured data
-```
+Return a copy of pre-configured test data from an internal collection.
+
+> **Source pointer:** See `FakeGitBranchOps.get_all_branch_heads` in `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py` for a canonical example.
 
 ### 5. Implement in DryRun/Printing as delegates
 
@@ -815,10 +812,9 @@ Both delegate to wrapped implementation without modification.
 
 ### 6. Update caller to use batch + filter pattern
 
-```python
-all_heads = git_ops.branch.get_all_branch_heads(repo_root)
-needed_heads = {name: all_heads[name] for name in branches if name in all_heads}
-```
+Fetch all items in one call, then filter to the subset you need using a comprehension.
+
+> **Source pointer:** See the caller in `packages/erk-shared/src/erk_shared/gateway/graphite/real.py` for a canonical example.
 
 **Performance impact:** O(N) subprocess calls -> O(1). Typical savings: 30-100x improvement.
 

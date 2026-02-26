@@ -30,12 +30,7 @@ git diff --name-only HEAD~1  # Files changed in this PR
 
 ## Example
 
-Type checking found errors in `plan_data_provider/real.py`:
-
-- `_fetch_learn_issue_states` - unresolved attribute
-- `learn_issue_states` - unknown argument
-
-These were pre-existing errors from a previous refactor, not introduced by the current PR. Agent correctly documented and proceeded without fixing.
+Type checking found errors in a provider module (unresolved attributes and unknown arguments from a previous refactor). These were pre-existing errors, not introduced by the current PR. Agent correctly documented and proceeded without fixing.
 
 ## Related Topics
 

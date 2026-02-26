@@ -112,11 +112,9 @@ When fetching HEAD SHAs for multiple branches, use `git for-each-ref` instead of
 
 ### Pattern
 
-```bash
-git for-each-ref --format='%(refname:short)\t%(objectname:short)' refs/heads/
-```
+Use `git for-each-ref` with a custom format to retrieve all branch names and SHAs in one call.
 
-Returns tab-separated lines: `branch-name<tab>short-sha`
+> **Source pointer:** See `RealGitBranchOps.get_all_branch_heads` in `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py` for the exact command and parsing logic.
 
 ### Usage in Graphite Cache
 

@@ -16,22 +16,18 @@ If a comprehension takes more than one second to understand, extract intermediat
 **Before (complex):**
 
 ```python
-git_branch_heads = {
-    branch_name: all_heads[branch_name]
-    for branch_name, _ in branches_data
-    if isinstance(branch_name, str) and branch_name in all_heads
+results = {
+    key: lookup[key]
+    for key, _ in raw_items
+    if isinstance(key, str) and key in lookup
 }
 ```
 
 **After (clearer):**
 
 ```python
-tracked_branch_names = {name for name, _ in branches_data if isinstance(name, str)}
-git_branch_heads = {
-    name: all_heads[name]
-    for name in tracked_branch_names
-    if name in all_heads
-}
+valid_keys = {k for k, _ in raw_items if isinstance(k, str)}
+results = {k: lookup[k] for k in valid_keys if k in lookup}
 ```
 
 ## When to Use Single Comprehension

@@ -26,12 +26,14 @@ Batch operations may have bugs that only manifest with multiple items:
 - Incorrect aggregation logic
 - Race conditions in parallel processing
 
-### Example: get_all_branch_heads Tests
+### Example: Batch Operation Tests
 
-See `tests/integration/test_real_git_branch_ops.py`:
+Tests for batch operations should cover at minimum:
 
-- `test_get_all_branch_heads_returns_all_branches` - Multiple branches
-- `test_get_all_branch_heads_returns_empty_on_non_repo` - Error case
+- **Multiple items** — verifies correct aggregation with more than one entry
+- **Error case** — verifies graceful handling when input is invalid
+
+> **Source pointer:** See `get_all_branch_heads` tests in `tests/integration/test_real_git_branch_ops.py` for a canonical example.
 
 ## Related Topics
 
