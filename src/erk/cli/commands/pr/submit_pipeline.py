@@ -162,12 +162,12 @@ def prepare_state(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitEr
     if plan_id is not None and impl_dir is not None and not has_plan_ref(impl_dir):
         remote_url = ctx.git.remote.get_remote_url(repo_root, "origin")
         owner, repo_name = parse_git_remote_url(remote_url)
-        issue_url = f"https://github.com/{owner}/{repo_name}/issues/{plan_id}"
+        plan_url = f"https://github.com/{owner}/{repo_name}/issues/{plan_id}"
         save_plan_ref(
             impl_dir,
             provider="github",
             plan_id=plan_id,
-            url=issue_url,
+            url=plan_url,
             labels=(),
             objective_id=None,
             node_ids=None,
