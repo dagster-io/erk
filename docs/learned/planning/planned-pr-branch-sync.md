@@ -3,17 +3,17 @@ title: Planned PR Branch Sync
 read_when:
   - "implementing or debugging planned-PR plan setup"
   - "understanding branch sync during plan implementation"
-  - "working with setup_impl_from_issue for planned PR plans"
+  - "working with setup_impl_from_pr for planned PR plans"
   - "debugging divergence between local and remote plan branches"
 tripwires:
   - action: "implementing planned-PR plan without syncing with remote"
     warning: "Before implementing a planned-PR plan, always sync with remote: fetch_branch -> checkout/create_tracking -> pull_rebase"
   - action: "detecting plan backend by checking backend type directly"
-    warning: "Use plan.header_fields.get(BRANCH_NAME) to detect planned-PR plans. There is only one backend (planned-PR)."
+    warning: "Use github.get_pr() + pr_result.head_ref_name to discover the plan branch. There is only one backend (planned-PR)."
   - action: "creating a new branch for a planned-PR plan"
     warning: "Planned PR plans already have a branch created during plan-save. Reuse the existing branch, don't create a new one."
   - action: "committing to planned-PR plan branches after checkout without pulling remote"
-    warning: "Both setup_impl_from_issue.py and submit.py use the same three-step sync: fetch_branch -> checkout/create_tracking -> pull_rebase. Skipping pull_rebase causes non-fast-forward push failures."
+    warning: "Both setup_impl_from_pr.py and submit.py use the same three-step sync: fetch_branch -> checkout/create_tracking -> pull_rebase. Skipping pull_rebase causes non-fast-forward push failures."
 ---
 
 # Planned PR Branch Sync
@@ -29,7 +29,7 @@ When implementing a planned-PR plan, the local branch must be synced with remote
 
 ## Three-Step Sync Sequence
 
-In `setup_impl_from_issue.py`, the sync follows this pattern:
+In `setup_impl_from_pr.py`, the sync follows this pattern:
 
 ```
 fetch_branch → checkout/create_tracking → pull_rebase
@@ -37,7 +37,7 @@ fetch_branch → checkout/create_tracking → pull_rebase
 
 ### Step 1: Fetch Branch
 
-<!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py:114 -->
+<!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:114 -->
 
 Calls `git.remote.fetch_branch()` to fetch the named branch from origin, making remote state available locally.
 
@@ -53,38 +53,48 @@ Three possible states:
 
 ### Step 3: Pull Rebase
 
-<!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py:132 -->
+<!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:132 -->
 
 Calls `git.remote.pull_rebase()` to fast-forward the local branch to remote HEAD. Only needed when already on branch or after checking out an existing local branch. Skip when creating a fresh tracking branch (already at remote HEAD).
 
 ## Backend Detection
 
-The branch name is stored in the plan's header fields. Detection uses a backend-agnostic pattern:
+The branch name is discovered via a lightweight GitHub PR query. Detection uses the PR's head ref:
 
-<!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py:103-112 -->
+<!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py -->
 
-Reads `plan.header_fields.get(BRANCH_NAME)`. If the result is a non-empty string, this is a planned-PR plan (reuse the existing branch and sync with remote).
+Calls `github.get_pr(repo_root, plan_number)` and reads `pr_result.head_ref_name` to discover the plan branch name. This is a planned-PR plan (reuse the existing branch and sync with remote).
 
 ## Idempotent Design
 
-`setup-impl-from-issue` is safe to run multiple times:
+`setup-impl-from-pr` is safe to run multiple times:
 
 - If already on the correct branch, it syncs with remote
 - If branch exists locally, it checks out and syncs
 - If branch only exists on remote, it creates tracking and checks out
 
-This is why `plan-implement` always calls `setup-impl-from-issue` even when `.impl/` already exists with issue tracking.
+This is why `plan-implement` always calls `setup-impl-from-pr` even when `.impl/` already exists with plan tracking.
 
 ## Pattern Consistency: Setup and Submit
 
-Both `setup_impl_from_issue.py` and `submit.py` use an identical three-step sync pattern when working with draft-PR plan branches:
+Both `setup_impl_from_pr.py` and `submit.py` use an identical three-step sync pattern when working with draft-PR plan branches:
 
-<!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py:81-97 -->
+<!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:81-97 -->
 <!-- Source: src/erk/cli/commands/submit.py:431-445 -->
 
 Both paths call the same three-step sequence: `fetch_branch()` → `create_tracking_branch()` / `checkout_branch()` → `pull_rebase()`. See the source files for exact call signatures.
 
 PR #7697 added the missing `pull_rebase()` call to the submit path. Without it, the submit path would attempt to push commits onto a branch that had diverged from remote, causing non-fast-forward push failures.
+
+## Issue-Based Plan Branching
+
+For comparison, issue-based plans (legacy) generate fresh branch names:
+
+<!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:155-157 -->
+
+Calls `generate_issue_branch_name()` with the issue number, plan title, timestamp, and optional objective ID. Branch names follow the pattern `P{issue}-{slugified-title}-{timestamp}`. This is the legacy format; current plans use `plnd/` prefix.
+
+If already on a branch matching the expected pattern (for legacy plans, `P{issue_number}-*`), the existing branch is reused.
 
 ## Auto-Force Push for Plan Implementation Branches
 

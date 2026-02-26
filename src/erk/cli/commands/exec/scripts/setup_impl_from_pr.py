@@ -1,20 +1,20 @@
-"""Set up .impl/ folder from GitHub issue in current worktree.
+"""Set up .impl/ folder from GitHub PR in current worktree.
 
-This exec command fetches a plan from a GitHub issue, creates a feature branch,
+This exec command fetches a plan from a GitHub PR, creates a feature branch,
 checks it out, and creates the .impl/ folder structure for implementation.
 
 Usage:
-    erk exec setup-impl-from-issue <issue-number> [--session-id <id>]
+    erk exec setup-impl-from-pr <plan-number> [--session-id <id>]
 
 Output:
     Structured JSON output with success status and folder details
 
 Exit Codes:
     0: Success (.impl/ folder created, branch checked out)
-    1: Error (issue not found, plan fetch failed, git operations failed)
+    1: Error (PR not found, plan fetch failed, git operations failed)
 
 Examples:
-    $ erk exec setup-impl-from-issue 1028
+    $ erk exec setup-impl-from-pr 1028
     {"success": true, "impl_path": "/path/to/.impl", "plan_number": 1028, "branch": "P1028-..."}
 """
 
@@ -245,7 +245,7 @@ def _setup_planned_pr_plan(
     }
 
 
-@click.command(name="setup-impl-from-issue")
+@click.command(name="setup-impl-from-pr")
 @click.argument("plan_number", type=int)
 @click.option(
     "--session-id",
@@ -258,25 +258,25 @@ def _setup_planned_pr_plan(
     help="Skip .impl/ folder creation (for local execution without file overhead)",
 )
 @click.pass_context
-def setup_impl_from_issue(
+def setup_impl_from_pr(
     ctx: click.Context,
     plan_number: int,
     session_id: str | None,
     no_impl: bool,
 ) -> None:
-    """Set up .impl/ folder from GitHub issue in current worktree.
+    """Set up .impl/ folder from GitHub PR in current worktree.
 
-    Fetches plan content from GitHub issue, creates/checks out a feature branch,
-    and creates .impl/ folder structure with plan.md, progress.md, and issue.json.
+    Fetches plan content from GitHub PR, creates/checks out a feature branch,
+    and creates .impl/ folder structure with plan.md, progress.md, and ref.json.
 
-    PLAN_NUMBER: GitHub issue number containing the plan
+    PLAN_NUMBER: GitHub PR number containing the plan
 
     The command:
-    1. Fetches the plan from the GitHub issue or draft PR
+    1. Fetches the plan from the draft PR
     2. Creates a feature branch from current branch (stacked) or trunk
     3. Checks out the new branch in the current worktree
     4. Creates .impl/ folder with plan content
-    5. Saves issue reference for PR linking
+    5. Saves plan reference for PR linking
     """
     output = _setup_planned_pr_plan(ctx, plan_number=plan_number, no_impl=no_impl)
     click.echo(json.dumps(output))

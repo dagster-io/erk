@@ -1,11 +1,11 @@
-"""Unit tests for plan-update-issue command."""
+"""Unit tests for plan-update command."""
 
 import json
 from datetime import UTC, datetime
 
 from click.testing import CliRunner
 
-from erk.cli.commands.exec.scripts.plan_update_issue import plan_update_issue
+from erk.cli.commands.exec.scripts.plan_update import plan_update
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
 from erk_shared.gateway.git.fake import FakeGit
@@ -54,7 +54,7 @@ def _make_comment(comment_id: int, body: str) -> IssueComment:
     )
 
 
-def test_plan_update_issue_success() -> None:
+def test_plan_update_success() -> None:
     """Test successful plan update."""
     issue = _make_issue(42, "Test Plan [erk-plan]", "metadata body")
     comment = _make_comment(12345, "old plan content")
@@ -74,7 +74,7 @@ def test_plan_update_issue_success() -> None:
     runner = CliRunner()
 
     result = runner.invoke(
-        plan_update_issue,
+        plan_update,
         ["--plan-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -102,7 +102,7 @@ def test_plan_update_issue_success() -> None:
     assert fake_github.updated_pr_titles[0] == (42, "[erk-plan] Updated Plan")
 
 
-def test_plan_update_issue_display_format() -> None:
+def test_plan_update_display_format() -> None:
     """Test display output format."""
     issue = _make_issue(99, "My Feature [erk-plan]", "body")
     comment = _make_comment(55555, "plan content")
@@ -121,7 +121,7 @@ def test_plan_update_issue_display_format() -> None:
     runner = CliRunner()
 
     result = runner.invoke(
-        plan_update_issue,
+        plan_update,
         ["--plan-number", "99", "--format", "display"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -136,7 +136,7 @@ def test_plan_update_issue_display_format() -> None:
     assert "URL: " in result.output
 
 
-def test_plan_update_issue_no_plan_found() -> None:
+def test_plan_update_no_plan_found() -> None:
     """Test error when no plan found."""
     issue = _make_issue(42, "Test [erk-plan]", "body")
     comment = _make_comment(12345, "plan content")
@@ -153,7 +153,7 @@ def test_plan_update_issue_no_plan_found() -> None:
     runner = CliRunner()
 
     result = runner.invoke(
-        plan_update_issue,
+        plan_update,
         ["--plan-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -168,7 +168,7 @@ def test_plan_update_issue_no_plan_found() -> None:
     assert "No plan found" in output["error"]
 
 
-def test_plan_update_issue_issue_not_found() -> None:
+def test_plan_update_issue_not_found() -> None:
     """Test error when issue does not exist."""
     # Empty issues dict - no issues
     fake_gh = FakeGitHubIssues()
@@ -180,7 +180,7 @@ def test_plan_update_issue_issue_not_found() -> None:
     runner = CliRunner()
 
     result = runner.invoke(
-        plan_update_issue,
+        plan_update,
         ["--plan-number", "999", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -195,7 +195,7 @@ def test_plan_update_issue_issue_not_found() -> None:
     assert "999" in output["error"]
 
 
-def test_plan_update_issue_formats_plan_content() -> None:
+def test_plan_update_formats_plan_content() -> None:
     """Test that plan content is properly formatted with metadata block."""
     issue = _make_issue(42, "Test [erk-plan]", "body")
     comment = _make_comment(12345, "old content")
@@ -214,7 +214,7 @@ def test_plan_update_issue_formats_plan_content() -> None:
     runner = CliRunner()
 
     result = runner.invoke(
-        plan_update_issue,
+        plan_update,
         ["--plan-number", "42"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -234,7 +234,7 @@ def test_plan_update_issue_formats_plan_content() -> None:
     assert "Step 1" in updated_body
 
 
-def test_plan_update_issue_updates_title_from_plan() -> None:
+def test_plan_update_updates_title_from_plan() -> None:
     """Test that issue title is updated from plan H1 heading."""
     issue = _make_issue(42, "[erk-plan] Old Title", "body")
     comment = _make_comment(12345, "old content")
@@ -254,7 +254,7 @@ def test_plan_update_issue_updates_title_from_plan() -> None:
     runner = CliRunner()
 
     result = runner.invoke(
-        plan_update_issue,
+        plan_update,
         ["--plan-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -272,7 +272,7 @@ def test_plan_update_issue_updates_title_from_plan() -> None:
     assert fake_github.updated_pr_titles[0] == (42, "[erk-plan] New Feature Name")
 
 
-def test_plan_update_issue_learn_plan_gets_learn_tag() -> None:
+def test_plan_update_learn_plan_gets_learn_tag() -> None:
     """Test that learn plans get [erk-learn] title tag."""
     now = datetime.now(UTC)
     issue = IssueInfo(
@@ -303,7 +303,7 @@ def test_plan_update_issue_learn_plan_gets_learn_tag() -> None:
     runner = CliRunner()
 
     result = runner.invoke(
-        plan_update_issue,
+        plan_update,
         ["--plan-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -319,7 +319,7 @@ def test_plan_update_issue_learn_plan_gets_learn_tag() -> None:
     assert fake_github.updated_pr_titles[0] == (42, "[erk-learn] Learn Something New")
 
 
-def test_plan_update_issue_strips_plan_prefix_from_title() -> None:
+def test_plan_update_strips_plan_prefix_from_title() -> None:
     """Test that 'Plan: ' prefix is stripped from extracted title."""
     issue = _make_issue(42, "[erk-plan] Old Title", "body")
     comment = _make_comment(12345, "old content")
@@ -338,7 +338,7 @@ def test_plan_update_issue_strips_plan_prefix_from_title() -> None:
     runner = CliRunner()
 
     result = runner.invoke(
-        plan_update_issue,
+        plan_update,
         ["--plan-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -352,7 +352,7 @@ def test_plan_update_issue_strips_plan_prefix_from_title() -> None:
     assert output["title"] == "[erk-plan] Add Feature X"
 
 
-def test_plan_update_issue_display_format_shows_new_title() -> None:
+def test_plan_update_display_format_shows_new_title() -> None:
     """Test display format shows the updated title."""
     issue = _make_issue(42, "[erk-plan] Old Title", "body")
     comment = _make_comment(12345, "old content")
@@ -371,7 +371,7 @@ def test_plan_update_issue_display_format_shows_new_title() -> None:
     runner = CliRunner()
 
     result = runner.invoke(
-        plan_update_issue,
+        plan_update,
         ["--plan-number", "42", "--format", "display"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -435,7 +435,7 @@ def test_plan_update_pushes_to_branch() -> None:
     runner = CliRunner()
 
     result = runner.invoke(
-        plan_update_issue,
+        plan_update,
         ["--plan-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -481,7 +481,7 @@ def test_plan_update_branch_push_failure_still_succeeds() -> None:
     runner = CliRunner()
 
     result = runner.invoke(
-        plan_update_issue,
+        plan_update,
         ["--plan-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -521,7 +521,7 @@ def test_plan_update_no_branch_skips_push() -> None:
     runner = CliRunner()
 
     result = runner.invoke(
-        plan_update_issue,
+        plan_update,
         ["--plan-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,

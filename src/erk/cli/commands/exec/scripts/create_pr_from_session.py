@@ -1,7 +1,7 @@
-"""Extract plan from Claude session and create GitHub issue.
+"""Extract plan from Claude session and create GitHub PR.
 
 Usage:
-    erk exec create-issue-from-session [--session-id SESSION_ID]
+    erk exec create-pr-from-session [--session-id SESSION_ID]
 
 This command combines plan extraction from Claude session files with GitHub
 issue creation. It extracts the latest ExitPlanMode plan, ensures the erk-plan
@@ -35,14 +35,14 @@ from erk_shared.context.helpers import (
 from erk_shared.gateway.github.plan_issues import create_plan_issue
 
 
-@click.command(name="create-issue-from-session")
+@click.command(name="create-pr-from-session")
 @click.option(
     "--session-id",
     help="Session ID to search within (optional, searches all sessions if not provided)",
 )
 @click.pass_context
-def create_issue_from_session(ctx: click.Context, session_id: str | None) -> None:
-    """Extract plan from Claude session and create GitHub issue.
+def create_pr_from_session(ctx: click.Context, session_id: str | None) -> None:
+    """Extract plan from Claude session and create GitHub PR.
 
     Combines plan extraction with GitHub issue creation in a single operation.
 

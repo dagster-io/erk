@@ -257,7 +257,7 @@ Based on user selection:
 gh pr close <NUMBER> --comment "Closing: This work is already represented in master via <evidence>. See #<related_pr> for the merged implementation."
 
 # For plans (uses erk exec to avoid GraphQL rate limits)
-erk exec close-issue-with-comment <NUMBER> --comment "Closing: This work is already represented in master. <evidence>"
+erk exec close-pr <NUMBER> --comment "Closing: This work is already represented in master. <evidence>"
 ```
 
 **Add label:**
