@@ -63,7 +63,7 @@
 - **[github-gist-api.md](github-gist-api.md)** — constructing gist raw URLs, downloading gist content programmatically, working with single-file gists
 - **[github-graphql.md](github-graphql.md)** — using gh api graphql, writing GraphQL queries for GitHub, passing variables to GraphQL queries, fetching data not available in REST API
 - **[github-interface-patterns.md](github-interface-patterns.md)** — calling GitHub API from erk, working with gh api command, fetching PR or issue data efficiently, understanding PRDetails type
-- **[github-issue-autoclose.md](github-issue-autoclose.md)** — implementing PR-to-issue linking, debugging why issues didn't auto-close after PR merge, understanding closing keyword behavior, working with plan issue closure detection
+- **[github-issue-autoclose.md](github-issue-autoclose.md)** — understanding why erk no longer uses Closes #N, understanding plan issue closure strategy
 - **[github-parsing.md](github-parsing.md)** — parsing GitHub URLs, extracting PR or issue numbers from URLs, understanding github parsing layers
 - **[github-pr-linkage-api.md](github-pr-linkage-api.md)** — querying PRs linked to an issue, understanding how GitHub tracks issue-PR relationships, debugging why a PR doesn't show as linked to an issue, working with CrossReferencedEvent or closingIssuesReferences
 - **[globalconfig-field-addition.md](globalconfig-field-addition.md)** — adding a new field to GlobalConfig, extending erk's global configuration, adding a user-configurable setting to ~/.erk/config.toml
@@ -96,7 +96,7 @@
 - **[plan-context-integration.md](plan-context-integration.md)** — using PlanContextProvider for PR generation, extracting plan content from branches, understanding how PR descriptions get plan context
 - **[plan-ref-architecture.md](plan-ref-architecture.md)** — working with plan-ref.json, working with PlanRef dataclass, migrating from IssueReference to PlanRef, understanding provider-agnostic plan references
 - **[plan-save-branch-restoration.md](plan-save-branch-restoration.md)** — modifying plan_save.py branch commit behavior, understanding git plumbing patterns in erk, working with commit_files_to_branch
-- **[pr-body-assembly.md](pr-body-assembly.md)** — implementing or modifying PR body construction, working with PR footer, closing references, or issue discovery, adding a new PR command that generates or updates PR descriptions
+- **[pr-body-assembly.md](pr-body-assembly.md)** — implementing or modifying PR body construction, working with PR footer or checkout command, adding a new PR command that generates or updates PR descriptions
 - **[pr-body-formatting.md](pr-body-formatting.md)** — adding GitHub-specific enhancements to PR descriptions, understanding separation between git commit messages and PR bodies, implementing badges, metadata, or HTML in PR bodies, debugging why HTML appears in git commit messages
 - **[pr-finalization-paths.md](pr-finalization-paths.md)** — debugging PR body content or issue closing, understanding local vs remote PR submission, working with 'Closes #N' in PRs
 - **[pr-footer-validation.md](pr-footer-validation.md)** — working with PR metadata footer format, modifying PR footer generation or parsing, debugging PR footer extraction errors

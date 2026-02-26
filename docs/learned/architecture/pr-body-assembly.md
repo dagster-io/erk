@@ -44,11 +44,11 @@ PR bodies no longer contain `Closes #N` references. Plan issue closure is handle
 
 ## Consumers
 
-| Command                          | Uses                                                        |
-| -------------------------------- | ----------------------------------------------------------- |
-| `erk pr rewrite`                 | `assemble_pr_body`, `run_commit_message_generation`         |
-| `erk pr submit`                  | `assemble_pr_body`, `run_commit_message_generation`         |
-| `erk exec update-pr-description` | `assemble_pr_body`, `run_commit_message_generation`         |
+| Command                          | Uses                                                |
+| -------------------------------- | --------------------------------------------------- |
+| `erk pr rewrite`                 | `assemble_pr_body`, `run_commit_message_generation` |
+| `erk pr submit`                  | `assemble_pr_body`, `run_commit_message_generation` |
+| `erk exec update-pr-description` | `assemble_pr_body`, `run_commit_message_generation` |
 
 ## Related Topics
 

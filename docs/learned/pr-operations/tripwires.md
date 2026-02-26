@@ -12,8 +12,6 @@ read_when:
 
 Rules triggered by matching actions in code.
 
-**adding Closes reference in a PR body update instead of initial creation** → Read [PR Validation Rules](pr-validation-rules.md) first. GitHub sets willCloseTarget at PR creation time. The Closes reference must be in the initial create_pr body, not a subsequent update. See checkout-footer-syntax.md.
-
 **adding git-only PR logic to a new location** → Read [Git-Only PR Submission Path](pr-submission-workflow.md) first. Two git-only paths already exist (command-level and pipeline-level). Understand why both exist before adding a third. See pr-submission-workflow.md.
 
 **adding plan HTML to the pr_body variable instead of pr_body_for_github** → Read [Plan Embedding in PR Body](plan-embedding-in-pr.md) first. Plan embedding uses <details> HTML which must never enter git commit messages. Append only to pr_body_for_github. See pr-body-formatting.md for the two-target pattern.
@@ -38,7 +36,7 @@ Rules triggered by matching actions in code.
 
 **using gh pr ready instead of the gateway's mark_pr_ready method** → Read [Draft PR Handling](draft-pr-handling.md) first. mark_pr_ready uses REST API to preserve GraphQL quota. Don't shell out to gh pr ready directly.
 
-**using issue number from .impl/issue.json in a checkout footer** → Read [PR Validation Rules](pr-validation-rules.md) first. Checkout footers require the PR number (from create_pr return value), NOT the issue number. Issue numbers go in `Closes` references. See pr-validation-rules.md.
+**using issue number from .impl/issue.json in a checkout footer** → Read [PR Validation Rules](pr-validation-rules.md) first. Checkout footers require the PR number (from create_pr return value), NOT the issue number. See pr-validation-rules.md.
 
 **using raw gh pr view or gh pr create in Python code** → Read [PR Creation Decision Logic](pr-creation-patterns.md) first. Use the typed GitHub gateway (get_pr_for_branch, create_pr) instead of shelling out. The gateway returns PRDetails | PRNotFound for LBYL handling.
 

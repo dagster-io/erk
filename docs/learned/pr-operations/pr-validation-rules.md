@@ -21,20 +21,20 @@ audit_result: edited
 
 See `pr_check()` in `src/erk/cli/commands/pr/check_cmd.py` for the orchestration logic. The command runs checks in sequence:
 
-| Check                   | What it validates                                                | Why it exists                                                               |
-| ----------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| Branch/plan-ref agreement  | Branch name `P{N}-...` matches `.impl/plan-ref.json` plan ID | Catches stale `.impl/` from a previous plan left behind after branch rename |
-| Checkout footer         | PR body contains `erk pr checkout <pr_number>` with exact number | Lets reviewers check out the PR into a fresh worktree                       |
-| Header position         | Plan-header metadata is at bottom, not legacy top position       | Ensures PR body follows current formatting standards                        |
+| Check                     | What it validates                                                | Why it exists                                                               |
+| ------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Branch/plan-ref agreement | Branch name `P{N}-...` matches `.impl/plan-ref.json` plan ID     | Catches stale `.impl/` from a previous plan left behind after branch rename |
+| Checkout footer           | PR body contains `erk pr checkout <pr_number>` with exact number | Lets reviewers check out the PR into a fresh worktree                       |
+| Header position           | Plan-header metadata is at bottom, not legacy top position       | Ensures PR body follows current formatting standards                        |
 
 ## The PR Number vs Issue Number Trap
 
 This is the single most common validation failure for agents, and it stems from a data source confusion:
 
-| Data source                | Contains              | Use for                          |
-| -------------------------- | --------------------- | -------------------------------- |
-| `.impl/plan-ref.json`     | Plan **issue** number | Identifying the plan (not used in PR body) |
-| `create_pr()` return value | **PR** number         | `erk pr checkout N` footer       |
+| Data source                | Contains              | Use for                                    |
+| -------------------------- | --------------------- | ------------------------------------------ |
+| `.impl/plan-ref.json`      | Plan **issue** number | Identifying the plan (not used in PR body) |
+| `create_pr()` return value | **PR** number         | `erk pr checkout N` footer                 |
 
 **Why agents get confused:** During the submit workflow, `.impl/plan-ref.json` is readily available and contains a number. The checkout footer needs a number. Agents grab the accessible one — but it's the wrong one. The PR number doesn't exist until `create_pr()` returns.
 
