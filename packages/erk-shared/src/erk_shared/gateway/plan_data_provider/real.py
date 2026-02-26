@@ -60,10 +60,10 @@ from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
 from erk_shared.gateway.plan_data_provider.lifecycle import compute_status_indicators
 from erk_shared.impl_folder import read_plan_ref
 from erk_shared.plan_store.conversion import (
+    github_issue_to_plan,
     header_datetime,
     header_int,
     header_str,
-    issue_info_to_plan,
 )
 from erk_shared.plan_store.types import Plan
 
@@ -427,13 +427,14 @@ class RealPlanDataProvider(PlanDataProvider):
         return extract_objective_from_comment(comment_body)
 
     def fetch_plans_by_ids(self, plan_ids: set[int]) -> list[PlanRowData]:
-        """Fetch specific plans by their issue numbers.
+        """Fetch specific plans by their GitHub numbers.
 
-        Uses get_issues_by_numbers_with_pr_linkages for targeted fetching
-        instead of listing all plans and filtering.
+        Uses get_issues_by_numbers_with_pr_linkages (backed by the
+        issueOrPullRequest GraphQL query) for targeted fetching. Works
+        for both issue-backed and PR-backed plans.
 
         Args:
-            plan_ids: Set of plan issue numbers to fetch
+            plan_ids: Set of plan numbers to fetch (issue or PR numbers)
 
         Returns:
             List of PlanRowData objects sorted by plan_id
@@ -447,7 +448,7 @@ class RealPlanDataProvider(PlanDataProvider):
         )
 
         # Convert IssueInfo -> Plan
-        plans = [issue_info_to_plan(issue) for issue in issues]
+        plans = [github_issue_to_plan(issue) for issue in issues]
 
         # Build worktree mapping
         worktree_by_plan_id = self._build_worktree_mapping()

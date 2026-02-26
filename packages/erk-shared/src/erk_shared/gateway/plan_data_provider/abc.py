@@ -125,10 +125,13 @@ class PlanDataProvider(ABC):
 
     @abstractmethod
     def fetch_plans_by_ids(self, plan_ids: set[int]) -> list[PlanRowData]:
-        """Fetch specific plans by their issue numbers.
+        """Fetch specific plans by their GitHub numbers.
+
+        Works for both issue-backed and PR-backed plans via the
+        issueOrPullRequest GraphQL query.
 
         Args:
-            plan_ids: Set of plan issue numbers to fetch
+            plan_ids: Set of plan numbers to fetch (issue or PR numbers)
 
         Returns:
             List of PlanRowData objects for the specified plans, sorted by plan_id

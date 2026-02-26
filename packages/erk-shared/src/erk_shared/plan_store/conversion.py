@@ -14,11 +14,14 @@ from erk_shared.gateway.github.types import PRDetails
 from erk_shared.plan_store.types import Plan, PlanState
 
 
-def issue_info_to_plan(issue: IssueInfo) -> Plan:
-    """Convert IssueInfo to Plan with pre-parsed header fields.
+def github_issue_to_plan(issue: IssueInfo) -> Plan:
+    """Convert a GitHub Issue (e.g. objective) to Plan with pre-parsed header fields.
 
     Parses the plan-header metadata block once and stores the result
     in header_fields, avoiding repeated YAML parsing by callers.
+
+    Used for GitHub Issues that carry plan-header metadata, such as
+    objective issues. Not used for draft-PR-backed plans.
 
     Args:
         issue: IssueInfo from GraphQL query
