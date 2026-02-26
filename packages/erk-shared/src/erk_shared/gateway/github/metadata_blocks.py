@@ -99,8 +99,12 @@ class WorktreeCreationSchema(MetadataBlockSchema):
 
     def validate(self, data: dict[str, Any]) -> None:
         """Validate erk-worktree-creation data structure."""
+        # Normalize legacy field name
+        if "issue_number" in data and "plan_number" not in data:
+            data["plan_number"] = data.pop("issue_number")
+
         required_fields = {"worktree_name", "branch_name", "timestamp"}
-        optional_fields = {"issue_number", "plan_file"}
+        optional_fields = {"plan_number", "plan_file"}
 
         # Check required fields exist
         missing = required_fields - set(data.keys())
@@ -114,12 +118,12 @@ class WorktreeCreationSchema(MetadataBlockSchema):
             if len(data[field]) == 0:
                 raise ValueError(f"{field} must not be empty")
 
-        # Validate optional issue_number field
-        if "issue_number" in data:
-            if not isinstance(data["issue_number"], int):
-                raise ValueError("issue_number must be an integer")
-            if data["issue_number"] <= 0:
-                raise ValueError("issue_number must be positive")
+        # Validate optional plan_number field
+        if "plan_number" in data:
+            if not isinstance(data["plan_number"], int):
+                raise ValueError("plan_number must be an integer")
+            if data["plan_number"] <= 0:
+                raise ValueError("plan_number must be positive")
 
         # Validate optional plan_file field
         if "plan_file" in data:
@@ -144,7 +148,11 @@ class PlanSchema(MetadataBlockSchema):
 
     def validate(self, data: dict[str, Any]) -> None:
         """Validate erk-plan data structure."""
-        required_fields = {"issue_number", "worktree_name", "timestamp"}
+        # Normalize legacy field name
+        if "issue_number" in data and "plan_number" not in data:
+            data["plan_number"] = data.pop("issue_number")
+
+        required_fields = {"plan_number", "worktree_name", "timestamp"}
         optional_fields = {"plan_file"}
 
         # Check required fields exist
@@ -153,10 +161,10 @@ class PlanSchema(MetadataBlockSchema):
             raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
 
         # Validate required fields
-        if not isinstance(data["issue_number"], int):
-            raise ValueError("issue_number must be an integer")
-        if data["issue_number"] <= 0:
-            raise ValueError("issue_number must be positive")
+        if not isinstance(data["plan_number"], int):
+            raise ValueError("plan_number must be an integer")
+        if data["plan_number"] <= 0:
+            raise ValueError("plan_number must be positive")
 
         if not isinstance(data["worktree_name"], str):
             raise ValueError("worktree_name must be a string")
@@ -334,7 +342,7 @@ def create_worktree_creation_block(
     worktree_name: str,
     branch_name: str,
     timestamp: str,
-    issue_number: int | None = None,
+    plan_number: int | None = None,
     plan_file: str | None = None,
 ) -> MetadataBlock:
     """Create an erk-worktree-creation block with validation.
@@ -343,7 +351,7 @@ def create_worktree_creation_block(
         worktree_name: Name of the worktree
         branch_name: Git branch name
         timestamp: ISO 8601 timestamp of creation
-        issue_number: Optional GitHub issue number this worktree implements
+        plan_number: Optional GitHub plan number this worktree implements
         plan_file: Optional path to the plan file
 
     Returns:
@@ -356,8 +364,8 @@ def create_worktree_creation_block(
         "timestamp": timestamp,
     }
 
-    if issue_number is not None:
-        data["issue_number"] = issue_number
+    if plan_number is not None:
+        data["plan_number"] = plan_number
 
     if plan_file is not None:
         data["plan_file"] = plan_file
@@ -370,7 +378,7 @@ def create_worktree_creation_block(
 
 
 def create_plan_block(
-    issue_number: int,
+    plan_number: int,
     worktree_name: str,
     timestamp: str,
     plan_file: str | None = None,
@@ -378,7 +386,7 @@ def create_plan_block(
     """Create an erk-plan block with validation.
 
     Args:
-        issue_number: GitHub issue number for this plan
+        plan_number: GitHub plan number for this plan
         worktree_name: Auto-generated worktree name from issue title
         timestamp: ISO 8601 timestamp of issue creation
         plan_file: Optional path to the plan file
@@ -388,7 +396,7 @@ def create_plan_block(
     """
     schema = PlanSchema()
     data: dict[str, Any] = {
-        "issue_number": issue_number,
+        "plan_number": plan_number,
         "worktree_name": worktree_name,
         "timestamp": timestamp,
     }

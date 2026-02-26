@@ -37,8 +37,8 @@ class TestCreatePlanIssueSuccess:
         )
 
         assert result.success is True
-        assert result.issue_number == 1
-        assert result.issue_url is not None
+        assert result.plan_number == 1
+        assert result.plan_url is not None
         assert result.title == "My Feature Plan"
         assert result.error is None
 
@@ -311,8 +311,8 @@ class TestCreatePlanIssueErrors:
         )
 
         assert result.success is False
-        assert result.issue_number is None
-        assert result.issue_url is None
+        assert result.plan_number is None
+        assert result.plan_url is None
         assert result.error is not None
         assert "not authenticated" in result.error.lower()
 
@@ -344,7 +344,7 @@ class TestCreatePlanIssueErrors:
         )
 
         assert result.success is False
-        assert result.issue_number is None
+        assert result.plan_number is None
         assert result.error is not None
         assert "Failed to ensure labels exist" in result.error
 
@@ -374,7 +374,7 @@ class TestCreatePlanIssueErrors:
         )
 
         assert result.success is False
-        assert result.issue_number is None
+        assert result.plan_number is None
         assert result.error is not None
         assert "Failed to create GitHub issue" in result.error
 
@@ -410,8 +410,8 @@ class TestCreatePlanIssuePartialSuccess:
 
         # Partial success: issue created but comment failed
         assert result.success is False
-        assert result.issue_number == 1  # Issue was created
-        assert result.issue_url is not None
+        assert result.plan_number == 1  # Issue was created
+        assert result.plan_url is not None
         assert result.error is not None
         assert "created but failed to add plan comment" in result.error
 
@@ -562,8 +562,8 @@ class TestCreatePlanIssueResultDataclass:
         """Verify result is immutable."""
         result = CreatePlanIssueResult(
             success=True,
-            issue_number=1,
-            issue_url="https://example.com/1",
+            plan_number=1,
+            plan_url="https://example.com/1",
             title="Test",
             error=None,
         )
@@ -575,15 +575,15 @@ class TestCreatePlanIssueResultDataclass:
         """Verify all fields are accessible."""
         result = CreatePlanIssueResult(
             success=False,
-            issue_number=42,
-            issue_url="https://github.com/test/repo/issues/42",
+            plan_number=42,
+            plan_url="https://github.com/test/repo/issues/42",
             title="My Title",
             error="Something went wrong",
         )
 
         assert result.success is False
-        assert result.issue_number == 42
-        assert result.issue_url == "https://github.com/test/repo/issues/42"
+        assert result.plan_number == 42
+        assert result.plan_url == "https://github.com/test/repo/issues/42"
         assert result.title == "My Title"
         assert result.error == "Something went wrong"
 
@@ -607,7 +607,7 @@ class TestCreateObjectiveIssue:
         )
 
         assert result.success is True
-        assert result.issue_number == 1
+        assert result.plan_number == 1
         assert result.title == "My Objective"
 
         # Verify labels only include erk-objective (NOT erk-plan)
@@ -816,7 +816,7 @@ class TestCreateObjectiveIssueSlugValidation:
         )
 
         assert result.success is False
-        assert result.issue_number is None
+        assert result.plan_number is None
         assert result.error is not None
         assert "Invalid objective slug" in result.error
         assert "INVALID SLUG" in result.error
@@ -841,7 +841,7 @@ class TestCreateObjectiveIssueSlugValidation:
         )
 
         assert result.success is True
-        assert result.issue_number is not None
+        assert result.plan_number is not None
 
         # Verify slug appears in the issue body
         _, body, _ = fake_gh.created_issues[0]
@@ -863,7 +863,7 @@ class TestCreateObjectiveIssueSlugValidation:
         )
 
         assert result.success is True
-        assert result.issue_number is not None
+        assert result.plan_number is not None
 
         # Verify no slug in body
         _, body, _ = fake_gh.created_issues[0]
@@ -894,7 +894,7 @@ class TestCreatePlanIssueCommandsSection:
         )
 
         assert result.success is True
-        assert result.issue_number == 1
+        assert result.plan_number == 1
 
         # Verify issue body was updated with commands section
         assert len(fake_gh.updated_bodies) == 1
@@ -927,7 +927,7 @@ class TestCreatePlanIssueCommandsSection:
         )
 
         assert result.success is True
-        assert result.issue_number == 1
+        assert result.plan_number == 1
 
         # Verify issue body was updated but without commands section
         assert len(fake_gh.updated_bodies) == 1
@@ -959,7 +959,7 @@ class TestCreatePlanIssueCommandsSection:
         )
 
         assert result.success is True
-        assert result.issue_number == 42
+        assert result.plan_number == 42
 
         # Verify commands reference issue 42, not 1
         _, updated_body = fake_gh.updated_bodies[0]

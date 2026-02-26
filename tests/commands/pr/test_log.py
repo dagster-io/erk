@@ -70,7 +70,7 @@ def test_log_displays_timeline_chronologically() -> None:
     )
 
     plan_block = create_plan_block(
-        issue_number=42,
+        plan_number=42,
         worktree_name="test-plan",
         timestamp="2024-01-15T12:30:00Z",
     )
@@ -142,7 +142,7 @@ def test_log_json_output() -> None:
     )
 
     plan_block = create_plan_block(
-        issue_number=42,
+        plan_number=42,
         worktree_name="test-plan",
         timestamp="2024-01-15T12:30:00Z",
     )
@@ -241,7 +241,7 @@ def test_log_with_all_event_types() -> None:
 
     # Create all event types
     plan_block = create_plan_block(
-        issue_number=42,
+        plan_number=42,
         worktree_name="test-plan",
         timestamp="2024-01-15T12:30:00Z",
     )
