@@ -230,6 +230,7 @@ def navigate_and_display_checkout(
     new_message: str,
     script_message_existing: str,
     script_message_new: str,
+    post_cd_commands: Sequence[str] | None,
 ) -> None:
     """Navigate to worktree and display checkout status.
 
@@ -247,6 +248,7 @@ def navigate_and_display_checkout(
         new_message: Message for new worktree (use {styled_path} placeholder)
         script_message_existing: Script message for existing worktree
         script_message_new: Script message for new worktree
+        post_cd_commands: Optional shell commands to run after cd in script mode
     """
     styled_path = click.style(str(worktree_path), fg="cyan", bold=True)
 
@@ -258,7 +260,7 @@ def navigate_and_display_checkout(
         command_name=command_name,
         script_message=script_message_existing if already_existed else script_message_new,
         relative_path=None,
-        post_cd_commands=None,
+        post_cd_commands=post_cd_commands,
     )
 
     if should_output:
