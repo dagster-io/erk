@@ -731,10 +731,10 @@ def test_checkout_tracks_untracked_branch_with_graphite() -> None:
 
         assert result.exit_code == 0
 
-        # Verify track_branch was called with trunk as parent
+        # Verify track_branch was called with repo root (not worktree path) and trunk as parent
         assert len(graphite.track_branch_calls) == 1
         cwd, branch_name, parent_branch = graphite.track_branch_calls[0]
-        assert cwd == feature_wt
+        assert cwd == env.cwd
         assert branch_name == "feature-untracked"
         assert parent_branch == "main"
 
