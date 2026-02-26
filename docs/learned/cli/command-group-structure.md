@@ -70,7 +70,7 @@ Some commands with aliases use `register_with_aliases(cli, command)` instead of 
 | Group Type               | Location                          |
 | ------------------------ | --------------------------------- |
 | Simple group             | `src/erk/cli/commands/objective/` |
-| Group with subgroups     | `src/erk/cli/commands/plan/`      |
+| Group with subgroups     | `src/erk/cli/commands/pr/`        |
 | Group with more commands | `src/erk/cli/commands/wt/`        |
 | Complex group            | `src/erk/cli/commands/stack/`     |
 

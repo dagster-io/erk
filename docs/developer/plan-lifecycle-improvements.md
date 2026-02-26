@@ -41,7 +41,7 @@ Two folders serve nearly identical purposes:
 
 **Current workflow:**
 
-1. `erk plan submit` creates `.worker-impl/` and commits it
+1. `erk pr dispatch` creates `.worker-impl/` and commits it
 2. Workflow checks out branch with `.worker-impl/`
 3. Workflow copies `.worker-impl/` → `.impl/`
 4. Claude reads from `.impl/`
@@ -77,7 +77,7 @@ This command would:
 - Eliminates `.worker-impl/` entirely
 - No committed artifacts to clean up
 - Issue becomes the single source of truth
-- `erk plan submit` becomes simpler (just dispatch, no file creation)
+- `erk pr dispatch` becomes simpler (just dispatch, no file creation)
 - Local workflow unchanged (`.impl/` stays gitignored)
 
 ### Implementation Notes
@@ -132,7 +132,7 @@ def generate_distinct_id() -> str:
 
 **Current workflow:**
 
-1. `erk plan submit` generates `distinct_id` (e.g., `abc123`)
+1. `erk pr dispatch` generates `distinct_id` (e.g., `abc123`)
 2. Passes `distinct_id` to workflow dispatch as input
 3. Workflow sets `run-name: "${{ inputs.issue_number }}:${{ inputs.distinct_id }}"`
 4. Submitter polls `gh run list` looking for `displayTitle` containing `:abc123`
@@ -197,7 +197,7 @@ def wait_for_workflow_run(issue_number: int, timeout: int = 300) -> str:
 
 ### Implementation Notes
 
-**Changes to `erk plan submit`:**
+**Changes to `erk pr dispatch`:**
 
 ```python
 # Before
@@ -238,7 +238,7 @@ name: Implement Issue ${{ inputs.issue_number }}
 
 **Files to modify:**
 
-- `src/erk/cli/commands/submit.py` - Remove `distinct_id` generation and polling
+- `src/erk/cli/commands/pr/` - Remove `distinct_id` generation and polling
 - `.github/workflows/plan-implement.yml` - Add comment posting, remove from run-name
 - `packages/erk-shared/src/erk_shared/distinct_id.py` - Delete (no longer needed)
 
@@ -365,7 +365,7 @@ gh issue develop 123 --checkout
 
 ### Implementation Notes
 
-**Changes to `erk plan submit`:**
+**Changes to `erk pr dispatch`:**
 
 ```python
 # Before
@@ -504,9 +504,9 @@ def create_plan_issue(title: str, plan_content: str) -> Issue:
 
 ### Current State
 
-`erk plan submit` creates a draft PR locally for "correct commit attribution":
+`erk pr dispatch` creates a draft PR locally for "correct commit attribution":
 
-1. User runs `erk plan submit 123`
+1. User runs `erk pr dispatch 123`
 2. Creates branch, commits `.worker-impl/`, pushes
 3. Creates draft PR via `gh pr create`
 4. Dispatches workflow
@@ -523,7 +523,7 @@ def create_plan_issue(title: str, plan_content: str) -> Issue:
 
 Let the workflow create the PR after implementation:
 
-1. User runs `erk plan submit 123`
+1. User runs `erk pr dispatch 123`
 2. Dispatches workflow (no branch/PR creation)
 3. Workflow creates branch from issue (`gh issue develop`)
 4. Workflow reconstructs `.impl/` from issue
@@ -554,16 +554,16 @@ Let the workflow create the PR after implementation:
 
 - Cleaner git history (no empty setup commits)
 - PR contains actual implementation from the start
-- Simpler `erk plan submit` (just dispatch, nothing else)
+- Simpler `erk pr dispatch` (just dispatch, nothing else)
 - No "find existing PR" logic in workflow
 - PR and implementation are atomic
 
 ### Implementation Notes
 
-**Simplified `erk plan submit`:**
+**Simplified `erk pr dispatch`:**
 
 ```python
-def submit(issue_number: int) -> None:
+def dispatch(issue_number: int) -> None:
     """Submit plan for remote implementation."""
     # Validate issue
     issue = validate_issue(issue_number)
@@ -611,7 +611,7 @@ jobs:
 
 | File                                                       | Change                                                                 |
 | ---------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `src/erk/cli/commands/submit.py`                           | Remove branch/PR creation, `distinct_id`, simplify to dispatch-only    |
+| `src/erk/cli/commands/pr/`                                 | Remove branch/PR creation, `distinct_id`, simplify to dispatch-only    |
 | `.github/workflows/plan-implement.yml`                     | Add run comment, branch creation, `.impl/` reconstruction, PR creation |
 | `packages/erk-shared/src/erk_shared/worker_impl_folder.py` | Delete (no longer needed)                                              |
 | `packages/erk-shared/src/erk_shared/distinct_id.py`        | Delete (no longer needed)                                              |
@@ -621,7 +621,7 @@ jobs:
 
 ### Migration Path
 
-1. **Phase 1:** Implement `erk plan reconstruct` command
+1. **Phase 1:** Implement `erk pr reconstruct` command
 2. **Phase 2:** Update workflow to use reconstruction instead of `.worker-impl/`
 3. **Phase 3:** Replace `distinct_id` with comment-based run discovery
 4. **Phase 4:** Consolidate metadata blocks (backwards-compatible parsing)

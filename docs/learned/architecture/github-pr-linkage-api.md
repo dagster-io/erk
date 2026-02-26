@@ -103,7 +103,7 @@ The `erk pr dispatch` command must include "Closes #N" in the **initial** PR bod
 Erk uses `CrossReferencedEvent` to query issue-PR linkages:
 
 - **Batch queries (dash)**: `get_prs_linked_to_issues()` in `packages/erk-shared/src/erk_shared/gateway/github/real.py` (main GitHub gateway)
-- **Single-issue queries (plan list)**: `get_prs_referencing_issue()` in `packages/erk-shared/src/erk_shared/gateway/github/issues/real.py` (issues subgateway)
+- **Single-issue queries (pr list)**: `get_prs_referencing_issue()` in `packages/erk-shared/src/erk_shared/gateway/github/issues/real.py` (issues subgateway)
 - **Field mapping**: GraphQL `willCloseTarget` → `PullRequestInfo.will_close_target`
 
 ## Debugging PR Linkages

@@ -89,38 +89,9 @@ if len(matches) == 0:
 
 ## Implementation Example
 
-The `erk plan co` command demonstrates all three cases:
+<!-- Source: src/erk/cli/commands/pr/checkout_cmd.py, _checkout_plan -->
 
-```python
-# src/erk/cli/commands/plan/checkout_cmd.py
-
-# Case 1: Single local branch found
-if len(local_branches) == 1:
-    branch_name = local_branches[0]
-    _checkout_branch(ctx, repo, branch_name=branch_name, ...)
-    return
-
-# Case 2: Multiple local branches found
-if len(local_branches) > 1:
-    _display_multiple_branches(issue_number, local_branches)
-    raise SystemExit(0)
-
-# Case 3: No local branches - check for PRs
-prs = ctx.issues.get_prs_referencing_issue(repo.root, issue_number)
-open_prs = [pr for pr in prs if pr.state == "OPEN"]
-
-if len(open_prs) == 0:
-    user_output(f"No local branch or open PR found for plan #{issue_number}...")
-    raise SystemExit(1)
-
-if len(open_prs) == 1:
-    _checkout_pr(ctx, repo, pr_number=open_prs[0].number, ...)
-    return
-
-# Multiple PRs
-_display_multiple_prs(issue_number, open_prs)
-raise SystemExit(0)
-```
+The `erk pr co` command demonstrates all three cases. See `_checkout_plan()` in `src/erk/cli/commands/pr/checkout_cmd.py`: queries open PRs referencing the issue via `ctx.issues.get_prs_referencing_issue()`, then dispatches on zero (exit 1), one (checkout immediately), or multiple (display table, exit 0).
 
 ## Exit Codes
 
