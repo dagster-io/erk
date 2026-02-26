@@ -161,6 +161,21 @@ def test_land_execute_triggers_objective_update() -> None:
         assert "--pr 123" in cmd
         assert f"--branch {feature_branch}" in cmd
 
+        # Regression: worktree_path must be main repo root (env.cwd), not the feature
+        # worktree path that gets deleted by land-execute. land_execute.py computes
+        # main_repo_root via get_git_common_dir() before the pipeline deletes the worktree.
+        # git_common_dirs maps env.cwd → env.git_dir, so common_dir.parent == env.cwd.
+        worktree_path_used = executor.executed_commands[0][1]
+        assert worktree_path_used == env.cwd, (
+            f"Expected main repo root {env.cwd!r}, got {worktree_path_used!r}. "
+            "worktree_path must be derived from get_git_common_dir(), "
+            "not the feature worktree path."
+        )
+        assert worktree_path_used != feature_worktree_path, (
+            "worktree_path must not be the feature worktree path, "
+            "which is deleted during land-execute."
+        )
+
         # Should show objective update messages
         assert "Linked to Objective #100" in result.output
         assert "Starting objective update..." in result.output
