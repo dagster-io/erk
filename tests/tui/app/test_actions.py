@@ -1,0 +1,183 @@
+"""Tests for ErkDashApp - actions."""
+
+import pytest
+
+from erk.tui.app import ErkDashApp
+from erk.tui.data.types import PlanFilters
+from erk.tui.screens.launch_screen import LaunchScreen
+from erk.tui.screens.unresolved_comments_screen import UnresolvedCommentsScreen
+from erk.tui.widgets.status_bar import StatusBar
+from erk_shared.gateway.clipboard.fake import FakeClipboard
+from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+
+
+class TestActionLaunch:
+    """Tests for action_launch and _on_launch_result."""
+
+    @pytest.mark.asyncio
+    async def test_launch_with_no_selected_row_does_nothing(self) -> None:
+        """Pressing 'l' with no rows does not push a screen."""
+        provider = FakePlanDataProvider(plans=[])
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            initial_stack_len = len(app.screen_stack)
+
+            await pilot.press("l")
+            await pilot.pause()
+
+            assert len(app.screen_stack) == initial_stack_len
+
+    @pytest.mark.asyncio
+    async def test_launch_pushes_launch_screen(self) -> None:
+        """Pressing 'l' with a selected row pushes LaunchScreen."""
+        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row(
+                    123,
+                    "Test Plan",
+                    plan_url="https://github.com/test/repo/issues/123",
+                    pr_number=456,
+                    pr_url="https://github.com/test/repo/pull/456",
+                )
+            ]
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("l")
+            await pilot.pause()
+            await pilot.pause()
+
+            assert len(app.screen_stack) > 1
+            assert isinstance(app.screen_stack[-1], LaunchScreen)
+
+    @pytest.mark.asyncio
+    async def test_launch_result_none_does_not_execute_command(self) -> None:
+        """_on_launch_result with None does not execute any command."""
+        clipboard = FakeClipboard()
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+            clipboard=clipboard,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            app._on_launch_result(None)
+
+            assert clipboard.last_copied is None
+
+    @pytest.mark.asyncio
+    async def test_launch_result_executes_command(self) -> None:
+        """_on_launch_result with a command_id executes that command."""
+        clipboard = FakeClipboard()
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=123)],
+            clipboard=clipboard,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            app._on_launch_result("copy_implement_local")
+
+            expected = 'source "$(erk pr checkout 123 --script)" && erk implement --dangerous'
+            assert clipboard.last_copied == expected
+
+
+class TestActionViewComments:
+    """Tests for action_view_comments (c key)."""
+
+    @pytest.mark.asyncio
+    async def test_no_selected_row_does_nothing(self) -> None:
+        """No selected row → early return, no screen pushed."""
+        provider = FakePlanDataProvider(plans=[])
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            initial_stack_len = len(app.screen_stack)
+
+            await pilot.press("c")
+            await pilot.pause()
+
+            assert len(app.screen_stack) == initial_stack_len
+
+    @pytest.mark.asyncio
+    async def test_no_pr_linked_shows_status_message(self) -> None:
+        """Row with pr_number=None → status bar shows 'No PR linked to this plan'."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")]  # No pr_number
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("c")
+            await pilot.pause()
+
+            status_bar = app.query_one(StatusBar)
+            assert status_bar._message == "No PR linked to this plan"
+
+    @pytest.mark.asyncio
+    async def test_zero_unresolved_shows_status_message(self) -> None:
+        """Row with 0 unresolved comments → status bar shows 'No unresolved comments'."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456, comment_counts=(5, 5))]
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("c")
+            await pilot.pause()
+
+            status_bar = app.query_one(StatusBar)
+            assert status_bar._message == "No unresolved comments"
+
+    @pytest.mark.asyncio
+    async def test_unresolved_comments_pushes_screen(self) -> None:
+        """Row with unresolved comments → pushes UnresolvedCommentsScreen."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456, comment_counts=(3, 5))]
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("c")
+            await pilot.pause()
+            await pilot.pause()
+
+            assert len(app.screen_stack) > 1
+            assert isinstance(app.screen_stack[-1], UnresolvedCommentsScreen)
+
+
+# --- Tests for _display_name_for_view ---
