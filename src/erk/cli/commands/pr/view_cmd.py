@@ -230,7 +230,7 @@ def pr_view(ctx: ErkContext, identifier: str | None, *, full: bool) -> None:
     (e.g., "https://github.com/owner/repo/issues/123").
 
     If not provided, infers the plan number from the current branch name
-    (e.g., via .impl/plan-ref.json on the current branch).
+    (e.g., via plan-ref.json in the resolved implementation directory).
 
     By default, shows only header information. Use --full to display
     the complete plan body.
@@ -256,7 +256,7 @@ def pr_view(ctx: ErkContext, identifier: str | None, *, full: bool) -> None:
                 + "No identifier specified and could not infer from branch name"
             )
             user_output("Usage: erk pr view <identifier>")
-            user_output("Or run from a plan branch with .impl/plan-ref.json")
+            user_output("Or run from a plan branch with a plan reference file")
             raise SystemExit(1)
         result = ctx.plan_backend.get_plan_for_branch(repo_root, branch)
         plan_id = ctx.plan_backend.resolve_plan_id_for_branch(repo_root, branch)
@@ -266,7 +266,7 @@ def pr_view(ctx: ErkContext, identifier: str | None, *, full: bool) -> None:
                 + "No identifier specified and could not infer from branch name"
             )
             user_output("Usage: erk pr view <identifier>")
-            user_output("Or run from a plan branch with .impl/plan-ref.json")
+            user_output("Or run from a plan branch with a plan reference file")
             raise SystemExit(1)
 
     if isinstance(result, PlanNotFound):

@@ -37,6 +37,7 @@ from erk_shared.gateway.pr.diff_extraction import filter_diff_excluded_files
 from erk_shared.gateway.pr.graphite_enhance import should_enhance_with_graphite
 from erk_shared.impl_folder import (
     has_plan_ref,
+    resolve_impl_dir,
     save_plan_ref,
     validate_plan_linkage,
 )
@@ -132,21 +133,22 @@ def prepare_state(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitEr
     trunk_branch = ctx.git.branch.detect_trunk_branch(repo_root)
     parent_branch = ctx.branch_manager.get_parent_branch(repo_root, branch_name) or trunk_branch
 
-    # Plan ID discovery via .impl/plan-ref.json (or legacy issue.json) or branch name
-    impl_dir = cwd / ".impl"
+    # Plan ID discovery via plan-ref.json (or legacy issue.json) in resolved impl dir
+    impl_dir = resolve_impl_dir(cwd, branch_name=branch_name)
     plan_id: str | None = None
-    try:
-        plan_id = validate_plan_linkage(impl_dir, branch_name)
-    except ValueError as e:
-        return SubmitError(
-            phase="prepare",
-            error_type="issue_linkage_mismatch",
-            message=str(e),
-            details={"branch": branch_name},
-        )
+    if impl_dir is not None:
+        try:
+            plan_id = validate_plan_linkage(impl_dir, branch_name)
+        except ValueError as e:
+            return SubmitError(
+                phase="prepare",
+                error_type="issue_linkage_mismatch",
+                message=str(e),
+                details={"branch": branch_name},
+            )
 
-    # Auto-repair: create .impl/plan-ref.json if missing but issue inferred from branch
-    if plan_id is not None and not has_plan_ref(impl_dir) and impl_dir.exists():
+    # Auto-repair: create plan-ref.json if missing but issue inferred from branch
+    if plan_id is not None and impl_dir is not None and not has_plan_ref(impl_dir):
         remote_url = ctx.git.remote.get_remote_url(repo_root, "origin")
         owner, repo_name = parse_git_remote_url(remote_url)
         issue_url = f"https://github.com/{owner}/{repo_name}/issues/{plan_id}"
@@ -689,8 +691,8 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
     existing_pr_body = state.existing_pr_body
 
     # Check learn plan label
-    impl_dir = state.cwd / ".impl"
-    is_learn_origin = is_learn_plan(impl_dir)
+    impl_dir = resolve_impl_dir(state.cwd, branch_name=state.branch_name)
+    is_learn_origin = is_learn_plan(impl_dir) if impl_dir is not None else False
 
     # Assemble PR body with plan details and footer
     final_body = assemble_pr_body(

@@ -1,12 +1,13 @@
 """Command to implement features from GitHub issues or plan files.
 
 This command runs implementation in the current directory using Claude.
-It creates a .impl/ folder with the plan content and invokes Claude for execution.
+It creates an impl folder (under .erk/impl-context/<branch>/) with the plan
+content and invokes Claude for execution.
 
 Usage:
 - GitHub issue mode: erk implement 123 or erk implement <URL>
 - Plan file mode: erk implement path/to/plan.md
-- Auto-detect mode: erk implement (on plan branch with .impl/)
+- Auto-detect mode: erk implement (on plan branch with plan-ref.json)
 """
 
 from pathlib import Path
@@ -118,7 +119,7 @@ def _implement_from_issue(
     ctx.console.info(f"Plan: {plan.title}")
 
     # Create dry-run description
-    dry_run_desc = f"Would create .impl/ from plan #{issue_number}\n  Title: {plan.title}"
+    dry_run_desc = f"Would create impl folder from plan #{issue_number}\n  Title: {plan.title}"
     plan_source = PlanSource(
         plan_content=plan.body,
         base_name=plan.title,
@@ -323,7 +324,7 @@ def implement(
     verbose: bool,
     model: str | None,
 ) -> None:
-    """Create .impl/ folder from plan and execute implementation.
+    """Create impl folder from plan and execute implementation.
 
     By default, runs in interactive mode where you can interact with Claude
     during implementation. Use --no-interactive for automated execution.
@@ -332,7 +333,7 @@ def implement(
     - Plan number (e.g., #123 or 123)
     - GitHub issue URL (e.g., https://github.com/user/repo/issues/123)
     - Path to plan file (e.g., ./my-feature-plan.md)
-    - Omitted (auto-detects plan number from .impl/plan-ref.json)
+    - Omitted (auto-detects plan number from plan-ref.json)
 
     Note: Plain numbers (e.g., 809) are always interpreted as plan numbers.
           For files with numeric names, use ./ prefix (e.g., ./809).
@@ -393,10 +394,10 @@ def implement(
             current_branch = ctx.git.branch.get_current_branch(ctx.cwd) or "unknown"
             raise click.ClickException(
                 f"Could not auto-detect plan number from branch '{current_branch}'.\n\n"
-                f"No .impl/plan-ref.json found. Either:\n"
+                f"No plan-ref.json found. Either:\n"
                 f"  1. Provide TARGET explicitly: erk implement <TARGET>\n"
                 f"  2. Switch to a plan branch: erk pr co <issue>\n"
-                f"  3. Set up .impl/ first: erk exec setup-impl --issue <issue>"
+                f"  3. Set up impl first: erk exec setup-impl --issue <issue>"
             )
 
         # Use detected plan number as target
