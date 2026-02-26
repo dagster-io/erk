@@ -370,14 +370,15 @@ def test_dispatch_auto_detects_from_impl_folder() -> None:
 
 
 def test_dispatch_auto_detects_from_impl_context() -> None:
-    """Test auto-detection from .erk/impl-context/ref.json when no .impl/ exists."""
+    """Test auto-detection from branch-scoped .erk/impl-context/<branch>/ directory."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         plan_branch = "plnd/auto-detect-context"
         pr_42 = _make_pr_42(plan_branch=plan_branch)
 
-        # Create .erk/impl-context/ref.json (no .impl/)
-        impl_context_dir = env.cwd / ".erk" / "impl-context"
+        # Create branch-scoped .erk/impl-context/main/ with ref.json and plan.md
+        # resolve_impl_dir() requires plan.md to exist for discovery (step 3)
+        impl_context_dir = env.cwd / ".erk" / "impl-context" / "main"
         impl_context_dir.mkdir(parents=True)
         plan_ref_content = build_plan_ref_json(
             provider="github-draft-pr",
@@ -387,6 +388,7 @@ def test_dispatch_auto_detects_from_impl_context() -> None:
             objective_id=None,
         )
         (impl_context_dir / "ref.json").write_text(plan_ref_content, encoding="utf-8")
+        (impl_context_dir / "plan.md").write_text("# Test plan\n", encoding="utf-8")
 
         fake_gh = FakeGitHub(
             authenticated=True,

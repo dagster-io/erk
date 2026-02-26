@@ -454,7 +454,7 @@ def extract_plan_from_current_branch(ctx: ErkContext) -> str | None:
         Plan identifier as string if current branch is a plan branch, else None
 
     Examples:
-        plnd/fix-bug-01-15-1430 (with .impl/) → "123"
+        plnd/fix-bug-01-15-1430 (with plan-ref.json) → "123"
         main → None
         feature-branch → None
     """
@@ -598,7 +598,9 @@ def prepare_plan_source_from_file(ctx: ErkContext, plan_file: Path) -> PlanSourc
     cleaned_stem = strip_plan_from_filename(plan_stem)
     base_name = sanitize_worktree_name(cleaned_stem)
 
-    dry_run_desc = f"Would create .impl/ from plan file: {plan_file}\n  Plan file will be preserved"
+    dry_run_desc = (
+        f"Would create impl folder from plan file: {plan_file}\n  Plan file will be preserved"
+    )
 
     return PlanSource(
         plan_content=plan_content,
@@ -669,7 +671,7 @@ class WorktreeCreationResult:
 
     Attributes:
         worktree_path: Path to the created worktree root
-        impl_dir: Path to the .impl/ directory (always at worktree root)
+        impl_dir: Path to the implementation directory (branch-scoped under .erk/impl-context/)
     """
 
     worktree_path: Path

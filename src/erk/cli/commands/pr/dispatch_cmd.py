@@ -37,7 +37,7 @@ from erk_shared.impl_context import (
     impl_context_exists,
     remove_impl_context,
 )
-from erk_shared.impl_folder import read_plan_ref
+from erk_shared.impl_folder import read_plan_ref, resolve_impl_dir
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 from erk_shared.plan_store.types import PlanNotFound
@@ -421,30 +421,24 @@ def _dispatch_planned_pr_plan(
 
 def _detect_plan_number_from_context(
     repo: RepoContext,
+    *,
+    branch_name: str | None,
 ) -> int | None:
     """Detect plan PR number from local context when no argument given.
 
-    Fallback chain:
-    1. .impl/plan-ref.json (or ref.json, issue.json) — local impl folder
-    2. .erk/impl-context/ref.json — committed staging directory
+    Uses resolve_impl_dir() for unified discovery across legacy .impl/
+    and branch-scoped .erk/impl-context/ directories.
 
     Args:
         repo: Repository context
+        branch_name: Current git branch name, or None
 
     Returns:
         Detected PR number, or None if nothing found.
     """
-    # 1. Check .impl/ folder
-    impl_dir = repo.root / ".impl"
-    if impl_dir.exists():
+    impl_dir = resolve_impl_dir(repo.root, branch_name=branch_name)
+    if impl_dir is not None:
         plan_ref = read_plan_ref(impl_dir)
-        if plan_ref is not None and plan_ref.plan_id.isdigit():
-            return int(plan_ref.plan_id)
-
-    # 2. Check .erk/impl-context/
-    impl_context_dir = repo.root / IMPL_CONTEXT_DIR
-    if impl_context_dir.exists():
-        plan_ref = read_plan_ref(impl_context_dir)
         if plan_ref is not None and plan_ref.plan_id.isdigit():
             return int(plan_ref.plan_id)
 
@@ -468,7 +462,7 @@ def pr_dispatch(ctx: ErkContext, plan_numbers: tuple[int, ...], base: str | None
 
     Arguments:
         PLAN_NUMBERS: One or more plan numbers to dispatch.
-            If omitted, auto-detects from .impl/, .erk/impl-context/, or current branch.
+            If omitted, auto-detects from the resolved implementation directory or current branch.
 
     \b
     Example:
@@ -507,7 +501,7 @@ def pr_dispatch(ctx: ErkContext, plan_numbers: tuple[int, ...], base: str | None
 
     # If no arguments given, try to auto-detect from context
     if not plan_numbers:
-        detected = _detect_plan_number_from_context(repo)
+        detected = _detect_plan_number_from_context(repo, branch_name=original_branch)
         if detected is None:
             user_output(
                 click.style("Error: ", fg="red")

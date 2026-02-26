@@ -431,7 +431,7 @@ def _create_json_response(
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
     help=(
         "Path to a plan markdown file. Will derive worktree name from filename "
-        "and create .impl/ folder with plan.md in the worktree. "
+        "and create impl folder with plan.md in the worktree. "
         "Worktree names are automatically suffixed with the current date (-YY-MM-DD) "
         "and versioned if duplicates exist."
     ),
@@ -447,7 +447,7 @@ def _create_json_response(
     type=str,
     help=(
         "GitHub issue number or URL with erk-plan label. Fetches issue content "
-        "and creates worktree with .impl/ folder and .impl/issue.json metadata. "
+        "and creates worktree with impl folder and plan-ref.json metadata. "
         "Worktree names are automatically suffixed with the current date (-YY-MM-DD) "
         "and versioned if duplicates exist."
     ),
@@ -518,9 +518,9 @@ def create_wt(
 
     Reads config.toml for env templates and post-create commands (if present).
     If --from-plan-file is provided, derives name from the plan filename and creates
-    .impl/ folder in the worktree.
+    an impl folder in the worktree.
     If --from-plan is provided, fetches the GitHub issue, validates the erk-plan label,
-    derives name from the issue title, and creates .impl/ folder with issue.json metadata.
+    derives name from the issue title, and creates an impl folder with plan-ref.json metadata.
     If --from-current-branch is provided, moves the current branch to the new worktree.
     If --from-branch is provided, creates a worktree from an existing branch.
 
