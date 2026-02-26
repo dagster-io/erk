@@ -1627,6 +1627,101 @@ class TestBlockingDepsPlans:
         assert "#100" in displays
         assert "#200" in displays
 
+    def test_next_node_own_pr_collected(self, tmp_path: Path) -> None:
+        """Node's own PR appears in objective_head_plans when not terminal."""
+        provider = self._make_provider(tmp_path)
+
+        # Node 1.1 is in_progress with its own PR, no deps
+        body = _make_roadmap_body(
+            "- id: '1.1'\n"
+            "  description: First step\n"
+            "  status: in_progress\n"
+            "  pr: '#300'\n"
+            "  depends_on: []\n"
+            "- id: '1.2'\n"
+            "  description: Second step\n"
+            "  status: pending\n"
+            "  pr: null\n"
+            "  depends_on: ['1.1']\n"
+        )
+
+        plan = Plan(
+            plan_identifier="42",
+            title="Objective: Test",
+            body=body,
+            state=PlanState.OPEN,
+            url="https://github.com/test/repo/issues/42",
+            labels=[],
+            assignees=[],
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+            metadata={},
+            objective_id=None,
+        )
+
+        row = provider._build_row_data(
+            plan=plan,
+            plan_id=42,
+            pr_linkages={},
+            workflow_run=None,
+            worktree_by_plan_id={},
+            use_graphite=False,
+        )
+
+        # Node 1.1 is next (pending depends on it, but 1.1 is in_progress so
+        # find_graph_next_node falls back to it). Its own PR should appear.
+        assert len(row.objective_head_plans) == 1
+        display, url = row.objective_head_plans[0]
+        assert display == "#300"
+        assert url == "https://github.com/test/repo/pull/300"
+
+    def test_next_node_own_pr_not_duplicated_with_dep_pr(self, tmp_path: Path) -> None:
+        """When next node's PR is also a blocking dep PR, it should not be duplicated."""
+        provider = self._make_provider(tmp_path)
+
+        # Node 1.1 has a PR and node 1.2 depends on it.
+        # find_graph_next_node picks 1.2 (pending), and 1.1 is a blocking dep.
+        # If 1.2 also happened to have the same PR (unusual but possible), no dupe.
+        body = _make_roadmap_body(
+            "- id: '1.1'\n"
+            "  description: First step\n"
+            "  status: in_progress\n"
+            "  pr: '#400'\n"
+            "  depends_on: []\n"
+            "- id: '1.2'\n"
+            "  description: Second step\n"
+            "  status: pending\n"
+            "  pr: '#400'\n"
+            "  depends_on: ['1.1']\n"
+        )
+
+        plan = Plan(
+            plan_identifier="42",
+            title="Objective: Test",
+            body=body,
+            state=PlanState.OPEN,
+            url="https://github.com/test/repo/issues/42",
+            labels=[],
+            assignees=[],
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+            metadata={},
+            objective_id=None,
+        )
+
+        row = provider._build_row_data(
+            plan=plan,
+            plan_id=42,
+            pr_linkages={},
+            workflow_run=None,
+            worktree_by_plan_id={},
+            use_graphite=False,
+        )
+
+        # #400 should appear only once (from blocking dep), not duplicated
+        displays = [d for d, _url in row.objective_head_plans]
+        assert displays.count("#400") == 1
+
 
 class TestFetchPlansByIds:
     """Tests for fetch_plans_by_ids method."""

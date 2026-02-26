@@ -28,6 +28,16 @@ from erk.core.commit_message_generator import CommitMessageGenerator
 from erk.core.context import ErkContext
 from erk.core.plan_context_provider import PlanContext, PlanContextProvider
 from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.metadata.core import (
+    extract_metadata_value,
+    extract_raw_metadata_blocks,
+    replace_metadata_block_in_body,
+)
+from erk_shared.gateway.github.metadata.roadmap import (
+    rerender_comment_roadmap,
+    update_node_in_frontmatter,
+)
 from erk_shared.gateway.github.parsing import parse_git_remote_url
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer
 from erk_shared.gateway.github.types import BodyText, GitHubRepoId, PRNotFound
@@ -37,6 +47,7 @@ from erk_shared.gateway.pr.diff_extraction import filter_diff_excluded_files
 from erk_shared.gateway.pr.graphite_enhance import should_enhance_with_graphite
 from erk_shared.impl_folder import (
     has_plan_ref,
+    read_plan_ref,
     resolve_impl_dir,
     save_plan_ref,
     validate_plan_linkage,
@@ -159,6 +170,7 @@ def prepare_state(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitEr
             url=issue_url,
             labels=(),
             objective_id=None,
+            node_ids=None,
         )
 
     return dataclasses.replace(
@@ -781,6 +793,108 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
     )
 
 
+def link_pr_to_objective_nodes(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
+    """Link the PR to objective roadmap nodes if .impl/ contains node_ids."""
+    if state.pr_number is None:
+        return state
+
+    impl_dir = state.cwd / ".impl"
+    if not impl_dir.exists():
+        return state
+
+    plan_ref = read_plan_ref(impl_dir)
+    if plan_ref is None:
+        return state
+
+    if plan_ref.objective_id is None or plan_ref.node_ids is None:
+        return state
+
+    if len(plan_ref.node_ids) == 0:
+        return state
+
+    objective_id = plan_ref.objective_id
+    pr_ref = f"#{state.pr_number}"
+
+    issue = ctx.github_issues.get_issue(state.repo_root, objective_id)
+    if isinstance(issue, IssueNotFound):
+        click.echo(
+            click.style(
+                f"   Warning: Objective #{objective_id} not found, skipping node linking",
+                dim=True,
+            )
+        )
+        return state
+
+    linked_nodes: list[str] = []
+
+    # Extract roadmap block once before iterating through node_ids
+    raw_blocks = extract_raw_metadata_blocks(issue.body)
+    roadmap_block = None
+    for block in raw_blocks:
+        if block.key == "objective-roadmap":
+            roadmap_block = block
+            break
+
+    updated_body = issue.body
+    if roadmap_block is not None:
+        block_content = roadmap_block.body
+        for node_id in plan_ref.node_ids:
+            updated_block_content = update_node_in_frontmatter(
+                block_content,
+                node_id,
+                pr=pr_ref,
+                status=None,
+            )
+            if updated_block_content is None:
+                continue
+
+            block_content = updated_block_content
+            linked_nodes.append(node_id)
+
+        if linked_nodes:
+            new_block_with_markers = (
+                "<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->\n"
+                "<!-- erk:metadata-block:objective-roadmap -->\n"
+                f"{block_content}\n"
+                "<!-- /erk:metadata-block:objective-roadmap -->"
+            )
+            try:
+                updated_body = replace_metadata_block_in_body(
+                    updated_body, "objective-roadmap", new_block_with_markers
+                )
+            except ValueError:
+                linked_nodes.clear()
+
+    if linked_nodes:
+        ctx.github_issues.update_issue_body(
+            state.repo_root, objective_id, BodyText(content=updated_body)
+        )
+
+        # Re-render comment roadmap table if applicable
+        objective_comment_id = extract_metadata_value(
+            updated_body, "objective-header", "objective_comment_id"
+        )
+        if objective_comment_id is not None:
+            comment_body = ctx.github_issues.get_comment_by_id(
+                state.repo_root, objective_comment_id
+            )
+            updated_comment = rerender_comment_roadmap(updated_body, comment_body)
+            if updated_comment is not None and updated_comment != comment_body:
+                ctx.github_issues.update_comment(
+                    state.repo_root, objective_comment_id, updated_comment
+                )
+
+        node_list = ", ".join(linked_nodes)
+        click.echo(
+            click.style(
+                f"   Linked PR #{state.pr_number} to objective #{objective_id} nodes: {node_list}",
+                fg="green",
+            )
+        )
+
+    return state
+
+
 # ---------------------------------------------------------------------------
 # Helper
 # ---------------------------------------------------------------------------
@@ -832,6 +946,7 @@ def _submit_pipeline() -> tuple[SubmitStep, ...]:
         generate_description,
         enhance_with_graphite,
         finalize_pr,
+        link_pr_to_objective_nodes,
     )
 
 

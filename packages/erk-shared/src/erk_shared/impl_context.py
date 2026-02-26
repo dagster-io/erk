@@ -33,6 +33,7 @@ def create_impl_context(
     provider: str,
     objective_id: int | None,
     now_iso: str,
+    node_ids: tuple[str, ...] | None,
 ) -> Path:
     """Create .erk/impl-context/ folder with plan and metadata.
 
@@ -44,6 +45,7 @@ def create_impl_context(
         provider: Plan provider name (e.g., "github", "github-draft-pr")
         objective_id: Optional linked objective issue number
         now_iso: ISO 8601 UTC timestamp for created_at/synced_at fields
+        node_ids: Optional objective node IDs this plan targets
 
     Returns:
         Path to the created .erk/impl-context/ directory
@@ -78,6 +80,7 @@ def create_impl_context(
         "synced_at": now_iso,
         "labels": [],
         "objective_id": objective_id,
+        "node_ids": list(node_ids) if node_ids is not None else None,
     }
     ref_file = impl_context_dir / "ref.json"
     ref_file.write_text(json.dumps(ref_data, indent=2), encoding="utf-8")
@@ -133,6 +136,7 @@ def build_impl_context_files(
     provider: str,
     objective_id: int | None,
     now_iso: str,
+    node_ids: tuple[str, ...] | None,
 ) -> dict[str, str]:
     """Build impl-context file contents as an in-memory mapping.
 
@@ -146,6 +150,7 @@ def build_impl_context_files(
         provider: Plan provider name (e.g., "github", "github-draft-pr")
         objective_id: Optional linked objective issue number
         now_iso: ISO 8601 UTC timestamp for created_at/synced_at fields
+        node_ids: Optional objective node IDs this plan targets
 
     Returns:
         Mapping of relative file paths to string content suitable for
@@ -159,6 +164,7 @@ def build_impl_context_files(
         "synced_at": now_iso,
         "labels": [],
         "objective_id": objective_id,
+        "node_ids": list(node_ids) if node_ids is not None else None,
     }
     return {
         f"{IMPL_CONTEXT_DIR}/plan.md": plan_content,

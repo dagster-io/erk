@@ -166,6 +166,7 @@ class PlanRef:
     synced_at: str  # ISO 8601 UTC timestamp of last sync
     labels: tuple[str, ...]  # Plan labels
     objective_id: int | None  # Parent objective, or None
+    node_ids: tuple[str, ...] | None  # Objective node IDs this plan targets, or None
 
 
 @dataclass(frozen=True)
@@ -197,6 +198,7 @@ def build_plan_ref_json(
     url: str,
     labels: tuple[str, ...],
     objective_id: int | None,
+    node_ids: tuple[str, ...] | None,
 ) -> str:
     """Build plan-ref.json content as a JSON string.
 
@@ -208,6 +210,7 @@ def build_plan_ref_json(
         url: Web URL to view the plan
         labels: Plan labels
         objective_id: Optional linked objective issue number
+        node_ids: Optional objective node IDs this plan targets
 
     Returns:
         JSON string with plan reference data
@@ -222,6 +225,7 @@ def build_plan_ref_json(
         "synced_at": now,
         "labels": list(labels),
         "objective_id": objective_id,
+        "node_ids": list(node_ids) if node_ids is not None else None,
     }
 
     return json.dumps(data, indent=2)
@@ -235,6 +239,7 @@ def save_plan_ref(
     url: str,
     labels: tuple[str, ...],
     objective_id: int | None,
+    node_ids: tuple[str, ...] | None,
 ) -> None:
     """Save provider-agnostic plan reference to impl dir as ref.json.
 
@@ -245,6 +250,7 @@ def save_plan_ref(
         url: Web URL to view the plan
         labels: Plan labels
         objective_id: Optional linked objective issue number
+        node_ids: Optional objective node IDs this plan targets
 
     Raises:
         FileNotFoundError: If impl_dir doesn't exist
@@ -260,6 +266,7 @@ def save_plan_ref(
         url=url,
         labels=labels,
         objective_id=objective_id,
+        node_ids=node_ids,
     )
     ref_file.write_text(content, encoding="utf-8")
 
@@ -280,6 +287,9 @@ def _parse_ref_json(ref_file: Path) -> PlanRef | None:
     labels_list = data.get("labels", [])
     labels = tuple(labels_list) if isinstance(labels_list, list) else ()
 
+    raw_node_ids = data.get("node_ids")
+    node_ids = tuple(raw_node_ids) if isinstance(raw_node_ids, list) else None
+
     return PlanRef(
         provider=data["provider"],
         plan_id=data["plan_id"],
@@ -288,6 +298,7 @@ def _parse_ref_json(ref_file: Path) -> PlanRef | None:
         synced_at=data["synced_at"],
         labels=labels,
         objective_id=data.get("objective_id"),
+        node_ids=node_ids,
     )
 
 
@@ -331,6 +342,9 @@ def read_plan_ref(impl_dir: Path) -> PlanRef | None:
     labels_list = data.get("labels", [])
     labels = tuple(labels_list) if isinstance(labels_list, list) else ()
 
+    raw_node_ids = data.get("node_ids")
+    node_ids = tuple(raw_node_ids) if isinstance(raw_node_ids, list) else None
+
     return PlanRef(
         provider="github",
         plan_id=str(data["issue_number"]),
@@ -339,6 +353,7 @@ def read_plan_ref(impl_dir: Path) -> PlanRef | None:
         synced_at=data["synced_at"],
         labels=labels,
         objective_id=data.get("objective_issue"),
+        node_ids=node_ids,
     )
 
 

@@ -202,6 +202,16 @@ gh pr edit "$pr_number" --body "${current_body}${footer}"
 
 **Note:** The footer includes the checkout command. This ensures `erk pr check` passes.
 
+### Step 7.75: Link PR to Objective (if applicable)
+
+If `.impl/plan-ref.json` or `.impl/ref.json` exists:
+
+```bash
+erk exec objective-link-pr --pr-number "$pr_number"
+```
+
+If this fails, warn but continue -- PR creation succeeded.
+
 ### Step 8: Validate PR Rules
 
 Run the PR check command to validate the PR was created correctly:

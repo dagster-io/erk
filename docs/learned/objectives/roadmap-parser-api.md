@@ -72,7 +72,7 @@ Extracts phase names from markdown headers (e.g., `### Phase 1: Planning`) and r
 
 ### RoadmapNode pr field
 
-`RoadmapNode` has a `pr` field (`str | None`) that holds a PR reference (e.g., `"#123"`). The `plan` field was removed — only `pr` exists on the dataclass. Additional fields: `depends_on` (`tuple[str, ...] | None`) for explicit dependencies and `slug` (`str | None`) for kebab-case node slugs.
+`RoadmapNode` has a `pr` field (`str | None`) that holds a PR reference (e.g., `"#123"`) for both in-progress and landed PRs. The `plan` field was removed — only `pr` exists on the dataclass. Additional fields: `depends_on` (`tuple[str, ...] | None`) for explicit dependencies and `slug` (`str | None`) for kebab-case node slugs.
 
 ## Dual-Parser Pattern
 

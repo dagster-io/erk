@@ -33,6 +33,7 @@ def test_create_impl_context_success(tmp_path: Path) -> None:
         provider="github",
         objective_id=None,
         now_iso=FAKE_NOW_ISO,
+        node_ids=None,
     )
 
     # Verify folder was created
@@ -72,6 +73,7 @@ def test_create_impl_context_already_exists(tmp_path: Path) -> None:
             provider="github",
             objective_id=None,
             now_iso=FAKE_NOW_ISO,
+            node_ids=None,
         )
 
 
@@ -88,6 +90,7 @@ def test_create_impl_context_repo_root_not_exists(tmp_path: Path) -> None:
             provider="github",
             objective_id=None,
             now_iso=FAKE_NOW_ISO,
+            node_ids=None,
         )
 
 
@@ -106,6 +109,7 @@ def test_create_impl_context_repo_root_not_directory(tmp_path: Path) -> None:
             provider="github",
             objective_id=None,
             now_iso=FAKE_NOW_ISO,
+            node_ids=None,
         )
 
 
@@ -120,6 +124,7 @@ def test_remove_impl_context_success(tmp_path: Path) -> None:
         provider="github",
         objective_id=None,
         now_iso=FAKE_NOW_ISO,
+        node_ids=None,
     )
 
     impl_context_dir = tmp_path / ".erk" / "impl-context"
@@ -157,6 +162,7 @@ def test_impl_context_exists_true(tmp_path: Path) -> None:
         provider="github",
         objective_id=None,
         now_iso=FAKE_NOW_ISO,
+        node_ids=None,
     )
 
     assert impl_context_exists(tmp_path) is True
@@ -202,6 +208,7 @@ def example():
         provider="github",
         objective_id=None,
         now_iso=FAKE_NOW_ISO,
+        node_ids=None,
     )
 
     plan_file = tmp_path / ".erk" / "impl-context" / "plan.md"
@@ -221,6 +228,7 @@ def test_create_impl_context_with_objective_id(tmp_path: Path) -> None:
         provider="github",
         objective_id=456,
         now_iso=FAKE_NOW_ISO,
+        node_ids=None,
     )
 
     ref_file = tmp_path / ".erk" / "impl-context" / "ref.json"
@@ -240,6 +248,7 @@ def test_create_impl_context_with_planned_pr_provider(tmp_path: Path) -> None:
         provider="github-draft-pr",
         objective_id=None,
         now_iso=FAKE_NOW_ISO,
+        node_ids=None,
     )
 
     ref_file = tmp_path / ".erk" / "impl-context" / "ref.json"
@@ -260,6 +269,7 @@ def test_create_impl_context_no_readme(tmp_path: Path) -> None:
         provider="github",
         objective_id=None,
         now_iso=FAKE_NOW_ISO,
+        node_ids=None,
     )
 
     readme_file = tmp_path / ".erk" / "impl-context" / "README.md"
@@ -275,6 +285,7 @@ def test_build_impl_context_files_returns_two_entries() -> None:
         provider="github",
         objective_id=None,
         now_iso=FAKE_NOW_ISO,
+        node_ids=None,
     )
 
     assert set(result.keys()) == {".erk/impl-context/plan.md", ".erk/impl-context/ref.json"}
@@ -291,6 +302,7 @@ def test_build_impl_context_files_preserves_plan_content() -> None:
         provider="github",
         objective_id=None,
         now_iso=FAKE_NOW_ISO,
+        node_ids=None,
     )
 
     assert result[".erk/impl-context/plan.md"] == plan_content
@@ -305,6 +317,7 @@ def test_build_impl_context_files_ref_json_fields() -> None:
         provider="github",
         objective_id=None,
         now_iso=FAKE_NOW_ISO,
+        node_ids=None,
     )
 
     ref_data = json.loads(result[".erk/impl-context/ref.json"])
@@ -326,6 +339,7 @@ def test_build_impl_context_files_with_objective_id() -> None:
         provider="github",
         objective_id=7813,
         now_iso=FAKE_NOW_ISO,
+        node_ids=None,
     )
 
     ref_data = json.loads(result[".erk/impl-context/ref.json"])
@@ -341,6 +355,7 @@ def test_build_impl_context_files_planned_pr_provider() -> None:
         provider="github-draft-pr",
         objective_id=None,
         now_iso=FAKE_NOW_ISO,
+        node_ids=None,
     )
 
     ref_data = json.loads(result[".erk/impl-context/ref.json"])
@@ -365,6 +380,7 @@ def test_build_impl_context_files_matches_create_impl_context_structure(tmp_path
         provider=provider,
         objective_id=objective_id,
         now_iso=FAKE_NOW_ISO,
+        node_ids=None,
     )
 
     # Build filesystem version
@@ -376,6 +392,7 @@ def test_build_impl_context_files_matches_create_impl_context_structure(tmp_path
         provider=provider,
         objective_id=objective_id,
         now_iso=FAKE_NOW_ISO,
+        node_ids=None,
     )
 
     impl_dir = tmp_path / ".erk" / "impl-context"

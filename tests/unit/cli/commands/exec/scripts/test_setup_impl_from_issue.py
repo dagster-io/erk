@@ -256,6 +256,7 @@ def test_planned_pr_plan_skips_checkout_when_impl_exists(tmp_path: Path) -> None
         url=f"https://github.com/test-owner/test-repo/pull/{pr_number}",
         labels=("erk-plan",),
         objective_id=None,
+        node_ids=None,
     )
 
     ctx = context_for_test(

@@ -314,6 +314,7 @@ def test_dispatch_auto_detects_from_impl_folder() -> None:
             url="https://github.com/test-owner/test-repo/pull/42",
             labels=("erk-plan",),
             objective_id=None,
+            node_ids=None,
         )
         (impl_dir / "plan-ref.json").write_text(plan_ref_content, encoding="utf-8")
 
@@ -386,6 +387,7 @@ def test_dispatch_auto_detects_from_impl_context() -> None:
             url="https://github.com/test-owner/test-repo/pull/42",
             labels=("erk-plan",),
             objective_id=None,
+            node_ids=None,
         )
         (impl_context_dir / "ref.json").write_text(plan_ref_content, encoding="utf-8")
         (impl_context_dir / "plan.md").write_text("# Test plan\n", encoding="utf-8")

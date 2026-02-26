@@ -37,6 +37,7 @@ def _setup_impl_with_plan_ref(tmp_path: Path, *, plan_id: str) -> None:
         url=f"https://github.com/test/repo/issues/{plan_id}",
         labels=(),
         objective_id=None,
+        node_ids=None,
     )
 
 

@@ -97,6 +97,9 @@ from erk.cli.commands.exec.scripts.objective_apply_landed_update import (
 from erk.cli.commands.exec.scripts.objective_fetch_context import (
     objective_fetch_context,
 )
+from erk.cli.commands.exec.scripts.objective_link_pr import (
+    objective_link_pr,
+)
 from erk.cli.commands.exec.scripts.objective_post_action_comment import (
     objective_post_action_comment,
 )
@@ -246,6 +249,7 @@ exec_group.add_command(objective_render_roadmap, name="objective-render-roadmap"
 exec_group.add_command(objective_save_to_issue, name="objective-save-to-issue")
 exec_group.add_command(objective_apply_landed_update, name="objective-apply-landed-update")
 exec_group.add_command(objective_fetch_context, name="objective-fetch-context")
+exec_group.add_command(objective_link_pr, name="objective-link-pr")
 exec_group.add_command(objective_update_after_land, name="objective-update-after-land")
 exec_group.add_command(objective_post_action_comment, name="objective-post-action-comment")
 exec_group.add_command(plan_save, name="plan-save")

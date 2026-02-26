@@ -162,6 +162,7 @@ def _implement_from_issue(
         url=plan.url,
         labels=(),
         objective_id=plan.objective_id,
+        node_ids=None,
     )
     ctx.console.success(f"✓ Saved plan reference: {plan.url}")
 

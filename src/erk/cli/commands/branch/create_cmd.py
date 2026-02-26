@@ -257,6 +257,7 @@ def branch_create(
             url=setup.issue_url,
             labels=(),
             objective_id=setup.objective_issue,
+            node_ids=None,
         )
 
         # In script mode, output activation script path and exit

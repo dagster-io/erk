@@ -21,15 +21,15 @@ This document captures the design thinking around extending the roadmap table fo
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, RoadmapNode -->
 
-The `RoadmapNode` dataclass has six fields (`id`, `description`, `status`, `pr`, `depends_on`, `slug`). The `pr` field holds a PR reference (`"#123"`) and is `str | None`. The `depends_on` field holds explicit dependencies (`tuple[str, ...] | None`), and `slug` holds a kebab-case identifier (`str | None`).
+The `RoadmapNode` dataclass has six fields (`id`, `description`, `status`, `pr`, `depends_on`, `slug`). The `pr` field holds a PR reference (`"#123"`) for both in-progress and landed PRs and is `str | None`. The `depends_on` field holds explicit dependencies (`tuple[str, ...] | None`), and `slug` holds a kebab-case identifier (`str | None`).
 
 The canonical table format:
 
 ```markdown
-| Node | Description | Status      | Plan  | PR   |
-| ---- | ----------- | ----------- | ----- | ---- |
-| 1.1  | Add auth    | done        | -     | #123 |
-| 1.2  | Add tests   | in-progress | #6464 | -    |
+| Node | Description | Status      | PR   |
+| ---- | ----------- | ----------- | ---- |
+| 1.1  | Add auth    | done        | #123 |
+| 1.2  | Add tests   | in-progress | -    |
 ```
 
 ## Legacy 4-Column Format (Historical)
@@ -53,8 +53,8 @@ Key design choices:
 
 - **5-col header canonical**: `| Node | Description | Status | Plan | PR |`
 - **4-col handled on write**: When editing a 4-col table in the rendered view, the table is auto-upgraded to 5-col
-- **Frontmatter schema v3**: The YAML frontmatter uses `schema_version: "3"` with the `nodes` key (v2 used `steps`). The parser accepts both v2 and v3; the renderer always emits v3.
-- **v2/v3 parsing**: `parse_roadmap()` accepts both schema versions. Returns a legacy format error for non-v2/v3 content (no table-parsing fallback)
+- **Frontmatter schema v4**: The YAML frontmatter uses `schema_version: "4"` with the `nodes` key (v2 used `steps`). The parser accepts v2, v3, and v4; the renderer always emits v4.
+- **v2/v3/v4 parsing**: `parse_roadmap()` accepts all three schema versions. Returns a legacy format error for non-v2/v3/v4 content (no table-parsing fallback)
 
 ## Historical: Planned 7-Column Extension (Never Built)
 
@@ -64,7 +64,7 @@ The original plan added three more columns: **Type** (task/milestone/research), 
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, update_node_in_frontmatter -->
 
-Status inference exists only at **write time** in `update_node_in_frontmatter()`: when no explicit status is provided, it infers `done` from a PR reference or preserves the existing status. The parser (`parse_roadmap()`) reads the explicit `status` field from YAML frontmatter with no inference — what's stored is what's returned.
+Status inference exists only at **write time** in `update_node_in_frontmatter()`: when no explicit status is provided, it infers `in_progress` from a PR reference or preserves the existing status. The parser (`parse_roadmap()`) reads the explicit `status` field from YAML frontmatter with no inference — what's stored is what's returned.
 
 ## Related Documentation
 

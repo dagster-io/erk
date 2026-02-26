@@ -16,6 +16,7 @@ def test_build_plan_ref_json_structure() -> None:
         url="https://github.com/owner/repo/issues/42",
         labels=("erk-plan", "bug"),
         objective_id=100,
+        node_ids=None,
     )
 
     data = json.loads(result)
@@ -41,6 +42,7 @@ def test_build_plan_ref_json_none_objective() -> None:
         url="https://github.com/owner/repo/pull/789",
         labels=(),
         objective_id=None,
+        node_ids=None,
     )
 
     data = json.loads(result)
