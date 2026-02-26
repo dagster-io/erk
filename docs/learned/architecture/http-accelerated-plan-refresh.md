@@ -39,13 +39,7 @@ No subprocess overhead. Enables batched and parallel requests.
 
 ## HttpClient ABC Extensions
 
-The `HttpClient` ABC in `packages/erk-shared/src/erk_shared/gateway/http/abc.py` provides:
-
-| Method                | Purpose                                    |
-| --------------------- | ------------------------------------------ |
-| `get_list()`          | Paginated list fetching                    |
-| `graphql()`           | Direct GraphQL queries                     |
-| `supports_direct_api` | Property indicating HTTP path availability |
+The `HttpClient` ABC is defined in `packages/erk-shared/src/erk_shared/gateway/http/abc.py`. See that file for the current method list.
 
 When `supports_direct_api` is False, the system falls back to the CLI subprocess path.
 
