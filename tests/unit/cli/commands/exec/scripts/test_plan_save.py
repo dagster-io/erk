@@ -501,6 +501,70 @@ def test_planned_pr_branch_slug_provided(tmp_path: Path, monkeypatch: pytest.Mon
     assert "my-custom-slug" in output["branch_name"]
 
 
+def test_planned_pr_objective_from_flag(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """--objective flag links plan to objective via branch name, metadata, and ref.json."""
+    fake_git = FakeGit(current_branches={tmp_path: "main"})
+    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_save,
+        ["--format", "json", "--branch-slug", "test-slug", "--objective", "456"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    json_line = next(line for line in result.output.strip().splitlines() if line.startswith("{"))
+    output = json.loads(json_line)
+    assert output["success"] is True
+    assert "O456" in output["branch_name"]
+    assert output["objective_issue"] == 456
+    # ref.json should include objective_id
+    ref_json = json.loads(fake_git.branch_commits[0].files[f"{IMPL_CONTEXT_DIR}/ref.json"])
+    assert ref_json["objective_id"] == 456
+
+
+def test_planned_pr_objective_flag_overrides_marker(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """--objective flag takes precedence over the session marker."""
+    fake_git = FakeGit(current_branches={tmp_path: "main"})
+    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+    runner = CliRunner()
+
+    # Create objective-context marker with value 100
+    session_id = "override-session"
+    marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+    marker_dir.mkdir(parents=True)
+    (marker_dir / "objective-context.marker").write_text("100", encoding="utf-8")
+
+    # Pass --objective=200, which should override the marker value of 100
+    result = runner.invoke(
+        plan_save,
+        [
+            "--format",
+            "json",
+            "--session-id",
+            session_id,
+            "--branch-slug",
+            "test-slug",
+            "--objective",
+            "200",
+        ],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    json_line = next(line for line in result.output.strip().splitlines() if line.startswith("{"))
+    output = json.loads(json_line)
+    assert output["success"] is True
+    # Flag value (200) should win over marker (100)
+    assert output["objective_issue"] == 200
+    assert "O200" in output["branch_name"]
+    ref_json = json.loads(fake_git.branch_commits[0].files[f"{IMPL_CONTEXT_DIR}/ref.json"])
+    assert ref_json["objective_id"] == 200
+
+
 def test_planned_pr_branch_slug_missing_errors(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

@@ -386,17 +386,20 @@ After the user approves the plan in Plan Mode:
 1. Exit Plan Mode
 2. Run `/erk:plan-save` to create the new GitHub issue:
    - **If any source plan(s) had `erk-learn` label** (`IS_LEARN_PLAN=true`): Add `--plan-type=learn` to the command
-   - **If the source plan(s) had an `objective_issue`**: Create the objective-context marker before saving:
-     ```bash
-     erk exec marker create --session-id "${CLAUDE_SESSION_ID}" --associated-objective <objective_number> objective-context
+   - **If the source plan(s) had an `objective_issue`**: Pass `--objective=<number>` to `/erk:plan-save`:
      ```
-   - **If consolidating with conflicting objectives**: Use the objective chosen by the user in Step 2
+     /erk:plan-save --objective=<objective_number>
+     ```
+   - **If consolidating with conflicting objectives**: Use the objective chosen by the user in Step 2 via `--objective=<number>`
    - **Otherwise**: Run `/erk:plan-save` without flags
-3. **If an objective was linked** (marker was created), verify the link was saved correctly:
+3. **If an objective was linked**, verify the link was saved correctly:
    ```bash
    erk exec get-plan-metadata <new_issue_number> objective_issue
    ```
-   If the objective link is missing, warn the user that the plan may not be linked to its objective.
+   If the objective link is missing, fix it with:
+   ```bash
+   erk exec update-plan-header <new_issue_number> objective_issue=<number>
+   ```
 4. **If CONSOLIDATION_MODE** (multiple plans consolidated), add the `erk-consolidated` label:
    ```bash
    erk exec add-plan-label <new_plan_number> --label "erk-consolidated"
