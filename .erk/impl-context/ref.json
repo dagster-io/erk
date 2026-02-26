@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Documentation Plan: Add branch-scoped implementation directories under .erk/impl-context/<branch>/"
+}
