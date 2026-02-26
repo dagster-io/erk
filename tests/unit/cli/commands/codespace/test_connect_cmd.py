@@ -219,5 +219,3 @@ def test_connect_env_invalid_format_errors() -> None:
 
     assert result.exit_code == 1
     assert "Invalid --env format" in result.output
-
-
