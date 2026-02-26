@@ -58,7 +58,7 @@ from erk_shared.gateway.github.types import (
 from erk_shared.gateway.http.abc import HttpClient
 from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
 from erk_shared.gateway.plan_data_provider.lifecycle import compute_status_indicators
-from erk_shared.impl_folder import read_plan_ref
+from erk_shared.impl_folder import read_plan_ref, resolve_impl_dir
 from erk_shared.plan_store.conversion import (
     github_issue_to_plan,
     header_datetime,
@@ -551,7 +551,8 @@ class RealPlanDataProvider(PlanDataProvider):
     def _build_worktree_mapping(self) -> dict[int, tuple[str, str | None]]:
         """Build mapping of plan ID to (worktree name, branch).
 
-        Reads .impl/plan-ref.json from each worktree to discover the plan ID.
+        Uses resolve_impl_dir() for unified discovery of implementation folders
+        (both legacy .impl/ and branch-scoped .erk/impl-context/).
         Plan-ref.json is the sole source of truth for plan-to-branch mapping.
 
         Returns:
@@ -561,15 +562,18 @@ class RealPlanDataProvider(PlanDataProvider):
         worktree_by_plan_id: dict[int, tuple[str, str | None]] = {}
         worktrees = self._ctx.git.worktree.list_worktrees(self._location.root)
         for worktree in worktrees:
-            impl_dir = worktree.path / ".impl"
+            impl_dir = resolve_impl_dir(worktree.path, branch_name=worktree.branch)
+            if impl_dir is None:
+                continue
             plan_ref = read_plan_ref(impl_dir)
-            if plan_ref is not None and plan_ref.plan_id.isdigit():
-                issue_number = int(plan_ref.plan_id)
-                if issue_number not in worktree_by_plan_id:
-                    worktree_by_plan_id[issue_number] = (
-                        worktree.path.name,
-                        worktree.branch,
-                    )
+            if plan_ref is None or not plan_ref.plan_id.isdigit():
+                continue
+            issue_number = int(plan_ref.plan_id)
+            if issue_number not in worktree_by_plan_id:
+                worktree_by_plan_id[issue_number] = (
+                    worktree.path.name,
+                    worktree.branch,
+                )
         return worktree_by_plan_id
 
     def _build_row_data(

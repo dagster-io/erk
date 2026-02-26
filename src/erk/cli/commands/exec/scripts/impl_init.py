@@ -18,7 +18,7 @@ Exit Codes:
 
 Examples:
     $ erk exec impl-init --json
-    {"valid": true, "impl_type": "impl", "has_plan_tracking": true, ...}
+    {"valid": true, "has_plan_tracking": true, ...}
 """
 
 import json
@@ -29,7 +29,7 @@ from typing import NoReturn
 import click
 
 from erk_shared.context.helpers import require_cwd, require_git
-from erk_shared.impl_folder import IMPL_DIR_RELATIVE, read_plan_ref, resolve_impl_dir
+from erk_shared.impl_folder import read_plan_ref, resolve_impl_dir
 
 
 def _error_json(error_type: str, message: str) -> NoReturn:
@@ -39,7 +39,7 @@ def _error_json(error_type: str, message: str) -> NoReturn:
     raise SystemExit(1)
 
 
-def _validate_impl_folder(ctx: click.Context) -> tuple[Path, str]:
+def _validate_impl_folder(ctx: click.Context) -> Path:
     """Validate implementation folder exists and has required files.
 
     Uses resolve_impl_dir() for branch-scoped discovery.
@@ -48,7 +48,7 @@ def _validate_impl_folder(ctx: click.Context) -> tuple[Path, str]:
         ctx: Click context for dependency injection.
 
     Returns:
-        Tuple of (impl_dir Path, impl_type string)
+        Path to the validated impl directory.
 
     Raises:
         SystemExit: If validation fails
@@ -72,10 +72,7 @@ def _validate_impl_folder(ctx: click.Context) -> tuple[Path, str]:
     if not plan_file.exists():
         _error_json("no_plan_file", f"No plan.md found in {impl_dir.name}/ folder")
 
-    # Determine impl_type based on whether it's under IMPL_DIR_RELATIVE
-    impl_type = "impl-context" if IMPL_DIR_RELATIVE in str(impl_dir) else "impl"
-
-    return impl_dir, impl_type
+    return impl_dir
 
 
 def _extract_related_docs(plan_content: str) -> dict[str, list[str]]:
@@ -139,7 +136,7 @@ def impl_init(ctx: click.Context, json_output: bool) -> None:
     Returns structured JSON with validation status and related documentation.
     """
     # Validate folder structure
-    impl_dir, impl_type = _validate_impl_folder(ctx)
+    impl_dir = _validate_impl_folder(ctx)
 
     # Get plan reference info
     plan_ref = read_plan_ref(impl_dir)
@@ -156,7 +153,6 @@ def impl_init(ctx: click.Context, json_output: bool) -> None:
     # Build result
     result: dict = {
         "valid": True,
-        "impl_type": impl_type,
         "has_plan_tracking": has_plan_tracking,
         "related_docs": related_docs,
     }

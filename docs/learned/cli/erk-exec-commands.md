@@ -142,7 +142,7 @@ erk exec setup-impl                           # Auto-detect from .impl/, branch,
 - `--issue` - Issue number to fetch plan from
 - `--file` - Local markdown file path
 
-**Output:** JSON with `success`, `source`, `plan_number`, `has_plan_tracking`, `impl_type`, `valid`, `related_docs`
+**Output:** JSON with `success`, `source`, `plan_number`, `has_plan_tracking`, `valid`, `related_docs`
 
 #### setup-impl-from-issue
 

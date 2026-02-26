@@ -59,7 +59,7 @@ def _run_impl_init(ctx: click.Context) -> dict[str, object]:
     Raises:
         SystemExit: If validation fails.
     """
-    impl_dir, impl_type = _validate_impl_folder(ctx)
+    impl_dir = _validate_impl_folder(ctx)
     plan_ref = read_plan_ref(impl_dir)
     has_plan_tracking = plan_ref is not None
     if plan_ref is not None:
@@ -71,7 +71,6 @@ def _run_impl_init(ctx: click.Context) -> dict[str, object]:
 
     result: dict[str, object] = {
         "valid": True,
-        "impl_type": impl_type,
         "has_plan_tracking": has_plan_tracking,
         "related_docs": related_docs,
     }
