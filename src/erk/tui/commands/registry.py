@@ -199,7 +199,7 @@ def get_all_commands() -> list[CommandDefinition]:
             name="Dispatch to Queue",
             description="dispatch",
             category=CommandCategory.ACTION,
-            shortcut="s",
+            shortcut="d",
             is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.plan_url is not None,
             get_display_name=_display_submit_to_queue,
         ),

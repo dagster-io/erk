@@ -19,7 +19,7 @@ from erk.tui.commands.types import CommandCategory, CommandContext, CommandDefin
 LAUNCH_KEYS: dict[str, str] = {
     # Plan actions
     "close_plan": "c",
-    "submit_to_queue": "s",
+    "submit_to_queue": "d",
     "land_pr": "l",
     "fix_conflicts_remote": "f",
     "address_remote": "a",
