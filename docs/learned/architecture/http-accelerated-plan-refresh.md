@@ -63,7 +63,7 @@ HttpClient follows the standard gateway pattern:
 
 ## Service Parameter Threading
 
-`PlanListService` is threaded through 24+ call sites. It accepts both `github` (gateway) and `http_client` parameters and selects the optimal path at runtime.
+`PlanListService` is threaded through many call sites (see `plan_list_service.py` for the current count). It accepts both `github` (gateway) and `http_client` parameters and selects the optimal path at runtime.
 
 ## PR Data Parsing
 
