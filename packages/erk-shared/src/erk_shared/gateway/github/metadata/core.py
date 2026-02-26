@@ -193,7 +193,7 @@ def create_worktree_creation_block(
     worktree_name: str,
     branch_name: str,
     timestamp: str,
-    issue_number: int | None = None,
+    plan_number: int | None = None,
     plan_file: str | None = None,
 ) -> MetadataBlock:
     """Create an erk-worktree-creation block with validation.
@@ -202,7 +202,7 @@ def create_worktree_creation_block(
         worktree_name: Name of the worktree
         branch_name: Git branch name
         timestamp: ISO 8601 timestamp of creation
-        issue_number: Optional GitHub issue number this worktree implements
+        plan_number: Optional GitHub plan number this worktree implements
         plan_file: Optional path to the plan file
 
     Returns:
@@ -215,8 +215,8 @@ def create_worktree_creation_block(
         "timestamp": timestamp,
     }
 
-    if issue_number is not None:
-        data["issue_number"] = issue_number
+    if plan_number is not None:
+        data["plan_number"] = plan_number
 
     if plan_file is not None:
         data["plan_file"] = plan_file
@@ -229,7 +229,7 @@ def create_worktree_creation_block(
 
 
 def create_plan_block(
-    issue_number: int,
+    plan_number: int,
     worktree_name: str,
     timestamp: str,
     plan_file: str | None = None,
@@ -237,7 +237,7 @@ def create_plan_block(
     """Create an erk-plan block with validation.
 
     Args:
-        issue_number: GitHub issue number for this plan
+        plan_number: GitHub plan number for this plan
         worktree_name: Auto-generated worktree name from issue title
         timestamp: ISO 8601 timestamp of issue creation
         plan_file: Optional path to the plan file
@@ -247,7 +247,7 @@ def create_plan_block(
     """
     schema = PlanSchema()
     data: dict[str, Any] = {
-        "issue_number": issue_number,
+        "plan_number": plan_number,
         "worktree_name": worktree_name,
         "timestamp": timestamp,
     }

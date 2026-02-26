@@ -201,17 +201,17 @@ def objective_save_to_issue(
         raise SystemExit(1)
 
     # Guard for type narrowing
-    if result.issue_number is None:
-        raise RuntimeError("Unexpected: issue_number is None after success")
+    if result.plan_number is None:
+        raise RuntimeError("Unexpected: plan_number is None after success")
 
     # Create marker file to enable idempotency
     if session_id is not None:
-        _create_objective_saved_issue_marker(session_id, repo_root, result.issue_number)
+        _create_objective_saved_issue_marker(session_id, repo_root, result.plan_number)
 
     # Optional validation
     validation_data: dict[str, Any] | None = None
     if run_validate:
-        validation_result = validate_objective(github, repo_root, result.issue_number)
+        validation_result = validate_objective(github, repo_root, result.plan_number)
         if isinstance(validation_result, ObjectiveValidationError):
             validation_data = {
                 "passed": False,
@@ -229,9 +229,9 @@ def objective_save_to_issue(
             }
 
     if output_format == "display":
-        click.echo(f"Objective saved to GitHub issue #{result.issue_number}")
+        click.echo(f"Objective saved to GitHub issue #{result.plan_number}")
         click.echo(f"Title: {result.title}")
-        click.echo(f"URL: {result.issue_url}")
+        click.echo(f"URL: {result.plan_url}")
         if validation_data is not None:
             if validation_data["passed"]:
                 click.echo("Validation: passed")
@@ -247,8 +247,8 @@ def objective_save_to_issue(
     else:
         output_data: dict[str, object] = {
             "success": True,
-            "issue_number": result.issue_number,
-            "issue_url": result.issue_url,
+            "issue_number": result.plan_number,
+            "issue_url": result.plan_url,
             "title": result.title,
         }
         if validation_data is not None:

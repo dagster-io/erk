@@ -41,8 +41,12 @@ class WorktreeCreationSchema(MetadataBlockSchema):
 
     def validate(self, data: dict[str, Any]) -> None:
         """Validate erk-worktree-creation data structure."""
+        # Normalize legacy field name
+        if "issue_number" in data and "plan_number" not in data:
+            data["plan_number"] = data.pop("issue_number")
+
         required_fields = {"worktree_name", "branch_name", "timestamp"}
-        optional_fields = {"issue_number", "plan_file"}
+        optional_fields = {"plan_number", "plan_file"}
 
         # Check required fields exist
         missing = required_fields - set(data.keys())
@@ -56,12 +60,12 @@ class WorktreeCreationSchema(MetadataBlockSchema):
             if len(data[field]) == 0:
                 raise ValueError(f"{field} must not be empty")
 
-        # Validate optional issue_number field
-        if "issue_number" in data:
-            if not isinstance(data["issue_number"], int):
-                raise ValueError("issue_number must be an integer")
-            if data["issue_number"] <= 0:
-                raise ValueError("issue_number must be positive")
+        # Validate optional plan_number field
+        if "plan_number" in data:
+            if not isinstance(data["plan_number"], int):
+                raise ValueError("plan_number must be an integer")
+            if data["plan_number"] <= 0:
+                raise ValueError("plan_number must be positive")
 
         # Validate optional plan_file field
         if "plan_file" in data:
@@ -86,7 +90,11 @@ class PlanSchema(MetadataBlockSchema):
 
     def validate(self, data: dict[str, Any]) -> None:
         """Validate erk-plan data structure."""
-        required_fields = {"issue_number", "worktree_name", "timestamp"}
+        # Normalize legacy field name
+        if "issue_number" in data and "plan_number" not in data:
+            data["plan_number"] = data.pop("issue_number")
+
+        required_fields = {"plan_number", "worktree_name", "timestamp"}
         optional_fields = {"plan_file"}
 
         # Check required fields exist
@@ -95,10 +103,10 @@ class PlanSchema(MetadataBlockSchema):
             raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
 
         # Validate required fields
-        if not isinstance(data["issue_number"], int):
-            raise ValueError("issue_number must be an integer")
-        if data["issue_number"] <= 0:
-            raise ValueError("issue_number must be positive")
+        if not isinstance(data["plan_number"], int):
+            raise ValueError("plan_number must be an integer")
+        if data["plan_number"] <= 0:
+            raise ValueError("plan_number must be positive")
 
         if not isinstance(data["worktree_name"], str):
             raise ValueError("worktree_name must be a string")

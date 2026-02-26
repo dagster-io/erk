@@ -508,12 +508,12 @@ def add_worktree_creation_comment(
     """
     timestamp = datetime.now(UTC).isoformat()
 
-    # Create metadata block with issue number
+    # Create metadata block with plan number
     block = create_worktree_creation_block(
         worktree_name=worktree_name,
         branch_name=branch_name,
         timestamp=timestamp,
-        issue_number=issue_number,
+        plan_number=issue_number,
     )
 
     # Format instructions for implementation

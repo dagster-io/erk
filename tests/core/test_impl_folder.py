@@ -199,7 +199,7 @@ def test_add_worktree_creation_comment_success(tmp_path: Path) -> None:
     assert block.key == "erk-worktree-creation"
     assert block.data["worktree_name"] == "feature-name"
     assert block.data["branch_name"] == "feature-branch"
-    assert block.data["issue_number"] == 42
+    assert block.data["plan_number"] == 42
     assert "timestamp" in block.data
     assert isinstance(block.data["timestamp"], str)
     assert len(block.data["timestamp"]) > 0
