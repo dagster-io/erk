@@ -19,7 +19,7 @@ from erk_shared.gateway.github.types import (
     WorkflowRun,
 )
 from erk_shared.gateway.time.abc import Time
-from erk_shared.plan_store.conversion import issue_info_to_plan
+from erk_shared.plan_store.conversion import github_issue_to_plan
 
 _OBJECTIVE_LABEL = "erk-objective"
 
@@ -29,7 +29,7 @@ class RealObjectiveListService(ObjectiveListService):
 
     Objectives are GitHub issues (not PRs), so this service uses the
     issue-based path: get_issues_with_pr_linkages with the erk-objective
-    label, then converts via issue_info_to_plan.
+    label, then converts via github_issue_to_plan.
     """
 
     def __init__(self, github: GitHub, *, time: Time) -> None:
@@ -56,7 +56,7 @@ class RealObjectiveListService(ObjectiveListService):
         )
         t1 = self._time.monotonic()
 
-        plans = [issue_info_to_plan(issue) for issue in issues]
+        plans = [github_issue_to_plan(issue) for issue in issues]
         t2 = self._time.monotonic()
 
         workflow_runs: dict[int, WorkflowRun | None] = {}

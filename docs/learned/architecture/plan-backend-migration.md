@@ -69,7 +69,7 @@ Some exec scripts still use direct GitHub CLI calls and are candidates for migra
 
 ## Pre-Parsed Header Fields Pattern
 
-After PR #7350, plan-header YAML is parsed once in `issue_info_to_plan()` and stored in `Plan.header_fields`. Downstream consumers access pre-parsed values via typed helpers:
+After PR #7350, plan-header YAML is parsed once in `github_issue_to_plan()` and stored in `Plan.header_fields`. Downstream consumers access pre-parsed values via typed helpers:
 
 <!-- Source: packages/erk-shared/src/erk_shared/plan_store/conversion.py, header_str, header_int, header_datetime -->
 
@@ -78,10 +78,10 @@ See `header_str()`, `header_int()`, and `header_datetime()` in `packages/erk-sha
 **Key types:**
 
 - `Plan.header_fields: dict[str, object]` — Pre-parsed from plan-header metadata block
-- `Plan.metadata: dict[str, object]` — Contains `{"number": issue.number, "author": issue.author}`
+- `Plan.metadata: dict[str, object]` — Provider-specific fields. Issue-backed: `{"number", "author"}`. PR-backed: `{"number", "owner", "repo", "author", "is_draft", "pr_state", "base_ref_name"}`
 - `header_str()`, `header_int()`, `header_datetime()` — Typed accessors with isinstance narrowing
 
-**Canonical conversion point:** `issue_info_to_plan()` in `packages/erk-shared/src/erk_shared/plan_store/conversion.py`
+**Canonical conversion points:** `github_issue_to_plan()` (issue-backed) and `pr_details_to_plan()` (PR-backed) in `packages/erk-shared/src/erk_shared/plan_store/conversion.py`
 
 ## Related Documentation
 
