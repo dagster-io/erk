@@ -815,6 +815,44 @@ class TestCommandPaletteFromMain:
             assert provider.browser.last_launched == "https://github.com/test/pr/456"
 
     @pytest.mark.asyncio
+    async def test_action_open_run_opens_run_url(self) -> None:
+        """Pressing n opens workflow run in browser."""
+        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row(
+                    123,
+                    "Test Plan",
+                    run_url="https://github.com/test/repo/actions/runs/789",
+                ),
+            ]
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            app.action_open_run()
+
+            assert provider.browser.last_launched == "https://github.com/test/repo/actions/runs/789"
+
+    @pytest.mark.asyncio
+    async def test_action_open_run_no_run_url(self) -> None:
+        """Pressing n with no run URL shows status message."""
+        provider = FakePlanDataProvider(plans=[make_plan_row(123, "Test Plan")])
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            app.action_open_run()
+
+            assert provider.browser.last_launched is None
+
+    @pytest.mark.asyncio
     async def test_execute_palette_command_with_no_selection(self) -> None:
         """Execute palette command with no selection does nothing."""
         clipboard = FakeClipboard()

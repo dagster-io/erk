@@ -106,6 +106,7 @@ class ErkDashApp(App):
         Binding("space", "show_detail", "Detail", show=False),
         Binding("o", "toggle_objective_filter", "Objective", show=False),
         Binding("p", "open_pr", "Open PR"),
+        Binding("n", "open_run", "Run"),
         Binding("c", "view_comments", "Comments", show=False),
         Binding("i", "show_implement", "Implement"),
         Binding("v", "view_plan_body", "View", show=False),
@@ -1105,6 +1106,21 @@ class ErkDashApp(App):
         else:
             if self._status_bar is not None:
                 self._status_bar.set_message("No PR linked to this plan")
+
+    def action_open_run(self) -> None:
+        """Open selected workflow run in browser."""
+        row = self._get_selected_row()
+        if row is None:
+            return
+
+        if row.run_url is not None:
+            self._provider.browser.launch(row.run_url)
+            if self._status_bar is not None:
+                run_id = row.run_url.rsplit("/", 1)[-1]
+                self._status_bar.set_message(f"Opened run {run_id}")
+        else:
+            if self._status_bar is not None:
+                self._status_bar.set_message("No workflow run linked to this plan")
 
     def action_show_implement(self) -> None:
         """Show implement command in status bar."""
