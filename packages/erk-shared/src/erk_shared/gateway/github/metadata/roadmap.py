@@ -107,6 +107,9 @@ def validate_roadmap_frontmatter(
         step_id = step_dict["id"]
         description = step_dict["description"]
         status = step_dict["status"]
+        # '-' is the display symbol for 'skipped'; normalize it
+        if status == "-":
+            status = "skipped"
         raw_pr = step_dict.get("pr")
 
         # Validate types

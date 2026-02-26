@@ -1145,6 +1145,21 @@ def test_validate_depends_on_non_string_items_rejected() -> None:
     assert "string" in errors[0]
 
 
+def test_dash_status_normalized_to_skipped() -> None:
+    """'-' is the display symbol for skipped; it should be accepted and normalized."""
+    data: dict[str, object] = {
+        "schema_version": "4",
+        "nodes": [
+            {"id": "1.1", "description": "Done task", "status": "done", "pr": "#100"},
+            {"id": "1.2", "description": "Skipped via dash", "status": "-", "pr": "#200"},
+        ],
+    }
+    steps, errors = validate_roadmap_frontmatter(data)
+    assert errors == []
+    assert steps is not None
+    assert steps[1].status == "skipped"
+
+
 def test_update_node_preserves_depends_on() -> None:
     """update_node_in_frontmatter roundtrip preserves depends_on."""
     block_content = _details_block(
