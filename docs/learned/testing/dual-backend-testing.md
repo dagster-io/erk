@@ -24,13 +24,9 @@ All plan test helpers are in `tests/test_utils/plan_helpers.py`.
 
 Creates a `PlannedPRBackend` pre-populated with plans, backed by `FakeGitHub`.
 
-```python
-def create_plan_store_with_plans(
-    plans: dict[str, Plan],
-) -> tuple[PlannedPRBackend, FakeGitHub]:
-```
+<!-- Source: tests/test_utils/plan_helpers.py, create_plan_store_with_plans -->
 
-Returns `tuple[PlannedPRBackend, FakeGitHub]` — the backend and its backing fake for assertions.
+See `create_plan_store_with_plans()` in `tests/test_utils/plan_helpers.py` for the full signature. Returns `tuple[PlannedPRBackend, FakeGitHub]` — the backend and its backing fake for assertions.
 
 ### `_plan_to_pr_details()`
 
@@ -53,14 +49,9 @@ After PR #8210, only the PlannedPRBackend exists. Use `create_plan_store_with_pl
 
 Tests should use `PlannedPRBackend` directly:
 
-```python
-def test_plan_creation() -> None:
-    backend, fake = create_plan_store_with_plans(plans={})
-    result = backend.create_plan(...)
+<!-- Source: tests/test_utils/plan_helpers.py, create_plan_store_with_plans -->
 
-    assert isinstance(fake, FakeGitHub)
-    assert len(fake.created_prs) == 1
-```
+See `create_plan_store_with_plans()` in `tests/test_utils/plan_helpers.py` for usage examples. For mutation tracking assertion patterns (e.g., `fake.created_prs`), see [Backend Testing Composition](backend-testing-composition.md).
 
 ## Related Topics
 
