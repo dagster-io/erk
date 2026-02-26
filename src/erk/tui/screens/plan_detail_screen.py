@@ -739,7 +739,13 @@ class PlanDetailScreen(ModalScreen):
                     op_id = f"land-pr-{row.pr_number}"
                     self.app._start_operation(op_id=op_id, label=f"Landing PR #{row.pr_number}...")
                     self.app._land_pr_async(
-                        op_id, row.pr_number, row.pr_head_branch, row.objective_issue
+                        op_id,
+                        row.pr_number,
+                        row.pr_head_branch,
+                        row.objective_issue,
+                        plan_id=row.plan_id,
+                        is_learn_plan=row.is_learn_plan,
+                        learn_status=row.learn_status,
                     )
 
     def compose(self) -> ComposeResult:
