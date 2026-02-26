@@ -8,7 +8,7 @@ read_when:
 last_audited: "2026-02-17 16:00 PT"
 audit_result: clean
 tripwires:
-  - action: "using issue number from .impl/issue.json in a checkout footer"
+  - action: "using issue number from .impl/plan-ref.json in a checkout footer"
     warning: "Checkout footers require the PR number, not the issue number. The issue is the plan; the PR is the implementation. See the PR Number vs Issue Number section."
   - action: "creating a PR without first checking if one already exists for the branch"
     warning: "The dispatch pipeline is idempotent — it checks for existing PRs before creating. If building PR creation outside the pipeline, replicate this check to prevent duplicates."
@@ -55,10 +55,10 @@ Agents regularly confuse these two identifiers because both are readily availabl
 
 | Identifier   | Source                | Used for                   |
 | ------------ | --------------------- | -------------------------- |
-| Issue number | `.impl/issue.json`    | `Closes #N` in PR body     |
+| Issue number | `.impl/plan-ref.json` | `Closes #N` in PR body     |
 | PR number    | `gh pr create` output | `erk pr checkout N` footer |
 
-**Why agents get this wrong:** During plan-based workflows, `.impl/issue.json` is immediately accessible and contains a number. The checkout footer also needs a number. The temptation to use the available number for both purposes is strong — but the checkout footer validator matches the _PR_ number, not the issue number, and `erk pr checkout` only accepts PR numbers.
+**Why agents get this wrong:** During plan-based workflows, `.impl/plan-ref.json` is immediately accessible and contains a number. The checkout footer also needs a number. The temptation to use the available number for both purposes is strong — but the checkout footer validator matches the _PR_ number, not the issue number, and `erk pr checkout` only accepts PR numbers.
 
 **The diagnostic signal:** If `erk pr check` reports "PR body missing checkout footer" but the footer visually appears present, the number is probably wrong. Compare the number in the footer against `gh pr view --json number`.
 

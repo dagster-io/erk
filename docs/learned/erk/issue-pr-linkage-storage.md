@@ -3,7 +3,7 @@ title: Issue-PR Linkage Storage Model
 read_when:
   - "understanding how plans link to PRs"
   - "debugging why a PR isn't linked to its issue"
-  - "working with .impl/issue.json"
+  - "working with .impl/plan-ref.json or .impl/issue.json"
   - "creating PRs that close issues"
 last_audited: "2026-02-17 00:00 PT"
 audit_result: clean
@@ -46,7 +46,24 @@ Slash commands that create PRs read the issue reference from local storage:
 
 ## Storage Locations
 
-### Local Worktree: `.impl/issue.json`
+### Local Worktree: `.impl/plan-ref.json` (primary) / `.impl/issue.json` (legacy)
+
+The primary format (`.impl/plan-ref.json`):
+
+```json
+{
+  "provider": "github-draft-pr",
+  "plan_id": "123",
+  "url": "https://github.com/owner/repo/pull/123",
+  "created_at": "2025-01-15T10:30:00+00:00",
+  "synced_at": "2025-01-15T10:30:00+00:00",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
+}
+```
+
+The legacy format (`.impl/issue.json`, still supported via `read_plan_ref()` three-level fallback: `plan-ref.json` → `ref.json` → `issue.json`):
 
 ```json
 {
@@ -109,7 +126,7 @@ This timing behavior is documented in [GitHub community discussion #24706](https
 ### PR Not Showing in `erk pr list`
 
 1. **No cross-reference exists**: PR body/commits don't mention the issue number
-2. **Wrong issue number**: Check `.impl/issue.json` contains correct number
+2. **Wrong issue number**: Check `.impl/plan-ref.json` (or legacy `.impl/issue.json`) contains correct plan ID
 3. **API propagation delay**: Wait a moment and refresh
 
 ### 🔗 Not Appearing (willCloseTarget is False)
@@ -118,15 +135,15 @@ The PR was created without `Closes #N` in the initial body:
 
 - PR was created manually without the keyword
 - PR was created via a tool that adds the keyword after creation
-- The `.impl/issue.json` was missing when the PR was created
+- The `.impl/plan-ref.json` was missing when the PR was created
 
 **Resolution**: Close the PR and create a new one with the closing keyword in the initial body.
 
 ### Verifying Linkage Status
 
 ```bash
-# Check local issue reference
-cat .impl/issue.json
+# Check local plan reference
+cat .impl/plan-ref.json  # or legacy: cat .impl/issue.json
 
 # Check PR body for closing keywords
 gh pr view --json body -q '.body'
