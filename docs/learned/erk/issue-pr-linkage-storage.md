@@ -56,11 +56,14 @@ The primary format (`.impl/plan-ref.json`):
   "plan_id": "123",
   "url": "https://github.com/owner/repo/pull/123",
   "created_at": "2025-01-15T10:30:00+00:00",
-  "synced_at": "2025-01-15T10:30:00+00:00"
+  "synced_at": "2025-01-15T10:30:00+00:00",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
 ```
 
-The legacy format (`.impl/issue.json`, still supported via `read_plan_ref()` fallback):
+The legacy format (`.impl/issue.json`, still supported via `read_plan_ref()` three-level fallback: `plan-ref.json` → `ref.json` → `issue.json`):
 
 ```json
 {

@@ -134,7 +134,7 @@ erk pr submit --debug
 
 ## Architecture Note
 
-The internal implementation was refactored in PR #6300 from a monolithic function to a linear function pipeline. The 6 user-facing phases described above map to 8 internal pipeline steps in `submit_pipeline.py`. See [PR Submit Pipeline Architecture](../cli/pr-submit-pipeline.md) for the internal step-by-step architecture.
+The internal implementation was refactored in PR #6300 from a monolithic function to a linear function pipeline. The 6 user-facing phases described above map to 10 internal pipeline steps in `submit_pipeline.py`. See [PR Submit Pipeline Architecture](../cli/pr-submit-pipeline.md) for the internal step-by-step architecture.
 
 ## Related Topics
 

@@ -55,11 +55,11 @@ Step 3 (`push_and_create_pr`) dispatches to `_graphite_first_flow()` or `_core_s
 
 **Why Graphite-first exists:** `gt submit` handles push + PR creation atomically, avoiding tracking divergence caused by direct `git push`. When Graphite is available, we prefer it. When not, core flow provides the fallback.
 
-**Trade-off:** Internal dispatch adds branching within one step. But the alternative (duplicating 7 other steps across two pipelines) is worse.
+**Trade-off:** Internal dispatch adds branching within one step. But the alternative (duplicating 9 other steps across two pipelines) is worse.
 
-## Why 8 Steps: Granularity Trade-offs
+## Why 10 Steps: Granularity Trade-offs
 
-The pipeline has 8 steps: prepare, commit WIP, push+PR, extract diff, fetch plan, generate description, Graphite enhancement, finalize.
+The pipeline has 10 steps: prepare, commit WIP, capture existing PR body, push+PR, extract diff, fetch plan, generate description, Graphite enhancement, finalize, link PR to objective nodes.
 
 **Why not fewer steps?** Merging "extract diff + generate description" would make testing harder (can't test diff extraction without running AI generation). Each step represents a **failure boundary** — a distinct phase where errors need different handling.
 
@@ -153,4 +153,4 @@ Both auto-behaviors print dim-styled informational messages when activated, keep
 
 <!-- Source: src/erk/cli/commands/pr/submit_pipeline.py -->
 
-See `src/erk/cli/commands/pr/submit_pipeline.py` for the complete implementation (789 lines). The module docstring and step signatures document the contract. This learned doc explains the **why** behind the design choices.
+See `src/erk/cli/commands/pr/submit_pipeline.py` for the complete implementation. The module docstring and step signatures document the contract. This learned doc explains the **why** behind the design choices.
