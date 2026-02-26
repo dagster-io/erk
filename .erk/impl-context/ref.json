@@ -1,5 +1,9 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Migrate erkweb + erkdesk submit \u2192 dispatch (Phase 1 remainder)",
+  "plan_id": "8248",
+  "url": "https://github.com/dagster-io/erk/pull/8248",
+  "created_at": "2026-02-26T05:11:36.341287",
+  "synced_at": "2026-02-26T05:11:36.341287",
+  "labels": [],
   "objective_id": 8241
 }
