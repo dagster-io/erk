@@ -1,9 +1,12 @@
-"""Unit tests for dependency_graph sparkline and find_graph_next_node."""
+"""Unit tests for dependency_graph sparkline, find_graph_next_node, and head state."""
+
+import pytest
 
 from erk_shared.gateway.github.metadata.dependency_graph import (
     DependencyGraph,
     ObjectiveNode,
     build_state_sparkline,
+    compute_objective_head_state,
     find_graph_next_node,
     phases_from_graph,
 )
@@ -135,3 +138,78 @@ def test_find_graph_next_node_includes_status_key() -> None:
     assert result is not None
     assert "status" in result
     assert result["status"] == "pending"
+
+
+# ---------------------------------------------------------------------------
+# min_dep_status tests
+# ---------------------------------------------------------------------------
+
+
+def test_min_dep_status_returns_none_for_no_deps() -> None:
+    """Node with no depends_on returns None."""
+    graph = DependencyGraph(nodes=(_make_node("1.1", status="pending"),))
+    assert graph.min_dep_status("1.1") is None
+
+
+def test_min_dep_status_returns_lowest_status() -> None:
+    """Node depending on nodes with mixed statuses returns the lowest."""
+    graph = DependencyGraph(
+        nodes=(
+            _make_node("1.1", status="done"),
+            _make_node("1.2", status="planning"),
+            _make_node("1.3", status="pending", depends_on=("1.1", "1.2")),
+        )
+    )
+    # "planning" (order 2) < "done" (order 4), so min is "planning"
+    assert graph.min_dep_status("1.3") == "planning"
+
+
+def test_min_dep_status_returns_terminal_when_all_deps_done() -> None:
+    """Returns 'done' when all deps are done/skipped."""
+    graph = DependencyGraph(
+        nodes=(
+            _make_node("1.1", status="done"),
+            _make_node("1.2", status="skipped"),
+            _make_node("1.3", status="pending", depends_on=("1.1", "1.2")),
+        )
+    )
+    # "done" (order 4) < "skipped" (order 5), so min is "done"
+    assert graph.min_dep_status("1.3") == "done"
+
+
+# ---------------------------------------------------------------------------
+# compute_objective_head_state tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("node_status", "min_dep_status", "expected"),
+    [
+        ("planning", None, "planning"),
+        ("planning", "pending", "planning"),
+        ("in_progress", None, "in-progress"),
+        ("in_progress", "pending", "in-progress"),
+        ("pending", None, "ready"),
+        ("pending", "done", "ready"),
+        ("pending", "skipped", "ready"),
+        ("pending", "planning", "planning"),
+        ("pending", "in_progress", "in-progress"),
+    ],
+    ids=[
+        "planning-no-deps",
+        "planning-overrides-dep-status",
+        "in_progress-no-deps",
+        "in_progress-overrides-dep-status",
+        "pending-no-deps-is-ready",
+        "pending-deps-done-is-ready",
+        "pending-deps-skipped-is-ready",
+        "pending-dep-planning-shows-planning",
+        "pending-dep-in_progress-shows-in-progress",
+    ],
+)
+def test_compute_objective_head_state(
+    node_status: str,
+    min_dep_status: str | None,
+    expected: str,
+) -> None:
+    assert compute_objective_head_state(node_status, min_dep_status) == expected
