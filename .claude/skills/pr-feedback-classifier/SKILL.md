@@ -21,6 +21,10 @@ Fetch and classify all PR review feedback for the current branch's PR.
 
 Check `$ARGUMENTS` for flags.
 
+## Critical Constraints
+
+**DO NOT write Python scripts or any code files.** Classify the data using direct AI reasoning only. Writing code to process JSON is unnecessary and pollutes the filesystem.
+
 ## Steps
 
 1. **Fetch PR info and all comments in a single call:**
