@@ -727,7 +727,7 @@ class PlanDetailScreen(ModalScreen):
                 self.dismiss()
                 if isinstance(self.app, ErkDashApp):
                     self.app.notify(f"Submitting plan #{row.plan_id} to queue...")
-                    self.app._submit_to_queue_async(row.plan_id)
+                    self.app._dispatch_to_queue_async(row.plan_id)
 
         elif command_id == "land_pr":
             if row.pr_number and row.pr_head_branch:
