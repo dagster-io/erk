@@ -23,7 +23,6 @@ from erk.tui.filtering.logic import filter_plans
 from erk.tui.filtering.types import FilterMode, FilterState
 from erk.tui.screens.help_screen import HelpScreen
 from erk.tui.screens.launch_screen import LaunchScreen
-from erk.tui.screens.objective_plans_screen import ObjectivePlansScreen
 from erk.tui.screens.plan_body_screen import PlanBodyScreen
 from erk.tui.screens.plan_detail_screen import PlanDetailScreen
 from erk.tui.screens.unresolved_comments_screen import UnresolvedCommentsScreen
@@ -84,7 +83,7 @@ class ErkDashApp(App):
         Binding("k", "cursor_up", "Up", show=False),
         Binding("enter", "show_detail", "Detail"),
         Binding("space", "show_detail", "Detail", show=False),
-        Binding("o", "open_row", "Open", show=False),
+        Binding("o", "toggle_objective_filter", "Objective", show=False),
         Binding("p", "open_pr", "Open PR"),
         Binding("c", "view_comments", "Comments", show=False),
         Binding("i", "show_implement", "Implement"),
@@ -96,7 +95,6 @@ class ErkDashApp(App):
         Binding("1", "switch_view_plans", "Plans", show=False),
         Binding("2", "switch_view_learn", "Learn", show=False),
         Binding("3", "switch_view_objectives", "Objectives", show=False),
-        Binding("d", "drill_down", "Drill Down", show=False),
         Binding("t", "toggle_stack_filter", "Stack", show=False),
         Binding("right", "next_view", "Next View", show=False, priority=True),
         Binding("left", "previous_view", "Previous View", show=False, priority=True),
@@ -146,6 +144,8 @@ class ErkDashApp(App):
         self._filter_state = FilterState.initial()
         self._stack_filter_branches: frozenset[str] | None = None
         self._stack_filter_label: str | None = None
+        self._objective_filter_issue: int | None = None
+        self._objective_filter_label: str | None = None
         self._sort_state = initial_sort if initial_sort is not None else SortState.initial()
         self._activity_by_plan: dict[int, BranchActivity] = {}
         self._activity_loading = False
@@ -302,7 +302,7 @@ class ErkDashApp(App):
     def _apply_filter_and_sort(self, rows: list[PlanRowData]) -> list[PlanRowData]:
         """Apply current filter and sort to rows.
 
-        Filter pipeline: stack filter → text filter → sort.
+        Filter pipeline: objective filter → stack filter → text filter → sort.
 
         Args:
             rows: Raw rows to process
@@ -310,7 +310,11 @@ class ErkDashApp(App):
         Returns:
             Filtered and sorted rows
         """
-        # Apply stack filter first
+        # Apply objective filter first
+        if self._objective_filter_issue is not None:
+            rows = [r for r in rows if r.objective_issue == self._objective_filter_issue]
+
+        # Apply stack filter
         if self._stack_filter_branches is not None:
             rows = [
                 r
@@ -386,8 +390,11 @@ class ErkDashApp(App):
     def action_exit_app(self) -> None:
         """Quit the application or handle progressive escape from filter mode.
 
-        Progressive escape order: stack filter → text content → text mode → quit.
+        Progressive escape order: objective filter → stack filter → text content → text mode → quit.
         """
+        if self._objective_filter_issue is not None:
+            self._clear_objective_filter()
+            return
         if self._stack_filter_branches is not None:
             self._clear_stack_filter()
             return
@@ -447,9 +454,11 @@ class ErkDashApp(App):
         if mode == self._view_mode:
             return
 
-        # Clear stack filter when switching views
+        # Clear filters when switching views
         self._stack_filter_branches = None
         self._stack_filter_label = None
+        self._objective_filter_issue = None
+        self._objective_filter_label = None
 
         self._view_mode = mode
         view_config = get_view_config(mode)
@@ -536,6 +545,43 @@ class ErkDashApp(App):
         """Clear the stack filter and restore all rows."""
         self._stack_filter_branches = None
         self._stack_filter_label = None
+        self._apply_filter()
+        if self._status_bar is not None:
+            self._status_bar.set_message(None)
+
+    def action_toggle_objective_filter(self) -> None:
+        """Toggle objective filter for the focused row's objective.
+
+        If objective filter is active, clears it (toggle off).
+        If no row selected or row has no objective_issue, shows status message.
+        Otherwise, filters table to only show rows sharing the same objective.
+        """
+        # Toggle off if already active
+        if self._objective_filter_issue is not None:
+            self._clear_objective_filter()
+            return
+
+        row = self._get_selected_row()
+        if row is None:
+            return
+
+        if row.objective_issue is None:
+            if self._status_bar is not None:
+                self._status_bar.set_message("Plan not linked to an objective")
+            return
+
+        self._objective_filter_issue = row.objective_issue
+        self._objective_filter_label = str(row.objective_issue)
+        self._apply_filter()
+
+        count = len(self._rows)
+        if self._status_bar is not None:
+            self._status_bar.set_message(f"Objective: #{row.objective_issue} ({count})")
+
+    def _clear_objective_filter(self) -> None:
+        """Clear the objective filter and restore all rows."""
+        self._objective_filter_issue = None
+        self._objective_filter_label = None
         self._apply_filter()
         if self._status_bar is not None:
             self._status_bar.set_message(None)
@@ -900,23 +946,6 @@ class ErkDashApp(App):
             )
         )
 
-    def action_drill_down(self) -> None:
-        """Show plans for selected objective (Objectives view only)."""
-        if self._view_mode != ViewMode.OBJECTIVES:
-            return
-        row = self._get_selected_row()
-        if row is None:
-            return
-        self.push_screen(
-            ObjectivePlansScreen(
-                provider=self._provider,
-                objective_id=row.plan_id,
-                objective_title=row.full_title,
-                progress_display=row.objective_progress_display,
-                objective_body=row.plan_body,
-            )
-        )
-
     def action_cursor_down(self) -> None:
         """Move cursor down (vim j key)."""
         if self._table is not None:
@@ -966,21 +995,6 @@ class ErkDashApp(App):
             self._status_bar.set_plan_count(
                 len(self._rows), noun=self._display_name_for_view(self._view_mode).lower()
             )
-
-    def action_open_row(self) -> None:
-        """Open selected row - PR if available, otherwise issue."""
-        row = self._get_selected_row()
-        if row is None:
-            return
-
-        if row.pr_url:
-            self._provider.browser.launch(row.pr_url)
-            if self._status_bar is not None:
-                self._status_bar.set_message(f"Opened PR #{row.pr_number}")
-        elif row.plan_url:
-            self._provider.browser.launch(row.plan_url)
-            if self._status_bar is not None:
-                self._status_bar.set_message(f"Opened issue #{row.plan_id}")
 
     def action_open_pr(self) -> None:
         """Open selected PR in browser."""
