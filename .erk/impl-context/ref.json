@@ -1,0 +1,8 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Phase 1: Eliminate .impl/ folder references from source and tests",
+  "objective_id": 8365,
+  "node_ids": [
+    "1.1,1.2,1.3,1.4"
+  ]
+}
