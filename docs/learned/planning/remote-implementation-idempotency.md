@@ -48,7 +48,7 @@ If already on a matching branch, output the existing branch name and continue wi
 
 ```bash
 # Remote workflow re-runs with --issue argument
-erk exec setup-impl-from-issue 77
+erk exec setup-impl-from-pr 77
 # Creates new branch P77-fix-...-01-25-0611
 # Orphans existing P77-fix-...-01-24-2229, PR now broken
 ```
@@ -57,7 +57,7 @@ erk exec setup-impl-from-issue 77
 
 ```bash
 # Remote workflow re-runs with --issue argument
-erk exec setup-impl-from-issue 77
+erk exec setup-impl-from-pr 77
 # Output: Already on branch for issue #77: P77-fix-remote-implementation-01-24-2229
 # Continues using existing branch, PR preserved
 ```
@@ -65,7 +65,7 @@ erk exec setup-impl-from-issue 77
 ## Reference
 
 - Commit: `f9807f2d` - Fix remote implementation workflow reusing existing branch
-- Implementation: `src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py`
+- Implementation: `src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py`
 
 ## Related Topics
 

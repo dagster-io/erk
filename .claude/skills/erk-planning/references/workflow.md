@@ -51,10 +51,10 @@ Option B: **Edit directly**
 /local:plan-update 123
 
 # Via CLI (requires explicit session ID)
-erk exec plan-update-issue --issue-number 123 --session-id="<session-id>"
+erk exec plan-update --plan-number 123 --session-id="<session-id>"
 
 # With explicit plan file
-erk exec plan-update-issue --issue-number 123 --plan-path /path/to/plan.md
+erk exec plan-update --plan-number 123 --plan-path /path/to/plan.md
 ```
 
 ### Step 4: Document the Change (Optional)
@@ -116,5 +116,5 @@ gh issue comment 42 --body "Added API rate limit handling to step 2"
 vim ~/.claude/plans/my-plan.md
 
 # 2. Update issue
-erk exec plan-update-issue --issue-number 42 --plan-path ~/.claude/plans/my-plan.md
+erk exec plan-update --plan-number 42 --plan-path ~/.claude/plans/my-plan.md
 ```

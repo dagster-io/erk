@@ -47,7 +47,7 @@ After implementation:
 
 ## .impl/ Folder Lifecycle
 
-1. **Created**: by `erk exec setup-impl-from-issue` or manually
+1. **Created**: by `erk exec setup-impl-from-pr` or manually
 2. **Contains**: `plan.md` (immutable) and `plan-ref.json` (tracking)
 3. **Preserved**: through implementation — never deleted by agents
 4. **Committed**: as part of the PR for reviewer context

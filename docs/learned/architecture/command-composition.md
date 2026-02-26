@@ -18,7 +18,7 @@ Exec scripts can orchestrate other exec scripts as sub-commands, aggregating the
 
 ```
 Orchestrator exec script
-  ├── Sub-command 1 (e.g., setup-impl-from-issue)
+  ├── Sub-command 1 (e.g., setup-impl-from-pr)
   ├── Sub-command 2 (e.g., impl-init)
   └── Sub-command 3 (e.g., cleanup-impl-context)
 ```
@@ -30,7 +30,7 @@ The orchestrator calls sub-commands as Python functions (not subprocess calls), 
 The `setup-impl` command (`src/erk/cli/commands/exec/scripts/setup_impl.py`) demonstrates this pattern:
 
 1. **Detects plan source** (issue, file, existing `.impl/`, or branch name)
-2. **Delegates** to `setup_impl_from_issue` for the heavy lifting
+2. **Delegates** to `setup_impl_from_pr` for the heavy lifting
 3. **Validates** by running `impl-init`
 4. **Cleans up** `.erk/impl-context/` staging directory
 

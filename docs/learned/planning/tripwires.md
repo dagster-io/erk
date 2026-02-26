@@ -86,7 +86,7 @@ Rules triggered by matching actions in code.
 
 **closing a plan issue without verifying all items were addressed** → Read [Complete File Inventory Protocol](complete-inventory-protocol.md) first. Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode.
 
-**committing to planned-PR plan branches after checkout without pulling remote** → Read [Planned PR Branch Sync](planned-pr-branch-sync.md) first. Both setup_impl_from_issue.py and submit.py use the same three-step sync: fetch_branch -> checkout/create_tracking -> pull_rebase. Skipping pull_rebase causes non-fast-forward push failures.
+**committing to planned-PR plan branches after checkout without pulling remote** → Read [Planned PR Branch Sync](planned-pr-branch-sync.md) first. Both setup_impl_from_pr.py and submit.py use the same three-step sync: fetch_branch -> checkout/create_tracking -> pull_rebase. Skipping pull_rebase causes non-fast-forward push failures.
 
 **consolidating issues that already have erk-consolidated label** → Read [Consolidation Labels](consolidation-labels.md) first. Filter out erk-consolidated issues before consolidation. These are outputs of previous consolidation and should not be re-consolidated.
 
@@ -110,7 +110,7 @@ Rules triggered by matching actions in code.
 
 **designing output routing for a multi-agent workflow** → Read [Agent Output Routing Strategies](agent-output-routing-strategies.md) first. Choose between embedded-prompt routing (in orchestrator Task prompts) and agent-file routing (in agent definitions). See this doc for the decision framework.
 
-**detecting plan backend by checking backend type directly** → Read [Planned PR Branch Sync](planned-pr-branch-sync.md) first. Use plan.header_fields.get(BRANCH_NAME) to detect planned-PR plans. There is only one backend (planned-PR).
+**detecting plan backend by checking backend type directly** → Read [Planned PR Branch Sync](planned-pr-branch-sync.md) first. Use github.get_pr() + pr_result.head_ref_name to discover the plan branch. There is only one backend (planned-PR).
 
 **editing plan body content in plan creation, replan, or one-shot dispatch** → Read [One-Shot Workflow](one-shot-workflow.md) first. One-shot metadata block preservation: the metadata block in the plan body (HTML comment with erk:metadata-block markers) must survive all edits. Never strip or overwrite HTML comment blocks that contain erk:metadata-block markers.
 

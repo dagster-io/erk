@@ -45,7 +45,7 @@ All commands invoked via `erk exec <command>`:
 | `list-sessions`              | List sessions with metadata for current worktree |
 | `preprocess-session`         | Convert JSONL to compressed XML                  |
 | `extract-latest-plan`        | Extract most recent plan from session            |
-| `create-issue-from-session`  | Create GitHub issue from session plan            |
+| `create-pr-from-session`     | Create GitHub issue from session plan            |
 | `extract-session-from-issue` | Extract session content from GitHub issue        |
 
 ### Slash Commands
@@ -108,7 +108,7 @@ falls back to mtime-based lookup if no session-specific plan found.
 ### 4. Create GitHub Issue from Session
 
 ```bash
-erk exec create-issue-from-session [--session-id SESSION_ID]
+erk exec create-pr-from-session [--session-id SESSION_ID]
 ```
 
 Extracts plan and creates GitHub issue with session content. Returns JSON with
@@ -224,7 +224,7 @@ erk exec extract-latest-plan --session-id <id>
 ### Create Issue from Session Plan
 
 ```bash
-erk exec create-issue-from-session --session-id <id>
+erk exec create-pr-from-session --session-id <id>
 ```
 
 ### Find Agent Subprocess Logs

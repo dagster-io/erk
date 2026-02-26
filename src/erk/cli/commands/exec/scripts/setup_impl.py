@@ -264,24 +264,24 @@ def setup_impl(ctx: click.Context, issue_number: int | None, file_path: Path | N
 
 
 def _handle_issue_setup(ctx: click.Context, *, issue_number: int) -> None:
-    """Handle setup from an issue number (shared by explicit --issue and auto-detect).
+    """Handle setup from a plan number (shared by explicit --issue and auto-detect).
 
-    Delegates to setup-impl-from-issue, runs impl-init, runs cleanup,
+    Delegates to setup-impl-from-pr, runs impl-init, runs cleanup,
     and outputs the combined result.
 
     Args:
         ctx: Click context.
-        issue_number: The issue/PR number to set up from.
+        issue_number: The plan/PR number to set up from.
     """
-    from erk.cli.commands.exec.scripts.setup_impl_from_issue import setup_impl_from_issue
+    from erk.cli.commands.exec.scripts.setup_impl_from_pr import setup_impl_from_pr
 
-    # Invoke setup-impl-from-issue as a sub-command
-    runner_ctx = click.Context(setup_impl_from_issue, parent=ctx, info_name="setup-impl-from-issue")
+    # Invoke setup-impl-from-pr as a sub-command
+    runner_ctx = click.Context(setup_impl_from_pr, parent=ctx, info_name="setup-impl-from-pr")
     runner_ctx.obj = ctx.obj
 
-    # Run setup-impl-from-issue
+    # Run setup-impl-from-pr
     ctx.invoke(
-        setup_impl_from_issue,
+        setup_impl_from_pr,
         plan_number=issue_number,
         session_id=None,
         no_impl=False,

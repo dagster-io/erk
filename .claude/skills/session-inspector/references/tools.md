@@ -119,12 +119,12 @@ erk exec extract-latest-plan [--session-id SESSION_ID]
 
 ---
 
-### create-issue-from-session
+### create-pr-from-session
 
 Extract plan from session and create GitHub issue.
 
 ```bash
-erk exec create-issue-from-session [--session-id SESSION_ID]
+erk exec create-pr-from-session [--session-id SESSION_ID]
 ```
 
 **Output:**
@@ -427,5 +427,5 @@ erk exec list-sessions --limit 20
 erk exec preprocess-session /path/to/session.jsonl --stdout > session.xml
 
 # 3. Create issue with session context
-erk exec create-issue-from-session --session-id abc123
+erk exec create-pr-from-session --session-id abc123
 ```
