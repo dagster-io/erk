@@ -212,8 +212,6 @@ def assemble_pr_body(
     body: str,
     plan_context: PlanContext | None,
     pr_number: int,
-    issue_number: int | None,
-    plans_repo: str | None,
     header: str,
     existing_pr_body: str,
 ) -> str:
@@ -223,8 +221,6 @@ def assemble_pr_body(
         body: AI-generated body content
         plan_context: Optional plan context for <details> section
         pr_number: PR number for footer checkout command
-        issue_number: Optional issue number for "Closes #N"
-        plans_repo: Optional plans repo for cross-repo references
         header: Existing PR header to preserve (may be empty)
         existing_pr_body: Full PR body captured before gt submit overwrites it.
             Used to extract plan-header metadata block. When the extracted block
@@ -245,11 +241,7 @@ def assemble_pr_body(
             # Issue-based: use existing format
             pr_body_content = body + build_plan_details_section(plan_context)
 
-    footer = build_pr_body_footer(
-        pr_number,
-        issue_number=issue_number,
-        plans_repo=plans_repo,
-    )
+    footer = build_pr_body_footer(pr_number)
 
     # Place metadata and header below content, above footer
     suffix = ""

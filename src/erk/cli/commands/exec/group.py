@@ -50,7 +50,6 @@ from erk.cli.commands.exec.scripts.generate_pr_address_summary import (
     generate_pr_address_summary,
 )
 from erk.cli.commands.exec.scripts.generate_pr_summary import generate_pr_summary
-from erk.cli.commands.exec.scripts.get_closing_text import get_closing_text
 from erk.cli.commands.exec.scripts.get_embedded_prompt import get_embedded_prompt
 from erk.cli.commands.exec.scripts.get_issue_body import get_issue_body
 from erk.cli.commands.exec.scripts.get_issue_timeline_prs import (
@@ -216,7 +215,6 @@ exec_group.add_command(find_project_dir, name="find-project-dir")
 exec_group.add_command(generate_node_slugs, name="generate-node-slugs")
 exec_group.add_command(generate_pr_address_summary, name="generate-pr-address-summary")
 exec_group.add_command(generate_pr_summary, name="generate-pr-summary")
-exec_group.add_command(get_closing_text, name="get-closing-text")
 exec_group.add_command(get_plan_info, name="get-plan-info")
 exec_group.add_command(get_plan_metadata, name="get-plan-metadata")
 exec_group.add_command(get_plans_for_objective, name="get-plans-for-objective")

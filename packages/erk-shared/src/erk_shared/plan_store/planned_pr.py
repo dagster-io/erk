@@ -358,9 +358,7 @@ class PlannedPRBackend(PlanBackend):
         )
 
         # Append checkout footer now that we have the PR number.
-        # No issue_number or plans_repo — draft PR IS the plan, so
-        # "Closes #N" would be self-referential.
-        footer = build_pr_body_footer(pr_number, issue_number=None, plans_repo=None)
+        footer = build_pr_body_footer(pr_number)
         self._github.update_pr_body(repo_root, pr_number, pr_body + footer)
 
         # Add all labels provided by caller

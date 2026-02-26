@@ -27,7 +27,7 @@ def _make_state(
     force: bool = False,
     debug: bool = False,
     session_id: str = "test-session",
-    issue_number: int | None = None,
+    plan_id: str | None = None,
     pr_number: int | None = None,
     pr_url: str | None = None,
     was_created: bool = False,
@@ -50,7 +50,7 @@ def _make_state(
         session_id=session_id,
         skip_description=False,
         quiet=False,
-        issue_number=issue_number,
+        plan_id=plan_id,
         pr_number=pr_number,
         pr_url=pr_url,
         was_created=was_created,
@@ -199,7 +199,7 @@ def test_success(tmp_path: Path) -> None:
 
 
 def test_plan_impl_auto_forces_on_divergence(tmp_path: Path) -> None:
-    """Plan impl branch (issue_number set) auto-forces when behind remote; no error returned."""
+    """Plan impl branch (plan_id set) auto-forces when behind remote; no error returned."""
     pr = _pr_details(number=42, branch="feature")
     fake_graphite = FakeGraphite()
     fake_github = FakeGitHub(
@@ -226,7 +226,7 @@ def test_plan_impl_auto_forces_on_divergence(tmp_path: Path) -> None:
         cwd=tmp_path,
         global_config=global_config,
     )
-    state = _make_state(cwd=tmp_path, issue_number=7699)
+    state = _make_state(cwd=tmp_path, plan_id="7699")
 
     result = _graphite_first_flow(ctx, state)
 
@@ -268,7 +268,7 @@ def test_branch_not_on_remote_skips_divergence_check(tmp_path: Path) -> None:
 
 
 def test_non_plan_branch_errors_on_divergence(tmp_path: Path) -> None:
-    """Non-plan branch (no issue_number) still errors when behind remote."""
+    """Non-plan branch (no plan_id) still errors when behind remote."""
     fake_git = FakeGit(
         remote_branches={tmp_path: ["origin/feature"]},
         branch_divergence={
@@ -286,7 +286,7 @@ def test_non_plan_branch_errors_on_divergence(tmp_path: Path) -> None:
         cwd=tmp_path,
         global_config=global_config,
     )
-    state = _make_state(cwd=tmp_path, issue_number=None)
+    state = _make_state(cwd=tmp_path, plan_id=None)
 
     result = _graphite_first_flow(ctx, state)
 

@@ -20,10 +20,7 @@ from erk_shared.gateway.github.pr_footer import (
     is_header_at_legacy_position,
 )
 from erk_shared.gateway.github.types import PRNotFound
-from erk_shared.gateway.pr.submit import (
-    has_checkout_footer_for_pr,
-    has_issue_closing_reference,
-)
+from erk_shared.gateway.pr.submit import has_checkout_footer_for_pr
 from erk_shared.impl_folder import read_plan_ref
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.planned_pr_lifecycle import (
@@ -177,9 +174,8 @@ def pr_check(ctx: ErkContext, identifier: str | None, stage: str | None) -> None
     \b
     PR validation checks:
     1. Branch/plan-ref agreement
-    2. Issue closing reference (Closes #N)
-    3. Checkout footer present
-    4. Plan-header metadata at correct position
+    2. Checkout footer present
+    3. Plan-header metadata at correct position
 
     \b
     Plan validation (with identifier):
@@ -298,42 +294,13 @@ def _check_pr_body(ctx: ErkContext, stage: str | None) -> None:
             )
         )
 
-    # Check 1: Issue closing reference (if issue number is discoverable)
-    # plan_ref already computed above
-    if plan_ref is not None:
-        if plan_ref.provider == "github-draft-pr":
-            checks.append(
-                PrCheck(passed=True, description="Draft PR plan — no closing reference needed")
-            )
-        else:
-            expected_plan_number_for_ref = int(plan_ref.plan_id)
-            plans_repo: str | None
-            if ctx.local_config is not None:
-                plans_repo = ctx.local_config.plans_repo
-            else:
-                plans_repo = None
-            if has_issue_closing_reference(pr_body, expected_plan_number_for_ref, plans_repo):
-                if plans_repo is None:
-                    ref_display = f"#{expected_plan_number_for_ref}"
-                else:
-                    ref_display = f"{plans_repo}#{expected_plan_number_for_ref}"
-                msg = f"PR body contains issue closing reference (Closes {ref_display})"
-                checks.append(PrCheck(passed=True, description=msg))
-            else:
-                if plans_repo is None:
-                    expected = f"Closes #{expected_plan_number_for_ref}"
-                else:
-                    expected = f"Closes {plans_repo}#{expected_plan_number_for_ref}"
-                msg = f"PR body missing issue closing reference (expected: {expected})"
-                checks.append(PrCheck(passed=False, description=msg))
-
-    # Check 2: Checkout footer
+    # Check 1: Checkout footer
     if has_checkout_footer_for_pr(pr_body, pr_number):
         checks.append(PrCheck(passed=True, description="PR body contains checkout footer"))
     else:
         checks.append(PrCheck(passed=False, description="PR body missing checkout footer"))
 
-    # Check 3: Header position (not at legacy top position)
+    # Check 2: Header position (not at legacy top position)
     header = extract_header_from_body(pr_body)
     if header:
         if is_header_at_legacy_position(pr_body):

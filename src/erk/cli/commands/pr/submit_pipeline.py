@@ -81,7 +81,7 @@ class SubmitState:
     session_id: str
     skip_description: bool
     quiet: bool
-    issue_number: int | None
+    plan_id: str | None
     pr_number: int | None
     pr_url: str | None
     was_created: bool
@@ -112,10 +112,10 @@ SubmitStep = Callable[[ErkContext, SubmitState], SubmitState | SubmitError]
 
 
 def prepare_state(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
-    """Resolve repo_root, branch_name, parent_branch, trunk_branch, issue_number.
+    """Resolve repo_root, branch_name, parent_branch, trunk_branch, plan_id.
 
     Single location for all discovery. Consolidates duplicate parent-branch
-    and issue-number discovery sites.
+    and plan-id discovery sites.
     """
     cwd = state.cwd
     repo_root = ctx.git.repo.get_repository_root(cwd)
@@ -134,11 +134,9 @@ def prepare_state(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitEr
 
     # Plan ID discovery via .impl/plan-ref.json (or legacy issue.json) or branch name
     impl_dir = cwd / ".impl"
-    issue_number: int | None = None
+    plan_id: str | None = None
     try:
         plan_id = validate_plan_linkage(impl_dir, branch_name)
-        if plan_id is not None:
-            issue_number = int(plan_id)
     except ValueError as e:
         return SubmitError(
             phase="prepare",
@@ -148,14 +146,14 @@ def prepare_state(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitEr
         )
 
     # Auto-repair: create .impl/plan-ref.json if missing but issue inferred from branch
-    if issue_number is not None and not has_plan_ref(impl_dir) and impl_dir.exists():
+    if plan_id is not None and not has_plan_ref(impl_dir) and impl_dir.exists():
         remote_url = ctx.git.remote.get_remote_url(repo_root, "origin")
         owner, repo_name = parse_git_remote_url(remote_url)
-        issue_url = f"https://github.com/{owner}/{repo_name}/issues/{issue_number}"
+        issue_url = f"https://github.com/{owner}/{repo_name}/issues/{plan_id}"
         save_plan_ref(
             impl_dir,
             provider="github",
-            plan_id=str(issue_number),
+            plan_id=plan_id,
             url=issue_url,
             labels=(),
             objective_id=None,
@@ -168,7 +166,7 @@ def prepare_state(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitEr
         branch_name=branch_name,
         parent_branch=parent_branch,
         trunk_branch=trunk_branch,
-        issue_number=issue_number,
+        plan_id=plan_id,
     )
 
 
@@ -213,7 +211,7 @@ def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | S
         click.echo(click.style("Phase 1: Graphite Submit", bold=True))
 
     # Auto-force for plan implementations (branches always diverge from remote)
-    is_plan_impl = state.issue_number is not None
+    is_plan_impl = state.plan_id is not None
     effective_force = state.force or is_plan_impl
 
     # Pre-check: detect remote divergence before gt submit
@@ -412,7 +410,6 @@ def _core_submit_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | Subm
 
     # Check for existing PR or create new one
     existing_pr = ctx.github.get_pr_for_branch(state.repo_root, state.branch_name)
-    plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
 
     if isinstance(existing_pr, PRNotFound):
         # Check parent branch has PR (stacked PRs)
@@ -437,11 +434,7 @@ def _core_submit_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | Subm
                 )
 
         # Build initial PR body with footer
-        footer = build_pr_body_footer(
-            pr_number=0,
-            issue_number=state.issue_number,
-            plans_repo=plans_repo,
-        )
+        footer = build_pr_body_footer(0)
         full_body = "" + footer
 
         pr_number = ctx.github.create_pr(
@@ -461,11 +454,7 @@ def _core_submit_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | Subm
         )
 
         # Update footer with actual PR number
-        updated_footer = build_pr_body_footer(
-            pr_number=pr_number,
-            issue_number=state.issue_number,
-            plans_repo=plans_repo,
-        )
+        updated_footer = build_pr_body_footer(pr_number)
         ctx.github.update_pr_body(state.repo_root, pr_number, "" + updated_footer)
 
         if not state.quiet:
@@ -489,11 +478,7 @@ def _core_submit_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | Subm
     current_body = "" if isinstance(pr_details, PRNotFound) else pr_details.body
     has_footer = "erk pr checkout" in current_body
     if not has_footer:
-        footer = build_pr_body_footer(
-            pr_number=pr_number,
-            issue_number=state.issue_number,
-            plans_repo=plans_repo,
-        )
+        footer = build_pr_body_footer(pr_number)
         ctx.github.update_pr_body(state.repo_root, pr_number, current_body + footer)
 
     if not state.quiet:
@@ -712,8 +697,6 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
         body=pr_body,
         plan_context=state.plan_context,
         pr_number=state.pr_number,
-        issue_number=None,
-        plans_repo=None,
         header="",
         existing_pr_body=existing_pr_body,
     )
@@ -789,7 +772,6 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
 
     return dataclasses.replace(
         state,
-        issue_number=None,
         pr_url=pr_url,
         graphite_url=graphite_url,
         title=pr_title,
@@ -897,7 +879,7 @@ def make_initial_state(
         session_id=resolved_session_id,
         skip_description=skip_description,
         quiet=quiet,
-        issue_number=None,
+        plan_id=None,
         pr_number=None,
         pr_url=None,
         was_created=False,

@@ -92,7 +92,7 @@ def test_make_initial_state_sets_placeholders(tmp_path: Path) -> None:
     assert state.force is True
     assert state.debug is True
     assert state.session_id == "my-session"
-    assert state.issue_number is None
+    assert state.plan_id is None
     assert state.pr_number is None
     assert state.pr_url is None
     assert state.was_created is False
