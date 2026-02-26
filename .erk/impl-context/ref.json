@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Documentation Plan: Make erk pr sync resilient to other-worktree gt sync failures"
+}
