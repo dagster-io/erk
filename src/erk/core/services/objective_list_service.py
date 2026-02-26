@@ -10,7 +10,6 @@ import logging
 from erk_shared.core.objective_list_service import ObjectiveListService
 from erk_shared.core.plan_list_service import PlanListData
 from erk_shared.gateway.github.abc import GitHub
-from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_dispatch_info
 from erk_shared.gateway.github.types import GitHubRepoLocation, IssueFilterState, WorkflowRun
 from erk_shared.gateway.time.abc import Time
@@ -26,9 +25,8 @@ class RealObjectiveListService(ObjectiveListService):
     because objectives are GitHub issues regardless of the plan backend.
     """
 
-    def __init__(self, github: GitHub, github_issues: GitHubIssues, *, time: Time) -> None:
+    def __init__(self, github: GitHub, *, time: Time) -> None:
         self._github = github
-        self._github_issues = github_issues
         self._time = time
 
     def get_objective_list_data(
@@ -41,7 +39,7 @@ class RealObjectiveListService(ObjectiveListService):
         creator: str | None = None,
         exclude_labels: list[str] | None = None,
     ) -> PlanListData:
-        t0 = self._time.monotonic()
+        t = self._time.monotonic()
         issues, pr_linkages = self._github.get_issues_with_pr_linkages(
             location=location,
             labels=[_OBJECTIVE_LABEL],
@@ -49,11 +47,13 @@ class RealObjectiveListService(ObjectiveListService):
             limit=limit,
             creator=creator,
         )
-        t1 = self._time.monotonic()
+        api_ms = (self._time.monotonic() - t) * 1000
 
+        t = self._time.monotonic()
         plans = [issue_info_to_plan(issue) for issue in issues]
-        t2 = self._time.monotonic()
+        plan_parsing_ms = (self._time.monotonic() - t) * 1000
 
+        t = self._time.monotonic()
         workflow_runs: dict[int, WorkflowRun | None] = {}
         if not skip_workflow_runs:
             node_id_to_issue: dict[str, int] = {}
@@ -70,15 +70,15 @@ class RealObjectiveListService(ObjectiveListService):
                     )
                     for node_id, run in runs_by_node_id.items():
                         workflow_runs[node_id_to_issue[node_id]] = run
-                except Exception as e:
+                except RuntimeError as e:
                     logging.warning("Failed to fetch workflow runs: %s", e)
-        t3 = self._time.monotonic()
+        workflow_runs_ms = (self._time.monotonic() - t) * 1000
 
         return PlanListData(
             plans=plans,
             pr_linkages=pr_linkages,
             workflow_runs=workflow_runs,
-            api_ms=(t1 - t0) * 1000,
-            plan_parsing_ms=(t2 - t1) * 1000,
-            workflow_runs_ms=(t3 - t2) * 1000,
+            api_ms=api_ms,
+            plan_parsing_ms=plan_parsing_ms,
+            workflow_runs_ms=workflow_runs_ms,
         )

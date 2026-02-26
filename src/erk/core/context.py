@@ -358,7 +358,7 @@ def context_for_test(
         plan_list_service = FakePlanListService()
 
     if objective_list_service is None:
-        objective_list_service = RealObjectiveListService(github, issues, time=time)
+        objective_list_service = RealObjectiveListService(github, time=time)
 
     if codespace_registry is None:
         codespace_registry = FakeCodespaceRegistry()
@@ -607,7 +607,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
 
     # Objectives are always issue-based regardless of plan backend
     objective_list_service: ObjectiveListService = RealObjectiveListService(
-        github, issues, time=time
+        github, time=time
     )
 
     # 9. Apply dry-run wrappers if needed
