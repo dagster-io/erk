@@ -1,7 +1,7 @@
-"""Update an existing GitHub issue's plan comment with new content.
+"""Update an existing plan's content.
 
 Usage:
-    erk exec plan-update-issue --plan-number N [OPTIONS]
+    erk exec plan-update --plan-number N [OPTIONS]
 
 This command updates the plan content comment on an existing GitHub issue:
 1. Find plan file (from session scratch, --plan-path, or ~/.claude/plans/)
@@ -41,7 +41,7 @@ from erk_shared.plan_store.types import PlanNotFound
 from erk_shared.plan_utils import extract_title_from_plan, get_title_tag_from_labels
 
 
-@click.command(name="plan-update-issue")
+@click.command(name="plan-update")
 @click.option(
     "--plan-number",
     type=int,
@@ -65,7 +65,7 @@ from erk_shared.plan_utils import extract_title_from_plan, get_title_tag_from_la
     help="Session ID to find plan file in scratch storage",
 )
 @click.pass_context
-def plan_update_issue(
+def plan_update(
     ctx: click.Context,
     *,
     plan_number: int,
@@ -73,7 +73,7 @@ def plan_update_issue(
     plan_path: Path | None,
     session_id: str | None,
 ) -> None:
-    """Update an existing GitHub issue's plan comment with new content."""
+    """Update an existing plan's content."""
 
     def _handle_update_error(error_msg: str, cause: Exception | None = None) -> None:
         """Output error message and exit with code 1."""

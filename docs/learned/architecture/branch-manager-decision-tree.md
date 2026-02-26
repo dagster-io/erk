@@ -67,13 +67,13 @@ The `slot init-pool` command in `src/erk/cli/commands/slot/init_pool_cmd.py` cre
 
 **Why**: BranchManager abstracts over Graphite vs plain Git modes. In Graphite mode, it delegates to `GraphiteBranchOps` to run `gt track`. In Git mode, it creates plain branches without metadata. Commands use `ctx.branch_manager` so they work in both modes without conditional logic.
 
-<!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py, setup_impl_from_issue -->
+<!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py, setup_impl_from_pr -->
 
-See `setup_impl_from_issue()` in `src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py` for the pattern: `branch_manager.create_branch()` followed by `branch_manager.checkout_branch()` to set up a plan implementation branch.
+See `setup_impl_from_pr()` in `src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py` for the pattern: `branch_manager.create_tracking_branch()` (for remote-only branches) or `branch_manager.checkout_branch()` (for existing local branches) to set up a plan implementation branch.
 
 ### Examples
 
-1. **Plan implementation branches** — created by `setup-impl-from-issue`, will have PRs
+1. **Plan implementation branches** — created by `setup-impl-from-pr`, will have PRs
 2. **User-created feature branches** — `gt create feature/new-thing`, managed by Graphite
 3. **Stacked branches** — depend on other branches, require Graphite metadata for upstack/downstack operations
 

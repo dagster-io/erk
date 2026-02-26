@@ -1,7 +1,7 @@
 """Close a plan with a comment.
 
 Usage:
-    erk exec close-issue-with-comment <PLAN_NUMBER> --comment "Closing because..."
+    erk exec close-pr <PLAN_NUMBER> --comment "Closing because..."
 
 Output:
     JSON with {success, plan_number, comment_id}
@@ -21,7 +21,7 @@ from erk_shared.context.helpers import (
 )
 
 
-@click.command(name="close-issue-with-comment")
+@click.command(name="close-pr")
 @click.argument("plan_number", type=int)
 @click.option(
     "--comment",
@@ -29,7 +29,7 @@ from erk_shared.context.helpers import (
     help="Comment body to add before closing",
 )
 @click.pass_context
-def close_issue_with_comment(
+def close_pr(
     ctx: click.Context,
     plan_number: int,
     *,

@@ -42,11 +42,11 @@ Not all erk exec commands support the `--format` flag. Always check with `erk ex
 
 ### Commands Without Format Flag
 
-| Command                 | Output Format | Notes                         |
-| ----------------------- | ------------- | ----------------------------- |
-| `get-closing-text`      | Plain text    | Returns closing text or empty |
-| `impl-signal`           | JSON always   | No format flag, always JSON   |
-| `setup-impl-from-issue` | Plain text    | Status messages only          |
+| Command              | Output Format | Notes                         |
+| -------------------- | ------------- | ----------------------------- |
+| `get-closing-text`   | Plain text    | Returns closing text or empty |
+| `impl-signal`        | JSON always   | No format flag, always JSON   |
+| `setup-impl-from-pr` | Plain text    | Status messages only          |
 
 ### Best Practice
 
@@ -71,7 +71,7 @@ See the `erk-exec` skill for complete workflow guidance and the full command ref
 ### Plan Operations
 
 - `get-plan-metadata` - Read plan issue metadata
-- `setup-impl-from-issue` - Prepare .impl/ folder
+- `setup-impl-from-pr` - Prepare .impl/ folder
 
 ### Session Operations
 
@@ -117,7 +117,7 @@ Updates a step's status and/or PR reference. When `--pr` is provided without `--
 ### Implementation Setup Operations
 
 - `setup-impl` - Consolidated implementation setup (orchestrator)
-- `setup-impl-from-issue` - Prepare worktree from a plan issue (called by `setup-impl`)
+- `setup-impl-from-pr` - Prepare worktree from a plan issue (called by `setup-impl`)
 - `cleanup-impl-context` - Remove `.erk/impl-context/` staging directory
 
 #### setup-impl
@@ -133,7 +133,7 @@ erk exec setup-impl                           # Auto-detect from .impl/, branch,
 **What it does:**
 
 1. Detects plan source (issue, file, existing `.impl/`, or branch name)
-2. Delegates to `setup-impl-from-issue` for issue-based plans
+2. Delegates to `setup-impl-from-pr` for issue-based plans
 3. Runs `impl-init` validation
 4. Cleans up `.erk/impl-context/` staging directory (git rm + commit + push)
 
@@ -144,7 +144,7 @@ erk exec setup-impl                           # Auto-detect from .impl/, branch,
 
 **Output:** JSON with `success`, `source`, `plan_number`, `has_plan_tracking`, `valid`, `related_docs`
 
-#### setup-impl-from-issue
+#### setup-impl-from-pr
 
 Creates implementation environment from a plan issue:
 
