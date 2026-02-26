@@ -43,12 +43,12 @@ Below is the exact mapping from source classes/functions to destination files. L
 
 Test classes for basic app composition, data loading, navigation, and refresh:
 
-| Class | Source Lines | Description |
-|-------|-------------|-------------|
-| `TestErkDashAppCompose` | 27–45 | App composition and layout |
-| `TestErkDashAppDataLoading` | 47–93 | Data loading behavior |
-| `TestErkDashAppNavigation` | 95–156 | Keyboard navigation (q, escape, ?) |
-| `TestErkDashAppRefresh` | 158–179 | Data refresh behavior (r key) |
+| Class                       | Source Lines | Description                        |
+| --------------------------- | ------------ | ---------------------------------- |
+| `TestErkDashAppCompose`     | 27–45        | App composition and layout         |
+| `TestErkDashAppDataLoading` | 47–93        | Data loading behavior              |
+| `TestErkDashAppNavigation`  | 95–156       | Keyboard navigation (q, escape, ?) |
+| `TestErkDashAppRefresh`     | 158–179      | Data refresh behavior (r key)      |
 
 **Imports needed:** `pytest`, `ErkDashApp`, `HelpScreen`, `PlanFilters`, `PlanDataTable`, `StatusBar`, `FakePlanDataProvider`, `make_plan_row`
 
@@ -56,9 +56,9 @@ Test classes for basic app composition, data loading, navigation, and refresh:
 
 #### `tests/tui/app/test_status_bar.py` (~60 lines)
 
-| Class | Source Lines | Description |
-|-------|-------------|-------------|
-| `TestStatusBar` | 181–239 | StatusBar widget (plan count, messages, fetch timings) |
+| Class           | Source Lines | Description                                            |
+| --------------- | ------------ | ------------------------------------------------------ |
+| `TestStatusBar` | 181–239      | StatusBar widget (plan count, messages, fetch timings) |
 
 **Imports needed:** `pytest`, `ErkDashApp`, `PlanFilters`, `StatusBar`, `FakePlanDataProvider`, `make_plan_row`
 
@@ -66,9 +66,9 @@ Test classes for basic app composition, data loading, navigation, and refresh:
 
 #### `tests/tui/app/test_filter_mode.py` (~165 lines)
 
-| Class | Source Lines | Description |
-|-------|-------------|-------------|
-| `TestFilterMode` | 279–441 | "/" filter mode (activate, narrow, escape, focus) |
+| Class            | Source Lines | Description                                       |
+| ---------------- | ------------ | ------------------------------------------------- |
+| `TestFilterMode` | 279–441      | "/" filter mode (activate, narrow, escape, focus) |
 
 **Imports needed:** `pytest`, `ErkDashApp`, `PlanFilters`, `PlanDataTable`, `StatusBar`, `FakePlanDataProvider`, `make_plan_row`
 
@@ -76,11 +76,11 @@ Test classes for basic app composition, data loading, navigation, and refresh:
 
 #### `tests/tui/app/test_plan_detail_screen.py` (~390 lines)
 
-| Class | Source Lines | Description |
-|-------|-------------|-------------|
-| `TestPlanDetailScreen` | 443–593 | Plan detail modal (space opens, escape/q dismisses) |
-| `TestPlanDetailScreenCopyActions` | 595–710 | Copy actions in detail screen |
-| `TestPlanDetailScreenFixConflictsKeybinding` | 712–786 | Fix conflicts keybinding |
+| Class                                        | Source Lines | Description                                         |
+| -------------------------------------------- | ------------ | --------------------------------------------------- |
+| `TestPlanDetailScreen`                       | 443–593      | Plan detail modal (space opens, escape/q dismisses) |
+| `TestPlanDetailScreenCopyActions`            | 595–710      | Copy actions in detail screen                       |
+| `TestPlanDetailScreenFixConflictsKeybinding` | 712–786      | Fix conflicts keybinding                            |
 
 **Imports needed:** `pytest`, `ErkDashApp`, `PlanDetailScreen`, `PlanFilters`, `StatusBar`, `FakeClipboard`, `FakePlanDataProvider`, `make_plan_row`
 
@@ -88,14 +88,14 @@ Test classes for basic app composition, data loading, navigation, and refresh:
 
 #### `tests/tui/app/test_command_palette.py` (~350 lines)
 
-| Class | Source Lines | Description |
-|-------|-------------|-------------|
-| `TestClosePlanViaCommandPalette` | 241–277 | Close plan command palette integration |
-| `TestCommandPaletteFromMain` | 788–855 | Command palette activation from main app |
-| `TestCommandPaletteFromMainCopyVariants` | 857–916 | Copy command variants |
-| `TestExecutePaletteCommandLandPR` | 918–967 | Land PR command execution |
-| `TestExecutePaletteCommandFixConflictsRemote` | 969–1032 | Fix conflicts remote command |
-| `TestExecutePaletteCommandCodespaceRunPlan` | 1989–2021 | Codespace run plan command |
+| Class                                         | Source Lines | Description                              |
+| --------------------------------------------- | ------------ | ---------------------------------------- |
+| `TestClosePlanViaCommandPalette`              | 241–277      | Close plan command palette integration   |
+| `TestCommandPaletteFromMain`                  | 788–855      | Command palette activation from main app |
+| `TestCommandPaletteFromMainCopyVariants`      | 857–916      | Copy command variants                    |
+| `TestExecutePaletteCommandLandPR`             | 918–967      | Land PR command execution                |
+| `TestExecutePaletteCommandFixConflictsRemote` | 969–1032     | Fix conflicts remote command             |
+| `TestExecutePaletteCommandCodespaceRunPlan`   | 1989–2021    | Codespace run plan command               |
 
 **Imports needed:** `pytest`, `ErkDashApp`, `PlanFilters`, `StatusBar`, `FakeClipboard`, `FakePlanDataProvider`, `make_plan_row`
 
@@ -103,10 +103,10 @@ Test classes for basic app composition, data loading, navigation, and refresh:
 
 #### `tests/tui/app/test_streaming.py` (~180 lines)
 
-| Class | Source Lines | Description |
-|-------|-------------|-------------|
-| `TestStreamingCommandTimeout` | 1034–1211 | Streaming command timeout handling |
-| `TestClosePlanInProcess` | 1213–1294 | Close plan in-process execution |
+| Class                         | Source Lines | Description                        |
+| ----------------------------- | ------------ | ---------------------------------- |
+| `TestStreamingCommandTimeout` | 1034–1211    | Streaming command timeout handling |
+| `TestClosePlanInProcess`      | 1213–1294    | Close plan in-process execution    |
 
 **Imports needed:** `pytest`, `ErkDashApp`, `PlanFilters`, `StatusBar`, `FakePlanDataProvider`, `make_plan_row`
 
@@ -114,9 +114,9 @@ Test classes for basic app composition, data loading, navigation, and refresh:
 
 #### `tests/tui/app/test_plan_body_screen.py` (~245 lines)
 
-| Class | Source Lines | Description |
-|-------|-------------|-------------|
-| `TestPlanBodyScreen` | 1296–1588 | Plan body screen modal behavior |
+| Class                | Source Lines | Description                     |
+| -------------------- | ------------ | ------------------------------- |
+| `TestPlanBodyScreen` | 1296–1588    | Plan body screen modal behavior |
 
 **Imports needed:** `pytest`, `Markdown`, `ErkDashApp`, `PlanBodyScreen`, `PlanFilters`, `FakePlanDataProvider`, `make_plan_row`
 
@@ -124,11 +124,11 @@ Test classes for basic app composition, data loading, navigation, and refresh:
 
 #### `tests/tui/app/test_view_switching.py` (~420 lines)
 
-| Class | Source Lines | Description |
-|-------|-------------|-------------|
-| `TestViewSwitching` | 1606–1987 | View switching (1/2/3 keys, persistence) |
-| `test_display_name_plans_view` (standalone function) | 2106–2111 | _display_name_for_view() for PLANS mode |
-| `test_display_name_non_plans_view` (standalone function) | 2114–2122 | _display_name_for_view() for other modes |
+| Class                                                    | Source Lines | Description                               |
+| -------------------------------------------------------- | ------------ | ----------------------------------------- |
+| `TestViewSwitching`                                      | 1606–1987    | View switching (1/2/3 keys, persistence)  |
+| `test_display_name_plans_view` (standalone function)     | 2106–2111    | \_display_name_for_view() for PLANS mode  |
+| `test_display_name_non_plans_view` (standalone function) | 2114–2122    | \_display_name_for_view() for other modes |
 
 **Imports needed:** `pytest`, `ErkDashApp`, `PlanFilters`, `ViewMode`, `get_view_config`, `ViewBar`, `StatusBar`, `FakePlanDataProvider`, `make_plan_row`
 
@@ -136,10 +136,10 @@ Test classes for basic app composition, data loading, navigation, and refresh:
 
 #### `tests/tui/app/test_actions.py` (~200 lines)
 
-| Class | Source Lines | Description |
-|-------|-------------|-------------|
-| `TestActionViewComments` | 2023–2101 | View comments action ('e' key) |
-| `TestActionLaunch` | 2125–2245 | Launch action ('l' key) |
+| Class                    | Source Lines | Description                    |
+| ------------------------ | ------------ | ------------------------------ |
+| `TestActionViewComments` | 2023–2101    | View comments action ('e' key) |
+| `TestActionLaunch`       | 2125–2245    | Launch action ('l' key)        |
 
 **Imports needed:** `pytest`, `ErkDashApp`, `PlanFilters`, `LaunchScreen`, `UnresolvedCommentsScreen`, `FakePlanDataProvider`, `make_plan_row`
 
@@ -147,16 +147,16 @@ Test classes for basic app composition, data loading, navigation, and refresh:
 
 #### `tests/tui/app/test_async_operations.py` (~850 lines)
 
-| Class | Source Lines | Description |
-|-------|-------------|-------------|
-| `TestAddressRemoteAsync` | 2247–2312 | Address remote async operation |
-| `TestFixConflictsRemoteAsync` | 2314–2414 | Fix conflicts remote async |
-| `TestLandPrAsync` | 2416–2814 | Land PR async operation |
-| `TestShouldTriggerLearn` | 2816–2840 | _should_trigger_learn helper function |
-| `TestDispatchToQueueAsync` | 2842–2935 | Dispatch to queue async |
-| `TestCloseObjectiveAsync` | 2937–3000 | Close objective async |
-| `TestCheckObjectiveAsync` | 3002–3066 | Check objective async |
-| `TestOneShotPlanAsync` | 3068–3132 | One-shot plan async |
+| Class                         | Source Lines | Description                            |
+| ----------------------------- | ------------ | -------------------------------------- |
+| `TestAddressRemoteAsync`      | 2247–2312    | Address remote async operation         |
+| `TestFixConflictsRemoteAsync` | 2314–2414    | Fix conflicts remote async             |
+| `TestLandPrAsync`             | 2416–2814    | Land PR async operation                |
+| `TestShouldTriggerLearn`      | 2816–2840    | \_should_trigger_learn helper function |
+| `TestDispatchToQueueAsync`    | 2842–2935    | Dispatch to queue async                |
+| `TestCloseObjectiveAsync`     | 2937–3000    | Close objective async                  |
+| `TestCheckObjectiveAsync`     | 3002–3066    | Check objective async                  |
+| `TestOneShotPlanAsync`        | 3068–3132    | One-shot plan async                    |
 
 **Imports needed:** `pytest`, `Path`, `ErkDashApp`, `_should_trigger_learn`, `PlanFilters`, `StatusBar`, `FakePlanDataProvider`, `make_plan_row`
 
@@ -164,10 +164,10 @@ Test classes for basic app composition, data loading, navigation, and refresh:
 
 #### `tests/tui/app/test_operation_tracking.py` (~290 lines)
 
-| Class | Source Lines | Description |
-|-------|-------------|-------------|
-| `_FakePopen` | 3134–3142 | Fake subprocess.Popen (helper class, NOT a test) |
-| `TestOperationTracking` | 3145–3435 | Multi-operation status bar tracking |
+| Class                   | Source Lines | Description                                      |
+| ----------------------- | ------------ | ------------------------------------------------ |
+| `_FakePopen`            | 3134–3142    | Fake subprocess.Popen (helper class, NOT a test) |
+| `TestOperationTracking` | 3145–3435    | Multi-operation status bar tracking              |
 
 **Imports needed:** `pytest`, `ErkDashApp`, `PlanFilters`, `StatusBar`, `FakePlanDataProvider`, `make_plan_row`
 
@@ -177,10 +177,10 @@ Test classes for basic app composition, data loading, navigation, and refresh:
 
 #### `tests/tui/app/test_app_filtering.py` (~370 lines)
 
-| Class | Source Lines | Description |
-|-------|-------------|-------------|
-| `TestStackFilter` | 3437–3637 | Stack filter functionality ('t' key) |
-| `TestObjectiveFilter` | 3639–3803 | Objective filter functionality ('o' key) |
+| Class                 | Source Lines | Description                              |
+| --------------------- | ------------ | ---------------------------------------- |
+| `TestStackFilter`     | 3437–3637    | Stack filter functionality ('t' key)     |
+| `TestObjectiveFilter` | 3639–3803    | Objective filter functionality ('o' key) |
 
 **Imports needed:** `pytest`, `ErkDashApp`, `PlanFilters`, `StatusBar`, `FakePlanDataProvider`, `make_plan_row`
 
@@ -188,9 +188,9 @@ Test classes for basic app composition, data loading, navigation, and refresh:
 
 #### `tests/tui/app/test_utils.py` (~25 lines)
 
-| Class | Source Lines | Description |
-|-------|-------------|-------------|
-| `TestBuildGithubUrl` | 1590–1604 | _build_github_url helper function |
+| Class                | Source Lines | Description                        |
+| -------------------- | ------------ | ---------------------------------- |
+| `TestBuildGithubUrl` | 1590–1604    | \_build_github_url helper function |
 
 **Imports needed:** `_build_github_url`
 
