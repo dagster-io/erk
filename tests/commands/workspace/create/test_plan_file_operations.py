@@ -172,7 +172,8 @@ def test_create_with_keep_plan_file_flag() -> None:
         wt_path = repo_dir / "worktrees" / f"my-feature-{date_suffix}"
         assert wt_path.exists()
         # Branch-scoped impl folder should be created with plan.md
-        assert (wt_path / ".erk" / "impl-context" / f"my-feature-{date_suffix}" / "plan.md").exists()
+        impl_dir = wt_path / ".erk" / "impl-context" / f"my-feature-{date_suffix}"
+        assert (impl_dir / "plan.md").exists()
         # Original plan file should still exist (copied, not moved)
         assert plan_file.exists()
         assert "Copied plan to" in result.output

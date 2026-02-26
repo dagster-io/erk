@@ -283,7 +283,8 @@ def test_create_with_stay_and_plan_file() -> None:
         wt_path = repo_dir / "worktrees" / f"test-feature-{date_suffix}"
         assert wt_path.exists()
         # Impl folder should be created
-        assert (wt_path / ".erk" / "impl-context" / f"test-feature-{date_suffix}" / "plan.md").exists()
+        impl_dir = wt_path / ".erk" / "impl-context" / f"test-feature-{date_suffix}"
+        assert (impl_dir / "plan.md").exists()
         assert not plan_file.exists()
         # When --stay is used, only show creation message (no navigation)
         assert "Created worktree at" in result.output
