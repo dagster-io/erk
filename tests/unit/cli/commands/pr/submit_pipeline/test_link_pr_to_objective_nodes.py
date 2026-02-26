@@ -10,7 +10,7 @@ from erk.cli.commands.pr.submit_pipeline import (
 from erk.core.context import context_for_test
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
-from erk_shared.impl_folder import save_plan_ref
+from erk_shared.impl_folder import get_impl_dir, save_plan_ref
 
 BRANCH = "test/branch"
 """Test branch name used across tests."""
@@ -96,12 +96,8 @@ def _make_issue(*, number: int, body: str) -> IssueInfo:
 
 
 def _setup_impl(cwd: Path, *, objective_id: int, node_ids: tuple[str, ...]) -> None:
-    """Create impl dir with ref.json containing node_ids.
-
-    Uses legacy .impl/ path since link_pr_to_objective_nodes still
-    uses state.cwd / ".impl" (not yet migrated to resolve_impl_dir).
-    """
-    impl_dir = cwd / ".impl"
+    """Create branch-scoped impl dir with ref.json containing node_ids."""
+    impl_dir = get_impl_dir(cwd, branch_name="feature")
     impl_dir.mkdir(parents=True, exist_ok=True)
     save_plan_ref(
         impl_dir,

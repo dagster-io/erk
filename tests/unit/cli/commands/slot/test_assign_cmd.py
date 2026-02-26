@@ -335,20 +335,6 @@ def test_slot_assign_pool_full_non_tty_fails() -> None:
         assert "--force" in result.output
 
 
-def test_cleanup_worktree_artifacts_removes_impl_folder(tmp_path) -> None:
-    """Test that cleanup removes .impl/ folder."""
-    worktree_path = tmp_path / "worktree"
-    worktree_path.mkdir()
-
-    impl_folder = worktree_path / ".impl"
-    impl_folder.mkdir()
-    (impl_folder / "plan.md").write_text("test plan", encoding="utf-8")
-
-    cleanup_worktree_artifacts(worktree_path)
-
-    assert not impl_folder.exists()
-
-
 def test_cleanup_worktree_artifacts_removes_scratch_folder(tmp_path) -> None:
     """Test that cleanup removes .erk/scratch/ folder."""
     worktree_path = tmp_path / "worktree"
@@ -372,14 +358,14 @@ def test_cleanup_worktree_artifacts_handles_missing_folders(tmp_path) -> None:
     worktree_path = tmp_path / "worktree"
     worktree_path.mkdir()
 
-    # No .impl/ or .erk/scratch/ exists - should not raise
+    # No .erk/impl-context/ or .erk/scratch/ exists - should not raise
     cleanup_worktree_artifacts(worktree_path)
 
     assert worktree_path.exists()
 
 
 def test_slot_assign_cleans_up_artifacts_when_reusing_worktree() -> None:
-    """Test that slot assign cleans up .impl/ and .erk/scratch/ when reusing worktree."""
+    """Test that slot assign cleans up .erk/impl-context/ and .erk/scratch/ when reusing worktree."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
@@ -387,11 +373,6 @@ def test_slot_assign_cleans_up_artifacts_when_reusing_worktree() -> None:
         # Pre-create worktree directory with stale artifacts
         worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         worktree_path.mkdir(parents=True)
-
-        # Create stale .impl/ folder
-        impl_folder = worktree_path / ".impl"
-        impl_folder.mkdir()
-        (impl_folder / "plan.md").write_text("old plan", encoding="utf-8")
 
         # Create stale .erk/scratch/ folder
         scratch_folder = worktree_path / ".erk" / "scratch"
@@ -442,7 +423,6 @@ def test_slot_assign_cleans_up_artifacts_when_reusing_worktree() -> None:
         assert result.exit_code == 0
 
         # Verify artifacts were cleaned up
-        assert not impl_folder.exists(), ".impl/ folder should be removed"
         assert not scratch_folder.exists(), ".erk/scratch/ folder should be removed"
 
 

@@ -218,7 +218,7 @@ def test_check_gitignore_entries_no_gitignore(tmp_path: Path) -> None:
 def test_check_gitignore_entries_all_present(tmp_path: Path) -> None:
     """Test gitignore check when all required entries are present."""
     gitignore = tmp_path / ".gitignore"
-    content = "*.pyc\n.erk/scratch/\n.impl/\n.erk/config.local.toml\n.erk/bin/\n"
+    content = "*.pyc\n.erk/scratch/\n.erk/config.local.toml\n.erk/bin/\n"
     gitignore.write_text(content, encoding="utf-8")
 
     result = check_gitignore_entries(tmp_path)
@@ -231,28 +231,13 @@ def test_check_gitignore_entries_all_present(tmp_path: Path) -> None:
 def test_check_gitignore_entries_missing_scratch(tmp_path: Path) -> None:
     """Test gitignore check when .erk/scratch/ entry is missing."""
     gitignore = tmp_path / ".gitignore"
-    gitignore.write_text("*.pyc\n.impl/\n.erk/config.local.toml\n.erk/bin/\n", encoding="utf-8")
+    gitignore.write_text("*.pyc\n.erk/config.local.toml\n.erk/bin/\n", encoding="utf-8")
 
     result = check_gitignore_entries(tmp_path)
 
     assert result.name == "gitignore"
     assert result.passed is False
     assert ".erk/scratch/" in result.message
-    assert result.remediation is not None
-    assert "erk init" in result.remediation
-
-
-def test_check_gitignore_entries_missing_impl(tmp_path: Path) -> None:
-    """Test gitignore check when .impl/ entry is missing."""
-    gitignore = tmp_path / ".gitignore"
-    content = "*.pyc\n.erk/scratch/\n.erk/config.local.toml\n.erk/bin/\n"
-    gitignore.write_text(content, encoding="utf-8")
-
-    result = check_gitignore_entries(tmp_path)
-
-    assert result.name == "gitignore"
-    assert result.passed is False
-    assert ".impl/" in result.message
     assert result.remediation is not None
     assert "erk init" in result.remediation
 
@@ -267,7 +252,6 @@ def test_check_gitignore_entries_missing_all(tmp_path: Path) -> None:
     assert result.name == "gitignore"
     assert result.passed is False
     assert ".erk/scratch/" in result.message
-    assert ".impl/" in result.message
     assert ".erk/config.local.toml" in result.message
     assert ".erk/bin/" in result.message
     assert result.remediation is not None

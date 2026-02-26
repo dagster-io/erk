@@ -299,15 +299,16 @@ def _make_pr_42(*, plan_branch: str) -> PRDetails:
 
 
 def test_dispatch_auto_detects_from_impl_folder() -> None:
-    """Test auto-detection from .impl/plan-ref.json when no arguments given."""
+    """Test auto-detection from branch-scoped .erk/impl-context/ directory."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         plan_branch = "plnd/auto-detect-impl"
         pr_42 = _make_pr_42(plan_branch=plan_branch)
 
-        # Create .impl/plan-ref.json
-        impl_dir = env.cwd / ".impl"
-        impl_dir.mkdir()
+        # Create branch-scoped .erk/impl-context/<branch>/ with plan-ref.json
+        from erk_shared.impl_folder import get_impl_dir
+        impl_dir = get_impl_dir(env.cwd, branch_name="main")
+        impl_dir.parent.mkdir(parents=True, exist_ok=True)
         plan_ref_content = build_plan_ref_json(
             provider="github-draft-pr",
             plan_id="42",

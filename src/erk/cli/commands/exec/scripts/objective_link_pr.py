@@ -14,11 +14,10 @@ Exit Codes:
 """
 
 import json
-from pathlib import Path
 
 import click
 
-from erk_shared.context.helpers import require_cwd, require_issues, require_repo_root
+from erk_shared.context.helpers import require_cwd, require_git, require_issues, require_repo_root
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
     extract_metadata_value,
@@ -30,26 +29,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
     update_node_in_frontmatter,
 )
 from erk_shared.gateway.github.types import BodyText
-from erk_shared.impl_folder import read_plan_ref
-
-
-def _find_impl_dir(cwd: Path) -> Path | None:
-    """Find the .impl/ directory, trying direct path first then scanning."""
-    # Check for .impl/ directly in cwd (legacy flat layout)
-    direct = cwd / ".impl"
-    if direct.exists():
-        return direct
-
-    # Check for branch-scoped layout under .erk/impl-context/
-    impl_context = cwd / ".erk" / "impl-context"
-    if impl_context.exists():
-        for child in impl_context.iterdir():
-            if child.is_dir():
-                ref_file = child / "ref.json"
-                if ref_file.exists():
-                    return child
-
-    return None
+from erk_shared.impl_folder import read_plan_ref, resolve_impl_dir
 
 
 @click.command(name="objective-link-pr")
@@ -67,8 +47,9 @@ def objective_link_pr(
 ) -> None:
     """Link PR number to objective roadmap nodes from .impl/ metadata."""
     cwd = require_cwd(ctx)
-
-    impl_dir = _find_impl_dir(cwd)
+    git = require_git(ctx)
+    current_branch = git.branch.get_current_branch(cwd)
+    impl_dir = resolve_impl_dir(cwd, branch_name=current_branch)
     if impl_dir is None:
         click.echo(json.dumps({"success": False, "reason": "no_impl_dir"}))
         return

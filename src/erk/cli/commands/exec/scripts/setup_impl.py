@@ -44,7 +44,7 @@ from erk_shared.context.helpers import (
     require_repo_root,
 )
 from erk_shared.gateway.github.types import PRNotFound
-from erk_shared.impl_folder import create_impl_folder, read_plan_ref
+from erk_shared.impl_folder import create_impl_folder, read_plan_ref, resolve_impl_dir
 
 
 def _run_impl_init(ctx: click.Context) -> dict[str, object]:
@@ -192,9 +192,15 @@ def setup_impl(ctx: click.Context, issue_number: int | None, file_path: Path | N
         return
 
     # Path 3: Auto-detect
-    # 3a: Check if .impl/ already exists and is valid
-    impl_dir = cwd / ".impl"
-    if impl_dir.exists():
+    git = require_git(ctx)
+    repo_root = require_repo_root(ctx)
+    github = require_github(ctx)
+
+    current_branch = git.branch.get_current_branch(cwd)
+
+    # 3a: Check if impl already exists and is valid
+    impl_dir = resolve_impl_dir(cwd, branch_name=current_branch)
+    if impl_dir is not None:
         plan_ref = read_plan_ref(impl_dir)
         if plan_ref is not None:
             # Has plan tracking - sync with remote
@@ -224,11 +230,6 @@ def setup_impl(ctx: click.Context, issue_number: int | None, file_path: Path | N
             return
 
     # 3b: Detect from branch
-    git = require_git(ctx)
-    repo_root = require_repo_root(ctx)
-    github = require_github(ctx)
-
-    current_branch = git.branch.get_current_branch(cwd)
 
     def pr_lookup() -> int | None:
         if current_branch is None:

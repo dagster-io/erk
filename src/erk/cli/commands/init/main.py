@@ -226,13 +226,6 @@ def _run_gitignore_prompts(repo_root: Path) -> None:
         "Add .erk/scratch/ to .gitignore (session-specific working files)?",
     )
 
-    # Add .impl/
-    gitignore_content, impl_added = _add_gitignore_entry_with_prompt(
-        gitignore_content,
-        ".impl/",
-        "Add .impl/ to .gitignore (temporary implementation plans)?",
-    )
-
     # Add .erk/config.local.toml
     gitignore_content, local_added = _add_gitignore_entry_with_prompt(
         gitignore_content,
@@ -248,7 +241,7 @@ def _run_gitignore_prompts(repo_root: Path) -> None:
     )
 
     # Write if any entry was modified
-    if env_added or scratch_added or impl_added or local_added or bin_added:
+    if env_added or scratch_added or local_added or bin_added:
         gitignore_path.write_text(gitignore_content, encoding="utf-8")
         user_output(f"Updated {gitignore_path}")
 

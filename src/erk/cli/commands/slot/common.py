@@ -501,12 +501,8 @@ def cleanup_worktree_artifacts(worktree_path: Path) -> None:
     Args:
         worktree_path: Path to the worktree to clean up
     """
-    impl_folder = worktree_path / ".impl"
     impl_context_folder = worktree_path / IMPL_DIR_RELATIVE
     scratch_folder = worktree_path / ".erk" / "scratch"
-
-    if impl_folder.exists():
-        shutil.rmtree(impl_folder)
 
     if impl_context_folder.exists():
         shutil.rmtree(impl_context_folder)

@@ -238,12 +238,14 @@ class TestBuildWorktreeMapping:
         assert len(mapping) == 0
 
     def test_planned_pr_branch_resolved_via_plan_ref_json(self, tmp_path: Path) -> None:
-        """Draft PR branch (plnd/*) resolved via .impl/plan-ref.json.
+        """Draft PR branch (plnd/*) resolved via branch-scoped .erk/impl-context/.
 
         Branch name 'plnd/fix-missing-data-02-19-1416' doesn't contain a
         numeric issue prefix. The plan ID (PR number) comes from
-        .impl/plan-ref.json inside the worktree directory.
+        .erk/impl-context/<branch>/plan-ref.json inside the worktree directory.
         """
+        from erk_shared.impl_folder import get_impl_dir
+
         repo_root = tmp_path / "repo"
         repo_root.mkdir()
 
@@ -254,9 +256,9 @@ class TestBuildWorktreeMapping:
         worktree_path.mkdir(parents=True)
         branch_name = "plnd/fix-missing-data-02-19-1416"
 
-        # Create .impl/plan-ref.json on disk (read_plan_ref does direct I/O)
-        impl_dir = worktree_path / ".impl"
-        impl_dir.mkdir()
+        # Create branch-scoped .erk/impl-context/<branch>/plan-ref.json on disk (read_plan_ref does direct I/O)
+        impl_dir = get_impl_dir(worktree_path, branch_name=branch_name)
+        impl_dir.parent.mkdir(parents=True, exist_ok=True)
         plan_ref_data = {
             "provider": "github-draft-pr",
             "plan_id": "7624",
@@ -276,6 +278,7 @@ class TestBuildWorktreeMapping:
                 ]
             },
             git_common_dirs={repo_root: repo_root / ".git"},
+            current_branches={worktree_path: branch_name},
         )
 
         ctx = create_test_context(
@@ -305,11 +308,13 @@ class TestBuildWorktreeMapping:
         assert worktree_branch == branch_name
 
     def test_legacy_planned_slash_branch_resolved_via_plan_ref_json(self, tmp_path: Path) -> None:
-        """Legacy planned/ prefix branch resolved via .impl/plan-ref.json.
+        """Legacy planned/ prefix branch resolved via branch-scoped .erk/impl-context/.
 
         Branch name 'planned/fix-auth-bug-01-15-1430' doesn't contain a
-        numeric issue prefix. The plan ID comes from .impl/plan-ref.json.
+        numeric issue prefix. The plan ID comes from .erk/impl-context/<branch>/plan-ref.json.
         """
+        from erk_shared.impl_folder import get_impl_dir
+
         repo_root = tmp_path / "repo"
         repo_root.mkdir()
 
@@ -320,9 +325,9 @@ class TestBuildWorktreeMapping:
         worktree_path.mkdir(parents=True)
         branch_name = "planned/fix-auth-bug-01-15-1430"
 
-        # Create .impl/plan-ref.json on disk (read_plan_ref does direct I/O)
-        impl_dir = worktree_path / ".impl"
-        impl_dir.mkdir()
+        # Create branch-scoped .erk/impl-context/<branch>/plan-ref.json on disk (read_plan_ref does direct I/O)
+        impl_dir = get_impl_dir(worktree_path, branch_name=branch_name)
+        impl_dir.parent.mkdir(parents=True, exist_ok=True)
         plan_ref_data = {
             "provider": "github-draft-pr",
             "plan_id": "8001",
@@ -342,6 +347,7 @@ class TestBuildWorktreeMapping:
                 ]
             },
             git_common_dirs={repo_root: repo_root / ".git"},
+            current_branches={worktree_path: branch_name},
         )
 
         ctx = create_test_context(
@@ -371,13 +377,15 @@ class TestBuildWorktreeMapping:
         assert worktree_branch == branch_name
 
     def test_planned_hyphen_branch_resolved_via_plan_ref_json(self, tmp_path: Path) -> None:
-        """Branch with 'planned-' (hyphen) prefix resolved via plan-ref.json.
+        """Branch with non-standard name resolved via branch-scoped plan-ref.json.
 
         After removing branch-name-based plan discovery, _build_worktree_mapping
-        reads plan-ref.json from ALL worktrees regardless of branch name.
-        Even non-standard branch names like 'planned-' (hyphen) work as long as
-        plan-ref.json is present.
+        reads plan-ref.json from branch-scoped .erk/impl-context/<branch>/ directories.
+        Non-standard branch names like 'planned-' (hyphen) work as long as
+        plan-ref.json is present in the correct branch-scoped location.
         """
+        from erk_shared.impl_folder import get_impl_dir
+
         repo_root = tmp_path / "repo"
         repo_root.mkdir()
 
@@ -388,9 +396,9 @@ class TestBuildWorktreeMapping:
         worktree_path.mkdir(parents=True)
         branch_name = "planned-fix-auth-bug-01-15-1430"
 
-        # Create .impl/plan-ref.json — will be read regardless of branch name format
-        impl_dir = worktree_path / ".impl"
-        impl_dir.mkdir()
+        # Create branch-scoped .erk/impl-context/<branch>/plan-ref.json — will be read regardless of branch name format
+        impl_dir = get_impl_dir(worktree_path, branch_name=branch_name)
+        impl_dir.parent.mkdir(parents=True, exist_ok=True)
         plan_ref_data = {
             "provider": "github-draft-pr",
             "plan_id": "9999",
@@ -410,6 +418,7 @@ class TestBuildWorktreeMapping:
                 ]
             },
             git_common_dirs={repo_root: repo_root / ".git"},
+            current_branches={worktree_path: branch_name},
         )
 
         ctx = create_test_context(
@@ -439,7 +448,7 @@ class TestBuildWorktreeMapping:
         assert worktree_branch == branch_name
 
     def test_planned_pr_branch_without_plan_ref_not_in_mapping(self, tmp_path: Path) -> None:
-        """Draft PR branch without .impl/plan-ref.json is not in mapping."""
+        """Draft PR branch without branch-scoped plan-ref.json is not in mapping."""
         repo_root = tmp_path / "repo"
         repo_root.mkdir()
 

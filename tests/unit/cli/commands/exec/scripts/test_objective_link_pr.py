@@ -8,6 +8,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.objective_link_pr import objective_link_pr
 from erk_shared.context.context import ErkContext
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 from erk_shared.impl_folder import get_impl_dir
@@ -92,13 +93,14 @@ def _write_ref_json(
 
 
 def test_no_impl_dir(tmp_path: Path) -> None:
-    """Returns no_impl_dir when .impl/ doesn't exist."""
+    """Returns no_impl_dir when impl dir doesn't exist."""
     runner = CliRunner()
+    git = FakeGit(current_branches={tmp_path: BRANCH})
 
     result = runner.invoke(
         objective_link_pr,
         ["--pr-number", "42"],
-        obj=ErkContext.for_test(cwd=tmp_path),
+        obj=ErkContext.for_test(cwd=tmp_path, git=git),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -109,17 +111,16 @@ def test_no_impl_dir(tmp_path: Path) -> None:
 
 def test_no_plan_ref(tmp_path: Path) -> None:
     """Returns no_plan_ref when impl dir exists but has no ref.json."""
-    # Use legacy .impl/ so _find_impl_dir finds it via the direct-path check
-    # (branch-scoped scan requires ref.json to exist, defeating the test's purpose)
-    impl_dir = tmp_path / ".impl"
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
     impl_dir.mkdir(parents=True)
+    git = FakeGit(current_branches={tmp_path: BRANCH})
 
     runner = CliRunner()
 
     result = runner.invoke(
         objective_link_pr,
         ["--pr-number", "42"],
-        obj=ErkContext.for_test(cwd=tmp_path),
+        obj=ErkContext.for_test(cwd=tmp_path, git=git),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -131,13 +132,14 @@ def test_no_plan_ref(tmp_path: Path) -> None:
 def test_no_objective_id(tmp_path: Path) -> None:
     """Returns no_objective_id when ref.json lacks objective_id."""
     _write_ref_json(get_impl_dir(tmp_path, branch_name=BRANCH), objective_id=None, node_ids=["1.1"])
+    git = FakeGit(current_branches={tmp_path: BRANCH})
 
     runner = CliRunner()
 
     result = runner.invoke(
         objective_link_pr,
         ["--pr-number", "42"],
-        obj=ErkContext.for_test(cwd=tmp_path),
+        obj=ErkContext.for_test(cwd=tmp_path, git=git),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -149,13 +151,14 @@ def test_no_objective_id(tmp_path: Path) -> None:
 def test_no_node_ids(tmp_path: Path) -> None:
     """Returns no_node_ids when ref.json lacks node_ids."""
     _write_ref_json(get_impl_dir(tmp_path, branch_name=BRANCH), objective_id=100, node_ids=None)
+    git = FakeGit(current_branches={tmp_path: BRANCH})
 
     runner = CliRunner()
 
     result = runner.invoke(
         objective_link_pr,
         ["--pr-number", "42"],
-        obj=ErkContext.for_test(cwd=tmp_path),
+        obj=ErkContext.for_test(cwd=tmp_path, git=git),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -167,13 +170,14 @@ def test_no_node_ids(tmp_path: Path) -> None:
 def test_empty_node_ids(tmp_path: Path) -> None:
     """Returns no_node_ids when ref.json has empty node_ids list."""
     _write_ref_json(get_impl_dir(tmp_path, branch_name=BRANCH), objective_id=100, node_ids=[])
+    git = FakeGit(current_branches={tmp_path: BRANCH})
 
     runner = CliRunner()
 
     result = runner.invoke(
         objective_link_pr,
         ["--pr-number", "42"],
-        obj=ErkContext.for_test(cwd=tmp_path),
+        obj=ErkContext.for_test(cwd=tmp_path, git=git),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -185,14 +189,14 @@ def test_empty_node_ids(tmp_path: Path) -> None:
 def test_issue_not_found(tmp_path: Path) -> None:
     """Returns issue_not_found when objective issue doesn't exist."""
     _write_ref_json(get_impl_dir(tmp_path, branch_name=BRANCH), objective_id=999, node_ids=["1.1"])
-
+    git = FakeGit(current_branches={tmp_path: BRANCH})
     fake_gh = FakeGitHubIssues()
     runner = CliRunner()
 
     result = runner.invoke(
         objective_link_pr,
         ["--pr-number", "42"],
-        obj=ErkContext.for_test(cwd=tmp_path, github_issues=fake_gh),
+        obj=ErkContext.for_test(cwd=tmp_path, git=git, github_issues=fake_gh),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -205,6 +209,7 @@ def test_issue_not_found(tmp_path: Path) -> None:
 def test_successful_single_node_link(tmp_path: Path) -> None:
     """Successfully links PR to a single roadmap node."""
     _write_ref_json(get_impl_dir(tmp_path, branch_name=BRANCH), objective_id=50, node_ids=["1.2"])
+    git = FakeGit(current_branches={tmp_path: BRANCH})
     issue = _make_issue(50, ROADMAP_BODY)
     fake_gh = FakeGitHubIssues(issues={50: issue})
     runner = CliRunner()
@@ -212,7 +217,7 @@ def test_successful_single_node_link(tmp_path: Path) -> None:
     result = runner.invoke(
         objective_link_pr,
         ["--pr-number", "42"],
-        obj=ErkContext.for_test(cwd=tmp_path, github_issues=fake_gh),
+        obj=ErkContext.for_test(cwd=tmp_path, git=git, github_issues=fake_gh),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -233,6 +238,7 @@ def test_successful_single_node_link(tmp_path: Path) -> None:
 def test_node_not_found_in_roadmap(tmp_path: Path) -> None:
     """Reports failure for a node_id that doesn't exist in the roadmap."""
     _write_ref_json(get_impl_dir(tmp_path, branch_name=BRANCH), objective_id=50, node_ids=["9.9"])
+    git = FakeGit(current_branches={tmp_path: BRANCH})
     issue = _make_issue(50, ROADMAP_BODY)
     fake_gh = FakeGitHubIssues(issues={50: issue})
     runner = CliRunner()
@@ -240,7 +246,7 @@ def test_node_not_found_in_roadmap(tmp_path: Path) -> None:
     result = runner.invoke(
         objective_link_pr,
         ["--pr-number", "42"],
-        obj=ErkContext.for_test(cwd=tmp_path, github_issues=fake_gh),
+        obj=ErkContext.for_test(cwd=tmp_path, git=git, github_issues=fake_gh),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -257,6 +263,7 @@ def test_node_not_found_in_roadmap(tmp_path: Path) -> None:
 def test_no_roadmap_block(tmp_path: Path) -> None:
     """Reports failure when issue has no roadmap metadata block."""
     _write_ref_json(get_impl_dir(tmp_path, branch_name=BRANCH), objective_id=50, node_ids=["1.1"])
+    git = FakeGit(current_branches={tmp_path: BRANCH})
     issue = _make_issue(50, NO_ROADMAP_BODY)
     fake_gh = FakeGitHubIssues(issues={50: issue})
     runner = CliRunner()
@@ -264,7 +271,7 @@ def test_no_roadmap_block(tmp_path: Path) -> None:
     result = runner.invoke(
         objective_link_pr,
         ["--pr-number", "42"],
-        obj=ErkContext.for_test(cwd=tmp_path, github_issues=fake_gh),
+        obj=ErkContext.for_test(cwd=tmp_path, git=git, github_issues=fake_gh),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -275,8 +282,9 @@ def test_no_roadmap_block(tmp_path: Path) -> None:
 
 def test_impl_context_scoped_layout(tmp_path: Path) -> None:
     """Finds ref.json in .erk/impl-context/ scoped layout."""
-    scoped_dir = tmp_path / ".erk" / "impl-context" / "my-branch"
-    _write_ref_json(scoped_dir, objective_id=50, node_ids=["1.3"])
+    branch = "my-branch"
+    _write_ref_json(get_impl_dir(tmp_path, branch_name=branch), objective_id=50, node_ids=["1.3"])
+    git = FakeGit(current_branches={tmp_path: branch})
     issue = _make_issue(50, ROADMAP_BODY)
     fake_gh = FakeGitHubIssues(issues={50: issue})
     runner = CliRunner()
@@ -284,7 +292,7 @@ def test_impl_context_scoped_layout(tmp_path: Path) -> None:
     result = runner.invoke(
         objective_link_pr,
         ["--pr-number", "77"],
-        obj=ErkContext.for_test(cwd=tmp_path, github_issues=fake_gh),
+        obj=ErkContext.for_test(cwd=tmp_path, git=git, github_issues=fake_gh),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -332,6 +340,7 @@ def test_comment_roadmap_rerendered(tmp_path: Path) -> None:
         "<!-- /erk:metadata-block:objective-roadmap -->\n"
     )
     _write_ref_json(get_impl_dir(tmp_path, branch_name=BRANCH), objective_id=50, node_ids=["1.1"])
+    git = FakeGit(current_branches={tmp_path: BRANCH})
     issue = _make_issue(50, body_with_header)
 
     comment = IssueComment(
@@ -356,7 +365,7 @@ def test_comment_roadmap_rerendered(tmp_path: Path) -> None:
     result = runner.invoke(
         objective_link_pr,
         ["--pr-number", "200"],
-        obj=ErkContext.for_test(cwd=tmp_path, github_issues=fake_gh),
+        obj=ErkContext.for_test(cwd=tmp_path, git=git, github_issues=fake_gh),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"

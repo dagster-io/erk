@@ -49,9 +49,9 @@ def test_init_adds_env_to_gitignore() -> None:
             global_config=global_config,
         )
 
-        # Accept prompt for .env, decline .erk/scratch/, .impl/, .erk/config.local.toml,
+        # Accept prompt for .env, decline .erk/scratch/, .erk/config.local.toml,
         # .erk/bin/, and hooks
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\nn\nn\nn\nn\nn\n")
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\nn\nn\nn\nn\n")
 
         assert result.exit_code == 0, result.output
         gitignore_content = gitignore.read_text(encoding="utf-8")
@@ -78,19 +78,18 @@ def test_init_skips_gitignore_entries_if_declined() -> None:
             global_config=global_config,
         )
 
-        # Decline all prompts (.env, .erk/scratch/, .impl/, .erk/config.local.toml,
+        # Decline all prompts (.env, .erk/scratch/, .erk/config.local.toml,
         # .erk/bin/, hooks)
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\nn\nn\nn\nn\nn\n")
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\nn\nn\nn\nn\n")
 
         assert result.exit_code == 0, result.output
         gitignore_content = gitignore.read_text(encoding="utf-8")
         assert ".env" not in gitignore_content
         assert ".erk/scratch/" not in gitignore_content
-        assert ".impl/" not in gitignore_content
 
 
-def test_init_adds_erk_scratch_and_impl_to_gitignore() -> None:
-    """Test that init offers to add .erk/scratch/ and .impl/ to .gitignore."""
+def test_init_adds_erk_scratch_to_gitignore() -> None:
+    """Test that init offers to add .erk/scratch/ to .gitignore."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides={"HOME": "{root_worktree}"}) as env:
         # Create .gitignore
@@ -109,15 +108,14 @@ def test_init_adds_erk_scratch_and_impl_to_gitignore() -> None:
             global_config=global_config,
         )
 
-        # Decline .env, accept .erk/scratch/ and .impl/, decline config.local.toml,
+        # Decline .env, accept .erk/scratch/, decline config.local.toml,
         # decline .erk/bin/, decline hooks
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\ny\ny\nn\nn\nn\n")
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\ny\nn\nn\nn\n")
 
         assert result.exit_code == 0, result.output
         gitignore_content = gitignore.read_text(encoding="utf-8")
         assert ".env" not in gitignore_content
         assert ".erk/scratch/" in gitignore_content
-        assert ".impl/" in gitignore_content
 
 
 def test_init_handles_missing_gitignore() -> None:
@@ -165,9 +163,9 @@ def test_init_preserves_gitignore_formatting() -> None:
             global_config=global_config,
         )
 
-        # Accept .env, decline .erk/scratch/, .impl/, .erk/config.local.toml,
+        # Accept .env, decline .erk/scratch/, .erk/config.local.toml,
         # .erk/bin/, and hooks
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\nn\nn\nn\nn\nn\n")
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\nn\nn\nn\nn\n")
 
         assert result.exit_code == 0, result.output
         gitignore_content = gitignore.read_text(encoding="utf-8")
