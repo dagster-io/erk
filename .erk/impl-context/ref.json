@@ -1,0 +1,8 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Rewrite impl-context and impl-folder-lifecycle docs (O#8197 nodes 4.1 + 4.2)",
+  "objective_id": 8197,
+  "node_ids": [
+    "{\"node_id\": \"4.1\", \"node_slug\": \"rewrite-impl-context-doc\", \"description\": \"Rewrite docs/learned/planning/impl-context.md for single-directory lifecycle\"}"
+  ]
+}
