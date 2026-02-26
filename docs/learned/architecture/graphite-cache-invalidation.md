@@ -106,7 +106,32 @@ See `RealGraphite.get_all_branches()` in `packages/erk-shared/src/erk_shared/gat
 
 When testing cache invalidation, filesystem mtime resolution can cause flaky tests. See [Integration Testing Patterns](../testing/integration-testing-patterns.md) for guidance on sleep patterns.
 
+## Branch Head Lookup Batching
+
+When fetching HEAD SHAs for multiple branches, use `git for-each-ref` instead of N individual `git rev-parse` calls.
+
+### Pattern
+
+```bash
+git for-each-ref --format='%(refname:short)\t%(objectname:short)' refs/heads/
+```
+
+Returns tab-separated lines: `branch-name<tab>short-sha`
+
+### Usage in Graphite Cache
+
+The `get_all_branches()` method uses `git_ops.branch.get_all_branch_heads()` to fetch all branch HEADs in a single call, then filters to only the branches tracked by Graphite.
+
+This pattern is also used by `get_all_branch_sync_info()`.
+
+### Performance
+
+- Before: 30-50 `git rev-parse` calls x 5-10ms = 150-500ms
+- After: 1 `git for-each-ref` call = ~5ms
+- Savings: ~30-100x improvement
+
 ## Related Topics
 
 - [Erk Architecture Patterns](erk-architecture.md) - Context and gateway design
 - [Gateway ABC Implementation](gateway-abc-implementation.md) - Adding new gateway methods
+- [Subprocess vs httpx Performance](subprocess-vs-httpx-performance.md) - Subprocess overhead characteristics

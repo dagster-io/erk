@@ -74,6 +74,12 @@ Rules triggered by matching actions in code.
 
 **auto-enabling a flag without informing the user** → Read [Derived Flags Pattern](derived-flags.md) first. When deriving a flag from auto-detection, always print a dim-styled informational message explaining why the behavior was activated. Users should never be surprised by automatic actions.
 
+**before calling subprocess commands in a loop over N items** → Read [Subprocess vs httpx Performance Characteristics](subprocess-vs-httpx-performance.md) first. Batch with single command: git for-each-ref for branches, GraphQL aliased queries for PRs, etc. Reduces O(N) subprocess calls to O(1).
+
+**before splitting 1 API query into multiple sequential subprocess calls** → Read [REST+GraphQL Trade-offs](rest-graphql-tradeoffs.md) first. Each subprocess call adds overhead. 2 sequential calls = 2x overhead. Only split if server-side filtering saves enough data transfer to offset subprocess cost.
+
+**before using `gh api` subprocess in TUI operations or hot paths** → Read [Subprocess vs httpx Performance Characteristics](subprocess-vs-httpx-performance.md) first. Each subprocess adds 200-300ms overhead (Go runtime + TLS). Use HttpClient with httpx for latency-sensitive operations (<500ms requirement).
+
 **calling GraphiteBranchManager.create_branch() without explicit checkout** → Read [Erk Architecture Patterns](erk-architecture.md) first. GraphiteBranchManager.create_branch() restores the original branch after tracking. Always call branch_manager.checkout_branch() afterward if you need to be on the new branch.
 
 **calling PromptExecutor, generate_slug_or_fallback, or BranchSlugGenerator from an exec script** [pattern: `PromptExecutor|generate_slug_or_fallback|BranchSlugGenerator`] → Read [Inference Hoisting Pattern](inference-hoisting.md) first. Exec scripts must be deterministic. LLM calls belong in the skill layer (.claude/commands/\*.md). Hoist: generate the value in the skill, pass it via --flag to the exec script. Read inference-hoisting.md.

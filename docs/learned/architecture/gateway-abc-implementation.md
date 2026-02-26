@@ -777,6 +777,72 @@ Key patterns demonstrated:
 
 See PR #6329 for the migration that introduced this pattern.
 
+## Batch Operations Pattern
+
+When a gateway method is called in a loop with N items, add a batch variant to eliminate N subprocess calls:
+
+### 1. Identify the N+1 pattern
+
+Look for code like:
+
+```python
+for branch in branches:
+    sha = git_ops.branch.get_branch_head(repo_root, branch)  # N calls
+```
+
+### 2. Add batch method to ABC
+
+```python
+@abstractmethod
+def get_all_branch_heads(self, repo_root: Path) -> dict[str, str]:
+    """Return mapping of all branch names to their HEAD commit SHAs."""
+```
+
+### 3. Implement in Real with single batched command
+
+Use commands that return bulk data: `git for-each-ref`, GraphQL aliased queries, etc.
+
+### 4. Implement in Fake returning pre-configured bulk data
+
+```python
+def get_all_branch_heads(self, repo_root: Path) -> dict[str, str]:
+    return dict(self._branch_heads)  # Return copy of pre-configured data
+```
+
+### 5. Implement in DryRun/Printing as delegates
+
+Both delegate to wrapped implementation without modification.
+
+### 6. Update caller to use batch + filter pattern
+
+```python
+all_heads = git_ops.branch.get_all_branch_heads(repo_root)
+needed_heads = {name: all_heads[name] for name in branches if name in all_heads}
+```
+
+**Performance impact:** O(N) subprocess calls -> O(1). Typical savings: 30-100x improvement.
+
+**Canonical example:** See `get_all_branch_heads()` implementation across all 5 gateway files in `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/`.
+
+## Adding Parameters to Existing Methods
+
+When adding a parameter to an existing ABC method, update in 5 places:
+
+### Checklist
+
+1. **ABC signature:** Add parameter with type annotation
+2. **Real implementation:** Add parameter, use in implementation
+3. **Fake implementation:** Add parameter (may ignore if not needed for tests)
+4. **DryRun wrapper:** Add parameter, forward to wrapped
+5. **Printing wrapper:** Add parameter, forward to wrapped
+
+### Frozen Dataclass Consideration
+
+If the method returns a frozen dataclass and you're adding a field:
+
+- Provide a default value to avoid breaking all construction sites
+- Or update all construction sites in the same PR
+
 ## Related Documentation
 
 - [Erk Architecture Patterns](erk-architecture.md) - Dependency injection, dry-run patterns
@@ -785,3 +851,4 @@ See PR #6329 for the migration that introduced this pattern.
 - [GitHub GraphQL Patterns](github-graphql.md) - GraphQL mutation patterns for GitHub
 - [Gateway Error Boundaries](gateway-error-boundaries.md) - Where exceptions become discriminated unions
 - [Gateway Signature Migration](gateway-signature-migration.md) - How to update all call sites when signatures change
+- [Subprocess vs httpx Performance](subprocess-vs-httpx-performance.md) - Performance characteristics for batch optimization decisions

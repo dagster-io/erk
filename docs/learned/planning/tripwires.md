@@ -224,6 +224,8 @@ Rules triggered by matching actions in code.
 
 **validating plan_id in exec scripts without checking provider type** → Read [Planned PR Backend](planned-pr-backend.md) first. Planned PR plan_id IS the PR number (not an issue number). Check provider type before assuming plan_id semantics. Issue-based plans use issue numbers; planned-PR plans use PR numbers.
 
+**when `erk exec plan-save` fails with gt track error 'X is not in the history of Y'** → Read [Plan Lifecycle](lifecycle.md) first. Check for and delete stale branches matching slug pattern with `git branch -D` before retrying.
+
 **writing a plan step that says 'update X' without a file path** → Read [Context Preservation Patterns](context-preservation-patterns.md) first. Generic references force re-discovery. Include the full path, line numbers, and evidence. See the five dimensions below.
 
 **writing lifecycle_stage value other than 'impl' in a write point** → Read [Lifecycle Stage Consolidation](lifecycle-stage-consolidation.md) first. All lifecycle write points must use 'impl', never the legacy values 'implementing' or 'implemented'. Schema validation accepts legacy values for backwards compatibility only.

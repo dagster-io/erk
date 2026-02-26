@@ -24,6 +24,9 @@ tripwires:
   - action: "renaming a lifecycle stage value"
     warning: "Update 3 locations: LifecycleStageValue type, valid_stages set, and color conditions in compute_lifecycle_display(). Missing any location causes silent validation failures or incorrect TUI colors."
     score: 7
+  - action: "when `erk exec plan-save` fails with gt track error 'X is not in the history of Y'"
+    warning: "Check for and delete stale branches matching slug pattern with `git branch -D` before retrying."
+    score: 5
 ---
 
 # Plan Lifecycle

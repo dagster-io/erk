@@ -26,6 +26,7 @@
 - **[gateway-fake-testing-exemplar.md](gateway-fake-testing-exemplar.md)** — writing tests for gateway fakes that return discriminated unions, deciding whether mutation tracking should occur on error paths, implementing a new fake gateway method with error injection
 - **[hook-testing.md](hook-testing.md)** — writing tests for any hook (PreToolUse, UserPromptSubmit, ExitPlanMode), creating a new hook implementation, testing hooks that read from stdin or check capabilities
 - **[import-conflict-resolution.md](import-conflict-resolution.md)** — resolving merge conflicts during rebase, fixing import conflicts after consolidation, rebasing after shared module changes
+- **[integration-test-coverage.md](integration-test-coverage.md)** — writing integration tests for batch operations, testing gateway methods that handle collections
 - **[integration-test-speed.md](integration-test-speed.md)** — integration test is slow, test takes too long, pytest --durations shows slow test
 - **[integration-testing-patterns.md](integration-testing-patterns.md)** — writing integration tests that interact with filesystem, testing time-dependent operations, handling mtime resolution in tests
 - **[mock-elimination.md](mock-elimination.md)** — refactoring tests to remove unittest.mock, replacing patch() calls with fakes, improving test maintainability

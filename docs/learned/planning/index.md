@@ -11,6 +11,7 @@
 - **[backend-naming-conventions.md](backend-naming-conventions.md)** — referencing the plan backend by name in code or documentation, confused about draft_pr vs planned_pr vs github-draft-pr naming, adding user-facing output that mentions the backend
 - **[branch-name-inference.md](branch-name-inference.md)** — debugging missing branch_name in plan issues, implementing PR lookup from plan issues, modifying branch creation or naming conventions
 - **[branch-plan-resolution.md](branch-plan-resolution.md)** — resolving which plan a branch belongs to, working with branch naming conventions for plans, understanding how get_plan_for_branch works
+- **[ci-failure-triage.md](ci-failure-triage.md)** — CI fails during implementation, deciding whether to fix failing tests, triaging type checking errors
 - **[complete-inventory-protocol.md](complete-inventory-protocol.md)** — estimating effort or remaining work for a plan or PR, closing a plan issue as complete, creating a consolidation plan from multiple PRs
 - **[consolidation-labels.md](consolidation-labels.md)** — consolidating multiple learn plans, working with erk-consolidated label, preventing re-consolidation of issues, modifying /local:replan-learn-plans or /erk:replan consolidation behavior
 - **[context-preservation-in-replan.md](context-preservation-in-replan.md)** — implementing or modifying replan workflow steps, debugging why a replanned issue produced a sparse plan, adding new plan-creation workflows that use EnterPlanMode

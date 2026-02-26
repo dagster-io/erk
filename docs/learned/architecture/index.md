@@ -25,6 +25,7 @@
 - **[command-composition.md](command-composition.md)** — creating an exec script that orchestrates other exec scripts, understanding setup-impl command architecture, adding CWD injection for testability
 - **[commandresult-extension-pattern.md](commandresult-extension-pattern.md)** — adding new field to CommandResult, extending CommandResult dataclass, adding metadata extraction, implementing new CommandResult field
 - **[composable-remote-commands.md](composable-remote-commands.md)** — adding a new remote command to run on codespaces, implementing erk codespace run subcommands, working with streaming remote execution
+- **[comprehensions.md](comprehensions.md)** — writing dictionary or list comprehensions, reviewing code with complex comprehensions
 - **[context-efficiency.md](context-efficiency.md)** — orchestrating multi-agent workflows, parent agent reading large agent output via TaskOutput, designing agent output routing to minimize context usage
 - **[context-injection-tiers.md](context-injection-tiers.md)** — designing a new hook or reminder system, understanding how coding standard reminders work, deciding where to inject context for agent compliance, choosing between ambient, per-prompt, and just-in-time injection
 - **[convergence-points.md](convergence-points.md)** — refactoring a command with multiple setup paths that share cleanup, adding a new entry path to an existing multi-path command, debugging cleanup that runs for some paths but not others
@@ -56,6 +57,7 @@
 - **[git-operation-patterns.md](git-operation-patterns.md)** — implementing git operations in gateways, checking if git branches or refs exist, deciding between LBYL and EAFP for git commands
 - **[github-admin-gateway.md](github-admin-gateway.md)** — working with GitHub repository secrets or admin operations, adding methods to the GitHubAdmin gateway, understanding the 5-place gateway pattern with security-sensitive operations
 - **[github-api-diagnostics.md](github-api-diagnostics.md)** — debugging GitHub API failures, investigating repository-specific API issues, GitHub CLI commands returning unexpected errors
+- **[github-api-optimization.md](github-api-optimization.md)** — optimizing GitHub API usage, implementing server-side filtering, choosing between gh api and HttpClient
 - **[github-api-rate-limits.md](github-api-rate-limits.md)** — using gh CLI commands programmatically, encountering GraphQL rate limit errors, choosing between REST and GraphQL API, implementing GitHub API calls in gateways
 - **[github-api-retry-mechanism.md](github-api-retry-mechanism.md)** — implementing GitHub API calls with retry logic, handling transient network errors, using execute_gh_command_with_retry(), injecting Time for testable retry delays
 - **[github-cli-limits.md](github-cli-limits.md)** — using gh pr diff in production code, working with large pull requests (300+ files), encountering HTTP 406 errors from gh CLI, implementing PR file discovery, working with GitHub codespaces in code, implementing codespace operations
@@ -87,8 +89,10 @@
 - **[not-found-sentinel.md](not-found-sentinel.md)** — designing return types for lookup operations, handling missing resource cases without exceptions, checking if get_pr_for_branch() returned a PR, working with GitHub PR lookup results
 - **[optional-field-propagation.md](optional-field-propagation.md)** — transforming dataclass instances in pipelines, debugging null metadata fields, adding optional fields to dataclasses
 - **[parallel-agent-pattern.md](parallel-agent-pattern.md)** — launching multiple agents concurrently, using Task with run_in_background, collecting results with TaskOutput, running agents in parallel
+- **[parallelizing-gateway-calls.md](parallelizing-gateway-calls.md)** — optimizing data loading with multiple independent operations, using concurrent.futures in Python, identifying parallelization opportunities
 - **[parameter-threading-pattern.md](parameter-threading-pattern.md)** — adding parameters to multi-layer commands (skill → command → exec), working with slash commands that call erk exec, debugging "No such option" errors in commands
 - **[pathlib-symlinks.md](pathlib-symlinks.md)** — Writing file validation code, Debugging unexpected path resolution behavior, Working with symlinked configuration files
+- **[performance-profiling.md](performance-profiling.md)** — profiling CLI performance, measuring optimization impact, communicating performance improvements in PRs
 - **[permission-modes.md](permission-modes.md)** — Working with interactive agent permissions, Implementing Codex or Claude backend integration, Modifying permission mode configuration
 - **[phase-zero-detection-pattern.md](phase-zero-detection-pattern.md)** — implementing mode variants in multi-phase commands, designing conditional execution workflows, debugging scattered mode detection logic
 - **[pipeline-transformation-patterns.md](pipeline-transformation-patterns.md)** — designing data transformation pipelines, deciding when to enrich vs filter data, troubleshooting lost metadata in pipelines
@@ -107,6 +111,7 @@
 - **[re-export-pattern.md](re-export-pattern.md)** — Creating public API surface from internal gateway modules, Simplifying import paths for commonly used types, Working with ruff import linting
 - **[rebase-conflict-patterns.md](rebase-conflict-patterns.md)** — resolving merge conflicts after rebase, debugging test failures after rebase, handling auto-generated file conflicts
 - **[ref-json-migration.md](ref-json-migration.md)** — working with plan-ref.json or ref.json, understanding plan reference file formats, debugging plan reference loading failures
+- **[rest-graphql-tradeoffs.md](rest-graphql-tradeoffs.md)** — optimizing GitHub API calls, deciding between REST and GraphQL, splitting or combining API queries
 - **[roadmap-mutation-semantics.md](roadmap-mutation-semantics.md)** — modifying objective roadmap update logic, understanding status inference when updating roadmap steps, working with update-objective-node command
 - **[selection-preservation-by-value.md](selection-preservation-by-value.md)** — working with auto-refreshing lists or tables in UI components, implementing selection state that should persist across data updates, building real-time dashboard views with user-selected items, debugging cursor position resets in DataTable or list components
 - **[sentinel-path-compatibility.md](sentinel-path-compatibility.md)** — writing functions that check path existence, seeing 'Called .exists() on sentinel path' errors, making functions testable with FakeGit
@@ -116,6 +121,8 @@
 - **[ssh-command-execution.md](ssh-command-execution.md)** — implementing remote command execution via SSH, working with codespace connections, debugging remote setup commands, choosing between subprocess and exec for SSH
 - **[state-derivation-pattern.md](state-derivation-pattern.md)** — designing frontend/backend data contracts, choosing between pre-rendered strings and raw state fields, implementing testable display logic
 - **[state-threading-pattern.md](state-threading-pattern.md)** — designing linear pipelines with immutable state, understanding SubmitState or pipeline architecture, implementing multi-step workflows with frozen dataclasses
+- **[subprocess-check-patterns.md](subprocess-check-patterns.md)** — writing subprocess.run calls, reviewing code with check=False, deciding between check=True and check=False
+- **[subprocess-vs-httpx-performance.md](subprocess-vs-httpx-performance.md)** — optimizing TUI data loading performance, choosing between gh api subprocess and httpx for API calls, analyzing slow dashboard or CLI operations
 - **[subprocess-wrappers.md](subprocess-wrappers.md)** — using subprocess wrappers, executing shell commands, understanding subprocess patterns
 - **[symlink-validation-pattern.md](symlink-validation-pattern.md)** — Validating @ references in markdown files, Validating import paths in configuration, Any path validation where source files may be symlinks
 - **[task-context-isolation.md](task-context-isolation.md)** — fetching large JSON responses from APIs, parsing PR review comments or GitHub issues, analyzing verbose API responses that pollute context, need to reduce context window usage, returning structured data from subagents, choosing between context: fork vs manual Task delegation
