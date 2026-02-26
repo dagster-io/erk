@@ -308,6 +308,7 @@ def _setup_impl_for_plan(
         url=setup.issue_url,
         labels=(),
         objective_id=setup.objective_issue,
+        node_ids=None,
     )
 
     if script:

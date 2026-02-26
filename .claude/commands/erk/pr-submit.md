@@ -74,6 +74,16 @@ erk exec set-pr-description --title "<generated title>" --body-file "<temp file 
 
 If this fails, display the error and stop.
 
+### Step 4.5: Link PR to Objective (if applicable)
+
+If `.impl/plan-ref.json` or `.impl/ref.json` exists and contains `objective_id`:
+
+```bash
+erk exec objective-link-pr --pr-number <pr_number>
+```
+
+Where `<pr_number>` is the PR number from Step 1. If this fails, warn but continue -- PR creation succeeded.
+
 ### Step 5: Report Results
 
 Report:

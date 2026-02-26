@@ -78,6 +78,7 @@ def create_impl_context_from_plan(
         provider=provider,
         objective_id=plan.objective_id,
         now_iso=time.now().isoformat(),
+        node_ids=None,
     )
 
     # Output structured success result

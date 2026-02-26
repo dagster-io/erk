@@ -59,6 +59,7 @@ from erk_shared.scratch.session_markers import (
     get_existing_saved_branch,
     get_existing_saved_issue,
     read_objective_context_marker,
+    read_roadmap_step_marker,
 )
 
 
@@ -116,6 +117,7 @@ def _save_as_planned_pr(
     learned_from_issue: int | None,
     created_from_workflow_run_url: str | None,
     branch_slug: str | None,
+    node_ids: tuple[str, ...] | None,
 ) -> None:
     """Save plan as a planned PR.
 
@@ -132,6 +134,7 @@ def _save_as_planned_pr(
         learned_from_issue: Parent plan issue number (for learn plans)
         created_from_workflow_run_url: GitHub Actions workflow run URL
         branch_slug: Pre-generated branch slug (skips LLM call when provided)
+        node_ids: Objective roadmap node IDs to associate with this plan
     """
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
@@ -200,12 +203,14 @@ def _save_as_planned_pr(
         raise SystemExit(1) from None
 
     # Build ref.json data
-    ref_data: dict[str, str | int | None] = {
+    ref_data: dict[str, str | int | list[str] | None] = {
         "provider": "github-draft-pr",
         "title": title,
     }
     if objective_issue is not None:
         ref_data["objective_id"] = objective_issue
+    if node_ids is not None:
+        ref_data["node_ids"] = list(node_ids)
 
     # Commit plan files directly to branch (no checkout needed).
     # Uses git plumbing to avoid race conditions when multiple sessions
@@ -336,10 +341,14 @@ def _save_plan_via_planned_pr(
 
     # Read objective from session marker (created by /erk:objective-plan)
     objective_issue: int | None = None
+    node_ids: tuple[str, ...] | None = None
     if session_id is not None:
         objective_issue = read_objective_context_marker(session_id, repo_root)
         if objective_issue is not None:
             click.echo(f"Linked to objective #{objective_issue} from session context", err=True)
+        step_id = read_roadmap_step_marker(session_id, repo_root)
+        if step_id is not None:
+            node_ids = (step_id,)
 
     # Session deduplication check
     if session_id is not None:
@@ -410,6 +419,7 @@ def _save_plan_via_planned_pr(
         learned_from_issue=learned_from_issue,
         created_from_workflow_run_url=created_from_workflow_run_url,
         branch_slug=branch_slug,
+        node_ids=node_ids,
     )
 
 

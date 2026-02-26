@@ -390,6 +390,7 @@ def test_no_plan_context_after_pxxxx_removal() -> None:
             url="https://github.com/test-owner/test-repo/issues/123",
             labels=("erk-plan",),
             objective_id=None,
+            node_ids=None,
         )
 
         ctx = build_workspace_test_context(

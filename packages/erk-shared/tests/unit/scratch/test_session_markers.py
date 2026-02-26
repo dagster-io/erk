@@ -8,6 +8,7 @@ from erk_shared.scratch.session_markers import (
     create_plan_saved_marker,
     get_existing_saved_branch,
     get_existing_saved_issue,
+    read_roadmap_step_marker,
 )
 
 # create_plan_saved_marker tests
@@ -161,6 +162,55 @@ def test_branch_marker_roundtrip(tmp_path: Path) -> None:
 
     # Now returns the branch name
     assert get_existing_saved_branch(session_id, tmp_path) == "plnd/roundtrip-02-22-1234"
+
+
+# read_roadmap_step_marker tests
+
+
+def test_read_roadmap_step_marker_returns_node_id(tmp_path: Path) -> None:
+    """Verify stored node ID is returned."""
+    session_id = "test-session-123"
+    marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+    marker_dir.mkdir(parents=True)
+    marker_file = marker_dir / "roadmap-step.marker"
+    marker_file.write_text("phase1.step2", encoding="utf-8")
+
+    result = read_roadmap_step_marker(session_id, tmp_path)
+
+    assert result == "phase1.step2"
+
+
+def test_read_roadmap_step_marker_returns_none_when_no_marker(tmp_path: Path) -> None:
+    """Verify None is returned when no marker exists."""
+    result = read_roadmap_step_marker("nonexistent-session", tmp_path)
+
+    assert result is None
+
+
+def test_read_roadmap_step_marker_returns_none_for_empty_content(tmp_path: Path) -> None:
+    """Verify None is returned when marker contains empty content."""
+    session_id = "test-session-123"
+    marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+    marker_dir.mkdir(parents=True)
+    marker_file = marker_dir / "roadmap-step.marker"
+    marker_file.write_text("", encoding="utf-8")
+
+    result = read_roadmap_step_marker(session_id, tmp_path)
+
+    assert result is None
+
+
+def test_read_roadmap_step_marker_strips_whitespace(tmp_path: Path) -> None:
+    """Verify whitespace is stripped from marker content."""
+    session_id = "test-session-123"
+    marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+    marker_dir.mkdir(parents=True)
+    marker_file = marker_dir / "roadmap-step.marker"
+    marker_file.write_text("  phase1.step2  \n", encoding="utf-8")
+
+    result = read_roadmap_step_marker(session_id, tmp_path)
+
+    assert result == "phase1.step2"
 
 
 def test_marker_roundtrip(tmp_path: Path) -> None:
