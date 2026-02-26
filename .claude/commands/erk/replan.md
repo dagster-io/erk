@@ -407,15 +407,15 @@ After the user approves the plan in Plan Mode:
 **Single plan:**
 
 ```bash
-erk exec close-issue-with-comment <original_number> --comment "Superseded by #<new_number> - see updated plan that accounts for codebase changes."
+erk exec close-pr <original_number> --comment "Superseded by #<new_number> - see updated plan that accounts for codebase changes."
 ```
 
 **Consolidated plans:**
 
 ```bash
-erk exec close-issue-with-comment 123 --comment "Consolidated into #<new_number> with #456, #789"
-erk exec close-issue-with-comment 456 --comment "Consolidated into #<new_number> with #123, #789"
-erk exec close-issue-with-comment 789 --comment "Consolidated into #<new_number> with #123, #456"
+erk exec close-pr 123 --comment "Consolidated into #<new_number> with #456, #789"
+erk exec close-pr 456 --comment "Consolidated into #<new_number> with #123, #789"
+erk exec close-pr 789 --comment "Consolidated into #<new_number> with #123, #456"
 ```
 
 Display final summary:

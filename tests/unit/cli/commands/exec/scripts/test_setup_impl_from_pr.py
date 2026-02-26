@@ -1,4 +1,4 @@
-"""Tests for erk exec setup-impl-from-issue command."""
+"""Tests for erk exec setup-impl-from-pr command."""
 
 import json
 from pathlib import Path
@@ -7,9 +7,9 @@ import click
 import pytest
 from click.testing import CliRunner
 
-from erk.cli.commands.exec.scripts.setup_impl_from_issue import (
+from erk.cli.commands.exec.scripts.setup_impl_from_pr import (
     _get_current_branch,
-    setup_impl_from_issue,
+    setup_impl_from_pr,
 )
 from erk_shared.context.context import ErkContext
 from erk_shared.context.testing import context_for_test
@@ -40,8 +40,8 @@ class TestGetCurrentBranch:
         assert "detached HEAD" in str(exc_info.value)
 
 
-class TestSetupImplFromIssueValidation:
-    """Tests for validation in setup-impl-from-issue command."""
+class TestSetupImplFromPrValidation:
+    """Tests for validation in setup-impl-from-pr command."""
 
     def test_missing_issue_shows_error(self, tmp_path: Path) -> None:
         """Command fails gracefully when issue cannot be found."""
@@ -53,7 +53,7 @@ class TestSetupImplFromIssueValidation:
         # The command requires a GitHub issue that doesn't exist
         # This test verifies the error handling for missing issues
         result = runner.invoke(
-            setup_impl_from_issue,
+            setup_impl_from_pr,
             ["999999"],  # Non-existent issue number
             obj=ctx,
             catch_exceptions=False,
@@ -65,8 +65,8 @@ class TestSetupImplFromIssueValidation:
         assert result.exit_code != 0 or "error" in result.output.lower()
 
 
-class TestSetupImplFromIssueNoImplFlag:
-    """Tests for --no-impl flag in setup-impl-from-issue command."""
+class TestSetupImplFromPrNoImplFlag:
+    """Tests for --no-impl flag in setup-impl-from-pr command."""
 
     def test_no_impl_flag_is_accepted(self, tmp_path: Path) -> None:
         """Verify --no-impl flag is accepted by the CLI.
@@ -83,7 +83,7 @@ class TestSetupImplFromIssueNoImplFlag:
         # The command will fail because it can't reach GitHub,
         # but we verify the flag is accepted without a click.UsageError
         result = runner.invoke(
-            setup_impl_from_issue,
+            setup_impl_from_pr,
             ["42", "--no-impl"],
             obj=ctx,
         )
@@ -176,7 +176,7 @@ def test_planned_pr_plan_uses_plan_branch_name(tmp_path: Path) -> None:
 
     runner = CliRunner()
     result = runner.invoke(
-        setup_impl_from_issue,
+        setup_impl_from_pr,
         [str(pr_number), "--no-impl"],
         obj=ctx,
     )
@@ -210,7 +210,7 @@ def test_planned_pr_plan_already_on_plan_branch(tmp_path: Path) -> None:
 
     runner = CliRunner()
     result = runner.invoke(
-        setup_impl_from_issue,
+        setup_impl_from_pr,
         [str(pr_number), "--no-impl"],
         obj=ctx,
     )
@@ -233,7 +233,7 @@ def test_planned_pr_plan_skips_checkout_when_impl_exists(tmp_path: Path) -> None
     """When .impl/ already has a matching plan_id, skip branch switching.
 
     In CI, the workflow checks out an implementation branch and pre-populates
-    .impl/ with plan-ref.json. setup-impl-from-issue should detect this and
+    .impl/ with plan-ref.json. setup-impl-from-pr should detect this and
     stay on the current branch instead of switching to the plan branch.
     """
     plan_branch = "plan-my-feature-02-19"
@@ -269,7 +269,7 @@ def test_planned_pr_plan_skips_checkout_when_impl_exists(tmp_path: Path) -> None
 
     runner = CliRunner()
     result = runner.invoke(
-        setup_impl_from_issue,
+        setup_impl_from_pr,
         [str(pr_number)],
         obj=ctx,
     )
@@ -303,7 +303,7 @@ def test_planned_pr_plan_sync_failure_reports_error(tmp_path: Path) -> None:
 
     runner = CliRunner()
     result = runner.invoke(
-        setup_impl_from_issue,
+        setup_impl_from_pr,
         [str(pr_number), "--no-impl"],
         obj=ctx,
     )
@@ -345,7 +345,7 @@ def test_planned_pr_reads_from_impl_context_when_present(tmp_path: Path) -> None
 
     runner = CliRunner()
     result = runner.invoke(
-        setup_impl_from_issue,
+        setup_impl_from_pr,
         [str(pr_number)],
         obj=ctx,
     )
@@ -359,7 +359,7 @@ def test_planned_pr_reads_from_impl_context_when_present(tmp_path: Path) -> None
     assert "From impl-context" in impl_plan.read_text(encoding="utf-8")
 
     # .erk/impl-context/ is NOT deleted here — Step 2d in plan-implement.md
-    # handles git rm + commit + push after setup_impl_from_issue completes
+    # handles git rm + commit + push after setup_impl_from_pr completes
     assert impl_context_dir.exists()
 
     # Output JSON has correct metadata
@@ -389,7 +389,7 @@ def test_planned_pr_reads_objective_id_from_ref_json(tmp_path: Path) -> None:
 
     runner = CliRunner()
     result = runner.invoke(
-        setup_impl_from_issue,
+        setup_impl_from_pr,
         [str(pr_number)],
         obj=ctx,
     )
@@ -416,7 +416,7 @@ def test_planned_pr_falls_back_to_pr_body_when_no_impl_context(tmp_path: Path) -
 
     runner = CliRunner()
     result = runner.invoke(
-        setup_impl_from_issue,
+        setup_impl_from_pr,
         [str(pr_number)],
         obj=ctx,
     )
@@ -450,7 +450,7 @@ def test_planned_pr_pr_not_found_reports_error(tmp_path: Path) -> None:
 
     runner = CliRunner()
     result = runner.invoke(
-        setup_impl_from_issue,
+        setup_impl_from_pr,
         ["9999"],
         obj=ctx,
     )

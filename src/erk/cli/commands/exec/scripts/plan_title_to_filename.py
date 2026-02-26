@@ -1,7 +1,7 @@
 """Convert plan title to filename.
 
 Usage:
-    erk exec issue-title-to-filename "Plan Title"
+    erk exec plan-title-to-filename "Plan Title"
 
 Single source of truth for filename transformation for /erk:plan-save.
 
@@ -22,9 +22,9 @@ import click
 from erk_shared.naming import InvalidPlanTitle, generate_filename_from_title, validate_plan_title
 
 
-@click.command(name="issue-title-to-filename")
+@click.command(name="plan-title-to-filename")
 @click.argument("title")
-def issue_title_to_filename(title: str) -> None:
+def plan_title_to_filename(title: str) -> None:
     """Convert plan title to filename.
 
     TITLE: Plan title to convert

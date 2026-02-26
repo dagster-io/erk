@@ -86,7 +86,7 @@ When you need to modify a plan that's already saved to GitHub:
 /local:plan-update 123
 
 # Via CLI
-erk exec plan-update-issue --plan-number 123 --session-id="<session-id>"
+erk exec plan-update --plan-number 123 --session-id="<session-id>"
 ```
 
 **When to update vs create new:**
@@ -129,7 +129,7 @@ When exiting plan mode with an existing linked issue (e.g., from `.impl/issue.js
 2. **Save as new**: If this is a fresh plan unrelated to the linked issue
 3. **Implement directly**: If changes are ready to code
 
-The `plan-update-issue` command finds plan content from:
+The `plan-update` command finds plan content from:
 
 1. `--plan-path` flag (explicit file path)
 2. Session scratch storage (via `--session-id`)

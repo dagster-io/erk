@@ -19,6 +19,7 @@ Quick reference for all `erk exec` subcommands.
 | Command                           | Description                                                               |
 | --------------------------------- | ------------------------------------------------------------------------- |
 | `add-plan-label`                  | Add a label to a plan via the appropriate backend.                        |
+| `add-plan-labels`                 | Batch add labels to multiple plans from JSON stdin.                       |
 | `add-reaction-to-comment`         | Add a reaction to a PR/issue comment.                                     |
 | `add-remote-execution-note`       | Add remote execution tracking note to PR body.                            |
 | `capture-session-info`            | Capture Claude Code session info for CI workflows.                        |
@@ -26,10 +27,11 @@ Quick reference for all `erk exec` subcommands.
 | `ci-update-pr-body`               | Update PR body with AI-generated summary and footer.                      |
 | `ci-verify-autofix`               | Run full CI verification after autofix push.                              |
 | `cleanup-impl-context`            | Clean up .erk/impl-context/ staging directory.                            |
-| `close-issue-with-comment`        | Close a plan with a comment.                                              |
+| `close-pr`                        | Close a plan with a comment.                                              |
+| `close-prs`                       | Batch close multiple plan PRs with comments from JSON stdin.              |
 | `create-impl-context-from-plan`   | Create .erk/impl-context/ folder from plan content.                       |
-| `create-issue-from-session`       | Extract plan from Claude session and create GitHub issue.                 |
 | `create-plan-from-context`        | Create GitHub issue from plan content with erk-plan label.                |
+| `create-pr-from-session`          | Extract plan from Claude session and create GitHub PR.                    |
 | `dash-data`                       | Serialize plan dashboard data to JSON.                                    |
 | `detect-plan-from-branch`         | Detect plan number from the current git branch.                           |
 | `detect-trunk-branch`             | Detect whether repo uses main or master as trunk branch.                  |
@@ -59,8 +61,7 @@ Quick reference for all `erk exec` subcommands.
 | `handle-no-changes`               | Handle no-changes scenario gracefully.                                    |
 | `impl-init`                       | Initialize implementation by validating .impl/ folder.                    |
 | `impl-signal`                     | Signal implementation events to GitHub.                                   |
-| `impl-verify`                     | Verify implementation folder still exists after implementation.           |
-| `issue-title-to-filename`         | Convert plan title to filename.                                           |
+| `impl-verify`                     | Verify .impl/ folder still exists after implementation.                   |
 | `land-execute`                    | Execute deferred land operations.                                         |
 | `list-sessions`                   | List Claude Code sessions with metadata for the current project.          |
 | `mark-impl-ended`                 | Update implementation ended event in GitHub issue and local state file.   |
@@ -79,8 +80,9 @@ Quick reference for all `erk exec` subcommands.
 | `objective-save-to-issue`         | Save plan as objective GitHub issue.                                      |
 | `objective-update-after-land`     | Update objective after landing a PR.                                      |
 | `plan-save`                       | Save plan as a draft PR.                                                  |
+| `plan-title-to-filename`          | Convert plan title to filename.                                           |
+| `plan-update`                     | Update an existing plan's content.                                        |
 | `plan-update-from-feedback`       | Update a plan issue's plan-body comment with new content.                 |
-| `plan-update-issue`               | Update an existing GitHub issue's plan comment with new content.          |
 | `post-or-update-pr-summary`       | Post or update a PR summary comment.                                      |
 | `post-pr-inline-comment`          | Post an inline review comment on a PR.                                    |
 | `post-workflow-started-comment`   | Post a workflow started comment to a GitHub issue.                        |
@@ -99,7 +101,7 @@ Quick reference for all `erk exec` subcommands.
 | `set-local-review-marker`         | Set local review marker on PR to skip CI reviews.                         |
 | `set-pr-description`              | Update PR title and body with agent-provided values.                      |
 | `setup-impl`                      | Consolidated implementation setup.                                        |
-| `setup-impl-from-issue`           | Set up .impl/ folder from GitHub issue in current worktree.               |
+| `setup-impl-from-pr`              | Set up .impl/ folder from GitHub PR in current worktree.                  |
 | `store-tripwire-candidates`       | Store tripwire candidates as a metadata comment on a plan issue.          |
 | `track-learn-evaluation`          | Track learn evaluation completion on a plan issue.                        |
 | `track-learn-result`              | Track learn workflow result on a plan issue.                              |
@@ -135,6 +137,12 @@ Add a label to a plan via the appropriate backend.
 | Flag      | Type | Required | Default        | Description              |
 | --------- | ---- | -------- | -------------- | ------------------------ |
 | `--label` | TEXT | Yes      | Sentinel.UNSET | Label to add to the plan |
+
+### add-plan-labels
+
+Batch add labels to multiple plans from JSON stdin.
+
+**Usage:** `erk exec add-plan-labels`
 
 ### add-reaction-to-comment
 
@@ -221,11 +229,11 @@ Clean up .erk/impl-context/ staging directory.
 
 **Usage:** `erk exec cleanup-impl-context`
 
-### close-issue-with-comment
+### close-pr
 
 Close a plan with a comment.
 
-**Usage:** `erk exec close-issue-with-comment` <plan_number>
+**Usage:** `erk exec close-pr` <plan_number>
 
 **Arguments:**
 
@@ -239,6 +247,12 @@ Close a plan with a comment.
 | ----------- | ---- | -------- | -------------- | ---------------------------------- |
 | `--comment` | TEXT | Yes      | Sentinel.UNSET | Comment body to add before closing |
 
+### close-prs
+
+Batch close multiple plan PRs with comments from JSON stdin.
+
+**Usage:** `erk exec close-prs`
+
 ### create-impl-context-from-plan
 
 Create .erk/impl-context/ folder from plan content.
@@ -251,23 +265,23 @@ Create .erk/impl-context/ folder from plan content.
 | --------- | -------- | ----------- |
 | `PLAN_ID` | Yes      | -           |
 
-### create-issue-from-session
+### create-plan-from-context
 
-Extract plan from Claude session and create GitHub issue.
+Create GitHub issue from plan content with erk-plan label.
 
-**Usage:** `erk exec create-issue-from-session`
+**Usage:** `erk exec create-plan-from-context`
+
+### create-pr-from-session
+
+Extract plan from Claude session and create GitHub PR.
+
+**Usage:** `erk exec create-pr-from-session`
 
 **Options:**
 
 | Flag           | Type | Required | Default        | Description                                                                   |
 | -------------- | ---- | -------- | -------------- | ----------------------------------------------------------------------------- |
 | `--session-id` | TEXT | No       | Sentinel.UNSET | Session ID to search within (optional, searches all sessions if not provided) |
-
-### create-plan-from-context
-
-Create GitHub issue from plan content with erk-plan label.
-
-**Usage:** `erk exec create-plan-from-context`
 
 ### dash-data
 
@@ -646,18 +660,6 @@ Verify implementation folder still exists after implementation.
 
 **Usage:** `erk exec impl-verify`
 
-### issue-title-to-filename
-
-Convert plan title to filename.
-
-**Usage:** `erk exec issue-title-to-filename` <title>
-
-**Arguments:**
-
-| Name    | Required | Description |
-| ------- | -------- | ----------- |
-| `TITLE` | Yes      | -           |
-
 ### land-execute
 
 Execute deferred land operations.
@@ -935,6 +937,33 @@ Save plan as a draft PR.
 | `--created-from-workflow-run-url` | TEXT    | No       | -       | GitHub Actions workflow run URL                           |
 | `--branch-slug`                   | TEXT    | No       | -       | Pre-generated branch slug (skips LLM call when provided)  |
 
+### plan-title-to-filename
+
+Convert plan title to filename.
+
+**Usage:** `erk exec plan-title-to-filename` <title>
+
+**Arguments:**
+
+| Name    | Required | Description |
+| ------- | -------- | ----------- |
+| `TITLE` | Yes      | -           |
+
+### plan-update
+
+Update an existing plan's content.
+
+**Usage:** `erk exec plan-update`
+
+**Options:**
+
+| Flag            | Type    | Required | Default        | Description                                               |
+| --------------- | ------- | -------- | -------------- | --------------------------------------------------------- |
+| `--plan-number` | INTEGER | Yes      | Sentinel.UNSET | Plan number to update                                     |
+| `--format`      | CHOICE  | No       | 'json'         | Output format: json (default) or display (formatted text) |
+| `--plan-path`   | PATH    | No       | Sentinel.UNSET | Direct path to plan file (overrides session lookup)       |
+| `--session-id`  | TEXT    | No       | Sentinel.UNSET | Session ID to find plan file in scratch storage           |
+
 ### plan-update-from-feedback
 
 Update a plan issue's plan-body comment with new content.
@@ -953,21 +982,6 @@ Update a plan issue's plan-body comment with new content.
 | ---------------- | ---- | -------- | -------------- | -------------------------- |
 | `--plan-path`    | PATH | No       | Sentinel.UNSET | Path to plan markdown file |
 | `--plan-content` | TEXT | No       | Sentinel.UNSET | Plan content as string     |
-
-### plan-update-issue
-
-Update an existing GitHub issue's plan comment with new content.
-
-**Usage:** `erk exec plan-update-issue`
-
-**Options:**
-
-| Flag            | Type    | Required | Default        | Description                                               |
-| --------------- | ------- | -------- | -------------- | --------------------------------------------------------- |
-| `--plan-number` | INTEGER | Yes      | Sentinel.UNSET | Plan number to update                                     |
-| `--format`      | CHOICE  | No       | 'json'         | Output format: json (default) or display (formatted text) |
-| `--plan-path`   | PATH    | No       | Sentinel.UNSET | Direct path to plan file (overrides session lookup)       |
-| `--session-id`  | TEXT    | No       | Sentinel.UNSET | Session ID to find plan file in scratch storage           |
 
 ### post-or-update-pr-summary
 
@@ -1197,11 +1211,11 @@ Consolidated implementation setup.
 | `--issue` | INTEGER | No       | -       | Issue/PR number to set up from |
 | `--file`  | PATH    | No       | -       | Markdown file to set up from   |
 
-### setup-impl-from-issue
+### setup-impl-from-pr
 
-Set up .impl/ folder from GitHub issue in current worktree.
+Set up .impl/ folder from GitHub PR in current worktree.
 
-**Usage:** `erk exec setup-impl-from-issue` <plan_number>
+**Usage:** `erk exec setup-impl-from-pr` <plan_number>
 
 **Arguments:**
 

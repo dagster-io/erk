@@ -1,4 +1,4 @@
-"""Unit tests for close-issue-with-comment command.
+"""Unit tests for close-pr command.
 
 Tests use PlannedPRBackend for dependency injection via ErkContext.for_test().
 The command uses PlanBackend which routes to FakeGitHub PR operations.
@@ -9,8 +9,8 @@ from datetime import UTC, datetime
 
 from click.testing import CliRunner
 
-from erk.cli.commands.exec.scripts.close_issue_with_comment import (
-    close_issue_with_comment,
+from erk.cli.commands.exec.scripts.close_pr import (
+    close_pr,
 )
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.fake import FakeGitHub
@@ -43,7 +43,7 @@ def _make_issue(
     )
 
 
-def test_close_issue_with_comment_success() -> None:
+def test_close_pr_success() -> None:
     """Test successfully closing an issue with a comment."""
     issue = _make_issue(42, "Test Issue", "This is the issue body")
     fake_gh = FakeGitHubIssues(issues={42: issue})
@@ -54,7 +54,7 @@ def test_close_issue_with_comment_success() -> None:
     runner = CliRunner()
 
     result = runner.invoke(
-        close_issue_with_comment,
+        close_pr,
         ["42", "--comment", "Closing: work is done."],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -80,14 +80,14 @@ def test_close_issue_with_comment_success() -> None:
     assert 42 in fake_github.closed_prs
 
 
-def test_close_issue_with_comment_not_found() -> None:
+def test_close_pr_not_found() -> None:
     """Test error when issue does not exist."""
     fake_gh = FakeGitHubIssues()  # Empty issues dict
     fake_github = FakeGitHub(issues_gateway=fake_gh)
     runner = CliRunner()
 
     result = runner.invoke(
-        close_issue_with_comment,
+        close_pr,
         ["999", "--comment", "This should fail"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -105,7 +105,7 @@ def test_close_issue_with_comment_not_found() -> None:
     assert len(fake_github.closed_prs) == 0
 
 
-def test_close_issue_with_comment_multiline() -> None:
+def test_close_pr_multiline() -> None:
     """Test closing with a multiline comment."""
     issue = _make_issue(100, "Plan Issue", "Implementation plan")
     fake_gh = FakeGitHubIssues(issues={100: issue})
@@ -124,7 +124,7 @@ def test_close_issue_with_comment_multiline() -> None:
 See #1234 for details."""
 
     result = runner.invoke(
-        close_issue_with_comment,
+        close_pr,
         ["100", "--comment", multiline_comment],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -144,7 +144,7 @@ See #1234 for details."""
     assert "PR #1234" in comment_body
 
 
-def test_close_issue_with_comment_changes_state() -> None:
+def test_close_pr_changes_state() -> None:
     """Test that the PR state changes to closed."""
     issue = _make_issue(55, "Open Issue", "Body")
     fake_gh = FakeGitHubIssues(issues={55: issue})
@@ -155,7 +155,7 @@ def test_close_issue_with_comment_changes_state() -> None:
     runner = CliRunner()
 
     result = runner.invoke(
-        close_issue_with_comment,
+        close_pr,
         ["55", "--comment", "Done"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -171,7 +171,7 @@ def test_close_issue_with_comment_changes_state() -> None:
     assert closed_pr.state == "CLOSED"
 
 
-def test_close_issue_with_comment_requires_comment_flag() -> None:
+def test_close_pr_requires_comment_flag() -> None:
     """Test that --comment flag is required."""
     issue = _make_issue(10, "Test", "Body")
     fake_gh = FakeGitHubIssues(issues={10: issue})
@@ -182,7 +182,7 @@ def test_close_issue_with_comment_requires_comment_flag() -> None:
     runner = CliRunner()
 
     result = runner.invoke(
-        close_issue_with_comment,
+        close_pr,
         ["10"],  # Missing --comment
         obj=ErkContext.for_test(
             github=fake_github,

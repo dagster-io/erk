@@ -8,6 +8,7 @@ import click
 
 # Import and register all scripts
 from erk.cli.commands.exec.scripts.add_plan_label import add_plan_label
+from erk.cli.commands.exec.scripts.add_plan_labels import add_plan_labels
 from erk.cli.commands.exec.scripts.add_reaction_to_comment import (
     add_reaction_to_comment,
 )
@@ -21,17 +22,18 @@ from erk.cli.commands.exec.scripts.check_impl import check_impl
 from erk.cli.commands.exec.scripts.ci_update_pr_body import ci_update_pr_body
 from erk.cli.commands.exec.scripts.ci_verify_autofix import ci_verify_autofix
 from erk.cli.commands.exec.scripts.cleanup_impl_context import cleanup_impl_context
-from erk.cli.commands.exec.scripts.close_issue_with_comment import (
-    close_issue_with_comment,
+from erk.cli.commands.exec.scripts.close_pr import (
+    close_pr,
 )
+from erk.cli.commands.exec.scripts.close_prs import close_prs
 from erk.cli.commands.exec.scripts.create_impl_context_from_plan import (
     create_impl_context_from_plan,
 )
-from erk.cli.commands.exec.scripts.create_issue_from_session import (
-    create_issue_from_session,
-)
 from erk.cli.commands.exec.scripts.create_plan_from_context import (
     create_plan_from_context,
+)
+from erk.cli.commands.exec.scripts.create_pr_from_session import (
+    create_pr_from_session,
 )
 from erk.cli.commands.exec.scripts.dash_data import dash_data
 from erk.cli.commands.exec.scripts.detect_plan_from_branch import (
@@ -77,9 +79,6 @@ from erk.cli.commands.exec.scripts.handle_no_changes import handle_no_changes
 from erk.cli.commands.exec.scripts.impl_init import impl_init
 from erk.cli.commands.exec.scripts.impl_signal import impl_signal
 from erk.cli.commands.exec.scripts.impl_verify import impl_verify
-from erk.cli.commands.exec.scripts.issue_title_to_filename import (
-    issue_title_to_filename,
-)
 from erk.cli.commands.exec.scripts.land_execute import land_execute
 from erk.cli.commands.exec.scripts.list_sessions import list_sessions
 from erk.cli.commands.exec.scripts.mark_impl_ended import mark_impl_ended
@@ -113,10 +112,13 @@ from erk.cli.commands.exec.scripts.objective_update_after_land import (
     objective_update_after_land,
 )
 from erk.cli.commands.exec.scripts.plan_save import plan_save
+from erk.cli.commands.exec.scripts.plan_title_to_filename import (
+    plan_title_to_filename,
+)
+from erk.cli.commands.exec.scripts.plan_update import plan_update
 from erk.cli.commands.exec.scripts.plan_update_from_feedback import (
     plan_update_from_feedback,
 )
-from erk.cli.commands.exec.scripts.plan_update_issue import plan_update_issue
 from erk.cli.commands.exec.scripts.post_or_update_pr_summary import (
     post_or_update_pr_summary,
 )
@@ -155,8 +157,8 @@ from erk.cli.commands.exec.scripts.set_local_review_marker import (
 )
 from erk.cli.commands.exec.scripts.set_pr_description import set_pr_description
 from erk.cli.commands.exec.scripts.setup_impl import setup_impl
-from erk.cli.commands.exec.scripts.setup_impl_from_issue import (
-    setup_impl_from_issue,
+from erk.cli.commands.exec.scripts.setup_impl_from_pr import (
+    setup_impl_from_pr,
 )
 from erk.cli.commands.exec.scripts.store_tripwire_candidates import (
     store_tripwire_candidates,
@@ -199,12 +201,13 @@ def exec_group() -> None:
 
 # Register all commands
 exec_group.add_command(add_plan_label, name="add-plan-label")
+exec_group.add_command(add_plan_labels, name="add-plan-labels")
 exec_group.add_command(add_reaction_to_comment, name="add-reaction-to-comment")
 exec_group.add_command(add_remote_execution_note, name="add-remote-execution-note")
 exec_group.add_command(capture_session_info, name="capture-session-info")
 exec_group.add_command(check_impl, name="check-impl")
 exec_group.add_command(cleanup_impl_context, name="cleanup-impl-context")
-exec_group.add_command(create_issue_from_session, name="create-issue-from-session")
+exec_group.add_command(create_pr_from_session, name="create-pr-from-session")
 exec_group.add_command(create_plan_from_context, name="create-plan-from-context")
 exec_group.add_command(dash_data, name="dash-data")
 exec_group.add_command(create_impl_context_from_plan, name="create-impl-context-from-plan")
@@ -237,7 +240,7 @@ exec_group.add_command(get_pr_review_comments, name="get-pr-review-comments")
 exec_group.add_command(impl_init, name="impl-init")
 exec_group.add_command(impl_signal, name="impl-signal")
 exec_group.add_command(impl_verify, name="impl-verify")
-exec_group.add_command(issue_title_to_filename, name="issue-title-to-filename")
+exec_group.add_command(plan_title_to_filename, name="plan-title-to-filename")
 exec_group.add_command(land_execute, name="land-execute")
 exec_group.add_command(list_sessions, name="list-sessions")
 exec_group.add_command(mark_impl_ended, name="mark-impl-ended")
@@ -254,7 +257,7 @@ exec_group.add_command(objective_update_after_land, name="objective-update-after
 exec_group.add_command(objective_post_action_comment, name="objective-post-action-comment")
 exec_group.add_command(plan_save, name="plan-save")
 exec_group.add_command(plan_update_from_feedback, name="plan-update-from-feedback")
-exec_group.add_command(plan_update_issue, name="plan-update-issue")
+exec_group.add_command(plan_update, name="plan-update")
 exec_group.add_command(post_or_update_pr_summary, name="post-or-update-pr-summary")
 exec_group.add_command(post_pr_inline_comment, name="post-pr-inline-comment")
 exec_group.add_command(pr_sync_commit, name="pr-sync-commit")
@@ -273,7 +276,7 @@ exec_group.add_command(session_id_injector_hook, name="session-id-injector-hook"
 exec_group.add_command(set_local_review_marker, name="set-local-review-marker")
 exec_group.add_command(set_pr_description, name="set-pr-description")
 exec_group.add_command(setup_impl, name="setup-impl")
-exec_group.add_command(setup_impl_from_issue, name="setup-impl-from-issue")
+exec_group.add_command(setup_impl_from_pr, name="setup-impl-from-pr")
 exec_group.add_command(store_tripwire_candidates, name="store-tripwire-candidates")
 exec_group.add_command(track_learn_evaluation, name="track-learn-evaluation")
 exec_group.add_command(track_learn_result, name="track-learn-result")
@@ -287,7 +290,8 @@ exec_group.add_command(upload_impl_session, name="upload-impl-session")
 exec_group.add_command(upload_session, name="upload-session")
 exec_group.add_command(ci_update_pr_body)
 exec_group.add_command(ci_verify_autofix, name="ci-verify-autofix")
-exec_group.add_command(close_issue_with_comment, name="close-issue-with-comment")
+exec_group.add_command(close_pr, name="close-pr")
+exec_group.add_command(close_prs, name="close-prs")
 exec_group.add_command(user_prompt_hook, name="user-prompt-hook")
 exec_group.add_command(validate_claude_credentials, name="validate-claude-credentials")
 exec_group.add_command(validate_plan_content, name="validate-plan-content")

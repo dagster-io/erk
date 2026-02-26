@@ -1,11 +1,11 @@
-"""Unit tests for issue-title-to-filename command."""
+"""Unit tests for plan-title-to-filename command."""
 
 import json
 
 import pytest
 from click.testing import CliRunner
 
-from erk.cli.commands.exec.scripts.issue_title_to_filename import issue_title_to_filename
+from erk.cli.commands.exec.scripts.plan_title_to_filename import plan_title_to_filename
 
 
 @pytest.mark.parametrize(
@@ -19,7 +19,7 @@ from erk.cli.commands.exec.scripts.issue_title_to_filename import issue_title_to
 def test_valid_title_produces_filename(title: str, expected_filename: str) -> None:
     """Valid titles produce expected filename on stdout."""
     runner = CliRunner()
-    result = runner.invoke(issue_title_to_filename, [title])
+    result = runner.invoke(plan_title_to_filename, [title])
     assert result.exit_code == 0
     assert result.output.strip() == expected_filename
 
@@ -38,14 +38,14 @@ def test_valid_title_produces_filename(title: str, expected_filename: str) -> No
 def test_invalid_title_exits_with_code_2(title: str) -> None:
     """Invalid titles exit with code 2 and JSON error on stderr."""
     runner = CliRunner()
-    result = runner.invoke(issue_title_to_filename, [title])
+    result = runner.invoke(plan_title_to_filename, [title])
     assert result.exit_code == 2
 
 
 def test_invalid_title_json_error_contains_guidance() -> None:
     """Invalid title outputs JSON with error_type and agent_guidance."""
     runner = CliRunner()
-    result = runner.invoke(issue_title_to_filename, ["Untitled Plan"])
+    result = runner.invoke(plan_title_to_filename, ["Untitled Plan"])
     assert result.exit_code == 2
     # CliRunner mixes stderr into output; parse the JSON from it
     error_output = json.loads(result.output.strip())
