@@ -1,4 +1,9 @@
 {
   "provider": "github-draft-pr",
-  "title": "Hoist Slug LLM Call Out of `erk one-shot` CLI"
+  "plan_id": "8232",
+  "url": "https://github.com/dagster-io/erk/pull/8232",
+  "created_at": "2026-02-25T16:38:20.517661",
+  "synced_at": "2026-02-25T16:38:20.517661",
+  "labels": [],
+  "objective_id": null
 }
