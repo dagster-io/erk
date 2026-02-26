@@ -490,7 +490,7 @@ def test_plan_list_displays_multiple_plans_with_different_workflow_runs() -> Non
         wt1 = repo_dir / "feature-1"
         wt1.mkdir(parents=True)
         impl1 = get_impl_dir(wt1, branch_name="feature-1")
-        impl1.parent.mkdir(parents=True, exist_ok=True)
+        impl1.mkdir(parents=True, exist_ok=True)
         save_plan_ref(
             impl1,
             provider="github",
@@ -505,7 +505,7 @@ def test_plan_list_displays_multiple_plans_with_different_workflow_runs() -> Non
         wt2 = repo_dir / "feature-2"
         wt2.mkdir(parents=True)
         impl2 = get_impl_dir(wt2, branch_name="feature-2")
-        impl2.parent.mkdir(parents=True, exist_ok=True)
+        impl2.mkdir(parents=True, exist_ok=True)
         save_plan_ref(
             impl2,
             provider="github",

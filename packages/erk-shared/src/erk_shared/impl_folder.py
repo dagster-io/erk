@@ -73,11 +73,13 @@ def resolve_impl_dir(base_path: Path, *, branch_name: str | None) -> Path | None
         if branch_dir.exists():
             return branch_dir
 
-    # Step 2: Discovery — search IMPL_DIR_RELATIVE for any subdir with plan.md
+    # Step 2: Discovery — search IMPL_DIR_RELATIVE for any subdir with plan.md or progress.md
     impl_context_root = base_path / IMPL_DIR_RELATIVE
     if impl_context_root.exists():
         for child in impl_context_root.iterdir():
-            if child.is_dir() and (child / "plan.md").exists():
+            if child.is_dir() and (
+                (child / "plan.md").exists() or (child / "progress.md").exists()
+            ):
                 return child
 
     # Step 3: Not found
@@ -334,7 +336,7 @@ def has_plan_ref(impl_dir: Path) -> bool:
 
 
 def validate_plan_linkage(impl_dir: Path, branch_name: str) -> str | None:
-    """Return plan_id from plan-ref.json.
+    """Return plan_id from plan-ref.json or legacy issue.json.
 
     Plan-ref.json is the sole source of truth for plan-to-branch mapping.
     Branch names no longer encode issue numbers.
@@ -344,11 +346,22 @@ def validate_plan_linkage(impl_dir: Path, branch_name: str) -> str | None:
         branch_name: Current git branch name (unused, kept for interface compat)
 
     Returns:
-        Plan ID (as string) from plan-ref.json, or None if not found.
+        Plan ID (as string) from plan-ref.json or legacy issue.json, or None if not found.
     """
     plan_ref = read_plan_ref(impl_dir)
     if plan_ref is not None:
         return plan_ref.plan_id
+
+    # Fallback: read legacy issue.json for backward compatibility
+    issue_file = impl_dir / "issue.json"
+    if issue_file.exists():
+        try:
+            data = json.loads(issue_file.read_text(encoding="utf-8"))
+            if "issue_number" in data:
+                return str(data["issue_number"])
+        except json.JSONDecodeError:
+            pass
+
     return None
 
 

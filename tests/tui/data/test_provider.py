@@ -258,7 +258,7 @@ class TestBuildWorktreeMapping:
 
         # Create branch-scoped .erk/impl-context/<branch>/plan-ref.json on disk
         impl_dir = get_impl_dir(worktree_path, branch_name=branch_name)
-        impl_dir.parent.mkdir(parents=True, exist_ok=True)
+        impl_dir.mkdir(parents=True, exist_ok=True)
         plan_ref_data = {
             "provider": "github-draft-pr",
             "plan_id": "7624",
@@ -327,7 +327,7 @@ class TestBuildWorktreeMapping:
 
         # Create branch-scoped .erk/impl-context/<branch>/plan-ref.json on disk
         impl_dir = get_impl_dir(worktree_path, branch_name=branch_name)
-        impl_dir.parent.mkdir(parents=True, exist_ok=True)
+        impl_dir.mkdir(parents=True, exist_ok=True)
         plan_ref_data = {
             "provider": "github-draft-pr",
             "plan_id": "8001",
@@ -398,7 +398,7 @@ class TestBuildWorktreeMapping:
 
         # Create branch-scoped plan-ref.json (works for non-standard branch names)
         impl_dir = get_impl_dir(worktree_path, branch_name=branch_name)
-        impl_dir.parent.mkdir(parents=True, exist_ok=True)
+        impl_dir.mkdir(parents=True, exist_ok=True)
         plan_ref_data = {
             "provider": "github-draft-pr",
             "plan_id": "9999",

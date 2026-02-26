@@ -309,7 +309,7 @@ def test_dispatch_auto_detects_from_impl_folder() -> None:
         from erk_shared.impl_folder import get_impl_dir
 
         impl_dir = get_impl_dir(env.cwd, branch_name="main")
-        impl_dir.parent.mkdir(parents=True, exist_ok=True)
+        impl_dir.mkdir(parents=True, exist_ok=True)
         plan_ref_content = build_plan_ref_json(
             provider="github-draft-pr",
             plan_id="42",

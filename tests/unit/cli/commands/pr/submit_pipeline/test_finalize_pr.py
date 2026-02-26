@@ -1,7 +1,6 @@
 """Unit tests for finalize_pr pipeline step."""
 
 import dataclasses
-import json
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -142,21 +141,20 @@ def test_updates_pr_title_and_body(tmp_path: Path) -> None:
 
 def test_adds_learn_plan_label(tmp_path: Path) -> None:
     """Branch-scoped impl dir with erk-learn label => adds ERK_SKIP_LEARN_LABEL."""
-    # Create branch-scoped impl dir with issue.json with erk-learn label
+    # Create branch-scoped impl dir with plan-ref.json with erk-learn label
     impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
     impl_dir.mkdir(parents=True)
-    issue_json = impl_dir / "issue.json"
-    issue_json.write_text(
-        json.dumps(
-            {
-                "issue_number": 42,
-                "issue_url": "https://github.com/owner/repo/issues/42",
-                "created_at": "2025-01-01T00:00:00+00:00",
-                "synced_at": "2025-01-01T00:00:00+00:00",
-                "labels": ["erk-learn"],
-            }
-        )
+    from erk_shared.impl_folder import build_plan_ref_json
+
+    plan_ref_content = build_plan_ref_json(
+        provider="github",
+        plan_id="42",
+        url="https://github.com/owner/repo/issues/42",
+        labels=("erk-learn",),
+        objective_id=None,
+        node_ids=None,
     )
+    (impl_dir / "plan-ref.json").write_text(plan_ref_content, encoding="utf-8")
 
     pr = _pr_details(number=42)
     fake_git = FakeGit(

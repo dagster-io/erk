@@ -937,8 +937,8 @@ def create_wt(
         impl_source = resolve_impl_dir(repo.root, branch_name=current_branch)
         # Type guard: impl_source is guaranteed non-None by the earlier check at line 649-653
         assert impl_source is not None, "impl_source must be non-None after validation"
-        new_branch = ctx.git.branch.get_current_branch(wt_path)
-        impl_dest = get_impl_dir(wt_path, branch_name=new_branch or "main")
+        # branch is always set when copy_plan=True (mutually exclusive with from_plan)
+        impl_dest = get_impl_dir(wt_path, branch_name=branch or "main")
         impl_dest.parent.mkdir(parents=True, exist_ok=True)
 
         # Copy entire directory

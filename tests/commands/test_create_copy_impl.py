@@ -16,7 +16,7 @@ def test_create_copy_plan_success() -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Setup: Create branch-scoped impl folder in current worktree (at repo root)
         source_impl_dir = get_impl_dir(env.cwd, branch_name="main")
-        source_impl_dir.parent.mkdir(parents=True, exist_ok=True)
+        source_impl_dir.mkdir(parents=True, exist_ok=True)
         (source_impl_dir / "plan.md").write_text("# Plan content", encoding="utf-8")
         progress_content = (
             "---\ncompleted_steps: 2\ntotal_steps: 5\n---\n\n"
@@ -158,7 +158,7 @@ def test_create_copy_plan_preserves_progress() -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Setup: Create branch-scoped impl with mixed checkbox states at repo root
         plan_dir = get_impl_dir(env.cwd, branch_name="main")
-        plan_dir.parent.mkdir(parents=True, exist_ok=True)
+        plan_dir.mkdir(parents=True, exist_ok=True)
         (plan_dir / "plan.md").write_text("# Plan", encoding="utf-8")
 
         original_progress = """---
@@ -217,7 +217,7 @@ def test_create_copy_plan_preserves_yaml_front_matter() -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Setup: Create branch-scoped impl with YAML front matter at repo root
         plan_dir = get_impl_dir(env.cwd, branch_name="main")
-        plan_dir.parent.mkdir(parents=True, exist_ok=True)
+        plan_dir.mkdir(parents=True, exist_ok=True)
         (plan_dir / "plan.md").write_text("# Plan", encoding="utf-8")
 
         original_progress = """---

@@ -405,7 +405,7 @@ def test_plan_list_sort_activity_with_local_branch() -> None:
         # Create branch-scoped .erk/impl-context/<branch>/ with plan ref
         branch_name = "P1-feature-for-issue-1"
         impl_dir = get_impl_dir(feature_wt, branch_name=branch_name)
-        impl_dir.parent.mkdir(parents=True, exist_ok=True)
+        impl_dir.mkdir(parents=True, exist_ok=True)
         save_plan_ref(
             impl_dir,
             provider="github",
@@ -511,7 +511,7 @@ def test_plan_list_sort_activity_orders_by_recency() -> None:
         wt1.mkdir(parents=True)
         branch1 = "P1-feature-for-issue-1"
         impl1 = get_impl_dir(wt1, branch_name=branch1)
-        impl1.parent.mkdir(parents=True, exist_ok=True)
+        impl1.mkdir(parents=True, exist_ok=True)
         save_plan_ref(
             impl1,
             provider="github",
@@ -527,7 +527,7 @@ def test_plan_list_sort_activity_orders_by_recency() -> None:
         wt2.mkdir(parents=True)
         branch2 = "P2-feature-for-issue-2"
         impl2 = get_impl_dir(wt2, branch_name=branch2)
-        impl2.parent.mkdir(parents=True, exist_ok=True)
+        impl2.mkdir(parents=True, exist_ok=True)
         save_plan_ref(
             impl2,
             provider="github",
