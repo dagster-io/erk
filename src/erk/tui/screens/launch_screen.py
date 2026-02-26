@@ -125,7 +125,7 @@ class LaunchScreen(ModalScreen[str | None]):
         event.stop()
         if event.key in self._key_to_command_id:
             self.dismiss(self._key_to_command_id[event.key])
-        elif event.key not in ("escape", "q"):
+        else:
             self.dismiss(None)
 
     def action_dismiss_cancel(self) -> None:
