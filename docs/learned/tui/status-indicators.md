@@ -63,7 +63,7 @@ Both public functions delegate to a shared helper that returns a list of emoji s
 | 🚧    | Draft PR          | Active stages (planned, implementing, review) when `is_draft=True`       |
 | 👀    | Published PR      | Active stages when `is_draft=False`                                      |
 | 💥    | Merge conflicts   | Implementing, implemented, or review when `has_conflicts=True`           |
-| ✔    | Approved          | Review stage when `review_decision="APPROVED"`                           |
+| ✔     | Approved          | Review stage when `review_decision="APPROVED"`                           |
 | ❌    | Changes requested | Review stage when `review_decision="CHANGES_REQUESTED"`                  |
 | 🚀    | Ready to merge    | Implemented stage when checks pass, no unresolved comments, no conflicts |
 

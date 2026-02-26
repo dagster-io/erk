@@ -836,7 +836,7 @@ last_dispatched_node_id: 'WFR_draft456'
             "\nCloses #7626\n"
             "\nTo checkout this PR in a fresh worktree and environment locally, run:\n\n"
             "```\n"
-            'source "$(erk pr checkout 200 --script)" && erk pr sync --dangerous\n'
+            'source "$(erk pr checkout 200 --script)"\n'
             "```\n"
         )
         details = _make_planned_pr_details(number=200, title="Frobnication", body=pr_body)

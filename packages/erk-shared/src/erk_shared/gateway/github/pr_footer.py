@@ -258,7 +258,7 @@ def build_pr_body_footer(
     parts.append(
         f"\nTo checkout this PR in a fresh worktree and environment locally, run:\n\n"
         f"```\n"
-        f'source "$(erk pr checkout {pr_number} --script)" && erk pr sync --dangerous\n'
+        f'source "$(erk pr checkout {pr_number} --script)"\n'
         f"```\n"
     )
 

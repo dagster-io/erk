@@ -26,7 +26,6 @@ from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
-from erk_shared.gateway.branch_manager.types import SubmitBranchError
 from erk_shared.gateway.github.parsing import (
     parse_issue_number_from_url,
     parse_pr_number_from_url,
@@ -202,26 +201,29 @@ def _checkout_pr(
         return
 
     # For cross-repository PRs, always fetch via refs/pull/<n>/head
-    # For same-repo PRs, check if branch exists locally first
+    # For same-repo PRs, always fetch from remote and force-update local branch
     if pr.is_cross_repository:
         ctx.git.remote.fetch_pr_ref(
             repo_root=repo.root, remote="origin", pr_number=pr_number, local_branch=branch_name
         )
     else:
         local_branches = ctx.git.branch.list_local_branches(repo.root)
-        if branch_name not in local_branches:
-            remote_branches = ctx.git.branch.list_remote_branches(repo.root)
-            remote_ref = f"origin/{branch_name}"
-            if remote_ref in remote_branches:
-                ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
+        remote_branches = ctx.git.branch.list_remote_branches(repo.root)
+        remote_ref = f"origin/{branch_name}"
+        if remote_ref in remote_branches:
+            ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
+            if branch_name not in local_branches:
                 ctx.branch_manager.create_tracking_branch(repo.root, branch_name, remote_ref)
             else:
-                ctx.git.remote.fetch_pr_ref(
-                    repo_root=repo.root,
-                    remote="origin",
-                    pr_number=pr_number,
-                    local_branch=branch_name,
-                )
+                # Force-update local branch to match remote
+                ctx.git.branch.create_branch(repo.root, branch_name, remote_ref, force=True)
+        elif branch_name not in local_branches:
+            ctx.git.remote.fetch_pr_ref(
+                repo_root=repo.root,
+                remote="origin",
+                pr_number=pr_number,
+                local_branch=branch_name,
+            )
 
     # Create worktree using shared helper
     worktree_path, already_existed = ensure_branch_has_worktree(
@@ -251,7 +253,7 @@ def _checkout_pr(
                 f"Run: cd {worktree_path} && git rebase origin/{pr.base_ref_name}"
             )
 
-    # Graphite integration: Track and submit if enabled (for new worktrees only)
+    # Graphite integration: Track or retrack if needed (for new worktrees only)
     if (
         ctx.branch_manager.is_graphite_managed()
         and not already_existed
@@ -261,15 +263,11 @@ def _checkout_pr(
         if parent is None:
             ctx.console.info("Tracking branch with Graphite...")
             ctx.branch_manager.track_branch(worktree_path, branch_name, pr.base_ref_name)
-            ctx.console.info("Submitting to link with Graphite...")
-            submit_result = ctx.branch_manager.submit_branch(worktree_path, branch_name)
-            if isinstance(submit_result, SubmitBranchError):
-                ctx.console.info(
-                    click.style("Warning: ", fg="yellow")
-                    + f"Failed to link with Graphite: {submit_result.message}"
-                )
-            else:
-                ctx.console.info(click.style("✓", fg="green") + " Branch linked with Graphite")
+        elif ctx.graphite_branch_ops is not None and ctx.graphite.is_branch_diverged_from_tracking(
+            ctx.git, repo.root, branch_name
+        ):
+            ctx.console.info("Retracking diverged branch with Graphite...")
+            ctx.graphite_branch_ops.retrack_branch(worktree_path, branch_name)
 
     # Navigate and display checkout result
     navigate_and_display_checkout(
@@ -396,21 +394,24 @@ def _checkout_plan_pr(
         )
         return
 
-    # Fetch the branch from remote if not local
+    # Always fetch from remote and force-update local branch
     local_branches = ctx.git.branch.list_local_branches(repo.root)
-    if branch_name not in local_branches:
-        remote_branches = ctx.git.branch.list_remote_branches(repo.root)
-        remote_ref = f"origin/{branch_name}"
-        if remote_ref in remote_branches:
-            ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
+    remote_branches = ctx.git.branch.list_remote_branches(repo.root)
+    remote_ref = f"origin/{branch_name}"
+    if remote_ref in remote_branches:
+        ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
+        if branch_name not in local_branches:
             ctx.branch_manager.create_tracking_branch(repo.root, branch_name, remote_ref)
         else:
-            ctx.git.remote.fetch_pr_ref(
-                repo_root=repo.root,
-                remote="origin",
-                pr_number=pr_number,
-                local_branch=branch_name,
-            )
+            # Force-update local branch to match remote
+            ctx.git.branch.create_branch(repo.root, branch_name, remote_ref, force=True)
+    elif branch_name not in local_branches:
+        ctx.git.remote.fetch_pr_ref(
+            repo_root=repo.root,
+            remote="origin",
+            pr_number=pr_number,
+            local_branch=branch_name,
+        )
 
     # Create worktree and navigate
     worktree_path, already_existed = ensure_branch_has_worktree(

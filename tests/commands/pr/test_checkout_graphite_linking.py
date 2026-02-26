@@ -43,13 +43,12 @@ def _make_pr_details(
     )
 
 
-def test_pr_checkout_tracks_and_submits_with_graphite() -> None:
-    """Test pr checkout tracks branch and submits to link with Graphite.
+def test_pr_checkout_tracks_untracked_branch_with_graphite() -> None:
+    """Test pr checkout tracks untracked branch with Graphite.
 
     When Graphite is enabled and checking out a PR into a new worktree,
-    checkout should:
-    1. Track the branch with Graphite (gt track)
-    2. Submit to establish remote stack metadata (gt submit)
+    checkout should track the branch with Graphite (gt track) but NOT
+    submit (force-push is unnecessary at checkout time).
     """
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -76,10 +75,9 @@ def test_pr_checkout_tracks_and_submits_with_graphite() -> None:
 
         assert result.exit_code == 0, result.output
         assert "Created worktree for PR #100" in result.output
-        # Check for Graphite linking messages
+        # Should track but NOT submit
         assert "Tracking branch with Graphite" in result.output
-        assert "Submitting to link with Graphite" in result.output
-        assert "Branch linked with Graphite" in result.output
+        assert "Submitting to link with Graphite" not in result.output
 
 
 def test_pr_checkout_skips_graphite_for_existing_worktree() -> None:
@@ -124,11 +122,11 @@ def test_pr_checkout_skips_graphite_for_existing_worktree() -> None:
         assert "Tracking branch with Graphite" not in result.output
 
 
-def test_pr_checkout_skips_graphite_for_already_tracked() -> None:
-    """Test pr checkout skips Graphite linking when branch is already tracked.
+def test_pr_checkout_skips_graphite_for_already_tracked_not_diverged() -> None:
+    """Test pr checkout skips Graphite when branch is tracked and not diverged.
 
     When a branch already has a parent in Graphite's metadata (get_parent_branch
-    returns non-None), the Graphite linking should be skipped for idempotence.
+    returns non-None) and the SHA matches Graphite's cache, no retracking is needed.
     """
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -150,6 +148,7 @@ def test_pr_checkout_skips_graphite_for_already_tracked() -> None:
         )
 
         # Use FakeGraphite with pre-configured parent branch (branch is already tracked)
+        # tracked_revision matches commit_sha = not diverged
         from erk_shared.gateway.graphite.fake import FakeGraphite
         from erk_shared.gateway.graphite.types import BranchMetadata
 
@@ -157,10 +156,11 @@ def test_pr_checkout_skips_graphite_for_already_tracked() -> None:
             branches={
                 "tracked-branch": BranchMetadata(
                     name="tracked-branch",
-                    parent="main",  # Already has a parent = already tracked
+                    parent="main",
                     children=[],
                     is_trunk=False,
-                    commit_sha=None,
+                    commit_sha="abc123",
+                    tracked_revision="abc123",
                 ),
             }
         )
@@ -173,8 +173,9 @@ def test_pr_checkout_skips_graphite_for_already_tracked() -> None:
 
         assert result.exit_code == 0, result.output
         assert "Created worktree for PR #102" in result.output
-        # Should NOT have Graphite linking messages (already tracked)
+        # Should NOT have any Graphite messages (already tracked and not diverged)
         assert "Tracking branch with Graphite" not in result.output
+        assert "Retracking diverged branch" not in result.output
 
 
 def test_pr_checkout_skips_graphite_for_fork_prs() -> None:
@@ -213,18 +214,19 @@ def test_pr_checkout_skips_graphite_for_fork_prs() -> None:
         assert "Tracking branch with Graphite" not in result.output
 
 
-def test_pr_checkout_shows_warning_when_submit_branch_fails() -> None:
-    """Test pr checkout shows warning when submit_branch fails.
+def test_pr_checkout_retracks_diverged_graphite_branch() -> None:
+    """Test pr checkout retracks when Graphite SHA cache is stale.
 
-    When Graphite submit fails during checkout, the command should still succeed
-    (checkout already happened) but display a warning about the failure.
+    When a branch is already tracked but the SHA has diverged from
+    Graphite's cache (e.g., after remote dispatch added commits),
+    checkout should retrack to update the cache.
     """
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         pr_details = _make_pr_details(
             number=105,
-            head_ref_name="feature-submit-fail",
+            head_ref_name="diverged-branch",
             is_cross_repository=False,
             state="OPEN",
         )
@@ -233,16 +235,26 @@ def test_pr_checkout_shows_warning_when_submit_branch_fails() -> None:
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
             trunk_branches={env.cwd: "main"},
-            local_branches={env.cwd: ["main", "feature-submit-fail"]},
-            remote_branches={env.cwd: ["origin/main", "origin/feature-submit-fail"]},
+            local_branches={env.cwd: ["main", "diverged-branch"]},
+            remote_branches={env.cwd: ["origin/main", "origin/diverged-branch"]},
             existing_paths={env.cwd, env.repo.worktrees_dir},
         )
 
+        # Branch is tracked but SHA diverged (tracked_revision != commit_sha)
         from erk_shared.gateway.graphite.fake import FakeGraphite
+        from erk_shared.gateway.graphite.types import BranchMetadata
 
         graphite = FakeGraphite(
-            branches={},
-            submit_stack_raises=RuntimeError("network error"),
+            branches={
+                "diverged-branch": BranchMetadata(
+                    name="diverged-branch",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha="new-sha-after-dispatch",
+                    tracked_revision="old-sha-before-dispatch",
+                ),
+            }
         )
         ctx = build_workspace_test_context(
             env, git=git, github=github, graphite=graphite, use_graphite=True
@@ -251,12 +263,11 @@ def test_pr_checkout_shows_warning_when_submit_branch_fails() -> None:
         with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
             result = runner.invoke(pr_group, ["checkout", "105"], obj=ctx)
 
-        # Checkout should still succeed despite submit failure
         assert result.exit_code == 0, result.output
         assert "Created worktree for PR #105" in result.output
-        # Should show warning about failed submit
-        assert "Failed to link with Graphite" in result.output
-        assert "network error" in result.output
+        # Should retrack instead of tracking fresh
+        assert "Retracking diverged branch with Graphite" in result.output
+        assert "Tracking branch with Graphite" not in result.output
 
 
 def test_pr_checkout_skips_graphite_when_disabled() -> None:
