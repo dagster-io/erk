@@ -72,13 +72,13 @@ def format_implement_summary(results: list[CommandResult], total_duration: float
     pr_url: str | None = None
     pr_number: int | None = None
     pr_title: str | None = None
-    issue_number: int | None = None
+    plan_number: int | None = None
     for result in results:
         if result.pr_url:
             pr_url = result.pr_url
             pr_number = result.pr_number
             pr_title = result.pr_title
-            issue_number = result.issue_number
+            plan_number = result.issue_number
             break
 
     if pr_url:
@@ -98,11 +98,11 @@ def format_implement_summary(results: list[CommandResult], total_duration: float
         # Show PR URL
         lines.append(Text(f"   {pr_url}", style="dim"))
 
-        # Show linked issue (if any)
-        if issue_number:
+        # Show linked plan (if any)
+        if plan_number:
             lines.append(Text(""))
             lines.append(
-                Text(f"📋 Linked Issue: #{issue_number} (will auto-close on merge)", style="yellow")
+                Text(f"📋 Linked Plan: #{plan_number} (will auto-close on merge)", style="yellow")
             )
 
     # Error details (if failed)
@@ -175,7 +175,7 @@ def stream_command_with_feedback(
     pr_url: str | None = None
     pr_number: int | None = None
     pr_title: str | None = None
-    issue_number: int | None = None
+    plan_number: int | None = None
     error_message: str | None = None
     success = True
     last_spinner_update: str | None = None
@@ -220,7 +220,7 @@ def stream_command_with_feedback(
             case PrTitleEvent(title=title):
                 pr_title = title
             case IssueNumberEvent(number=num):
-                issue_number = num  # Already int, no conversion needed
+                plan_number = num  # Already int, no conversion needed
             case ErrorEvent(message=msg):
                 click.echo(click.style(f"  ! {msg}", fg="red"), err=True)
                 error_message = msg
@@ -256,7 +256,7 @@ def stream_command_with_feedback(
         pr_url=pr_url,
         pr_number=pr_number,
         pr_title=pr_title,
-        issue_number=issue_number,
+        issue_number=plan_number,
         duration_seconds=duration,
         error_message=error_message,
         filtered_messages=filtered_messages,

@@ -203,9 +203,9 @@ def _handle_agent_message(
     pr_title = metadata.get("pr_title")
     if pr_title is not None:
         events.append(PrTitleEvent(title=str(pr_title)))
-    issue_number = metadata.get("issue_number")
-    if issue_number is not None:
-        events.append(IssueNumberEvent(number=int(issue_number)))
+    plan_number = metadata.get("plan_number")
+    if plan_number is not None:
+        events.append(IssueNumberEvent(number=int(plan_number)))
 
     return events
 
