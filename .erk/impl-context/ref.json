@@ -1,5 +1,9 @@
 {
   "provider": "github-draft-pr",
-  "title": "Complete Phase 1: .impl/ to .erk/impl-context/ consolidation",
+  "plan_id": "8314",
+  "url": "https://github.com/dagster-io/erk/pull/8314",
+  "created_at": "2026-02-26T17:39:53.362929",
+  "synced_at": "2026-02-26T17:39:53.362929",
+  "labels": [],
   "objective_id": 8197
 }
