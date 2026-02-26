@@ -12,12 +12,8 @@ from erk_shared.gateway.graphite.types import BranchMetadata
 
 if TYPE_CHECKING:
     from erk_shared.gateway.gt.types import (
-        RestackError,
-        RestackSuccess,
         SquashError,
         SquashSuccess,
-        SyncError,
-        SyncSuccess,
     )
 
 
@@ -37,31 +33,6 @@ class Graphite(ABC):
 
         Returns:
             Graphite PR URL (e.g., "https://app.graphite.com/github/pr/dagster-io/erk/23")
-        """
-        ...
-
-    @abstractmethod
-    def sync(self, repo_root: Path, *, force: bool, quiet: bool) -> None:
-        """Run gt sync to synchronize with remote.
-
-        Args:
-            repo_root: Repository root directory
-            force: If True, pass --force flag to gt sync
-            quiet: If True, pass --quiet flag to gt sync for minimal output
-        """
-        ...
-
-    @abstractmethod
-    def restack(self, repo_root: Path, *, quiet: bool) -> None:
-        """Run gt restack to rebase the current stack.
-
-        This is more surgical than sync - it only affects the current stack,
-        not all branches in the repository. Always runs with --no-interactive
-        to prevent prompts in automated workflows.
-
-        Args:
-            repo_root: Repository root directory
-            quiet: If True, pass --quiet flag to gt restack for minimal output
         """
         ...
 
@@ -324,23 +295,6 @@ class Graphite(ABC):
 
         return metadata.tracked_revision != metadata.commit_sha
 
-    @abstractmethod
-    def continue_restack(self, repo_root: Path, *, quiet: bool) -> None:
-        """Continue an in-progress gt restack (gt continue).
-
-        This is used after manually resolving merge conflicts during a restack
-        operation. The gt continue command tells Graphite to proceed with the
-        rebase using the resolved files.
-
-        Args:
-            repo_root: Repository root directory
-            quiet: If True, suppress output
-
-        Raises:
-            subprocess.CalledProcessError: If continue fails (e.g., unresolved conflicts)
-        """
-        ...
-
     def squash_branch_idempotent(
         self, repo_root: Path, *, quiet: bool
     ) -> SquashSuccess | SquashError:
@@ -414,112 +368,4 @@ class Graphite(ABC):
                 success=False,
                 error="squash-failed",
                 message=f"Failed to squash: {e}",
-            )
-
-    def restack_idempotent(self, repo_root: Path, *, quiet: bool) -> RestackSuccess | RestackError:
-        """Restack with structured result handling.
-
-        This method wraps restack() and handles exceptions to return a typed
-        result instead of raising. It encapsulates the exception-to-result
-        conversion at the gateway boundary, keeping CLI code LBYL-compliant.
-
-        This method catches RuntimeError from restack() and parses the error
-        message to detect conflict patterns. While parsing exception messages
-        is inherently fragile, this pattern is acceptable because:
-        1. It's encapsulated in the gateway layer (not CLI code)
-        2. The Graphite CLI doesn't provide structured error codes
-        3. False negatives (treating conflicts as generic errors) are safe
-
-        Args:
-            repo_root: Repository root directory
-            quiet: If True, pass --quiet flag to gt restack for minimal output
-
-        Returns:
-            RestackSuccess if restack succeeded
-            RestackError if restack failed (with error_type distinguishing conflicts)
-
-        Example:
-            >>> result = graphite.restack_idempotent(repo_root, quiet=False)
-            >>> if isinstance(result, RestackSuccess):
-            ...     print(result.message)
-            >>> elif result.error_type == "restack-conflict":
-            ...     print("Resolve conflicts and run: gt continue")
-        """
-        # Import at runtime to avoid circular dependency
-        from erk_shared.gateway.gt.types import RestackError, RestackSuccess
-
-        try:
-            self.restack(repo_root, quiet=quiet)
-            return RestackSuccess(
-                success=True,
-                message="Branch restacked.",
-            )
-        except RuntimeError as e:
-            error_msg = str(e).lower()
-
-            # Detect conflict patterns from gt restack stderr
-            if "conflict" in error_msg or "unmerged files" in error_msg:
-                return RestackError(
-                    success=False,
-                    error_type="restack-conflict",
-                    message=str(e),
-                )
-            return RestackError(
-                success=False,
-                error_type="restack-failed",
-                message=f"Failed to restack: {e}",
-            )
-
-    def sync_idempotent(
-        self, repo_root: Path, *, force: bool, quiet: bool
-    ) -> SyncSuccess | SyncError:
-        """Sync with structured result handling.
-
-        This method wraps sync() and handles exceptions to return a typed
-        result instead of raising. gt sync is repo-wide: it syncs ALL branches.
-        When another worktree has unstaged changes, gt sync exits code 1 even
-        though the current branch synced fine. This method classifies that
-        specific failure as "other-branch-conflict" so the caller can warn
-        and continue.
-
-        Args:
-            repo_root: Repository root directory
-            force: If True, pass --force flag to gt sync
-            quiet: If True, pass --quiet flag to gt sync for minimal output
-
-        Returns:
-            SyncSuccess if sync succeeded
-            SyncError if sync failed (with error_type distinguishing other-branch issues)
-
-        Example:
-            >>> result = graphite.sync_idempotent(repo_root, force=True, quiet=False)
-            >>> if isinstance(result, SyncSuccess):
-            ...     print(result.message)
-            >>> elif result.error_type == "other-branch-conflict":
-            ...     print("Warning: other branches had issues")
-        """
-        # Import at runtime to avoid circular dependency
-        from erk_shared.gateway.gt.types import SyncError, SyncSuccess
-
-        try:
-            self.sync(repo_root, force=force, quiet=quiet)
-            return SyncSuccess(
-                success=True,
-                message="Synced with remote.",
-            )
-        except RuntimeError as e:
-            error_msg = str(e).lower()
-
-            # "cannot sync" + "unstaged changes" indicates another worktree
-            # has dirty state, but the current branch likely synced fine.
-            if "cannot sync" in error_msg and "unstaged changes" in error_msg:
-                return SyncError(
-                    success=False,
-                    error_type="other-branch-conflict",
-                    message=str(e),
-                )
-            return SyncError(
-                success=False,
-                error_type="sync-failed",
-                message=f"Failed to sync: {e}",
             )

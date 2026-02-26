@@ -45,76 +45,6 @@ class RealGraphite(Graphite):
         """
         return f"https://app.graphite.com/github/pr/{repo_id.owner}/{repo_id.repo}/{pr_number}"
 
-    def sync(self, repo_root: Path, *, force: bool, quiet: bool) -> None:
-        """Run gt sync to synchronize with remote.
-
-        Error output (stderr) is always captured to ensure RuntimeError
-        includes complete error messages for debugging. In verbose mode (!quiet),
-        stderr is displayed to the user after successful execution.
-
-        Note: Uses try/except as an acceptable error boundary for handling gt CLI
-        availability. We cannot reliably check gt installation status a priori.
-
-        Args:
-            repo_root: Repository root directory
-            force: If True, pass --force flag to gt sync
-            quiet: If True, pass --quiet flag to gt sync for minimal output
-        """
-        cmd = ["gt", "sync", "--no-interactive"]
-        if force:
-            cmd.append("-f")
-        if quiet:
-            cmd.append("--quiet")
-
-        result = run_subprocess_with_context(
-            cmd=cmd,
-            operation_context="sync with Graphite (gt sync)",
-            cwd=repo_root,
-            stdout=DEVNULL if quiet else sys.stdout,
-            stderr=subprocess.PIPE,
-        )
-
-        # Display stderr in verbose mode after successful execution
-        if not quiet and result.stderr:
-            user_output(result.stderr, nl=False)
-
-        # Invalidate branches cache - gt sync modifies Graphite metadata
-        self._branches_cache = None
-
-    def restack(self, repo_root: Path, *, quiet: bool) -> None:
-        """Run gt restack to rebase the current stack.
-
-        More surgical than sync - only affects the current stack, not all branches
-        in the repository. Always runs with --no-interactive to prevent prompts
-        in automated workflows.
-
-        Error output (stderr) is always captured to ensure RuntimeError
-        includes complete error messages for debugging. In verbose mode (!quiet),
-        stderr is displayed to the user after successful execution.
-
-        Args:
-            repo_root: Repository root directory
-            quiet: If True, pass --quiet flag to gt restack for minimal output
-        """
-        cmd = ["gt", "restack", "--no-interactive"]
-        if quiet:
-            cmd.append("--quiet")
-
-        result = run_subprocess_with_context(
-            cmd=cmd,
-            operation_context="restack with Graphite (gt restack)",
-            cwd=repo_root,
-            stdout=DEVNULL if quiet else sys.stdout,
-            stderr=subprocess.PIPE,
-        )
-
-        # Display stderr in verbose mode after successful execution
-        if not quiet and result.stderr:
-            user_output(result.stderr, nl=False)
-
-        # Invalidate branches cache - gt restack modifies branch state
-        self._branches_cache = None
-
     def get_prs_from_graphite(self, git_ops: Git, repo_root: Path) -> dict[str, PullRequestInfo]:
         """Get PR information from Graphite's .git/.graphite_pr_info file."""
         git_dir = git_ops.repo.get_git_common_dir(repo_root)
@@ -353,21 +283,3 @@ class RealGraphite(Graphite):
             check=False,
         )
         return result.returncode == 0
-
-    def continue_restack(self, repo_root: Path, *, quiet: bool) -> None:
-        """Run gt continue to continue an in-progress restack."""
-        cmd = ["gt", "continue", "--no-interactive"]
-
-        result = run_subprocess_with_context(
-            cmd=cmd,
-            operation_context="continue restack with Graphite (gt continue)",
-            cwd=repo_root,
-            stdout=DEVNULL if quiet else subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-
-        if not quiet and result.stderr:
-            user_output(result.stderr, nl=False)
-
-        # Invalidate branches cache - gt continue modifies branch state
-        self._branches_cache = None

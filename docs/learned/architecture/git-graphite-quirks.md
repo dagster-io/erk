@@ -24,7 +24,7 @@ tripwires:
   - action: "comparing git SHA to Graphite's tracked SHA for divergence detection"
     warning: "Ensure both `commit_sha` and `graphite_tracked_sha` are non-None before comparison. Returning False when either is None avoids false negatives on new branches."
   - action: "amending a commit when Graphite is enabled"
-    warning: "After amending commits or running gt restack, Graphite's cache may not update, leaving branches diverged. Call retrack_branch() to fix tracking. The auto-fix is already implemented in sync_cmd and branch_manager."
+    warning: "After amending commits or running gt restack, Graphite's cache may not update, leaving branches diverged. Call retrack_branch() to fix tracking. The auto-fix is already implemented in checkout_cmd, rewrite_cmd, submit_pipeline, and branch_manager."
   - action: "using --force-with-lease in multi-step workflows where earlier steps push"
     warning: "Force-push silently overwrites intermediate commits from earlier workflow steps. Always `git pull --rebase` before pushing in multi-step workflows."
   - action: "using git merge on a Graphite-managed branch"
@@ -264,52 +264,11 @@ This ensures callers can create multiple branches without unexpected working dir
 
 **Location in Codebase**: `packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py`
 
-## RestackError Handling Patterns
+## graphite_restack_required Error
 
-`gt restack` can fail in two distinct ways, requiring different user responses:
+The `graphite_restack_required` error type is set in `SubmitError.error_type` when `gt submit` fails because the remote has diverged. It is detected by keyword matching on the RuntimeError message from `gt submit`. See `_graphite_first_flow()` in `src/erk/cli/commands/pr/submit_pipeline.py`.
 
-### Error Types
-
-| Error Type         | Meaning                                              | User Action                                             |
-| ------------------ | ---------------------------------------------------- | ------------------------------------------------------- |
-| `restack-conflict` | Merge conflicts during rebase                        | Resolve conflicts manually, run `gt restack --continue` |
-| `restack-failed`   | Other restack failure (permissions, corrupted state) | Check git status, may need `git rebase --abort`         |
-
-### Code Pattern
-
-```python
-from erk_shared.gateway.gt.types import RestackError, RestackSuccess
-
-result = ctx.graphite.restack_idempotent(repo.root, no_interactive=True, quiet=False)
-
-if isinstance(result, RestackError):
-    if result.error_type == "restack-conflict":
-        # Guide user through conflict resolution
-        user_error(f"Conflicts detected: {result.message}")
-        user_output("Resolve conflicts and run: gt restack --continue")
-    else:
-        # Generic failure
-        raise click.ClickException(result.message)
-```
-
-### Reference
-
-Type definitions: `packages/erk-shared/src/erk_shared/gateway/gt/types.py:26-43`
-
-## RestackError vs graphite_restack_required
-
-Two error types relate to restacking, but at different levels with different meanings:
-
-| Error                       | Layer                          | When It Fires                                      | Meaning                                                       |
-| --------------------------- | ------------------------------ | -------------------------------------------------- | ------------------------------------------------------------- |
-| `RestackError`              | Gateway (`gt restack` output)  | `gt restack` command itself fails during execution | Restack was attempted but hit conflicts or failures           |
-| `graphite_restack_required` | CLI (`SubmitError.error_type`) | `gt submit` fails because remote has diverged      | Restack hasn't been attempted yet; user needs to run it first |
-
-<!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, _graphite_first_flow -->
-
-The `graphite_restack_required` error type is detected by keyword matching on the RuntimeError message from `gt submit`. See `_graphite_first_flow()` in `src/erk/cli/commands/pr/submit_pipeline.py`.
-
-**Key distinction:** `RestackError` means "we tried to restack and it failed." `graphite_restack_required` means "you need to restack before this operation can proceed."
+**Meaning:** "You need to restack before this operation can proceed." (Restack hasn't been attempted yet.)
 
 ## Graphite SHA Tracking Divergence
 
@@ -379,9 +338,7 @@ if ctx.graphite.is_branch_diverged_from_tracking(ctx.git, repo_root, branch_name
 
 **Where Auto-Fixes Are Implemented**:
 
-1. **sync_cmd.py**: After `gt restack` operations (two code paths)
-   - Line ~250: After restack in sync's rebase path
-   - Line ~315: After restack before Graphite submission
+1. **checkout_cmd.py**, **rewrite_cmd.py**, **submit_pipeline.py**: After restack operations
 2. **branch_manager/graphite.py**: Before tracking child branches
    - Auto-fixes diverged parent before `gt track` to prevent creation failures
 
@@ -389,7 +346,6 @@ if ctx.graphite.is_branch_diverged_from_tracking(ctx.git, repo_root, branch_name
 
 - Gateway method: `packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/real.py` (`retrack_branch()`)
 - Divergence detection: `packages/erk-shared/src/erk_shared/gateway/graphite/abc.py` (`is_branch_diverged_from_tracking()`)
-- Sync auto-fix: `src/erk/cli/commands/pr/sync_cmd.py:250,315`
 - Branch creation auto-fix: `packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py`
 - Fix commit: `8b8b06b5` (PR #6052)
 

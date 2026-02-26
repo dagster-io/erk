@@ -1067,8 +1067,7 @@ ctx.graphite.track_branch(branch_name, parent)
 ```python
 parent = ctx.branch_manager.get_parent_branch(repo.root, branch_name)
 if parent is not None:  # Already tracked
-    ctx.graphite.sync(repo.root, force=True)
-    ctx.graphite.restack_idempotent(repo.root, no_interactive=True)
+    ctx.graphite.squash_branch_idempotent(repo.root, quiet=True)
 ```
 
 **Use when:** Re-running provides value (e.g., sync pulls latest changes, restack updates base).

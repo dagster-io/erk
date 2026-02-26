@@ -61,14 +61,6 @@ class GraphiteDisabled(Graphite):
         """Get Graphite PR URL - always works (pure string construction)."""
         return f"https://app.graphite.dev/github/pr/{repo_id.owner}/{repo_id.repo}/{pr_number}"
 
-    def sync(self, repo_root: Path, *, force: bool, quiet: bool) -> None:
-        """Raise error - sync is a mutating operation."""
-        raise GraphiteDisabledError(self.reason)
-
-    def restack(self, repo_root: Path, *, quiet: bool) -> None:
-        """Raise error - restack is a mutating operation."""
-        raise GraphiteDisabledError(self.reason)
-
     def get_prs_from_graphite(self, git_ops: Git, repo_root: Path) -> dict[str, PullRequestInfo]:
         """Return empty dict - no PR info available when disabled."""
         return {}
@@ -104,7 +96,3 @@ class GraphiteDisabled(Graphite):
     def is_branch_tracked(self, repo_root: Path, branch: str) -> bool:
         """Return False - no branches tracked when disabled."""
         return False
-
-    def continue_restack(self, repo_root: Path, *, quiet: bool) -> None:
-        """Raise error - continue_restack is a mutating operation."""
-        raise GraphiteDisabledError(self.reason)

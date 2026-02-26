@@ -58,17 +58,6 @@ class PrintingGraphite(PrintingBase, Graphite):
 
     # Operations that need printing
 
-    def sync(self, repo_root: Path, *, force: bool, quiet: bool) -> None:
-        """Sync with printed output."""
-        cmd = "gt sync -f" if force else "gt sync"
-        self._emit(self._format_command(cmd))
-        self._wrapped.sync(repo_root, force=force, quiet=quiet)
-
-    def restack(self, repo_root: Path, *, quiet: bool) -> None:
-        """Restack with printed output."""
-        self._emit(self._format_command("gt restack --no-interactive"))
-        self._wrapped.restack(repo_root, quiet=quiet)
-
     def squash_branch(self, repo_root: Path, *, quiet: bool) -> None:
         """Squash branch with printed output."""
         self._emit(self._format_command("gt squash"))
@@ -97,8 +86,3 @@ class PrintingGraphite(PrintingBase, Graphite):
             quiet=quiet,
             force=force,
         )
-
-    def continue_restack(self, repo_root: Path, *, quiet: bool) -> None:
-        """Continue restack with printed output."""
-        self._emit(self._format_command("gt continue"))
-        self._wrapped.continue_restack(repo_root, quiet=quiet)
