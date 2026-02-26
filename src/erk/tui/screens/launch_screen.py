@@ -123,9 +123,8 @@ class LaunchScreen(ModalScreen[str | None]):
         """Handle key press—dispatch to command if mapped, dismiss otherwise."""
         event.prevent_default()
         event.stop()
-        command_id = self._key_to_command_id.get(event.key)
-        if command_id is not None:
-            self.dismiss(command_id)
+        if event.key in self._key_to_command_id:
+            self.dismiss(self._key_to_command_id[event.key])
         elif event.key not in ("escape", "q"):
             self.dismiss(None)
 
