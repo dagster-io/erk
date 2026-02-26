@@ -73,7 +73,7 @@ All new plans use the `plnd/` prefix pattern. Branches follow the pattern `plnd/
 - **Branch creation**: `generate_planned_pr_branch_name()` produces `plnd/{slug}-{timestamp}`
 - **Plan ID resolution**: `PlannedPRBackend.resolve_plan_id_for_branch()` uses an API call, not regex
 - **Source of truth**: `plan-ref.json` is the sole source of plan ID for all plan branches (both current `plnd/` and legacy `P{issue}-`)
-- **Extraction functions**: `extract_leading_issue_number()` returns `None` for `plnd/` branches; `extract_objective_number()` handles `P{issue}-O{obj}-`, `plnd/O{obj}-`, and legacy `planned/O{obj}-` patterns
+- **Extraction functions**: `extract_objective_number()` handles `P{issue}-O{obj}-`, `plnd/O{obj}-`, and legacy `planned/O{obj}-` patterns
 
 **Key change (PR #8071):** Plan ID encoding was removed from branch names. All plan-to-branch mapping now goes through `plan-ref.json`.
 

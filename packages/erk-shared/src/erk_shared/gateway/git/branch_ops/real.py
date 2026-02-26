@@ -370,13 +370,6 @@ class RealGitBranchOps(GitBranchOps):
         is_diverged = ahead > 0 and behind > 0
         return BranchDivergence(is_diverged=is_diverged, ahead=ahead, behind=behind)
 
-    def get_branch_issue(self, repo_root: Path, branch: str) -> int | None:
-        """Deprecated: Branch names no longer encode issue numbers.
-
-        Always returns None. Use plan-ref.json for plan-to-branch mapping.
-        """
-        return None
-
     def get_behind_commit_authors(self, cwd: Path, branch: str) -> list[str]:
         """Get authors of commits on remote that are not in local branch."""
         # Check if branch has upstream

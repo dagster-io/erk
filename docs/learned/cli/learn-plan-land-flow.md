@@ -39,8 +39,8 @@ Branch names are stable identifiers (set at `erk br co --for-plan` time). PR lab
 
 **Detection sequence**:
 
-1. `extract_leading_issue_number(state.branch)` → `123` from `P123-feature-branch`
-2. Check if issue #123 exists
+1. Read `plan-ref.json` from `.impl/` to get plan ID
+2. Check if the corresponding issue exists
 3. Optionally prompt user to trigger async learn (if not already learned)
 4. Populate `state.plan_id` for execution pipeline
 

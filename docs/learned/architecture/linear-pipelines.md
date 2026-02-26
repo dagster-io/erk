@@ -79,7 +79,7 @@ The validation pipeline takes CLI arguments directly. The execution pipeline rec
 
 - `repo_root` and `main_repo_root`: Re-discovered via `discover_repo_context(ctx.cwd)` in the execution pipeline
 - `pr_details`: Re-fetched from GitHub if needed by `merge_pr()` step
-- `plan_issue_number`: Re-derived from branch name via `extract_leading_issue_number()`
+- `plan_id`: Set to `None` by `make_execution_state()`; execution pipeline steps check for `None` and skip learn plan logic if not set
 
 **Why not serialize everything?**
 

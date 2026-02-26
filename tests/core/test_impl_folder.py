@@ -725,9 +725,8 @@ def test_validate_plan_linkage_both_match(tmp_path: Path) -> None:
 def test_validate_plan_linkage_mismatch_raises(tmp_path: Path) -> None:
     """Test validation returns plan_id from plan-ref when branch has no issue number.
 
-    Since extract_leading_issue_number() always returns None, P-prefix branches
-    cannot provide an issue number to validate against. The function returns the
-    plan_id from plan-ref.json without any mismatch check.
+    P-prefix branches cannot provide an issue number to validate against.
+    The function returns the plan_id from plan-ref.json without any mismatch check.
     """
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
@@ -748,8 +747,8 @@ def test_validate_plan_linkage_mismatch_raises(tmp_path: Path) -> None:
 def test_validate_plan_linkage_branch_only(tmp_path: Path) -> None:
     """Test validation returns None when no plan ref exists and branch has no issue number.
 
-    Since extract_leading_issue_number() always returns None, P-prefix branches
-    cannot provide an issue number. With no plan-ref.json, the function returns None.
+    P-prefix branches cannot provide an issue number. With no plan-ref.json,
+    the function returns None.
     """
     impl_dir = tmp_path / ".impl"
 
