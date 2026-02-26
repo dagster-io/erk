@@ -5,8 +5,8 @@ read_when:
   - "building or modifying PR submission pipelines"
   - "generating PR bodies with checkout footers"
 tripwires:
-  - action: "using issue number from .impl/issue.json in a checkout footer"
-    warning: "Checkout footers require the PR number (from create_pr return value), NOT the issue number. See pr-validation-rules.md."
+  - action: "using issue number from .impl/plan-ref.json in a checkout footer"
+    warning: "Checkout footers require the PR number (from create_pr return value), NOT the plan issue number. See pr-validation-rules.md."
 last_audited: "2026-02-26 00:00 PT"
 audit_result: edited
 ---

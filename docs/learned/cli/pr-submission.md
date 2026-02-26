@@ -59,9 +59,9 @@ The two commands diverge in their operations:
 
 Both workflows must satisfy the same validation rules checked by `erk pr check`:
 
-1. **Issue closing reference** — When `.impl/issue.json` exists, PR body must contain `Closes #N` (or `Closes owner/repo#N` for cross-repo plans)
+1. **Issue closing reference** — When `.impl/plan-ref.json` (or legacy `.impl/issue.json`) exists, PR body must contain `Closes #N` (or `Closes owner/repo#N` for cross-repo plans)
 2. **Checkout footer** — PR body must contain `erk pr checkout <pr-number>` command
-3. **Branch/issue agreement** — Branch name pattern `P123-...` must match `.impl/issue.json` issue number
+3. **Branch/issue agreement** — Branch name pattern `P123-...` must match `.impl/plan-ref.json` plan ID
 
 These rules are enforced by validation functions in the PR submission gateway:
 
@@ -78,7 +78,7 @@ See `has_checkout_footer_for_pr()` and `has_issue_closing_reference()` in `packa
 
 ## Cross-Repo Plans
 
-When `.impl/issue.json` contains a `plans_repo` field (e.g., `anthropics/erk-plans`), the closing reference format changes:
+When `.impl/plan-ref.json` contains a `plans_repo` field (e.g., `anthropics/erk-plans`), the closing reference format changes:
 
 - **Same-repo:** `Closes #123`
 - **Cross-repo:** `Closes anthropics/erk-plans#123`
@@ -110,7 +110,7 @@ Both workflows run `erk pr check` after creating the PR, even though the PR is a
 **What it catches:**
 
 - Footer generation logic bugs (wrong PR number embedded)
-- Issue reference extraction failures (`.impl/issue.json` wasn't read correctly)
+- Issue reference extraction failures (`.impl/plan-ref.json` wasn't read correctly)
 - GitHub API quirks (PR body didn't save as expected)
 
 **Anti-pattern:** Treating validation failures as user errors — these are system bugs. If `erk pr check` fails after a workflow completes, the workflow's PR construction logic is broken.

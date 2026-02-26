@@ -59,7 +59,7 @@ Two execution paths depending on Graphite availability:
 
 The `PlanContextProvider` checks for a linked erk-plan issue:
 
-1. Looks for `.impl/issue.json` in repo root
+1. Looks for `.impl/plan-ref.json` (or legacy `.impl/issue.json`) in repo root
 2. Extracts issue number from metadata
 3. Fetches plan body from GitHub
 4. Includes objective summary if linked
