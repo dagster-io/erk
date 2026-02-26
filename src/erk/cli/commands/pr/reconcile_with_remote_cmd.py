@@ -1,17 +1,17 @@
-"""Sync branch with remote and resolve divergence.
+"""Reconcile branch with remote.
 
-Uses Claude to sync a diverged local branch with its remote tracking branch,
-handling rebase and conflicts as needed. Invokes the /erk:sync-divergence
+Uses Claude to reconcile a diverged local branch with its remote tracking branch,
+handling rebase and conflicts as needed. Invokes the /erk:reconcile-with-remote
 Claude slash command.
 """
 
 import click
 
-from erk.cli.output import stream_sync_divergence
+from erk.cli.output import stream_reconcile_with_remote
 from erk.core.context import ErkContext
 
 
-@click.command("sync-divergence")
+@click.command("reconcile-with-remote")
 @click.option(
     "-d",
     "--dangerous",
@@ -19,8 +19,8 @@ from erk.core.context import ErkContext
     help="Acknowledge that this command invokes Claude with --dangerously-skip-permissions.",
 )
 @click.pass_obj
-def pr_sync_divergence(ctx: ErkContext, *, dangerous: bool) -> None:
-    """Sync branch with remote and resolve divergence.
+def pr_reconcile_with_remote(ctx: ErkContext, *, dangerous: bool) -> None:
+    """Reconcile branch with remote and resolve divergence.
 
     When gt submit fails with "Branch has been updated remotely", this command
     fetches remote changes, analyzes divergence, rebases if needed, and resolves
@@ -29,8 +29,8 @@ def pr_sync_divergence(ctx: ErkContext, *, dangerous: bool) -> None:
     Examples:
 
     \b
-      # Sync with remote and resolve divergence
-      erk pr sync-divergence --dangerous
+      # Reconcile with remote and resolve divergence
+      erk pr reconcile-with-remote --dangerous
 
     To disable the --dangerous flag requirement:
 
@@ -88,12 +88,12 @@ def pr_sync_divergence(ctx: ErkContext, *, dangerous: bool) -> None:
 
     click.echo(click.style("Analyzing divergence and invoking Claude...", fg="yellow"))
 
-    # Execute sync divergence
-    result = stream_sync_divergence(executor, cwd)
+    # Execute reconcile with remote
+    result = stream_reconcile_with_remote(executor, cwd)
 
     if result.requires_interactive:
         raise click.ClickException("Semantic decision requires interactive resolution")
     if not result.success:
-        raise click.ClickException(result.error_message or "Sync divergence failed")
+        raise click.ClickException(result.error_message or "Reconcile with remote failed")
 
     click.echo(click.style("\nBranch synced with remote!", fg="green", bold=True))

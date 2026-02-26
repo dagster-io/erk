@@ -1,21 +1,21 @@
 ---
-title: erk pr sync-divergence Command
+title: erk pr reconcile-with-remote Command
 last_audited: "2026-02-17 16:00 PT"
 audit_result: clean
 read_when:
   - "resolving branch divergence from remote"
   - "fixing gt submit 'Branch has been updated remotely' errors"
-  - "syncing local branch with remote tracking branch"
+  - "reconciling local branch with remote tracking branch"
 ---
 
-# erk pr sync-divergence Command
+# erk pr reconcile-with-remote Command
 
-Syncs a diverged local branch with its remote tracking branch, handling rebase and conflicts using Claude.
+Reconciles a diverged local branch with its remote tracking branch, handling rebase and conflicts using Claude.
 
 ## Usage
 
 ```bash
-erk pr sync-divergence --dangerous
+erk pr reconcile-with-remote --dangerous
 ```
 
 ## When to Use
@@ -52,11 +52,7 @@ This is useful for workflows where you've accepted the risk of Claude executing 
 
 ## How It Works
 
-1. **Fetch remote state** - Gets latest remote tracking branch
-2. **Analyze divergence** - Determines ahead/behind counts
-3. **Invoke Claude** - Runs `/erk:sync-divergence` slash command
-4. **Rebase if needed** - Claude handles rebase and conflict resolution
-5. **Report result** - Success or error with actionable guidance
+See `src/erk/cli/commands/pr/reconcile_with_remote_cmd.py:62-92` for the implementation sequence.
 
 ## Output Patterns
 
@@ -79,9 +75,9 @@ The command uses streaming output to show Claude's progress in real-time:
 ## Relationship to Other Commands
 
 - `erk pr fix-conflicts` - Fix conflicts in merge state (not divergence)
-- `gt submit` - What you retry after sync-divergence succeeds
-- `/erk:sync-divergence` - The slash command this wraps
+- `gt submit` - What you retry after reconcile-with-remote succeeds
+- `/erk:reconcile-with-remote` - The slash command this wraps
 
 ## Reference Implementation
 
-See `src/erk/cli/commands/pr/sync_divergence_cmd.py`.
+See `src/erk/cli/commands/pr/reconcile_with_remote_cmd.py`.
