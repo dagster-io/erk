@@ -30,7 +30,7 @@ Linear pipelines solve this by **deferring the dispatch decision**. Discovery ha
 
 <!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, prepare_state -->
 
-Step 1 (`prepare_state()`) resolves 6 fields: `repo_root`, `branch_name`, `parent_branch`, `trunk_branch`, `issue_number`, and validates `.impl/issue.json` linkage.
+Step 1 (`prepare_state()`) resolves 6 fields: `repo_root`, `branch_name`, `parent_branch`, `trunk_branch`, `issue_number`, and validates `.impl/plan-ref.json` linkage (with legacy `.impl/issue.json` fallback).
 
 **Why consolidate all discovery in one step?**
 
@@ -55,11 +55,11 @@ Step 3 (`push_and_create_pr`) dispatches to `_graphite_first_flow()` or `_core_s
 
 **Why Graphite-first exists:** `gt submit` handles push + PR creation atomically, avoiding tracking divergence caused by direct `git push`. When Graphite is available, we prefer it. When not, core flow provides the fallback.
 
-**Trade-off:** Internal dispatch adds branching within one step. But the alternative (duplicating 7 other steps across two pipelines) is worse.
+**Trade-off:** Internal dispatch adds branching within one step. But the alternative (duplicating 9 other steps across two pipelines) is worse.
 
-## Why 8 Steps: Granularity Trade-offs
+## Why 10 Steps: Granularity Trade-offs
 
-The pipeline has 8 steps: prepare, commit WIP, push+PR, extract diff, fetch plan, generate description, Graphite enhancement, finalize.
+The pipeline has 10 steps: prepare, commit WIP, capture existing PR body, push+PR, extract diff, fetch plan, generate description, Graphite enhancement, finalize, link PR to objective nodes.
 
 **Why not fewer steps?** Merging "extract diff + generate description" would make testing harder (can't test diff extraction without running AI generation). Each step represents a **failure boundary** — a distinct phase where errors need different handling.
 
@@ -67,17 +67,17 @@ The pipeline has 8 steps: prepare, commit WIP, push+PR, extract diff, fetch plan
 
 **Decision test:** If the step can fail independently and that failure requires distinct error handling, it deserves to be a separate step.
 
-## Auto-Repair Pattern: .impl/issue.json Creation
+## Auto-Repair Pattern: .impl/ Reference File Creation
 
 <!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, prepare_state, auto-repair section -->
 
-`prepare_state()` auto-creates `.impl/issue.json` if the issue number is inferred from the branch name but the file is missing.
+`prepare_state()` auto-creates the `.impl/` reference file if the issue number is inferred from the branch name but the file is missing.
 
-**Why auto-repair instead of erroring?** Early erk workflows created `.impl/` but not `issue.json`. Erroring would break existing worktrees. Auto-repair maintains forward compatibility while migrating to the new structure.
+**Why auto-repair instead of erroring?** Early erk workflows created `.impl/` but not a reference file. Erroring would break existing worktrees. Auto-repair maintains forward compatibility while migrating to the new structure.
 
 **Why in prepare_state() instead of a separate "repair" step?** Because the repair needs `issue_number` (discovered in prepare), `repo_root` (discovered in prepare), and `remote_url` (fetched for repair). Preparing and repairing are coupled — no value in separating them.
 
-**When to remove this:** When no worktrees exist with `.impl/` but missing `issue.json`, grep for `.impl` directories and check for `issue.json` presence. If all have it, the auto-repair is dead code.
+**When to remove this:** When no worktrees exist with `.impl/` but missing a reference file, grep for `.impl` directories and check for `plan-ref.json` or `issue.json` presence. If all have one, the auto-repair is dead code.
 
 ## Why Amend the Local Commit: Git Hygiene vs Metadata Footer
 
@@ -153,4 +153,4 @@ Both auto-behaviors print dim-styled informational messages when activated, keep
 
 <!-- Source: src/erk/cli/commands/pr/submit_pipeline.py -->
 
-See `src/erk/cli/commands/pr/submit_pipeline.py` for the complete implementation (789 lines). The module docstring and step signatures document the contract. This learned doc explains the **why** behind the design choices.
+See `src/erk/cli/commands/pr/submit_pipeline.py` for the complete implementation. The module docstring and step signatures document the contract. This learned doc explains the **why** behind the design choices.

@@ -99,7 +99,7 @@ Submit and land both use factory functions to construct initial state. See `make
 
 <!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, prepare_state -->
 
-The submit pipeline's `prepare_state()` step resolves 6 fields: `repo_root`, `branch_name`, `parent_branch`, `trunk_branch`, `issue_number`, and performs `.impl/issue.json` validation.
+The submit pipeline's `prepare_state()` step resolves 6 fields: `repo_root`, `branch_name`, `parent_branch`, `trunk_branch`, `issue_number`, and validates `.impl/plan-ref.json` linkage (with legacy fallback).
 
 **Why consolidate discovery in step 1 instead of spreading it across steps?**
 

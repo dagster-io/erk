@@ -218,7 +218,7 @@ Rules triggered by matching actions in code.
 
 **using gh issue view on a plan ID without checking plan backend type** → Read [Planned PR Backend](planned-pr-backend.md) first. Planned PR plan IDs are PR numbers. Using gh issue view on a planned-PR plan produces a confusing 404. Route to gh pr view based on backend type.
 
-**using issue number from .impl/issue.json in a checkout footer** → Read [PR Submission Patterns](pr-submission-patterns.md) first. Checkout footers require the PR number, not the issue number. The issue is the plan; the PR is the implementation. See the PR Number vs Issue Number section.
+**using issue number from .impl/plan-ref.json in a checkout footer** → Read [PR Submission Patterns](pr-submission-patterns.md) first. Checkout footers require the PR number, not the issue number. The issue is the plan; the PR is the implementation. See the PR Number vs Issue Number section.
 
 **using issue timeline API as the primary PR lookup path** → Read [PR Discovery Strategies for Plans](pr-discovery.md) first. The primary path is branch_name from plan-header → get_pr_for_branch(). Timeline API is a separate strategy for when branch_name is unavailable.
 
