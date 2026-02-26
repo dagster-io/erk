@@ -48,7 +48,7 @@ def test_run_plan_starts_codespace_and_runs_command() -> None:
     call = fake_codespace.ssh_calls[0]
     assert call.gh_name == "user-mybox-abc123"
     assert "erk objective plan 42" in call.remote_command
-    assert "tmux new-session -A -s plan-42" in call.remote_command
+    assert "tmux" not in call.remote_command
     assert call.interactive is True
 
 

@@ -44,8 +44,6 @@ Rules triggered by matching actions in code.
 
 **reusing ClaudePromptExecutor parsing logic for Codex** → Read [Codex CLI JSONL Output Format](codex/codex-jsonl-format.md) first. The two formats share almost nothing structurally. A CodexPromptExecutor needs its own parser — don't parameterize the existing Claude parser.
 
-**starting tmux inside a codespace without setting TERM=xterm-256color** → Read [Codespace Tmux Session Persistence](codespace-tmux-persistence.md) first. Remote tmux requires TERM=xterm-256color. Without it, terminal rendering breaks silently.
-
 **using --ask-for-approval with codex exec** → Read [Codex CLI Reference for Erk Integration](codex/codex-cli-reference.md) first. codex exec hardcodes approval to Never. Only the TUI supports --ask-for-approval. This means exec and TUI need different flag sets for the same PermissionMode.
 
 **using --output-format with codex** → Read [Codex CLI Reference for Erk Integration](codex/codex-cli-reference.md) first. Codex has no --output-format. Use --json (boolean flag) for JSONL. Without --json, output goes to terminal. This affects execute_command_streaming() porting.
@@ -55,7 +53,5 @@ Rules triggered by matching actions in code.
 **using --system-prompt or --allowedTools with codex** → Read [Codex CLI Reference for Erk Integration](codex/codex-cli-reference.md) first. Codex has no --system-prompt or --allowedTools. Prepend system prompt to user prompt. Tool restriction is not available — this affects execute_prompt() porting.
 
 **using issue number from .impl/plan-ref.json for a checkout footer** → Read [Issue-PR Closing Integration](issue-pr-closing-integration.md) first. The checkout footer requires the PR number, not the issue number. These are different values — the issue is the plan, the PR is the implementation.
-
-**using random session names for tmux in codespaces** → Read [Codespace Tmux Session Persistence](codespace-tmux-persistence.md) first. Use deterministic names for plan sessions (from plan ID) and TTY-derived names for interactive sessions. Random names prevent reconnection.
 
 **using shell=True in subprocess calls for the Slack bot** → Read [Slack Bot Patterns](slack-bot-patterns.md) first. Never use shell=True for security. Pass arguments as a list to prevent shell injection. See runner.py for the pattern.
