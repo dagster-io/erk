@@ -1,6 +1,9 @@
 ---
 description: Analyze merged PRs by category with net lines of code statistics
 argument-hint: [since]
+context: fork
+agent: general-purpose
+model: haiku
 ---
 
 # /local:code-stats

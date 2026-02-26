@@ -35,7 +35,7 @@ If either is missing, STOP and report: "ERROR: Both issue number and --node are 
 
 Launch a Task agent to fetch objective data and create the context marker:
 
-Use the Task tool with `subagent_type: "general-purpose"` and `model: "sonnet"`:
+Use the Task tool with `subagent_type: "general-purpose"` and `model: "haiku"`:
 
 **Task Prompt:**
 
