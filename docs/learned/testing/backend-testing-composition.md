@@ -6,7 +6,7 @@ read_when:
   - "writing tests for exec scripts with backend operations"
 tripwires:
   - action: "creating a FakePlanBackend for testing caller code"
-    warning: "Use real backend + fake gateway instead. FakeGitHubIssues injected into GitHubPlanStore. Fake backends are only for validating ABC contract across providers."
+    warning: "Use real backend + fake gateway instead. FakeGitHub injected into PlannedPRBackend. Fake backends are only for validating ABC contract across providers."
 last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 ---
@@ -19,8 +19,9 @@ Pattern for testing code that uses Backend ABCs. The key insight: inject fake ga
 
 ```python
 # Correct: real backend with fake gateway
-fake_issues = FakeGitHubIssues(issues={123: issue})
-backend = GitHubPlanStore(fake_issues)
+fake_github = FakeGitHub()
+fake_issues = FakeGitHubIssues()
+backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
 
 # Wrong: fake backend for testing callers
 fake_backend = FakePlanBackend()  # Only for ABC contract tests
@@ -42,13 +43,13 @@ See `test_started_posts_comment_and_updates_metadata` in
 [`tests/unit/cli/commands/exec/scripts/test_impl_signal.py`](../../../tests/unit/cli/commands/exec/scripts/test_impl_signal.py)
 for the full test. The key elements:
 
-- Creates a `FakeGitHubIssues` with a test issue
-- Invokes `impl_signal` via `CliRunner` with `ErkContext.for_test(github_issues=fake_issues)`
-- Asserts on `fake_issues.added_comments` and `fake_issues.updated_bodies`
+- Creates a `FakeGitHub` with test PRs
+- Invokes `impl_signal` via `CliRunner` with `ErkContext.for_test(github=fake_github)`
+- Asserts on `fake_github.pr_comments`, `fake_github.updated_pr_bodies`, `fake_github.updated_pr_titles`, etc.
 
 ## When to Use Fake Backends
 
-Fake backends are appropriate only for validating the ABC contract itself across different providers. For example, ensuring both `GitHubPlanStore` and a hypothetical `JiraPlanStore` implement the same interface correctly.
+Fake backends are appropriate only for validating the ABC contract itself across different providers. For example, ensuring both `PlannedPRBackend` and a hypothetical alternative backend implement the same interface correctly.
 
 ## Decision Table
 
@@ -62,11 +63,17 @@ Fake backends are appropriate only for validating the ABC contract itself across
 
 Assert on fake gateway mutation tracking properties:
 
-| Property                     | What It Tracks                                                            |
-| ---------------------------- | ------------------------------------------------------------------------- |
-| `fake_issues.added_comments` | List of `(issue_number, body, comment_id)` tuples                         |
-| `fake_issues.updated_bodies` | List of `(issue_number, body)` tuples                                     |
-| `fake_issues.created_labels` | List of `(label, description, color)` tuples from `ensure_label_exists()` |
+| Property                          | What It Tracks                                      |
+| --------------------------------- | --------------------------------------------------- |
+| `fake_github.pr_comments`         | List of `(pr_number, body)` tuples                  |
+| `fake_github.updated_pr_bodies`   | List of `(pr_number, new_body)` tuples              |
+| `fake_github.updated_pr_titles`   | List of `(pr_number, new_title)` tuples             |
+| `fake_github.updated_pr_bases`    | List of `(pr_number, new_base)` tuples              |
+| `fake_github.created_prs`         | List of `(branch, title, body, base, draft)` tuples |
+| `fake_github.added_labels`        | List of `(pr_number, label)` tuples                 |
+| `fake_github.merged_prs`          | List of merged PR numbers                           |
+| `fake_github.closed_prs`          | List of closed PR numbers                           |
+| `fake_github.resolved_thread_ids` | Set of resolved review thread IDs                   |
 
 ## Related Documentation
 

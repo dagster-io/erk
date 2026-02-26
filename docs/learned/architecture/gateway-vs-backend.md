@@ -53,23 +53,13 @@ Backends abstract over business logic that may have multiple storage or provider
 **Key characteristics:**
 
 - No `dry_run.py` or `printing.py` — business logic doesn't need these
-- Compose gateways internally (e.g., `GitHubPlanStore` composes `GitHubIssues` gateway)
+- Compose gateways internally (e.g., `PlannedPRBackend` composes `GitHub` gateway)
 - To test code that uses a backend, inject fake **gateways** into the **real** backend
 - Fake backends exist only to validate the ABC contract works across different providers
 
-**Example:** `PlanBackend` at `packages/erk-shared/src/erk_shared/plan_store/backend.py` — abstracts plan CRUD with `GitHubPlanStore` implementation backed by `GitHubIssues` gateway.
+**Example:** `PlanBackend` at `packages/erk-shared/src/erk_shared/plan_store/backend.py` — abstracts plan CRUD with `PlannedPRBackend` implementation backed by `GitHub` gateway.
 
-**Testing pattern:**
-
-```python
-# Correct: real backend with fake gateway
-fake_issues = FakeGitHubIssues()
-backend = GitHubPlanStore(fake_issues)
-result = backend.create_plan(...)
-
-# Wrong: fake backend for testing callers
-# (Backend fakes validate ABC design, not caller behavior)
-```
+**Testing pattern:** See [Backend Testing Composition](../testing/backend-testing-composition.md) for the full pattern (real backend + fake gateways).
 
 ## Decision Guide
 

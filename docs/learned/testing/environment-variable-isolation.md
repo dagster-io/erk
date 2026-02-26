@@ -27,16 +27,9 @@ Previously, setting `ERK_PLAN_BACKEND=planned_pr` in the shell environment cause
 
 See `context_for_test()` in `packages/erk-shared/src/erk_shared/context/testing.py`.
 
-## Two `context_for_test()` Implementations
+## `context_for_test()` Implementation
 
-There are two versions of `context_for_test()`:
-
-| Location                                                | Parameter name  | Checks `ERK_PLAN_BACKEND`? |
-| ------------------------------------------------------- | --------------- | -------------------------- |
-| `packages/erk-shared/src/erk_shared/context/testing.py` | `github_issues` | **Yes** — respects env var |
-| Local erk (if present)                                  | `issues`        | No — ignores env var       |
-
-The parameter name difference (`issues` vs `github_issues`) is a historical artifact. The key behavioral difference is whether `ERK_PLAN_BACKEND` affects backend selection when no `plan_store` is provided.
+After PR #8210, `context_for_test()` in `packages/erk-shared/src/erk_shared/context/testing.py` no longer checks `ERK_PLAN_BACKEND`. The plan backend is hardcoded to `PlannedPRBackend`.
 
 ## Mitigations
 
@@ -52,11 +45,11 @@ Use `autouse=True` in a `conftest.py` to apply across all tests in a module.
 
 ### Option 2: Explicit `plan_store` in test context
 
-Pass `plan_store` explicitly to `context_for_test()` to bypass env var inspection:
+Pass `plan_store` explicitly to `context_for_test()`:
 
 ```python
 ctx = context_for_test(
-    plan_store=FakePlanStore(),  # Explicit: ignores ERK_PLAN_BACKEND
+    plan_store=PlannedPRBackend(FakeGitHub(), FakeGitHubIssues(), time=FakeTime()),
     ...
 )
 ```

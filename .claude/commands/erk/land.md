@@ -72,13 +72,20 @@ gh pr list --head <branch-name> --state all --limit 1 --json number -q '.[0].num
 
 **If no PR found:** Report error and exit - cannot land without a PR.
 
-### Step 4: Extract Plan Issue Number (P-prefix Detection)
+### Step 4: Extract Plan Issue Number
 
-Parse the plan issue number from the branch name pattern `P<number>-...`
+The plan issue number is no longer encoded in branch names. Instead, use `plan-ref.json` to resolve the plan ID:
 
-Example: `P3699-objective-aware-pr-land` -> Plan Issue #3699
+1. Check if `.impl/plan-ref.json` exists
+2. If exists, read the `plan_id` field from the JSON file
+3. If not found, check for legacy `P<number>-*` branch prefix pattern for backwards compatibility
 
-**If branch doesn't have P-prefix:** Record that there's no plan link. Continue to Step 6.
+Example:
+
+- Current: `plnd/objective-aware-pr-land-02-26-1430` → resolve via plan-ref.json
+- Legacy: `P3699-objective-aware-pr-land` → extract 3699 from branch name
+
+**If no plan link found:** Record that there's no plan link. Continue to Step 6.
 
 ### Step 5: Check for Objective Link
 

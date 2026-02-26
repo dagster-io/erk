@@ -502,13 +502,13 @@ class FakeFileSystem(FileSystemGateway):
 
 ### The Distinction
 
-| Aspect              | Gateway                                            | Backend                                          |
-| ------------------- | -------------------------------------------------- | ------------------------------------------------ |
-| **Purpose**         | Thin wrapper around external system                | Higher-level abstraction that composes gateways  |
-| **Examples**        | `GitHubIssues`, `Git`, `Graphite`, `Shell`, `Time` | `GitHubPlanStore`, `PlanBackend` implementations |
-| **Implementations** | 4: ABC, Real, Fake, DryRun                         | Just ABC + real implementations                  |
-| **Needs Fake?**     | ✅ Yes - provides in-memory simulation             | ❌ No - inject fake gateways instead             |
-| **Testing**         | Use `FakeGitHubIssues` directly                    | Use `GitHubPlanStore(FakeGitHubIssues())`        |
+| Aspect              | Gateway                                      | Backend                                                                   |
+| ------------------- | -------------------------------------------- | ------------------------------------------------------------------------- |
+| **Purpose**         | Thin wrapper around external system          | Higher-level abstraction that composes gateways                           |
+| **Examples**        | `GitHub`, `Git`, `Graphite`, `Shell`, `Time` | `PlannedPRBackend`, `PlanBackend` implementations                         |
+| **Implementations** | 4: ABC, Real, Fake, DryRun                   | Just ABC + real implementations                                           |
+| **Needs Fake?**     | ✅ Yes - provides in-memory simulation       | ❌ No - inject fake gateways instead                                      |
+| **Testing**         | Use `FakeGitHub` directly                    | Use `PlannedPRBackend(FakeGitHub(), FakeGitHubIssues(), time=FakeTime())` |
 
 ### Backend Architecture
 
@@ -520,14 +520,15 @@ Backends are higher-level abstractions that:
 
 ```python
 # Backend takes gateways as constructor arguments
-class GitHubPlanStore(PlanBackend):
-    def __init__(self, github_issues: GitHubIssues, time: Time | None = None):
-        self._github_issues = github_issues  # Injects gateway
-        self._time = time or RealTime()
+class PlannedPRBackend(PlanBackend):
+    def __init__(self, github: GitHub, github_issues: GitHubIssues, *, time: Time):
+        self._github = github  # Injects gateway
+        self._github_issues = github_issues
+        self._time = time
 
     def create_plan(self, ...) -> CreatePlanResult:
         # Uses gateway to implement domain operation
-        result = self._github_issues.create_issue(...)
+        result = self._github.create_pr(...)
         return CreatePlanResult(plan_id=str(result.number), url=result.url)
 ```
 
@@ -536,14 +537,15 @@ class GitHubPlanStore(PlanBackend):
 To test code that uses a backend, inject fake gateways into the real backend:
 
 ```python
-# ✅ CORRECT: Inject fake gateway into real backend
+# ✅ CORRECT: Inject fake gateways into real backend
 def test_create_plan():
+    fake_github = FakeGitHub()
     fake_issues = FakeGitHubIssues()
-    plan_store = GitHubPlanStore(fake_issues)
+    plan_backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
 
-    result = plan_store.create_plan(...)
+    result = plan_backend.create_plan(...)
 
-    assert fake_issues.created_issues[0][0] == "expected title"
+    assert fake_github.created_prs[0].title == "expected title"
 
 # ❌ WRONG: Creating a fake backend
 class FakePlanBackend(PlanBackend):  # DON'T DO THIS

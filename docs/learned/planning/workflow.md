@@ -284,10 +284,10 @@ This dual-check prevents false negatives when agents commit their work without l
 
 ### Submitting for Remote Implementation
 
-For automated implementation via GitHub Actions, use `erk pr dispatch`:
+For automated implementation via GitHub Actions, use `erk pr submit`:
 
 ```bash
-erk pr dispatch <issue-number>
+erk pr submit <issue-number>
 ```
 
 This command:

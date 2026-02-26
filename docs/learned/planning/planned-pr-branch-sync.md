@@ -96,13 +96,13 @@ PR #7697 added the missing `pull_rebase()` call to the submit path. Without it, 
 
 ## Issue-Based Plan Branching
 
-For comparison, issue-based plans generate fresh branch names:
+For comparison, issue-based plans (legacy) generate fresh branch names:
 
 <!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py:155-157 -->
 
-Calls `generate_issue_branch_name()` with the issue number, plan title, timestamp, and optional objective ID. Branch names follow the pattern `P{issue}-{slugified-title}-{timestamp}`.
+Calls `generate_issue_branch_name()` with the issue number, plan title, timestamp, and optional objective ID. Branch names follow the pattern `P{issue}-{slugified-title}-{timestamp}`. This is the legacy format; current plans use `plnd/` prefix.
 
-If already on a branch matching the expected prefix (`P{issue_number}-`), the existing branch is reused.
+If already on a branch matching the expected pattern (for legacy plans, `P{issue_number}-*`), the existing branch is reused.
 
 ## Auto-Force Push for Plan Implementation Branches
 

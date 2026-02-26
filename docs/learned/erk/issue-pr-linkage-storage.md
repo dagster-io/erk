@@ -23,7 +23,7 @@ When a plan becomes a PR, erk establishes a linkage that allows:
 
 ## How Linkages Are Created
 
-### Via `erk pr dispatch`
+### Via `erk pr submit`
 
 The primary path for creating issue-PR linkages:
 
@@ -59,7 +59,7 @@ Slash commands that create PRs read the issue reference from local storage:
 
 This file maps the current worktree to its source GitHub issue.
 
-- Created by `erk pr dispatch` (as `.erk/impl-context/`)
+- Created by `erk pr submit` (as `.erk/impl-context/`)
 - Created by `erk wt create --from-plan` (as `.impl/`)
 - Read by slash commands when creating PRs
 
@@ -102,7 +102,7 @@ Uses batch queries via `get_prs_linked_to_issues()` for efficient dashboard disp
 | Create PR, then edit body to add `Closes #N` | `willCloseTarget: false`            |
 | Create PR with `Closes #N`, then remove it   | `willCloseTarget: true` (unchanged) |
 
-This timing behavior is documented in [GitHub community discussion #24706](https://github.com/orgs/community/discussions/24706). This is why `erk pr dispatch` passes the "Closes" text to `create_pr()` rather than adding it via `update_pr_body()`.
+This timing behavior is documented in [GitHub community discussion #24706](https://github.com/orgs/community/discussions/24706). This is why `erk pr submit` passes the "Closes" text to `create_pr()` rather than adding it via `update_pr_body()`.
 
 ## Debugging Linkage Issues
 
