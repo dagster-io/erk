@@ -46,6 +46,7 @@ class OneShotDispatchParams:
     prompt: str
     model: str | None
     extra_workflow_inputs: dict[str, str]
+    slug: str | None
 
 
 @dataclass(frozen=True)
@@ -62,12 +63,14 @@ def generate_branch_name(
     *,
     time: Time,
     prompt_executor: PromptExecutor | None,
+    slug: str | None,
 ) -> str:
     """Generate a branch name from the prompt.
 
     Format: oneshot-{slug}-{MM-DD-HHMM}
 
-    When prompt_executor is provided, uses LLM to generate a concise slug
+    When slug is provided, uses it directly (no LLM call). When
+    prompt_executor is provided, uses LLM to generate a concise slug
     from the prompt. When None (e.g., dry-run mode), falls back to
     sanitize_worktree_name.
 
@@ -75,21 +78,25 @@ def generate_branch_name(
         prompt: The task description
         time: Time gateway for deterministic timestamps
         prompt_executor: PromptExecutor for LLM slug generation, or None to skip
+        slug: Pre-generated slug to use directly, or None to generate one
 
     Returns:
         Branch name string
     """
-    title = prompt
-    if prompt_executor is not None:
+    if slug is not None:
+        title = slug
+    elif prompt_executor is not None:
         title = generate_slug_or_fallback(prompt_executor, prompt)
+    else:
+        title = prompt
 
-    slug = sanitize_worktree_name(title)
+    sanitized = sanitize_worktree_name(title)
     prefix = "oneshot-"
     max_slug_len = 31 - len(prefix)
-    if len(slug) > max_slug_len:
-        slug = slug[:max_slug_len].rstrip("-")
+    if len(sanitized) > max_slug_len:
+        sanitized = sanitized[:max_slug_len].rstrip("-")
     timestamp = format_branch_timestamp_suffix(time.now())
-    return f"{prefix}{slug}{timestamp}"
+    return f"{prefix}{sanitized}{timestamp}"
 
 
 def dispatch_one_shot(
@@ -145,6 +152,7 @@ def dispatch_one_shot(
             params.prompt,
             time=ctx.time,
             prompt_executor=None,
+            slug=params.slug,
         )
         user_output(
             click.style("Dry-run mode:", fg="cyan", bold=True) + " No changes will be made\n"
@@ -183,12 +191,16 @@ def dispatch_one_shot(
         # Generate branch name with LLM-generated slug
         current_step = "Generating branch name"
         user_output("Generating branch name...")
-        user_output(click.style("  (calling haiku for slug generation...)", dim=True))
-        slug_start = time.monotonic()
-        slug = generate_slug_or_fallback(ctx.prompt_executor, params.prompt)
-        slug_elapsed = time.monotonic() - slug_start
-        slug_msg = f"  \u2713 Slug: {slug} ({format_duration(slug_elapsed)})"
-        user_output(click.style(slug_msg, dim=True))
+        if params.slug is not None:
+            slug = params.slug
+            user_output(click.style(f"  \u2713 Slug: {slug} (pre-generated)", dim=True))
+        else:
+            user_output(click.style("  (calling haiku for slug generation...)", dim=True))
+            slug_start = time.monotonic()
+            slug = generate_slug_or_fallback(ctx.prompt_executor, params.prompt)
+            slug_elapsed = time.monotonic() - slug_start
+            slug_msg = f"  \u2713 Slug: {slug} ({format_duration(slug_elapsed)})"
+            user_output(click.style(slug_msg, dim=True))
         # planned_pr: plnd/ prefix (no issue number needed)
         branch_name = generate_planned_pr_branch_name(
             slug,
