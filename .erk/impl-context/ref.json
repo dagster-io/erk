@@ -1,5 +1,9 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Objective #7911 Nodes 3.3 + 3.4 Cleanup",
+  "plan_id": "8263",
+  "url": "https://github.com/dagster-io/erk/pull/8263",
+  "created_at": "2026-02-26T12:06:06.868699",
+  "synced_at": "2026-02-26T12:06:06.868699",
+  "labels": [],
   "objective_id": 7911
 }
