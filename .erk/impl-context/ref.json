@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Objective: Eliminate `.impl/` Folder \u2014 Unify on `.erk/impl-context/<branch>/`"
+}
