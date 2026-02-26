@@ -11,8 +11,10 @@ Options:
     --learned-from-issue INT: Parent plan issue (for learn plans)
     --created-from-workflow-run-url URL: Workflow run URL
 
-Objective linking is automatic via the objective-context session marker
-(created by /erk:objective-plan). No CLI flag needed.
+Objective linking: use --objective to pass directly, or rely on
+automatic linking via the objective-context session marker
+(created by /erk:objective-plan). The --objective flag takes
+precedence over the session marker.
 
 Exit Codes:
     0: Success
@@ -322,6 +324,7 @@ def _save_plan_via_planned_pr(
     learned_from_issue: int | None,
     created_from_workflow_run_url: str | None,
     branch_slug: str | None,
+    objective: int | None,
 ) -> None:
     """Handle planned-PR backend: dedup check, plan extraction, validation, and save.
 
@@ -334,18 +337,23 @@ def _save_plan_via_planned_pr(
         learned_from_issue: Parent plan issue number (for learn plans)
         created_from_workflow_run_url: GitHub Actions workflow run URL
         branch_slug: Pre-generated branch slug (skips LLM call when provided)
+        objective: Objective issue number from CLI flag (overrides session marker)
     """
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
     claude_installation = require_claude_installation(ctx)
 
-    # Read objective from session marker (created by /erk:objective-plan)
-    objective_issue: int | None = None
+    # CLI flag takes precedence over marker
+    objective_issue: int | None = objective
     node_ids: tuple[str, ...] | None = None
-    if session_id is not None:
+    if objective_issue is not None:
+        click.echo(f"Linked to objective #{objective_issue} from --objective flag", err=True)
+    elif session_id is not None:
         objective_issue = read_objective_context_marker(session_id, repo_root)
         if objective_issue is not None:
             click.echo(f"Linked to objective #{objective_issue} from session context", err=True)
+
+    if session_id is not None:
         step_id = read_roadmap_step_marker(session_id, repo_root)
         if step_id is not None:
             node_ids = (step_id,)
@@ -464,6 +472,12 @@ def _save_plan_via_planned_pr(
     default=None,
     help="Pre-generated branch slug (skips LLM call when provided)",
 )
+@click.option(
+    "--objective",
+    type=int,
+    default=None,
+    help="Objective issue number (overrides session marker)",
+)
 @click.pass_context
 def plan_save(
     ctx: click.Context,
@@ -475,6 +489,7 @@ def plan_save(
     learned_from_issue: int | None,
     created_from_workflow_run_url: str | None,
     branch_slug: str | None,
+    objective: int | None,
 ) -> None:
     """Save plan as a draft PR."""
     _save_plan_via_planned_pr(
@@ -486,4 +501,5 @@ def plan_save(
         learned_from_issue=learned_from_issue,
         created_from_workflow_run_url=created_from_workflow_run_url,
         branch_slug=branch_slug,
+        objective=objective,
     )
