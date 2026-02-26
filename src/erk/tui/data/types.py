@@ -77,10 +77,9 @@ class PlanRowData:
         objective_slug_display: Slug or stripped title fallback (max 25 chars).
         objective_state_display: Sparkline string (e.g., "✓✓✓▶▶○○○○").
         objective_head_state: Head state of next node ("in-progress", "ready", "-").
-        objective_head_plans: Tuple of (display, url) pairs for blocking head nodes.
-            display is a PR number like "#7911" (when PR is linked) or a node ID
-            like "1.3" (fallback when no PR). url is the GitHub PR link or "" when
-            no PR is available. Empty tuple when no non-terminal blocking deps.
+        objective_head_plans: Tuple of (display, url) pairs for blocking head PRs.
+            Each entry is a PR number like "#7911" paired with its GitHub PR URL.
+            Empty tuple when no blocking deps have linked PRs.
         objective_next_node_display: Next node ID display (e.g., "1.1" or "-").
 
         updated_at: Last update datetime of the issue.

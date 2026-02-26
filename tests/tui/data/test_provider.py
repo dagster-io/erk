@@ -1543,8 +1543,8 @@ class TestBlockingDepsPlans:
         assert display == "#100"
         assert url == "https://github.com/test/repo/pull/100"
 
-    def test_blocking_dep_without_pr_shows_node_id(self, tmp_path: Path) -> None:
-        """When next node has a non-terminal dep without a PR, node ID is shown as fallback."""
+    def test_blocking_dep_without_pr_not_collected(self, tmp_path: Path) -> None:
+        """When next node has a non-terminal dep without a PR, it is not collected."""
         provider = self._make_provider(tmp_path)
 
         # Node 1.1 is in_progress but has no PR
@@ -1584,10 +1584,7 @@ class TestBlockingDepsPlans:
             use_graphite=False,
         )
 
-        assert len(row.objective_head_plans) == 1
-        display, url = row.objective_head_plans[0]
-        assert display == "1.1"
-        assert url == ""
+        assert row.objective_head_plans == ()
 
     def test_multiple_blocking_deps_collected(self, tmp_path: Path) -> None:
         """Multiple non-terminal deps with plans are all collected."""

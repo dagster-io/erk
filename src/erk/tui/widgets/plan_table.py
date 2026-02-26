@@ -286,12 +286,7 @@ class PlanDataTable(DataTable):
             if row.objective_head_plans:
                 limit = 3 if len(row.objective_head_plans) <= 3 else 2
                 show = row.objective_head_plans[:limit]
-                parts = []
-                for display, url in show:
-                    if url:
-                        parts.append(f"[link={url}]{display}[/link]")
-                    else:
-                        parts.append(display)
+                parts = [f"[link={url}]{display}[/link]" for display, url in show]
                 if len(row.objective_head_plans) > 3:
                     parts.append("\u2026")
                 deps_cell = " ".join(parts)
