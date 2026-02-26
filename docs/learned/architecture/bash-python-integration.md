@@ -10,6 +10,8 @@ tripwires:
     pattern: "<<\\s*EOF\\b"
   - action: "using bash heredocs for large agent outputs"
     warning: "heredocs fail silently with special characters; prefer the Write tool"
+  - action: "piping JSON through bash heredoc to gh api or other commands"
+    warning: "JSON with special characters ($, backticks, backslashes) gets silently corrupted by bash expansion in unquoted heredocs. Use <<'EOF' (quoted) or write to a temp file and pipe from that."
 last_audited: "2026-02-07 19:35 PT"
 audit_result: clean
 ---

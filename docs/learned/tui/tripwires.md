@@ -14,6 +14,8 @@ Rules triggered by matching actions in code.
 
 **accessing \_status_bar without null guard** → Read [TUI Streaming Output Patterns](streaming-output.md) first. Guard \_status_bar access with `if self._status_bar is not None:` — timing issue during widget lifecycle can cause AttributeError.
 
+**accessing optional gateway fields without null checks in TUI event handlers** → Read [Modal Widget Embedding Pattern](modal-widget-embedding.md) first. Gateway fields like plan_body or objective_content may be None. Always check before accessing in event handlers.
+
 **adding a DataTable column with add_column(key=...)** → Read [TUI Architecture Overview](architecture.md) first. Column key is a data binding contract — must match data field name. Silent failure when mismatched.
 
 **adding a column to PlanDataTable without updating make_plan_row** → Read [Column Addition Pattern](column-addition-pattern.md) first. Column additions require 5 coordinated changes. See column-addition-pattern.md for the complete checklist.
@@ -32,11 +34,15 @@ Rules triggered by matching actions in code.
 
 **adding emoji with Unicode variation selector (\ufe0f) to status indicators** → Read [TUI Status Indicators](status-indicators.md) first. Variation selector forces double-wide rendering in terminals, breaking column alignment. Current safe emoji: 🥞 🚧 👀 💥 ✔ ❌ 🚀. Test any new emoji in terminal before adding.
 
+**adding labels to ViewConfig.labels expecting OR semantics from GitHub API** → Read [TUI View Switching](view-switching.md) first. GitHub GraphQL uses AND semantics for label arrays. Multiple labels in a single ViewConfig.labels means items must have ALL listed labels. Use separate views for separate label types. See github-graphql-label-semantics.md.
+
 **adding or reordering PlanDataTable columns** → Read [Column Addition Pattern](column-addition-pattern.md) first. TUI column index cascade: adding or reordering columns invalidates ALL test assertions using column indices. Run a systematic grep for column-index assertions (e.g., row[N]) before and after the change. Update every affected test file.
 
 **adding stage column outside planned_pr backend check** → Read [Dashboard Column Inventory](dashboard-columns.md) first. stage column is planned_pr-only. It appears before obj in the column order. Check \_setup_columns() for the backend conditional block.
 
 **adding streaming commands without using \_push_streaming_detail helper** → Read [View-Aware Command Filtering](view-aware-commands.md) first. Streaming ACTION commands need \_push_streaming_detail() to handle the push-then-stream sequence correctly. Direct streaming without it skips the detail screen push.
+
+**adding the same label to multiple ViewConfig entries without exclude_labels** → Read [TUI View Switching](view-switching.md) first. Without exclude_labels, items matching the shared label appear in multiple views. Use exclude_labels for defense-in-depth deduplication (Plans view excludes erk-learn).
 
 **caching fetched data under self.\_view_mode after an async operation** → Read [TUI Async State Snapshot Pattern](async-state-snapshot.md) first. Cache under fetched_mode (snapshot at start), not self.\_view_mode (may have changed during fetch).
 
@@ -67,6 +73,8 @@ Rules triggered by matching actions in code.
 **modifying how plan titles are displayed in TUI** → Read [TUI Plan Title Rendering Pipeline](plan-title-rendering-pipeline.md) first. Ensure `[erk-learn]` prefix is added BEFORE any filtering/sorting stages.
 
 **passing --no-wait in worker thread subprocess calls** → Read [Async Action Refresh Pattern](async-action-refresh-pattern.md) first. Never pass --no-wait in worker threads — it defeats the polling purpose. The thread exists to wait for the operation to complete before refreshing.
+
+**passing id= kwarg to PlanDataTable constructor** → Read [Modal Widget Embedding Pattern](modal-widget-embedding.md) first. PlanDataTable does not support the id= keyword argument. Use CSS selectors or widget references instead.
 
 **pushing PlanBodyScreen without explicit content_type** → Read [TUI View Switching](view-switching.md) first. Content type must come from view_mode at push time, not derived inside the screen.
 

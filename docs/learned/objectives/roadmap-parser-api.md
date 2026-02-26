@@ -62,25 +62,17 @@ Extracts all metadata blocks from text using HTML comment markers. Returns `list
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py, replace_metadata_block_in_body -->
 
-```python
-def replace_metadata_block_in_body(body: str, key: str, new_block_content: str) -> str
-```
-
 Replaces an entire metadata block's content in the body. Finds the block by key and substitutes the content between the HTML comment markers. Used during roadmap mutations to replace the frontmatter block after updating node data.
 
 ### `enrich_phase_names()` (from roadmap.py)
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, enrich_phase_names -->
 
-```python
-def enrich_phase_names(body: str, phases: list[RoadmapPhase]) -> list[RoadmapPhase]
-```
-
 Extracts phase names from markdown headers (e.g., `### Phase 1: Planning`) and replaces placeholder names in parsed `RoadmapPhase` objects. Called by `parse_roadmap()` after frontmatter parsing because frontmatter stores flat steps without phase names. Uses regex pattern `^###\s+Phase\s+(\d+)([A-Z]?):\s*(.+?)` to match headers.
 
-### Separate plan and pr fields on RoadmapNode
+### RoadmapNode pr field
 
-`RoadmapNode` has separate `plan` and `pr` fields (both `str | None`). The `plan` field holds a plan issue reference (e.g., `"#6464"`), while `pr` holds a landed PR reference (e.g., `"#123"`). This replaces the old convention where `pr` held both formats (`"plan #456"` vs `"#123"`). The parser reads these as separate YAML fields from v2 frontmatter — no table-based migration occurs during parsing.
+`RoadmapNode` has a `pr` field (`str | None`) that holds a PR reference (e.g., `"#123"`). The `plan` field was removed — only `pr` exists on the dataclass. Additional fields: `depends_on` (`tuple[str, ...] | None`) for explicit dependencies and `slug` (`str | None`) for kebab-case node slugs.
 
 ## Dual-Parser Pattern
 
