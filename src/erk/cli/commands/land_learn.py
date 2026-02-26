@@ -111,7 +111,7 @@ def _create_learn_issue_impl(
     if result.success:
         user_output(
             click.style("✓", fg="green")
-            + f" Created learn issue #{result.issue_number} for plan #{plan_id}"
+            + f" Created learn issue #{result.plan_number} for plan #{plan_id}"
         )
     elif result.error:
         user_output(
