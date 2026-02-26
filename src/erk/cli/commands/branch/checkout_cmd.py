@@ -578,6 +578,14 @@ def branch_checkout(
         # Fall through to jump to the worktree
 
     if len(matching_worktrees) == 1:
+        # --new-slot was requested but the branch already existed in a worktree
+        # (not one we just created in the len==0 branch above)
+        if new_slot and not is_newly_created:
+            raise click.ClickException(
+                f"Branch '{branch}' is already checked out in {matching_worktrees[0].path.name}. "
+                f"Cannot create a new slot for an existing branch."
+            )
+
         # Exactly one worktree contains this branch
         target_worktree = matching_worktrees[0]
 
@@ -599,6 +607,12 @@ def branch_checkout(
 
     else:
         # Multiple worktrees contain this branch
+        if new_slot:
+            raise click.ClickException(
+                f"Branch '{branch}' is already checked out in multiple worktrees. "
+                f"Cannot create a new slot for an existing branch."
+            )
+
         # Check if any worktree has the branch directly checked out
         directly_checked_out = [wt for wt in matching_worktrees if wt.branch == branch]
 
