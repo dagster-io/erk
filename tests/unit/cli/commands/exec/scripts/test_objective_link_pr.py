@@ -10,6 +10,10 @@ from erk.cli.commands.exec.scripts.objective_link_pr import objective_link_pr
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
+from erk_shared.impl_folder import get_impl_dir
+
+BRANCH = "test/branch"
+"""Test branch name used across tests."""
 
 ROADMAP_BODY = """\
 # Objective: Build Feature X
@@ -104,9 +108,11 @@ def test_no_impl_dir(tmp_path: Path) -> None:
 
 
 def test_no_plan_ref(tmp_path: Path) -> None:
-    """Returns no_plan_ref when .impl/ exists but has no ref.json."""
+    """Returns no_plan_ref when impl dir exists but has no ref.json."""
+    # Use legacy .impl/ so _find_impl_dir finds it via the direct-path check
+    # (branch-scoped scan requires ref.json to exist, defeating the test's purpose)
     impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir.mkdir(parents=True)
 
     runner = CliRunner()
 
@@ -124,7 +130,7 @@ def test_no_plan_ref(tmp_path: Path) -> None:
 
 def test_no_objective_id(tmp_path: Path) -> None:
     """Returns no_objective_id when ref.json lacks objective_id."""
-    _write_ref_json(tmp_path / ".impl", objective_id=None, node_ids=["1.1"])
+    _write_ref_json(get_impl_dir(tmp_path, branch_name=BRANCH), objective_id=None, node_ids=["1.1"])
 
     runner = CliRunner()
 
@@ -142,7 +148,7 @@ def test_no_objective_id(tmp_path: Path) -> None:
 
 def test_no_node_ids(tmp_path: Path) -> None:
     """Returns no_node_ids when ref.json lacks node_ids."""
-    _write_ref_json(tmp_path / ".impl", objective_id=100, node_ids=None)
+    _write_ref_json(get_impl_dir(tmp_path, branch_name=BRANCH), objective_id=100, node_ids=None)
 
     runner = CliRunner()
 
@@ -160,7 +166,7 @@ def test_no_node_ids(tmp_path: Path) -> None:
 
 def test_empty_node_ids(tmp_path: Path) -> None:
     """Returns no_node_ids when ref.json has empty node_ids list."""
-    _write_ref_json(tmp_path / ".impl", objective_id=100, node_ids=[])
+    _write_ref_json(get_impl_dir(tmp_path, branch_name=BRANCH), objective_id=100, node_ids=[])
 
     runner = CliRunner()
 
@@ -178,7 +184,7 @@ def test_empty_node_ids(tmp_path: Path) -> None:
 
 def test_issue_not_found(tmp_path: Path) -> None:
     """Returns issue_not_found when objective issue doesn't exist."""
-    _write_ref_json(tmp_path / ".impl", objective_id=999, node_ids=["1.1"])
+    _write_ref_json(get_impl_dir(tmp_path, branch_name=BRANCH), objective_id=999, node_ids=["1.1"])
 
     fake_gh = FakeGitHubIssues()
     runner = CliRunner()
@@ -198,7 +204,7 @@ def test_issue_not_found(tmp_path: Path) -> None:
 
 def test_successful_single_node_link(tmp_path: Path) -> None:
     """Successfully links PR to a single roadmap node."""
-    _write_ref_json(tmp_path / ".impl", objective_id=50, node_ids=["1.2"])
+    _write_ref_json(get_impl_dir(tmp_path, branch_name=BRANCH), objective_id=50, node_ids=["1.2"])
     issue = _make_issue(50, ROADMAP_BODY)
     fake_gh = FakeGitHubIssues(issues={50: issue})
     runner = CliRunner()
@@ -226,7 +232,7 @@ def test_successful_single_node_link(tmp_path: Path) -> None:
 
 def test_node_not_found_in_roadmap(tmp_path: Path) -> None:
     """Reports failure for a node_id that doesn't exist in the roadmap."""
-    _write_ref_json(tmp_path / ".impl", objective_id=50, node_ids=["9.9"])
+    _write_ref_json(get_impl_dir(tmp_path, branch_name=BRANCH), objective_id=50, node_ids=["9.9"])
     issue = _make_issue(50, ROADMAP_BODY)
     fake_gh = FakeGitHubIssues(issues={50: issue})
     runner = CliRunner()
@@ -250,7 +256,7 @@ def test_node_not_found_in_roadmap(tmp_path: Path) -> None:
 
 def test_no_roadmap_block(tmp_path: Path) -> None:
     """Reports failure when issue has no roadmap metadata block."""
-    _write_ref_json(tmp_path / ".impl", objective_id=50, node_ids=["1.1"])
+    _write_ref_json(get_impl_dir(tmp_path, branch_name=BRANCH), objective_id=50, node_ids=["1.1"])
     issue = _make_issue(50, NO_ROADMAP_BODY)
     fake_gh = FakeGitHubIssues(issues={50: issue})
     runner = CliRunner()
@@ -325,7 +331,7 @@ def test_comment_roadmap_rerendered(tmp_path: Path) -> None:
         "</details>\n"
         "<!-- /erk:metadata-block:objective-roadmap -->\n"
     )
-    _write_ref_json(tmp_path / ".impl", objective_id=50, node_ids=["1.1"])
+    _write_ref_json(get_impl_dir(tmp_path, branch_name=BRANCH), objective_id=50, node_ids=["1.1"])
     issue = _make_issue(50, body_with_header)
 
     comment = IssueComment(

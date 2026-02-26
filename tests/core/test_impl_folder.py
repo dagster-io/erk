@@ -231,8 +231,8 @@ def test_add_worktree_creation_comment_issue_not_found(tmp_path: Path) -> None:
 
 def test_read_plan_author_success(tmp_path: Path) -> None:
     """Test reading plan author from plan.md with valid plan-header block."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
 
     # Create plan.md with plan-header metadata block
     plan_content = """<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
@@ -268,8 +268,8 @@ worktree_name: test-worktree
 
 def test_read_plan_author_no_plan_file(tmp_path: Path) -> None:
     """Test read_plan_author returns None when plan.md doesn't exist."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
 
     author = read_plan_author(impl_dir)
 
@@ -277,8 +277,8 @@ def test_read_plan_author_no_plan_file(tmp_path: Path) -> None:
 
 
 def test_read_plan_author_no_impl_dir(tmp_path: Path) -> None:
-    """Test read_plan_author returns None when .impl/ directory doesn't exist."""
-    impl_dir = tmp_path / ".impl"
+    """Test read_plan_author returns None when impl directory doesn't exist."""
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
     # Don't create the directory
 
     author = read_plan_author(impl_dir)
@@ -288,8 +288,8 @@ def test_read_plan_author_no_impl_dir(tmp_path: Path) -> None:
 
 def test_read_plan_author_no_metadata_block(tmp_path: Path) -> None:
     """Test read_plan_author returns None when plan.md has no plan-header block."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
 
     # Create plan.md without metadata block
     plan_content = """# Simple Plan
@@ -307,8 +307,8 @@ def test_read_plan_author_no_metadata_block(tmp_path: Path) -> None:
 
 def test_read_plan_author_missing_created_by_field(tmp_path: Path) -> None:
     """Test read_plan_author returns None when created_by field is missing."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
 
     # Create plan.md with plan-header but no created_by
     plan_content = """<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
@@ -342,8 +342,8 @@ worktree_name: test-worktree
 
 def test_read_last_dispatched_run_id_success(tmp_path: Path) -> None:
     """Test reading run ID from plan.md with valid plan-header block."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
 
     # Create plan.md with plan-header metadata block including run ID
     plan_content = """<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
@@ -381,8 +381,8 @@ last_dispatched_at: '2025-01-15T11:00:00+00:00'
 
 def test_read_last_dispatched_run_id_no_plan_file(tmp_path: Path) -> None:
     """Test read_last_dispatched_run_id returns None when plan.md doesn't exist."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
 
     run_id = read_last_dispatched_run_id(impl_dir)
 
@@ -390,8 +390,8 @@ def test_read_last_dispatched_run_id_no_plan_file(tmp_path: Path) -> None:
 
 
 def test_read_last_dispatched_run_id_no_impl_dir(tmp_path: Path) -> None:
-    """Test read_last_dispatched_run_id returns None when .impl/ directory doesn't exist."""
-    impl_dir = tmp_path / ".impl"
+    """Test read_last_dispatched_run_id returns None when impl directory doesn't exist."""
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
     # Don't create the directory
 
     run_id = read_last_dispatched_run_id(impl_dir)
@@ -401,8 +401,8 @@ def test_read_last_dispatched_run_id_no_impl_dir(tmp_path: Path) -> None:
 
 def test_read_last_dispatched_run_id_no_metadata_block(tmp_path: Path) -> None:
     """Test read_last_dispatched_run_id returns None when plan.md has no plan-header block."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
 
     # Create plan.md without metadata block
     plan_content = """# Simple Plan
@@ -420,8 +420,8 @@ def test_read_last_dispatched_run_id_no_metadata_block(tmp_path: Path) -> None:
 
 def test_read_last_dispatched_run_id_null_value(tmp_path: Path) -> None:
     """Test read_last_dispatched_run_id returns None when run ID is null."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
 
     # Create plan.md with plan-header but null run ID
     plan_content = """<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
@@ -453,8 +453,8 @@ last_dispatched_at: null
 
 def test_read_last_dispatched_run_id_missing_field(tmp_path: Path) -> None:
     """Test read_last_dispatched_run_id returns None when run ID field is missing."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
 
     # Create plan.md with plan-header but no last_dispatched_run_id
     plan_content = """<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
@@ -489,8 +489,8 @@ worktree_name: test-worktree
 
 def test_save_plan_ref_success(tmp_path: Path) -> None:
     """Test saving plan reference to ref.json."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
 
     save_plan_ref(
         impl_dir,
@@ -517,7 +517,7 @@ def test_save_plan_ref_success(tmp_path: Path) -> None:
 
 def test_save_plan_ref_dir_not_exists(tmp_path: Path) -> None:
     """Test save_plan_ref raises error when dir doesn't exist."""
-    impl_dir = tmp_path / ".impl"
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
 
     with pytest.raises(FileNotFoundError, match="Implementation directory does not exist"):
         save_plan_ref(
@@ -533,8 +533,8 @@ def test_save_plan_ref_dir_not_exists(tmp_path: Path) -> None:
 
 def test_save_plan_ref_no_objective(tmp_path: Path) -> None:
     """Test save_plan_ref stores null for objective_id when None."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
 
     save_plan_ref(
         impl_dir,
@@ -552,8 +552,8 @@ def test_save_plan_ref_no_objective(tmp_path: Path) -> None:
 
 def test_read_plan_ref_roundtrip(tmp_path: Path) -> None:
     """Test save -> read roundtrip for plan-ref.json."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
 
     save_plan_ref(
         impl_dir,
@@ -578,8 +578,8 @@ def test_read_plan_ref_roundtrip(tmp_path: Path) -> None:
 
 def test_read_plan_ref_from_legacy_issue_json(tmp_path: Path) -> None:
     """Test read_plan_ref falls back to legacy issue.json format."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
 
     # Write legacy issue.json (no plan-ref.json)
     issue_data = {
@@ -603,8 +603,8 @@ def test_read_plan_ref_from_legacy_issue_json(tmp_path: Path) -> None:
 
 def test_read_plan_ref_prefers_ref_json(tmp_path: Path) -> None:
     """Test read_plan_ref prefers ref.json over legacy issue.json."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
 
     # Write both files with different data
     ref_data = {
@@ -634,8 +634,8 @@ def test_read_plan_ref_prefers_ref_json(tmp_path: Path) -> None:
 
 def test_read_plan_ref_not_exists(tmp_path: Path) -> None:
     """Test read_plan_ref returns None when no files exist."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
 
     ref = read_plan_ref(impl_dir)
     assert ref is None
@@ -643,8 +643,8 @@ def test_read_plan_ref_not_exists(tmp_path: Path) -> None:
 
 def test_read_plan_ref_invalid_json(tmp_path: Path) -> None:
     """Test read_plan_ref returns None for invalid JSON."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
 
     (impl_dir / "ref.json").write_text("not valid json", encoding="utf-8")
 
@@ -654,8 +654,8 @@ def test_read_plan_ref_invalid_json(tmp_path: Path) -> None:
 
 def test_read_plan_ref_missing_fields(tmp_path: Path) -> None:
     """Test read_plan_ref returns None when required fields missing."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
 
     (impl_dir / "ref.json").write_text(json.dumps({"provider": "github"}), encoding="utf-8")
 
@@ -665,8 +665,8 @@ def test_read_plan_ref_missing_fields(tmp_path: Path) -> None:
 
 def test_has_plan_ref_with_ref_json(tmp_path: Path) -> None:
     """Test has_plan_ref detects ref.json."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
 
     save_plan_ref(
         impl_dir,
@@ -683,8 +683,8 @@ def test_has_plan_ref_with_ref_json(tmp_path: Path) -> None:
 
 def test_has_plan_ref_detects_legacy_file(tmp_path: Path) -> None:
     """Test has_plan_ref detects legacy issue.json."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
 
     # Write only legacy issue.json file
     legacy_data = {
@@ -700,8 +700,8 @@ def test_has_plan_ref_detects_legacy_file(tmp_path: Path) -> None:
 
 def test_has_plan_ref_not_exists(tmp_path: Path) -> None:
     """Test has_plan_ref returns False when neither file exists."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
 
     assert has_plan_ref(impl_dir) is False
 
@@ -713,8 +713,8 @@ def test_has_plan_ref_not_exists(tmp_path: Path) -> None:
 
 def test_validate_plan_linkage_both_match(tmp_path: Path) -> None:
     """Test validation passes when branch and ref.json match."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
     save_plan_ref(
         impl_dir,
         provider="github",
@@ -735,8 +735,8 @@ def test_validate_plan_linkage_mismatch_raises(tmp_path: Path) -> None:
     P-prefix branches cannot provide an issue number to validate against.
     The function returns the plan_id from plan-ref.json without any mismatch check.
     """
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
     save_plan_ref(
         impl_dir,
         provider="github",
@@ -758,7 +758,7 @@ def test_validate_plan_linkage_branch_only(tmp_path: Path) -> None:
     P-prefix branches cannot provide an issue number. With no plan-ref.json,
     the function returns None.
     """
-    impl_dir = tmp_path / ".impl"
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
 
     result = validate_plan_linkage(impl_dir, "P123-some-feature-01-04-1234")
     assert result is None  # Branch no longer provides issue number
@@ -766,8 +766,8 @@ def test_validate_plan_linkage_branch_only(tmp_path: Path) -> None:
 
 def test_validate_plan_linkage_impl_only(tmp_path: Path) -> None:
     """Test validation returns plan_id when branch has no issue number."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
     save_plan_ref(
         impl_dir,
         provider="github",
@@ -784,7 +784,7 @@ def test_validate_plan_linkage_impl_only(tmp_path: Path) -> None:
 
 def test_validate_plan_linkage_neither(tmp_path: Path) -> None:
     """Test validation returns None when neither source has info."""
-    impl_dir = tmp_path / ".impl"
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
 
     result = validate_plan_linkage(impl_dir, "feature-branch")
     assert result is None
@@ -792,8 +792,8 @@ def test_validate_plan_linkage_neither(tmp_path: Path) -> None:
 
 def test_validate_plan_linkage_legacy_fallback(tmp_path: Path) -> None:
     """Test validation works with legacy issue.json via read_plan_ref fallback."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
     legacy_data = {
         "issue_number": 42,
         "issue_url": "https://github.com/org/repo/issues/42",
@@ -808,8 +808,8 @@ def test_validate_plan_linkage_legacy_fallback(tmp_path: Path) -> None:
 
 def test_validate_plan_linkage_planned_pr_with_plan_ref(tmp_path: Path) -> None:
     """Test planned-PR branch returns plan_id from plan-ref.json."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
     save_plan_ref(
         impl_dir,
         provider="github-draft-pr",
@@ -826,7 +826,7 @@ def test_validate_plan_linkage_planned_pr_with_plan_ref(tmp_path: Path) -> None:
 
 def test_validate_plan_linkage_planned_pr_without_plan_ref(tmp_path: Path) -> None:
     """Test planned-PR branch without plan-ref.json returns None."""
-    impl_dir = tmp_path / ".impl"
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
 
     result = validate_plan_linkage(impl_dir, "plan-fix-auth-bug-01-15-1430")
     assert result is None

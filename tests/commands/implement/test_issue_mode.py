@@ -156,8 +156,8 @@ def test_implement_from_issue_dry_run() -> None:
         assert "Would run in current directory" in result.output
         assert "Add Authentication Feature" in result.output
 
-        # Verify no .impl/ created in dry-run
-        assert not (env.cwd / ".impl").exists()
+        # Verify no impl-context/ created in dry-run
+        assert not (env.cwd / ".erk" / "impl-context").exists()
 
 
 def test_auto_detect_fails_on_plnd_branch_without_plan_ref() -> None:

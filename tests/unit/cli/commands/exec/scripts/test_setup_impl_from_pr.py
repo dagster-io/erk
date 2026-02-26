@@ -22,6 +22,9 @@ from erk_shared.impl_folder import save_plan_ref
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 
+BRANCH = "test/branch"
+"""Test branch name used across tests."""
+
 
 class TestGetCurrentBranch:
     """Tests for the _get_current_branch helper function."""
@@ -246,9 +249,10 @@ def test_planned_pr_plan_skips_checkout_when_impl_exists(tmp_path: Path) -> None
     )
     fake_graphite = FakeGraphite()
 
-    # Pre-create .impl/ with matching plan_id (simulating CI setup)
+    # Pre-create .impl/ with matching plan_id (simulating CI setup).
+    # Uses legacy .impl/ — setup_impl_from_issue early-exit check hardcodes cwd / ".impl".
     impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir.mkdir(parents=True)
     save_plan_ref(
         impl_dir,
         provider="github",
