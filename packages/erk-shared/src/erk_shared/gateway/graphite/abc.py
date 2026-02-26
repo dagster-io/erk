@@ -11,7 +11,14 @@ from erk_shared.gateway.github.types import GitHubRepoId, PullRequestInfo
 from erk_shared.gateway.graphite.types import BranchMetadata
 
 if TYPE_CHECKING:
-    from erk_shared.gateway.gt.types import RestackError, RestackSuccess, SquashError, SquashSuccess
+    from erk_shared.gateway.gt.types import (
+        RestackError,
+        RestackSuccess,
+        SquashError,
+        SquashSuccess,
+        SyncError,
+        SyncSuccess,
+    )
 
 
 class Graphite(ABC):
@@ -461,4 +468,58 @@ class Graphite(ABC):
                 success=False,
                 error_type="restack-failed",
                 message=f"Failed to restack: {e}",
+            )
+
+    def sync_idempotent(
+        self, repo_root: Path, *, force: bool, quiet: bool
+    ) -> SyncSuccess | SyncError:
+        """Sync with structured result handling.
+
+        This method wraps sync() and handles exceptions to return a typed
+        result instead of raising. gt sync is repo-wide: it syncs ALL branches.
+        When another worktree has unstaged changes, gt sync exits code 1 even
+        though the current branch synced fine. This method classifies that
+        specific failure as "other-branch-conflict" so the caller can warn
+        and continue.
+
+        Args:
+            repo_root: Repository root directory
+            force: If True, pass --force flag to gt sync
+            quiet: If True, pass --quiet flag to gt sync for minimal output
+
+        Returns:
+            SyncSuccess if sync succeeded
+            SyncError if sync failed (with error_type distinguishing other-branch issues)
+
+        Example:
+            >>> result = graphite.sync_idempotent(repo_root, force=True, quiet=False)
+            >>> if isinstance(result, SyncSuccess):
+            ...     print(result.message)
+            >>> elif result.error_type == "other-branch-conflict":
+            ...     print("Warning: other branches had issues")
+        """
+        # Import at runtime to avoid circular dependency
+        from erk_shared.gateway.gt.types import SyncError, SyncSuccess
+
+        try:
+            self.sync(repo_root, force=force, quiet=quiet)
+            return SyncSuccess(
+                success=True,
+                message="Synced with remote.",
+            )
+        except RuntimeError as e:
+            error_msg = str(e).lower()
+
+            # "cannot sync" + "unstaged changes" indicates another worktree
+            # has dirty state, but the current branch likely synced fine.
+            if "cannot sync" in error_msg and "unstaged changes" in error_msg:
+                return SyncError(
+                    success=False,
+                    error_type="other-branch-conflict",
+                    message=str(e),
+                )
+            return SyncError(
+                success=False,
+                error_type="sync-failed",
+                message=f"Failed to sync: {e}",
             )

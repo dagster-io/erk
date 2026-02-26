@@ -40,7 +40,7 @@ from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.gateway.gt.events import CompletionEvent
 from erk_shared.gateway.gt.operations.squash import execute_squash
-from erk_shared.gateway.gt.types import RestackError, SquashError, SquashSuccess
+from erk_shared.gateway.gt.types import RestackError, SquashError, SquashSuccess, SyncError
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 
@@ -240,8 +240,17 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
 
         # Sync with remote to pull any new commits
         user_output("Syncing with remote...")
-        ctx.graphite.sync(repo.root, force=True, quiet=False)
-        user_output(click.style("✓", fg="green") + " Synced with remote")
+        sync_result = ctx.graphite.sync_idempotent(repo.root, force=True, quiet=False)
+        if isinstance(sync_result, SyncError):
+            if sync_result.error_type == "other-branch-conflict":
+                user_output(
+                    click.style("⚠", fg="yellow")
+                    + " Sync completed with warnings (other branches had issues)"
+                )
+            else:
+                raise click.ClickException(sync_result.message)
+        else:
+            user_output(click.style("✓", fg="green") + " Synced with remote")
 
         # Strip .erk/impl-context/ before restack to avoid conflicts
         if _strip_impl_context_if_present(ctx, repo.root):
