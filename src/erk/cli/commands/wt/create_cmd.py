@@ -663,8 +663,8 @@ def create_wt(
         if isinstance(result, PlanNotFound):
             user_output(
                 click.style("Error: ", fg="red")
-                + f"Failed to fetch issue #{plan_number_parsed}\n"
-                + f"Details: Issue #{plan_number_parsed} not found\n\n"
+                + f"Failed to fetch plan #{plan_number_parsed}\n"
+                + f"Details: Plan #{plan_number_parsed} not found\n\n"
                 + "Troubleshooting:\n"
                 + "  • Verify issue number is correct\n"
                 + "  • Check repository access: gh auth status\n"

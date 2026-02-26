@@ -54,7 +54,7 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
 
     # 3. Fetch issues for titles (using issues interface)
     issues = ctx.issues.list_issues(repo_root=repo.root, labels=["erk-pr", "erk-plan"])
-    issue_map = {issue.number: issue for issue in issues}
+    plan_map = {issue.number: issue for issue in issues}
 
     # Second filtering pass - remove runs where we can't display title
     if not show_all:
@@ -65,11 +65,11 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
                 continue  # Already filtered, but defensive check
 
             # Filter if issue not found
-            if plan_num not in issue_map:
+            if plan_num not in plan_map:
                 continue
 
             # Filter if title is empty
-            issue = issue_map[plan_num]
+            issue = plan_map[plan_num]
             if not issue.title or not issue.title.strip():
                 continue
 
@@ -140,8 +140,8 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
                 plan_cell = f"[cyan]#{plan_num}[/cyan]"
 
             # Get title from issue map
-            if plan_num in issue_map:
-                issue = issue_map[plan_num]
+            if plan_num in plan_map:
+                issue = plan_map[plan_num]
 
                 title = issue.title
                 # Truncate to 50 characters

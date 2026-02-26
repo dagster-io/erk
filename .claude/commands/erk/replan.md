@@ -384,28 +384,24 @@ Items by source:
 After the user approves the plan in Plan Mode:
 
 1. Exit Plan Mode
-2. Run `/erk:plan-save` to create the new GitHub issue:
-   - **If any source plan(s) had `erk-learn` label** (`IS_LEARN_PLAN=true`): Add `--plan-type=learn` to the command
-   - **If the source plan(s) had an `objective_issue`**: Pass `--objective=<number>` to `/erk:plan-save`:
+2. Save the new plan:
+   - **If the source plan(s) had an `objective_issue`**: Use the system skill to save with the objective link:
      ```
-     /erk:plan-save --objective=<objective_number>
+     /erk:system:plan-save-with-objective --objective=<objective_number>
      ```
-   - **If consolidating with conflicting objectives**: Use the objective chosen by the user in Step 2 via `--objective=<number>`
-   - **Otherwise**: Run `/erk:plan-save` without flags
-3. **If an objective was linked**, verify the link was saved correctly:
-   ```bash
-   erk exec get-plan-metadata <new_issue_number> objective_issue
-   ```
-   If the objective link is missing, fix it with:
-   ```bash
-   erk exec update-plan-header <new_issue_number> objective_issue=<number>
-   ```
-4. **If CONSOLIDATION_MODE** (multiple plans consolidated), add the `erk-consolidated` label:
+     If `IS_LEARN_PLAN=true`, also pass `--plan-type=learn`:
+     ```
+     /erk:system:plan-save-with-objective --objective=<objective_number> --plan-type=learn
+     ```
+     If consolidating with conflicting objectives, use the objective chosen by the user in Step 2.
+     The system skill handles objective link verification and auto-fix.
+   - **Otherwise** (no objective): Run `/erk:plan-save` without flags (add `--plan-type=learn` if `IS_LEARN_PLAN=true`)
+3. **If CONSOLIDATION_MODE** (multiple plans consolidated), add the `erk-consolidated` label:
    ```bash
    erk exec add-plan-label <new_plan_number> --label "erk-consolidated"
    ```
    This prevents the consolidated plan from being re-consolidated by `/local:replan-learn-plans`.
-5. Close original plan(s) with comment linking to the new one:
+4. Close original plan(s) with comment linking to the new one:
 
 **Single plan:**
 

@@ -12,10 +12,9 @@ Save the current session's plan to GitHub with session context.
 ```bash
 /erk:plan-save                           # Standalone plan
 /erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
-/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
 ```
 
-Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=<number>` to override the marker or provide the link when no marker exists (e.g., during replan).
+Objective linking is automatic: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command.
 
 ## Plan Storage
 
@@ -30,7 +29,7 @@ The JSON output contract is the same for both backends (`plan_number`, `plan_url
 
 ### Step 1: Parse Arguments
 
-Check `$ARGUMENTS` for the `--plan-type` and `--objective` flags:
+Check `$ARGUMENTS` for the `--plan-type` flag:
 
 ```
 If $ARGUMENTS contains "--plan-type=<type>":
@@ -39,12 +38,6 @@ If $ARGUMENTS contains "--plan-type=<type>":
   - Set PLAN_TYPE_FLAG to "--plan-type=<type>"
 Else:
   - Set PLAN_TYPE_FLAG to empty string
-
-If $ARGUMENTS contains "--objective=<number>":
-  - Extract the number
-  - Set OBJECTIVE_FLAG to "--objective=<number>"
-Else:
-  - Set OBJECTIVE_FLAG to empty string
 ```
 
 ### Step 1.5: Generate Branch Slug
@@ -65,7 +58,7 @@ Store the result as `BRANCH_SLUG`.
 Run this command with the session ID, branch slug, and optional flags:
 
 ```bash
-erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}" ${PLAN_TYPE_FLAG}
 ```
 
 Parse the JSON output to extract `plan_number` for verification in Step 3.
