@@ -29,20 +29,20 @@ Do NOT manually add to `_pr_details` after calling `create_pr()` — this causes
 
 FakeGitHub tracks all mutations for test assertions:
 
-| Property                  | Tracks                              | Format                                    |
-| ------------------------- | ----------------------------------- | ----------------------------------------- |
-| `created_prs`             | PRs created via create_pr()         | (title, body, base, head \| None, bool)   |
-| `added_labels`            | Labels added to issues/PRs          | (number, label)                           |
-| `merged_prs`              | PR numbers that were merged         | list[int]                                 |
-| `closed_prs`              | PR numbers that were closed         | list[int]                                 |
-| `updated_pr_bases`        | PR base branch updates              | (number, base)                            |
-| `updated_pr_bodies`       | PR body updates                     | (number, body)                            |
-| `updated_pr_titles`       | PR title updates                    | (number, title)                           |
-| `triggered_workflows`     | Workflow dispatch triggers          | (workflow, dict[str, str])                |
-| `resolved_thread_ids`     | Resolved review thread IDs          | set[str]                                  |
-| `thread_replies`          | Replies posted to review threads    | (thread_id, body)                         |
-| `pr_comments`             | Comments posted to PRs              | (number, body)                            |
-| `deleted_remote_branches` | Remote branches deleted             | list[str]                                 |
+| Property                  | Tracks                           | Format                                  |
+| ------------------------- | -------------------------------- | --------------------------------------- |
+| `created_prs`             | PRs created via create_pr()      | (title, body, base, head \| None, bool) |
+| `added_labels`            | Labels added to issues/PRs       | (number, label)                         |
+| `merged_prs`              | PR numbers that were merged      | list[int]                               |
+| `closed_prs`              | PR numbers that were closed      | list[int]                               |
+| `updated_pr_bases`        | PR base branch updates           | (number, base)                          |
+| `updated_pr_bodies`       | PR body updates                  | (number, body)                          |
+| `updated_pr_titles`       | PR title updates                 | (number, title)                         |
+| `triggered_workflows`     | Workflow dispatch triggers       | (workflow, dict[str, str])              |
+| `resolved_thread_ids`     | Resolved review thread IDs       | set[str]                                |
+| `thread_replies`          | Replies posted to review threads | (thread_id, body)                       |
+| `pr_comments`             | Comments posted to PRs           | (number, body)                          |
+| `deleted_remote_branches` | Remote branches deleted          | list[str]                               |
 
 Access via properties that return copies (not the internal mutable lists).
 

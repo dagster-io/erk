@@ -32,13 +32,13 @@ The TUI supports three views — Plans, Learn, and Objectives — with instant s
 
 **ViewConfig** frozen dataclass holds per-view configuration:
 
-| Field            | Type              | Description                                          |
-| ---------------- | ----------------- | ---------------------------------------------------- |
-| `mode`           | `ViewMode`        | Which view this config describes                     |
-| `display_name`   | `str`             | Human-readable name (e.g., "Plans")                  |
-| `labels`         | `tuple[str, ...]` | GitHub labels for API queries                        |
-| `key_hint`       | `str`             | Keyboard shortcut (e.g., "1")                        |
-| `exclude_labels` | `tuple[str, ...]` | Labels to exclude from results (client-side filter)  |
+| Field            | Type              | Description                                         |
+| ---------------- | ----------------- | --------------------------------------------------- |
+| `mode`           | `ViewMode`        | Which view this config describes                    |
+| `display_name`   | `str`             | Human-readable name (e.g., "Plans")                 |
+| `labels`         | `tuple[str, ...]` | GitHub labels for API queries                       |
+| `key_hint`       | `str`             | Keyboard shortcut (e.g., "1")                       |
+| `exclude_labels` | `tuple[str, ...]` | Labels to exclude from results (client-side filter) |
 
 **VIEW_CONFIGS** tuple defines all three views:
 
