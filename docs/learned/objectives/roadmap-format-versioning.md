@@ -43,7 +43,7 @@ The old format where plan and PR shared a single column is no longer actively pa
 | 1.2  | Add tests   | -      | plan #6464 |
 ```
 
-The surgical update command uses two functions: `_replace_node_refs_in_body()` updates the YAML frontmatter (source of truth), while `_replace_table_in_text()` updates the rendered markdown table in the objective-body comment.
+The surgical update command uses two functions: `update_node_in_frontmatter()` updates the YAML frontmatter (source of truth), while `rerender_comment_roadmap()` updates the rendered markdown table in the objective-body comment.
 
 ## Migration Strategy: Header-Based Detection
 

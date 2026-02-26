@@ -25,12 +25,12 @@ The roadmap parser is a shared module consumed by two commands with fundamentall
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py -->
 
-The `roadmap.py` module in `erk_shared.gateway.github.metadata` exists because two commands need the same parsing logic but use different subsets of it. Both `check_cmd.py` (erk objective check) and `update_objective_node.py` consume the shared parser, but differ in scope: `check_cmd` uses all 4 functions and both data types for full validation workflow, while `update_objective_node` only imports `parse_roadmap` for validation before surgical regex edits.
+The `roadmap.py` module in `erk_shared.gateway.github.metadata` exists because two commands need the same parsing logic but use different subsets of it. Both `check_cmd.py` (erk objective check) and `update_objective_node.py` consume the shared parser, but differ in scope: `check_cmd` imports 2 functions (`parse_roadmap`, `serialize_phases`) for validation workflow, while `update_objective_node` imports 3 functions and 1 type (`RoadmapNodeStatus`, `parse_roadmap`, `rerender_comment_roadmap`, `update_node_in_frontmatter`) for surgical node updates.
 
 <!-- Source: src/erk/cli/commands/objective/check_cmd.py, validate_objective -->
 <!-- Source: src/erk/cli/commands/exec/scripts/update_objective_node.py, _replace_node_refs_in_body -->
 
-The key insight: `update_objective_node` calls `parse_roadmap` for **validation**, not for mutation. It confirms the target node ID exists in the parsed output, then performs a separate regex replacement on the raw markdown. The parsed data is thrown away. This means the parser's job is to be a source of truth about table structure, not a round-trip serializer.
+The key insight: `update_objective_node` calls `parse_roadmap` for **validation**, not for mutation. It confirms the target node ID exists in the parsed output, then uses `update_node_in_frontmatter()` for YAML changes and `rerender_comment_roadmap()` for table rendering. The parsed data is thrown away after validation. This means the parser's job is to be a source of truth about table structure, not a round-trip serializer.
 
 ## Non-Obvious Data Model Choices
 
@@ -84,7 +84,7 @@ Returns `(phases, validation_errors)`. Always returns a tuple. For v2 YAML front
 
 ### `parse_v2_roadmap(body)` — Strict v2 Parser
 
-Returns `(phases, validation_errors) | None`. Returns `None` when the body is not in v2 format (no metadata block, no `<details>` wrapper, or non-v2 schema version). Use this when the caller needs to distinguish "not v2 format" from "v2 format with errors" — for example, commands that should reject legacy format explicitly rather than receiving an error string.
+Returns `(phases, validation_errors) | None`. Returns `None` when the body is not in v2+ format (no metadata block, no `<details>` wrapper, or schema version not in v2/v3/v4). Use this when the caller needs to distinguish "not v2+ format" from "v2+ format with errors" — for example, commands that should reject legacy format explicitly rather than receiving an error string.
 
 ## Relationship to Sibling Docs
 
