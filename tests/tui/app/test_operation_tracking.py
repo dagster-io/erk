@@ -195,9 +195,6 @@ class TestOperationTracking:
                 456,
                 "test-branch",
                 None,
-                plan_id=0,
-                is_learn_plan=False,
-                learn_status=None,
             )
             await pilot.pause(0.3)
 
@@ -235,9 +232,6 @@ class TestOperationTracking:
                 456,
                 "test-branch",
                 None,
-                plan_id=0,
-                is_learn_plan=False,
-                learn_status=None,
             )
             await pilot.pause(0.3)
 
