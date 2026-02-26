@@ -747,7 +747,6 @@ class TestCommentCountsDisplay:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-
         )
 
         assert row.resolved_comment_count == 3
@@ -828,7 +827,6 @@ class TestCommentCountsDisplay:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-
         )
 
         assert row.resolved_comment_count == 0
@@ -895,7 +893,6 @@ class TestCommentCountsDisplay:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-
         )
 
         assert row.resolved_comment_count == 0
@@ -965,7 +962,6 @@ class TestLearnStatusDisplay:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-
         )
 
         assert row.learn_status is None
@@ -1034,7 +1030,6 @@ class TestLearnStatusDisplay:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-
         )
 
         assert row.learn_status == "pending"
@@ -1101,7 +1096,6 @@ class TestLearnStatusDisplay:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-
         )
 
         assert row.learn_status == "completed_no_plan"
@@ -1170,7 +1164,6 @@ class TestLearnStatusDisplay:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-
         )
 
         assert row.learn_status == "completed_with_plan"
@@ -1241,7 +1234,6 @@ class TestLearnStatusDisplay:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-
         )
 
         assert row.learn_status == "plan_completed"
