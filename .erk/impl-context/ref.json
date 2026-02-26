@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: Modal dismiss keys (Esc/q/Space) not working in TUI (again)"
+}
