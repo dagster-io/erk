@@ -47,14 +47,14 @@ def _plan_to_pr_details(plan: Plan) -> PRDetails:
         metadata_part = body[: end_marker_idx + len(_PLAN_HEADER_END_MARKER)]
         content_part = body[end_marker_idx + len(_PLAN_HEADER_END_MARKER) :].strip()
         details_section = DETAILS_OPEN + content_part + DETAILS_CLOSE
-        pr_body = metadata_part + PLAN_CONTENT_SEPARATOR + details_section
+        pr_body = metadata_part + "\n\n" + details_section
     else:
         # Plain body without a plan-header block - synthesize one with branch_name so
         # PlannedPRBackend._convert_to_plan() can populate header_fields["branch_name"].
         # Real planned-PR plans always have branch_name in plan-header (set by plan_save).
         metadata_body = format_plan_header_body_for_test(branch_name=branch_name)
         details_section = DETAILS_OPEN + body + DETAILS_CLOSE
-        pr_body = metadata_body + PLAN_CONTENT_SEPARATOR + details_section
+        pr_body = metadata_body + "\n\n" + details_section
 
     # Include erk-plan label plus any existing labels
     labels = tuple(plan.labels) if "erk-plan" in plan.labels else ("erk-plan", *plan.labels)

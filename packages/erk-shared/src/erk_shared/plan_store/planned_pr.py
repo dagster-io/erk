@@ -34,10 +34,8 @@ from erk_shared.gateway.time.abc import Time
 from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.conversion import pr_details_to_plan
 from erk_shared.plan_store.planned_pr_lifecycle import (
-    PLAN_CONTENT_SEPARATOR,
     build_plan_stage_body,
     extract_plan_content,
-    extract_plan_header_block,
 )
 from erk_shared.plan_store.types import (
     CreatePlanResult,
@@ -499,13 +497,11 @@ class PlannedPRBackend(PlanBackend):
             raise RuntimeError(msg)
 
         # Preserve metadata prefix and replace plan content
-        plan_header_block = extract_plan_header_block(result.body)
-        if plan_header_block:
-            updated_body = build_plan_stage_body(
-                plan_header_block[: -len(PLAN_CONTENT_SEPARATOR)], content
-            )
+        plan_header = find_metadata_block(result.body, "plan-header")
+        if plan_header is not None:
+            updated_body = build_plan_stage_body(render_metadata_block(plan_header), content)
         else:
-            # No separator found - just set the content
+            # No metadata block found - just set the content
             updated_body = content
 
         self._github.update_pr_body(repo_root, pr_number, updated_body)

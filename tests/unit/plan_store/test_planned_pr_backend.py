@@ -284,11 +284,11 @@ def test_list_plans_includes_only_planned_prs_with_erk_plan_label() -> None:
 
 
 def test_build_plan_stage_body_combines_metadata_and_content() -> None:
-    """build_plan_stage_body creates a body with metadata, separator, and details-wrapped plan."""
+    """build_plan_stage_body creates a body with metadata and details-wrapped plan, no separator."""
     result = build_plan_stage_body("metadata block", "plan content")
     assert "metadata block" in result
     assert "plan content" in result
-    assert "\n\n---\n\n" in result
+    assert "\n\n---\n\n" not in result
     assert DETAILS_OPEN in result
 
 
