@@ -37,6 +37,7 @@ def pr_replan(ctx: ErkContext, issue_refs: tuple[str, ...]) -> None:
     )
 
     # Replace current process with Claude
+    click.echo(f"Launching Claude to replan: {', '.join(issue_refs)}")
     command = f"/erk:replan {' '.join(issue_refs)}"
     try:
         ctx.agent_launcher.launch_interactive(config, command=command)
