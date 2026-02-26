@@ -297,8 +297,7 @@ def dispatch_one_shot(
             draft=True,
         )
         # Add footer now that we have the PR number.
-        # No issue_number — draft PR IS the plan, Closes #N would be self-referential.
-        footer = build_pr_body_footer(pr_number, issue_number=None, plans_repo=None)
+        footer = build_pr_body_footer(pr_number)
         ctx.github.update_pr_body(repo.root, pr_number, pr_body_initial + footer)
         # Add plan labels
         ctx.github.add_label_to_pr(repo.root, pr_number, "erk-planned-pr")

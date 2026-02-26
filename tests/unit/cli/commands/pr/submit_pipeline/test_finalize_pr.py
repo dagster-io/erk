@@ -39,7 +39,7 @@ def _make_state(
     debug: bool = False,
     session_id: str = "test-session",
     skip_description: bool = False,
-    issue_number: int | None = None,
+    plan_id: str | None = None,
     pr_number: int | None = 42,
     pr_url: str | None = "https://github.com/owner/repo/pull/42",
     was_created: bool = True,
@@ -63,7 +63,7 @@ def _make_state(
         session_id=session_id,
         skip_description=skip_description,
         quiet=False,
-        issue_number=issue_number,
+        plan_id=plan_id,
         pr_number=pr_number,
         pr_url=pr_url,
         was_created=was_created,
@@ -331,8 +331,8 @@ def test_finalize_pr_planned_pr_backend_extracts_metadata(tmp_path: Path) -> Non
     result = finalize_pr(ctx, state)
 
     assert isinstance(result, SubmitState)
-    # Planned PR backend sets issue_number to None (no self-close)
-    assert result.issue_number is None
+    # Planned PR backend sets plan_id to None (no self-close)
+    assert result.plan_id is None
     # PR body should contain metadata prefix
     updated_body = fake_github.updated_pr_bodies[0][1]
     assert "plan-header" in updated_body
@@ -476,8 +476,8 @@ def test_updates_lifecycle_stage_for_linked_plan(tmp_path: Path) -> None:
     assert "lifecycle_stage: impl" in lifecycle_bodies[0]
 
 
-def test_no_lifecycle_update_with_only_issue_number(tmp_path: Path) -> None:
-    """finalize_pr does NOT update lifecycle when only issue_number is set (no plan_context)."""
+def test_no_lifecycle_update_with_only_plan_id(tmp_path: Path) -> None:
+    """finalize_pr does NOT update lifecycle when only plan_id is set (no plan_context)."""
     plan_body = format_plan_header_body_for_test(lifecycle_stage="planned")
     plan_issue = IssueInfo(
         number=321,
@@ -505,12 +505,12 @@ def test_no_lifecycle_update_with_only_issue_number(tmp_path: Path) -> None:
     )
     ctx = context_for_test(git=fake_git, github=fake_github, issues=fake_issues, cwd=tmp_path)
 
-    state = _make_state(cwd=tmp_path, issue_number=321, plan_context=None)
+    state = _make_state(cwd=tmp_path, plan_id="321", plan_context=None)
 
     result = finalize_pr(ctx, state)
 
     assert isinstance(result, SubmitState)
-    # issue_number alone should NOT trigger lifecycle update
+    # plan_id alone should NOT trigger lifecycle update
     assert len(fake_issues.updated_bodies) == 0
 
 
@@ -540,7 +540,7 @@ def test_updates_lifecycle_stage_for_draft_pr_backend(tmp_path: Path) -> None:
         title="Implement feature",
         body="Summary of work",
         plan_context=None,
-        issue_number=None,
+        plan_id=None,
         existing_pr_body=pr_body,
     )
 

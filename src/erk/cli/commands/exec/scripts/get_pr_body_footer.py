@@ -6,10 +6,9 @@ creating PRs from remote implementations.
 
 Usage:
     erk exec get-pr-body-footer --pr-number 123
-    erk exec get-pr-body-footer --pr-number 123 --plan-number 456
 
 Output:
-    Markdown footer with checkout command and optional issue closing reference
+    Markdown footer with checkout command
 
 Exit Codes:
     0: Success
@@ -25,18 +24,6 @@ Examples:
     ```
     source "$(erk pr checkout 1895 --script)" && erk pr sync --dangerous
     ```
-
-    $ erk exec get-pr-body-footer --pr-number 1895 --plan-number 123
-
-    ---
-
-    Closes #123
-
-    To checkout this PR in a fresh worktree and environment locally, run:
-
-    ```
-    source "$(erk pr checkout 1895 --script)" && erk pr sync --dangerous
-    ```
 """
 
 import click
@@ -46,25 +33,14 @@ from erk_shared.gateway.github.pr_footer import build_pr_body_footer
 
 @click.command(name="get-pr-body-footer")
 @click.option("--pr-number", type=int, required=True, help="PR number for checkout command")
-@click.option("--plan-number", type=int, required=False, help="Plan number to close")
-@click.option(
-    "--plans-repo", type=str, required=False, help="Target repo in owner/repo format (cross-repo)"
-)
-def get_pr_body_footer(pr_number: int, plan_number: int | None, plans_repo: str | None) -> None:
+def get_pr_body_footer(pr_number: int) -> None:
     """Generate PR body footer with checkout command.
 
     Outputs a markdown footer section that includes the `erk pr checkout` command,
     allowing users to easily checkout the PR in a fresh worktree locally.
 
-    When plan_number is provided, includes "Closes #N" (or "Closes owner/repo#N"
-    for cross-repo plans) to auto-close the issue when the PR is merged.
-
     Args:
         pr_number: The PR number to include in the checkout command
-        plan_number: Optional plan number to close when PR is merged
-        plans_repo: Optional target repo in "owner/repo" format for cross-repo
     """
-    output = build_pr_body_footer(
-        pr_number=pr_number, issue_number=plan_number, plans_repo=plans_repo
-    )
+    output = build_pr_body_footer(pr_number)
     click.echo(output, nl=False)

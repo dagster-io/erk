@@ -246,14 +246,14 @@ View PR: https://app.graphite.com/github/pr/owner/repo/456"""
     assert result["pr_url"] == "https://app.graphite.com/github/pr/owner/repo/456"
 
 
-def test_extract_pr_metadata_from_text_handles_closes_pattern() -> None:
-    """Test that 'Closes #N' pattern is recognized for issue linking."""
+def test_extract_pr_metadata_from_text_ignores_closes_pattern() -> None:
+    """Test that 'Closes #N' pattern is NOT recognized for issue linking."""
     text = "Created PR #100: Add feature. Closes #200"
 
     result = extract_pr_metadata_from_text(text)
 
     assert result["pr_number"] == 100
-    assert result["issue_number"] == 200
+    assert result["issue_number"] is None
 
 
 # =============================================================================
@@ -394,26 +394,18 @@ View on Graphite: https://app.graphite.com/github/pr/owner/repo/123"""
 
         assert result["issue_number"] == 456
 
-    def test_closes_pattern_lowercase(self) -> None:
-        """Test 'closes #N' pattern."""
+    def test_closes_pattern_not_recognized(self) -> None:
+        """Test 'closes #N' pattern is no longer recognized."""
         text = "This PR closes #789"
         result = extract_pr_metadata_from_text(text)
 
-        assert result["issue_number"] == 789
+        assert result["issue_number"] is None
 
-    def test_closes_pattern_uppercase(self) -> None:
-        """Test 'Closes #N' pattern."""
-        text = "Closes #789"
-        result = extract_pr_metadata_from_text(text)
-
-        assert result["issue_number"] == 789
-
-    def test_issue_pattern_preferred_over_closes(self) -> None:
-        """Test that 'issue #N' pattern is checked first."""
+    def test_issue_pattern_matched_closes_ignored(self) -> None:
+        """Test that 'issue #N' is matched while 'Closes #N' is ignored."""
         text = "Linked to issue #100. Closes #200"
         result = extract_pr_metadata_from_text(text)
 
-        # 'issue #N' pattern should match first
         assert result["issue_number"] == 100
 
     def test_issue_with_auto_close_context(self) -> None:

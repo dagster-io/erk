@@ -81,8 +81,6 @@ def set_pr_description(
         body=pr_body,
         plan_context=plan_context,
         pr_number=pr_number,
-        issue_number=None,
-        plans_repo=None,
         header="",
         existing_pr_body=existing_body,
     )

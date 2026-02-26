@@ -287,15 +287,9 @@ def extract_pr_metadata_from_text(text: str) -> dict[str, str | int | None]:
                 result["pr_number"] = int(graphite_url_match.group(1))
 
     # Extract issue number from patterns like "issue #123" or "Linked to issue #123"
-    # or "#1308 (will auto-close"
     issue_match = re.search(r"issue\s*#(\d+)", text, re.IGNORECASE)
     if issue_match:
         result["issue_number"] = int(issue_match.group(1))
-    else:
-        # Try "Closes #123" pattern
-        closes_match = re.search(r"Closes\s*#(\d+)", text, re.IGNORECASE)
-        if closes_match:
-            result["issue_number"] = int(closes_match.group(1))
 
     return result
 

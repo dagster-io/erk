@@ -144,8 +144,6 @@ def _execute_update_description(ctx: ErkContext, *, debug: bool, session_id: str
         body=pr_body,
         plan_context=plan_context,
         pr_number=pr_number,
-        issue_number=None,
-        plans_repo=None,
         header="",
         existing_pr_body=existing_body,
     )
