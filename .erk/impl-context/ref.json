@@ -1,4 +1,9 @@
 {
   "provider": "github-draft-pr",
-  "title": "Fix: Modal dismiss keys (Esc/q/Space) broken"
+  "plan_id": "8309",
+  "url": "https://github.com/dagster-io/erk/pull/8309",
+  "created_at": "2026-02-26T08:41:58.808149",
+  "synced_at": "2026-02-26T08:41:58.808149",
+  "labels": [],
+  "objective_id": null
 }
