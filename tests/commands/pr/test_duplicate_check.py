@@ -1,4 +1,4 @@
-"""Tests for plan duplicate-check command."""
+"""Tests for pr duplicate-check command."""
 
 from datetime import datetime
 
