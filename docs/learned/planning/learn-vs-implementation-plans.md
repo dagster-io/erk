@@ -50,7 +50,7 @@ See the `LEARNED_FROM_ISSUE` constant and `PlanHeaderFieldName` type in `package
 
 This field drives three behaviors:
 
-1. **Base branch auto-detection** — During `erk plan submit`, the submit command reads `learned_from_issue`, fetches the parent issue, extracts its `branch_name`, and uses that as the base branch. This creates a stacked branch hierarchy: trunk → implementation branch → learn plan branch.
+1. **Base branch auto-detection** — During `erk pr dispatch`, the submit command reads `learned_from_issue`, fetches the parent issue, extracts its `branch_name`, and uses that as the base branch. This creates a stacked branch hierarchy: trunk → implementation branch → learn plan branch.
 
 2. **Learn status tracking** — When a learn plan's PR lands, `erk land` reads `learned_from_issue` to find the parent and updates the parent's `learn_status` to `plan_completed` with the learn plan's PR number.
 
@@ -101,7 +101,7 @@ See `LearnStatusValue` in `packages/erk-shared/src/erk_shared/gateway/github/met
 
 **Running `/erk:learn` on a learn plan issue**: Creates a documentation cycle. The learn command rejects this with a clear error.
 
-**Overriding `--base` on learn plan submission without reason**: The auto-detected parent branch is almost always correct. Override only when the parent branch has been deleted from the remote.
+**Overriding `--base` on learn plan dispatch without reason**: The auto-detected parent branch is almost always correct. Override only when the parent branch has been deleted from the remote.
 
 ## Related Documentation
 

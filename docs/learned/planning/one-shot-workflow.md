@@ -120,7 +120,7 @@ concurrency:
 
 ## Registration Step (Best-Effort Composition)
 
-`src/erk/cli/commands/exec/scripts/register_one_shot_plan.py` performs four independent operations that `erk plan submit` normally handles at submit time. Each operation is best-effort -- failures are logged but don't block others:
+`src/erk/cli/commands/exec/scripts/register_one_shot_plan.py` performs four independent operations that `erk pr dispatch` normally handles at submit time. Each operation is best-effort -- failures are logged but don't block others:
 
 1. **Dispatch metadata** -- the primary metadata source is the CLI dispatch (`write_dispatch_metadata()` in `src/erk/cli/commands/pr/metadata_helpers.py`), with CI registration as a fallback. Writes `run_id`, `node_id`, `dispatched_at` to the plan entity's `plan-header` metadata block.
 2. **Queued comment** -- adds a "Queued for Implementation" emoji comment to the plan with PR link and workflow run URL
@@ -144,7 +144,7 @@ The CLI write is the primary source; CI registration fills gaps when the CLI cou
 
 ### Divergence Risk: One-Shot vs Plan-Submit
 
-One-shot dispatch and `erk plan submit` both push branches and create PRs, but one-shot uses force-push (squash) while plan-submit may use regular push. After a one-shot dispatch, the local branch may diverge from remote. Always `git pull --rebase` before making local changes to a one-shot branch.
+One-shot dispatch and `erk pr dispatch` both push branches and create PRs, but one-shot uses force-push (squash) while pr dispatch may use regular push. After a one-shot dispatch, the local branch may diverge from remote. Always `git pull --rebase` before making local changes to a one-shot branch.
 
 ## Claude Planning Command
 

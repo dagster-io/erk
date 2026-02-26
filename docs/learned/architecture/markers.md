@@ -18,9 +18,9 @@ Markers provide friction before destructive operations. They persist across sess
 
 ## Current Markers
 
-| Marker          | Created By | Cleared By                                    | Purpose                                          |
-| --------------- | ---------- | --------------------------------------------- | ------------------------------------------------ |
-| `pending-learn` | `erk land` | `erk plan learn`, `create-learn-plan` kit CLI | Block worktree deletion until insights extracted |
+| Marker          | Created By | Cleared By                               | Purpose                                          |
+| --------------- | ---------- | ---------------------------------------- | ------------------------------------------------ |
+| `pending-learn` | `erk land` | `erk learn`, `create-learn-plan` kit CLI | Block worktree deletion until insights extracted |
 
 ## API
 
@@ -45,7 +45,7 @@ Constants:
 
 1. `erk land` merges PR → creates `pending-learn` marker
 2. User tries `erk wt delete` → blocked with "run learn first" message
-3. User runs `erk plan learn` or `erk exec create-learn-plan` → marker deleted
+3. User runs `erk learn` or `erk exec create-learn-plan` → marker deleted
 4. User can now delete worktree
 
 ## Storage Location

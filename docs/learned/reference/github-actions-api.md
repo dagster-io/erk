@@ -63,7 +63,7 @@ The GitHub gateway uses two API surfaces for workflow queries. The choice is dri
 | Batch query N runs by node ID    | GraphQL `nodes(ids: [...])`      | O(1) API call vs O(N) REST calls        |
 | Run status for multiple branches | REST (fetch all, filter locally) | GraphQL schema lacks branch filtering   |
 
-The GraphQL batch pattern is critical for the `erk plan list` command, which shows workflow status for many plans simultaneously. Without batching, displaying 20 plans would require 20 individual REST calls.
+The GraphQL batch pattern is critical for the `erk pr list` command, which shows workflow status for many plans simultaneously. Without batching, displaying 20 plans would require 20 individual REST calls.
 
 **Anti-pattern**: Using `get_workflow_run` in a loop. If you have multiple run IDs, store their GraphQL node IDs and use `get_workflow_runs_by_node_ids` instead.
 
@@ -73,7 +73,7 @@ See `RealGitHub.get_workflow_runs_by_node_ids()` in `packages/erk-shared/src/erk
 
 ## Workflow Run Priority Selection
 
-When displaying workflow status for a branch (e.g., in `erk plan list`), multiple runs may exist. The gateway selects the "most relevant" run using a priority hierarchy:
+When displaying workflow status for a branch (e.g., in `erk pr list`), multiple runs may exist. The gateway selects the "most relevant" run using a priority hierarchy:
 
 1. **Active runs** (in_progress, queued) — the current state matters most
 2. **Failed runs** — failures are more actionable than successes
