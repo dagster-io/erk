@@ -1166,3 +1166,98 @@ def test_pr_sync_skips_retrack_when_not_diverged(tmp_path: Path) -> None:
 
         # Should NOT have retracked the branch
         assert len(graphite.retrack_branch_calls) == 0
+
+
+def test_pr_sync_warns_and_continues_on_other_branch_unstaged_changes(tmp_path: Path) -> None:
+    """Test sync warns and continues when gt sync fails due to other worktree issues."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        pr_info = _make_pr_info(123, "feature-branch", title="Feature PR")
+        pr_details = _make_pr_details(
+            number=123,
+            head_ref_name="feature-branch",
+            title="Feature PR",
+        )
+        github = FakeGitHub(
+            prs={"feature-branch": pr_info},
+            pr_details={123: pr_details},
+        )
+
+        # Branch ALREADY tracked, but sync raises due to other worktree
+        graphite = FakeGraphite(
+            sync_raises=RuntimeError("cannot sync: unstaged changes in /other/worktree"),
+            branches={
+                "feature-branch": BranchMetadata(
+                    name="feature-branch",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha="abc123",
+                )
+            },
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "feature-branch"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
+
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Sync completed with warnings" in result.output
+        assert "other branches had issues" in result.output
+        # Should still restack and push despite sync warning
+        assert len(graphite.restack_calls) == 1
+        assert len(graphite.submit_stack_calls) == 1
+
+
+def test_pr_sync_fails_on_generic_sync_error(tmp_path: Path) -> None:
+    """Test sync fails cleanly on a generic sync error (not other-branch)."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        pr_info = _make_pr_info(123, "feature-branch", title="Feature PR")
+        pr_details = _make_pr_details(
+            number=123,
+            head_ref_name="feature-branch",
+            title="Feature PR",
+        )
+        github = FakeGitHub(
+            prs={"feature-branch": pr_info},
+            pr_details={123: pr_details},
+        )
+
+        # Branch ALREADY tracked, sync raises generic error
+        graphite = FakeGraphite(
+            sync_raises=RuntimeError("network timeout"),
+            branches={
+                "feature-branch": BranchMetadata(
+                    name="feature-branch",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha="abc123",
+                )
+            },
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "feature-branch"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
+
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
+
+        assert result.exit_code != 0
+        assert "network timeout" in result.output
+        # Should NOT have attempted restack or submit
+        assert len(graphite.restack_calls) == 0
+        assert len(graphite.submit_stack_calls) == 0

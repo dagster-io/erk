@@ -23,6 +23,36 @@ class CommandResult(NamedTuple):
 # =============================================================================
 
 
+# =============================================================================
+# Sync Operation Types
+# =============================================================================
+
+
+SyncErrorType = Literal["other-branch-conflict", "sync-failed"]
+
+
+@dataclass(frozen=True)
+class SyncSuccess:
+    """Success result from idempotent sync."""
+
+    success: Literal[True]
+    message: str
+
+
+@dataclass(frozen=True)
+class SyncError:
+    """Error result from idempotent sync."""
+
+    success: Literal[False]
+    error_type: SyncErrorType
+    message: str
+
+
+# =============================================================================
+# Restack Operation Types
+# =============================================================================
+
+
 RestackErrorType = Literal["restack-conflict", "restack-failed"]
 
 
