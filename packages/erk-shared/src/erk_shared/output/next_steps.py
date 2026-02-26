@@ -126,7 +126,7 @@ def format_next_steps_markdown(issue_number: int, *, url: str) -> str:
     s = IssueNextSteps(issue_number, url=url)
     return f"""## Execution Commands
 
-**Submit to Erk Queue:**
+**Dispatch to Erk Queue:**
 ```bash
 {s.dispatch}
 ```

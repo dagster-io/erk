@@ -601,8 +601,8 @@ class TestPlanDetailScreenCopyActions:
             assert clipboard.last_copied == "erk br co --for-plan 123"
 
     @pytest.mark.asyncio
-    async def test_copy_submit_shortcut_3(self) -> None:
-        """Pressing '3' in detail screen copies submit command."""
+    async def test_copy_dispatch_shortcut_3(self) -> None:
+        """Pressing '3' in detail screen copies dispatch command."""
         clipboard = FakeClipboard()
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],

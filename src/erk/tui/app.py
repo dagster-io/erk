@@ -1178,7 +1178,7 @@ class ErkDashApp(App):
                 self._provider.clipboard.copy(cmd)
                 self.notify(f"Copied: {cmd}")
 
-        elif command_id == "copy_submit":
+        elif command_id == "copy_dispatch":
             cmd = f"erk pr dispatch {row.plan_id}"
             self._provider.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
@@ -1234,7 +1234,7 @@ class ErkDashApp(App):
                 self._start_operation(op_id=op_id, label=f"Closing plan #{row.plan_id}...")
                 self._close_plan_async(op_id, row.plan_id, row.plan_url)
 
-        elif command_id == "submit_to_queue":
+        elif command_id == "dispatch_to_queue":
             if row.plan_url:
                 op_id = f"dispatch-plan-{row.plan_id}"
                 self._start_operation(

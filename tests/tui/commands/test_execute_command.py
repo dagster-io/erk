@@ -116,12 +116,12 @@ class TestExecuteCommandCopyCommands:
         assert executor.copied_texts == ["erk br co --for-plan 123"]
         assert "Copied: erk br co --for-plan 123" in executor.notifications
 
-    def test_copy_submit_copies_command(self) -> None:
-        """copy_submit copies the dispatch command."""
+    def test_copy_dispatch_copies_command(self) -> None:
+        """copy_dispatch copies the dispatch command."""
         row = make_plan_row(123, "Test")
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)
-        screen.execute_command("copy_submit")
+        screen.execute_command("copy_dispatch")
         assert executor.copied_texts == ["erk pr dispatch 123"]
         assert "Copied: erk pr dispatch 123" in executor.notifications
 
@@ -199,16 +199,16 @@ class TestExecuteCommandClosePlan:
         assert executor.refresh_count == 0
 
 
-class TestExecuteCommandSubmitToQueue:
-    """Tests for submit_to_queue command.
+class TestExecuteCommandDispatchToQueue:
+    """Tests for dispatch_to_queue command.
 
-    Note: submit_to_queue uses dismiss-and-delegate to the app's background worker.
+    Note: dispatch_to_queue uses dismiss-and-delegate to the app's background worker.
     These tests verify the guard conditions. The async worker behavior is tested
     in test_app.py.
     """
 
-    def test_submit_to_queue_does_nothing_without_issue_url(self) -> None:
-        """submit_to_queue does nothing if no issue URL."""
+    def test_dispatch_to_queue_does_nothing_without_issue_url(self) -> None:
+        """dispatch_to_queue does nothing if no issue URL."""
         row = PlanRowData(
             plan_id=123,
             plan_url=None,  # Explicitly None
@@ -267,7 +267,7 @@ class TestExecuteCommandSubmitToQueue:
         )
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)
-        screen.execute_command("submit_to_queue")
+        screen.execute_command("dispatch_to_queue")
         assert executor.refresh_count == 0
 
 
@@ -371,7 +371,7 @@ class TestExecuteCommandNoExecutor:
         screen.execute_command("open_browser")
         screen.execute_command("copy_prepare")
         screen.execute_command("close_plan")
-        screen.execute_command("submit_to_queue")
+        screen.execute_command("dispatch_to_queue")
         screen.execute_command("land_pr")
         screen.execute_command("fix_conflicts_remote")
         screen.execute_command("copy_close_plan")

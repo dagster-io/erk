@@ -21,7 +21,7 @@ def test_launch_keys_no_duplicate_keys_within_plan_view() -> None:
     """Plan action keys should not have duplicate key bindings."""
     plan_action_ids = [
         "close_plan",
-        "submit_to_queue",
+        "dispatch_to_queue",
         "land_pr",
         "fix_conflicts_remote",
         "address_remote",
@@ -53,7 +53,7 @@ def test_launch_screen_builds_key_mapping_for_plan_view() -> None:
 
     # Key mapping is built in __init__, no need to call compose()
     assert "c" in screen._key_to_command_id  # close_plan
-    assert "d" in screen._key_to_command_id  # submit_to_queue
+    assert "d" in screen._key_to_command_id  # dispatch_to_queue
     assert "l" in screen._key_to_command_id  # land_pr
     assert "f" in screen._key_to_command_id  # fix_conflicts_remote
     assert "a" in screen._key_to_command_id  # address_remote
@@ -93,7 +93,7 @@ def test_launch_screen_excludes_unavailable_commands() -> None:
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     screen = LaunchScreen(ctx=ctx)
 
-    # close_plan and submit_to_queue should be present (always available / needs plan_url)
+    # close_plan and dispatch_to_queue should be present (always available / needs plan_url)
     assert "c" in screen._key_to_command_id
     assert "d" in screen._key_to_command_id
 
@@ -117,6 +117,6 @@ def test_launch_screen_maps_command_ids_correctly() -> None:
     screen = LaunchScreen(ctx=ctx)
 
     assert screen._key_to_command_id["c"] == "close_plan"
-    assert screen._key_to_command_id["d"] == "submit_to_queue"
+    assert screen._key_to_command_id["d"] == "dispatch_to_queue"
     assert screen._key_to_command_id["f"] == "fix_conflicts_remote"
     assert screen._key_to_command_id["a"] == "address_remote"

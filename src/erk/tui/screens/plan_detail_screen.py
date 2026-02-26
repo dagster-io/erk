@@ -49,7 +49,7 @@ class PlanDetailScreen(ModalScreen):
         Binding("1", "copy_prepare", "Prepare"),
         Binding("4", "copy_prepare_activate", "Activate"),
         Binding("2", "copy_implement_local", "Implement Local"),
-        Binding("3", "copy_submit", "Submit"),
+        Binding("3", "copy_dispatch", "Dispatch"),
         Binding("5", "fix_conflicts_remote", "Fix Conflicts"),
     ]
 
@@ -359,8 +359,8 @@ class PlanDetailScreen(ModalScreen):
             )
             self._copy_and_notify(cmd)
 
-    def action_copy_submit(self) -> None:
-        """Copy submit command to clipboard."""
+    def action_copy_dispatch(self) -> None:
+        """Copy dispatch command to clipboard."""
         cmd = f"erk pr dispatch {self._row.plan_id}"
         self._copy_and_notify(cmd)
 
@@ -664,7 +664,7 @@ class PlanDetailScreen(ModalScreen):
                 executor.copy_to_clipboard(cmd)
                 executor.notify(f"Copied: {cmd}", severity=None)
 
-        elif command_id == "copy_submit":
+        elif command_id == "copy_dispatch":
             cmd = f"erk pr dispatch {row.plan_id}"
             executor.copy_to_clipboard(cmd)
             executor.notify(f"Copied: {cmd}", severity=None)
@@ -722,7 +722,7 @@ class PlanDetailScreen(ModalScreen):
                     self.app._start_operation(op_id=op_id, label=f"Closing plan #{row.plan_id}...")
                     self.app._close_plan_async(op_id, row.plan_id, row.plan_url)
 
-        elif command_id == "submit_to_queue":
+        elif command_id == "dispatch_to_queue":
             if row.plan_url:
                 self.dismiss()
                 if isinstance(self.app, ErkDashApp):
