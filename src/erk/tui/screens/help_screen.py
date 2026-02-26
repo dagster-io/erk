@@ -104,5 +104,5 @@ class HelpScreen(ModalScreen):
         """Consume all keys; dismiss on keys not handled by bindings."""
         event.prevent_default()
         event.stop()
-        if event.key in ("escape", "q", "question_mark"):
+        if event.key not in ("escape", "q", "question_mark"):
             self.dismiss()

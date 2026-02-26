@@ -133,6 +133,26 @@ class TestErkDashAppNavigation:
             assert len(app.screen_stack) > 1
             assert isinstance(app.screen_stack[-1], HelpScreen)
 
+    @pytest.mark.asyncio
+    async def test_help_screen_dismisses_on_unmapped_key(self) -> None:
+        """Pressing an unmapped key dismisses HelpScreen."""
+        provider = FakePlanDataProvider()
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.press("?")
+            await pilot.pause()
+            await pilot.pause()
+
+            assert isinstance(app.screen_stack[-1], HelpScreen)
+
+            # Press unmapped key — should dismiss
+            await pilot.press("j")
+            await pilot.pause()
+
+            assert not isinstance(app.screen_stack[-1], HelpScreen)
+
 
 class TestErkDashAppRefresh:
     """Tests for data refresh behavior."""
@@ -1514,6 +1534,32 @@ class TestPlanBodyScreen:
             assert body_screen._content == objective_content
             assert body_screen._loading is False
 
+    @pytest.mark.asyncio
+    async def test_plan_body_screen_dismisses_on_unmapped_key(self) -> None:
+        """Pressing an unmapped key dismisses PlanBodyScreen."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", plan_body="metadata body")]
+        )
+        provider.set_plan_content(123, "Plan content")
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("v")
+            await pilot.pause()
+            await pilot.pause()
+
+            assert isinstance(app.screen_stack[-1], PlanBodyScreen)
+
+            # Press unmapped key — should dismiss
+            await pilot.press("j")
+            await pilot.pause()
+
+            assert not isinstance(app.screen_stack[-1], PlanBodyScreen)
+
 
 class TestBuildGithubUrl:
     """Tests for _build_github_url helper function."""
@@ -2147,6 +2193,39 @@ class TestActionLaunch:
 
             expected = 'source "$(erk pr checkout 123 --script)" && erk implement --dangerous'
             assert clipboard.last_copied == expected
+
+    @pytest.mark.asyncio
+    async def test_launch_screen_dismisses_on_unmapped_key(self) -> None:
+        """Pressing an unmapped key dismisses LaunchScreen with None result."""
+        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row(
+                    123,
+                    "Test Plan",
+                    plan_url="https://github.com/test/repo/issues/123",
+                    pr_number=456,
+                    pr_url="https://github.com/test/repo/pull/456",
+                )
+            ]
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("l")
+            await pilot.pause()
+            await pilot.pause()
+
+            assert isinstance(app.screen_stack[-1], LaunchScreen)
+
+            # Press unmapped key — should dismiss
+            await pilot.press("x")
+            await pilot.pause()
+
+            assert not isinstance(app.screen_stack[-1], LaunchScreen)
 
 
 class TestAddressRemoteAsync:
