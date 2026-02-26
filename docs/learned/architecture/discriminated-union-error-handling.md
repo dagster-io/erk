@@ -222,17 +222,9 @@ def handle_error(result: Any) -> str:
 
 ### Error Types Are Frozen Dataclasses
 
-All error types use `@dataclass(frozen=True)` for immutability:
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/git/remote_ops/types.py, PushError -->
 
-```python
-@dataclass(frozen=True)
-class PushError:
-    message: str
-
-    @property
-    def error_type(self) -> str:
-        return "push-failed"
-```
+All error types use `@dataclass(frozen=True)` for immutability. See `PushError` in `packages/erk-shared/src/erk_shared/gateway/git/remote_ops/types.py` for the canonical pattern: a single `message: str` field and an `error_type` property returning a kebab-case string like `"push-failed"`.
 
 ### Include Domain Context
 
@@ -240,16 +232,7 @@ Error types should carry domain-meaningful fields for caller inspection:
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/types.py, PRNotFound -->
 
-See `PRNotFound` in `packages/erk-shared/src/erk_shared/gateway/github/types.py`.
-
-```python
-@dataclass(frozen=True)
-class PRNotFound:
-    pr_number: int | None = None  # Set when looking up by number
-    branch: str | None = None     # Set when looking up by branch
-```
-
-The caller can inspect these fields to construct better error messages or branch on specific failure modes.
+See `PRNotFound` in `packages/erk-shared/src/erk_shared/gateway/github/types.py`. It carries `pr_number: int | None` (set when looking up by number) and `branch: str | None` (set when looking up by branch), enabling callers to construct better error messages or branch on specific failure modes.
 
 ### Naming Conventions
 

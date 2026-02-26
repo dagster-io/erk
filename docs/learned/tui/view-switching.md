@@ -32,12 +32,13 @@ The TUI supports three views — Plans, Learn, and Objectives — with instant s
 
 **ViewConfig** frozen dataclass holds per-view configuration:
 
-| Field          | Type              | Description                         |
-| -------------- | ----------------- | ----------------------------------- |
-| `mode`         | `ViewMode`        | Which view this config describes    |
-| `display_name` | `str`             | Human-readable name (e.g., "Plans") |
-| `labels`       | `tuple[str, ...]` | GitHub labels for API queries       |
-| `key_hint`     | `str`             | Keyboard shortcut (e.g., "1")       |
+| Field            | Type              | Description                                          |
+| ---------------- | ----------------- | ---------------------------------------------------- |
+| `mode`           | `ViewMode`        | Which view this config describes                     |
+| `display_name`   | `str`             | Human-readable name (e.g., "Plans")                  |
+| `labels`         | `tuple[str, ...]` | GitHub labels for API queries                        |
+| `key_hint`       | `str`             | Keyboard shortcut (e.g., "1")                        |
+| `exclude_labels` | `tuple[str, ...]` | Labels to exclude from results (client-side filter)  |
 
 **VIEW_CONFIGS** tuple defines all three views:
 
@@ -61,7 +62,7 @@ The `exclude_labels` field on `ViewConfig` enables defense-in-depth: Plans view 
 
 ## Cache Strategy
 
-<!-- Source: src/erk/tui/app.py:129 -->
+<!-- Source: src/erk/tui/app.py:151 -->
 
 Data is cached by label tuple: `dict[tuple[str, ...], list[PlanRowData]]`.
 
@@ -71,7 +72,7 @@ Cache is populated in `_load_data()` after each successful fetch and looked up i
 
 ## View Switching Flow
 
-<!-- Source: src/erk/tui/app.py:340-390 -->
+<!-- Source: src/erk/tui/app.py:420 -->
 
 `_switch_view(mode)` orchestrates the transition:
 
@@ -84,7 +85,7 @@ Cache is populated in `_load_data()` after each successful fetch and looked up i
 
 ## PlanDataTable.reconfigure()
 
-<!-- Source: src/erk/tui/widgets/plan_table.py:103-123 -->
+<!-- Source: src/erk/tui/widgets/plan_table.py:117 -->
 
 `reconfigure()` preserves the widget instance while rebuilding its columns:
 
@@ -104,9 +105,9 @@ Renders `1:Plans  2:Learn  3:Objectives` with the active view in bold white and 
 
 Left/right arrow keys cycle through views. This is delegated from `PlanDataTable` to the app:
 
-<!-- Source: src/erk/tui/widgets/plan_table.py:102-108 -->
+<!-- Source: src/erk/tui/widgets/plan_table.py:109-116 -->
 
-`PlanDataTable` overrides `action_cursor_left` and `action_cursor_right` to delegate to `ErkDashApp.action_previous_view()` and `action_next_view()` respectively. See `src/erk/tui/widgets/plan_table.py:102-108` for the implementation.
+`PlanDataTable` overrides `action_cursor_left` and `action_cursor_right` to delegate to `ErkDashApp.action_previous_view()` and `action_next_view()` respectively. See `src/erk/tui/widgets/plan_table.py:109-116` for the implementation.
 
 The app uses `get_next_view_mode()` and `get_previous_view_mode()` from `src/erk/tui/views/types.py` which cycle through `VIEW_CONFIGS` with wrapping (last -> first, first -> last).
 

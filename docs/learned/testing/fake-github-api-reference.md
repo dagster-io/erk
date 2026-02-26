@@ -29,13 +29,20 @@ Do NOT manually add to `_pr_details` after calling `create_pr()` — this causes
 
 FakeGitHub tracks all mutations for test assertions:
 
-| Property               | Tracks                         | Tuple Format              |
-| ---------------------- | ------------------------------ | ------------------------- |
-| `created_prs`          | PRs created via create_pr()    | (title, body, base, head) |
-| `added_labels`         | Labels added to issues/PRs     | (number, label)           |
-| `removed_labels`       | Labels removed from issues/PRs | (number, label)           |
-| `posted_comments`      | Comments posted to issues/PRs  | (number, body)            |
-| `updated_issue_bodies` | Issue body updates             | (number, new_body)        |
+| Property                  | Tracks                              | Format                                    |
+| ------------------------- | ----------------------------------- | ----------------------------------------- |
+| `created_prs`             | PRs created via create_pr()         | (title, body, base, head \| None, bool)   |
+| `added_labels`            | Labels added to issues/PRs          | (number, label)                           |
+| `merged_prs`              | PR numbers that were merged         | list[int]                                 |
+| `closed_prs`              | PR numbers that were closed         | list[int]                                 |
+| `updated_pr_bases`        | PR base branch updates              | (number, base)                            |
+| `updated_pr_bodies`       | PR body updates                     | (number, body)                            |
+| `updated_pr_titles`       | PR title updates                    | (number, title)                           |
+| `triggered_workflows`     | Workflow dispatch triggers          | (workflow, dict[str, str])                |
+| `resolved_thread_ids`     | Resolved review thread IDs          | set[str]                                  |
+| `thread_replies`          | Replies posted to review threads    | (thread_id, body)                         |
+| `pr_comments`             | Comments posted to PRs              | (number, body)                            |
+| `deleted_remote_branches` | Remote branches deleted             | list[str]                                 |
 
 Access via properties that return copies (not the internal mutable lists).
 
@@ -58,18 +65,14 @@ Parameter names match the `ErkContext` field names. Check the current signature 
 Common patterns for setting up test data:
 
 ```python
-# Create a PR with specific details
-fake_github.add_pr_details(
-    pr_number=42,
-    title="My PR",
-    body="PR body content",
+# Configure PR details via constructor
+fake_github = FakeGitHub(
+    pr_details={42: PRDetails(number=42, title="My PR", body="PR body content")},
 )
 
-# Set up issue with labels
-fake_issues.add_issue(
-    number=100,
-    title="Plan issue",
-    labels=["erk-plan", "erk-planned-pr"],
+# Configure issues via constructor
+fake_issues = FakeGitHubIssues(
+    issues={100: IssueInfo(number=100, title="Plan issue", labels=["erk-plan", "erk-planned-pr"])},
 )
 ```
 

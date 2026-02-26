@@ -159,16 +159,9 @@ This checklist helps you choose between discriminated unions and exceptions. For
 
 ### NonIdealState Protocol
 
-All discriminated union error types must implement the `NonIdealState` protocol from `packages/erk-shared/src/erk_shared/non_ideal_state.py`:
+<!-- Source: packages/erk-shared/src/erk_shared/non_ideal_state.py, NonIdealState -->
 
-```python
-class NonIdealState(Protocol):
-    @property
-    def error_type(self) -> str: ...
-
-    @property
-    def message(self) -> str: ...
-```
+All discriminated union error types must implement the `NonIdealState` protocol from `packages/erk-shared/src/erk_shared/non_ideal_state.py`. The protocol requires two read-only properties: `error_type` (machine-readable classification string) and `message` (human-readable description).
 
 ### Type Colocation Rule
 
