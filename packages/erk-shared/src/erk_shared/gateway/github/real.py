@@ -1492,7 +1492,6 @@ query {{
         state: IssueFilterState,
         limit: int | None,
         author: str | None,
-        exclude_labels: list[str] | None = None,
     ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
         """List plan PRs with rich details via REST+GraphQL two-step approach.
 
@@ -1536,15 +1535,6 @@ query {{
 
         # Filter to PRs only (items with pull_request key)
         pr_items = [item for item in issues_data if "pull_request" in item]
-
-        # Client-side exclude_labels filtering (cheap — labels are in REST response)
-        if exclude_labels:
-            exclude_set = set(exclude_labels)
-            pr_items = [
-                item
-                for item in pr_items
-                if not any(label["name"] in exclude_set for label in item.get("labels", []))
-            ]
 
         if not pr_items:
             rest_ms = _elapsed_ms(t_rest_start, t_rest_end)

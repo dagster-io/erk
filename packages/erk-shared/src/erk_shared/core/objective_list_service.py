@@ -26,7 +26,6 @@ class ObjectiveListService(ABC):
         limit: int | None = None,
         skip_workflow_runs: bool = False,
         creator: str | None = None,
-        exclude_labels: list[str] | None = None,
     ) -> PlanListData:
         """Fetch all data needed for objective listing.
 
@@ -36,7 +35,6 @@ class ObjectiveListService(ABC):
             limit: Maximum number of objectives to return (None for no limit)
             skip_workflow_runs: If True, skip fetching workflow runs (for performance)
             creator: Filter by creator username
-            exclude_labels: Labels to exclude from results
 
         Returns:
             PlanListData containing objectives as plans, PR linkages, and workflow runs

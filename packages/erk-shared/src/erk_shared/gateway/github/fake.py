@@ -726,7 +726,6 @@ class FakeGitHub(GitHub):
         state: IssueFilterState,
         limit: int | None,
         author: str | None,
-        exclude_labels: list[str] | None = None,
     ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
         """Return pre-configured plan PR details and linkages."""
         return self._plan_pr_details

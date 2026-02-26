@@ -419,7 +419,6 @@ class GitHub(ABC):
         state: IssueFilterState,
         limit: int | None,
         author: str | None,
-        exclude_labels: list[str] | None = None,
     ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
         """List plan PRs with rich details.
 
@@ -433,8 +432,6 @@ class GitHub(ABC):
             state: Filter by state ("open" or "closed")
             limit: Maximum number of results (None for no limit)
             author: Filter by PR author username (server-side via REST creator param)
-            exclude_labels: Labels to exclude from results (client-side filtering
-                applied before expensive GraphQL enrichment). None means no exclusion.
 
         Returns:
             Tuple of (pr_details_list, pr_linkages_by_pr_number)

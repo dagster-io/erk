@@ -227,7 +227,6 @@ class PrintingGitHub(PrintingBase, GitHub):
         state: IssueFilterState,
         limit: int | None,
         author: str | None,
-        exclude_labels: list[str] | None = None,
     ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
         """List plan PRs with rich details (read-only, no printing)."""
         return self._wrapped.list_plan_prs_with_details(
@@ -236,7 +235,6 @@ class PrintingGitHub(PrintingBase, GitHub):
             state=state,
             limit=limit,
             author=author,
-            exclude_labels=exclude_labels,
         )
 
     def update_pr_title_and_body(

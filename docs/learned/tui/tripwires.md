@@ -42,7 +42,7 @@ Rules triggered by matching actions in code.
 
 **adding streaming commands without using \_push_streaming_detail helper** → Read [View-Aware Command Filtering](view-aware-commands.md) first. Streaming ACTION commands need \_push_streaming_detail() to handle the push-then-stream sequence correctly. Direct streaming without it skips the detail screen push.
 
-**adding the same label to multiple ViewConfig entries without exclude_labels** → Read [TUI View Switching](view-switching.md) first. Without exclude_labels, items matching the shared label appear in multiple views. Use exclude_labels for defense-in-depth deduplication (Plans view excludes erk-learn).
+**assigning both erk-plan and erk-learn labels to the same issue** → Read [TUI View Switching](view-switching.md) first. Labels must be mutually exclusive — a plan issue has either erk-plan or erk-learn, never both. Mutually exclusive labels make tab separation work via server-side filtering with no client-side exclusion needed.
 
 **caching fetched data under self.\_view_mode after an async operation** → Read [TUI Async State Snapshot Pattern](async-state-snapshot.md) first. Cache under fetched_mode (snapshot at start), not self.\_view_mode (may have changed during fetch).
 

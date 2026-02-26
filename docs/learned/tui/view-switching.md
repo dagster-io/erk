@@ -14,15 +14,15 @@ tripwires:
     warning: "Content type must come from view_mode at push time, not derived inside the screen."
   - action: "adding labels to ViewConfig.labels expecting OR semantics from GitHub API"
     warning: "GitHub GraphQL uses AND semantics for label arrays. Multiple labels in a single ViewConfig.labels means items must have ALL listed labels. Use separate views for separate label types. See github-graphql-label-semantics.md."
-  - action: "adding the same label to multiple ViewConfig entries without exclude_labels"
-    warning: "Without exclude_labels, items matching the shared label appear in multiple views. Use exclude_labels for defense-in-depth deduplication (Plans view excludes erk-learn)."
+  - action: "assigning both erk-plan and erk-learn labels to the same issue"
+    warning: "Labels must be mutually exclusive — a plan issue has either erk-plan or erk-learn, never both. Mutually exclusive labels make tab separation work via server-side filtering with no client-side exclusion needed."
 last_audited: "2026-02-17 00:00 PT"
 audit_result: edited
 ---
 
 # TUI View Switching
 
-The TUI supports three views — Plans, Learn, and Objectives — with instant switching via keyboard shortcuts. This document explains the view system architecture, the two-tier filtering strategy, and the caching mechanism that enables sub-millisecond view switches.
+The TUI supports three views — Plans, Learn, and Objectives — with instant switching via keyboard shortcuts. This document explains the view system architecture, the label-based filtering strategy, and the caching mechanism that enables sub-millisecond view switches.
 
 ## Core Types
 
@@ -32,33 +32,32 @@ The TUI supports three views — Plans, Learn, and Objectives — with instant s
 
 **ViewConfig** frozen dataclass holds per-view configuration:
 
-| Field            | Type              | Description                                         |
-| ---------------- | ----------------- | --------------------------------------------------- |
-| `mode`           | `ViewMode`        | Which view this config describes                    |
-| `display_name`   | `str`             | Human-readable name (e.g., "Plans")                 |
-| `labels`         | `tuple[str, ...]` | GitHub labels for API queries                       |
-| `key_hint`       | `str`             | Keyboard shortcut (e.g., "1")                       |
-| `exclude_labels` | `tuple[str, ...]` | Labels to exclude from results (client-side filter) |
+| Field          | Type              | Description                         |
+| -------------- | ----------------- | ----------------------------------- |
+| `mode`         | `ViewMode`        | Which view this config describes    |
+| `display_name` | `str`             | Human-readable name (e.g., "Plans") |
+| `labels`       | `tuple[str, ...]` | GitHub labels for API queries       |
+| `key_hint`     | `str`             | Keyboard shortcut (e.g., "1")       |
 
 **VIEW_CONFIGS** tuple defines all three views:
 
-| View       | Labels               | Exclude Labels   | Key |
-| ---------- | -------------------- | ---------------- | --- |
-| Plans      | `("erk-plan",)`      | `("erk-learn",)` | `1` |
-| Learn      | `("erk-learn",)`     | `()`             | `2` |
-| Objectives | `("erk-objective",)` | `()`             | `3` |
+| View       | Labels               | Key |
+| ---------- | -------------------- | --- |
+| Plans      | `("erk-plan",)`      | `1` |
+| Learn      | `("erk-learn",)`     | `2` |
+| Objectives | `("erk-objective",)` | `3` |
 
-Plans and Learn use **different** type-specific labels. Plans queries `erk-plan` and excludes `erk-learn` items. Learn queries `erk-learn` directly. Both share the BASE label `erk-planned-pr` on their issues but use different type labels for API queries.
+Plans and Learn use **mutually exclusive** type-specific labels. Each plan issue has either `erk-plan` or `erk-learn`, never both. This makes tab separation work naturally via server-side label filtering — no client-side exclusion needed.
 
 ## Label-Based Filtering
 
 Each view uses distinct type-specific labels for API queries:
 
-- **Plans view**: Queries `erk-plan` label, then excludes items with `erk-learn` label (via `exclude_labels`)
-- **Learn view**: Queries `erk-learn` label directly
+- **Plans view**: Queries `erk-plan` label
+- **Learn view**: Queries `erk-learn` label
 - **Objectives view**: Queries `erk-objective` label
 
-The `exclude_labels` field on `ViewConfig` enables defense-in-depth: Plans view fetches `erk-plan` issues but filters out any that also have `erk-learn` (server-side label filter + client-side exclude).
+The labels are mutually exclusive, so server-side filtering alone provides clean separation between tabs.
 
 ## Cache Strategy
 

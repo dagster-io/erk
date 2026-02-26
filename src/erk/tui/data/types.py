@@ -202,7 +202,6 @@ class PlanFilters:
     limit: int | None
     show_prs: bool
     show_runs: bool
-    exclude_labels: tuple[str, ...]
     creator: str | None = None
     show_pr_column: bool = True
     lifecycle_stage: str | None = None
@@ -217,6 +216,5 @@ class PlanFilters:
             limit=None,
             show_prs=False,
             show_runs=False,
-            exclude_labels=(),
             creator=None,
         )

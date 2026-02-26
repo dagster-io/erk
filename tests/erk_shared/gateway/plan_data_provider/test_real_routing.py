@@ -56,7 +56,6 @@ class TestPlanDataProviderRouting:
             limit=None,
             show_prs=False,
             show_runs=False,
-            exclude_labels=(),
         )
 
         # Act
@@ -84,7 +83,6 @@ class TestPlanDataProviderRouting:
             limit=None,
             show_prs=False,
             show_runs=False,
-            exclude_labels=(),
         )
 
         # Act
@@ -112,7 +110,6 @@ class TestPlanDataProviderRouting:
             limit=None,
             show_prs=False,
             show_runs=False,
-            exclude_labels=(),
         )
 
         # Act
@@ -139,7 +136,6 @@ class TestPlanDataProviderRouting:
             limit=None,
             show_prs=False,
             show_runs=False,
-            exclude_labels=(),
         )
 
         # Act
@@ -171,7 +167,6 @@ class TestPlanDataProviderRouting:
             limit=None,
             show_prs=False,
             show_runs=False,
-            exclude_labels=(),
         )
         provider.fetch_plans(filters_with_objective)
         assert mock_objective_service.get_objective_list_data.call_count == 1, (
@@ -193,7 +188,6 @@ class TestPlanDataProviderRouting:
             limit=None,
             show_prs=False,
             show_runs=False,
-            exclude_labels=(),
         )
         provider.fetch_plans(filters_without_objective)
         assert mock_plan_service.get_plan_list_data.call_count == 1, (

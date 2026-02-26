@@ -38,22 +38,15 @@ The type is determined by `plan_type` in the plan metadata.
 
 Due to [GitHub GraphQL AND semantics](../architecture/github-graphql-label-semantics.md), always query by **type-specific** labels:
 
-| View       | Query Label     | Exclude Label |
-| ---------- | --------------- | ------------- |
-| Plans      | `erk-plan`      | `erk-learn`   |
-| Learn      | `erk-learn`     | (none)        |
-| Objectives | `erk-objective` | (none)        |
+| View       | Query Label     |
+| ---------- | --------------- |
+| Plans      | `erk-plan`      |
+| Learn      | `erk-learn`     |
+| Objectives | `erk-objective` |
+
+The labels are mutually exclusive — a plan issue has either `erk-plan` or `erk-learn`, never both. This makes tab separation work naturally via server-side label filtering with no client-side exclusion needed.
 
 Do NOT query by `erk-planned-pr` — it returns all plan types, and combining with a type label triggers AND semantics.
-
-## Defense-in-Depth Filtering
-
-The Plans view uses both server-side and client-side filtering:
-
-1. **Server-side**: Queries with `labels=("erk-plan",)`
-2. **Client-side**: `exclude_labels=("erk-learn",)` filters out any learn items
-
-This double filtering prevents learn plans from appearing in the Plans tab even if they have both labels.
 
 ## Label Backfill Side Effects
 

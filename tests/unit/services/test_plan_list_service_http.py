@@ -134,32 +134,6 @@ def test_http_path_filters_non_pr_items() -> None:
     assert result.plans[0].plan_identifier == "42"
 
 
-def test_http_path_excludes_labels() -> None:
-    """HTTP path applies client-side exclude_labels filtering."""
-    items = [
-        _make_rest_issue_pr(number=1, labels=["erk-plan"]),
-        _make_rest_issue_pr(number=2, labels=["erk-plan", "erk-learn"]),
-    ]
-
-    http_client = FakeHttpClient()
-    http_client.set_list_response(
-        "repos/owner/repo/issues?labels=erk-plan&state=open&per_page=30&sort=updated&direction=desc",
-        response=items,
-    )
-    http_client.set_response("graphql", response=_make_graphql_enrichment([1]))
-
-    service = PlannedPRPlanListService(FakeGitHub(), time=FakeTime())
-    result = service.get_plan_list_data(
-        location=TEST_LOCATION,
-        labels=["erk-plan"],
-        exclude_labels=["erk-learn"],
-        http_client=http_client,
-    )
-
-    assert len(result.plans) == 1
-    assert result.plans[0].plan_identifier == "1"
-
-
 def test_http_path_populates_timing_data() -> None:
     """HTTP path populates api_ms timing in result."""
     rest_items = [_make_rest_issue_pr(number=42)]

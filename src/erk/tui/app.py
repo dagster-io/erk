@@ -219,7 +219,6 @@ class ErkDashApp(App):
             show_prs=self._plan_filters.show_prs,
             show_runs=self._plan_filters.show_runs,
             creator=self._plan_filters.creator,
-            exclude_labels=view_config.exclude_labels,
         )
 
         fetch_timings: FetchTimings | None = None

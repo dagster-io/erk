@@ -65,7 +65,6 @@ class PlannedPRPlanListService(PlanListService):
         limit: int | None = None,
         skip_workflow_runs: bool = False,
         creator: str | None = None,
-        exclude_labels: list[str] | None = None,
         http_client: HttpClient | None,
     ) -> PlanListData:
         """Fetch plan list data from draft PRs via REST+GraphQL.
@@ -81,7 +80,6 @@ class PlannedPRPlanListService(PlanListService):
             limit: Maximum number of results
             skip_workflow_runs: If True, skip fetching workflow runs
             creator: Filter by PR author username
-            exclude_labels: Labels to exclude from results
             http_client: Optional HTTP client for direct API calls
 
         Returns:
@@ -96,7 +94,6 @@ class PlannedPRPlanListService(PlanListService):
                 limit=limit,
                 skip_workflow_runs=skip_workflow_runs,
                 creator=creator,
-                exclude_labels=exclude_labels,
             )
 
         # Subprocess path: REST+GraphQL two-step via gh CLI
@@ -107,7 +104,6 @@ class PlannedPRPlanListService(PlanListService):
             state=state,
             limit=limit,
             author=creator,
-            exclude_labels=exclude_labels,
         )
         t1 = self._time.monotonic()
 
@@ -138,7 +134,6 @@ class PlannedPRPlanListService(PlanListService):
         limit: int | None,
         skip_workflow_runs: bool,
         creator: str | None,
-        exclude_labels: list[str] | None,
     ) -> PlanListData:
         """Fetch plan list data via direct HTTP calls (no subprocess overhead).
 
@@ -168,15 +163,6 @@ class PlannedPRPlanListService(PlanListService):
 
         # Filter to PRs only (items with pull_request key)
         pr_items = [item for item in issues_data if "pull_request" in item]
-
-        # Client-side exclude_labels filtering
-        if exclude_labels:
-            exclude_set = set(exclude_labels)
-            pr_items = [
-                item
-                for item in pr_items
-                if not any(label["name"] in exclude_set for label in item.get("labels", []))
-            ]
 
         if not pr_items:
             t1 = self._time.monotonic()

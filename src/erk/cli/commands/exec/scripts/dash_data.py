@@ -103,7 +103,6 @@ def dash_data(
         limit=limit,
         show_prs=show_prs,
         show_runs=show_runs,
-        exclude_labels=(),
         creator=creator,
     )
 

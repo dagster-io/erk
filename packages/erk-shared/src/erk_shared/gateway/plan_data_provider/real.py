@@ -141,7 +141,6 @@ class RealPlanDataProvider(PlanDataProvider):
                 limit=filters.limit,
                 skip_workflow_runs=not needs_workflow_runs,
                 creator=filters.creator,
-                exclude_labels=list(filters.exclude_labels) if filters.exclude_labels else None,
             )
         else:
             plan_data = self._ctx.plan_list_service.get_plan_list_data(
@@ -151,7 +150,6 @@ class RealPlanDataProvider(PlanDataProvider):
                 limit=filters.limit,
                 skip_workflow_runs=not needs_workflow_runs,
                 creator=filters.creator,
-                exclude_labels=list(filters.exclude_labels) if filters.exclude_labels else None,
                 http_client=http_for_service,
             )
 
@@ -493,7 +491,6 @@ class RealPlanDataProvider(PlanDataProvider):
                 limit=100,
                 show_prs=True,
                 show_runs=False,
-                exclude_labels=(),
                 creator=None,
             )
             rows, _timings = self.fetch_plans(filters)

@@ -109,7 +109,7 @@ def create_plan_issue(
         repo_root: Repository root directory
         plan_content: The full plan markdown content
         title: Optional title (extracted from H1 if None)
-        extra_labels: Additional labels beyond erk-plan (include "erk-learn" for learn plans)
+        extra_labels: Additional labels (include "erk-learn" for learn plans — replaces erk-plan)
         title_tag: Tag for issue title (defaults based on labels, may be prefix or suffix)
         source_repo: For cross-repo plans, the implementation repo in "owner/repo" format
         objective_id: Optional parent objective issue number

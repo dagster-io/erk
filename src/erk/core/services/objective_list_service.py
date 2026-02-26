@@ -44,7 +44,6 @@ class RealObjectiveListService(ObjectiveListService):
         limit: int | None = None,
         skip_workflow_runs: bool = False,
         creator: str | None = None,
-        exclude_labels: list[str] | None = None,
     ) -> PlanListData:
         t0 = self._time.monotonic()
         issues, pr_linkages = self._github.get_issues_with_pr_linkages(

@@ -156,7 +156,6 @@ class TestPlanDataTableRowConversion:
             limit=None,
             show_prs=False,
             show_runs=False,
-            exclude_labels=(),
         )
         table = PlanDataTable(filters)
         row = make_plan_row(123, "Test Plan")
@@ -184,7 +183,6 @@ class TestPlanDataTableRowConversion:
             limit=None,
             show_prs=True,
             show_runs=False,
-            exclude_labels=(),
         )
         table = PlanDataTable(filters)
         row = make_plan_row(123, "Test Plan", pr_number=456)
@@ -212,7 +210,6 @@ class TestPlanDataTableRowConversion:
             limit=None,
             show_prs=True,
             show_runs=False,
-            exclude_labels=(),
         )
         table = PlanDataTable(filters)
         # Use custom pr_display with link indicator (simulates will_close_target=True)
@@ -233,7 +230,6 @@ class TestPlanDataTableRowConversion:
             limit=None,
             show_prs=False,
             show_runs=True,
-            exclude_labels=(),
         )
         table = PlanDataTable(filters)
         row = make_plan_row(123, "Test Plan")
@@ -515,7 +511,6 @@ class TestShowPrColumnFalse:
             limit=None,
             show_prs=True,
             show_runs=False,
-            exclude_labels=(),
             show_pr_column=False,
         )
         table = PlanDataTable(filters)
@@ -535,7 +530,6 @@ class TestShowPrColumnFalse:
             limit=None,
             show_prs=True,
             show_runs=False,
-            exclude_labels=(),
             show_pr_column=False,
         )
         table = PlanDataTable(filters)
@@ -556,7 +550,6 @@ class TestShowPrColumnFalse:
             limit=None,
             show_prs=True,
             show_runs=False,
-            exclude_labels=(),
             show_pr_column=True,
         )
         table = PlanDataTable(filters)
@@ -581,7 +574,6 @@ def test_row_to_values_planned_pr_includes_stage() -> None:
         limit=None,
         show_prs=False,
         show_runs=False,
-        exclude_labels=(),
     )
     table = PlanDataTable(filters)
     row = make_plan_row(123, "Test Plan", lifecycle_display="[cyan]review[/cyan]")

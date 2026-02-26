@@ -275,7 +275,6 @@ class FakePlanListService(PlanListService):
         limit: int | None = None,
         skip_workflow_runs: bool = False,
         creator: str | None = None,
-        exclude_labels: list[str] | None = None,
         http_client: object | None,
     ) -> PlanListData:
         plans = list(self._data.plans)
@@ -289,11 +288,6 @@ class FakePlanListService(PlanListService):
         # Label filtering (AND logic)
         if labels:
             plans = [p for p in plans if all(label in p.labels for label in labels)]
-
-        # Exclude labels
-        if exclude_labels:
-            exclude_set = set(exclude_labels)
-            plans = [p for p in plans if not any(label in exclude_set for label in p.labels)]
 
         # Limit
         if limit is not None:
@@ -323,6 +317,5 @@ class FakeObjectiveListService(ObjectiveListService):
         limit: int | None = None,
         skip_workflow_runs: bool = False,
         creator: str | None = None,
-        exclude_labels: list[str] | None = None,
     ) -> PlanListData:
         return self._data
