@@ -37,9 +37,10 @@ def test_file_setup_creates_impl(tmp_path: Path) -> None:
     result = runner.invoke(setup_impl, ["--file", str(plan_file)], obj=ctx)
 
     assert result.exit_code == 0
-    # .impl/ should be created
-    assert (tmp_path / ".impl" / "plan.md").exists()
-    plan_content = (tmp_path / ".impl" / "plan.md").read_text(encoding="utf-8")
+    # Impl folder should be created (branch-scoped under .erk/impl-context/)
+    impl_plan = tmp_path / ".erk" / "impl-context" / "my-feature-plan" / "plan.md"
+    assert impl_plan.exists()
+    plan_content = impl_plan.read_text(encoding="utf-8")
     assert "My Feature Plan" in plan_content
 
 

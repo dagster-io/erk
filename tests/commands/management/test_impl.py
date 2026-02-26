@@ -59,8 +59,8 @@ def test_create_with_plan_file() -> None:
         assert worktree_path.exists()
         assert worktree_path.is_dir()
 
-        # Verify impl folder was created with plan.md
-        impl_folder = worktree_path / ".impl"
+        # Verify branch-scoped impl folder was created with plan.md
+        impl_folder = worktree_path / ".erk" / "impl-context" / expected_name
         assert impl_folder.exists()
         assert (impl_folder / "plan.md").exists()
         assert (impl_folder / "plan.md").read_text(encoding="utf-8") == plan_content
@@ -111,8 +111,8 @@ def test_create_with_plan_name_sanitization() -> None:
         worktree_path = env.erk_root / "repos" / "repo" / "worktrees" / expected_name
         assert worktree_path.exists()
 
-        # Verify impl folder was created
-        assert (worktree_path / ".impl" / "plan.md").exists()
+        # Verify branch-scoped impl folder was created
+        assert (worktree_path / ".erk" / "impl-context" / expected_name / "plan.md").exists()
         assert not plan_file.exists()
 
 

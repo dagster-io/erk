@@ -34,7 +34,7 @@ from erk.cli.help_formatter import CommandWithHiddenOptions
 from erk.core.context import ErkContext
 from erk.core.prompt_executor import PromptExecutor
 from erk.core.repo_discovery import ensure_erk_metadata_dir
-from erk_shared.impl_folder import create_impl_folder, save_plan_ref
+from erk_shared.impl_folder import create_impl_folder, get_impl_dir, save_plan_ref
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import PlanNotFound
 
@@ -137,18 +137,22 @@ def _implement_from_issue(
         )
         return
 
-    # Create .impl/ folder in current directory
-    ctx.console.info("Creating .impl/ folder with plan...")
+    # Get current branch for impl directory scoping
+    branch = ctx.git.branch.get_current_branch(ctx.cwd)
+
+    # Create impl folder in current directory
+    ctx.console.info("Creating impl folder with plan...")
     create_impl_folder(
         worktree_path=ctx.cwd,
         plan_content=plan.body,
+        branch_name=branch or "current",
         overwrite=True,
     )
-    ctx.console.success("✓ Created .impl/ folder")
+    ctx.console.success("✓ Created impl folder")
 
     # Save plan reference for PR linking
     ctx.console.info("Saving plan reference for PR linking...")
-    impl_dir = ctx.cwd / ".impl"
+    impl_dir = get_impl_dir(ctx.cwd, branch_name=branch or "current")
     provider_name = ctx.plan_store.get_provider_name()
     save_plan_ref(
         impl_dir,
@@ -163,7 +167,6 @@ def _implement_from_issue(
     # Execute based on mode
     if script:
         # Script mode - output activation script (stays in current directory)
-        branch = ctx.git.branch.get_current_branch(ctx.cwd)
         if branch is None:
             branch = "current"
         target_description = f"#{issue_number}"
@@ -247,14 +250,18 @@ def _implement_from_file(
         )
         return
 
-    # Create .impl/ folder in current directory
-    ctx.console.info("Creating .impl/ folder with plan...")
+    # Get current branch for impl directory scoping
+    branch = ctx.git.branch.get_current_branch(ctx.cwd)
+
+    # Create impl folder in current directory
+    ctx.console.info("Creating impl folder with plan...")
     create_impl_folder(
         worktree_path=ctx.cwd,
         plan_content=plan_source.plan_content,
+        branch_name=branch or "current",
         overwrite=True,
     )
-    ctx.console.success("✓ Created .impl/ folder")
+    ctx.console.success("✓ Created impl folder")
 
     # NOTE: We do NOT delete the original plan file. The user may want to
     # reference it or use it again.
@@ -262,7 +269,6 @@ def _implement_from_file(
     # Execute based on mode
     if script:
         # Script mode - output activation script (stays in current directory)
-        branch = ctx.git.branch.get_current_branch(ctx.cwd)
         if branch is None:
             branch = "current"
         target_description = str(plan_file)

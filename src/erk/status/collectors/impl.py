@@ -7,6 +7,7 @@ from erk.core.context import ErkContext
 from erk.status.collectors.base import StatusCollector
 from erk.status.models.status_data import PlanStatus
 from erk_shared.impl_folder import (
+    get_impl_dir,
     get_impl_path,
     read_plan_ref,
 )
@@ -23,16 +24,19 @@ class PlanFileCollector(StatusCollector):
         return "plan"
 
     def is_available(self, ctx: ErkContext, worktree_path: Path) -> bool:
-        """Check if .impl/plan.md exists.
+        """Check if plan.md exists in the branch-scoped impl directory.
 
         Args:
             ctx: Erk context
             worktree_path: Path to worktree
 
         Returns:
-            True if .impl/plan.md exists
+            True if plan.md exists in the impl directory
         """
-        impl_path = get_impl_path(worktree_path, git_ops=ctx.git)
+        branch = ctx.git.branch.get_current_branch(worktree_path)
+        if branch is None:
+            return False
+        impl_path = get_impl_path(worktree_path, branch_name=branch, git_ops=ctx.git)
         return impl_path is not None
 
     def collect(self, ctx: ErkContext, worktree_path: Path, repo_root: Path) -> PlanStatus | None:
@@ -46,7 +50,18 @@ class PlanFileCollector(StatusCollector):
         Returns:
             PlanStatus with folder information or None if collection fails
         """
-        impl_path = get_impl_path(worktree_path, git_ops=ctx.git)
+        branch = ctx.git.branch.get_current_branch(worktree_path)
+        if branch is None:
+            return PlanStatus(
+                exists=False,
+                path=None,
+                summary=None,
+                line_count=0,
+                first_lines=[],
+                format="none",
+            )
+
+        impl_path = get_impl_path(worktree_path, branch_name=branch, git_ops=ctx.git)
 
         if impl_path is None:
             return PlanStatus(
@@ -82,7 +97,7 @@ class PlanFileCollector(StatusCollector):
             summary = summary[:97] + "..."
 
         # Return folder path, not plan.md file path
-        impl_folder = worktree_path / ".impl"
+        impl_folder = get_impl_dir(worktree_path, branch_name=branch)
 
         # Read plan reference if present
         plan_ref = read_plan_ref(impl_folder)

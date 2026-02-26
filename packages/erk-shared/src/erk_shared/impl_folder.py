@@ -1,8 +1,9 @@
 """Implementation folder utilities for erk and erk-kits.
 
-This module provides shared utilities for managing .impl/ folder structures:
+This module provides shared utilities for managing branch-scoped impl directories
+under .erk/impl-context/<branch>/:
 - plan.md: Immutable implementation plan
-- plan-ref.json: Provider-agnostic plan reference (optional, replaces legacy issue.json)
+- ref.json: Provider-agnostic plan reference (optional, replaces legacy plan-ref.json/issue.json)
 
 These utilities are used by both erk (for local operations) and erk-kits
 (for kit CLI commands).
@@ -23,31 +24,56 @@ from erk_shared.gateway.github.metadata.core import (
 )
 from erk_shared.gateway.github.metadata.schemas import CREATED_BY, LAST_DISPATCHED_RUN_ID
 
+IMPL_DIR_RELATIVE = ".erk/impl-context"
+"""Relative path for branch-scoped implementation directories."""
+
 _REQUIRED_REF_FIELDS = ("provider", "plan_id", "url", "created_at", "synced_at")
 """Fields required in plan-ref.json and ref.json for valid PlanRef construction."""
+
+
+def _sanitize_branch_for_dirname(branch_name: str) -> str:
+    """Convert a branch name into a safe directory name by replacing `/` with `--`."""
+    return branch_name.replace("/", "--")
+
+
+def get_impl_dir(base_path: Path, *, branch_name: str) -> Path:
+    """Return the branch-scoped implementation directory path.
+
+    Pure path computation — no filesystem I/O.
+
+    Args:
+        base_path: Repository root or worktree path
+        branch_name: Git branch name (may contain `/`)
+
+    Returns:
+        Path to the branch-scoped impl directory (e.g. base/.erk/impl-context/feature--branch)
+    """
+    return base_path / IMPL_DIR_RELATIVE / _sanitize_branch_for_dirname(branch_name)
 
 
 def create_impl_folder(
     worktree_path: Path,
     plan_content: str,
     *,
+    branch_name: str,
     overwrite: bool,
 ) -> Path:
-    """Create .impl/ folder with plan.md file.
+    """Create branch-scoped impl folder with plan.md file.
 
     Args:
         worktree_path: Path to the worktree directory
         plan_content: Content for plan.md file
-        overwrite: If True, remove existing .impl/ folder before creating new one.
-                   If False, raise FileExistsError when .impl/ already exists.
+        branch_name: Git branch name for scoping the impl directory
+        overwrite: If True, remove existing folder before creating new one.
+                   If False, raise FileExistsError when folder already exists.
 
     Returns:
-        Path to the created .impl/ directory
+        Path to the created impl directory
 
     Raises:
-        FileExistsError: If .impl/ directory already exists and overwrite is False
+        FileExistsError: If impl directory already exists and overwrite is False
     """
-    impl_folder = worktree_path / ".impl"
+    impl_folder = get_impl_dir(worktree_path, branch_name=branch_name)
 
     if impl_folder.exists():
         if overwrite:
@@ -55,7 +81,7 @@ def create_impl_folder(
         else:
             raise FileExistsError(f"Implementation folder already exists at {impl_folder}")
 
-    # Create .impl/ directory
+    # Create impl directory
     impl_folder.mkdir(parents=True, exist_ok=False)
 
     # Write immutable plan.md
@@ -65,17 +91,18 @@ def create_impl_folder(
     return impl_folder
 
 
-def get_impl_path(worktree_path: Path, git_ops=None) -> Path | None:
-    """Get path to plan.md in .impl/ if it exists.
+def get_impl_path(worktree_path: Path, *, branch_name: str, git_ops=None) -> Path | None:
+    """Get path to plan.md in the branch-scoped impl directory if it exists.
 
     Args:
         worktree_path: Path to the worktree directory
+        branch_name: Git branch name for scoping the impl directory
         git_ops: Optional Git interface for path checking (uses .exists() if None)
 
     Returns:
         Path to plan.md if exists, None otherwise
     """
-    plan_file = worktree_path / ".impl" / "plan.md"
+    plan_file = get_impl_dir(worktree_path, branch_name=branch_name) / "plan.md"
     if git_ops is not None:
         path_exists = git_ops.worktree.path_exists(plan_file)
     else:
@@ -170,10 +197,10 @@ def save_plan_ref(
     labels: tuple[str, ...],
     objective_id: int | None,
 ) -> None:
-    """Save provider-agnostic plan reference to .impl/plan-ref.json.
+    """Save provider-agnostic plan reference to impl dir as ref.json.
 
     Args:
-        impl_dir: Path to .impl/ directory
+        impl_dir: Path to impl directory
         provider: Plan provider name (e.g. "github", "github-draft-pr")
         plan_id: Provider-specific ID as string ("42", "PROJ-123")
         url: Web URL to view the plan
@@ -187,7 +214,7 @@ def save_plan_ref(
         msg = f"Implementation directory does not exist: {impl_dir}"
         raise FileNotFoundError(msg)
 
-    plan_ref_file = impl_dir / "plan-ref.json"
+    ref_file = impl_dir / "ref.json"
     content = build_plan_ref_json(
         provider=provider,
         plan_id=plan_id,
@@ -195,7 +222,7 @@ def save_plan_ref(
         labels=labels,
         objective_id=objective_id,
     )
-    plan_ref_file.write_text(content, encoding="utf-8")
+    ref_file.write_text(content, encoding="utf-8")
 
 
 def _parse_ref_json(ref_file: Path) -> PlanRef | None:

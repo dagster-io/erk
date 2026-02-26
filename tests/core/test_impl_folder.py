@@ -13,8 +13,11 @@ from erk_shared.gateway.github.metadata_blocks import (
     parse_metadata_blocks,
 )
 from erk_shared.impl_folder import (
+    IMPL_DIR_RELATIVE,
+    _sanitize_branch_for_dirname,
     add_worktree_creation_comment,
     create_impl_folder,
+    get_impl_dir,
     get_impl_path,
     has_plan_ref,
     read_last_dispatched_run_id,
@@ -23,6 +26,41 @@ from erk_shared.impl_folder import (
     save_plan_ref,
     validate_plan_linkage,
 )
+
+BRANCH = "feature/test-branch"
+"""Test branch name used across tests."""
+
+# =============================================================================
+# get_impl_dir / _sanitize_branch_for_dirname Tests
+# =============================================================================
+
+
+def test_sanitize_branch_simple() -> None:
+    """Test sanitizing a branch name without slashes."""
+    assert _sanitize_branch_for_dirname("main") == "main"
+
+
+def test_sanitize_branch_with_slash() -> None:
+    """Test sanitizing a branch name with slashes."""
+    assert _sanitize_branch_for_dirname("feature/test-branch") == "feature--test-branch"
+
+
+def test_sanitize_branch_multiple_slashes() -> None:
+    """Test sanitizing a branch name with multiple slashes."""
+    assert _sanitize_branch_for_dirname("refs/heads/feature") == "refs--heads--feature"
+
+
+def test_get_impl_dir_basic(tmp_path: Path) -> None:
+    """Test get_impl_dir returns correct path."""
+    result = get_impl_dir(tmp_path, branch_name="feature/test")
+    assert result == tmp_path / IMPL_DIR_RELATIVE / "feature--test"
+
+
+def test_get_impl_dir_no_slash(tmp_path: Path) -> None:
+    """Test get_impl_dir with branch name without slash."""
+    result = get_impl_dir(tmp_path, branch_name="main")
+    assert result == tmp_path / IMPL_DIR_RELATIVE / "main"
+
 
 # =============================================================================
 # create_impl_folder Tests
@@ -41,11 +79,11 @@ Build a test feature.
 2. Add tests
 3. Update documentation
 """
-    plan_folder = create_impl_folder(tmp_path, plan_content, overwrite=False)
+    plan_folder = create_impl_folder(tmp_path, plan_content, branch_name=BRANCH, overwrite=False)
 
     # Verify folder structure
     assert plan_folder.exists()
-    assert plan_folder == tmp_path / ".impl"
+    assert plan_folder == get_impl_dir(tmp_path, branch_name=BRANCH)
 
     # Verify plan.md exists and has correct content
     plan_file = plan_folder / "plan.md"
@@ -58,31 +96,27 @@ def test_create_impl_folder_already_exists(tmp_path: Path) -> None:
     plan_content = "# Test Plan\n"
 
     # Create first time - should succeed
-    create_impl_folder(tmp_path, plan_content, overwrite=False)
+    create_impl_folder(tmp_path, plan_content, branch_name=BRANCH, overwrite=False)
 
     # Try to create again - should raise
     with pytest.raises(FileExistsError, match="Implementation folder already exists"):
-        create_impl_folder(tmp_path, plan_content, overwrite=False)
+        create_impl_folder(tmp_path, plan_content, branch_name=BRANCH, overwrite=False)
 
 
 def test_create_impl_folder_overwrite_replaces_existing(tmp_path: Path) -> None:
-    """Test that overwrite=True removes existing .impl/ folder before creating new one.
-
-    This is the fix for GitHub issue #2595 where creating a worktree from a branch
-    with an existing .impl/ folder would fail because the folder was inherited.
-    """
+    """Test that overwrite=True removes existing impl folder before creating new one."""
     old_plan = "# Old Plan\n\nOld content.\n"
     new_plan = "# New Plan\n\nNew content.\n"
 
-    # Create first .impl/ folder
-    impl_folder = create_impl_folder(tmp_path, old_plan, overwrite=False)
+    # Create first impl folder
+    impl_folder = create_impl_folder(tmp_path, old_plan, branch_name=BRANCH, overwrite=False)
     old_plan_file = impl_folder / "plan.md"
 
     # Verify old content
     assert old_plan_file.read_text(encoding="utf-8") == old_plan
 
     # Create again with overwrite=True - should succeed and replace content
-    new_impl_folder = create_impl_folder(tmp_path, new_plan, overwrite=True)
+    new_impl_folder = create_impl_folder(tmp_path, new_plan, branch_name=BRANCH, overwrite=True)
 
     # Verify new content replaced old
     assert new_impl_folder == impl_folder  # Same path
@@ -97,17 +131,17 @@ def test_create_impl_folder_overwrite_replaces_existing(tmp_path: Path) -> None:
 def test_get_impl_path_exists(tmp_path: Path) -> None:
     """Test getting plan path when it exists."""
     plan_content = "# Test\n"
-    create_impl_folder(tmp_path, plan_content, overwrite=False)
+    create_impl_folder(tmp_path, plan_content, branch_name=BRANCH, overwrite=False)
 
-    plan_path = get_impl_path(tmp_path)
+    plan_path = get_impl_path(tmp_path, branch_name=BRANCH)
     assert plan_path is not None
-    assert plan_path == tmp_path / ".impl" / "plan.md"
+    assert plan_path == get_impl_dir(tmp_path, branch_name=BRANCH) / "plan.md"
     assert plan_path.exists()
 
 
 def test_get_impl_path_not_exists(tmp_path: Path) -> None:
     """Test getting plan path when it doesn't exist."""
-    plan_path = get_impl_path(tmp_path)
+    plan_path = get_impl_path(tmp_path, branch_name=BRANCH)
     assert plan_path is None
 
 
@@ -453,7 +487,7 @@ worktree_name: test-worktree
 
 
 def test_save_plan_ref_success(tmp_path: Path) -> None:
-    """Test saving plan reference to .impl/plan-ref.json."""
+    """Test saving plan reference to ref.json."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
 
@@ -466,10 +500,10 @@ def test_save_plan_ref_success(tmp_path: Path) -> None:
         objective_id=99,
     )
 
-    plan_ref_file = impl_dir / "plan-ref.json"
-    assert plan_ref_file.exists()
+    ref_file = impl_dir / "ref.json"
+    assert ref_file.exists()
 
-    data = json.loads(plan_ref_file.read_text(encoding="utf-8"))
+    data = json.loads(ref_file.read_text(encoding="utf-8"))
     assert data["provider"] == "github"
     assert data["plan_id"] == "42"
     assert data["url"] == "https://github.com/owner/repo/issues/42"
@@ -508,7 +542,7 @@ def test_save_plan_ref_no_objective(tmp_path: Path) -> None:
         objective_id=None,
     )
 
-    data = json.loads((impl_dir / "plan-ref.json").read_text(encoding="utf-8"))
+    data = json.loads((impl_dir / "ref.json").read_text(encoding="utf-8"))
     assert data["objective_id"] is None
 
 
@@ -562,13 +596,13 @@ def test_read_plan_ref_from_legacy_issue_json(tmp_path: Path) -> None:
     assert ref.objective_id == 99
 
 
-def test_read_plan_ref_prefers_plan_ref_json(tmp_path: Path) -> None:
-    """Test read_plan_ref prefers plan-ref.json over legacy issue.json."""
+def test_read_plan_ref_prefers_ref_json(tmp_path: Path) -> None:
+    """Test read_plan_ref prefers ref.json over legacy issue.json."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
 
     # Write both files with different data
-    plan_ref_data = {
+    ref_data = {
         "provider": "linear",
         "plan_id": "PROJ-123",
         "url": "https://linear.app/proj/PROJ-123",
@@ -577,7 +611,7 @@ def test_read_plan_ref_prefers_plan_ref_json(tmp_path: Path) -> None:
         "labels": [],
         "objective_id": None,
     }
-    (impl_dir / "plan-ref.json").write_text(json.dumps(plan_ref_data), encoding="utf-8")
+    (impl_dir / "ref.json").write_text(json.dumps(ref_data), encoding="utf-8")
 
     issue_data = {
         "issue_number": 42,
@@ -607,7 +641,7 @@ def test_read_plan_ref_invalid_json(tmp_path: Path) -> None:
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
 
-    (impl_dir / "plan-ref.json").write_text("not valid json", encoding="utf-8")
+    (impl_dir / "ref.json").write_text("not valid json", encoding="utf-8")
 
     ref = read_plan_ref(impl_dir)
     assert ref is None
@@ -618,14 +652,14 @@ def test_read_plan_ref_missing_fields(tmp_path: Path) -> None:
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
 
-    (impl_dir / "plan-ref.json").write_text(json.dumps({"provider": "github"}), encoding="utf-8")
+    (impl_dir / "ref.json").write_text(json.dumps({"provider": "github"}), encoding="utf-8")
 
     ref = read_plan_ref(impl_dir)
     assert ref is None
 
 
-def test_has_plan_ref_with_plan_ref_json(tmp_path: Path) -> None:
-    """Test has_plan_ref detects plan-ref.json."""
+def test_has_plan_ref_with_ref_json(tmp_path: Path) -> None:
+    """Test has_plan_ref detects ref.json."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
 
@@ -672,7 +706,7 @@ def test_has_plan_ref_not_exists(tmp_path: Path) -> None:
 
 
 def test_validate_plan_linkage_both_match(tmp_path: Path) -> None:
-    """Test validation passes when branch and plan-ref.json match."""
+    """Test validation passes when branch and ref.json match."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
     save_plan_ref(

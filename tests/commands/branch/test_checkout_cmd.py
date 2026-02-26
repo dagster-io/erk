@@ -726,12 +726,12 @@ def test_checkout_for_plan_creates_impl_folder() -> None:
         assert result.exit_code == 0, f"Failed: {result.output}"
         assert "Created .impl/ folder from plan #500" in result.output
 
-        # Verify .impl/ folder was created in the worktree
+        # Verify branch-scoped impl folder was created in the worktree
         worktree_path = env.repo.worktrees_dir / "erk-slot-01"
-        impl_folder = worktree_path / ".impl"
+        impl_folder = worktree_path / ".erk" / "impl-context" / "plan-500"
         assert impl_folder.exists()
         assert (impl_folder / "plan.md").exists()
-        assert (impl_folder / "plan-ref.json").exists()
+        assert (impl_folder / "ref.json").exists()
 
 
 def test_checkout_for_plan_error_both_branch_and_for_plan() -> None:
@@ -1038,8 +1038,8 @@ def test_checkout_stacks_in_place_for_plan_with_script() -> None:
         assert checkout_path == env.cwd
         assert checkout_branch == branch
 
-        # Verify .impl/ folder was created
-        impl_folder = env.cwd / ".impl"
+        # Verify branch-scoped impl folder was created
+        impl_folder = env.cwd / ".erk" / "impl-context" / "plan-500"
         assert impl_folder.exists()
         assert (impl_folder / "plan.md").exists()
 

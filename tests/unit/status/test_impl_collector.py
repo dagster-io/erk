@@ -11,10 +11,13 @@ from erk.status.collectors.impl import PlanFileCollector
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.impl_folder import create_impl_folder, save_plan_ref
 
+BRANCH = "feature/test-branch"
+"""Test branch name used across tests."""
+
 
 def test_plan_collector_no_plan_folder(tmp_path: Path) -> None:
-    """Test collector returns None when no .impl/ folder exists."""
-    git = FakeGit()
+    """Test collector returns exists=False when no impl folder exists."""
+    git = FakeGit(current_branches={tmp_path: BRANCH})
     ctx = minimal_context(git, tmp_path)
     collector = PlanFileCollector()
 
@@ -27,12 +30,12 @@ def test_plan_collector_no_plan_folder(tmp_path: Path) -> None:
 
 
 def test_plan_collector_with_plan_no_issue(tmp_path: Path) -> None:
-    """Test collector returns plan status without issue when no issue.json exists."""
+    """Test collector returns plan status without issue when no ref.json exists."""
     # Create plan folder without issue reference (uses ## Step N: format)
     plan_content = "# Test Plan\n\n## Step 1: Step one\n## Step 2: Step two\n"
-    create_impl_folder(tmp_path, plan_content, overwrite=False)
+    create_impl_folder(tmp_path, plan_content, branch_name=BRANCH, overwrite=False)
 
-    git = FakeGit()
+    git = FakeGit(current_branches={tmp_path: BRANCH})
     ctx = minimal_context(git, tmp_path)
     collector = PlanFileCollector()
 
@@ -48,7 +51,7 @@ def test_plan_collector_with_issue_reference(tmp_path: Path) -> None:
     """Test collector includes issue reference in PlanStatus."""
     # Create plan folder (uses ## Step N: format)
     plan_content = "# Test Plan\n\n## Step 1: Step one\n"
-    plan_folder = create_impl_folder(tmp_path, plan_content, overwrite=False)
+    plan_folder = create_impl_folder(tmp_path, plan_content, branch_name=BRANCH, overwrite=False)
 
     # Save plan reference
     save_plan_ref(
@@ -60,7 +63,7 @@ def test_plan_collector_with_issue_reference(tmp_path: Path) -> None:
         objective_id=None,
     )
 
-    git = FakeGit()
+    git = FakeGit(current_branches={tmp_path: BRANCH})
     ctx = minimal_context(git, tmp_path)
     collector = PlanFileCollector()
 
@@ -76,13 +79,13 @@ def test_plan_collector_invalid_issue_reference(tmp_path: Path) -> None:
     """Test collector handles invalid issue.json gracefully."""
     # Create plan folder (uses ## Step N: format)
     plan_content = "# Test Plan\n\n## Step 1: Step\n"
-    plan_folder = create_impl_folder(tmp_path, plan_content, overwrite=False)
+    plan_folder = create_impl_folder(tmp_path, plan_content, branch_name=BRANCH, overwrite=False)
 
     # Create invalid issue.json
     issue_file = plan_folder / "issue.json"
     issue_file.write_text("not valid json", encoding="utf-8")
 
-    git = FakeGit()
+    git = FakeGit(current_branches={tmp_path: BRANCH})
     ctx = minimal_context(git, tmp_path)
     collector = PlanFileCollector()
 
