@@ -12,6 +12,7 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.check_impl import (
     check_impl,
 )
+from erk_shared.context.context import ErkContext
 
 
 @pytest.fixture
@@ -37,7 +38,7 @@ def impl_folder(tmp_path: Path) -> Path:
     return impl_dir
 
 
-def test_check_impl_validates_complete_plan_ref(impl_folder: Path, monkeypatch) -> None:
+def test_check_impl_validates_complete_plan_ref(impl_folder: Path) -> None:
     """Test that check-impl validates plan-ref.json has all required fields."""
     plan_ref = impl_folder / "plan-ref.json"
 
@@ -53,11 +54,12 @@ def test_check_impl_validates_complete_plan_ref(impl_folder: Path, monkeypatch) 
     }
     plan_ref.write_text(json.dumps(plan_ref_data), encoding="utf-8")
 
-    # Change to parent directory for test
-    monkeypatch.chdir(impl_folder.parent)
-
     runner = CliRunner()
-    result = runner.invoke(check_impl, ["--dry-run"])
+    result = runner.invoke(
+        check_impl,
+        ["--dry-run"],
+        obj=ErkContext.for_test(cwd=impl_folder.parent),
+    )
 
     assert result.exit_code == 0
     data = json.loads(result.output)
@@ -66,7 +68,7 @@ def test_check_impl_validates_complete_plan_ref(impl_folder: Path, monkeypatch) 
     assert data["plan_length"] > 0
 
 
-def test_check_impl_handles_incomplete_plan_ref(impl_folder: Path, monkeypatch) -> None:
+def test_check_impl_handles_incomplete_plan_ref(impl_folder: Path) -> None:
     """Test that incomplete plan-ref.json is detected and tracking disabled."""
     plan_ref = impl_folder / "plan-ref.json"
 
@@ -76,11 +78,12 @@ def test_check_impl_handles_incomplete_plan_ref(impl_folder: Path, monkeypatch) 
     }
     plan_ref.write_text(json.dumps(plan_ref_data), encoding="utf-8")
 
-    # Change to parent directory for test
-    monkeypatch.chdir(impl_folder.parent)
-
     runner = CliRunner()
-    result = runner.invoke(check_impl, ["--dry-run"])
+    result = runner.invoke(
+        check_impl,
+        ["--dry-run"],
+        obj=ErkContext.for_test(cwd=impl_folder.parent),
+    )
 
     assert result.exit_code == 0
     data = json.loads(result.output)
@@ -88,15 +91,16 @@ def test_check_impl_handles_incomplete_plan_ref(impl_folder: Path, monkeypatch) 
     assert data["has_plan_tracking"] is False  # Tracking disabled due to incomplete format
 
 
-def test_check_impl_handles_missing_issue_json(impl_folder: Path, monkeypatch) -> None:
+def test_check_impl_handles_missing_issue_json(impl_folder: Path) -> None:
     """Test that missing issue.json is handled gracefully."""
     # No issue.json file created
 
-    # Change to parent directory for test
-    monkeypatch.chdir(impl_folder.parent)
-
     runner = CliRunner()
-    result = runner.invoke(check_impl, ["--dry-run"])
+    result = runner.invoke(
+        check_impl,
+        ["--dry-run"],
+        obj=ErkContext.for_test(cwd=impl_folder.parent),
+    )
 
     assert result.exit_code == 0
     data = json.loads(result.output)
@@ -104,7 +108,7 @@ def test_check_impl_handles_missing_issue_json(impl_folder: Path, monkeypatch) -
     assert data["has_plan_tracking"] is False
 
 
-def test_check_impl_errors_on_missing_plan(tmp_path: Path, monkeypatch) -> None:
+def test_check_impl_errors_on_missing_plan(tmp_path: Path) -> None:
     """Test error when plan.md is missing."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
@@ -113,17 +117,18 @@ def test_check_impl_errors_on_missing_plan(tmp_path: Path, monkeypatch) -> None:
     progress_md = impl_dir / "progress.md"
     progress_md.write_text("# Progress\n\n- [ ] Step 1", encoding="utf-8")
 
-    # Change to parent directory for test
-    monkeypatch.chdir(tmp_path)
-
     runner = CliRunner()
-    result = runner.invoke(check_impl, ["--dry-run"])
+    result = runner.invoke(
+        check_impl,
+        ["--dry-run"],
+        obj=ErkContext.for_test(cwd=tmp_path),
+    )
 
     assert result.exit_code == 1
     assert "No plan.md found" in result.output
 
 
-def test_check_impl_errors_on_missing_progress(tmp_path: Path, monkeypatch) -> None:
+def test_check_impl_errors_on_missing_progress(tmp_path: Path) -> None:
     """Test error when progress.md is missing."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
@@ -132,31 +137,33 @@ def test_check_impl_errors_on_missing_progress(tmp_path: Path, monkeypatch) -> N
     plan_md = impl_dir / "plan.md"
     plan_md.write_text("# Plan\n\n1. Do thing", encoding="utf-8")
 
-    # Change to parent directory for test
-    monkeypatch.chdir(tmp_path)
-
     runner = CliRunner()
-    result = runner.invoke(check_impl, ["--dry-run"])
+    result = runner.invoke(
+        check_impl,
+        ["--dry-run"],
+        obj=ErkContext.for_test(cwd=tmp_path),
+    )
 
     assert result.exit_code == 1
     assert "No progress.md found" in result.output
 
 
-def test_check_impl_errors_on_missing_impl_folder(tmp_path: Path, monkeypatch) -> None:
+def test_check_impl_errors_on_missing_impl_folder(tmp_path: Path) -> None:
     """Test error when .impl/ folder doesn't exist."""
     # No .impl/ folder created
 
-    # Change to directory for test
-    monkeypatch.chdir(tmp_path)
-
     runner = CliRunner()
-    result = runner.invoke(check_impl, ["--dry-run"])
+    result = runner.invoke(
+        check_impl,
+        ["--dry-run"],
+        obj=ErkContext.for_test(cwd=tmp_path),
+    )
 
     assert result.exit_code == 1
-    assert "No .impl/ folder found" in result.output
+    assert "No implementation folder found" in result.output
 
 
-def test_check_impl_normal_mode_with_tracking(impl_folder: Path, monkeypatch) -> None:
+def test_check_impl_normal_mode_with_tracking(impl_folder: Path) -> None:
     """Test normal mode outputs instructions with tracking enabled."""
     plan_ref = impl_folder / "plan-ref.json"
     plan_ref.write_text(
@@ -174,11 +181,12 @@ def test_check_impl_normal_mode_with_tracking(impl_folder: Path, monkeypatch) ->
         encoding="utf-8",
     )
 
-    # Change to parent directory for test
-    monkeypatch.chdir(impl_folder.parent)
-
     runner = CliRunner()
-    result = runner.invoke(check_impl, [])
+    result = runner.invoke(
+        check_impl,
+        [],
+        obj=ErkContext.for_test(cwd=impl_folder.parent),
+    )
 
     assert result.exit_code == 0
     assert "Plan loaded from .impl/plan.md" in result.output
@@ -186,15 +194,16 @@ def test_check_impl_normal_mode_with_tracking(impl_folder: Path, monkeypatch) ->
     assert "/erk:plan-implement" in result.output
 
 
-def test_check_impl_normal_mode_without_tracking(impl_folder: Path, monkeypatch) -> None:
+def test_check_impl_normal_mode_without_tracking(impl_folder: Path) -> None:
     """Test normal mode outputs instructions with tracking disabled."""
     # No issue.json file created
 
-    # Change to parent directory for test
-    monkeypatch.chdir(impl_folder.parent)
-
     runner = CliRunner()
-    result = runner.invoke(check_impl, [])
+    result = runner.invoke(
+        check_impl,
+        [],
+        obj=ErkContext.for_test(cwd=impl_folder.parent),
+    )
 
     assert result.exit_code == 0
     assert "Plan loaded from .impl/plan.md" in result.output

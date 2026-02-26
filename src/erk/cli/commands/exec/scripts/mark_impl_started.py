@@ -34,11 +34,12 @@ import click
 
 from erk_shared.context.helpers import (
     require_cwd,
+    require_git,
     require_plan_backend,
     require_repo_root,
 )
 from erk_shared.env import in_github_actions
-from erk_shared.impl_folder import read_plan_ref, write_local_run_state
+from erk_shared.impl_folder import read_plan_ref, resolve_impl_dir, write_local_run_state
 
 
 @dataclass(frozen=True)
@@ -82,15 +83,17 @@ def mark_impl_started(ctx: click.Context, session_id: str | None) -> None:
     # Get dependencies from context
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
+    git = require_git(ctx)
+    branch_name = git.branch.get_current_branch(cwd)
 
-    # Read plan reference from .impl/plan-ref.json (or legacy issue.json)
-    impl_dir = cwd / ".impl"
-    plan_ref = read_plan_ref(impl_dir)
-    if plan_ref is None:
+    # Read plan reference from resolved impl directory
+    impl_dir = resolve_impl_dir(cwd, branch_name=branch_name)
+    plan_ref = read_plan_ref(impl_dir) if impl_dir is not None else None
+    if plan_ref is None or impl_dir is None:
         result = MarkImplError(
             success=False,
             error_type="no-issue-reference",
-            message="No issue reference found in .impl/issue.json",
+            message="No issue reference found in implementation folder",
         )
         click.echo(json.dumps(asdict(result), indent=2))
         raise SystemExit(0)

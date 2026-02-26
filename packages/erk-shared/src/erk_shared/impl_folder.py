@@ -51,6 +51,45 @@ def get_impl_dir(base_path: Path, *, branch_name: str) -> Path:
     return base_path / IMPL_DIR_RELATIVE / _sanitize_branch_for_dirname(branch_name)
 
 
+def resolve_impl_dir(base_path: Path, *, branch_name: str | None) -> Path | None:
+    """Resolve the implementation directory using a multi-step discovery strategy.
+
+    Resolution order:
+    1. Branch-scoped: get_impl_dir(base_path, branch_name=branch_name) if branch_name
+       provided and directory exists
+    2. Legacy: base_path / ".impl" if exists
+    3. Discovery: search base_path / IMPL_DIR_RELATIVE for any subdir containing plan.md
+    4. Return None if not found
+
+    Args:
+        base_path: Repository root or worktree path
+        branch_name: Git branch name (may contain `/`), or None to skip step 1
+
+    Returns:
+        Path to the resolved impl directory, or None if not found
+    """
+    # Step 1: Branch-scoped lookup
+    if branch_name is not None:
+        branch_dir = get_impl_dir(base_path, branch_name=branch_name)
+        if branch_dir.exists():
+            return branch_dir
+
+    # Step 2: Legacy .impl/ lookup
+    legacy_dir = base_path / ".impl"
+    if legacy_dir.exists():
+        return legacy_dir
+
+    # Step 3: Discovery — search IMPL_DIR_RELATIVE for any subdir with plan.md
+    impl_context_root = base_path / IMPL_DIR_RELATIVE
+    if impl_context_root.exists():
+        for child in impl_context_root.iterdir():
+            if child.is_dir() and (child / "plan.md").exists():
+                return child
+
+    # Step 4: Not found
+    return None
+
+
 def create_impl_folder(
     worktree_path: Path,
     plan_content: str,
