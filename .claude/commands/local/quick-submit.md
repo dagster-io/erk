@@ -1,5 +1,8 @@
 ---
 description: Quick commit all changes and submit with Graphite
+context: fork
+agent: general-purpose
+model: haiku
 ---
 
 # Quick Submit

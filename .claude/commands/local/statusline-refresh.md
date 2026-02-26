@@ -1,5 +1,8 @@
 ---
 description: Trigger an immediate status line refresh
+context: fork
+agent: general-purpose
+model: haiku
 ---
 
 # /statusline-refresh
