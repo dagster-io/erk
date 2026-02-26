@@ -1129,7 +1129,7 @@ class ErkDashApp(App):
 
         elif command_id == "submit_to_queue":
             if row.plan_url:
-                self.notify(f"Submitting plan #{row.plan_id} to queue...")
+                self.notify(f"Dispatching plan #{row.plan_id} to queue...")
                 self._dispatch_to_queue_async(row.plan_id)
 
         elif command_id == "land_pr":
