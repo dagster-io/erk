@@ -115,16 +115,16 @@ class FakePlanDataProvider(PlanDataProvider):
         self._plans = [p for p in self._plans if p.plan_id != plan_id]
         return []
 
-    def submit_to_queue(self, plan_id: int, plan_url: str) -> None:
-        """Fake submit to queue implementation.
+    def dispatch_to_queue(self, plan_id: int, plan_url: str) -> None:
+        """Fake dispatch to queue implementation.
 
-        Tracks the submission without actually submitting.
+        Tracks the dispatch without actually dispatching.
 
         Args:
-            plan_id: The plan ID to submit
+            plan_id: The plan ID to dispatch
             plan_url: The plan URL (unused in fake)
         """
-        # Just track the call - actual submit is complex and not needed for UI tests
+        # Just track the call - actual dispatch is complex and not needed for UI tests
         pass
 
     def fetch_branch_activity(self, rows: list[PlanRowData]) -> dict[int, BranchActivity]:
