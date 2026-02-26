@@ -40,6 +40,8 @@ class FakeBranchManager(BranchManager):
     _submit_branch_error: SubmitBranchError | None = None
     # Track tracked branches for assertions: list of (branch_name, parent_branch) tuples
     _tracked_branches: list[tuple[str, str]] = field(default_factory=list)
+    # Track retracked branches for assertions: list of branch names
+    _retracked_branches: list[str] = field(default_factory=list)
     # Track commits for assertions: list of commit messages
     _commits: list[str] = field(default_factory=list)
     # Track checked out branches for assertions: list of branch names
@@ -155,6 +157,15 @@ class FakeBranchManager(BranchManager):
         """
         self._tracked_branches.append((branch_name, parent_branch))
 
+    def retrack_branch(self, repo_root: Path, branch_name: str) -> None:
+        """Record branch retracking for test assertions.
+
+        Args:
+            repo_root: Repository root directory (unused in fake)
+            branch_name: Name of the branch to re-track
+        """
+        self._retracked_branches.append(branch_name)
+
     def get_parent_branch(self, repo_root: Path, branch: str) -> str | None:
         """Get parent branch from configured test data.
 
@@ -246,6 +257,15 @@ class FakeBranchManager(BranchManager):
             List of (branch_name, parent_branch) tuples.
         """
         return list(self._tracked_branches)
+
+    @property
+    def retracked_branches(self) -> list[str]:
+        """Get list of retracked branches for test assertions.
+
+        Returns:
+            List of branch names that were retracked.
+        """
+        return list(self._retracked_branches)
 
     @property
     def commits(self) -> list[str]:
