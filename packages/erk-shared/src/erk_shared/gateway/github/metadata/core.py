@@ -580,8 +580,8 @@ def parse_metadata_blocks(text: str) -> list[MetadataBlock]:
             data = parse_metadata_block_body(raw_block.body)
             blocks.append(MetadataBlock(key=raw_block.key, data=data))
         except ValueError as e:
-            # Lenient: skip bad blocks silently (debug level to avoid noise)
-            logger.debug(f"Failed to parse metadata block '{raw_block.key}': {e}")
+            # Lenient: skip bad blocks but warn so parse failures are visible
+            logger.warning(f"Failed to parse metadata block '{raw_block.key}': {e}")
             continue
 
     return blocks
