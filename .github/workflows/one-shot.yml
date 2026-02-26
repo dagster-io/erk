@@ -104,18 +104,16 @@ jobs:
           git config user.name "$SUBMITTED_BY"
           git config user.email "$SUBMITTED_BY@users.noreply.github.com"
 
-      - name: Write prompt to .impl/prompt.md
+      - name: Write prompt to .erk/impl-context/prompt.md
         env:
           PROMPT: ${{ inputs.prompt }}
         run: |
           if [ -f .erk/impl-context/prompt.md ]; then
             echo "Prompt already committed to .erk/impl-context/prompt.md"
-            mkdir -p .impl
-            cp .erk/impl-context/prompt.md .impl/prompt.md
           else
-            mkdir -p .impl
-            printf '%s\n' "$PROMPT" > .impl/prompt.md
-            echo "Prompt written to .impl/prompt.md from workflow input"
+            mkdir -p .erk/impl-context
+            printf '%s\n' "$PROMPT" > .erk/impl-context/prompt.md
+            echo "Prompt written to .erk/impl-context/prompt.md from workflow input"
           fi
 
       - name: Detect trunk branch
@@ -162,22 +160,22 @@ jobs:
       - name: Verify plan outputs exist
         if: steps.plan.outputs.plan_success == 'true'
         run: |
-          if [ ! -f .impl/plan.md ]; then
-            echo "::error::Planning succeeded but .impl/plan.md not found"
+          if [ ! -f .erk/impl-context/plan.md ]; then
+            echo "::error::Planning succeeded but .erk/impl-context/plan.md not found"
             exit 1
           fi
-          if [ ! -f .impl/plan-result.json ]; then
-            echo "::error::Planning succeeded but .impl/plan-result.json not found"
+          if [ ! -f .erk/impl-context/plan-result.json ]; then
+            echo "::error::Planning succeeded but .erk/impl-context/plan-result.json not found"
             exit 1
           fi
-          echo "Plan outputs found: .impl/plan.md and .impl/plan-result.json"
+          echo "Plan outputs found: .erk/impl-context/plan.md and .erk/impl-context/plan-result.json"
 
       - name: Read plan result
         id: read_result
         if: steps.plan.outputs.plan_success == 'true'
         run: |
-          PLAN_ID=$(jq -r '.plan_number' .impl/plan-result.json)
-          PLAN_TITLE=$(jq -r '.title' .impl/plan-result.json)
+          PLAN_ID=$(jq -r '.plan_number' .erk/impl-context/plan-result.json)
+          PLAN_TITLE=$(jq -r '.title' .erk/impl-context/plan-result.json)
           echo "plan_id=$PLAN_ID" >> $GITHUB_OUTPUT
           echo "plan_title=$PLAN_TITLE" >> $GITHUB_OUTPUT
           echo "Plan saved as #$PLAN_ID: $PLAN_TITLE"
@@ -228,9 +226,8 @@ jobs:
           PLAN_ID: ${{ steps.read_result.outputs.plan_id }}
           PLAN_TITLE: ${{ steps.read_result.outputs.plan_title }}
         run: |
-          # Copy plan from local .impl/ to committed .erk/impl-context/
+          # Plan is already in .erk/impl-context/plan.md (written directly by Claude)
           mkdir -p .erk/impl-context
-          cp .impl/plan.md .erk/impl-context/plan.md
 
           # Create ref.json with plan metadata
           jq -n \
