@@ -228,11 +228,11 @@ def test_display_name_close_plan_shows_cli_command() -> None:
     assert get_display_name(cmd, ctx) == "erk pr close 5831"
 
 
-def test_display_name_submit_to_queue_shows_cli_command() -> None:
-    """submit_to_queue should show the CLI command with issue number."""
+def test_display_name_dispatch_to_queue_shows_cli_command() -> None:
+    """dispatch_to_queue should show the CLI command with issue number."""
     row = make_plan_row(5831, "Test Plan")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
-    cmd = next(c for c in get_all_commands() if c.id == "submit_to_queue")
+    cmd = next(c for c in get_all_commands() if c.id == "dispatch_to_queue")
     assert get_display_name(cmd, ctx) == "erk pr dispatch 5831"
 
 
@@ -313,11 +313,11 @@ def test_display_name_copy_pr_checkout_shows_pr() -> None:
     assert get_display_name(cmd, ctx) == expected
 
 
-def test_display_name_copy_submit_shows_issue() -> None:
-    """copy_submit should show the issue number."""
+def test_display_name_copy_dispatch_shows_issue() -> None:
+    """copy_dispatch should show the issue number."""
     row = make_plan_row(5831, "Test Plan")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
-    cmd = next(c for c in get_all_commands() if c.id == "copy_submit")
+    cmd = next(c for c in get_all_commands() if c.id == "copy_dispatch")
     assert get_display_name(cmd, ctx) == "erk pr dispatch 5831"
 
 
@@ -498,7 +498,7 @@ def test_plan_commands_hidden_in_objectives_view() -> None:
     # All plan commands should be absent
     plan_cmd_ids = [
         "close_plan",
-        "submit_to_queue",
+        "dispatch_to_queue",
         "land_pr",
         "fix_conflicts_remote",
         "address_remote",
@@ -507,7 +507,7 @@ def test_plan_commands_hidden_in_objectives_view() -> None:
         "open_run",
         "copy_checkout",
         "copy_pr_checkout",
-        "copy_submit",
+        "copy_dispatch",
         "copy_replan",
         "copy_land",
         "copy_close_plan",
@@ -700,7 +700,7 @@ def test_commands_available_in_plans_view() -> None:
     # These should all be available
     expected_available = [
         "close_plan",
-        "submit_to_queue",
+        "dispatch_to_queue",
         "fix_conflicts_remote",
         "address_remote",
         "land_pr",
@@ -709,7 +709,7 @@ def test_commands_available_in_plans_view() -> None:
         "open_run",
         "copy_checkout",
         "copy_pr_checkout",
-        "copy_submit",
+        "copy_dispatch",
         "copy_replan",
         "copy_land",
         "copy_close_plan",

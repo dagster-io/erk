@@ -36,8 +36,8 @@ def _display_close_plan(ctx: CommandContext) -> str:
     return f"erk pr close {ctx.row.plan_id}"
 
 
-def _display_submit_to_queue(ctx: CommandContext) -> str:
-    """Display name for submit_to_queue command."""
+def _display_dispatch_to_queue(ctx: CommandContext) -> str:
+    """Display name for dispatch_to_queue command."""
     return f"erk pr dispatch {ctx.row.plan_id}"
 
 
@@ -99,8 +99,8 @@ def _display_copy_implement_local(ctx: CommandContext) -> str:
     return f'source "$(erk pr checkout {ctx.row.pr_number} --script)" && erk implement --dangerous'
 
 
-def _display_copy_submit(ctx: CommandContext) -> str:
-    """Display name for copy_submit command."""
+def _display_copy_dispatch(ctx: CommandContext) -> str:
+    """Display name for copy_dispatch command."""
     return f"erk pr dispatch {ctx.row.plan_id}"
 
 
@@ -195,13 +195,13 @@ def get_all_commands() -> list[CommandDefinition]:
             get_display_name=_display_close_plan,
         ),
         CommandDefinition(
-            id="submit_to_queue",
+            id="dispatch_to_queue",
             name="Dispatch to Queue",
             description="dispatch",
             category=CommandCategory.ACTION,
             shortcut="d",
             is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.plan_url is not None,
-            get_display_name=_display_submit_to_queue,
+            get_display_name=_display_dispatch_to_queue,
         ),
         CommandDefinition(
             id="land_pr",
@@ -327,13 +327,13 @@ def get_all_commands() -> list[CommandDefinition]:
             get_display_name=_display_copy_implement_local,
         ),
         CommandDefinition(
-            id="copy_submit",
+            id="copy_dispatch",
             name="erk pr dispatch",
-            description="submit",
+            description="dispatch",
             category=CommandCategory.COPY,
             shortcut="3",
             is_available=lambda ctx: _is_plan_view(ctx),
-            get_display_name=_display_copy_submit,
+            get_display_name=_display_copy_dispatch,
         ),
         CommandDefinition(
             id="copy_replan",
