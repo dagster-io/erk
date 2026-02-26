@@ -73,6 +73,7 @@ Quick reference for all `erk exec` subcommands.
 | `normalize-tripwire-candidates`   | Normalize agent-produced tripwire candidate JSON in-place.                |
 | `objective-apply-landed-update`   | Apply mechanical updates to an objective after landing a PR.              |
 | `objective-fetch-context`         | Fetch all context for objective update in a single call.                  |
+| `objective-link-pr`               | Link PR number to objective roadmap nodes from .impl/ metadata.           |
 | `objective-post-action-comment`   | Post a formatted action comment to an objective issue.                    |
 | `objective-render-roadmap`        | Render a complete roadmap section from JSON input on stdin.               |
 | `objective-save-to-issue`         | Save plan as objective GitHub issue.                                      |
@@ -861,6 +862,18 @@ Fetch all context for objective update in a single call.
 | `--objective` | INTEGER | No       | -       | Objective issue (auto-discovered if omitted)              |
 | `--branch`    | TEXT    | No       | -       | Branch name (auto-discovered if omitted)                  |
 | `--plan`      | INTEGER | No       | -       | Plan number (direct lookup, skips branch-based discovery) |
+
+### objective-link-pr
+
+Link PR number to objective roadmap nodes from .impl/ metadata.
+
+**Usage:** `erk exec objective-link-pr`
+
+**Options:**
+
+| Flag          | Type    | Required | Default        | Description                          |
+| ------------- | ------- | -------- | -------------- | ------------------------------------ |
+| `--pr-number` | INTEGER | Yes      | Sentinel.UNSET | PR number to link to objective nodes |
 
 ### objective-post-action-comment
 
