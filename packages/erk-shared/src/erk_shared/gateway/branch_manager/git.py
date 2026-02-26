@@ -132,6 +132,15 @@ class GitBranchManager(BranchManager):
         # Plain Git doesn't track parent relationships
         pass
 
+    def retrack_branch(self, repo_root: Path, branch_name: str) -> None:
+        """No-op for plain Git - retracking is a Graphite-only concept.
+
+        Args:
+            repo_root: Repository root directory (unused)
+            branch_name: Name of the branch (unused)
+        """
+        pass
+
     def get_parent_branch(self, repo_root: Path, branch: str) -> str | None:
         """Git-only mode doesn't track parent relationships.
 

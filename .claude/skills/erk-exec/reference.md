@@ -194,12 +194,12 @@ Update PR body with AI-generated summary and footer.
 
 **Options:**
 
-| Flag           | Type    | Required | Default        | Description                          |
-| -------------- | ------- | -------- | -------------- | ------------------------------------ |
-| `--plan-id`    | INTEGER | Yes      | Sentinel.UNSET | Plan identifier to close on merge    |
-| `--run-id`     | TEXT    | No       | -              | Optional workflow run ID             |
-| `--run-url`    | TEXT    | No       | -              | Optional workflow run URL            |
-| `--planned-pr` | FLAG    | No       | -              | Planned-PR plan (preserves metadata) |
+| Flag           | Type    | Required | Default        | Description                   |
+| -------------- | ------- | -------- | -------------- | ----------------------------- |
+| `--plan-id`    | INTEGER | Yes      | Sentinel.UNSET | Plan identifier (for context) |
+| `--run-id`     | TEXT    | No       | -              | Optional workflow run ID      |
+| `--run-url`    | TEXT    | No       | -              | Optional workflow run URL     |
+| `--planned-pr` | FLAG    | No       | -              | Planned-PR plan               |
 
 ### ci-verify-autofix
 
@@ -495,11 +495,9 @@ Generate PR body footer with checkout command.
 
 **Options:**
 
-| Flag            | Type    | Required | Default        | Description                                   |
-| --------------- | ------- | -------- | -------------- | --------------------------------------------- |
-| `--pr-number`   | INTEGER | Yes      | Sentinel.UNSET | PR number for checkout command                |
-| `--plan-number` | INTEGER | No       | Sentinel.UNSET | Plan number to close                          |
-| `--plans-repo`  | TEXT    | No       | Sentinel.UNSET | Target repo in owner/repo format (cross-repo) |
+| Flag          | Type    | Required | Default        | Description                    |
+| ------------- | ------- | -------- | -------------- | ------------------------------ |
+| `--pr-number` | INTEGER | Yes      | Sentinel.UNSET | PR number for checkout command |
 
 ### get-pr-commits
 
