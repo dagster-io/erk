@@ -90,8 +90,8 @@ def _display_copy_pr_checkout(ctx: CommandContext) -> str:
     """Display name for copy_pr_checkout command."""
     if ctx.row.pr_number:
         pr = ctx.row.pr_number
-        return f'source "$(erk pr checkout {pr} --script)" && erk pr sync --dangerous'
-    return "checkout && sync"
+        return f'source "$(erk pr checkout {pr} --script)"'
+    return "checkout"
 
 
 def _display_copy_implement_local(ctx: CommandContext) -> str:

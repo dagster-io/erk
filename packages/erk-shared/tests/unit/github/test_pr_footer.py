@@ -20,7 +20,7 @@ def test_build_pr_body_footer_without_issue_number() -> None:
     result = build_pr_body_footer(pr_number=1895, issue_number=None, plans_repo=None)
 
     assert "---" in result
-    assert 'source "$(erk pr checkout 1895 --script)" && erk pr sync --dangerous' in result
+    assert 'source "$(erk pr checkout 1895 --script)"' in result
     assert "Closes #" not in result
 
 
@@ -30,7 +30,7 @@ def test_build_pr_body_footer_with_issue_number() -> None:
 
     assert "---" in result
     assert "Closes #123" in result
-    assert 'source "$(erk pr checkout 1895 --script)" && erk pr sync --dangerous' in result
+    assert 'source "$(erk pr checkout 1895 --script)"' in result
 
 
 def test_build_pr_body_footer_issue_number_before_checkout() -> None:
@@ -45,12 +45,13 @@ def test_build_pr_body_footer_issue_number_before_checkout() -> None:
     assert closes_pos < checkout_pos
 
 
-def test_build_pr_body_footer_includes_sync_command() -> None:
-    """Test that footer includes '&& erk pr sync --dangerous' in checkout command."""
+def test_build_pr_body_footer_includes_checkout_command() -> None:
+    """Test that footer includes checkout command without sync."""
     result = build_pr_body_footer(pr_number=100, issue_number=None, plans_repo=None)
 
-    assert "&& erk pr sync --dangerous" in result
-    assert 'source "$(erk pr checkout 100 --script)" && erk pr sync --dangerous' in result
+    assert 'source "$(erk pr checkout 100 --script)"' in result
+    # sync is no longer needed — checkout fetches and updates local branch
+    assert "erk pr sync" not in result
 
 
 def test_build_pr_body_footer_cross_repo_issue() -> None:
