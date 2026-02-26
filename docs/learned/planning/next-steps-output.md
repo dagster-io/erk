@@ -27,7 +27,7 @@ For issue-based plans. Takes `issue_number: int` and `url: str`.
 | --------------------------------- | --------------------------------------------------------------------------------------- |
 | `view`                            | URL string                                                                              |
 | `checkout`                        | `erk br co --for-plan {issue_number}`                                                   |
-| `submit`                          | `erk pr dispatch {issue_number}`                                                        |
+| `dispatch`                        | `erk pr dispatch {issue_number}`                                                        |
 | `checkout_and_implement`          | `source "$(erk br co --for-plan {N} --script)" && erk implement --dangerous`            |
 | `checkout_new_slot`               | `erk br co --new-slot --for-plan {issue_number}`                                        |
 | `checkout_new_slot_and_implement` | `source "$(erk br co --new-slot --for-plan {N} --script)" && erk implement --dangerous` |
@@ -40,7 +40,7 @@ For draft-PR plans. Takes `pr_number: int`, `branch_name: str`, and `url: str`.
 | --------------------------------- | --------------------------------------------------------------------------------------- |
 | `view`                            | URL string                                                                              |
 | `checkout`                        | `erk br co --for-plan {pr_number}`                                                      |
-| `submit`                          | `erk pr dispatch {pr_number}`                                                           |
+| `dispatch`                        | `erk pr dispatch {pr_number}`                                                           |
 | `checkout_branch_and_implement`   | `source "$(erk br co {branch_name} --script)" && erk implement --dangerous`             |
 | `checkout_and_implement`          | `source "$(erk br co --for-plan {N} --script)" && erk implement --dangerous`            |
 | `checkout_new_slot`               | `erk br co --new-slot --for-plan {pr_number}`                                           |
@@ -66,7 +66,7 @@ See [Shell Activation Pattern](../cli/shell-activation-pattern.md) for the full 
 
 Two slash command constants are defined for use in Claude Code context:
 
-- `SUBMIT_SLASH_COMMAND = "/erk:pr-dispatch"` — used in the plain-text formatters for the "In Claude Code:" section
+- `DISPATCH_SLASH_COMMAND = "/erk:pr-dispatch"` — used in the plain-text formatters for the "In Claude Code:" section
 - `CHECKOUT_SLASH_COMMAND = "/erk:prepare"` — defined but not currently used in any formatter
 
 ## Related Topics

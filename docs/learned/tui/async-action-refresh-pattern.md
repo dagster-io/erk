@@ -33,7 +33,7 @@ All background worker methods in `app.py` follow the same structure:
 
 <!-- Source: src/erk/tui/app.py, _close_plan_async -->
 
-The pattern is used consistently across multiple async operations in `app.py`, including methods for closing plans, dispatching PR address workflows, landing PRs, submitting to the implementation queue, closing objectives, and dispatching one-shot plans. All follow the same structure and call `self.call_from_thread(self.action_refresh)` after the subprocess succeeds.
+The pattern is used consistently across multiple async operations in `app.py`, including methods for closing plans, dispatching PR address workflows, landing PRs, dispatching to the implementation queue, closing objectives, and dispatching one-shot plans. All follow the same structure and call `self.call_from_thread(self.action_refresh)` after the subprocess succeeds.
 
 ## Why call_from_thread
 

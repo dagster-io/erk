@@ -182,7 +182,7 @@ Abstract interface for fetching plan data. Implementations must provide 3 abstra
 | --------------------------- | -------------------------------- | --------------------------- |
 | `fetch_plans`               | `(filters: PlanFilters)`         | `list[PlanRowData]`         |
 | `close_plan`                | `(plan_id: int, plan_url: str)`  | `list[int]` (PR numbers)    |
-| `submit_to_queue`           | `(plan_id: int, plan_url: str)`  | `None`                      |
+| `dispatch_to_queue`         | `(plan_id: int, plan_url: str)`  | `None`                      |
 | `fetch_branch_activity`     | `(rows: list[PlanRowData])`      | `dict[int, BranchActivity]` |
 | `fetch_plan_content`        | `(plan_id: int, plan_body: str)` | `str \| None`               |
 | `fetch_objective_content`   | `(plan_id: int, plan_body: str)` | `str \| None`               |

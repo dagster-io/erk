@@ -108,7 +108,7 @@ def _run_async(self) -> None:
 
 ### Production Usage
 
-The streaming detail pattern in `src/erk/tui/app.py` pushes a streaming screen for long-running commands (land PR, submit to queue, etc.) with a success callback for post-completion actions like objective updates. See also `src/erk/tui/screens/plan_detail_screen.py` for screen-level streaming.
+The streaming detail pattern in `src/erk/tui/app.py` pushes a streaming screen for long-running commands (land PR, dispatch to queue, etc.) with a success callback for post-completion actions like objective updates. See also `src/erk/tui/screens/plan_detail_screen.py` for screen-level streaming.
 
 ## Related Documentation
 
