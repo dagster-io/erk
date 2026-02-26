@@ -52,6 +52,7 @@ Quick reference for all `erk exec` subcommands.
 | `get-pr-commits`                  | Fetch PR commits using REST API (avoids GraphQL rate limits).             |
 | `get-pr-context`                  | Output JSON with branch, PR, diff, commits, and plan context.             |
 | `get-pr-discussion-comments`      | Fetch PR discussion comments for agent context injection.                 |
+| `get-pr-feedback`                 | Fetch all PR feedback in a single command.                                |
 | `get-pr-for-plan`                 | Get PR details for a plan.                                                |
 | `get-pr-review-comments`          | Fetch PR review comments for agent context injection.                     |
 | `get-pr-view`                     | Fetch PR details using REST API (avoids GraphQL rate limits).             |
@@ -534,6 +535,19 @@ Fetch PR discussion comments for agent context injection.
 | Flag   | Type    | Required | Default | Description                                 |
 | ------ | ------- | -------- | ------- | ------------------------------------------- |
 | `--pr` | INTEGER | No       | -       | PR number (defaults to current branch's PR) |
+
+### get-pr-feedback
+
+Fetch all PR feedback in a single command.
+
+**Usage:** `erk exec get-pr-feedback`
+
+**Options:**
+
+| Flag                 | Type    | Required | Default | Description                                 |
+| -------------------- | ------- | -------- | ------- | ------------------------------------------- |
+| `--pr`               | INTEGER | No       | -       | PR number (defaults to current branch's PR) |
+| `--include-resolved` | FLAG    | No       | -       | Include resolved review threads             |
 
 ### get-pr-for-plan
 

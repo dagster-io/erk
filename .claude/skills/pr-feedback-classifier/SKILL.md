@@ -7,7 +7,7 @@ description: >
 argument-hint: "[--pr <number>] [--include-resolved]"
 context: fork
 agent: general-purpose
-model: sonnet
+model: haiku
 ---
 
 # PR Feedback Classifier
@@ -23,38 +23,21 @@ Check `$ARGUMENTS` for flags.
 
 ## Steps
 
-1. **Get current branch and PR info using REST API** (avoids GraphQL rate limits):
-   - **If `--pr <number>` specified in `$ARGUMENTS`**:
-
-     ```bash
-     erk exec get-pr-view <number>
-     ```
-
-   - **If `--pr` not specified** (use current branch):
-     ```bash
-     erk exec get-pr-view
-     ```
-
-   Parse the JSON output to extract `number`, `title`, and `url`.
-
-2. **Fetch all comments:**
+1. **Fetch PR info and all comments in a single call:**
 
    ```bash
-   # If --include-resolved in $ARGUMENTS:
-   erk exec get-pr-review-comments [--pr <number>] --include-resolved
-   # Otherwise:
-   erk exec get-pr-review-comments [--pr <number>]
-
-   erk exec get-pr-discussion-comments [--pr <number>]
+   erk exec get-pr-feedback [--pr <number>] [--include-resolved]
    ```
 
-   Note: Pass `--pr <number>` to both exec commands when specified in `$ARGUMENTS`.
+   Pass `--pr <number>` if specified in `$ARGUMENTS`. Pass `--include-resolved` if specified in `$ARGUMENTS`.
 
-3. **Classify each comment** using the Comment Classification Model below.
+   This returns JSON with `pr_number`, `pr_title`, `pr_url`, `review_threads`, and `discussion_comments`.
 
-4. **Group into batches** by complexity.
+2. **Classify each comment** using the Comment Classification Model below.
 
-5. **Output structured JSON** (schema below).
+3. **Group into batches** by complexity.
+
+4. **Output structured JSON** (schema below).
 
 ## Comment Classification Model
 
