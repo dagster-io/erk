@@ -15,6 +15,7 @@ from pathlib import Path
 
 import click
 
+from erk.cli.commands.land_learn import _create_learn_issue_with_sessions
 from erk.cli.commands.navigation_helpers import check_clean_working_tree
 from erk.cli.commands.objective_helpers import get_objective_for_branch
 from erk.cli.core import discover_repo_context
@@ -26,7 +27,6 @@ from erk_shared.gateway.gt.cli import render_events
 from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
 from erk_shared.gateway.gt.types import LandPrError
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.types import PlanHeaderNotFoundError, PlanNotFound
 from erk_shared.stack.validation import validate_parent_is_trunk
 
 # ---------------------------------------------------------------------------
@@ -328,24 +328,12 @@ def validate_pr(ctx: ErkContext, state: LandState) -> LandState | LandError:
     return state
 
 
-def check_learn_status(ctx: ErkContext, state: LandState) -> LandState | LandError:
-    """Check learn status for plan branches, prompt if needed.
+def resolve_plan_id(ctx: ErkContext, state: LandState) -> LandState | LandError:
+    """Resolve plan ID for branch (used by create_learn_issue execution step).
 
     Populates: plan_id.
     """
-    from erk.cli.commands.land_cmd import _check_learn_status_and_prompt
-
     plan_id = ctx.plan_backend.resolve_plan_id_for_branch(state.main_repo_root, state.branch)
-
-    if plan_id is not None and (state.is_current_branch or state.worktree_path is not None):
-        _check_learn_status_and_prompt(
-            ctx,
-            repo_root=state.main_repo_root,
-            plan_id=plan_id,
-            force=state.force,
-            script=state.script,
-        )
-
     return dataclasses.replace(state, plan_id=plan_id)
 
 
@@ -436,27 +424,12 @@ def merge_pr(ctx: ErkContext, state: LandState) -> LandState | LandError:
     return dataclasses.replace(state, merged_pr_number=merged_pr_number)
 
 
-def update_learn_plan(ctx: ErkContext, state: LandState) -> LandState | LandError:
-    """Update parent plan learn_status if this is a learn plan."""
+def create_learn_issue(ctx: ErkContext, state: LandState) -> LandState | LandError:
+    """Create a learn plan issue with preprocessed sessions for the landed plan."""
     if state.plan_id is None or state.merged_pr_number is None:
         return state
 
-    learned_from = ctx.plan_backend.get_metadata_field(
-        state.main_repo_root, state.plan_id, "learned_from_issue"
-    )
-    if isinstance(learned_from, PlanNotFound) or learned_from is None:
-        return state
-
-    try:
-        ctx.plan_backend.update_metadata(
-            state.main_repo_root,
-            str(learned_from),
-            {"learn_status": "plan_completed", "learn_plan_pr": state.merged_pr_number},
-        )
-        user_output(f"Updated learn status on parent plan #{learned_from}")
-    except (RuntimeError, PlanHeaderNotFoundError):
-        user_output(f"Warning: Could not update learn status on parent plan #{learned_from}")
-
+    _create_learn_issue_with_sessions(ctx, state=state)
     return state
 
 
@@ -492,7 +465,7 @@ def _validation_pipeline() -> tuple[LandStep, ...]:
     return (
         resolve_target,
         validate_pr,
-        check_learn_status,
+        resolve_plan_id,
         gather_confirmations,
         resolve_objective,
     )
@@ -502,7 +475,7 @@ def _validation_pipeline() -> tuple[LandStep, ...]:
 def _execution_pipeline() -> tuple[LandStep, ...]:
     return (
         merge_pr,
-        update_learn_plan,
+        create_learn_issue,
         cleanup_and_navigate,
     )
 

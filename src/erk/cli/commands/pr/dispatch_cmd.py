@@ -21,7 +21,6 @@ from erk.cli.ensure import Ensure, UserFacingCliError
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
-from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
     create_submission_queued_block,
     render_erk_issue_event,
@@ -43,42 +42,6 @@ from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 from erk_shared.plan_store.types import PlanNotFound
 
 logger = logging.getLogger(__name__)
-
-
-def is_issue_learn_plan(labels: list[str]) -> bool:
-    """Check if an issue is a learn plan by checking for erk-learn label.
-
-    Args:
-        labels: The issue's labels
-
-    Returns:
-        True if the issue has the erk-learn label, False otherwise
-    """
-    return "erk-learn" in labels
-
-
-def get_learn_plan_parent_branch(ctx: ErkContext, repo_root: Path, plan_id: str) -> str | None:
-    """Get the parent branch for a learn plan.
-
-    Learn plans should stack on their parent plan's branch.
-    Extracts learned_from_issue via plan_backend, fetches parent's branch_name.
-
-    Args:
-        ctx: ErkContext with plan_backend
-        repo_root: Repository root path
-        plan_id: Plan identifier
-
-    Returns:
-        Parent plan's branch_name if found, None otherwise
-    """
-    learned_from = ctx.plan_backend.get_metadata_field(repo_root, plan_id, "learned_from_issue")
-    if isinstance(learned_from, PlanNotFound) or learned_from is None:
-        return None
-
-    branch_name = ctx.plan_backend.get_metadata_field(repo_root, str(learned_from), "branch_name")
-    if isinstance(branch_name, PlanNotFound) or branch_name is None:
-        return None
-    return str(branch_name)
 
 
 def load_workflow_config(repo_root: Path, workflow_name: str) -> dict[str, str]:
@@ -531,29 +494,6 @@ def pr_dispatch(ctx: ErkContext, plan_numbers: tuple[int, ...], base: str | None
             target_branch = ctx.git.branch.detect_trunk_branch(repo.root)
         else:
             target_branch = original_branch
-
-    # For single-plan learn plan dispatches, auto-detect parent branch
-    plan_number = plan_numbers[0] if len(plan_numbers) == 1 else None
-    if plan_number is not None and base is None:
-        user_output(f"Checking plan #{plan_number}...")
-        if ctx.issues.issue_exists(repo.root, plan_number):
-            issue = ctx.issues.get_issue(repo.root, plan_number)
-            # issue_exists check above ensures this won't be IssueNotFound
-            if not isinstance(issue, IssueNotFound) and is_issue_learn_plan(issue.labels):
-                parent_branch = get_learn_plan_parent_branch(ctx, repo.root, str(plan_number))
-                if parent_branch is not None and ctx.git.branch.branch_exists_on_remote(
-                    repo.root, "origin", parent_branch
-                ):
-                    target_branch = parent_branch
-                    user_output(
-                        f"Learn plan detected, stacking on parent branch: "
-                        f"{click.style(parent_branch, fg='cyan')}"
-                    )
-                elif parent_branch is not None:
-                    user_output(
-                        click.style("Warning: ", fg="yellow")
-                        + f"Parent branch '{parent_branch}' not on remote, using trunk"
-                    )
 
     # Get GitHub username (authentication already validated)
     user_output("Resolving GitHub username...")
