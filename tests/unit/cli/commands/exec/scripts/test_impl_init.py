@@ -14,7 +14,7 @@ from erk.cli.commands.exec.scripts.impl_init import (
 )
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.impl_folder import create_impl_folder
+from erk_shared.impl_folder import create_impl_folder, get_impl_dir
 
 BRANCH = "feature/test-branch"
 """Test branch name used across tests."""
@@ -30,8 +30,8 @@ def _make_ctx(tmp_path: Path, *, branch: str = BRANCH) -> ErkContext:
 
 def test_impl_init_returns_valid_json(tmp_path: Path) -> None:
     """Test impl-init returns valid JSON with expected structure."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
     (impl_dir / "plan.md").write_text("# Test Plan\n\n1. Step one\n", encoding="utf-8")
 
     runner = CliRunner()
@@ -45,8 +45,8 @@ def test_impl_init_returns_valid_json(tmp_path: Path) -> None:
 
 def test_impl_init_extracts_related_docs(tmp_path: Path) -> None:
     """Test impl-init extracts Related Documentation section."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
     plan_content = """# Test Plan
 
 ## Objective
@@ -85,10 +85,10 @@ Build a test feature.
 
 def test_impl_init_with_issue_tracking(tmp_path: Path) -> None:
     """Test impl-init detects plan-ref.json and returns plan_number."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
     (impl_dir / "plan.md").write_text("# Test Plan\n", encoding="utf-8")
-    (impl_dir / "plan-ref.json").write_text(
+    (impl_dir / "ref.json").write_text(
         json.dumps(
             {
                 "provider": "github",
@@ -137,8 +137,8 @@ def test_impl_init_errors_missing_impl_folder(tmp_path: Path) -> None:
 
 def test_impl_init_errors_missing_plan(tmp_path: Path) -> None:
     """Test impl-init returns JSON error when plan.md is missing."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
 
     runner = CliRunner()
     result = runner.invoke(impl_init, ["--json"], obj=_make_ctx(tmp_path))

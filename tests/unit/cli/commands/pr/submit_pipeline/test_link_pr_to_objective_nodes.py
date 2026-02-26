@@ -12,6 +12,9 @@ from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.impl_folder import save_plan_ref
 
+BRANCH = "test/branch"
+"""Test branch name used across tests."""
+
 _FAKE_NOW = datetime(2025, 1, 15, 10, 0, 0, tzinfo=UTC)
 
 # A minimal objective body with a roadmap metadata block using <details> format
@@ -93,9 +96,13 @@ def _make_issue(*, number: int, body: str) -> IssueInfo:
 
 
 def _setup_impl(cwd: Path, *, objective_id: int, node_ids: tuple[str, ...]) -> None:
-    """Create .impl/ with ref.json containing node_ids."""
+    """Create impl dir with ref.json containing node_ids.
+
+    Uses legacy .impl/ path since link_pr_to_objective_nodes still
+    uses state.cwd / ".impl" (not yet migrated to resolve_impl_dir).
+    """
     impl_dir = cwd / ".impl"
-    impl_dir.mkdir(exist_ok=True)
+    impl_dir.mkdir(parents=True, exist_ok=True)
     save_plan_ref(
         impl_dir,
         provider="github",

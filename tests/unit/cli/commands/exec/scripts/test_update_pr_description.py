@@ -19,6 +19,7 @@ from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.impl_folder import get_impl_dir
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
 from tests.fakes.prompt_executor import FakePromptExecutor
@@ -378,8 +379,9 @@ def test_no_plan_context_after_pxxxx_removal() -> None:
             fake_github_issues=fake_github_issues,
         )
 
-        # Create .impl/plan-ref.json (not currently used by PlannedPRBackend.get_plan_for_branch)
-        impl_dir = env.cwd / ".impl"
+        # Create branch-scoped impl dir with ref.json
+        # (not currently used by PlannedPRBackend.get_plan_for_branch)
+        impl_dir = get_impl_dir(env.cwd, branch_name="plnd/fix-bug-123-01-01-1200")
         impl_dir.mkdir(parents=True, exist_ok=True)
         from erk_shared.impl_folder import save_plan_ref
 

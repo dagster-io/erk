@@ -13,14 +13,19 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.mark_impl_ended import mark_impl_ended
 from erk.cli.commands.exec.scripts.mark_impl_started import mark_impl_started
 from erk_shared.context.context import ErkContext
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.impl_folder import get_impl_dir
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from tests.test_utils.plan_helpers import issue_info_to_pr_details
+
+BRANCH = "test/branch"
+"""Test branch name used across tests."""
 
 
 def make_plan_header_body(
@@ -86,10 +91,10 @@ def test_mark_impl_started_local_updates_metadata(tmp_path: Path, monkeypatch) -
     # Ensure we're not in GitHub Actions (CI sets GITHUB_ACTIONS=true)
     monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
 
-    # Setup .impl/ folder with plan-ref.json
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
-    plan_ref_file = impl_dir / "plan-ref.json"
+    # Setup branch-scoped impl folder with ref.json
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
+    plan_ref_file = impl_dir / "ref.json"
     plan_ref_file.write_text(
         json.dumps(
             {
@@ -125,6 +130,7 @@ def test_mark_impl_started_local_updates_metadata(tmp_path: Path, monkeypatch) -
         ["--session-id", "test-session-id"],
         obj=ErkContext.for_test(
             cwd=tmp_path,
+            git=FakeGit(current_branches={tmp_path: BRANCH}),
             github=fake_github,
             plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
             repo_root=repo_root,
@@ -150,7 +156,7 @@ def test_mark_impl_started_local_updates_metadata(tmp_path: Path, monkeypatch) -
     # Lifecycle stage should be set to impl
     assert block.data["lifecycle_stage"] == "impl"
 
-    # Verify .impl/local-run-state.json written
+    # Verify impl/local-run-state.json written
     local_state_file = impl_dir / "local-run-state.json"
     assert local_state_file.exists()
     local_state = json.loads(local_state_file.read_text(encoding="utf-8"))
@@ -163,10 +169,10 @@ def test_mark_impl_started_remote_updates_metadata(tmp_path: Path, monkeypatch) 
     # monkeypatch GITHUB_ACTIONS env var
     monkeypatch.setenv("GITHUB_ACTIONS", "true")
 
-    # Setup .impl/ folder with plan-ref.json
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
-    plan_ref_file = impl_dir / "plan-ref.json"
+    # Setup branch-scoped impl folder with ref.json
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
+    plan_ref_file = impl_dir / "ref.json"
     plan_ref_file.write_text(
         json.dumps(
             {
@@ -201,6 +207,7 @@ def test_mark_impl_started_remote_updates_metadata(tmp_path: Path, monkeypatch) 
         mark_impl_started,
         obj=ErkContext.for_test(
             cwd=tmp_path,
+            git=FakeGit(current_branches={tmp_path: BRANCH}),
             github=fake_github,
             plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
             repo_root=repo_root,
@@ -256,10 +263,10 @@ def test_mark_impl_ended_local_updates_metadata(tmp_path: Path, monkeypatch) -> 
     # Ensure we're not in GitHub Actions (CI sets GITHUB_ACTIONS=true)
     monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
 
-    # Setup .impl/ folder with plan-ref.json
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
-    plan_ref_file = impl_dir / "plan-ref.json"
+    # Setup branch-scoped impl folder with ref.json
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
+    plan_ref_file = impl_dir / "ref.json"
     plan_ref_file.write_text(
         json.dumps(
             {
@@ -295,6 +302,7 @@ def test_mark_impl_ended_local_updates_metadata(tmp_path: Path, monkeypatch) -> 
         ["--session-id", "test-session-id-2"],
         obj=ErkContext.for_test(
             cwd=tmp_path,
+            git=FakeGit(current_branches={tmp_path: BRANCH}),
             github=fake_github,
             plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
             repo_root=repo_root,
@@ -318,7 +326,7 @@ def test_mark_impl_ended_local_updates_metadata(tmp_path: Path, monkeypatch) -> 
     # Remote impl fields should remain null
     assert block.data["last_remote_impl_at"] is None
 
-    # Verify .impl/local-run-state.json written
+    # Verify impl/local-run-state.json written
     local_state_file = impl_dir / "local-run-state.json"
     assert local_state_file.exists()
     local_state = json.loads(local_state_file.read_text(encoding="utf-8"))
@@ -331,10 +339,10 @@ def test_mark_impl_ended_remote_updates_metadata(tmp_path: Path, monkeypatch) ->
     # monkeypatch GITHUB_ACTIONS env var
     monkeypatch.setenv("GITHUB_ACTIONS", "true")
 
-    # Setup .impl/ folder with plan-ref.json
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
-    plan_ref_file = impl_dir / "plan-ref.json"
+    # Setup branch-scoped impl folder with ref.json
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
+    plan_ref_file = impl_dir / "ref.json"
     plan_ref_file.write_text(
         json.dumps(
             {
@@ -369,6 +377,7 @@ def test_mark_impl_ended_remote_updates_metadata(tmp_path: Path, monkeypatch) ->
         mark_impl_ended,
         obj=ErkContext.for_test(
             cwd=tmp_path,
+            git=FakeGit(current_branches={tmp_path: BRANCH}),
             github=fake_github,
             plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
             repo_root=repo_root,
