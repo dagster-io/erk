@@ -46,6 +46,8 @@ Rules triggered by matching actions in code.
 
 **creating FakeSessionData without gitBranch JSONL** → Read [Testing with FakeClaudeInstallation](session-store-testing.md) first. Missing `gitBranch` field causes silent empty results from branch-filtered discovery. Always include gitBranch in fake session data.
 
+**creating a FakeGitHub PR without checking auto-registration in \_pr_details** → Read [FakeGitHub API Reference](fake-github-api-reference.md) first. FakeGitHub.create_pr() auto-registers the PR in \_pr_details. Manually adding to \_pr_details after create_pr() causes duplicates.
+
 **creating a FakePlanBackend for testing caller code** → Read [Backend Testing Composition](backend-testing-composition.md) first. Use real backend + fake gateway instead. FakeGitHub injected into PlannedPRBackend. Fake backends are only for validating ABC contract across providers.
 
 **creating a fake gateway without constructor-injected error configuration** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Fakes must accept error variants at construction time (e.g., push_to_remote_error=PushError(...)) to enable failure injection in tests.
@@ -117,6 +119,8 @@ Rules triggered by matching actions in code.
 **using Path.home() directly in production code** [pattern: `Path\.home\(\)`] → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Use gateway abstractions instead. For ~/.claude/ paths use ClaudeInstallation, for ~/.erk/ paths use ErkInstallation. Direct Path.home() access bypasses testability (fakes) and creates parallel test flakiness.
 
 **using asyncio.sleep() to wait for Bolt handler completion** → Read [Bolt Async Dispatch Testing Pattern](bolt-async-dispatch-testing.md) first. Use dispatch_and_settle() from conftest — it awaits all background tasks deterministically.
+
+**using context_for_test without matching parameter names to the current API** → Read [FakeGitHub API Reference](fake-github-api-reference.md) first. context_for_test() parameter names evolve. Check the current function signature before adding new parameters.
 
 **using hardcoded port numbers for mock server** → Read [Bolt Async Dispatch Testing Pattern](bolt-async-dispatch-testing.md) first. Use port=0 for auto-assigned port to avoid CI conflicts.
 

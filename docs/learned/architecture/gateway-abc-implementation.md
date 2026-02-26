@@ -18,6 +18,8 @@ tripwires:
   - action: "adding subprocess.run or run_subprocess_with_context calls to a gateway real.py file"
     warning: "Must add integration tests in tests/integration/test_real_*.py. Real gateway methods with subprocess calls need tests that verify the actual subprocess behavior."
     pattern: "subprocess\\.run\\(|run_subprocess_with_context\\("
+  - action: "making N sequential gh api calls in a loop when a single GraphQL query could fetch all data"
+    warning: "Each gh subprocess call costs ~200-300ms overhead. Batch into a single GraphQL query with node fragments when fetching multiple items. See http-accelerated-plan-refresh.md for the dual-path pattern."
   - action: "using subprocess.run with git command outside of a gateway"
     warning: "Use the Git gateway instead. Direct subprocess calls bypass testability (fakes) and dry-run support. The Git ABC (erk_shared.gateway.git.abc.Git) likely already has a method for this operation. Only use subprocess directly in real.py gateway implementations."
     pattern: "subprocess\\.run\\(\\s*\\[.*[\"']git"

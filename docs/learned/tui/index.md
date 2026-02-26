@@ -18,6 +18,7 @@
 - **[frozen-dataclass-field-management.md](frozen-dataclass-field-management.md)** — removing a field from a frozen dataclass, renaming a field in PlanRowData or similar frozen dataclass, getting unexpected constructor errors after field changes
 - **[lifecycle-display.md](lifecycle-display.md)** — adding a new lifecycle stage to the TUI, changing lifecycle abbreviations or colors, modifying PR status emoji indicators, understanding the stage column in erk dash
 - **[modal-screen-pattern.md](modal-screen-pattern.md)** — adding a new modal screen to the TUI, implementing a ModalScreen subclass, displaying detail views or confirmation dialogs
+- **[modal-widget-embedding.md](modal-widget-embedding.md)** — reusing PlanDataTable in a modal screen, embedding complex widgets in Textual modal screens, handling null safety for optional gateway fields in TUI
 - **[plan-row-data.md](plan-row-data.md)** — writing command availability predicates, understanding what data is available for TUI commands, checking which PlanRowData fields are nullable
 - **[plan-title-rendering-pipeline.md](plan-title-rendering-pipeline.md)** — debugging why plan titles display incorrectly, troubleshooting missing prefixes in TUI, understanding plan data flow in TUI
 - **[stacked-pr-indicator.md](stacked-pr-indicator.md)** — adding or modifying PR indicators in the TUI dashboard, understanding blocking vs. informational indicators, working with stacked PR detection

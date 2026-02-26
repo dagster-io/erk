@@ -15,6 +15,8 @@ tripwires:
     warning: "Always check isinstance(result, ErrorType) before accessing success-variant properties. Without type narrowing, you may access .message on a success type or .data on an error type."
   - action: "using None as a success return value in a validation function (ErrorType | None where None = success)"
     warning: "None-as-success is counterintuitive — None typically signals absence/failure, not success. Use ValidThing | InvalidThing so both outcomes are explicit named types."
+  - action: "using if/else on a discriminated union without isinstance() for type narrowing"
+    warning: "Type checkers require isinstance() for narrowing. 'if result.is_error' or 'if not result' does not narrow. Use 'if isinstance(result, ErrorType):' for correct narrowing in both branches."
 ---
 
 # Discriminated Union Error Handling

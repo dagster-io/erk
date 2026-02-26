@@ -14,6 +14,8 @@ Rules triggered by matching actions in code.
 
 **completing a libcst-refactor batch rename** → Read [LibCST Systematic Import Refactoring](libcst-systematic-imports.md) first. After bulk rename, grep entire codebase for old symbol name. LibCST leave_Name visitor does NOT rename string literals used as dict keys. Subagent may miss files outside its scope.
 
+**completing a refactoring without searching docs/learned/ for stale references** → Read [Post-Refactoring Documentation Audit](post-refactor-documentation-audit.md) first. 64% of review violations come from stale documentation after refactoring. Run the 5-step checklist in post-refactor-documentation-audit.md before marking the task complete.
+
 **completing a rename without checking serialization names** → Read [Systematic Rename Checklist](systematic-rename-checklist.md) first. Serialization names (JSON keys, provider names, YAML values) may need to be preserved for backward compatibility even when code identifiers change. Check all serialization points.
 
 **completing a terminology rename without grepping for string literals** → Read [Systematic Terminology Renames](systematic-terminology-renames.md) first. LibCST leave_Name visitor does NOT rename string literals used as dict keys. After LibCST batch rename, grep for old identifier as string key.
