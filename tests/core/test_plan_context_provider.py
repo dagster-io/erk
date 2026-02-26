@@ -4,13 +4,15 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from erk.core.plan_context_provider import PlanContext, PlanContextProvider
+from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 from erk_shared.gateway.github.metadata.plan_header import (
     format_plan_content_comment,
     format_plan_header_body,
 )
-from erk_shared.plan_store.github import GitHubPlanStore
+from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
 
 
 def _make_issue_info(
@@ -36,8 +38,9 @@ def _make_issue_info(
 
 
 def _make_provider(github_issues: FakeGitHubIssues) -> PlanContextProvider:
-    """Create a PlanContextProvider with GitHubPlanStore backed by fake issues."""
-    plan_backend = GitHubPlanStore(github_issues)
+    """Create a PlanContextProvider with PlannedPRBackend backed by fake GitHub."""
+    fake_github = FakeGitHub(issues_gateway=github_issues)
+    plan_backend = PlannedPRBackend(fake_github, github_issues, time=FakeTime())
     return PlanContextProvider(plan_backend=plan_backend, github_issues=github_issues)
 
 

@@ -19,10 +19,12 @@ from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
-from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+from tests.test_utils.plan_helpers import (
+    create_backend_from_issues,
+    format_plan_header_body_for_test,
+)
 
 
 def _make_state(
@@ -443,23 +445,17 @@ def test_updates_lifecycle_stage_for_linked_plan(tmp_path: Path) -> None:
         updated_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
         author="test-user",
     )
-    fake_issues = FakeGitHubIssues(issues={321: plan_issue})
+    backend, fake_github, fake_issues = create_backend_from_issues({321: plan_issue})
 
-    pr = _pr_details(number=42)
     fake_git = FakeGit(
         repository_roots={tmp_path: tmp_path},
         remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
-    )
-    fake_github = FakeGitHub(
-        prs_by_branch={"feature": pr},
-        pr_details={42: pr},
-        issues_gateway=fake_issues,
     )
     ctx = context_for_test(
         git=fake_git,
         github=fake_github,
         issues=fake_issues,
-        plan_store=GitHubPlanStore(fake_issues),
+        plan_store=backend,
         cwd=tmp_path,
     )
 
@@ -473,10 +469,11 @@ def test_updates_lifecycle_stage_for_linked_plan(tmp_path: Path) -> None:
     result = finalize_pr(ctx, state)
 
     assert isinstance(result, SubmitState)
-    # Verify lifecycle_stage was updated in the plan issue
-    assert len(fake_issues.updated_bodies) == 1
-    updated_body = fake_issues.updated_bodies[0][1]
-    assert "lifecycle_stage: impl" in updated_body
+    # Verify lifecycle_stage was updated in the plan PR (#321)
+    # Note: finalize_pr also updates the feature PR (#42) body, so there may be multiple entries
+    lifecycle_bodies = [b for n, b in fake_github.updated_pr_bodies if n == 321]
+    assert len(lifecycle_bodies) == 1
+    assert "lifecycle_stage: impl" in lifecycle_bodies[0]
 
 
 def test_no_lifecycle_update_with_only_issue_number(tmp_path: Path) -> None:

@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
+from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import (
@@ -15,11 +16,15 @@ from erk_shared.gateway.github.metadata.core import (
     create_workflow_started_block,
     render_metadata_block,
 )
-from erk_shared.plan_store.github import GitHubPlanStore
+from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
-from tests.test_utils.plan_helpers import create_plan_store_with_plans
+from tests.test_utils.plan_helpers import (
+    create_plan_store_with_plans,
+    issue_info_to_pr_details,
+)
 
 
 def _make_issue_info(plan: Plan) -> IssueInfo:
@@ -83,11 +88,16 @@ def test_log_displays_timeline_chronologically() -> None:
     comment2 = render_metadata_block(plan_block)
     comment3 = render_metadata_block(submission_block)
 
+    issue = _make_issue_info(plan)
     fake_issues = FakeGitHubIssues(
-        issues={42: _make_issue_info(plan)},
+        issues={42: issue},
         comments={42: [comment1, comment2, comment3]},
     )
-    store = GitHubPlanStore(fake_issues)
+    fake_github = FakeGitHub(
+        pr_details={42: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
+    store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -139,11 +149,16 @@ def test_log_json_output() -> None:
 
     comment = render_metadata_block(plan_block)
 
+    issue = _make_issue_info(plan)
     fake_issues = FakeGitHubIssues(
-        issues={42: _make_issue_info(plan)},
+        issues={42: issue},
         comments={42: [comment]},
     )
-    store = GitHubPlanStore(fake_issues)
+    fake_github = FakeGitHub(
+        pr_details={42: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
+    store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -184,11 +199,16 @@ def test_log_with_no_events() -> None:
         objective_id=None,
     )
 
+    issue = _make_issue_info(plan)
     fake_issues = FakeGitHubIssues(
-        issues={42: _make_issue_info(plan)},
+        issues={42: issue},
         comments={42: []},  # No comments
     )
-    store = GitHubPlanStore(fake_issues)
+    fake_github = FakeGitHub(
+        pr_details={42: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
+    store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -253,11 +273,16 @@ def test_log_with_all_event_types() -> None:
         render_metadata_block(status_block),
     ]
 
+    issue = _make_issue_info(plan)
     fake_issues = FakeGitHubIssues(
-        issues={42: _make_issue_info(plan)},
+        issues={42: issue},
         comments={42: comments},
     )
-    store = GitHubPlanStore(fake_issues)
+    fake_github = FakeGitHub(
+        pr_details={42: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
+    store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -331,11 +356,16 @@ def test_log_multiple_status_updates() -> None:
         render_metadata_block(status3),
     ]
 
+    issue = _make_issue_info(plan)
     fake_issues = FakeGitHubIssues(
-        issues={42: _make_issue_info(plan)},
+        issues={42: issue},
         comments={42: comments},
     )
-    store = GitHubPlanStore(fake_issues)
+    fake_github = FakeGitHub(
+        pr_details={42: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
+    store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -379,11 +409,16 @@ def test_log_json_structure() -> None:
 
     comment = render_metadata_block(submission_block)
 
+    issue = _make_issue_info(plan)
     fake_issues = FakeGitHubIssues(
-        issues={42: _make_issue_info(plan)},
+        issues={42: issue},
         comments={42: [comment]},
     )
-    store = GitHubPlanStore(fake_issues)
+    fake_github = FakeGitHub(
+        pr_details={42: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
+    store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:

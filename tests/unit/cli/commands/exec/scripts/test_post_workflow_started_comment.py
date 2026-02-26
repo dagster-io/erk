@@ -21,7 +21,9 @@ from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
-from erk_shared.plan_store.github import GitHubPlanStore
+from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from tests.test_utils.plan_helpers import issue_info_to_pr_details
 
 
 def _create_test_issue(issue_number: int) -> IssueInfo:
@@ -150,12 +152,17 @@ def test_build_comment_has_valid_timestamp() -> None:
 def test_cli_success(tmp_path: Path) -> None:
     """Test CLI command successfully posts comment."""
     runner = CliRunner()
-    fake_github = FakeGitHubIssues(
-        issues={123: _create_test_issue(123)},
+    issue = _create_test_issue(123)
+    fake_gh_issues = FakeGitHubIssues(
+        issues={123: issue},
+    )
+    fake_github = FakeGitHub(
+        pr_details={123: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_gh_issues,
     )
     ctx = ErkContext.for_test(
-        github=FakeGitHub(issues_gateway=fake_github),
-        plan_store=GitHubPlanStore(fake_github),
+        github=fake_github,
+        plan_store=PlannedPRBackend(fake_github, fake_gh_issues, time=FakeTime()),
         repo_root=tmp_path,
     )
 
@@ -184,9 +191,9 @@ def test_cli_success(tmp_path: Path) -> None:
     assert output["plan_id"] == 123
 
     # Verify comment was added via mutation tracking
-    assert len(fake_github.added_comments) == 1
-    issue_num, comment_body, _comment_id = fake_github.added_comments[0]
-    assert issue_num == 123
+    assert len(fake_github.pr_comments) == 1
+    pr_num, comment_body = fake_github.pr_comments[0]
+    assert pr_num == 123
     assert "my-branch" in comment_body
 
 
@@ -194,10 +201,11 @@ def test_cli_github_api_failure(tmp_path: Path) -> None:
     """Test CLI command handles GitHub API failure."""
     runner = CliRunner()
     # Issue not in the fake, so add_comment will raise RuntimeError
-    fake_github = FakeGitHubIssues(issues={})
+    fake_gh_issues = FakeGitHubIssues(issues={})
+    fake_github = FakeGitHub(issues_gateway=fake_gh_issues)
     ctx = ErkContext.for_test(
-        github=FakeGitHub(issues_gateway=fake_github),
-        plan_store=GitHubPlanStore(fake_github),
+        github=fake_github,
+        plan_store=PlannedPRBackend(fake_github, fake_gh_issues, time=FakeTime()),
         repo_root=tmp_path,
     )
 
@@ -242,12 +250,17 @@ def test_cli_missing_required_option() -> None:
 def test_cli_passes_correct_args_to_github(tmp_path: Path) -> None:
     """Test CLI command passes correct arguments to GitHub API."""
     runner = CliRunner()
-    fake_github = FakeGitHubIssues(
-        issues={789: _create_test_issue(789)},
+    issue = _create_test_issue(789)
+    fake_gh_issues = FakeGitHubIssues(
+        issues={789: issue},
+    )
+    fake_github = FakeGitHub(
+        pr_details={789: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_gh_issues,
     )
     ctx = ErkContext.for_test(
-        github=FakeGitHub(issues_gateway=fake_github),
-        plan_store=GitHubPlanStore(fake_github),
+        github=fake_github,
+        plan_store=PlannedPRBackend(fake_github, fake_gh_issues, time=FakeTime()),
         repo_root=tmp_path,
     )
 
@@ -270,9 +283,9 @@ def test_cli_passes_correct_args_to_github(tmp_path: Path) -> None:
         obj=ctx,
     )
 
-    # Verify add_comment was called with correct issue number
-    assert len(fake_github.added_comments) == 1
-    issue_num, comment_body, _comment_id = fake_github.added_comments[0]
-    assert issue_num == 789
+    # Verify add_comment was called with correct PR number
+    assert len(fake_github.pr_comments) == 1
+    pr_num, comment_body = fake_github.pr_comments[0]
+    assert pr_num == 789
     # Comment body should contain the branch name
     assert "test-branch" in comment_body

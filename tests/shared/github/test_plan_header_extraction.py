@@ -958,7 +958,7 @@ def test_extract_plan_header_objective_issue_returns_none_for_plan_content() -> 
     Plan content typically looks like markdown without metadata blocks, so extraction
     should return None rather than incorrectly parsing the content.
     """
-    # Simulate plan content (what's in plan.body from GitHubPlanStore)
+    # Simulate plan content (what's in plan.body from the plan backend)
     plan_content = """# Plan: Add Feature X
 
 ## Summary
