@@ -32,8 +32,12 @@ from erk.status.orchestrator import StatusOrchestrator
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.parallel.real import RealParallelTaskRunner
+from erk_shared.impl_folder import get_impl_dir
 from tests.fakes.context import create_test_context
 from tests.fakes.parallel_task_runner import FakeParallelTaskRunner
+
+BRANCH = "test/branch"
+"""Test branch name used across tests."""
 
 
 def test_orchestrator_collects_all_data(tmp_path: Path) -> None:
@@ -521,7 +525,7 @@ def test_orchestrator_multiple_collector_types(tmp_path: Path) -> None:
         def collect(self, ctx: ErkContext, worktree_path: Path, repo_root: Path) -> object:
             return PlanStatus(
                 exists=True,
-                path=worktree_path / ".impl",
+                path=get_impl_dir(worktree_path, branch_name=BRANCH),
                 line_count=5,
                 first_lines=["# Plan"],
                 summary="Test plan",

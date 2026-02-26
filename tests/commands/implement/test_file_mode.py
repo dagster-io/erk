@@ -110,5 +110,5 @@ def test_implement_from_plan_file_dry_run() -> None:
         # Verify plan file preserved in dry-run
         assert plan_file.exists()
 
-        # Verify no .impl/ created in dry-run
-        assert not (env.cwd / ".impl").exists()
+        # Verify no impl-context/ created in dry-run
+        assert not (env.cwd / ".erk" / "impl-context").exists()
