@@ -1,5 +1,9 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Rename issue_number to plan_number in pr/* CLI files",
+  "plan_id": "8266",
+  "url": "https://github.com/dagster-io/erk/pull/8266",
+  "created_at": "2026-02-26T12:09:01.150036",
+  "synced_at": "2026-02-26T12:09:01.150036",
+  "labels": [],
   "objective_id": 7724
 }
