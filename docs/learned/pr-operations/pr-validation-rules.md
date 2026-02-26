@@ -21,11 +21,11 @@ audit_result: edited
 
 See `pr_check()` in `src/erk/cli/commands/pr/check_cmd.py` for the orchestration logic. The command runs checks in sequence:
 
-| Check                     | What it validates                                                | Why it exists                                                               |
-| ------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| Branch/plan-ref agreement | Branch name `P{N}-...` matches `.impl/plan-ref.json` plan ID     | Catches stale `.impl/` from a previous plan left behind after branch rename |
-| Checkout footer           | PR body contains `erk pr checkout <pr_number>` with exact number | Lets reviewers check out the PR into a fresh worktree                       |
-| Header position           | Plan-header metadata is at bottom, not legacy top position       | Ensures PR body follows current formatting standards                        |
+| Check             | What it validates                                                | Why it exists                                         |
+| ----------------- | ---------------------------------------------------------------- | ----------------------------------------------------- |
+| Plan-ref presence | `.impl/plan-ref.json` exists and contains a valid plan ID        | Confirms the PR is linked to a tracked plan           |
+| Checkout footer   | PR body contains `erk pr checkout <pr_number>` with exact number | Lets reviewers check out the PR into a fresh worktree |
+| Header position   | Plan-header metadata is at bottom, not legacy top position       | Ensures PR body follows current formatting standards  |
 
 ## The PR Number vs Issue Number Trap
 
@@ -57,7 +57,7 @@ When `erk pr check` fails, the resolution pattern is:
 Common failure modes:
 
 - **"PR body missing checkout footer"** — Footer was never appended, or uses wrong PR number
-- **Branch/plan-ref disagreement** — Branch was renamed but `.impl/plan-ref.json` still points to the old plan
+- **Missing plan reference** — `.impl/plan-ref.json` is absent or unreadable
 
 ## Stage-Specific Checks
 
