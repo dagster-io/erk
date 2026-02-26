@@ -77,7 +77,9 @@ def _format_sync_from_batch(all_sync: dict[str, BranchSyncInfo], branch: str | N
     return " ".join(parts)
 
 
-def _get_impl_issue(ctx: ErkContext, worktree_path: Path, *, branch: str | None) -> tuple[str | None, str | None]:
+def _get_impl_issue(
+    ctx: ErkContext, worktree_path: Path, *, branch: str | None
+) -> tuple[str | None, str | None]:
     """Get impl issue number and URL from plan-ref.json.
 
     Args:
