@@ -1113,7 +1113,7 @@ class ErkDashApp(App):
         if row is None:
             return
 
-        if row.run_url:
+        if row.run_url is not None:
             self._provider.browser.launch(row.run_url)
             if self._status_bar is not None:
                 run_id = row.run_url.rsplit("/", 1)[-1]
