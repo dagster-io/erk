@@ -84,6 +84,7 @@ class UpdateError:
         "claude-execution-failed",
         "claude-empty-output",
         "github-api-failed",
+        "plan-header-not-found",
     ]
     message: str
     stderr: str | None
@@ -263,10 +264,21 @@ def _update_pr_body_impl(
     if is_planned_pr:
         # For planned-PR plans: preserve metadata prefix, include original plan section
         plan_header = find_metadata_block(pr_result.body, "plan-header")
+        if plan_header is None:
+            return UpdateError(
+                success=False,
+                error="plan-header-not-found",
+                message=(
+                    "plan-header metadata block not found in PR body for planned-PR plan. "
+                    "The plan-header was lost in a previous step. "
+                    "Inspect the PR body and check for earlier CI step failures."
+                ),
+                stderr=None,
+            )
         plan_content = extract_plan_content(pr_result.body)
         original_plan_section = build_original_plan_section(plan_content)
 
-        metadata_text = render_metadata_block(plan_header) if plan_header is not None else ""
+        metadata_text = render_metadata_block(plan_header)
 
         summary_body = _build_pr_body(
             summary=summary,
