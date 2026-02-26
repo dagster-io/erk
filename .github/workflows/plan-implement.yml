@@ -38,7 +38,7 @@ on:
         required: true
         type: string
       plan_backend:
-        description: "Plan backend type (github or draft_pr)"
+        description: "Plan backend type (github or planned_pr)"
         required: false
         type: string
         default: "github"
@@ -79,7 +79,7 @@ on:
         required: true
         type: string
       plan_backend:
-        description: "Plan backend type (github or draft_pr)"
+        description: "Plan backend type (github or planned_pr)"
         required: false
         type: string
         default: "github"
@@ -149,7 +149,7 @@ jobs:
           rm -rf .erk/impl-context
           erk exec create-impl-context-from-plan "$PLAN_ID"
           if [ $? -ne 0 ]; then
-            if [ "$ERK_PLAN_BACKEND" = "draft_pr" ]; then
+            if [ "$ERK_PLAN_BACKEND" = "planned_pr" ]; then
               gh pr comment "$PLAN_ID" --body "Could not fetch plan content for plan #$PLAN_ID."
             else
               gh issue comment "$PLAN_ID" --body "Could not fetch plan content for plan #$PLAN_ID."
@@ -425,7 +425,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           PLANNED_PR_FLAG=""
-          if [ "${{ inputs.plan_backend }}" = "draft_pr" ]; then
+          if [ "${{ inputs.plan_backend }}" = "planned_pr" ]; then
             PLANNED_PR_FLAG="--planned-pr"
           fi
           erk exec ci-update-pr-body \
