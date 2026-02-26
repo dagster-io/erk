@@ -18,7 +18,7 @@ def _close_linked_prs(
     repo_root: Path,
     plan_number: int,
 ) -> list[int]:
-    """Close all OPEN PRs linked to an issue.
+    """Close all OPEN PRs linked to a plan.
 
     Returns list of PR numbers that were closed.
     """
@@ -38,9 +38,9 @@ def _close_linked_prs(
 @click.argument("identifier", type=str)
 @click.pass_obj
 def pr_close(ctx: ErkContext, identifier: str) -> None:
-    """Close a plan by issue number or GitHub URL.
+    """Close a plan by plan number or GitHub URL.
 
-    Closes all OPEN PRs linked to the issue in addition to closing the issue itself.
+    Closes all OPEN PRs linked to the plan in addition to closing the plan itself.
 
     Args:
         identifier: Plan identifier (e.g., "42" or GitHub URL)
@@ -49,13 +49,13 @@ def pr_close(ctx: ErkContext, identifier: str) -> None:
     ensure_erk_metadata_dir(repo)  # Ensure erk metadata directories exist
     repo_root = repo.root  # Use git repository root for GitHub operations
 
-    # Parse issue number - errors if invalid
+    # Parse plan number - errors if invalid
     number = parse_issue_identifier(identifier)
 
     # Fetch plan - errors if not found
     result = ctx.plan_store.get_plan(repo_root, str(number))
     if isinstance(result, PlanNotFound):
-        raise click.ClickException(f"Issue #{number} not found")
+        raise click.ClickException(f"Plan #{number} not found")
 
     # Close linked PRs before closing the plan
     closed_prs = _close_linked_prs(ctx, repo_root, number)

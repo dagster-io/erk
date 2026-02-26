@@ -21,8 +21,8 @@ from tests.test_utils.plan_helpers import (
 )
 
 
-def test_close_plan_with_issue_number() -> None:
-    """Test closing a plan with issue number."""
+def test_close_plan_with_plan_number() -> None:
+    """Test closing a plan with plan number."""
     # Arrange
     plan_issue = Plan(
         plan_identifier="42",
@@ -68,7 +68,7 @@ def test_close_plan_not_found() -> None:
         # Assert
         assert result.exit_code == 1
         assert "Error" in result.output
-        assert "Issue #999 not found" in result.output
+        assert "Plan #999 not found" in result.output
 
 
 def _make_issue_info(plan: Plan) -> IssueInfo:
