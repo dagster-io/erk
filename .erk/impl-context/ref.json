@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Hoist Slug LLM Call Out of `erk one-shot` CLI"
+}
