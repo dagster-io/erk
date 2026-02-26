@@ -71,7 +71,7 @@ def _show_dry_run_output(
 def _implement_from_issue(
     ctx: ErkContext,
     *,
-    issue_number: str,
+    plan_number: str,
     dry_run: bool,
     submit: bool,
     dangerous: bool,
@@ -85,7 +85,7 @@ def _implement_from_issue(
 
     Args:
         ctx: Erk context
-        issue_number: GitHub issue number
+        plan_number: GitHub plan number
         dry_run: Whether to perform dry run
         submit: Whether to auto-submit PR after implementation
         dangerous: Whether to skip permission prompts
@@ -101,9 +101,9 @@ def _implement_from_issue(
 
     # Fetch plan from GitHub
     ctx.console.info("Fetching plan from GitHub...")
-    result = ctx.plan_store.get_plan(repo.root, issue_number)
+    result = ctx.plan_store.get_plan(repo.root, plan_number)
     if isinstance(result, PlanNotFound):
-        user_output(click.style("Error: ", fg="red") + f"Plan #{issue_number} not found")
+        user_output(click.style("Error: ", fg="red") + f"Plan #{plan_number} not found")
         raise SystemExit(1)
     plan = result
 
@@ -111,7 +111,7 @@ def _implement_from_issue(
     if "erk-plan" not in plan.labels:
         user_output(
             click.style("Error: ", fg="red")
-            + f"Plan #{issue_number} does not have the 'erk-plan' label.\n"
+            + f"Plan #{plan_number} does not have the 'erk-plan' label.\n"
             "Create a plan using 'erk pr create' or add the label manually."
         )
         raise SystemExit(1) from None
@@ -119,7 +119,7 @@ def _implement_from_issue(
     ctx.console.info(f"Plan: {plan.title}")
 
     # Create dry-run description
-    dry_run_desc = f"Would create impl folder from plan #{issue_number}\n  Title: {plan.title}"
+    dry_run_desc = f"Would create impl folder from plan #{plan_number}\n  Title: {plan.title}"
     plan_source = PlanSource(
         plan_content=plan.body,
         base_name=plan.title,
@@ -158,7 +158,7 @@ def _implement_from_issue(
     save_plan_ref(
         impl_dir,
         provider=provider_name,
-        plan_id=str(issue_number),
+        plan_id=str(plan_number),
         url=plan.url,
         labels=(),
         objective_id=plan.objective_id,
@@ -171,7 +171,7 @@ def _implement_from_issue(
         # Script mode - output activation script (stays in current directory)
         if branch is None:
             branch = "current"
-        target_description = f"#{issue_number}"
+        target_description = f"#{plan_number}"
         output_activation_instructions(
             ctx,
             wt_path=ctx.cwd,
@@ -424,7 +424,7 @@ def implement(
 
         _implement_from_issue(
             ctx,
-            issue_number=target_info.plan_number,
+            plan_number=target_info.plan_number,
             dry_run=dry_run,
             submit=submit,
             dangerous=dangerous,
