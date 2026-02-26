@@ -926,6 +926,7 @@ def _execute_land_directly(
             pr=pr_number,
             branch=branch,
             plan=int(plan_id) if plan_id is not None else None,
+            worktree_path=main_repo_root,
         )
 
     # Determine navigation target — if worktree was removed, navigate to root repo

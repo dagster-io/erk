@@ -116,6 +116,7 @@ def run_objective_update_after_land(
     pr: int,
     branch: str,
     plan: int | None,
+    worktree_path: Path,
 ) -> None:
     """Run the objective update after a PR has been landed.
 
@@ -135,7 +136,7 @@ def run_objective_update_after_land(
     result = stream_command_with_feedback(
         executor=ctx.prompt_executor,
         command=cmd,
-        worktree_path=ctx.cwd,
+        worktree_path=worktree_path,
         dangerous=True,
         permission_mode="edits",
     )
