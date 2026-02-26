@@ -92,7 +92,7 @@ def _make_issue(*, number: int) -> IssueInfo:
     )
 
 
-def _setup_plan_ref(tmp_path: Path, *, plan_id: str) -> None:
+def _setup_plan_ref(repo_root: Path, *, plan_id: str) -> None:
     """Create a ref.json file in the branch-scoped impl directory."""
     plan_ref = {
         "provider": "github",
@@ -103,7 +103,7 @@ def _setup_plan_ref(tmp_path: Path, *, plan_id: str) -> None:
         "labels": [],
         "objective_id": None,
     }
-    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir = get_impl_dir(repo_root, branch_name=BRANCH)
     impl_dir.mkdir(parents=True, exist_ok=True)
     (impl_dir / "ref.json").write_text(json.dumps(plan_ref, indent=2), encoding="utf-8")
     (impl_dir / "plan.md").write_text("# Test Plan\n", encoding="utf-8")
