@@ -333,6 +333,6 @@ class PlannedPRPlanListService(PlanListService):
                 )
                 for node_id, run in runs_by_node_id.items():
                     workflow_runs[node_id_to_plan[node_id]] = run
-            except Exception as e:
+            except RuntimeError as e:
                 logging.warning("Failed to fetch workflow runs: %s", e)
         return workflow_runs

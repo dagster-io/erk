@@ -220,7 +220,7 @@ This is a comprehensive feature plan that includes all the necessary details.
 
     result = runner.invoke(
         plan_save,
-        ["--format", "json"],
+        ["--format", "json", "--branch-slug", "test-slug"],
         obj=ErkContext.for_test(
             github_issues=fake_gh,
             claude_installation=fake_store,
