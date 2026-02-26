@@ -1,6 +1,5 @@
 """Connect to a codespace and launch Claude."""
 
-import os
 import shlex
 
 import click
@@ -29,37 +28,9 @@ def _build_export_prefix(env_vars: tuple[str, ...]) -> str:
     return f"export {' '.join(parts)} && "
 
 
-def _tty_session_name() -> str:
-    """Derive a tmux session name from the local terminal's TTY device.
-
-    Each terminal tab/window has a unique TTY path (e.g., /dev/ttys003 on macOS,
-    /dev/pts/3 on Linux). Using this as the session name means the same terminal
-    always reconnects to the same remote session, while different terminals get
-    independent sessions.
-    """
-    try:
-        tty_path = os.ttyname(0)  # e.g., /dev/ttys003 or /dev/pts/3
-        suffix = tty_path.removeprefix("/dev/").replace("/", "-")
-        return f"claude-{suffix}"
-    except OSError:
-        return "claude"
-
-
 @click.command("connect")
 @click.argument("name", required=False)
 @click.option("--shell", is_flag=True, help="Drop into shell instead of launching Claude.")
-@click.option(
-    "--tmux",
-    "-t",
-    is_flag=True,
-    help="Wrap Claude in a tmux session for persistence across disconnects.",
-)
-@click.option(
-    "--session",
-    "session_name",
-    default=None,
-    help="tmux session name (implies --tmux; default: derived from local TTY).",
-)
 @click.option("--env", "env_vars", multiple=True, help="Set env var in remote session (KEY=VALUE).")
 @click.pass_obj
 def connect_codespace(
@@ -67,8 +38,6 @@ def connect_codespace(
     name: str | None,
     *,
     shell: bool,
-    tmux: bool,
-    session_name: str | None,
     env_vars: tuple[str, ...],
 ) -> None:
     """Connect to a codespace and launch Claude.
@@ -80,12 +49,8 @@ def connect_codespace(
     since codespace isolation provides safety.
 
     Use --shell to drop into an interactive shell instead of launching Claude.
-    Use --tmux/-t to wrap Claude in a persistent tmux session.
     """
     codespace = resolve_codespace(ctx.codespace_registry, name)
-
-    # --session implies --tmux
-    use_tmux = tmux or session_name is not None
 
     export_prefix = _build_export_prefix(env_vars)
 
@@ -104,21 +69,7 @@ def connect_codespace(
     else:
         setup_commands = "git pull && uv sync && source .venv/bin/activate"
         claude_command = "claude --dangerously-skip-permissions"
-
-        if use_tmux:
-            session = session_name if session_name is not None else _tty_session_name()
-            # Force TERM to xterm-256color for tmux — remote may lack
-            # terminfo for local terminal (e.g. ghostty)
-            claude_command = (
-                f"TERM=xterm-256color tmux new-session -A -s {session} {claude_command}"
-            )
-            click.echo(
-                f"Connecting to codespace '{codespace.name}' (tmux session: {session})...",
-                err=True,
-            )
-        else:
-            click.echo(f"Connecting to codespace '{codespace.name}'...", err=True)
-
+        click.echo(f"Connecting to codespace '{codespace.name}'...", err=True)
         remote_command = f"bash -l -c '{export_prefix}{setup_commands} && {claude_command}'"
 
     # Replace current process with SSH session to codespace

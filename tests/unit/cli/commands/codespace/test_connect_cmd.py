@@ -1,12 +1,10 @@
 """Unit tests for codespace connect command."""
 
 from datetime import datetime
-from unittest.mock import patch
 
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk.cli.commands.codespace.connect_cmd import _tty_session_name
 from erk.core.context import context_for_test
 from erk_shared.gateway.codespace.fake import FakeCodespace
 from erk_shared.gateway.codespace_registry.abc import RegisteredCodespace
@@ -223,110 +221,3 @@ def test_connect_env_invalid_format_errors() -> None:
     assert "Invalid --env format" in result.output
 
 
-def test_connect_with_tmux_flag_wraps_in_tmux() -> None:
-    """connect --tmux wraps Claude in a tmux session."""
-    runner = CliRunner()
-
-    cs = RegisteredCodespace(
-        name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
-    )
-    codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
-    fake_codespace = FakeCodespace()
-    ctx = context_for_test(codespace_registry=codespace_registry, codespace=fake_codespace)
-
-    result = runner.invoke(cli, ["codespace", "connect", "--tmux"], obj=ctx)
-
-    assert result.exit_code == 0
-    assert fake_codespace.last_call is not None
-    assert "tmux new-session -A -s" in fake_codespace.last_call.remote_command
-    assert "claude" in fake_codespace.last_call.remote_command
-
-
-def test_connect_without_tmux_flag_no_tmux() -> None:
-    """connect without --tmux runs Claude directly (no tmux)."""
-    runner = CliRunner()
-
-    cs = RegisteredCodespace(
-        name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
-    )
-    codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
-    fake_codespace = FakeCodespace()
-    ctx = context_for_test(codespace_registry=codespace_registry, codespace=fake_codespace)
-
-    result = runner.invoke(cli, ["codespace", "connect"], obj=ctx)
-
-    assert result.exit_code == 0
-    assert fake_codespace.last_call is not None
-    assert "tmux" not in fake_codespace.last_call.remote_command
-    assert "claude --dangerously-skip-permissions" in fake_codespace.last_call.remote_command
-
-
-def test_connect_session_implies_tmux() -> None:
-    """connect --session implies --tmux without needing to pass both."""
-    runner = CliRunner()
-
-    cs = RegisteredCodespace(
-        name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
-    )
-    codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
-    fake_codespace = FakeCodespace()
-    ctx = context_for_test(codespace_registry=codespace_registry, codespace=fake_codespace)
-
-    result = runner.invoke(cli, ["codespace", "connect", "--session", "my-session"], obj=ctx)
-
-    assert result.exit_code == 0
-    assert fake_codespace.last_call is not None
-    assert "tmux new-session -A -s my-session" in fake_codespace.last_call.remote_command
-
-
-def test_tty_session_name_macos_tty() -> None:
-    """_tty_session_name derives session name from macOS TTY path."""
-    with patch("erk.cli.commands.codespace.connect_cmd.os.ttyname", return_value="/dev/ttys003"):
-        assert _tty_session_name() == "claude-ttys003"
-
-
-def test_tty_session_name_linux_pts() -> None:
-    """_tty_session_name derives session name from Linux pts path."""
-    with patch("erk.cli.commands.codespace.connect_cmd.os.ttyname", return_value="/dev/pts/3"):
-        assert _tty_session_name() == "claude-pts-3"
-
-
-def test_tty_session_name_fallback_on_error() -> None:
-    """_tty_session_name falls back to 'claude' when not connected to a TTY."""
-    with patch("erk.cli.commands.codespace.connect_cmd.os.ttyname", side_effect=OSError):
-        assert _tty_session_name() == "claude"
-
-
-def test_connect_with_explicit_session_name() -> None:
-    """connect --session uses the provided session name instead of TTY-derived one."""
-    runner = CliRunner()
-
-    cs = RegisteredCodespace(
-        name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
-    )
-    codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
-    fake_codespace = FakeCodespace()
-    ctx = context_for_test(codespace_registry=codespace_registry, codespace=fake_codespace)
-
-    result = runner.invoke(cli, ["codespace", "connect", "--session", "my-session"], obj=ctx)
-
-    assert result.exit_code == 0
-    assert fake_codespace.last_call is not None
-    assert "tmux new-session -A -s my-session" in fake_codespace.last_call.remote_command
-
-
-def test_connect_shows_session_name_in_output() -> None:
-    """connect command shows the tmux session name in the connecting message."""
-    runner = CliRunner()
-
-    cs = RegisteredCodespace(
-        name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
-    )
-    codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
-    fake_codespace = FakeCodespace()
-    ctx = context_for_test(codespace_registry=codespace_registry, codespace=fake_codespace)
-
-    result = runner.invoke(cli, ["codespace", "connect", "--session", "my-session"], obj=ctx)
-
-    assert result.exit_code == 0
-    assert "tmux session: my-session" in result.output
