@@ -35,7 +35,7 @@ Full resolution — resolves branch name to plan via draft PR lookup, then conve
 
 ## Supported Branch Formats
 
-- **P-prefix**: `P{number}-{slug}` — standard plan branches
+- **P-prefix**: `P{number}-{slug}` — legacy plan branches (current format is `plnd/`)
 - **Objective format**: `P{number}-O{objective}-{slug}` — plans linked to objectives
 - **Legacy formats**: No longer resolved from branch names; use `plan-ref.json`
 

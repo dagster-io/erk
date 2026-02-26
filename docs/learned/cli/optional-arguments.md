@@ -25,28 +25,9 @@ When a CLI command needs a value that can be inferred from context (branch name,
 
 ## Implementation Pattern
 
-```python
-@click.command("mycommand")
-@click.argument("issue", type=str, required=False)
-@click.pass_obj
-def mycommand(ctx: ErkContext, issue: str | None) -> None:
-    # Priority 1: Explicit argument
-    if issue is not None:
-        issue_number = _extract_issue_number(issue)
-    else:
-        # Priority 2: Check plan-ref.json
-        plan_ref = read_plan_ref(ctx.cwd / ".impl")
-        if plan_ref is not None:
-            issue_number = int(plan_ref.plan_id) if plan_ref.plan_id.isdigit() else None
-        else:
-            issue_number = None
+<!-- Source: src/erk/cli/commands/pr/dispatch_cmd.py, dispatch_cmd -->
 
-        if issue_number is None:
-            raise click.ClickException(
-                "Could not infer issue number. "
-                "Provide explicitly or run from a branch with .impl/plan-ref.json."
-            )
-```
+See the `dispatch_cmd()` function in `src/erk/cli/commands/pr/dispatch_cmd.py` or `check_cmd()` in `src/erk/cli/commands/pr/check_cmd.py` for concrete examples of this pattern. The key sequence is: check for an explicit argument first, then fall back to `read_plan_ref()` on the `.impl/` directory, then raise a `ClickException` if neither source provides a value.
 
 ## When to Use This Pattern
 
