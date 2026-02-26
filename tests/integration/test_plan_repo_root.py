@@ -17,12 +17,17 @@ from erk.cli.commands.pr.list_cmd import dash
 from erk.cli.commands.pr.view_cmd import pr_view
 from erk.core.services.plan_list_service import RealPlanListService
 from erk_shared.gateway.github.fake import FakeGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
-from erk_shared.gateway.github.types import GitHubRepoLocation, PullRequestInfo
+from erk_shared.gateway.github.types import (
+    GitHubRepoLocation,
+    PRDetails,
+    PRNotFound,
+    PullRequestInfo,
+)
 from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.github import GitHubPlanStore
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from tests.test_utils.env_helpers import erk_isolated_fs_env
+from tests.test_utils.plan_helpers import issue_info_to_pr_details
 
 
 def test_plan_issue_list_uses_repo_root_not_metadata_dir() -> None:
@@ -118,32 +123,33 @@ def test_plan_issue_get_uses_repo_root_not_metadata_dir() -> None:
         # Track which directory is passed to gh operations
         captured_repo_root: Path | None = None
 
-        # Create a tracking FakeGitHubIssues that captures the repo_root
-        class TrackingFakeGitHubIssues(FakeGitHubIssues):
-            def get_issue(self, repo_root: Path, issue_number: int) -> IssueInfo:
-                nonlocal captured_repo_root
-                captured_repo_root = repo_root
-                return super().get_issue(repo_root, issue_number)
-
-        # Create a fake issue to return
         from datetime import UTC, datetime
 
+        # Create a fake issue and convert to PR details for PlannedPRBackend
         fake_issue = IssueInfo(
             number=42,
             title="Test Issue",
             body="Test body",
             state="OPEN",
             url="https://github.com/test/repo/issues/42",
-            labels=[],
+            labels=["erk-plan"],
             assignees=[],
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC),
             author="test-user",
         )
+        pr_details = issue_info_to_pr_details(fake_issue)
 
-        tracking_issues = TrackingFakeGitHubIssues(issues={42: fake_issue})
-        store = GitHubPlanStore(tracking_issues)
-        ctx = env.build_context(plan_store=store, issues=tracking_issues)
+        # Create a tracking FakeGitHub that captures the repo_root on get_pr
+        class TrackingFakeGitHub(FakeGitHub):
+            def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails | PRNotFound:
+                nonlocal captured_repo_root
+                captured_repo_root = repo_root
+                return super().get_pr(repo_root, pr_number)
+
+        tracking_github = TrackingFakeGitHub(pr_details={42: pr_details})
+        store = PlannedPRBackend(tracking_github, tracking_github.issues, time=FakeTime())
+        ctx = env.build_context(plan_store=store, issues=tracking_github.issues)
 
         # Act: Run the get command
         result = runner.invoke(pr_view, ["42"], obj=ctx)

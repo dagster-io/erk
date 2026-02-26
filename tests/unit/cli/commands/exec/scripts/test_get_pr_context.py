@@ -11,7 +11,8 @@ from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
-from erk_shared.plan_store.github import GitHubPlanStore
+from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -80,12 +81,16 @@ def test_outputs_valid_json() -> None:
             prs_by_branch={"feature": pr_details},
         )
 
+        # Use a separate FakeGitHub for plan_store with no prs_by_branch,
+        # so PlannedPRBackend.get_plan_for_branch returns PlanNotFound
+        # (matching original intent: no plan context for "feature" branch)
+        plan_github = FakeGitHub()
         ctx = build_workspace_test_context(
             env,
             git=git,
             graphite=graphite,
             github=github,
-            plan_store=GitHubPlanStore(FakeGitHubIssues()),
+            plan_store=PlannedPRBackend(plan_github, FakeGitHubIssues(), time=FakeTime()),
         )
 
         result = runner.invoke(get_pr_context, [], obj=ctx)

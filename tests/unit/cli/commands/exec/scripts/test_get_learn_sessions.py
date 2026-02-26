@@ -19,9 +19,13 @@ from erk_shared.gateway.claude_installation.fake import (
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-from erk_shared.plan_store.github import GitHubPlanStore
+from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from tests.test_utils.github_helpers import create_test_issue
-from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+from tests.test_utils.plan_helpers import (
+    format_plan_header_body_for_test,
+    issue_info_to_pr_details,
+)
 
 
 def _session_content_with_branch(*, branch: str) -> str:
@@ -39,6 +43,10 @@ def test_get_learn_sessions_with_explicit_issue(tmp_path: Path) -> None:
     fake_git = FakeGit()
     test_issue = create_test_issue(123, "Test Plan #123", "Plan body")
     fake_issues = FakeGitHubIssues(issues={123: test_issue})
+    fake_github = FakeGitHub(
+        pr_details={123: issue_info_to_pr_details(test_issue)},
+        issues_gateway=fake_issues,
+    )
     fake_claude = FakeClaudeInstallation.for_test()
 
     runner = CliRunner()
@@ -49,8 +57,8 @@ def test_get_learn_sessions_with_explicit_issue(tmp_path: Path) -> None:
             ["123"],
             obj=ErkContext.for_test(
                 git=fake_git,
-                github=FakeGitHub(issues_gateway=fake_issues),
-                plan_store=GitHubPlanStore(fake_issues),
+                github=fake_github,
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -72,8 +80,11 @@ def test_get_learn_sessions_infers_from_branch(tmp_path: Path) -> None:
         fake_git = FakeGit(
             current_branches={cwd: "P456-implement-feature"},
         )
-        fake_issues = FakeGitHubIssues(
-            issues={456: create_test_issue(456, "Test Plan #456", "Plan body")}
+        issue = create_test_issue(456, "Test Plan #456", "Plan body")
+        fake_issues = FakeGitHubIssues(issues={456: issue})
+        fake_github = FakeGitHub(
+            pr_details={456: issue_info_to_pr_details(issue)},
+            issues_gateway=fake_issues,
         )
         fake_claude = FakeClaudeInstallation.for_test()
 
@@ -82,8 +93,8 @@ def test_get_learn_sessions_infers_from_branch(tmp_path: Path) -> None:
             [],  # No issue argument - branch doesn't resolve
             obj=ErkContext.for_test(
                 git=fake_git,
-                github=FakeGitHub(issues_gateway=fake_issues),
-                plan_store=GitHubPlanStore(fake_issues),
+                github=fake_github,
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -101,6 +112,10 @@ def test_get_learn_sessions_with_url_format(tmp_path: Path) -> None:
     fake_git = FakeGit()
     test_issue = create_test_issue(789, "Test Plan #789", "Plan body")
     fake_issues = FakeGitHubIssues(issues={789: test_issue})
+    fake_github = FakeGitHub(
+        pr_details={789: issue_info_to_pr_details(test_issue)},
+        issues_gateway=fake_issues,
+    )
     fake_claude = FakeClaudeInstallation.for_test()
 
     runner = CliRunner()
@@ -111,8 +126,8 @@ def test_get_learn_sessions_with_url_format(tmp_path: Path) -> None:
             ["https://github.com/owner/repo/issues/789"],
             obj=ErkContext.for_test(
                 git=fake_git,
-                github=FakeGitHub(issues_gateway=fake_issues),
-                plan_store=GitHubPlanStore(fake_issues),
+                github=fake_github,
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -140,6 +155,7 @@ def test_get_learn_sessions_fails_without_issue(tmp_path: Path) -> None:
             current_branches={cwd: "main"},  # Not a P{issue} branch
         )
         fake_issues = FakeGitHubIssues()
+        fake_github = FakeGitHub(issues_gateway=fake_issues)
         fake_claude = FakeClaudeInstallation.for_test()
 
         result = runner.invoke(
@@ -147,8 +163,8 @@ def test_get_learn_sessions_fails_without_issue(tmp_path: Path) -> None:
             [],
             obj=ErkContext.for_test(
                 git=fake_git,
-                github=FakeGitHub(issues_gateway=fake_issues),
-                plan_store=GitHubPlanStore(fake_issues),
+                github=fake_github,
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -165,6 +181,7 @@ def test_get_learn_sessions_fails_with_invalid_issue(tmp_path: Path) -> None:
     """Test error with invalid issue identifier."""
     fake_git = FakeGit()
     fake_issues = FakeGitHubIssues()
+    fake_github = FakeGitHub(issues_gateway=fake_issues)
     fake_claude = FakeClaudeInstallation.for_test()
 
     runner = CliRunner()
@@ -175,8 +192,8 @@ def test_get_learn_sessions_fails_with_invalid_issue(tmp_path: Path) -> None:
             ["not-a-number"],
             obj=ErkContext.for_test(
                 git=fake_git,
-                github=FakeGitHub(issues_gateway=fake_issues),
-                plan_store=GitHubPlanStore(fake_issues),
+                github=fake_github,
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -199,6 +216,10 @@ def test_json_output_structure(tmp_path: Path) -> None:
     fake_git = FakeGit()
     test_issue = create_test_issue(100, "Test Plan #100", "Plan body")
     fake_issues = FakeGitHubIssues(issues={100: test_issue})
+    fake_github = FakeGitHub(
+        pr_details={100: issue_info_to_pr_details(test_issue)},
+        issues_gateway=fake_issues,
+    )
     fake_claude = FakeClaudeInstallation.for_test()
 
     runner = CliRunner()
@@ -209,8 +230,8 @@ def test_json_output_structure(tmp_path: Path) -> None:
             ["100"],
             obj=ErkContext.for_test(
                 git=fake_git,
-                github=FakeGitHub(issues_gateway=fake_issues),
-                plan_store=GitHubPlanStore(fake_issues),
+                github=fake_github,
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -249,6 +270,10 @@ def test_session_sources_contains_local_session_data(tmp_path: Path) -> None:
         fake_git = FakeGit(current_branches={cwd: "plnd/feature-200-01-01-1200"})
         test_issue = create_test_issue(200, "Test Plan #200", "Plan body")
         fake_issues = FakeGitHubIssues(issues={200: test_issue})
+        fake_github = FakeGitHub(
+            pr_details={200: issue_info_to_pr_details(test_issue)},
+            issues_gateway=fake_issues,
+        )
 
         # Set up fake claude installation with sessions that will be returned
         # via the local session fallback path (when no readable_session_ids from GitHub).
@@ -281,8 +306,8 @@ def test_session_sources_contains_local_session_data(tmp_path: Path) -> None:
             ["200"],
             obj=ErkContext.for_test(
                 git=fake_git,
-                github=FakeGitHub(issues_gateway=fake_issues),
-                plan_store=GitHubPlanStore(fake_issues),
+                github=fake_github,
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -328,6 +353,10 @@ def test_session_sources_includes_remote_session(tmp_path: Path) -> None:
     )
     test_issue = create_test_issue(300, "Test Plan #300", body=plan_body)
     fake_issues = FakeGitHubIssues(issues={300: test_issue})
+    fake_github = FakeGitHub(
+        pr_details={300: issue_info_to_pr_details(test_issue)},
+        issues_gateway=fake_issues,
+    )
     fake_claude = FakeClaudeInstallation.for_test()
 
     runner = CliRunner()
@@ -338,8 +367,8 @@ def test_session_sources_includes_remote_session(tmp_path: Path) -> None:
             ["300"],
             obj=ErkContext.for_test(
                 git=fake_git,
-                github=FakeGitHub(issues_gateway=fake_issues),
-                plan_store=GitHubPlanStore(fake_issues),
+                github=fake_github,
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -375,6 +404,10 @@ def test_session_sources_includes_both_local_and_remote(tmp_path: Path) -> None:
         )
         test_issue = create_test_issue(400, "Test Plan #400", body=plan_body)
         fake_issues = FakeGitHubIssues(issues={400: test_issue})
+        fake_github = FakeGitHub(
+            pr_details={400: issue_info_to_pr_details(test_issue)},
+            issues_gateway=fake_issues,
+        )
 
         # Set up fake claude installation with local sessions.
         # Session must have matching gitBranch for branch filtering.
@@ -397,8 +430,8 @@ def test_session_sources_includes_both_local_and_remote(tmp_path: Path) -> None:
             ["400"],
             obj=ErkContext.for_test(
                 git=fake_git,
-                github=FakeGitHub(issues_gateway=fake_issues),
-                plan_store=GitHubPlanStore(fake_issues),
+                github=fake_github,
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -438,6 +471,10 @@ def test_session_sources_no_remote_when_metadata_missing(tmp_path: Path) -> None
     )
     test_issue = create_test_issue(500, "Test Plan #500", body=plan_body)
     fake_issues = FakeGitHubIssues(issues={500: test_issue})
+    fake_github = FakeGitHub(
+        pr_details={500: issue_info_to_pr_details(test_issue)},
+        issues_gateway=fake_issues,
+    )
     fake_claude = FakeClaudeInstallation.for_test()
 
     runner = CliRunner()
@@ -448,8 +485,8 @@ def test_session_sources_no_remote_when_metadata_missing(tmp_path: Path) -> None
             ["500"],
             obj=ErkContext.for_test(
                 git=fake_git,
-                github=FakeGitHub(issues_gateway=fake_issues),
-                plan_store=GitHubPlanStore(fake_issues),
+                github=fake_github,
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -477,6 +514,10 @@ def test_local_fallback_filters_by_branch(tmp_path: Path) -> None:
         fake_git = FakeGit(current_branches={cwd: "plnd/feature-600-01-01-1200"})
         test_issue = create_test_issue(600, "Test Plan #600", "Plan body")
         fake_issues = FakeGitHubIssues(issues={600: test_issue})
+        fake_github = FakeGitHub(
+            pr_details={600: issue_info_to_pr_details(test_issue)},
+            issues_gateway=fake_issues,
+        )
 
         fake_claude = FakeClaudeInstallation.for_test(
             projects={
@@ -511,8 +552,8 @@ def test_local_fallback_filters_by_branch(tmp_path: Path) -> None:
             ["600"],
             obj=ErkContext.for_test(
                 git=fake_git,
-                github=FakeGitHub(issues_gateway=fake_issues),
-                plan_store=GitHubPlanStore(fake_issues),
+                github=fake_github,
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,

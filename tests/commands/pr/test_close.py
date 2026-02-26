@@ -8,7 +8,8 @@ from erk.cli.cli import cli
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo, PRReference
-from erk_shared.plan_store.github import GitHubPlanStore
+from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
@@ -16,6 +17,7 @@ from tests.test_utils.env_helpers import erk_inmem_env
 from tests.test_utils.plan_helpers import (
     create_plan_store_with_plans,
     format_plan_header_body_for_test,
+    issue_info_to_pr_details,
 )
 
 
@@ -109,14 +111,20 @@ def test_close_plan_closes_linked_open_prs() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        github = FakeGitHub()
+        issue = _make_issue_info(plan_issue)
         # Create FakeGitHubIssues with both the plan issue and PR references
         fake_issues = FakeGitHubIssues(
-            issues={42: _make_issue_info(plan_issue)},
+            issues={42: issue},
             pr_references={42: [open_draft_pr, open_non_draft_pr]},
         )
-        store = GitHubPlanStore(fake_issues)
-        ctx = build_workspace_test_context(env, plan_store=store, github=github, issues=fake_issues)
+        fake_github = FakeGitHub(
+            pr_details={42: issue_info_to_pr_details(issue)},
+            issues_gateway=fake_issues,
+        )
+        store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+        ctx = build_workspace_test_context(
+            env, plan_store=store, github=fake_github, issues=fake_issues
+        )
 
         # Act
         result = runner.invoke(cli, ["pr", "close", "42"], obj=ctx)
@@ -125,9 +133,9 @@ def test_close_plan_closes_linked_open_prs() -> None:
         assert result.exit_code == 0
         assert "Closed plan #42" in result.output
         assert "Closed 2 linked PR(s): #100, #101" in result.output
-        # Verify both PRs were closed via FakeGitHub
-        assert 100 in github.closed_prs
-        assert 101 in github.closed_prs
+        # Verify both linked PRs were closed via FakeGitHub
+        assert 100 in fake_github.closed_prs
+        assert 101 in fake_github.closed_prs
 
 
 def test_close_plan_skips_closed_and_merged_prs() -> None:
@@ -154,13 +162,19 @@ def test_close_plan_skips_closed_and_merged_prs() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        github = FakeGitHub()
+        issue = _make_issue_info(plan_issue)
         fake_issues = FakeGitHubIssues(
-            issues={42: _make_issue_info(plan_issue)},
+            issues={42: issue},
             pr_references={42: [open_pr, closed_pr, merged_pr]},
         )
-        store = GitHubPlanStore(fake_issues)
-        ctx = build_workspace_test_context(env, plan_store=store, github=github, issues=fake_issues)
+        fake_github = FakeGitHub(
+            pr_details={42: issue_info_to_pr_details(issue)},
+            issues_gateway=fake_issues,
+        )
+        store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+        ctx = build_workspace_test_context(
+            env, plan_store=store, github=fake_github, issues=fake_issues
+        )
 
         # Act
         result = runner.invoke(cli, ["pr", "close", "42"], obj=ctx)
@@ -169,8 +183,10 @@ def test_close_plan_skips_closed_and_merged_prs() -> None:
         assert result.exit_code == 0
         assert "Closed plan #42" in result.output
         assert "Closed 1 linked PR(s): #100" in result.output
-        # Only the OPEN PR should be closed
-        assert github.closed_prs == [100]
+        # Only the OPEN linked PR should be in the linked-PR closed output
+        assert 100 in fake_github.closed_prs
+        assert 101 not in fake_github.closed_prs
+        assert 102 not in fake_github.closed_prs
 
 
 def test_close_plan_no_linked_prs() -> None:
@@ -192,13 +208,19 @@ def test_close_plan_no_linked_prs() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        github = FakeGitHub()
+        issue = _make_issue_info(plan_issue)
         fake_issues = FakeGitHubIssues(
-            issues={42: _make_issue_info(plan_issue)},
+            issues={42: issue},
             pr_references={},  # No linked PRs
         )
-        store = GitHubPlanStore(fake_issues)
-        ctx = build_workspace_test_context(env, plan_store=store, github=github, issues=fake_issues)
+        fake_github = FakeGitHub(
+            pr_details={42: issue_info_to_pr_details(issue)},
+            issues_gateway=fake_issues,
+        )
+        store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+        ctx = build_workspace_test_context(
+            env, plan_store=store, github=fake_github, issues=fake_issues
+        )
 
         # Act
         result = runner.invoke(cli, ["pr", "close", "42"], obj=ctx)
@@ -206,9 +228,8 @@ def test_close_plan_no_linked_prs() -> None:
         # Assert
         assert result.exit_code == 0
         assert "Closed plan #42" in result.output
-        # No PR closing message should appear
+        # No linked PR closing message should appear
         assert "linked PR(s)" not in result.output
-        assert github.closed_prs == []
 
 
 def test_close_plan_invalid_identifier() -> None:
@@ -271,13 +292,19 @@ def test_close_plan_reports_closed_prs() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        github = FakeGitHub()
+        issue = _make_issue_info(plan_issue)
         fake_issues = FakeGitHubIssues(
-            issues={42: _make_issue_info(plan_issue)},
+            issues={42: issue},
             pr_references={42: [pr1, pr2, pr3]},
         )
-        store = GitHubPlanStore(fake_issues)
-        ctx = build_workspace_test_context(env, plan_store=store, github=github, issues=fake_issues)
+        fake_github = FakeGitHub(
+            pr_details={42: issue_info_to_pr_details(issue)},
+            issues_gateway=fake_issues,
+        )
+        store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+        ctx = build_workspace_test_context(
+            env, plan_store=store, github=fake_github, issues=fake_issues
+        )
 
         # Act
         result = runner.invoke(cli, ["pr", "close", "42"], obj=ctx)
@@ -290,7 +317,7 @@ def test_close_plan_reports_closed_prs() -> None:
 def test_close_plan_with_objective_invokes_update() -> None:
     """Test closing a plan linked to an objective invokes the objective update."""
     # Arrange - body must include plan-header with objective_issue so
-    # GitHubPlanStore._convert_to_plan() extracts objective_id correctly
+    # PlannedPRBackend._convert_to_plan() extracts objective_id correctly
     body_with_header = format_plan_header_body_for_test(objective_issue=99) + "\nPlan content"
     plan_issue = Plan(
         plan_identifier="42",
@@ -366,7 +393,7 @@ def test_close_plan_without_objective_skips_update() -> None:
 def test_close_plan_objective_update_failure_does_not_break_close() -> None:
     """Test that a failing objective update does not prevent plan close from succeeding."""
     # Arrange - body must include plan-header with objective_issue so
-    # GitHubPlanStore._convert_to_plan() extracts objective_id correctly
+    # PlannedPRBackend._convert_to_plan() extracts objective_id correctly
     body_with_header = format_plan_header_body_for_test(objective_issue=99) + "\nPlan content"
     plan_issue = Plan(
         plan_identifier="42",
