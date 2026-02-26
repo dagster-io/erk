@@ -52,25 +52,24 @@ def connect_codespace(
     """
     codespace = resolve_codespace(ctx.codespace_registry, name)
 
-    export_prefix = _build_export_prefix(env_vars)
-
     # Connect via SSH and launch Claude (or shell with --shell flag)
     # -t: Force pseudo-terminal allocation (required for interactive TUI like claude)
     # bash -l -c: Use login shell to ensure PATH is set up (claude installs to ~/.claude/local/)
     #
     # IMPORTANT: The entire remote command (bash -l -c '...') must be a single argument.
     # SSH concatenates command arguments with spaces without preserving grouping.
+    export_prefix = _build_export_prefix(env_vars)
     if shell:
         if export_prefix:
             remote_command = f"bash -l -c '{export_prefix}exec bash -l'"
         else:
             remote_command = "bash -l"
-        click.echo(f"Connecting to codespace '{codespace.name}'...", err=True)
     else:
         setup_commands = "git pull && uv sync && source .venv/bin/activate"
         claude_command = "claude --dangerously-skip-permissions"
-        click.echo(f"Connecting to codespace '{codespace.name}'...", err=True)
         remote_command = f"bash -l -c '{export_prefix}{setup_commands} && {claude_command}'"
+
+    click.echo(f"Connecting to codespace '{codespace.name}'...", err=True)
 
     # Replace current process with SSH session to codespace
     ctx.codespace.exec_ssh_interactive(codespace.gh_name, remote_command)
