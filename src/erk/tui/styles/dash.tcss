@@ -43,6 +43,12 @@ StatusBar {
     padding: 0 1;
 }
 
+StatusBar.running {
+    background: $warning;
+    color: $text;
+    text-style: bold;
+}
+
 /* Help overlay styling */
 #help-container {
     align: center middle;

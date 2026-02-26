@@ -6,9 +6,11 @@ import asyncio
 import subprocess
 import time
 from collections.abc import Iterator
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
+import click
 from textual import on, work
 from textual.app import App, ComposeResult, SystemCommand
 from textual.binding import Binding
@@ -41,13 +43,13 @@ from erk_shared.gateway.command_executor.real import RealCommandExecutor
 from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
 
 
-def _extract_subprocess_error(e: subprocess.CalledProcessError) -> str:
-    """Extract a human-readable error message from a CalledProcessError."""
-    if e.stderr and e.stderr.strip():
-        return e.stderr.strip()
-    if e.stdout and e.stdout.strip():
-        return e.stdout.strip()
-    return "Unknown error"
+@dataclass(frozen=True)
+class _OperationResult:
+    """Result of a streaming subprocess operation."""
+
+    success: bool
+    output_lines: tuple[str, ...]
+    return_code: int
 
 
 def _build_github_url(plan_url: str, resource_type: str, number: int) -> str:
@@ -624,11 +626,68 @@ class ErkDashApp(App):
         if self._table is not None:
             self._table.populate(self._rows)
 
+    def _start_operation(self, *, op_id: str, label: str) -> None:
+        """Register a background operation in the status bar."""
+        if self._status_bar is not None:
+            self._status_bar.start_operation(op_id=op_id, label=label)
+
+    def _update_operation(self, *, op_id: str, progress: str) -> None:
+        """Update the progress line for a background operation."""
+        if self._status_bar is not None:
+            self._status_bar.update_operation(op_id=op_id, progress=progress)
+
+    def _finish_operation(self, *, op_id: str) -> None:
+        """Remove a completed background operation from the status bar."""
+        if self._status_bar is not None:
+            self._status_bar.finish_operation(op_id=op_id)
+
+    def _run_streaming_operation(
+        self,
+        *,
+        op_id: str,
+        command: list[str],
+    ) -> _OperationResult:
+        """Run a subprocess with live output streaming to the status bar.
+
+        Must be called from a background thread (@work(thread=True)).
+        Uses Popen with merged stdout/stderr for real-time progress.
+
+        Args:
+            op_id: Operation identifier for status bar updates
+            command: Command and arguments to execute
+
+        Returns:
+            Result with success flag, collected output lines, and return code
+        """
+        output_lines: list[str] = []
+        proc = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            stdin=subprocess.DEVNULL,
+            bufsize=1,
+            text=True,
+            cwd=str(self._provider.repo_root),
+        )
+        if proc.stdout is not None:
+            for line in proc.stdout:
+                clean = click.unstyle(line.rstrip())
+                if clean:
+                    output_lines.append(clean)
+                    self.call_from_thread(self._update_operation, op_id=op_id, progress=clean)
+        return_code = proc.wait()
+        return _OperationResult(
+            success=return_code == 0,
+            output_lines=tuple(output_lines),
+            return_code=return_code,
+        )
+
     @work(thread=True)
-    def _close_plan_async(self, plan_id: int, plan_url: str) -> None:
+    def _close_plan_async(self, op_id: str, plan_id: int, plan_url: str) -> None:
         """Close plan in background thread with toast notifications.
 
         Args:
+            op_id: Operation identifier for status bar tracking
             plan_id: The plan identifier
             plan_url: The plan URL
         """
@@ -641,11 +700,13 @@ class ErkDashApp(App):
                 msg = f"Closed plan #{plan_id} (and {len(closed_prs)} linked PRs)"
             else:
                 msg = f"Closed plan #{plan_id}"
+            self.call_from_thread(self._finish_operation, op_id=op_id)
             self.call_from_thread(self.notify, msg, timeout=3)
             # Trigger data refresh
             self.call_from_thread(self.action_refresh)
         except Exception as e:
             # Error toast
+            self.call_from_thread(self._finish_operation, op_id=op_id)
             self.call_from_thread(
                 self.notify,
                 f"Failed to close plan #{plan_id}: {e}",
@@ -654,18 +715,17 @@ class ErkDashApp(App):
             )
 
     @work(thread=True)
-    def _address_remote_async(self, pr_number: int) -> None:
+    def _address_remote_async(self, op_id: str, pr_number: int) -> None:
         """Dispatch address-remote workflow in background thread with toast."""
-        try:
-            result = subprocess.run(
-                ["erk", "launch", "pr-address", "--pr", str(pr_number)],
-                capture_output=True,
-                text=True,
-                check=True,
-                stdin=subprocess.DEVNULL,
-                cwd=str(self._provider.repo_root),
+        result = self._run_streaming_operation(
+            op_id=op_id,
+            command=["erk", "launch", "pr-address", "--pr", str(pr_number)],
+        )
+        self.call_from_thread(self._finish_operation, op_id=op_id)
+        if result.success:
+            metadata_updated = any(
+                "Updated dispatch metadata" in line for line in result.output_lines
             )
-            metadata_updated = "Updated dispatch metadata" in result.stderr
             if metadata_updated:
                 self.call_from_thread(
                     self.notify, f"Dispatched address for PR #{pr_number}", timeout=3
@@ -676,10 +736,9 @@ class ErkDashApp(App):
                     f"Dispatched address for PR #{pr_number} (metadata not updated)",
                     timeout=5,
                 )
-            # Trigger data refresh to pick up updated run_id/run_status
             self.call_from_thread(self.action_refresh)
-        except subprocess.CalledProcessError as e:
-            error_msg = _extract_subprocess_error(e)
+        else:
+            error_msg = next((ln for ln in reversed(result.output_lines) if ln), "Unknown error")
             self.call_from_thread(
                 self.notify,
                 f"Failed to dispatch address for PR #{pr_number}: {error_msg}",
@@ -688,18 +747,17 @@ class ErkDashApp(App):
             )
 
     @work(thread=True)
-    def _fix_conflicts_remote_async(self, pr_number: int) -> None:
+    def _fix_conflicts_remote_async(self, op_id: str, pr_number: int) -> None:
         """Dispatch fix-conflicts workflow in background thread with toast."""
-        try:
-            result = subprocess.run(
-                ["erk", "launch", "pr-fix-conflicts", "--pr", str(pr_number)],
-                capture_output=True,
-                text=True,
-                check=True,
-                stdin=subprocess.DEVNULL,
-                cwd=str(self._provider.repo_root),
+        result = self._run_streaming_operation(
+            op_id=op_id,
+            command=["erk", "launch", "pr-fix-conflicts", "--pr", str(pr_number)],
+        )
+        self.call_from_thread(self._finish_operation, op_id=op_id)
+        if result.success:
+            metadata_updated = any(
+                "Updated dispatch metadata" in line for line in result.output_lines
             )
-            metadata_updated = "Updated dispatch metadata" in result.stderr
             if metadata_updated:
                 self.call_from_thread(
                     self.notify,
@@ -714,8 +772,8 @@ class ErkDashApp(App):
                     timeout=5,
                 )
             self.call_from_thread(self.action_refresh)
-        except subprocess.CalledProcessError as e:
-            error_msg = _extract_subprocess_error(e)
+        else:
+            error_msg = next((ln for ln in reversed(result.output_lines) if ln), "Unknown error")
             self.call_from_thread(
                 self.notify,
                 f"Failed to dispatch fix-conflicts for PR #{pr_number}: {error_msg}",
@@ -724,28 +782,24 @@ class ErkDashApp(App):
             )
 
     @work(thread=True)
-    def _land_pr_async(self, pr_number: int, branch: str, objective_issue: int | None) -> None:
+    def _land_pr_async(
+        self, op_id: str, pr_number: int, branch: str, objective_issue: int | None
+    ) -> None:
         """Land PR in background thread with toast."""
-        try:
-            subprocess.run(
-                [
-                    "erk",
-                    "exec",
-                    "land-execute",
-                    f"--pr-number={pr_number}",
-                    f"--branch={branch}",
-                    "-f",
-                ],
-                capture_output=True,
-                text=True,
-                check=True,
-                stdin=subprocess.DEVNULL,
-                cwd=str(self._provider.repo_root),
-            )
-            self.call_from_thread(self.notify, f"Landed PR #{pr_number}", timeout=3)
-            self.call_from_thread(self.action_refresh)
-        except subprocess.CalledProcessError as e:
-            error_msg = _extract_subprocess_error(e)
+        result = self._run_streaming_operation(
+            op_id=op_id,
+            command=[
+                "erk",
+                "exec",
+                "land-execute",
+                f"--pr-number={pr_number}",
+                f"--branch={branch}",
+                "-f",
+            ],
+        )
+        if not result.success:
+            error_msg = next((ln for ln in reversed(result.output_lines) if ln), "Unknown error")
+            self.call_from_thread(self._finish_operation, op_id=op_id)
             self.call_from_thread(
                 self.notify,
                 f"Failed to land PR #{pr_number}: {error_msg}",
@@ -754,54 +808,58 @@ class ErkDashApp(App):
             )
             return
 
+        self.call_from_thread(self.notify, f"Landed PR #{pr_number}", timeout=3)
+        self.call_from_thread(self.action_refresh)
+
         if objective_issue is not None:
             self.call_from_thread(
-                self.notify, f"Updating objective #{objective_issue}...", timeout=3
+                self._update_operation,
+                op_id=op_id,
+                progress=f"Updating objective #{objective_issue}...",
             )
-            try:
-                subprocess.run(
-                    [
-                        "erk",
-                        "exec",
-                        "objective-update-after-land",
-                        f"--objective={objective_issue}",
-                        f"--pr={pr_number}",
-                        f"--branch={branch}",
-                    ],
-                    capture_output=True,
-                    text=True,
-                    check=True,
-                    stdin=subprocess.DEVNULL,
-                    cwd=str(self._provider.repo_root),
-                )
+            obj_result = self._run_streaming_operation(
+                op_id=op_id,
+                command=[
+                    "erk",
+                    "exec",
+                    "objective-update-after-land",
+                    f"--objective={objective_issue}",
+                    f"--pr={pr_number}",
+                    f"--branch={branch}",
+                ],
+            )
+            self.call_from_thread(self._finish_operation, op_id=op_id)
+            if obj_result.success:
                 self.call_from_thread(
                     self.notify, f"Updated objective #{objective_issue}", timeout=3
                 )
-            except subprocess.CalledProcessError as e:
-                error_msg = _extract_subprocess_error(e)
+            else:
+                error_msg = next(
+                    (ln for ln in reversed(obj_result.output_lines) if ln),
+                    "Unknown error",
+                )
                 self.call_from_thread(
                     self.notify,
                     f"Failed to update objective #{objective_issue}: {error_msg}",
                     severity="error",
                     timeout=5,
                 )
+        else:
+            self.call_from_thread(self._finish_operation, op_id=op_id)
 
     @work(thread=True)
-    def _dispatch_to_queue_async(self, plan_id: int) -> None:
+    def _dispatch_to_queue_async(self, op_id: str, plan_id: int) -> None:
         """Dispatch plan to queue in background thread with toast."""
-        try:
-            subprocess.run(
-                ["erk", "pr", "dispatch", str(plan_id)],
-                capture_output=True,
-                text=True,
-                check=True,
-                stdin=subprocess.DEVNULL,
-                cwd=str(self._provider.repo_root),
-            )
+        result = self._run_streaming_operation(
+            op_id=op_id,
+            command=["erk", "pr", "dispatch", str(plan_id)],
+        )
+        self.call_from_thread(self._finish_operation, op_id=op_id)
+        if result.success:
             self.call_from_thread(self.notify, f"Dispatched plan #{plan_id} to queue", timeout=3)
             self.call_from_thread(self.action_refresh)
-        except subprocess.CalledProcessError as e:
-            error_msg = _extract_subprocess_error(e)
+        else:
+            error_msg = next((ln for ln in reversed(result.output_lines) if ln), "Unknown error")
             self.call_from_thread(
                 self.notify,
                 f"Failed to dispatch plan #{plan_id}: {error_msg}",
@@ -810,21 +868,18 @@ class ErkDashApp(App):
             )
 
     @work(thread=True)
-    def _close_objective_async(self, plan_id: int) -> None:
+    def _close_objective_async(self, op_id: str, plan_id: int) -> None:
         """Close objective in background thread with toast."""
-        try:
-            subprocess.run(
-                ["erk", "objective", "close", str(plan_id), "--force"],
-                capture_output=True,
-                text=True,
-                check=True,
-                stdin=subprocess.DEVNULL,
-                cwd=str(self._provider.repo_root),
-            )
+        result = self._run_streaming_operation(
+            op_id=op_id,
+            command=["erk", "objective", "close", str(plan_id), "--force"],
+        )
+        self.call_from_thread(self._finish_operation, op_id=op_id)
+        if result.success:
             self.call_from_thread(self.notify, f"Closed objective #{plan_id}", timeout=3)
             self.call_from_thread(self.action_refresh)
-        except subprocess.CalledProcessError as e:
-            error_msg = _extract_subprocess_error(e)
+        else:
+            error_msg = next((ln for ln in reversed(result.output_lines) if ln), "Unknown error")
             self.call_from_thread(
                 self.notify,
                 f"Failed to close objective #{plan_id}: {error_msg}",
@@ -833,20 +888,17 @@ class ErkDashApp(App):
             )
 
     @work(thread=True)
-    def _check_objective_async(self, plan_id: int) -> None:
+    def _check_objective_async(self, op_id: str, plan_id: int) -> None:
         """Check objective in background thread with toast."""
-        try:
-            subprocess.run(
-                ["erk", "objective", "check", str(plan_id)],
-                capture_output=True,
-                text=True,
-                check=True,
-                stdin=subprocess.DEVNULL,
-                cwd=str(self._provider.repo_root),
-            )
+        result = self._run_streaming_operation(
+            op_id=op_id,
+            command=["erk", "objective", "check", str(plan_id)],
+        )
+        self.call_from_thread(self._finish_operation, op_id=op_id)
+        if result.success:
             self.call_from_thread(self.notify, f"Checked objective #{plan_id}", timeout=3)
-        except subprocess.CalledProcessError as e:
-            error_msg = _extract_subprocess_error(e)
+        else:
+            error_msg = next((ln for ln in reversed(result.output_lines) if ln), "Unknown error")
             self.call_from_thread(
                 self.notify,
                 f"Failed to check objective #{plan_id}: {error_msg}",
@@ -855,23 +907,20 @@ class ErkDashApp(App):
             )
 
     @work(thread=True)
-    def _one_shot_plan_async(self, plan_id: int) -> None:
+    def _one_shot_plan_async(self, op_id: str, plan_id: int) -> None:
         """Dispatch one-shot plan in background thread with toast."""
-        try:
-            subprocess.run(
-                ["erk", "objective", "plan", str(plan_id), "--one-shot"],
-                capture_output=True,
-                text=True,
-                check=True,
-                stdin=subprocess.DEVNULL,
-                cwd=str(self._provider.repo_root),
-            )
+        result = self._run_streaming_operation(
+            op_id=op_id,
+            command=["erk", "objective", "plan", str(plan_id), "--one-shot"],
+        )
+        self.call_from_thread(self._finish_operation, op_id=op_id)
+        if result.success:
             self.call_from_thread(
                 self.notify, f"Dispatched one-shot plan for objective #{plan_id}", timeout=3
             )
             self.call_from_thread(self.action_refresh)
-        except subprocess.CalledProcessError as e:
-            error_msg = _extract_subprocess_error(e)
+        else:
+            error_msg = next((ln for ln in reversed(result.output_lines) if ln), "Unknown error")
             self.call_from_thread(
                 self.notify,
                 f"Failed to dispatch one-shot plan for objective #{plan_id}: {error_msg}",
@@ -1037,9 +1086,10 @@ class ErkDashApp(App):
             self.notify("Cannot close plan: no issue URL", severity="warning")
             return
 
-        # Show starting toast and run async - no blocking
-        self.notify(f"Closing plan #{row.plan_id}...")
-        self._close_plan_async(row.plan_id, row.plan_url)
+        # Show persistent status bar message and run async - no blocking
+        op_id = f"close-plan-{row.plan_id}"
+        self._start_operation(op_id=op_id, label=f"Closing plan #{row.plan_id}...")
+        self._close_plan_async(op_id, row.plan_id, row.plan_url)
 
     def _copy_checkout_command(self, row: PlanRowData) -> None:
         """Copy appropriate checkout command based on row state.
@@ -1163,56 +1213,40 @@ class ErkDashApp(App):
 
         elif command_id == "fix_conflicts_remote":
             if row.pr_number:
-                executor = RealCommandExecutor(
-                    browser_launch=self._provider.browser.launch,
-                    clipboard_copy=self._provider.clipboard.copy,
-                    close_plan_fn=self._provider.close_plan,
-                    notify_fn=self._notify_with_severity,
-                    refresh_fn=self.action_refresh,
-                    dispatch_to_queue_fn=self._provider.dispatch_to_queue,
+                op_id = f"fix-conflicts-pr-{row.pr_number}"
+                self._start_operation(
+                    op_id=op_id,
+                    label=f"Dispatching fix-conflicts for PR #{row.pr_number}...",
                 )
-                detail_screen = PlanDetailScreen(
-                    row=row,
-                    clipboard=self._provider.clipboard,
-                    browser=self._provider.browser,
-                    executor=executor,
-                    repo_root=self._provider.repo_root,
-                )
-                self.push_screen(detail_screen)
-                detail_screen.call_after_refresh(
-                    lambda: detail_screen.run_streaming_command(
-                        [
-                            "erk",
-                            "launch",
-                            "pr-fix-conflicts",
-                            "--pr",
-                            str(row.pr_number),
-                        ],
-                        cwd=self._provider.repo_root,
-                        title=f"Fix Conflicts Remote PR #{row.pr_number}",
-                    )
-                )
+                self._fix_conflicts_remote_async(op_id, row.pr_number)
 
         elif command_id == "address_remote":
             if row.pr_number:
-                self.notify(f"Dispatching address for PR #{row.pr_number}...")
-                self._address_remote_async(row.pr_number)
+                op_id = f"address-pr-{row.pr_number}"
+                self._start_operation(
+                    op_id=op_id, label=f"Dispatching address for PR #{row.pr_number}..."
+                )
+                self._address_remote_async(op_id, row.pr_number)
 
         elif command_id == "close_plan":
             if row.plan_url:
-                # Show starting toast and run async - no modal blocking
-                self.notify(f"Closing plan #{row.plan_id}...")
-                self._close_plan_async(row.plan_id, row.plan_url)
+                op_id = f"close-plan-{row.plan_id}"
+                self._start_operation(op_id=op_id, label=f"Closing plan #{row.plan_id}...")
+                self._close_plan_async(op_id, row.plan_id, row.plan_url)
 
         elif command_id == "submit_to_queue":
             if row.plan_url:
-                self.notify(f"Dispatching plan #{row.plan_id} to queue...")
-                self._dispatch_to_queue_async(row.plan_id)
+                op_id = f"dispatch-plan-{row.plan_id}"
+                self._start_operation(
+                    op_id=op_id, label=f"Dispatching plan #{row.plan_id} to queue..."
+                )
+                self._dispatch_to_queue_async(op_id, row.plan_id)
 
         elif command_id == "land_pr":
             if row.pr_number and row.pr_head_branch:
-                self.notify(f"Landing PR #{row.pr_number}...")
-                self._land_pr_async(row.pr_number, row.pr_head_branch, row.objective_issue)
+                op_id = f"land-pr-{row.pr_number}"
+                self._start_operation(op_id=op_id, label=f"Landing PR #{row.pr_number}...")
+                self._land_pr_async(op_id, row.pr_number, row.pr_head_branch, row.objective_issue)
 
         elif command_id == "copy_replan":
             cmd = f"/erk:replan {row.plan_id}"
@@ -1236,16 +1270,22 @@ class ErkDashApp(App):
                 self.notify(f"Opened objective #{row.plan_id}")
 
         elif command_id == "one_shot_plan":
-            self.notify(f"Dispatching one-shot plan for objective #{row.plan_id}...")
-            self._one_shot_plan_async(row.plan_id)
+            op_id = f"one-shot-plan-{row.plan_id}"
+            self._start_operation(
+                op_id=op_id,
+                label=f"Dispatching one-shot plan for objective #{row.plan_id}...",
+            )
+            self._one_shot_plan_async(op_id, row.plan_id)
 
         elif command_id == "check_objective":
-            self.notify(f"Checking objective #{row.plan_id}...")
-            self._check_objective_async(row.plan_id)
+            op_id = f"check-objective-{row.plan_id}"
+            self._start_operation(op_id=op_id, label=f"Checking objective #{row.plan_id}...")
+            self._check_objective_async(op_id, row.plan_id)
 
         elif command_id == "close_objective":
-            self.notify(f"Closing objective #{row.plan_id}...")
-            self._close_objective_async(row.plan_id)
+            op_id = f"close-objective-{row.plan_id}"
+            self._start_operation(op_id=op_id, label=f"Closing objective #{row.plan_id}...")
+            self._close_objective_async(op_id, row.plan_id)
 
         elif command_id == "codespace_run_plan":
             cmd = f"erk codespace run objective plan {row.plan_id}"

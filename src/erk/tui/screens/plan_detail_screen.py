@@ -719,22 +719,29 @@ class PlanDetailScreen(ModalScreen):
                 self.dismiss()
                 # Access parent app and trigger async close with toast
                 if isinstance(self.app, ErkDashApp):
-                    self.app.notify(f"Closing plan #{row.plan_id}...")
-                    self.app._close_plan_async(row.plan_id, row.plan_url)
+                    op_id = f"close-plan-{row.plan_id}"
+                    self.app._start_operation(op_id=op_id, label=f"Closing plan #{row.plan_id}...")
+                    self.app._close_plan_async(op_id, row.plan_id, row.plan_url)
 
         elif command_id == "submit_to_queue":
             if row.plan_url:
                 self.dismiss()
                 if isinstance(self.app, ErkDashApp):
-                    self.app.notify(f"Dispatching plan #{row.plan_id} to queue...")
-                    self.app._dispatch_to_queue_async(row.plan_id)
+                    op_id = f"dispatch-plan-{row.plan_id}"
+                    self.app._start_operation(
+                        op_id=op_id, label=f"Dispatching plan #{row.plan_id} to queue..."
+                    )
+                    self.app._dispatch_to_queue_async(op_id, row.plan_id)
 
         elif command_id == "land_pr":
             if row.pr_number and row.pr_head_branch:
                 self.dismiss()
                 if isinstance(self.app, ErkDashApp):
-                    self.app.notify(f"Landing PR #{row.pr_number}...")
-                    self.app._land_pr_async(row.pr_number, row.pr_head_branch, row.objective_issue)
+                    op_id = f"land-pr-{row.pr_number}"
+                    self.app._start_operation(op_id=op_id, label=f"Landing PR #{row.pr_number}...")
+                    self.app._land_pr_async(
+                        op_id, row.pr_number, row.pr_head_branch, row.objective_issue
+                    )
 
     def compose(self) -> ComposeResult:
         """Create detail dialog content as an Action Hub."""
