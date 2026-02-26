@@ -103,7 +103,7 @@ def test_get_impl_issue_from_impl_folder(tmp_path: Path) -> None:
     git = FakeGit(existing_paths={plan_file}, current_branches={worktree_path: branch})
     ctx = create_test_context(git=git)
 
-    issue_text, issue_url = _get_impl_issue(ctx, worktree_path)
+    issue_text, issue_url = _get_impl_issue(ctx, worktree_path, branch=branch)
 
     assert issue_text == "#42"
     assert issue_url == "https://github.com/owner/repo/issues/42"
@@ -115,7 +115,7 @@ def test_get_impl_issue_none_when_not_found() -> None:
     git = FakeGit()
     ctx = create_test_context(git=git)
 
-    issue_text, issue_url = _get_impl_issue(ctx, worktree_path)
+    issue_text, issue_url = _get_impl_issue(ctx, worktree_path, branch="some-branch")
 
     assert issue_text is None
     assert issue_url is None
