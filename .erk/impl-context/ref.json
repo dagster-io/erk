@@ -1,4 +1,9 @@
 {
   "provider": "github-draft-pr",
-  "title": "Fix: Pass plan PR number to objective roadmap update in plan-save"
+  "plan_id": "8296",
+  "url": "https://github.com/dagster-io/erk/pull/8296",
+  "created_at": "2026-02-26T15:25:15.697220",
+  "synced_at": "2026-02-26T15:25:15.697220",
+  "labels": [],
+  "objective_id": null
 }
