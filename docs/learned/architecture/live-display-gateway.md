@@ -25,9 +25,7 @@ Rich's `Live` display requires careful lifecycle management (start → update lo
 
 ## Cross-Cutting Pattern: Watch Loop Architecture
 
-<!-- Source: src/erk/cli/commands/plan/list_cmd.py, _run_watch_loop -->
-
-The canonical usage pattern appears in `_run_watch_loop()` in `src/erk/cli/commands/plan/list_cmd.py`. This demonstrates the ONLY correct way to use LiveDisplay:
+The canonical usage pattern for LiveDisplay in watch loops demonstrates the ONLY correct way to use LiveDisplay:
 
 1. **Start once** before entering the loop
 2. **Update repeatedly** inside the loop (every tick)

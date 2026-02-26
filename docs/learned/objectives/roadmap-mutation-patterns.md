@@ -81,8 +81,8 @@ Both patterns are triggered by upstream workflow commands, not invoked directly 
 
 | Upstream Command | Triggers                                | Via                                                   |
 | ---------------- | --------------------------------------- | ----------------------------------------------------- |
-| `erk plan save`  | Surgical update to set node in_progress | Skill calls `update-objective-node` with status       |
-| `erk pr submit`  | Surgical update to link PR              | Skill calls `update-objective-node` with PR reference |
+| `/erk:plan-save` | Surgical update to set node in_progress | Skill calls `update-objective-node` with status       |
+| `/erk:pr-submit` | Surgical update to link PR              | Skill calls `update-objective-node` with PR reference |
 | `erk land`       | Full-body update after merge            | `objective-apply-landed-update` with `--node` flags   |
 
 ## Anti-Patterns

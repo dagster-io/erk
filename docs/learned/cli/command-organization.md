@@ -25,20 +25,22 @@ erk dash          # Display plan dashboard
 erk implement     # Implement a plan in current directory
 erk prepare       # Create a worktree from a plan issue
 
-# Plan management operations are under `erk pr`:
+# Plan submission operations are under `erk pr`:
+erk pr dispatch   # Submit a plan for remote execution
+
+# Plan creation, view/close/log/replan operations are under `erk pr`:
 erk pr create     # Create a new plan issue
 erk pr view       # View a plan
 erk pr close      # Close a plan
 erk pr log        # View plan execution logs
 erk pr replan     # Replan a plan issue
-erk pr dispatch   # Submit a plan for remote execution
 ```
 
 **Why top-level?**
 
 - Highest-frequency entry points: `implement`, `prepare`, and `dash` are the most common workflow starters
 - Natural mental model: "I want to work on a plan" → `erk implement 42`
-- Plan management via `erk pr <subcommand>`: `create`, `view`, `close`, `log`, `replan`, `dispatch`
+- Plan management via `erk pr <subcommand>`: `dispatch`, `list`, `create`, `view`, `close`, `log`, `replan`
 
 ## Command Categories
 
@@ -232,14 +234,14 @@ erk implement 42
 erk prepare 42
 erk dash
 
-# GOOD: erk pr subcommands for plan management
+# GOOD: erk pr subcommands for plan submission and management
+erk pr dispatch 42
 erk pr create --file plan.md
 erk pr view 42
 erk pr close 42
-erk pr dispatch 42
 ```
 
-**Why?** Only `implement`, `prepare`, and `dash` are top-level — they are the most common workflow entry points. All other plan and PR operations live under `erk pr`.
+**Why?** Only `implement`, `prepare`, and `dash` are top-level — they are the most common workflow entry points. Plan submission and management (dispatch/create/view/close/log/replan) all live under `erk pr`.
 
 ### ✅ Infrastructure Grouped Under Noun
 
@@ -360,7 +362,7 @@ erk down                  # Move to child branch
 
 **Step 2: Create command file**
 
-- Plan/PR command: `src/erk/cli/commands/pr/<name>_cmd.py`
+- PR command: `src/erk/cli/commands/pr/<name>_cmd.py`
 - Worktree command: `src/erk/cli/commands/wt/<name>_cmd.py`
 - Stack command: `src/erk/cli/commands/stack/<name>_cmd.py`
 - Top-level: `src/erk/cli/commands/<name>.py`
@@ -392,7 +394,7 @@ wt_group.add_command(create_wt)  # Grouped under wt
 | Component         | Location                                                                                                    |
 | ----------------- | ----------------------------------------------------------------------------------------------------------- |
 | CLI entry point   | `src/erk/cli/cli.py`                                                                                        |
-| Plan/PR commands  | `src/erk/cli/commands/pr/`                                                                                  |
+| PR commands       | `src/erk/cli/commands/pr/`                                                                                  |
 | Worktree commands | `src/erk/cli/commands/wt/`                                                                                  |
 | Stack commands    | `src/erk/cli/commands/stack/`                                                                               |
 | Navigation        | `src/erk/cli/commands/branch/checkout_cmd.py`, `src/erk/cli/commands/up.py`, `src/erk/cli/commands/down.py` |

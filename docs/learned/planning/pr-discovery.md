@@ -9,14 +9,14 @@ read_when:
   - "working with plan-header branch_name field"
 tripwires:
   - action: "assuming branch_name is always present in plan-header metadata"
-    warning: "branch_name is null until Phase 2 (plan submit). Check the plan metadata field lifecycle in lifecycle.md."
+    warning: "branch_name is null until Phase 2 (pr dispatch). Check the plan metadata field lifecycle in lifecycle.md."
   - action: "using issue timeline API as the primary PR lookup path"
     warning: "The primary path is branch_name from plan-header → get_pr_for_branch(). Timeline API is a separate strategy for when branch_name is unavailable."
 ---
 
 # PR Discovery Strategies for Plans
 
-Finding the PR associated with a plan issue is a cross-cutting concern that spans multiple commands (`get-pr-for-plan`, `trigger-async-learn`, `pr checkout`, `pr close`). Two fundamentally different strategies exist, chosen based on what metadata is available.
+Finding the PR associated with a plan issue is a cross-cutting concern that spans multiple commands (`get-pr-for-plan`, `trigger-async-learn`, `erk pr co`, `erk pr close`). Two fundamentally different strategies exist, chosen based on what metadata is available.
 
 ## Why Two Strategies Exist
 

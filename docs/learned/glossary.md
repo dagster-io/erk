@@ -854,14 +854,14 @@ A special type of implementation plan created by `/erk:learn`. Learn plans captu
 **Identifying Learn Plans in Code**:
 
 - Issue label: Check for `erk-learn` in `issue.labels`
-- Helper function: `is_issue_learn_plan(labels)` in `src/erk/cli/commands/submit.py`
+- Helper function: `is_issue_learn_plan(labels)` in `src/erk/cli/commands/pr/dispatch_cmd.py`
 - Plan metadata: Check `plan_type: learn` in plan-header
 - PR label: PRs from learn plans have `erk-skip-extraction`
 
 **Special Behaviors**:
 
 - `erk land` skips the "not learned from" warning for learn plans (they don't need learning)
-- `erk learn complete` validates the issue has the `erk-learn` label
+- `/erk:learn` validates the issue has the `erk-learn` label
 
 **Purpose**: Prevent valuable learnings from being lost after implementation sessions by systematically documenting patterns, decisions, and discoveries.
 

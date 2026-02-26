@@ -14,7 +14,7 @@ When using erk worktrees with Graphite, branches must be tracked in Graphite bef
 
 ## The Problem
 
-Erk creates git branches and worktrees, but does not automatically register them with Graphite. When you try to submit a PR with `gt submit`, you may encounter:
+Erk creates git branches and worktrees, but does not automatically register them with Graphite. When you try to submit a PR with `erk pr dispatch` or `gt submit`, you may encounter:
 
 ```
 error: no_parent - Branch 'feature-branch' is not tracked by Graphite

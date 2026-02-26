@@ -296,7 +296,7 @@ Use existing branch 'P123-feature-01-12-1430'? [Y/n]
 2. **Delete and create new**: Remove existing branches, start fresh
 3. **Abort**: Cancel submission
 
-This prevents branch proliferation when resubmitting plans. See [Branch Reuse in Plan Submit](submit-branch-reuse.md) for details.
+This prevents branch proliferation when resubmitting plans. See [Branch Reuse in PR Dispatch](submit-branch-reuse.md) for details.
 
 ### Branch Creation
 
@@ -329,7 +329,7 @@ trunk (main)
 
 **Fallback**: If parent lookup fails (missing parent, no branch recorded), falls back to trunk.
 
-**Implementation**: See `get_learn_plan_parent_branch()` in `src/erk/cli/commands/submit.py`.
+**Implementation**: See `get_learn_plan_parent_branch()` in `src/erk/cli/commands/pr/dispatch_cmd.py`.
 
 ### `.erk/impl-context/` Folder Creation
 
