@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Documentation Plan: Update tests to exercise branch-scoped .erk/impl-context/ primary code paths"
+}
