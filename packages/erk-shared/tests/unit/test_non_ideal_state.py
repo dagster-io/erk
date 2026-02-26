@@ -1,8 +1,8 @@
 """Unit tests for NonIdealStateError and NonIdealState protocol."""
 
-import pytest
-
 from dataclasses import dataclass
+
+import pytest
 
 from erk_shared.non_ideal_state import (
     BranchDetectionFailed,
@@ -14,7 +14,6 @@ from erk_shared.non_ideal_state import (
     PRNotFoundError,
     SessionNotFound,
 )
-
 
 # ============================================================================
 # NonIdealStateError

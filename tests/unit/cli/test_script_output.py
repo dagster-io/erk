@@ -8,7 +8,6 @@ from click.testing import CliRunner
 from erk.cli.script_output import exit_with_error, handle_non_ideal_exit
 from erk_shared.non_ideal_state import BranchDetectionFailed, NonIdealStateError
 
-
 # ============================================================================
 # Test helpers
 # ============================================================================

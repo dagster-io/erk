@@ -1,8 +1,8 @@
 """Data types for GitHub issues integration."""
 
+from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Iterator
 
 from erk_shared.non_ideal_state import EnsurableResult
 
