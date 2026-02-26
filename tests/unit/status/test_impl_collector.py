@@ -25,8 +25,8 @@ def test_plan_collector_no_plan_folder(tmp_path: Path) -> None:
 
     assert result is not None
     assert result.exists is False
-    assert result.issue_number is None
-    assert result.issue_url is None
+    assert result.plan_number is None
+    assert result.plan_url is None
 
 
 def test_plan_collector_with_plan_no_issue(tmp_path: Path) -> None:
@@ -43,8 +43,8 @@ def test_plan_collector_with_plan_no_issue(tmp_path: Path) -> None:
 
     assert result is not None
     assert result.exists is True
-    assert result.issue_number is None
-    assert result.issue_url is None
+    assert result.plan_number is None
+    assert result.plan_url is None
 
 
 def test_plan_collector_with_issue_reference(tmp_path: Path) -> None:
@@ -72,8 +72,8 @@ def test_plan_collector_with_issue_reference(tmp_path: Path) -> None:
 
     assert result is not None
     assert result.exists is True
-    assert result.issue_number == 42
-    assert result.issue_url == "https://github.com/owner/repo/issues/42"
+    assert result.plan_number == 42
+    assert result.plan_url == "https://github.com/owner/repo/issues/42"
 
 
 def test_plan_collector_invalid_issue_reference(tmp_path: Path) -> None:
@@ -95,5 +95,5 @@ def test_plan_collector_invalid_issue_reference(tmp_path: Path) -> None:
     # Should still work but without issue info
     assert result is not None
     assert result.exists is True
-    assert result.issue_number is None
-    assert result.issue_url is None
+    assert result.plan_number is None
+    assert result.plan_url is None

@@ -37,8 +37,8 @@ class LearnResult:
     last_remote_impl_at: str | None
 
 
-def _extract_issue_number(identifier: str) -> int | None:
-    """Extract issue number from identifier (number or URL).
+def _extract_plan_number(identifier: str) -> int | None:
+    """Extract plan number from identifier (number or URL).
 
     Args:
         identifier: Issue number or GitHub issue URL
@@ -108,11 +108,11 @@ def learn_cmd(
     # Resolve plan_id: explicit argument or infer from branch
     plan_id: str | None = None
     if issue is not None:
-        issue_number = _extract_issue_number(issue)
-        if issue_number is None:
+        plan_number = _extract_plan_number(issue)
+        if plan_number is None:
             user_output(click.style(f"Error: Invalid issue identifier: {issue}", fg="red"))
             raise SystemExit(1)
-        plan_id = str(issue_number)
+        plan_id = str(plan_number)
     elif branch_name is not None:
         plan_id = ctx.plan_backend.resolve_plan_id_for_branch(ctx.cwd, branch_name)
 
