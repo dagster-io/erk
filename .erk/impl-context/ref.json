@@ -1,0 +1,5 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Update CLI commands to use resolve_impl_dir()",
+  "objective_id": 8197
+}
