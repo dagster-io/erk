@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Documentation Plan: Delete get_branch_issue() dead code and simplify to plan-ref.json"
+}
