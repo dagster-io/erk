@@ -139,8 +139,8 @@ class TestPlanBodyScreen:
             assert not isinstance(app.screen_stack[-1], PlanBodyScreen)
 
     @pytest.mark.asyncio
-    async def test_issue_body_screen_dismisses_on_arbitrary_key(self) -> None:
-        """PlanBodyScreen closes when pressing any key, not just the bound dismiss keys."""
+    async def test_issue_body_screen_does_not_dismiss_on_arbitrary_key(self) -> None:
+        """PlanBodyScreen does NOT close on arbitrary keys — only dismiss keys work."""
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", plan_body="metadata body")]
         )
@@ -161,7 +161,7 @@ class TestPlanBodyScreen:
             await pilot.press("x")
             await pilot.pause()
 
-            assert not isinstance(app.screen_stack[-1], PlanBodyScreen)
+            assert isinstance(app.screen_stack[-1], PlanBodyScreen)
 
     @pytest.mark.asyncio
     async def test_issue_body_screen_shows_empty_message_when_no_content(self) -> None:
@@ -277,8 +277,8 @@ class TestPlanBodyScreen:
             assert body_screen._loading is False
 
     @pytest.mark.asyncio
-    async def test_plan_body_screen_dismisses_on_unmapped_key(self) -> None:
-        """Pressing an unmapped key dismisses PlanBodyScreen."""
+    async def test_plan_body_screen_does_not_dismiss_on_unmapped_key(self) -> None:
+        """Pressing an unmapped key does NOT dismiss PlanBodyScreen."""
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", plan_body="metadata body")]
         )
@@ -296,8 +296,8 @@ class TestPlanBodyScreen:
 
             assert isinstance(app.screen_stack[-1], PlanBodyScreen)
 
-            # Press unmapped key — should dismiss
+            # Press unmapped key — should NOT dismiss
             await pilot.press("j")
             await pilot.pause()
 
-            assert not isinstance(app.screen_stack[-1], PlanBodyScreen)
+            assert isinstance(app.screen_stack[-1], PlanBodyScreen)
