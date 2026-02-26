@@ -52,6 +52,11 @@ class _OperationResult:
     return_code: int
 
 
+def _last_output_line(result: _OperationResult) -> str:
+    """Return the last non-empty output line, or 'Unknown error'."""
+    return next((ln for ln in reversed(result.output_lines) if ln), "Unknown error")
+
+
 def _should_trigger_learn(*, is_learn_plan: bool, learn_status: str | None) -> bool:
     """Determine if async learn should be triggered after landing a PR.
 
@@ -752,7 +757,7 @@ class ErkDashApp(App):
                 )
             self.call_from_thread(self.action_refresh)
         else:
-            error_msg = next((ln for ln in reversed(result.output_lines) if ln), "Unknown error")
+            error_msg = _last_output_line(result)
             self.call_from_thread(
                 self.notify,
                 f"Failed to dispatch address for PR #{pr_number}: {error_msg}",
@@ -787,7 +792,7 @@ class ErkDashApp(App):
                 )
             self.call_from_thread(self.action_refresh)
         else:
-            error_msg = next((ln for ln in reversed(result.output_lines) if ln), "Unknown error")
+            error_msg = _last_output_line(result)
             self.call_from_thread(
                 self.notify,
                 f"Failed to dispatch fix-conflicts for PR #{pr_number}: {error_msg}",
@@ -820,7 +825,7 @@ class ErkDashApp(App):
             ],
         )
         if not result.success:
-            error_msg = next((ln for ln in reversed(result.output_lines) if ln), "Unknown error")
+            error_msg = _last_output_line(result)
             self.call_from_thread(self._finish_operation, op_id=op_id)
             self.call_from_thread(
                 self.notify,
@@ -855,10 +860,7 @@ class ErkDashApp(App):
                     self.notify, f"Updated objective #{objective_issue}", timeout=3
                 )
             else:
-                error_msg = next(
-                    (ln for ln in reversed(obj_result.output_lines) if ln),
-                    "Unknown error",
-                )
+                error_msg = _last_output_line(obj_result)
                 self.call_from_thread(
                     self.notify,
                     f"Failed to update objective #{objective_issue}: {error_msg}",
@@ -882,10 +884,7 @@ class ErkDashApp(App):
                     self.notify, f"Learn triggered for plan #{plan_id}", timeout=3
                 )
             else:
-                error_msg = next(
-                    (ln for ln in reversed(learn_result.output_lines) if ln),
-                    "Unknown error",
-                )
+                error_msg = _last_output_line(learn_result)
                 self.call_from_thread(
                     self.notify,
                     f"Learn trigger failed for plan #{plan_id}: {error_msg}",
@@ -907,7 +906,7 @@ class ErkDashApp(App):
             self.call_from_thread(self.notify, f"Dispatched plan #{plan_id} to queue", timeout=3)
             self.call_from_thread(self.action_refresh)
         else:
-            error_msg = next((ln for ln in reversed(result.output_lines) if ln), "Unknown error")
+            error_msg = _last_output_line(result)
             self.call_from_thread(
                 self.notify,
                 f"Failed to dispatch plan #{plan_id}: {error_msg}",
@@ -927,7 +926,7 @@ class ErkDashApp(App):
             self.call_from_thread(self.notify, f"Closed objective #{plan_id}", timeout=3)
             self.call_from_thread(self.action_refresh)
         else:
-            error_msg = next((ln for ln in reversed(result.output_lines) if ln), "Unknown error")
+            error_msg = _last_output_line(result)
             self.call_from_thread(
                 self.notify,
                 f"Failed to close objective #{plan_id}: {error_msg}",
@@ -946,7 +945,7 @@ class ErkDashApp(App):
         if result.success:
             self.call_from_thread(self.notify, f"Checked objective #{plan_id}", timeout=3)
         else:
-            error_msg = next((ln for ln in reversed(result.output_lines) if ln), "Unknown error")
+            error_msg = _last_output_line(result)
             self.call_from_thread(
                 self.notify,
                 f"Failed to check objective #{plan_id}: {error_msg}",
@@ -968,7 +967,7 @@ class ErkDashApp(App):
             )
             self.call_from_thread(self.action_refresh)
         else:
-            error_msg = next((ln for ln in reversed(result.output_lines) if ln), "Unknown error")
+            error_msg = _last_output_line(result)
             self.call_from_thread(
                 self.notify,
                 f"Failed to dispatch one-shot plan for objective #{plan_id}: {error_msg}",
