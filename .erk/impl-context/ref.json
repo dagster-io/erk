@@ -1,4 +1,9 @@
 {
   "provider": "github-draft-pr",
-  "title": "Change Learn Plan Labeling: `erk-learn` Only (no `erk-plan`)"
+  "plan_id": "8170",
+  "url": "https://github.com/dagster-io/erk/pull/8170",
+  "created_at": "2026-02-26T07:43:45.039756",
+  "synced_at": "2026-02-26T07:43:45.039756",
+  "labels": [],
+  "objective_id": null
 }
