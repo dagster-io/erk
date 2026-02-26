@@ -45,7 +45,7 @@ def _make_plan(
         body="",
         state=PlanState.OPEN,
         url="https://github.com/test/repo/issues/42",
-        labels=["erk-planned-pr", "erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
         updated_at=datetime(2024, 1, 16, 12, 0, tzinfo=UTC),

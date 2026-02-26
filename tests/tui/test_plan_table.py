@@ -698,7 +698,7 @@ def test_dedup_preserves_row_order() -> None:
 
 def test_dedup_multi_label_query_scenario() -> None:
     """Deduplication handles multi-label queries returning same plan multiple times."""
-    # Simulates multi-label query (e.g., erk-planned-pr + erk-learn) returning same plan
+    # Simulates multi-label query (e.g., erk-pr + erk-learn) returning same plan
     plan_a = make_plan_row(123, "Multi-Label Plan A")
     plan_b = make_plan_row(456, "Plan B")
     plan_a_duplicate = make_plan_row(123, "Multi-Label Plan A")  # Same plan, different label result

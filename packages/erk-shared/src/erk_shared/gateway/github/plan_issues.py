@@ -43,9 +43,9 @@ _LABEL_ERK_PLAN = "erk-plan"
 _LABEL_ERK_PLAN_DESC = "Implementation plan for manual execution"
 _LABEL_ERK_PLAN_COLOR = "0E8A16"
 
-_LABEL_ERK_PLANNED_PR = "erk-planned-pr"
-_LABEL_ERK_PLANNED_PR_DESC = "Plan managed as a draft PR"
-_LABEL_ERK_PLANNED_PR_COLOR = "1D76DB"
+_LABEL_ERK_PR = "erk-pr"
+_LABEL_ERK_PR_DESC = "Plan managed as a draft PR"
+_LABEL_ERK_PR_COLOR = "1D76DB"
 
 _LABEL_ERK_LEARN = "erk-learn"
 _LABEL_ERK_LEARN_DESC = "Documentation learning plan"
@@ -141,10 +141,10 @@ def create_plan_issue(
     if title is None:
         title = extract_title_from_plan(plan_content)
 
-    # Step 3: Determine labels - erk-planned-pr + type-specific label
+    # Step 3: Determine labels - erk-pr + type-specific label
     # Learn plans are identified by having "erk-learn" in extra_labels
     is_learn_plan = extra_labels is not None and _LABEL_ERK_LEARN in extra_labels
-    labels = [_LABEL_ERK_PLANNED_PR]
+    labels = [_LABEL_ERK_PR]
     if is_learn_plan:
         labels.append(_LABEL_ERK_LEARN)
     else:
@@ -452,12 +452,12 @@ def _ensure_labels_exist(
     """
     try:
         for label in labels:
-            if label == _LABEL_ERK_PLANNED_PR:
+            if label == _LABEL_ERK_PR:
                 github_issues.ensure_label_exists(
                     repo_root=repo_root,
-                    label=_LABEL_ERK_PLANNED_PR,
-                    description=_LABEL_ERK_PLANNED_PR_DESC,
-                    color=_LABEL_ERK_PLANNED_PR_COLOR,
+                    label=_LABEL_ERK_PR,
+                    description=_LABEL_ERK_PR_DESC,
+                    color=_LABEL_ERK_PR_COLOR,
                 )
             elif label == _LABEL_ERK_PLAN:
                 github_issues.ensure_label_exists(
@@ -512,9 +512,9 @@ def get_erk_label_definitions() -> list[LabelDefinition]:
     """
     return [
         LabelDefinition(
-            name=_LABEL_ERK_PLANNED_PR,
-            description=_LABEL_ERK_PLANNED_PR_DESC,
-            color=_LABEL_ERK_PLANNED_PR_COLOR,
+            name=_LABEL_ERK_PR,
+            description=_LABEL_ERK_PR_DESC,
+            color=_LABEL_ERK_PR_COLOR,
         ),
         LabelDefinition(
             name=_LABEL_ERK_PLAN,
@@ -549,9 +549,9 @@ def get_required_erk_labels() -> list[LabelDefinition]:
     """
     return [
         LabelDefinition(
-            name=_LABEL_ERK_PLANNED_PR,
-            description=_LABEL_ERK_PLANNED_PR_DESC,
-            color=_LABEL_ERK_PLANNED_PR_COLOR,
+            name=_LABEL_ERK_PR,
+            description=_LABEL_ERK_PR_DESC,
+            color=_LABEL_ERK_PR_COLOR,
         ),
         LabelDefinition(
             name=_LABEL_ERK_PLAN,

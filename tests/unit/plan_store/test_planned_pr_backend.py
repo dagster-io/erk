@@ -143,12 +143,12 @@ def test_create_plan_adds_extra_labels() -> None:
         repo_root=Path("/repo"),
         title="Test Plan",
         content="# Plan",
-        labels=("erk-planned-pr", "erk-learn"),
+        labels=("erk-pr", "erk-learn"),
         metadata={"branch_name": "test-branch"},
     )
 
     pr_number = int(result.plan_id)
-    assert fake_github.has_pr_label(Path("/repo"), pr_number, "erk-planned-pr")
+    assert fake_github.has_pr_label(Path("/repo"), pr_number, "erk-pr")
     assert fake_github.has_pr_label(Path("/repo"), pr_number, "erk-learn")
 
 

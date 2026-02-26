@@ -35,7 +35,7 @@ def test_create_plan_issue_success() -> None:
     assert len(fake_gh.created_issues) == 1
     title, body, labels = fake_gh.created_issues[0]
     assert title == "[erk-plan] My Feature"
-    assert "erk-planned-pr" in labels
+    assert "erk-pr" in labels
     assert "erk-plan" in labels
     assert "Step 1" in body
 
@@ -87,10 +87,10 @@ def test_create_plan_issue_ensures_label() -> None:
     )
 
     assert result.exit_code == 0
-    # Verify labels were created (erk-planned-pr + erk-plan)
+    # Verify labels were created (erk-pr + erk-plan)
     assert len(fake_gh.created_labels) == 2
     label_0, description_0, color_0 = fake_gh.created_labels[0]
-    assert label_0 == "erk-planned-pr"
+    assert label_0 == "erk-pr"
     assert description_0 == "Plan managed as a draft PR"
     assert color_0 == "1D76DB"
     label_1, description_1, color_1 = fake_gh.created_labels[1]

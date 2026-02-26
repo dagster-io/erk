@@ -51,7 +51,7 @@ def _serialize_plan_row(row: PlanRowData) -> dict[str, Any]:
 
 @click.command(name="dash-data")
 @click.option("--state", type=click.Choice(["open", "closed"]), default=None)
-@click.option("--label", multiple=True, default=("erk-planned-pr", "erk-plan"))
+@click.option("--label", multiple=True, default=("erk-pr", "erk-plan"))
 @click.option("--limit", type=int, default=None)
 @click.option("--show-prs/--no-show-prs", default=True)
 @click.option("--show-runs/--no-show-runs", default=False)

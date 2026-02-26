@@ -25,7 +25,7 @@ Fetch all open erk-plan issues, sorted oldest first:
 gh api repos/dagster-io/erk/issues \
   -X GET \
   --paginate \
-  -f labels=erk-planned-pr,erk-plan \
+  -f labels=erk-pr,erk-plan \
   -f state=open \
   -f per_page=100 \
   --jq 'sort_by(.created_at) | map({number, title, createdAt: .created_at, labels})'
