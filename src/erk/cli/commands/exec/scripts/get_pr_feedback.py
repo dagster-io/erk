@@ -123,16 +123,13 @@ def get_pr_feedback(ctx: click.Context, pr: int | None, include_resolved: bool) 
         branch = GitHubChecks.branch(get_current_branch(ctx))
         if isinstance(branch, BranchDetectionFailed):
             branch.ensure()
-        assert not isinstance(branch, BranchDetectionFailed)
         pr_details = GitHubChecks.pr_for_branch(github, repo_root, branch)
         if isinstance(pr_details, NoPRForBranch):
             pr_details.ensure()
-        assert not isinstance(pr_details, NoPRForBranch)
     else:
         pr_details = GitHubChecks.pr_by_number(github, repo_root, pr)
         if isinstance(pr_details, PRNotFoundError):
             pr_details.ensure()
-        assert not isinstance(pr_details, PRNotFoundError)
 
     # Parallel fetch of review threads and discussion comments
     with ThreadPoolExecutor(max_workers=2) as executor:
@@ -159,7 +156,6 @@ def get_pr_feedback(ctx: click.Context, pr: int | None, include_resolved: bool) 
     # Validate comments result
     if isinstance(comments_result, GitHubAPIFailed):
         comments_result.ensure()
-    assert not isinstance(comments_result, GitHubAPIFailed)
     comments = comments_result
 
     # Filter out threads with invalid IDs
