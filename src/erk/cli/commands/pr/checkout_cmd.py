@@ -283,11 +283,9 @@ def _checkout_pr(
         if parent is None:
             ctx.console.info("Tracking branch with Graphite...")
             ctx.branch_manager.track_branch(worktree_path, branch_name, pr.base_ref_name)
-        elif ctx.graphite_branch_ops is not None and ctx.graphite.is_branch_diverged_from_tracking(
-            ctx.git, repo.root, branch_name
-        ):
+        elif ctx.graphite.is_branch_diverged_from_tracking(ctx.git, repo.root, branch_name):
             ctx.console.info("Retracking diverged branch with Graphite...")
-            ctx.graphite_branch_ops.retrack_branch(worktree_path, branch_name)
+            ctx.branch_manager.retrack_branch(worktree_path, branch_name)
 
     # Navigate and display checkout result
     navigate_and_display_checkout(

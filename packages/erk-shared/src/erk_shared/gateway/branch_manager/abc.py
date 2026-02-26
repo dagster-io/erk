@@ -136,6 +136,19 @@ class BranchManager(ABC):
         ...
 
     @abstractmethod
+    def retrack_branch(self, repo_root: Path, branch_name: str) -> None:
+        """Re-track an existing branch to fix tracking divergence.
+
+        For Graphite: Runs `gt track <branch>` to update Graphite's branchRevision.
+        For Git: No-op (plain Git doesn't track branch relationships).
+
+        Args:
+            repo_root: Repository root directory
+            branch_name: Name of the branch to re-track
+        """
+        ...
+
+    @abstractmethod
     def get_parent_branch(self, repo_root: Path, branch: str) -> str | None:
         """Get parent branch name for a given branch.
 
