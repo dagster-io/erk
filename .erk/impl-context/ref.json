@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Documentation Plan: Split tests/tui/test_app.py into tests/tui/app/ sub-module"
+}
