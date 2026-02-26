@@ -51,11 +51,11 @@ Plan and objective commands safely reuse the same keyboard shortcuts because the
 
 | Shortcut | Plan View Command    | Objectives View Command |
 | -------- | -------------------- | ----------------------- |
-| `s`      | Submit to Queue      | Implement (One-Shot)    |
+| `s`      | Dispatch to Queue    | Implement (One-Shot)    |
 | `5`      | Fix Conflicts Remote | Check Objective         |
 | `i`      | Open Issue           | Open Objective          |
 | `1`      | Copy Prepare         | Copy Implement          |
-| `3`      | Copy Submit          | Copy View               |
+| `3`      | Copy Dispatch        | Copy View               |
 
 A shortcut collision would only occur if both a plan and objective command with the same shortcut had overlapping view predicates. The `_is_plan_view` / `_is_objectives_view` split prevents this.
 

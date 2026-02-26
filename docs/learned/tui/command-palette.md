@@ -39,7 +39,7 @@ Erk's TUI command palette uses category-based emoji prefixes to identify command
 
 | Category | Emoji     | Use For              | Examples                               |
 | -------- | --------- | -------------------- | -------------------------------------- |
-| `ACTION` | lightning | Mutative operations  | Close plan, Submit to queue, Land PR   |
+| `ACTION` | lightning | Mutative operations  | Close plan, Dispatch to queue, Land PR |
 | `OPEN`   | link      | Browser navigation   | Open issue, Open PR, Open workflow run |
 | `COPY`   | clipboard | Clipboard operations | Copy checkout command                  |
 
