@@ -149,7 +149,7 @@ def test_create_with_json_and_plan_file() -> None:
         expected_name = f"test-feature-{date_suffix}"
         assert output_data["worktree_name"] == expected_name
         wt_path = repo_dir / "worktrees" / expected_name
-        expected_impl_folder = wt_path / ".impl"
+        expected_impl_folder = wt_path / ".erk" / "impl-context" / expected_name
         assert output_data["plan_file"] == str(expected_impl_folder)
         assert output_data["status"] == "created"
 
@@ -283,7 +283,7 @@ def test_create_with_stay_and_plan_file() -> None:
         wt_path = repo_dir / "worktrees" / f"test-feature-{date_suffix}"
         assert wt_path.exists()
         # Impl folder should be created
-        assert (wt_path / ".impl" / "plan.md").exists()
+        assert (wt_path / ".erk" / "impl-context" / f"test-feature-{date_suffix}" / "plan.md").exists()
         assert not plan_file.exists()
         # When --stay is used, only show creation message (no navigation)
         assert "Created worktree at" in result.output

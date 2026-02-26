@@ -6,6 +6,7 @@ from erk.cli.cli import cli
 from erk.cli.config import LoadedConfig
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.naming import default_branch_for_worktree
 from tests.commands.workspace.create.conftest import get_current_date_suffix
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -49,9 +50,10 @@ def test_create_with_plan_file() -> None:
         date_suffix = get_current_date_suffix()
         wt_path = repo_dir / "worktrees" / f"my-feature-{date_suffix}"
         assert wt_path.exists()
-        # Impl folder should be created with plan.md
-        assert (wt_path / ".impl").exists()
-        assert (wt_path / ".impl" / "plan.md").exists()
+        # Branch-scoped impl folder should be created with plan.md
+        impl_dir = wt_path / ".erk" / "impl-context" / f"my-feature-{date_suffix}"
+        assert impl_dir.exists()
+        assert (impl_dir / "plan.md").exists()
         assert not plan_file.exists()
 
 
@@ -102,7 +104,8 @@ def test_create_with_plan_file_removes_plan_word() -> None:
             expected_worktree_name = f"{expected_worktree_base}-{date_suffix}"
             wt_path = repo_dir / "worktrees" / expected_worktree_name
             assert wt_path.exists(), f"Expected worktree at {wt_path} for {plan_filename}"
-            assert (wt_path / ".impl" / "plan.md").exists()
+            branch_name = default_branch_for_worktree(expected_worktree_name)
+            assert (wt_path / ".erk" / "impl-context" / branch_name / "plan.md").exists()
             assert not plan_file.exists()
 
             # Clean up for next test
@@ -168,8 +171,8 @@ def test_create_with_keep_plan_file_flag() -> None:
         date_suffix = get_current_date_suffix()
         wt_path = repo_dir / "worktrees" / f"my-feature-{date_suffix}"
         assert wt_path.exists()
-        # Impl folder should be created with plan.md
-        assert (wt_path / ".impl" / "plan.md").exists()
+        # Branch-scoped impl folder should be created with plan.md
+        assert (wt_path / ".erk" / "impl-context" / f"my-feature-{date_suffix}" / "plan.md").exists()
         # Original plan file should still exist (copied, not moved)
         assert plan_file.exists()
         assert "Copied plan to" in result.output
@@ -227,7 +230,7 @@ def test_create_with_plan_file_ensures_uniqueness() -> None:
         expected_name1 = f"my-feature-{date_suffix1}"
         wt_path1 = repo_dir / "worktrees" / expected_name1
         assert wt_path1.exists(), f"Expected first worktree at {wt_path1}"
-        assert (wt_path1 / ".impl" / "plan.md").exists()
+        assert (wt_path1 / ".erk" / "impl-context" / expected_name1 / "plan.md").exists()
 
         # Recreate plan file for second worktree
         plan_file.write_text("# My Feature Plan - Round 2\n", encoding="utf-8")
@@ -251,7 +254,7 @@ def test_create_with_plan_file_ensures_uniqueness() -> None:
             expected_name2 = f"my-feature-{date_suffix2}"
         wt_path2 = repo_dir / "worktrees" / expected_name2
         assert wt_path2.exists(), f"Expected second worktree at {wt_path2}"
-        assert (wt_path2 / ".impl" / "plan.md").exists()
+        assert (wt_path2 / ".erk" / "impl-context" / expected_name2 / "plan.md").exists()
 
         # Verify both worktrees exist
         assert wt_path1.exists()

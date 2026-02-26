@@ -127,8 +127,8 @@ def test_status_cmd_displays_all_collector_sections(tmp_path: Path) -> None:
         .with_graphite_stack(["main", "feature"])
     )
 
-    # Create .impl/ folder with plan.md and progress.md
-    impl_folder = scenario.repo_dir / "feature" / ".impl"
+    # Create branch-scoped impl folder with plan.md and progress.md
+    impl_folder = scenario.repo_dir / "feature" / ".erk" / "impl-context" / "feature"
     impl_folder.mkdir(parents=True, exist_ok=True)
     plan_file = impl_folder / "plan.md"
     plan_file.write_text("# Feature Plan\n## Overview\nImplement new feature", encoding="utf-8")
