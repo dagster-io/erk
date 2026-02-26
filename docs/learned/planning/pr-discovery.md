@@ -16,7 +16,7 @@ tripwires:
 
 # PR Discovery Strategies for Plans
 
-Finding the PR associated with a plan issue is a cross-cutting concern that spans multiple commands (`get-pr-for-plan`, `trigger-async-learn`, `plan checkout`, `plan close`). Two fundamentally different strategies exist, chosen based on what metadata is available.
+Finding the PR associated with a plan issue is a cross-cutting concern that spans multiple commands (`get-pr-for-plan`, `trigger-async-learn`, `pr checkout`, `pr close`). Two fundamentally different strategies exist, chosen based on what metadata is available.
 
 ## Why Two Strategies Exist
 
@@ -25,7 +25,7 @@ Plan metadata accumulates progressively through the lifecycle. The `branch_name`
 | Available Data | Strategy            | Used By                                                  |
 | -------------- | ------------------- | -------------------------------------------------------- |
 | `branch_name`  | Branch → PR lookup  | `get-pr-for-plan`, `trigger-async-learn`, land, dispatch |
-| `issue_number` | Issue timeline → PR | `get-issue-timeline-prs`, `plan checkout`, `plan close`  |
+| `issue_number` | Issue timeline → PR | `get-issue-timeline-prs`, `pr checkout`, `pr close`      |
 
 ## Strategy 1: Branch-Based Lookup (Primary)
 
