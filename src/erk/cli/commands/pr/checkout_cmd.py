@@ -87,6 +87,42 @@ def _parse_checkout_reference(reference: str) -> _PrRef | _PlanRef:
     raise SystemExit(1)
 
 
+def _fetch_and_update_branch(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    branch_name: str,
+    pr_number: int,
+) -> None:
+    """Fetch a branch from remote and update the local copy.
+
+    Handles three cases:
+    - Remote branch exists, no local branch: create tracking branch
+    - Remote branch exists, local branch exists: force-update local to match remote
+    - No remote branch, no local branch: fetch via PR ref
+    """
+    local_branches = ctx.git.branch.list_local_branches(repo.root)
+    remote_branches = ctx.git.branch.list_remote_branches(repo.root)
+    remote_ref = f"origin/{branch_name}"
+    if remote_ref in remote_branches:
+        ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
+        if branch_name not in local_branches:
+            ctx.branch_manager.create_tracking_branch(repo.root, branch_name, remote_ref)
+        else:
+            # Force-update local branch to match remote.
+            # Uses ctx.git.branch directly because branch_manager.create_branch()
+            # doesn't support force=True — this is an alignment operation, not
+            # a new branch creation.
+            ctx.git.branch.create_branch(repo.root, branch_name, remote_ref, force=True)
+    elif branch_name not in local_branches:
+        ctx.git.remote.fetch_pr_ref(
+            repo_root=repo.root,
+            remote="origin",
+            pr_number=pr_number,
+            local_branch=branch_name,
+        )
+
+
 @alias("co")
 @click.command("checkout", cls=CommandWithHiddenOptions)
 @click.argument("reference")
@@ -207,23 +243,7 @@ def _checkout_pr(
             repo_root=repo.root, remote="origin", pr_number=pr_number, local_branch=branch_name
         )
     else:
-        local_branches = ctx.git.branch.list_local_branches(repo.root)
-        remote_branches = ctx.git.branch.list_remote_branches(repo.root)
-        remote_ref = f"origin/{branch_name}"
-        if remote_ref in remote_branches:
-            ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
-            if branch_name not in local_branches:
-                ctx.branch_manager.create_tracking_branch(repo.root, branch_name, remote_ref)
-            else:
-                # Force-update local branch to match remote
-                ctx.git.branch.create_branch(repo.root, branch_name, remote_ref, force=True)
-        elif branch_name not in local_branches:
-            ctx.git.remote.fetch_pr_ref(
-                repo_root=repo.root,
-                remote="origin",
-                pr_number=pr_number,
-                local_branch=branch_name,
-            )
+        _fetch_and_update_branch(ctx, repo, branch_name=branch_name, pr_number=pr_number)
 
     # Create worktree using shared helper
     worktree_path, already_existed = ensure_branch_has_worktree(
@@ -394,24 +414,8 @@ def _checkout_plan_pr(
         )
         return
 
-    # Always fetch from remote and force-update local branch
-    local_branches = ctx.git.branch.list_local_branches(repo.root)
-    remote_branches = ctx.git.branch.list_remote_branches(repo.root)
-    remote_ref = f"origin/{branch_name}"
-    if remote_ref in remote_branches:
-        ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
-        if branch_name not in local_branches:
-            ctx.branch_manager.create_tracking_branch(repo.root, branch_name, remote_ref)
-        else:
-            # Force-update local branch to match remote
-            ctx.git.branch.create_branch(repo.root, branch_name, remote_ref, force=True)
-    elif branch_name not in local_branches:
-        ctx.git.remote.fetch_pr_ref(
-            repo_root=repo.root,
-            remote="origin",
-            pr_number=pr_number,
-            local_branch=branch_name,
-        )
+    # Fetch from remote and force-update local branch
+    _fetch_and_update_branch(ctx, repo, branch_name=branch_name, pr_number=pr_number)
 
     # Create worktree and navigate
     worktree_path, already_existed = ensure_branch_has_worktree(
