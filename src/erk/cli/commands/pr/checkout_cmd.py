@@ -131,7 +131,9 @@ def _fetch_and_update_branch(
 @click.option("--sync", is_flag=True, help="Run gt submit after checkout to sync with Graphite")
 @script_option
 @click.pass_obj
-def pr_checkout(ctx: ErkContext, reference: str, no_slot: bool, force: bool, sync: bool, script: bool) -> None:
+def pr_checkout(
+    ctx: ErkContext, reference: str, no_slot: bool, force: bool, sync: bool, script: bool
+) -> None:
     """Checkout PR or plan into a worktree for review.
 
     REFERENCE can be:
@@ -305,7 +307,9 @@ def _checkout_pr(
         new_message=f"Created worktree for PR #{pr_number} at {{styled_path}}",
         script_message_existing=f'echo "Went to existing worktree for PR #{pr_number}"',
         script_message_new=f'echo "Checked out PR #{pr_number} at $(pwd)"',
-        post_cd_commands=["gt submit --no-interactive"] if should_submit_to_graphite and sync else None,
+        post_cd_commands=["gt submit --no-interactive"]
+        if should_submit_to_graphite and sync
+        else None,
     )
 
     # Print activation instructions (non-script mode only)
