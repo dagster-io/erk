@@ -14,7 +14,7 @@ This document describes the 4-tier priority system for finding plan files when s
 
 ## Priority Order
 
-When `plan_save_to_issue` needs to locate a plan file, it checks these sources in order (see `plan_save_to_issue.py` lines 199-213):
+When `plan_save` needs to locate a plan file, it checks these sources in order (see `_get_snapshot_result()` in `plan_save.py`):
 
 | Priority | Source                                  | Condition                                        |
 | -------- | --------------------------------------- | ------------------------------------------------ |
@@ -68,10 +68,10 @@ Plan file requested
 
 **Cause**: Multiple sessions running in parallel, mtime-based lookup selected another session's plan.
 
-**Solution**: Always pass `--session-id` to `erk exec plan-save-to-issue`:
+**Solution**: Always pass `--session-id` to `erk exec plan-save`:
 
 ```bash
-erk exec plan-save-to-issue --session-id "${CLAUDE_SESSION_ID}" --format json
+erk exec plan-save --session-id "${CLAUDE_SESSION_ID}" --format json
 ```
 
 ### Plan Not Found
@@ -98,7 +98,7 @@ ls -la ~/.claude/plans/
 
 The lookup logic lives in two places:
 
-- **`plan_save_to_issue.py`** (`src/erk/cli/commands/exec/scripts/`) orchestrates the 4-tier priority cascade (priorities 1-2, then delegates to `get_latest_plan` for 3-4).
+- **`plan_save.py`** (`src/erk/cli/commands/exec/scripts/`) orchestrates the 4-tier priority cascade (priorities 1-2, then delegates to `get_latest_plan` for 3-4).
 - **`ClaudeInstallation.find_plan_for_session()`** (`packages/erk-shared/src/erk_shared/gateway/claude_installation/`) implements slug-based plan lookup via session log parsing.
 - **`ClaudeInstallation.get_latest_plan()`** (same package) combines slug-based lookup with mtime fallback.
 

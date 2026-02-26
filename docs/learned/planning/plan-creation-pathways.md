@@ -16,7 +16,6 @@ Plans can be created through multiple entry points, all routing to the planned-P
 | --------------------------------------- | ------------------------------- | ------------------ |
 | `/erk:plan-save`                        | Planned PR (PlannedPRBackend)   | Draft pull request |
 | `erk pr create --file <path>`           | Planned PR (PlannedPRBackend)   | Draft pull request |
-| `erk exec plan-save-to-issue`           | Planned PR (PlannedPRBackend)   | Draft pull request |
 | One-shot dispatch (`one_shot_dispatch`) | Planned PR (`ctx.plan_backend`) | Draft pull request |
 | `PlannedPRBackend.create_plan()`        | Planned PR                      | Draft pull request |
 | `register_one_shot_plan`                | Planned PR (updates existing)   | Updates skeleton   |

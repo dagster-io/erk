@@ -22,7 +22,7 @@ from erk.core.prompt_executor import ClaudePromptExecutor
 from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
 from erk.core.script_writer import RealScriptWriter
 from erk.core.services.objective_list_service import RealObjectiveListService
-from erk.core.services.plan_list_service import PlannedPRPlanListService, RealPlanListService
+from erk.core.services.plan_list_service import PlannedPRPlanListService
 from erk.core.shell import RealShell
 
 # Re-export ErkContext from erk_shared for isinstance() compatibility
@@ -355,12 +355,10 @@ def context_for_test(
         script_writer = FakeScriptWriter()
 
     if plan_list_service is None:
-        # If github and issues were provided, wire them up via RealPlanListService
-        # so that tests get realistic behavior when testing plan list functionality
-        plan_list_service = RealPlanListService(github, issues, time=time)
+        plan_list_service = FakePlanListService()
 
     if objective_list_service is None:
-        objective_list_service = RealObjectiveListService(github, issues, time=time)
+        objective_list_service = RealObjectiveListService(github, time=time)
 
     if codespace_registry is None:
         codespace_registry = FakeCodespaceRegistry()
@@ -608,9 +606,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     plan_list_service: PlanListService = PlannedPRPlanListService(github, time=time)
 
     # Objectives are always issue-based regardless of plan backend
-    objective_list_service: ObjectiveListService = RealObjectiveListService(
-        github, issues, time=time
-    )
+    objective_list_service: ObjectiveListService = RealObjectiveListService(github, time=time)
 
     # 9. Apply dry-run wrappers if needed
     # Note: DryRunGitHub composes DryRunGitHubIssues internally,

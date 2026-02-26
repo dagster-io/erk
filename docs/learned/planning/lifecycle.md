@@ -8,7 +8,7 @@ read_when:
   - "understanding plan states"
 tripwires:
   - action: "manually creating an erk-plan issue with gh issue create"
-    warning: "Use `erk exec plan-save-to-issue --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section)."
+    warning: "Use `erk exec plan-save --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section)."
   - action: "saving a plan linked to an objective"
     warning: "Always verify the link was saved correctly with `erk exec get-plan-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives."
   - action: "implementing custom PR/plan relevance assessment logic"
@@ -103,7 +103,7 @@ When evaluating whether a plan should be implemented or closed, use the verdict 
 
 ### Session Idempotency
 
-Plan save operations are idempotent within a session. The `plan-save-to-issue` command:
+Plan save operations are idempotent within a session. The `plan-save` command:
 
 1. Checks if a plan issue was already created for this session ID
 2. If found, returns the existing issue instead of creating a duplicate
@@ -1053,12 +1053,12 @@ The field is nullable — plans created before this feature have `lifecycle_stag
 
 Each stage is set by specific commands at well-defined moments:
 
-| Stage      | Set By                                                                                        | When                                              |
-| ---------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| `prompted` | `one_shot_dispatch`                                                                           | One-shot plan issue created                       |
-| `planning` | `one-shot.yml` workflow                                                                       | Agent begins writing plan                         |
-| `planned`  | `plan_save_to_issue`, `plan create`, `register_one_shot_plan`, `PlannedPRBackend.create_plan` | Plan saved to GitHub                              |
-| `impl`     | `mark-impl-started`, `impl-signal` (started/submitted), `handle-no-changes`, `pr/shared.py`   | Implementation begins, completes, or PR submitted |
+| Stage      | Set By                                                                                      | When                                              |
+| ---------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| `prompted` | `one_shot_dispatch`                                                                         | One-shot plan issue created                       |
+| `planning` | `one-shot.yml` workflow                                                                     | Agent begins writing plan                         |
+| `planned`  | `plan_save`, `plan create`, `register_one_shot_plan`, `PlannedPRBackend.create_plan`        | Plan saved to GitHub                              |
+| `impl`     | `mark-impl-started`, `impl-signal` (started/submitted), `handle-no-changes`, `pr/shared.py` | Implementation begins, completes, or PR submitted |
 
 ### Explicit Updates via Exec Command
 
