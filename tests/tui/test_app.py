@@ -11,6 +11,7 @@ from erk.tui.app import (
     PlanBodyScreen,
     PlanDetailScreen,
     _build_github_url,
+    _should_trigger_learn,
 )
 from erk.tui.data.types import PlanFilters
 from erk.tui.screens.launch_screen import LaunchScreen
@@ -988,7 +989,7 @@ class TestExecutePaletteCommandFixConflictsRemote:
         # Capture calls to _fix_conflicts_remote_async
         captured_pr: int | None = None
 
-        def mock_async(self_app: ErkDashApp, pr_number: int) -> None:
+        def mock_async(self_app: ErkDashApp, op_id: str, pr_number: int) -> None:
             nonlocal captured_pr
             captured_pr = pr_number
 
@@ -1001,7 +1002,7 @@ class TestExecutePaletteCommandFixConflictsRemote:
             initial_stack_len = len(app.screen_stack)
 
             app.execute_palette_command("fix_conflicts_remote")
-            await pilot.pause()
+            await pilot.pause(0.3)
 
             # Should NOT have pushed a new screen
             assert len(app.screen_stack) == initial_stack_len
@@ -1402,6 +1403,31 @@ class TestPlanBodyScreen:
             assert not isinstance(app.screen_stack[-1], PlanBodyScreen)
 
     @pytest.mark.asyncio
+    async def test_issue_body_screen_dismisses_on_arbitrary_key(self) -> None:
+        """PlanBodyScreen closes when pressing any key, not just the bound dismiss keys."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", plan_body="metadata body")]
+        )
+        provider.set_plan_content(123, "Plan content")
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("v")
+            await pilot.pause()
+            await pilot.pause()
+
+            assert isinstance(app.screen_stack[-1], PlanBodyScreen)
+
+            await pilot.press("x")
+            await pilot.pause()
+
+            assert not isinstance(app.screen_stack[-1], PlanBodyScreen)
+
+    @pytest.mark.asyncio
     async def test_issue_body_screen_shows_empty_message_when_no_content(self) -> None:
         """PlanBodyScreen shows empty message when no plan content found."""
         provider = FakePlanDataProvider(
@@ -1560,10 +1586,10 @@ class TestViewSwitching:
     async def test_pressing_2_switches_to_learn_view(self) -> None:
         """Pressing '2' switches to Learn view."""
         provider = FakePlanDataProvider(
-            plans=[
-                make_plan_row(1, "Regular Plan"),
-                make_plan_row(2, "Learn Plan", is_learn_plan=True),
-            ]
+            plans=[make_plan_row(1, "Regular Plan")],
+            plans_by_labels={
+                ("erk-learn",): [make_plan_row(2, "Learn Plan", is_learn_plan=True)],
+            },
         )
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
@@ -1571,7 +1597,7 @@ class TestViewSwitching:
         async with app.run_test() as pilot:
             await pilot.pause()
             assert app._view_mode == ViewMode.PLANS
-            # Plans view excludes learn plans
+            # Plans view shows only regular plans
             assert len(app._rows) == 1
             assert app._rows[0].plan_id == 1
 
@@ -1580,19 +1606,21 @@ class TestViewSwitching:
             await pilot.pause()
 
             assert app._view_mode == ViewMode.LEARN
-            # Learn view filters to only learn plans
+            # Learn view shows only learn plans
             assert len(app._rows) == 1
             assert app._rows[0].plan_id == 2
 
     @pytest.mark.asyncio
     async def test_plans_view_excludes_learn_plans(self) -> None:
-        """Plans view filters out learn plans."""
+        """Plans view filters out learn plans (via server-side labels)."""
         provider = FakePlanDataProvider(
             plans=[
                 make_plan_row(1, "Regular Plan A"),
-                make_plan_row(2, "Learn Plan", is_learn_plan=True),
                 make_plan_row(3, "Regular Plan B"),
-            ]
+            ],
+            plans_by_labels={
+                ("erk-learn",): [make_plan_row(2, "Learn Plan", is_learn_plan=True)],
+            },
         )
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
@@ -1600,7 +1628,7 @@ class TestViewSwitching:
         async with app.run_test() as pilot:
             await pilot.pause()
             assert app._view_mode == ViewMode.PLANS
-            # Plans view should exclude the learn plan
+            # Plans view should only have non-learn plans
             assert len(app._rows) == 2
             issue_numbers = {r.plan_id for r in app._rows}
             assert issue_numbers == {1, 3}
@@ -1637,10 +1665,10 @@ class TestViewSwitching:
     async def test_pressing_1_returns_to_plans_view(self) -> None:
         """Pressing '1' returns to Plans view from another view."""
         provider = FakePlanDataProvider(
-            plans=[
-                make_plan_row(1, "Plan A"),
-                make_plan_row(2, "Learn Plan", is_learn_plan=True),
-            ]
+            plans=[make_plan_row(1, "Plan A")],
+            plans_by_labels={
+                ("erk-learn",): [make_plan_row(2, "Learn Plan", is_learn_plan=True)],
+            },
         )
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
@@ -1648,7 +1676,6 @@ class TestViewSwitching:
         async with app.run_test() as pilot:
             await pilot.pause()
             assert app._view_mode == ViewMode.PLANS
-            # Plans view excludes learn plans
             assert len(app._rows) == 1
 
             # Switch to Learn
@@ -1736,10 +1763,10 @@ class TestViewSwitching:
     async def test_left_arrow_wraps_from_first_to_last(self) -> None:
         """Left arrow from Learn goes to Plans."""
         provider = FakePlanDataProvider(
-            plans=[
-                make_plan_row(1, "Plan A"),
-                make_plan_row(2, "Learn Plan", is_learn_plan=True),
-            ]
+            plans=[make_plan_row(1, "Plan A")],
+            plans_by_labels={
+                ("erk-learn",): [make_plan_row(2, "Learn Plan", is_learn_plan=True)],
+            },
         )
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
@@ -1762,10 +1789,10 @@ class TestViewSwitching:
     async def test_data_cache_avoids_refetch(self) -> None:
         """Switching back to a cached view does not refetch."""
         provider = FakePlanDataProvider(
-            plans=[
-                make_plan_row(1, "Plan A"),
-                make_plan_row(2, "Learn Plan", is_learn_plan=True),
-            ]
+            plans=[make_plan_row(1, "Plan A")],
+            plans_by_labels={
+                ("erk-learn",): [make_plan_row(2, "Learn Plan", is_learn_plan=True)],
+            },
         )
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
@@ -1774,17 +1801,16 @@ class TestViewSwitching:
             await pilot.pause()
             count_after_initial = provider.fetch_count
 
-            # Switch to Learn (uses cache since same labels)
+            # Switch to Learn (fetches since different labels)
             await pilot.press("2")
             await pilot.pause()
+            count_after_learn = provider.fetch_count
+            assert count_after_learn == count_after_initial + 1
 
-            # Switch back to Plans (should use cache)
+            # Switch back to Plans (should use cache, no refetch)
             await pilot.press("1")
             await pilot.pause()
-
-            # The Plans view uses the same erk-plan labels as Learn view,
-            # so cache is shared. No additional fetch needed.
-            assert provider.fetch_count == count_after_initial
+            assert provider.fetch_count == count_after_learn
 
     @pytest.mark.asyncio
     async def test_stale_fetch_does_not_update_display(self) -> None:
@@ -1850,16 +1876,11 @@ class TestViewSwitching:
     @pytest.mark.asyncio
     async def test_right_arrow_cycles_to_next_view(self) -> None:
         """Right arrow cycles through views: PLANS → LEARN → OBJECTIVES → PLANS."""
-        objective_plans = [
-            make_plan_row(10, "Objective A"),
-        ]
         provider = FakePlanDataProvider(
-            plans=[
-                make_plan_row(1, "Regular Plan"),
-                make_plan_row(2, "Learn Plan", is_learn_plan=True),
-            ],
+            plans=[make_plan_row(1, "Regular Plan")],
             plans_by_labels={
-                ("erk-objective",): objective_plans,
+                ("erk-learn",): [make_plan_row(2, "Learn Plan", is_learn_plan=True)],
+                ("erk-objective",): [make_plan_row(10, "Objective A")],
             },
         )
         filters = PlanFilters.default()
@@ -1888,16 +1909,11 @@ class TestViewSwitching:
     @pytest.mark.asyncio
     async def test_left_arrow_cycles_to_previous_view(self) -> None:
         """Left arrow cycles through views: PLANS → OBJECTIVES → LEARN → PLANS."""
-        objective_plans = [
-            make_plan_row(10, "Objective A"),
-        ]
         provider = FakePlanDataProvider(
-            plans=[
-                make_plan_row(1, "Regular Plan"),
-                make_plan_row(2, "Learn Plan", is_learn_plan=True),
-            ],
+            plans=[make_plan_row(1, "Regular Plan")],
             plans_by_labels={
-                ("erk-objective",): objective_plans,
+                ("erk-learn",): [make_plan_row(2, "Learn Plan", is_learn_plan=True)],
+                ("erk-objective",): [make_plan_row(10, "Objective A")],
             },
         )
         filters = PlanFilters.default()
@@ -2169,10 +2185,10 @@ class TestAddressRemoteAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
-        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
-            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            return _FakePopen(lines=("Updated dispatch metadata",), return_code=0)
 
-        monkeypatch.setattr(subprocess, "run", fake_run)
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -2180,7 +2196,7 @@ class TestAddressRemoteAsync:
 
             count_before = provider.fetch_count
 
-            app._address_remote_async(456)
+            app._address_remote_async("test-op", 456)
             await pilot.pause(0.3)
 
             assert provider.fetch_count > count_before
@@ -2199,10 +2215,10 @@ class TestAddressRemoteAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
-        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
-            raise subprocess.CalledProcessError(1, args, stderr="dispatch failed")
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            return _FakePopen(lines=("dispatch failed",), return_code=1)
 
-        monkeypatch.setattr(subprocess, "run", fake_run)
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -2210,7 +2226,7 @@ class TestAddressRemoteAsync:
 
             count_before = provider.fetch_count
 
-            app._address_remote_async(456)
+            app._address_remote_async("test-op", 456)
             await pilot.pause(0.3)
 
             assert provider.fetch_count == count_before
@@ -2235,17 +2251,18 @@ class TestFixConflictsRemoteAsync:
 
         captured_args: list[str] = []
 
-        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
-            captured_args.extend(args)
-            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            if args:
+                captured_args.extend(args[0])  # type: ignore[arg-type]
+            return _FakePopen(return_code=0)
 
-        monkeypatch.setattr(subprocess, "run", fake_run)
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
 
         async with app.run_test() as pilot:
             await pilot.pause()
             await pilot.pause()
 
-            app._fix_conflicts_remote_async(456)
+            app._fix_conflicts_remote_async("test-op", 456)
             await pilot.pause(0.3)
 
             assert captured_args == [
@@ -2270,10 +2287,10 @@ class TestFixConflictsRemoteAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
-        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
-            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            return _FakePopen(lines=("Updated dispatch metadata",), return_code=0)
 
-        monkeypatch.setattr(subprocess, "run", fake_run)
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -2281,7 +2298,7 @@ class TestFixConflictsRemoteAsync:
 
             count_before = provider.fetch_count
 
-            app._fix_conflicts_remote_async(456)
+            app._fix_conflicts_remote_async("test-op", 456)
             await pilot.pause(0.3)
 
             assert provider.fetch_count > count_before
@@ -2300,10 +2317,10 @@ class TestFixConflictsRemoteAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
-        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
-            raise subprocess.CalledProcessError(1, args, stderr="dispatch failed")
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            return _FakePopen(lines=("dispatch failed",), return_code=1)
 
-        monkeypatch.setattr(subprocess, "run", fake_run)
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -2311,7 +2328,7 @@ class TestFixConflictsRemoteAsync:
 
             count_before = provider.fetch_count
 
-            app._fix_conflicts_remote_async(456)
+            app._fix_conflicts_remote_async("test-op", 456)
             await pilot.pause(0.3)
 
             assert provider.fetch_count == count_before
@@ -2336,17 +2353,21 @@ class TestLandPrAsync:
 
         captured_calls: list[list[str]] = []
 
-        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
-            captured_calls.append(list(args))
-            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            if args:
+                captured_calls.append(list(args[0]))  # type: ignore[arg-type]
+            return _FakePopen(return_code=0)
 
-        monkeypatch.setattr(subprocess, "run", fake_run)
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
 
         async with app.run_test() as pilot:
             await pilot.pause()
             await pilot.pause()
 
-            app._land_pr_async(456, "test-branch", None)
+            app._land_pr_async(
+                "test-op", 456, "test-branch", None,
+                plan_id=123, is_learn_plan=True, learn_status="completed_with_plan",
+            )
             await pilot.pause(0.3)
 
             assert len(captured_calls) == 1
@@ -2373,10 +2394,10 @@ class TestLandPrAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
-        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
-            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            return _FakePopen(return_code=0)
 
-        monkeypatch.setattr(subprocess, "run", fake_run)
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -2384,7 +2405,10 @@ class TestLandPrAsync:
 
             count_before = provider.fetch_count
 
-            app._land_pr_async(456, "test-branch", None)
+            app._land_pr_async(
+                "test-op", 456, "test-branch", None,
+                plan_id=123, is_learn_plan=True, learn_status="completed_with_plan",
+            )
             await pilot.pause(0.3)
 
             assert provider.fetch_count > count_before
@@ -2403,10 +2427,10 @@ class TestLandPrAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
-        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
-            raise subprocess.CalledProcessError(1, args, stderr="land failed")
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            return _FakePopen(lines=("land failed",), return_code=1)
 
-        monkeypatch.setattr(subprocess, "run", fake_run)
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -2414,7 +2438,10 @@ class TestLandPrAsync:
 
             count_before = provider.fetch_count
 
-            app._land_pr_async(456, "test-branch", None)
+            app._land_pr_async(
+                "test-op", 456, "test-branch", None,
+                plan_id=123, is_learn_plan=True, learn_status="completed_with_plan",
+            )
             await pilot.pause(0.3)
 
             assert provider.fetch_count == count_before
@@ -2443,17 +2470,21 @@ class TestLandPrAsync:
 
         captured_calls: list[list[str]] = []
 
-        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
-            captured_calls.append(list(args))
-            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            if args:
+                captured_calls.append(list(args[0]))  # type: ignore[arg-type]
+            return _FakePopen(return_code=0)
 
-        monkeypatch.setattr(subprocess, "run", fake_run)
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
 
         async with app.run_test() as pilot:
             await pilot.pause()
             await pilot.pause()
 
-            app._land_pr_async(456, "test-branch", 789)
+            app._land_pr_async(
+                "test-op", 456, "test-branch", 789,
+                plan_id=123, is_learn_plan=True, learn_status="completed_with_plan",
+            )
             await pilot.pause(0.3)
 
             assert len(captured_calls) == 2
@@ -2482,21 +2513,203 @@ class TestLandPrAsync:
 
         captured_calls: list[list[str]] = []
 
-        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
-            captured_calls.append(list(args))
-            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            if args:
+                captured_calls.append(list(args[0]))  # type: ignore[arg-type]
+            return _FakePopen(return_code=0)
 
-        monkeypatch.setattr(subprocess, "run", fake_run)
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
 
         async with app.run_test() as pilot:
             await pilot.pause()
             await pilot.pause()
 
-            app._land_pr_async(456, "test-branch", None)
+            app._land_pr_async(
+                "test-op", 456, "test-branch", None,
+                plan_id=123, is_learn_plan=True, learn_status="completed_with_plan",
+            )
             await pilot.pause(0.3)
 
             # Only the land command, no objective update
             assert len(captured_calls) == 1
+
+    @pytest.mark.asyncio
+    async def test_land_pr_chains_learn_trigger(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_land_pr_async should trigger learn when learn_status is None."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        captured_calls: list[list[str]] = []
+
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            if args:
+                captured_calls.append(list(args[0]))  # type: ignore[arg-type]
+            return _FakePopen(return_code=0)
+
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            app._land_pr_async(
+                "test-op", 456, "test-branch", None,
+                plan_id=123, is_learn_plan=False, learn_status=None,
+            )
+            await pilot.pause(0.3)
+
+            assert len(captured_calls) == 2
+            assert captured_calls[1] == [
+                "erk", "exec", "trigger-async-learn", "123",
+            ]
+
+    @pytest.mark.asyncio
+    async def test_land_pr_skips_learn_for_learn_plan(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_land_pr_async should skip learn when is_learn_plan is True."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        captured_calls: list[list[str]] = []
+
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            if args:
+                captured_calls.append(list(args[0]))  # type: ignore[arg-type]
+            return _FakePopen(return_code=0)
+
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            app._land_pr_async(
+                "test-op", 456, "test-branch", None,
+                plan_id=123, is_learn_plan=True, learn_status=None,
+            )
+            await pilot.pause(0.3)
+
+            # Only the land command, no learn trigger
+            assert len(captured_calls) == 1
+
+    @pytest.mark.asyncio
+    async def test_land_pr_skips_learn_when_already_completed(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_land_pr_async should skip learn when status is already completed."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        captured_calls: list[list[str]] = []
+
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            if args:
+                captured_calls.append(list(args[0]))  # type: ignore[arg-type]
+            return _FakePopen(return_code=0)
+
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            app._land_pr_async(
+                "test-op", 456, "test-branch", None,
+                plan_id=123, is_learn_plan=False, learn_status="completed_with_plan",
+            )
+            await pilot.pause(0.3)
+
+            # Only the land command, no learn trigger
+            assert len(captured_calls) == 1
+
+    @pytest.mark.asyncio
+    async def test_land_pr_learn_failure_does_not_affect_land(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """Learn trigger failure should show warning but not affect land success."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        call_count = 0
+
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            nonlocal call_count
+            call_count += 1
+            if args and "trigger-async-learn" in args[0]:  # type: ignore[operator]
+                return _FakePopen(lines=("learn failed",), return_code=1)
+            return _FakePopen(return_code=0)
+
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            count_before = provider.fetch_count
+
+            app._land_pr_async(
+                "test-op", 456, "test-branch", None,
+                plan_id=123, is_learn_plan=False, learn_status=None,
+            )
+            await pilot.pause(0.3)
+
+            # Land still refreshed successfully
+            assert provider.fetch_count > count_before
+            # Both land and learn were called
+            assert call_count == 2
+
+
+class TestShouldTriggerLearn:
+    """Tests for _should_trigger_learn pure function."""
+
+    def test_skip_learn_plans(self) -> None:
+        assert _should_trigger_learn(is_learn_plan=True, learn_status=None) is False
+
+    def test_skip_completed_no_plan(self) -> None:
+        assert _should_trigger_learn(is_learn_plan=False, learn_status="completed_no_plan") is False
+
+    def test_skip_completed_with_plan(self) -> None:
+        result = _should_trigger_learn(is_learn_plan=False, learn_status="completed_with_plan")
+        assert result is False
+
+    def test_skip_plan_completed(self) -> None:
+        assert _should_trigger_learn(is_learn_plan=False, learn_status="plan_completed") is False
+
+    def test_skip_pending(self) -> None:
+        assert _should_trigger_learn(is_learn_plan=False, learn_status="pending") is False
+
+    def test_trigger_on_none(self) -> None:
+        assert _should_trigger_learn(is_learn_plan=False, learn_status=None) is True
+
+    def test_trigger_on_not_started(self) -> None:
+        assert _should_trigger_learn(is_learn_plan=False, learn_status="not_started") is True
 
 
 class TestDispatchToQueueAsync:
@@ -2516,22 +2729,22 @@ class TestDispatchToQueueAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
-        captured_args: list[str] = []
+        captured_calls: list[list[str]] = []
 
-        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
-            captured_args.extend(args)
-            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            captured_calls.append(list(args[0]))
+            return _FakePopen(lines=("Dispatched",), return_code=0)
 
-        monkeypatch.setattr(subprocess, "run", fake_run)
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
 
         async with app.run_test() as pilot:
             await pilot.pause()
             await pilot.pause()
 
-            app._dispatch_to_queue_async(123)
+            app._dispatch_to_queue_async("test-op", 123)
             await pilot.pause(0.3)
 
-            assert captured_args == ["erk", "pr", "dispatch", "123"]
+            assert captured_calls == [["erk", "pr", "dispatch", "123"]]
 
     @pytest.mark.asyncio
     async def test_dispatch_to_queue_triggers_refresh_on_success(
@@ -2547,10 +2760,10 @@ class TestDispatchToQueueAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
-        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
-            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            return _FakePopen(lines=("Dispatched",), return_code=0)
 
-        monkeypatch.setattr(subprocess, "run", fake_run)
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -2558,7 +2771,7 @@ class TestDispatchToQueueAsync:
 
             count_before = provider.fetch_count
 
-            app._dispatch_to_queue_async(123)
+            app._dispatch_to_queue_async("test-op", 123)
             await pilot.pause(0.3)
 
             assert provider.fetch_count > count_before
@@ -2577,10 +2790,10 @@ class TestDispatchToQueueAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
-        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
-            raise subprocess.CalledProcessError(1, args, stderr="submit failed")
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            return _FakePopen(lines=("submit failed",), return_code=1)
 
-        monkeypatch.setattr(subprocess, "run", fake_run)
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -2588,7 +2801,7 @@ class TestDispatchToQueueAsync:
 
             count_before = provider.fetch_count
 
-            app._dispatch_to_queue_async(123)
+            app._dispatch_to_queue_async("test-op", 123)
             await pilot.pause(0.3)
 
             assert provider.fetch_count == count_before
@@ -2611,22 +2824,22 @@ class TestCloseObjectiveAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
-        captured_args: list[str] = []
+        captured_calls: list[list[str]] = []
 
-        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
-            captured_args.extend(args)
-            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            captured_calls.append(list(args[0]))
+            return _FakePopen(lines=("Closed",), return_code=0)
 
-        monkeypatch.setattr(subprocess, "run", fake_run)
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
 
         async with app.run_test() as pilot:
             await pilot.pause()
             await pilot.pause()
 
-            app._close_objective_async(123)
+            app._close_objective_async("test-op", 123)
             await pilot.pause(0.3)
 
-            assert captured_args == ["erk", "objective", "close", "123", "--force"]
+            assert captured_calls == [["erk", "objective", "close", "123", "--force"]]
 
     @pytest.mark.asyncio
     async def test_close_objective_triggers_refresh_on_success(
@@ -2642,10 +2855,10 @@ class TestCloseObjectiveAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
-        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
-            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            return _FakePopen(lines=("Closed",), return_code=0)
 
-        monkeypatch.setattr(subprocess, "run", fake_run)
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -2653,7 +2866,7 @@ class TestCloseObjectiveAsync:
 
             count_before = provider.fetch_count
 
-            app._close_objective_async(123)
+            app._close_objective_async("test-op", 123)
             await pilot.pause(0.3)
 
             assert provider.fetch_count > count_before
@@ -2676,22 +2889,22 @@ class TestCheckObjectiveAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
-        captured_args: list[str] = []
+        captured_calls: list[list[str]] = []
 
-        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
-            captured_args.extend(args)
-            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            captured_calls.append(list(args[0]))
+            return _FakePopen(lines=("Checked",), return_code=0)
 
-        monkeypatch.setattr(subprocess, "run", fake_run)
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
 
         async with app.run_test() as pilot:
             await pilot.pause()
             await pilot.pause()
 
-            app._check_objective_async(123)
+            app._check_objective_async("test-op", 123)
             await pilot.pause(0.3)
 
-            assert captured_args == ["erk", "objective", "check", "123"]
+            assert captured_calls == [["erk", "objective", "check", "123"]]
 
     @pytest.mark.asyncio
     async def test_check_objective_no_refresh(
@@ -2707,10 +2920,10 @@ class TestCheckObjectiveAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
-        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
-            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            return _FakePopen(lines=("Checked",), return_code=0)
 
-        monkeypatch.setattr(subprocess, "run", fake_run)
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -2718,7 +2931,7 @@ class TestCheckObjectiveAsync:
 
             count_before = provider.fetch_count
 
-            app._check_objective_async(123)
+            app._check_objective_async("test-op", 123)
             await pilot.pause(0.3)
 
             # check_objective is read-only, no refresh
@@ -2744,17 +2957,18 @@ class TestOneShotPlanAsync:
 
         captured_args: list[str] = []
 
-        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
-            captured_args.extend(args)
-            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            if args:
+                captured_args.extend(args[0])  # type: ignore[arg-type]
+            return _FakePopen(return_code=0)
 
-        monkeypatch.setattr(subprocess, "run", fake_run)
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
 
         async with app.run_test() as pilot:
             await pilot.pause()
             await pilot.pause()
 
-            app._one_shot_plan_async(123)
+            app._one_shot_plan_async("test-op", 123)
             await pilot.pause(0.3)
 
             assert captured_args == ["erk", "objective", "plan", "123", "--one-shot"]
@@ -2773,10 +2987,10 @@ class TestOneShotPlanAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
-        def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
-            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            return _FakePopen(return_code=0)
 
-        monkeypatch.setattr(subprocess, "run", fake_run)
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -2784,7 +2998,7 @@ class TestOneShotPlanAsync:
 
             count_before = provider.fetch_count
 
-            app._one_shot_plan_async(123)
+            app._one_shot_plan_async("test-op", 123)
             await pilot.pause(0.3)
 
             assert provider.fetch_count > count_before
@@ -2970,7 +3184,10 @@ class TestOperationTracking:
             op_id = "land-pr-456"
             app._start_operation(op_id=op_id, label="Landing PR #456...")
 
-            app._land_pr_async(op_id, 456, "test-branch", None)
+            app._land_pr_async(
+                op_id, 456, "test-branch", None,
+                plan_id=0, is_learn_plan=False, learn_status=None,
+            )
             await pilot.pause(0.3)
 
             assert op_id not in status_bar._operations
@@ -3002,7 +3219,10 @@ class TestOperationTracking:
             op_id = "land-pr-456"
             app._start_operation(op_id=op_id, label="Landing PR #456...")
 
-            app._land_pr_async(op_id, 456, "test-branch", None)
+            app._land_pr_async(
+                op_id, 456, "test-branch", None,
+                plan_id=0, is_learn_plan=False, learn_status=None,
+            )
             await pilot.pause(0.3)
 
             assert op_id not in status_bar._operations
