@@ -6,81 +6,34 @@ paths:
   - ".claude/**/*.md"
 marker: "<!-- tripwires-review -->"
 model: claude-sonnet-4-5
-timeout_minutes: 30
+timeout_minutes: 15
 allowed_tools: "Bash(gh:*),Bash(erk exec:*),Bash(TZ=*),Bash(grep:*),Read(*)"
 enabled: true
 ---
 
-## Step 1: Load Tripwire Index
+## Step 1: Run Mechanical Scan
 
-Tripwires are organized by category. Universal tripwires are in `AGENTS.md`. Category-specific tripwires are in `docs/learned/<category>/tripwires.md` (e.g., `docs/learned/architecture/tripwires.md`, `docs/learned/cli/tripwires.md`).
+Run: `erk exec tripwire-scan --base origin/main`
 
-For comprehensive coverage, read these category tripwire files based on the diff:
+Parse the JSON output. The scan:
 
-- Changes in `src/erk/gateway/` or `packages/erk-shared/src/*/gateway/` → Read `docs/learned/architecture/tripwires.md`
-- Changes in `src/erk/cli/` → Read `docs/learned/cli/tripwires.md`
-- Changes in `tests/` → Read `docs/learned/testing/tripwires.md`
-- Changes in `.github/` → Read `docs/learned/ci/tripwires.md`
-- Changes in `src/erk/tui/` → Read `docs/learned/tui/tripwires.md`
-- Planning-related changes → Read `docs/learned/planning/tripwires.md`
+- Determines which tripwire categories apply to the changed files
+- Runs all Tier 1 regex patterns mechanically against added lines in the diff
+- Returns compact JSON with Tier 1 results and Tier 2 entries
 
-Tripwires come in two formats:
+If the scan fails (success=false), fall back to the manual process:
+read category tripwire files based on the diff and grep patterns manually.
 
-**With explicit pattern** (Tier 1 — mechanical matching):
+## Step 2: Evaluate Tier 1 Matches
 
-```
-**[action text]** [pattern: `regex_here`] → Read [linked doc] first. [summary]
-```
+For each entry in `tier1_matches`:
 
-**Without pattern** (Tier 2 — semantic matching):
-
-```
-**[action text]** → Read [linked doc] first. [summary]
-```
-
-Parse EVERY tripwire entry and classify into:
-
-- **Tier 1**: Has `[pattern: ...]` — extract the regex for mechanical grep matching
-- **Tier 2**: No pattern — extract the action text for LLM-derived matching
-
-For all tripwires, extract:
-
-- **Action**: The action text (e.g., "calling os.chdir()", "passing dry_run boolean flags")
-- **Linked doc**: The documentation file to read if triggered
-- **Summary**: Brief description of what the rule enforces
-
-## Step 2: Match Tripwires to Diff
-
-### Tier 1: Mechanical Pattern Matching
-
-For tripwires that have an explicit `[pattern: ...]`:
-
-1. Use `grep` to search the diff for lines matching the pattern regex
-2. Record: pattern, file path, line number, matched text
-3. Apply each pattern EXACTLY as written — do not modify or skip patterns
-4. This is deterministic — no reasoning needed, just mechanical regex matching
-
-### Tier 2: Semantic Matching
-
-For tripwires WITHOUT an explicit pattern:
-
-1. Derive a search approach from the action text (e.g., "calling os.chdir()" → search for `os.chdir(`)
-2. Convert natural language to code patterns (e.g., "importing time module" → `import time`)
-3. Scan the diff for matching code constructs
-4. Use your judgment — these require understanding intent, not just tokens
-
-This is DYNAMIC - the category tripwire files are the source of truth. New tripwires added via frontmatter are automatically collected when `erk docs sync` runs.
-
-Track which tripwires matched the diff (triggered tripwires).
-
-## Step 3: Load Docs for Matched Tripwires (Lazy Loading)
-
-For EACH tripwire that matched in Step 2:
-
-1. Read the linked documentation file
+1. Read the linked doc at the `doc_path` (relative to `docs/learned/<category>/`)
 2. Extract ALL rules AND EXCEPTIONS from that doc
-3. Check if any exceptions apply to the code being reviewed
+3. Check if any exceptions apply to the matched code
 4. Only flag as a violation if NO exception applies
+
+If `tier1_matches` is empty, skip this step.
 
 **CRITICAL: Read the full doc to understand exceptions.**
 
@@ -91,7 +44,19 @@ Many rules have explicit exceptions. For example, the "5+ parameters" rule has e
 
 If the code matches an exception, it is NOT a violation. Do not flag it.
 
-**You MUST load and read the linked documentation before deciding if something is a violation.** The tripwire summary in tripwires.md is abbreviated - the full exceptions are only in the linked docs.
+**You MUST load and read the linked documentation before deciding if something is a violation.** The tripwire summary is abbreviated - the full exceptions are only in the linked docs.
+
+## Step 3: Evaluate Tier 2 Entries
+
+For each entry in `tier2_entries`:
+
+1. Derive a search approach from the action text (e.g., "calling os.chdir()" -> search for `os.chdir(`)
+2. Convert natural language to code patterns (e.g., "importing time module" -> `import time`)
+3. Scan the diff for matching code constructs
+4. If triggered, read the linked doc and check exceptions
+5. Flag violations only when no exception applies
+
+Use your judgment - these require understanding intent, not just tokens.
 
 ## Step 4: Inline Comment Format
 
@@ -107,20 +72,19 @@ Summary format (preserve existing Activity Log entries and prepend new entry):
 
 ```
 ### Tripwires Triggered
-- [tripwire name] → loaded [doc path]
-- [tripwire name] → loaded [doc path]
+- [tripwire name] -> loaded [doc path]
+- [tripwire name] -> loaded [doc path]
 
 (List only tripwires that matched the diff)
 
 ### Tier 1 Pattern Matches
-✅ `pattern` - None found
-❌ `pattern` - Found in src/foo.py:12
-
-(Mechanical grep results for pattern-bearing tripwires)
+(From mechanical scan JSON - tier1_matches and tier1_clean)
+x `pattern` - Found in src/foo.py:12
+v `pattern` - None found
 
 ### Tier 2 Semantic Matches
-✅ [action] - None found
-❌ [action] - Found in src/foo.py:12
+x [action] - Found in src/foo.py:12
+v [action] - None found
 
 (LLM-derived matches for tripwires without patterns)
 

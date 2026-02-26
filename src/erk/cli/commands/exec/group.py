@@ -156,6 +156,11 @@ from erk.cli.commands.exec.scripts.track_learn_evaluation import (
 from erk.cli.commands.exec.scripts.track_learn_result import (
     track_learn_result,
 )
+from erk.cli.commands.exec.scripts.trigger_async_learn import trigger_async_learn
+from erk.cli.commands.exec.scripts.tripwire_scan import tripwire_scan
+from erk.cli.commands.exec.scripts.tripwires_reminder_hook import (
+    tripwires_reminder_hook,
+)
 from erk.cli.commands.exec.scripts.update_issue_body import update_issue_body
 from erk.cli.commands.exec.scripts.update_objective_node import update_objective_node
 from erk.cli.commands.exec.scripts.update_plan_header import update_plan_header
@@ -252,6 +257,9 @@ exec_group.add_command(setup_impl_from_pr, name="setup-impl-from-pr")
 exec_group.add_command(store_tripwire_candidates, name="store-tripwire-candidates")
 exec_group.add_command(track_learn_evaluation, name="track-learn-evaluation")
 exec_group.add_command(track_learn_result, name="track-learn-result")
+exec_group.add_command(trigger_async_learn, name="trigger-async-learn")
+exec_group.add_command(tripwire_scan, name="tripwire-scan")
+exec_group.add_command(tripwires_reminder_hook, name="tripwires-reminder-hook")
 exec_group.add_command(update_issue_body, name="update-issue-body")
 exec_group.add_command(update_plan_header, name="update-plan-header")
 exec_group.add_command(update_objective_node, name="update-objective-node")
