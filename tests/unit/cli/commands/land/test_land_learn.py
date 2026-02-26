@@ -266,7 +266,7 @@ def test_creates_issue_and_shows_success(
 
     # Plan content with source references is in the first comment
     assert len(fake_issues.added_comments) >= 1
-    _issue_number, comment_body, _comment_id = fake_issues.added_comments[0]
+    _plan_number, comment_body, _comment_id = fake_issues.added_comments[0]
     assert "#100" in comment_body
     assert "#42" in comment_body
 

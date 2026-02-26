@@ -44,9 +44,9 @@ from erk_shared.scratch.scratch import get_scratch_dir
 
 
 def _create_objective_saved_issue_marker(
-    session_id: str, repo_root: Path, issue_number: int
+    session_id: str, repo_root: Path, plan_number: int
 ) -> None:
-    """Create marker file storing the issue number of the saved objective.
+    """Create marker file storing the plan number of the saved objective.
 
     This marker enables idempotency - when the agent calls objective-save-to-issue
     multiple times in the same session, subsequent calls return the existing issue
@@ -55,11 +55,11 @@ def _create_objective_saved_issue_marker(
     Args:
         session_id: The session ID for the scratch directory.
         repo_root: The repository root path.
-        issue_number: The GitHub issue number where the objective was saved.
+        plan_number: The GitHub issue number where the objective was saved.
     """
     marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
     marker_file = marker_dir / "objective-saved-issue.marker"
-    marker_file.write_text(str(issue_number), encoding="utf-8")
+    marker_file.write_text(str(plan_number), encoding="utf-8")
 
 
 def _get_existing_saved_objective(session_id: str, repo_root: Path) -> int | None:
@@ -149,7 +149,7 @@ def objective_save_to_issue(
                 json.dumps(
                     {
                         "success": True,
-                        "issue_number": existing_issue,
+                        "plan_number": existing_issue,
                         "skipped_duplicate": True,
                         "message": f"Session already saved objective #{existing_issue}",
                     }
@@ -247,7 +247,7 @@ def objective_save_to_issue(
     else:
         output_data: dict[str, object] = {
             "success": True,
-            "issue_number": result.plan_number,
+            "plan_number": result.plan_number,
             "issue_url": result.plan_url,
             "title": result.title,
         }
