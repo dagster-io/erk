@@ -2,10 +2,10 @@
 title: Sub-Agent Context Limitations
 read_when:
   - delegating session-dependent commands to Task tool sub-agents
-  - debugging impl-signal or plan-save-to-issue failures with empty session IDs
+  - debugging impl-signal or plan-save failures with empty session IDs
   - designing workflows that split work between root agent and sub-agents
 tripwires:
-  - action: "including impl-signal or plan-save-to-issue in a Task tool sub-agent prompt"
+  - action: "including impl-signal or plan-save in a Task tool sub-agent prompt"
     warning: "Sub-agents cannot access ${CLAUDE_SESSION_ID}. Session-dependent commands must run in the root agent context. See sub-agent-context-limitations.md."
   - action: "passing ${CLAUDE_SESSION_ID} to a sub-agent via the prompt string"
     warning: "String substitution of ${CLAUDE_SESSION_ID} happens at the root agent level. By the time the sub-agent runs the bash command, the variable is not in its environment. The root agent must resolve the value and pass it as a literal."
@@ -29,7 +29,7 @@ Any `erk exec` command accepting `--session-id` degrades when run from a sub-age
 | --------------------- | ------------------------------------------------------- | --------------------------------------------------------------------------- |
 | `impl-signal started` | Links GitHub comment to session, deletes plan file      | No GitHub comment, plan file persists                                       |
 | `impl-signal ended`   | Links ended event to session                            | No GitHub metadata update                                                   |
-| `plan-save-to-issue`  | Session-scoped plan lookup, deduplication, snapshotting | Falls back to latest-by-mtime (may pick wrong plan), no deduplication guard |
+| `plan-save`           | Session-scoped plan lookup, deduplication, snapshotting | Falls back to latest-by-mtime (may pick wrong plan), no deduplication guard |
 
 <!-- Source: src/erk/cli/commands/exec/scripts/impl_signal.py, _signal_started -->
 

@@ -175,7 +175,7 @@ erk exec track-learn-result \
 When creating the learn plan, the `--learned-from-issue` flag is passed:
 
 ```bash
-erk exec plan-save-to-issue \
+erk exec plan-save \
     --plan-type learn \
     --learned-from-issue <parent-issue-number> \
     ...

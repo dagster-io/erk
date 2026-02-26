@@ -6,9 +6,13 @@ ErkContext with appropriate fake implementations.
 """
 
 from erk.core.context import ErkContext
+from erk_shared.core.fakes import FakePlanListService
+from erk_shared.core.plan_list_service import PlanListData
 from erk_shared.gateway.git.dry_run import DryRunGit
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
+from erk_shared.plan_store.types import Plan
 from tests.fakes.shell import FakeShell
 from tests.test_utils.env_helpers import ErkInMemEnv, ErkIsolatedFsEnv
 
@@ -123,3 +127,19 @@ def build_navigation_test_context(
         ...     result = runner.invoke(cli, ["up"], obj=ctx)
     """
     return build_workspace_test_context(env, current_branch=current_branch, **kwargs)
+
+
+def build_fake_plan_list_service(
+    plans: list[Plan],
+    *,
+    pr_linkages: dict[int, list[PullRequestInfo]] | None = None,
+    workflow_runs: dict[int, WorkflowRun | None] | None = None,
+) -> FakePlanListService:
+    """Build a FakePlanListService with pre-configured plan data."""
+    return FakePlanListService(
+        data=PlanListData(
+            plans=plans,
+            pr_linkages=pr_linkages or {},
+            workflow_runs=workflow_runs or {},
+        )
+    )

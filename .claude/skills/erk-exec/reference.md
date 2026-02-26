@@ -77,7 +77,6 @@ Quick reference for all `erk exec` subcommands.
 | `objective-save-to-issue`         | Save plan as objective GitHub issue.                                      |
 | `objective-update-after-land`     | Update objective after landing a PR.                                      |
 | `plan-save`                       | Save plan as a draft PR.                                                  |
-| `plan-save-to-issue`              | Extract plan from ~/.claude/plans/ and create GitHub issue.               |
 | `plan-update-from-feedback`       | Update a plan issue's plan-body comment with new content.                 |
 | `plan-update-issue`               | Update an existing GitHub issue's plan comment with new content.          |
 | `post-or-update-pr-summary`       | Post or update a PR summary comment.                                      |
@@ -908,23 +907,6 @@ Save plan as a draft PR.
 | `--learned-from-issue`            | INTEGER | No       | -       | Parent plan issue number (for learn plans)                |
 | `--created-from-workflow-run-url` | TEXT    | No       | -       | GitHub Actions workflow run URL                           |
 | `--branch-slug`                   | TEXT    | No       | -       | Pre-generated branch slug (skips LLM call when provided)  |
-
-### plan-save-to-issue
-
-Extract plan from ~/.claude/plans/ and create GitHub issue.
-
-**Usage:** `erk exec plan-save-to-issue`
-
-**Options:**
-
-| Flag                              | Type    | Required | Default | Description                                                               |
-| --------------------------------- | ------- | -------- | ------- | ------------------------------------------------------------------------- |
-| `--format`                        | CHOICE  | No       | 'json'  | Output format: json (default) or display (formatted text)                 |
-| `--plan-file`                     | PATH    | No       | -       | Path to specific plan file (highest priority)                             |
-| `--session-id`                    | TEXT    | No       | -       | Session ID for scoped plan lookup (uses slug from session logs)           |
-| `--plan-type`                     | CHOICE  | No       | -       | Plan type: standard (default) or learn (for documentation learning plans) |
-| `--learned-from-issue`            | INTEGER | No       | -       | Parent plan issue number (for learn plans, enables auto-update on land)   |
-| `--created-from-workflow-run-url` | TEXT    | No       | -       | GitHub Actions workflow run URL that created this plan (for backlink)     |
 
 ### plan-update-from-feedback
 

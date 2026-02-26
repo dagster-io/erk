@@ -28,13 +28,11 @@ def issue_info_to_plan(issue: IssueInfo) -> Plan:
     """
     state = PlanState.OPEN if issue.state == "OPEN" else PlanState.CLOSED
 
-    # Parse plan-header block once
     header_fields: dict[str, object] = {}
     block = find_metadata_block(issue.body, "plan-header")
     if block is not None:
         header_fields = dict(block.data)
 
-    # Extract objective_id from parsed header (no second parse needed)
     objective_id: int | None = None
     raw_objective = header_fields.get(OBJECTIVE_ISSUE)
     if isinstance(raw_objective, int):
@@ -59,7 +57,6 @@ def issue_info_to_plan(issue: IssueInfo) -> Plan:
 def pr_details_to_plan(pr: PRDetails, *, plan_body: str | None) -> Plan:
     """Convert PRDetails to Plan with pre-parsed header fields.
 
-    Parallel to issue_info_to_plan() but for planned-PR-backed plans.
     The PR body contains the plan-header metadata block followed by
     plan content. If plan_body is provided, it overrides the body
     content (used when plan content is extracted separately from the
