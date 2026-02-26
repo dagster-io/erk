@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Split `tests/tui/test_app.py` into a subpackage"
+}
