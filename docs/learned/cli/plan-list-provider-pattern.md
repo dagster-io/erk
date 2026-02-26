@@ -1,7 +1,7 @@
 ---
 title: Plan List Provider Pattern
 read_when:
-  - "modifying erk plan list output"
+  - "modifying erk pr list output"
   - "understanding how plan list and TUI share data providers"
   - "adding columns to plan list display"
 tripwires:
@@ -11,13 +11,13 @@ tripwires:
 
 # Plan List Provider Pattern
 
-Both `erk plan list` (CLI) and `erk dash` (TUI) use `RealPlanDataProvider` to fetch and display plan data. This shared provider pattern ensures consistent data across interfaces.
+Both `erk pr list` (CLI) and `erk dash` (TUI) use `RealPlanDataProvider` to fetch and display plan data. This shared provider pattern ensures consistent data across interfaces.
 
 ## Architecture
 
 ```
 RealPlanDataProvider
-  ├── erk plan list (CLI)     → Rich static table
+  ├── erk pr list (CLI)     → Rich static table
   └── erk dash (TUI/Textual)  → PlanDataTable widget
 ```
 

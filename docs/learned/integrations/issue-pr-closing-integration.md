@@ -26,7 +26,7 @@ The submit pipeline resolves issue numbers from three sources with a strict prio
 
 | Source                    | When used                  | Why it exists                                                                  |
 | ------------------------- | -------------------------- | ------------------------------------------------------------------------------ |
-| `.impl/plan-ref.json`     | Authoritative when present | Created by `erk br co --for-plan` or `erk plan submit` — explicit plan linkage |
+| `.impl/plan-ref.json`     | Authoritative when present | Created by `erk br co --for-plan` or `erk pr dispatch` — explicit plan linkage |
 | Branch name (`P{N}-slug`) | Fallback when no `.impl/`  | Supports manually-created worktrees from plan branches                         |
 | Existing PR footer        | Last resort on re-submit   | Preserves references after worktree recreation                                 |
 

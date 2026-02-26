@@ -26,7 +26,7 @@ erk implement     # Implement a plan in current directory
 erk prepare       # Create a worktree from a plan issue
 
 # Most plan management operations are under `erk plan`:
-erk plan submit   # Submit a plan for remote execution
+erk pr dispatch   # Submit a plan for remote execution
 
 # Plan creation, view/close/log/replan operations are under `erk pr`:
 erk pr create     # Create a new plan issue
@@ -245,7 +245,7 @@ erk prepare 42
 erk dash
 
 # GOOD: erk plan subcommands for plan submission
-erk plan submit 42
+erk pr dispatch 42
 
 # GOOD: erk pr subcommands for plan creation/viewing/closing
 erk pr create --file plan.md
@@ -332,7 +332,7 @@ erk pr view 42            # View specific plan
 erk implement 42          # Set up .impl/ and implement in current directory
 
 # Submit for execution
-erk plan submit 42        # Queue for remote execution
+erk pr dispatch 42        # Queue for remote execution
 
 # Track progress
 erk pr log 42             # View execution history
@@ -397,7 +397,7 @@ wt_group.add_command(create_wt)  # Grouped under wt
 
 **Step 4: Add tests**
 
-- Plan commands: `tests/commands/plan/test_<name>.py`
+- PR commands: `tests/commands/pr/test_<name>.py`
 - Worktree commands: `tests/commands/wt/test_<name>.py`
 - Stack commands: `tests/commands/stack/test_<name>.py`
 

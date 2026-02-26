@@ -3,18 +3,18 @@ title: Branch Reuse in Plan Submit
 last_audited: "2026-02-17 16:00 PT"
 audit_result: clean
 read_when:
-  - "implementing erk plan submit"
+  - "implementing erk pr dispatch"
   - "handling duplicate branches"
   - "resubmitting a plan issue"
 ---
 
 # Branch Reuse in Plan Submit
 
-When resubmitting a plan issue, `erk plan submit` detects existing local branches and prompts the user to reuse or replace them.
+When resubmitting a plan issue, `erk pr dispatch` detects existing local branches and prompts the user to reuse or replace them.
 
 ## Problem Statement
 
-Without branch detection, each `erk plan submit` creates a new timestamped branch (e.g., `P123-feature-01-15-1430`). Resubmitting the same issue creates duplicate branches that clutter the repository.
+Without branch detection, each `erk pr dispatch` creates a new timestamped branch (e.g., `P123-feature-01-15-1430`). Resubmitting the same issue creates duplicate branches that clutter the repository.
 
 ## User Workflow
 
@@ -68,20 +68,20 @@ Branch detection occurs **before** computing the new branch name because:
 
 ## Implementation Reference
 
-See `src/erk/cli/commands/submit.py`:
+See `src/erk/cli/commands/pr/dispatch_cmd.py`:
 
 - `_find_existing_branches_for_issue()` - Detection logic
 - `_prompt_existing_branch_action()` - User prompt handling
 
 ## Force Mode (Non-Interactive)
 
-When `erk plan submit` runs in contexts without interactive stdin (e.g., TUI with `subprocess.DEVNULL`), prompts cause "Aborted!" errors.
+When `erk pr dispatch` runs in contexts without interactive stdin (e.g., TUI with `subprocess.DEVNULL`), prompts cause "Aborted!" errors.
 
 The `--force` / `-f` flag bypasses prompts and automatically deletes existing branches:
 
 ```bash
-erk plan submit 123 --force
-erk plan submit 123 -f
+erk pr dispatch 123 --force
+erk pr dispatch 123 -f
 ```
 
 **Behavior with --force:**

@@ -220,7 +220,7 @@ export function PlanDetail({plan, onClose}: PlanDetailProps) {
                 code={`source "$(erk prepare ${plan.issue_number} --script)" && erk implement --dangerous`}
                 onCopy={showToast}
               />
-              <CodeSnippet code={`erk plan submit ${plan.issue_number}`} onCopy={showToast} />
+              <CodeSnippet code={`erk pr dispatch ${plan.issue_number}`} onCopy={showToast} />
             </div>
             {toast && <div className="detail-toast">{toast}</div>}
           </div>
