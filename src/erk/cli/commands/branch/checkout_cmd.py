@@ -235,7 +235,6 @@ def _perform_checkout(
 
     if should_output_message:
         user_output(user_message)
-        # Display sync status after checkout message
         display_sync_status(ctx, worktree_path=target_path, branch=branch, script=script)
 
         # Print activation instructions for opt-in workflow

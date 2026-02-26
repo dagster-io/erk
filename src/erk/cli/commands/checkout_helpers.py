@@ -6,6 +6,7 @@ which imports wt.checkout_cmd. By having checkout-specific helpers here,
 we break that cycle.
 """
 
+import logging
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -21,6 +22,8 @@ from erk.cli.core import worktree_path_for
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
 from erk_shared.output.output import user_output
+
+logger = logging.getLogger(__name__)
 
 
 def _is_bot_author(author: str) -> bool:
@@ -73,7 +76,14 @@ def display_sync_status(
     if script:
         return
 
-    ahead, behind = ctx.git.branch.get_ahead_behind(worktree_path, branch)
+    # Sync status is informational — never block checkout activation output.
+    # get_ahead_behind raises RuntimeError on subprocess failure (e.g., network issues).
+    try:
+        ahead, behind = ctx.git.branch.get_ahead_behind(worktree_path, branch)
+    except RuntimeError:
+        logger.debug("Failed to get ahead/behind for %s on %s", branch, worktree_path)
+        return
+
     sync_display = format_sync_status(ahead, behind)
 
     if sync_display is None:
