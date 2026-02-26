@@ -305,6 +305,10 @@ def _dispatch_planned_pr_plan(
         raise UserFacingCliError(push_result.message)
     user_output(click.style("✓", fg="green") + " Branch pushed to remote")
 
+    # Fix Graphite tracking divergence caused by pull_rebase + commit
+    if ctx.graphite_branch_ops is not None:
+        ctx.graphite_branch_ops.retrack_branch(repo.root, branch_name)
+
     # Switch back to original branch
     ctx.branch_manager.checkout_branch(repo.root, original_branch)
 

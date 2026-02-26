@@ -133,6 +133,11 @@ def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() ->
         assert "Creating .erk/impl-context/ folder" in result.output
         assert "Workflow triggered" in result.output
 
+        # Verify: Graphite tracking divergence was fixed after push
+        assert len(graphite.retrack_branch_calls) == 1
+        _cwd, retracked_branch = graphite.retrack_branch_calls[0]
+        assert retracked_branch == plan_branch
+
         # Verify: no warnings, dispatch metadata written successfully
         assert "Warning:" not in result.output
         assert "Dispatch metadata written" in result.output
