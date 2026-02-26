@@ -85,6 +85,7 @@ class HelpScreen(ModalScreen):
             with Vertical(classes="help-section"):
                 yield Label("Filter & Sort", classes="help-section-title")
                 yield Label("/       Start filter mode", classes="help-binding")
+                yield Label("t       Filter to Graphite stack", classes="help-binding")
                 yield Label("Esc     Clear filter / exit filter", classes="help-binding")
                 yield Label("Enter   Return focus to table", classes="help-binding")
                 yield Label("s       Toggle sort mode", classes="help-binding")

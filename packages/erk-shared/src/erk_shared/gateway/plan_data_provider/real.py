@@ -500,6 +500,19 @@ class RealPlanDataProvider(PlanDataProvider):
             all_plans.extend(rows)
         return [row for row in all_plans if row.objective_issue == objective_issue]
 
+    def get_branch_stack(self, branch: str) -> list[str] | None:
+        """Get the Graphite stack containing a branch.
+
+        Delegates to BranchManager which reads local Graphite cache (no network).
+
+        Args:
+            branch: The branch name to look up
+
+        Returns:
+            Ordered list of branch names in the stack, or None
+        """
+        return self._ctx.branch_manager.get_branch_stack(self._location.root, branch)
+
     def fetch_unresolved_comments(self, pr_number: int) -> list[PRReviewThread]:
         """Fetch unresolved review threads for a pull request.
 
