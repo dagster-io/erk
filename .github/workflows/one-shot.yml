@@ -40,12 +40,12 @@ on:
         type: string
         default: ""
       plan_issue_number:
-        description: "Plan entity number: issue number (github backend) or PR number (draft_pr backend)"
+        description: "Plan entity number: issue number (github backend) or PR number (planned_pr backend)"
         required: false
         type: string
         default: ""
       plan_backend:
-        description: "Plan backend type (github or draft_pr)"
+        description: "Plan backend type (github or planned_pr)"
         required: false
         type: string
         default: "github"
