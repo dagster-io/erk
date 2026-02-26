@@ -36,6 +36,7 @@ def test_dispatch_happy_path() -> None:
             prompt="fix the import in config.py",
             model=None,
             extra_workflow_inputs={},
+            slug=None,
         )
 
         result = dispatch_one_shot(ctx, params=params, dry_run=False)
@@ -108,6 +109,7 @@ def test_dispatch_with_extra_inputs() -> None:
                 "objective_issue": "42",
                 "node_id": "1.1",
             },
+            slug=None,
         )
 
         result = dispatch_one_shot(ctx, params=params, dry_run=False)
@@ -188,6 +190,38 @@ def test_dispatch_stays_on_current_branch_on_error() -> None:
         assert git.branch.get_current_branch(env.cwd) == "main"
 
 
+def test_dispatch_with_pre_generated_slug_skips_llm() -> None:
+    """Test that providing a slug skips LLM slug generation and uses slug directly."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
+        )
+        issues = FakeGitHubIssues()
+        github = FakeGitHub(authenticated=True, issues_gateway=issues)
+
+        ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
+
+        params = OneShotDispatchParams(
+            prompt="fix the import in config.py",
+            model=None,
+            extra_workflow_inputs={},
+            slug="fix-config-import",
+        )
+
+        result = dispatch_one_shot(ctx, params=params, dry_run=False)
+
+        assert result is not None
+        # Branch should contain the pre-generated slug
+        assert "fix-config-import" in result.branch_name
+        assert result.branch_name.startswith("plnd/")
+
+
 def test_dispatch_long_prompt_truncates_workflow_input() -> None:
     """Test that long prompts are truncated in workflow input but committed in full."""
     runner = CliRunner()
@@ -211,6 +245,7 @@ def test_dispatch_long_prompt_truncates_workflow_input() -> None:
             prompt=long_prompt,
             model=None,
             extra_workflow_inputs={},
+            slug=None,
         )
 
         result = dispatch_one_shot(ctx, params=params, dry_run=False)
