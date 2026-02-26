@@ -24,8 +24,8 @@ Erk has two plan types that share the same issue infrastructure (`erk-pr` base l
 
 **Ask: "Is the primary output code or documentation?"**
 
-| Signal                                    | Plan Type      | Label(s)                       | Typical Output              |
-| ----------------------------------------- | -------------- | ------------------------------ | --------------------------- |
+| Signal                                    | Plan Type      | Label(s)               | Typical Output              |
+| ----------------------------------------- | -------------- | ---------------------- | --------------------------- |
 | Adding features, fixing bugs, refactoring | Implementation | `erk-pr` + `erk-plan`  | Source code, tests, config  |
 | Extracting insights from completed work   | Learn          | `erk-pr` + `erk-learn` | Docs in `docs/learned/`     |
 | Consolidating learnings from multiple PRs | Learn          | `erk-pr` + `erk-learn` | Docs, tripwires, checklists |
