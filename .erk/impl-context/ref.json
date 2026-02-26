@@ -1,4 +1,9 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Improve success output for erk CLI commands"
+  "plan_id": "8301",
+  "url": "https://github.com/dagster-io/erk/pull/8301",
+  "created_at": "2026-02-26T07:55:24.543255",
+  "synced_at": "2026-02-26T07:55:24.543255",
+  "labels": [],
+  "objective_id": null
 }
