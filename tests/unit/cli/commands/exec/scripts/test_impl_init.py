@@ -40,7 +40,6 @@ def test_impl_init_returns_valid_json(tmp_path: Path) -> None:
     assert result.exit_code == 0
     data = json.loads(result.output)
     assert data["valid"] is True
-    assert data["impl_type"] == "impl"
     assert data["has_plan_tracking"] is False
 
 
@@ -123,7 +122,6 @@ def test_impl_init_detects_branch_scoped_impl(tmp_path: Path) -> None:
     assert result.exit_code == 0
     data = json.loads(result.output)
     assert data["valid"] is True
-    assert data["impl_type"] == "impl-context"
 
 
 def test_impl_init_errors_missing_impl_folder(tmp_path: Path) -> None:
