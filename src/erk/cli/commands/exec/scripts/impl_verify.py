@@ -26,22 +26,29 @@ import json
 
 import click
 
-from erk_shared.context.helpers import require_cwd
+from erk_shared.context.helpers import require_cwd, require_git
+from erk_shared.impl_folder import resolve_impl_dir
 
 
 @click.command(name="impl-verify")
 @click.pass_context
 def impl_verify(ctx: click.Context) -> None:
-    """Verify .impl/ folder still exists after implementation."""
+    """Verify implementation folder still exists after implementation."""
     cwd = require_cwd(ctx)
-    impl_dir = cwd / ".impl"
+    git = require_git(ctx)
+    branch_name = git.branch.get_current_branch(cwd)
 
-    if not impl_dir.exists():
+    impl_dir = resolve_impl_dir(cwd, branch_name=branch_name)
+
+    if impl_dir is None:
         # Hard error - agent violated instructions
         result = {
             "valid": False,
-            "error": ".impl/ folder was deleted during implementation. This violates instructions.",
-            "action": "The .impl/ folder must be preserved for user review.",
+            "error": (
+                "Implementation folder was deleted during implementation."
+                " This violates instructions."
+            ),
+            "action": "The implementation folder must be preserved for user review.",
         }
         click.echo(json.dumps(result))
         raise SystemExit(1)

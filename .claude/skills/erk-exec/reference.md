@@ -22,7 +22,7 @@ Quick reference for all `erk exec` subcommands.
 | `add-reaction-to-comment`         | Add a reaction to a PR/issue comment.                                     |
 | `add-remote-execution-note`       | Add remote execution tracking note to PR body.                            |
 | `capture-session-info`            | Capture Claude Code session info for CI workflows.                        |
-| `check-impl`                      | Check .impl/ folder structure and validate prerequisites.                 |
+| `check-impl`                      | Check implementation folder structure and validate prerequisites.         |
 | `ci-update-pr-body`               | Update PR body with AI-generated summary and footer.                      |
 | `ci-verify-autofix`               | Run full CI verification after autofix push.                              |
 | `cleanup-impl-context`            | Clean up .erk/impl-context/ staging directory.                            |
@@ -59,7 +59,7 @@ Quick reference for all `erk exec` subcommands.
 | `handle-no-changes`               | Handle no-changes scenario gracefully.                                    |
 | `impl-init`                       | Initialize implementation by validating .impl/ folder.                    |
 | `impl-signal`                     | Signal implementation events to GitHub.                                   |
-| `impl-verify`                     | Verify .impl/ folder still exists after implementation.                   |
+| `impl-verify`                     | Verify implementation folder still exists after implementation.           |
 | `issue-title-to-filename`         | Convert plan title to filename.                                           |
 | `land-execute`                    | Execute deferred land operations.                                         |
 | `list-sessions`                   | List Claude Code sessions with metadata for the current project.          |
@@ -176,7 +176,7 @@ Capture Claude Code session info for CI workflows.
 
 ### check-impl
 
-Check .impl/ folder structure and validate prerequisites.
+Check implementation folder structure and validate prerequisites.
 
 **Usage:** `erk exec check-impl`
 
@@ -641,7 +641,7 @@ Signal implementation events to GitHub.
 
 ### impl-verify
 
-Verify .impl/ folder still exists after implementation.
+Verify implementation folder still exists after implementation.
 
 **Usage:** `erk exec impl-verify`
 

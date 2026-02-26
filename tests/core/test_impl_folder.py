@@ -23,6 +23,7 @@ from erk_shared.impl_folder import (
     read_last_dispatched_run_id,
     read_plan_author,
     read_plan_ref,
+    resolve_impl_dir,
     save_plan_ref,
     validate_plan_linkage,
 )
@@ -820,3 +821,70 @@ def test_validate_plan_linkage_planned_pr_without_plan_ref(tmp_path: Path) -> No
 
     result = validate_plan_linkage(impl_dir, "plan-fix-auth-bug-01-15-1430")
     assert result is None
+
+
+# ============================================================================
+# resolve_impl_dir Tests
+# ============================================================================
+
+
+def test_resolve_impl_dir_branch_scoped(tmp_path: Path) -> None:
+    """Test resolve_impl_dir finds branch-scoped directory."""
+    create_impl_folder(tmp_path, "# Plan\n", branch_name=BRANCH, overwrite=False)
+
+    result = resolve_impl_dir(tmp_path, branch_name=BRANCH)
+    assert result is not None
+    assert result == get_impl_dir(tmp_path, branch_name=BRANCH)
+
+
+def test_resolve_impl_dir_legacy_fallback(tmp_path: Path) -> None:
+    """Test resolve_impl_dir finds legacy .impl/ directory."""
+    legacy_dir = tmp_path / ".impl"
+    legacy_dir.mkdir()
+    (legacy_dir / "plan.md").write_text("# Plan\n", encoding="utf-8")
+
+    result = resolve_impl_dir(tmp_path, branch_name="nonexistent-branch")
+    assert result is not None
+    assert result == legacy_dir
+
+
+def test_resolve_impl_dir_discovery(tmp_path: Path) -> None:
+    """Test resolve_impl_dir discovers subdir via plan.md search."""
+    # Create a branch-scoped dir for a different branch
+    other_branch = "other/feature"
+    create_impl_folder(tmp_path, "# Plan\n", branch_name=other_branch, overwrite=False)
+
+    # Searching with a branch that doesn't have its own dir should discover via scan
+    result = resolve_impl_dir(tmp_path, branch_name="nonexistent-branch")
+    assert result is not None
+    assert result == get_impl_dir(tmp_path, branch_name=other_branch)
+
+
+def test_resolve_impl_dir_not_found(tmp_path: Path) -> None:
+    """Test resolve_impl_dir returns None when nothing found."""
+    result = resolve_impl_dir(tmp_path, branch_name="nonexistent-branch")
+    assert result is None
+
+
+def test_resolve_impl_dir_branch_scoped_priority(tmp_path: Path) -> None:
+    """Test resolve_impl_dir prefers branch-scoped over legacy .impl/."""
+    # Create both branch-scoped and legacy directories
+    create_impl_folder(tmp_path, "# Branch Plan\n", branch_name=BRANCH, overwrite=False)
+    legacy_dir = tmp_path / ".impl"
+    legacy_dir.mkdir()
+    (legacy_dir / "plan.md").write_text("# Legacy Plan\n", encoding="utf-8")
+
+    result = resolve_impl_dir(tmp_path, branch_name=BRANCH)
+    assert result is not None
+    assert result == get_impl_dir(tmp_path, branch_name=BRANCH)
+
+
+def test_resolve_impl_dir_none_branch_skips_step1(tmp_path: Path) -> None:
+    """Test resolve_impl_dir with None branch goes straight to legacy lookup."""
+    legacy_dir = tmp_path / ".impl"
+    legacy_dir.mkdir()
+    (legacy_dir / "plan.md").write_text("# Plan\n", encoding="utf-8")
+
+    result = resolve_impl_dir(tmp_path, branch_name=None)
+    assert result is not None
+    assert result == legacy_dir

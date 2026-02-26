@@ -14,12 +14,21 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.impl_signal import impl_signal
 from erk_shared.context.context import ErkContext
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from tests.test_utils.plan_helpers import issue_info_to_pr_details
+
+BRANCH = "feature/test-branch"
+"""Test branch name used across tests."""
+
+
+def _fake_git(tmp_path: Path) -> FakeGit:
+    """Create FakeGit with branch configured for tmp_path."""
+    return FakeGit(current_branches={tmp_path: BRANCH})
 
 
 def _is_on_git_branch() -> bool:
@@ -111,7 +120,7 @@ def test_started_no_plan_reference(tmp_path: Path) -> None:
     result = runner.invoke(
         impl_signal,
         ["started", "--session-id", "test-session-id"],
-        obj=ErkContext.for_test(cwd=tmp_path),
+        obj=ErkContext.for_test(cwd=tmp_path, git=_fake_git(tmp_path)),
     )
 
     assert result.exit_code == 0
@@ -131,7 +140,7 @@ def test_ended_no_plan_reference(tmp_path: Path) -> None:
     result = runner.invoke(
         impl_signal,
         ["ended"],
-        obj=ErkContext.for_test(cwd=tmp_path),
+        obj=ErkContext.for_test(cwd=tmp_path, git=_fake_git(tmp_path)),
     )
 
     assert result.exit_code == 0
@@ -142,12 +151,12 @@ def test_ended_no_plan_reference(tmp_path: Path) -> None:
 
 
 def test_started_missing_impl_folder(tmp_path: Path) -> None:
-    """Returns error when .impl/ folder is missing."""
+    """Returns error when no impl folder exists."""
     runner = CliRunner()
     result = runner.invoke(
         impl_signal,
         ["started", "--session-id", "test-session-id"],
-        obj=ErkContext.for_test(cwd=tmp_path),
+        obj=ErkContext.for_test(cwd=tmp_path, git=_fake_git(tmp_path)),
     )
 
     assert result.exit_code == 0
@@ -158,12 +167,12 @@ def test_started_missing_impl_folder(tmp_path: Path) -> None:
 
 
 def test_ended_missing_impl_folder(tmp_path: Path) -> None:
-    """Returns error when .impl/ folder is missing."""
+    """Returns error when no impl folder exists."""
     runner = CliRunner()
     result = runner.invoke(
         impl_signal,
         ["ended"],
-        obj=ErkContext.for_test(cwd=tmp_path),
+        obj=ErkContext.for_test(cwd=tmp_path, git=_fake_git(tmp_path)),
     )
 
     assert result.exit_code == 0
@@ -184,7 +193,7 @@ def test_impl_context_fallback(tmp_path: Path) -> None:
     result = runner.invoke(
         impl_signal,
         ["started", "--session-id", "test-session-id"],
-        obj=ErkContext.for_test(cwd=tmp_path),
+        obj=ErkContext.for_test(cwd=tmp_path, git=_fake_git(tmp_path)),
     )
 
     assert result.exit_code == 0
@@ -212,7 +221,7 @@ def test_started_fails_without_session_id(tmp_path: Path) -> None:
     result = runner.invoke(
         impl_signal,
         ["started"],
-        obj=ErkContext.for_test(cwd=tmp_path),
+        obj=ErkContext.for_test(cwd=tmp_path, git=_fake_git(tmp_path)),
     )
 
     assert result.exit_code == 0
@@ -229,7 +238,7 @@ def test_started_fails_with_empty_session_id(tmp_path: Path) -> None:
     result = runner.invoke(
         impl_signal,
         ["started", "--session-id", ""],
-        obj=ErkContext.for_test(cwd=tmp_path),
+        obj=ErkContext.for_test(cwd=tmp_path, git=_fake_git(tmp_path)),
     )
 
     assert result.exit_code == 0
@@ -246,7 +255,7 @@ def test_started_fails_with_whitespace_session_id(tmp_path: Path) -> None:
     result = runner.invoke(
         impl_signal,
         ["started", "--session-id", "   "],
-        obj=ErkContext.for_test(cwd=tmp_path),
+        obj=ErkContext.for_test(cwd=tmp_path, git=_fake_git(tmp_path)),
     )
 
     assert result.exit_code == 0
@@ -275,6 +284,7 @@ def test_started_posts_comment_and_updates_metadata(tmp_path: Path) -> None:
         ["started", "--session-id", "test-session-123"],
         obj=ErkContext.for_test(
             cwd=tmp_path,
+            git=_fake_git(tmp_path),
             github=fake_github,
             plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
         ),
@@ -315,6 +325,7 @@ def test_ended_updates_metadata(tmp_path: Path) -> None:
         ["ended", "--session-id", "test-session-456"],
         obj=ErkContext.for_test(
             cwd=tmp_path,
+            git=_fake_git(tmp_path),
             github=fake_github,
             plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
         ),
@@ -353,6 +364,7 @@ def test_started_sets_lifecycle_stage_impl(tmp_path: Path) -> None:
         ["started", "--session-id", "test-session-321"],
         obj=ErkContext.for_test(
             cwd=tmp_path,
+            git=_fake_git(tmp_path),
             github=fake_github,
             plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
         ),
@@ -385,6 +397,7 @@ def test_started_writes_local_run_state(tmp_path: Path) -> None:
         ["started", "--session-id", "test-session-789"],
         obj=ErkContext.for_test(
             cwd=tmp_path,
+            git=_fake_git(tmp_path),
             github=fake_github,
             plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
         ),
@@ -421,6 +434,7 @@ def test_submitted_updates_lifecycle_stage(tmp_path: Path) -> None:
         ["submitted"],
         obj=ErkContext.for_test(
             cwd=tmp_path,
+            git=_fake_git(tmp_path),
             github=fake_github,
             plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
         ),
@@ -452,7 +466,7 @@ def test_submitted_no_plan_ref(tmp_path: Path) -> None:
     result = runner.invoke(
         impl_signal,
         ["submitted"],
-        obj=ErkContext.for_test(cwd=tmp_path),
+        obj=ErkContext.for_test(cwd=tmp_path, git=_fake_git(tmp_path)),
     )
 
     assert result.exit_code == 0
@@ -478,6 +492,7 @@ def test_submitted_no_session_id_ok(tmp_path: Path) -> None:
         ["submitted"],
         obj=ErkContext.for_test(
             cwd=tmp_path,
+            git=_fake_git(tmp_path),
             github=fake_github,
             plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
         ),
@@ -502,6 +517,7 @@ def test_submitted_issue_not_found(tmp_path: Path) -> None:
         ["submitted"],
         obj=ErkContext.for_test(
             cwd=tmp_path,
+            git=_fake_git(tmp_path),
             github=fake_github,
             plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
         ),

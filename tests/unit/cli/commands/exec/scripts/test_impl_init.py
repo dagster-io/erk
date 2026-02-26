@@ -6,22 +6,48 @@ Tests the initialization and validation for /erk:plan-implement.
 import json
 from pathlib import Path
 
-import pytest
 from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.impl_init import (
     _extract_related_docs,
     impl_init,
 )
+from erk_shared.context.context import ErkContext
+from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.impl_folder import create_impl_folder
+
+BRANCH = "feature/test-branch"
+"""Test branch name used across tests."""
 
 
-@pytest.fixture
-def impl_folder(tmp_path: Path) -> Path:
-    """Create .impl/ folder with test files."""
+def _make_ctx(tmp_path: Path, *, branch: str = BRANCH) -> ErkContext:
+    """Create test ErkContext with FakeGit configured for the given branch."""
+    return ErkContext.for_test(
+        cwd=tmp_path,
+        git=FakeGit(current_branches={tmp_path: branch}),
+    )
+
+
+def test_impl_init_returns_valid_json(tmp_path: Path) -> None:
+    """Test impl-init returns valid JSON with expected structure."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
+    (impl_dir / "plan.md").write_text("# Test Plan\n\n1. Step one\n", encoding="utf-8")
 
-    # Create plan.md with Related Documentation section
+    runner = CliRunner()
+    result = runner.invoke(impl_init, ["--json"], obj=_make_ctx(tmp_path))
+
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data["valid"] is True
+    assert data["impl_type"] == "impl"
+    assert data["has_plan_tracking"] is False
+
+
+def test_impl_init_extracts_related_docs(tmp_path: Path) -> None:
+    """Test impl-init extracts Related Documentation section."""
+    impl_dir = tmp_path / ".impl"
+    impl_dir.mkdir()
     plan_content = """# Test Plan
 
 ## Objective
@@ -43,34 +69,10 @@ Build a test feature.
 - [Kit CLI Testing](docs/learned/testing/kit-cli-testing.md)
 - `docs/learned/patterns.md`
 """
-    plan_md = impl_dir / "plan.md"
-    plan_md.write_text(plan_content, encoding="utf-8")
-
-    return impl_dir
-
-
-def test_impl_init_returns_valid_json(impl_folder: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test impl-init returns valid JSON with expected structure."""
-    monkeypatch.chdir(impl_folder.parent)
+    (impl_dir / "plan.md").write_text(plan_content, encoding="utf-8")
 
     runner = CliRunner()
-    result = runner.invoke(impl_init, ["--json"])
-
-    assert result.exit_code == 0
-    data = json.loads(result.output)
-    assert data["valid"] is True
-    assert data["impl_type"] == "impl"
-    assert data["has_plan_tracking"] is False
-
-
-def test_impl_init_extracts_related_docs(
-    impl_folder: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Test impl-init extracts Related Documentation section."""
-    monkeypatch.chdir(impl_folder.parent)
-
-    runner = CliRunner()
-    result = runner.invoke(impl_init, ["--json"])
+    result = runner.invoke(impl_init, ["--json"], obj=_make_ctx(tmp_path))
 
     assert result.exit_code == 0
     data = json.loads(result.output)
@@ -82,10 +84,12 @@ def test_impl_init_extracts_related_docs(
     assert "docs/learned/patterns.md" in related_docs["docs"]
 
 
-def test_impl_init_with_issue_tracking(impl_folder: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_impl_init_with_issue_tracking(tmp_path: Path) -> None:
     """Test impl-init detects plan-ref.json and returns plan_number."""
-    plan_ref = impl_folder / "plan-ref.json"
-    plan_ref.write_text(
+    impl_dir = tmp_path / ".impl"
+    impl_dir.mkdir()
+    (impl_dir / "plan.md").write_text("# Test Plan\n", encoding="utf-8")
+    (impl_dir / "plan-ref.json").write_text(
         json.dumps(
             {
                 "provider": "github",
@@ -100,10 +104,8 @@ def test_impl_init_with_issue_tracking(impl_folder: Path, monkeypatch: pytest.Mo
         encoding="utf-8",
     )
 
-    monkeypatch.chdir(impl_folder.parent)
-
     runner = CliRunner()
-    result = runner.invoke(impl_init, ["--json"])
+    result = runner.invoke(impl_init, ["--json"], obj=_make_ctx(tmp_path))
 
     assert result.exit_code == 0
     data = json.loads(result.output)
@@ -111,21 +113,12 @@ def test_impl_init_with_issue_tracking(impl_folder: Path, monkeypatch: pytest.Mo
     assert data["plan_number"] == 123
 
 
-def test_impl_init_detects_impl_context(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test impl-init detects .erk/impl-context/ folder."""
-    # Create .erk/impl-context/ folder instead of .impl/
-    erk_dir = tmp_path / ".erk"
-    erk_dir.mkdir()
-    impl_dir = erk_dir / "impl-context"
-    impl_dir.mkdir()
-
-    plan_md = impl_dir / "plan.md"
-    plan_md.write_text("# Plan\n\n1. Step one", encoding="utf-8")
-
-    monkeypatch.chdir(tmp_path)
+def test_impl_init_detects_branch_scoped_impl(tmp_path: Path) -> None:
+    """Test impl-init detects branch-scoped .erk/impl-context/<branch>/ folder."""
+    create_impl_folder(tmp_path, "# Plan\n\n1. Step one", branch_name=BRANCH, overwrite=False)
 
     runner = CliRunner()
-    result = runner.invoke(impl_init, ["--json"])
+    result = runner.invoke(impl_init, ["--json"], obj=_make_ctx(tmp_path))
 
     assert result.exit_code == 0
     data = json.loads(result.output)
@@ -133,14 +126,10 @@ def test_impl_init_detects_impl_context(tmp_path: Path, monkeypatch: pytest.Monk
     assert data["impl_type"] == "impl-context"
 
 
-def test_impl_init_errors_missing_impl_folder(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_impl_init_errors_missing_impl_folder(tmp_path: Path) -> None:
     """Test impl-init returns JSON error when no impl folder exists."""
-    monkeypatch.chdir(tmp_path)
-
     runner = CliRunner()
-    result = runner.invoke(impl_init, ["--json"])
+    result = runner.invoke(impl_init, ["--json"], obj=_make_ctx(tmp_path))
 
     assert result.exit_code == 1
     data = json.loads(result.output)
@@ -148,15 +137,13 @@ def test_impl_init_errors_missing_impl_folder(
     assert data["error_type"] == "no_impl_folder"
 
 
-def test_impl_init_errors_missing_plan(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_impl_init_errors_missing_plan(tmp_path: Path) -> None:
     """Test impl-init returns JSON error when plan.md is missing."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
 
-    monkeypatch.chdir(tmp_path)
-
     runner = CliRunner()
-    result = runner.invoke(impl_init, ["--json"])
+    result = runner.invoke(impl_init, ["--json"], obj=_make_ctx(tmp_path))
 
     assert result.exit_code == 1
     data = json.loads(result.output)

@@ -57,7 +57,7 @@ from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.branch_manager.abc import BranchManager
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.gateway.git.abc import Git
-from erk_shared.impl_folder import read_plan_ref
+from erk_shared.impl_folder import read_plan_ref, resolve_impl_dir
 from erk_shared.scratch.plan_snapshots import snapshot_plan_for_session
 from erk_shared.scratch.scratch import get_scratch_dir
 from erk_shared.scratch.session_markers import read_objective_context_marker
@@ -675,7 +675,8 @@ def _gather_inputs(
     if needs_blocking_message:
         current_branch = git.branch.get_current_branch(repo_root)
         worktree_name = _get_worktree_name(git, repo_root)
-        plan_ref = read_plan_ref(repo_root / ".impl")
+        impl_dir = resolve_impl_dir(repo_root, branch_name=current_branch)
+        plan_ref = read_plan_ref(impl_dir) if impl_dir is not None else None
         plan_number = (
             int(plan_ref.plan_id) if plan_ref is not None and plan_ref.plan_id.isdigit() else None
         )
