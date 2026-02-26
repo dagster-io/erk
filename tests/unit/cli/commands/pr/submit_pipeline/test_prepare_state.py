@@ -98,9 +98,8 @@ def test_detached_head_returns_error(tmp_path: Path) -> None:
 def test_issue_linkage_mismatch_returns_error(tmp_path: Path) -> None:
     """Branch with P-prefix cannot extract issue number, no mismatch possible.
 
-    Since extract_leading_issue_number() always returns None, P-prefix branches
-    cannot provide an issue number. The test verifies plan_id comes from
-    issue.json without any mismatch error.
+    P-prefix branches cannot provide an issue number. The test verifies plan_id
+    comes from issue.json without any mismatch error.
     """
     # Create .impl/issue.json with issue number
     impl_dir = tmp_path / ".impl"
@@ -135,9 +134,8 @@ def test_issue_linkage_mismatch_returns_error(tmp_path: Path) -> None:
 def test_auto_repair_creates_plan_ref_json(tmp_path: Path) -> None:
     """Branch with P-prefix cannot extract issue number, no auto-repair possible.
 
-    Since extract_leading_issue_number() always returns None, P-prefix branches
-    cannot provide an issue number for auto-repair. Without plan-ref.json,
-    plan_id remains None.
+    P-prefix branches cannot provide an issue number for auto-repair. Without
+    plan-ref.json, plan_id remains None.
     """
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()

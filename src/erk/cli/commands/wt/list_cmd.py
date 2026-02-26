@@ -77,39 +77,26 @@ def _format_sync_from_batch(all_sync: dict[str, BranchSyncInfo], branch: str | N
     return " ".join(parts)
 
 
-def _get_impl_issue(
-    ctx: ErkContext, worktree_path: Path, branch: str | None = None
-) -> tuple[str | None, str | None]:
-    """Get impl issue number and URL from local sources.
-
-    Checks .impl/issue.json first, then git config fallback.
+def _get_impl_issue(ctx: ErkContext, worktree_path: Path, *, branch: str | None) -> tuple[str | None, str | None]:
+    """Get impl issue number and URL from plan-ref.json.
 
     Args:
         ctx: Erk context with git operations
         worktree_path: Path to the worktree directory
-        branch: Optional branch name (avoids redundant git subprocess call if provided)
+        branch: Branch name, or None if detached HEAD
 
     Returns:
         Tuple of (issue number formatted as "#{number}", issue URL) or (None, None) if not found
     """
-    # Resolve branch name up front for impl directory lookup
     if branch is None:
-        branch = ctx.git.branch.get_current_branch(worktree_path)
+        return None, None
 
-    # Try impl folder first
-    if branch is not None:
-        impl_path = get_impl_path(worktree_path, branch_name=branch, git_ops=ctx.git)
-        if impl_path is not None:
-            # impl_path points to plan.md, get the parent impl directory
-            plan_ref = read_plan_ref(impl_path.parent)
-            if plan_ref is not None:
-                return f"#{plan_ref.plan_id}", plan_ref.url
-
-    # Fallback to git config (no URL available from git config)
-    if branch is not None:
-        issue_num = ctx.git.branch.get_branch_issue(worktree_path, branch)
-        if issue_num is not None:
-            return f"#{issue_num}", None
+    impl_path = get_impl_path(worktree_path, branch_name=branch, git_ops=ctx.git)
+    if impl_path is not None:
+        # impl_path points to plan.md, get the parent impl directory
+        plan_ref = read_plan_ref(impl_path.parent)
+        if plan_ref is not None:
+            return f"#{plan_ref.plan_id}", plan_ref.url
 
     return None, None
 
@@ -269,7 +256,7 @@ def _list_worktrees(ctx: ErkContext, *, show_last_commit: bool, show_all: bool) 
         root_pr, use_graphite=use_graphite, graphite_url=root_graphite_url
     )
     root_sync = _format_sync_from_batch(all_sync_info, root_branch)
-    root_impl_text, root_impl_url = _get_impl_issue(ctx, repo.root, root_branch)
+    root_impl_text, root_impl_url = _get_impl_issue(ctx, repo.root, branch=root_branch)
     root_impl_cell = _format_impl_cell(root_impl_text, root_impl_url)
 
     if show_last_commit:
@@ -310,7 +297,7 @@ def _list_worktrees(ctx: ErkContext, *, show_last_commit: bool, show_all: bool) 
         sync_cell = _format_sync_from_batch(all_sync_info, branch)
 
         # Impl issue
-        impl_text, impl_url = _get_impl_issue(ctx, wt.path, branch)
+        impl_text, impl_url = _get_impl_issue(ctx, wt.path, branch=branch)
         impl_cell = _format_impl_cell(impl_text, impl_url)
 
         if show_last_commit:

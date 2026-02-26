@@ -109,28 +109,10 @@ def test_get_impl_issue_from_impl_folder(tmp_path: Path) -> None:
     assert issue_url == "https://github.com/owner/repo/issues/42"
 
 
-def test_get_impl_issue_from_git_config() -> None:
-    """Test getting impl issue from git config fallback (no URL available)."""
-    worktree_path = Path("/repo/worktree")
-    git = FakeGit(
-        current_branches={worktree_path: "feature"},
-        branch_issues={"feature": 123},
-    )
-    ctx = create_test_context(git=git)
-
-    issue_text, issue_url = _get_impl_issue(ctx, worktree_path)
-
-    assert issue_text == "#123"
-    assert issue_url is None  # Git config doesn't have URL
-
-
 def test_get_impl_issue_none_when_not_found() -> None:
-    """Test getting impl issue returns (None, None) when no issue found."""
+    """Test getting impl issue returns (None, None) when no .impl/ folder exists."""
     worktree_path = Path("/repo/worktree")
-    git = FakeGit(
-        current_branches={worktree_path: "feature"},
-        # No branch_issues configured
-    )
+    git = FakeGit()
     ctx = create_test_context(git=git)
 
     issue_text, issue_url = _get_impl_issue(ctx, worktree_path)

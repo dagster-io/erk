@@ -19,8 +19,8 @@ When a CLI command needs a value that can be inferred from context (branch name,
 ## Inference Priority Order
 
 1. **Explicit CLI argument** - User-provided value takes precedence
-2. **Branch name pattern** - Extract from `P{number}-...` branch naming
-3. **.impl/issue.json file** - Check local implementation tracking
+2. **plan-ref.json** - Check `.impl/plan-ref.json` for plan ID
+3. **.impl/issue.json file** - Check local implementation tracking (legacy)
 4. **Error with helpful message** - Explain what was expected
 
 ## Implementation Pattern
@@ -34,36 +34,18 @@ def mycommand(ctx: ErkContext, issue: str | None) -> None:
     if issue is not None:
         issue_number = _extract_issue_number(issue)
     else:
-        # Priority 2: Infer from branch name (P123-...)
-        branch = ctx.git.get_current_branch(ctx.cwd)
-        issue_number = extract_leading_issue_number(branch)
-
-        if issue_number is None:
-            # Priority 3: Check .impl/issue.json
-            impl_issue = ctx.cwd / ".impl" / "issue.json"
-            if impl_issue.exists():
-                data = json.loads(impl_issue.read_text())
-                issue_number = data.get("issue_number")
+        # Priority 2: Check plan-ref.json
+        plan_ref = read_plan_ref(ctx.cwd / ".impl")
+        if plan_ref is not None:
+            issue_number = int(plan_ref.plan_id) if plan_ref.plan_id.isdigit() else None
+        else:
+            issue_number = None
 
         if issue_number is None:
             raise click.ClickException(
                 "Could not infer issue number. "
-                "Provide explicitly or run from a P{number}-... branch."
+                "Provide explicitly or run from a branch with .impl/plan-ref.json."
             )
-```
-
-## Helper Function
-
-Use `extract_leading_issue_number()` from `erk_shared.naming`:
-
-```python
-from erk_shared.naming import extract_leading_issue_number
-
-branch = "P4655-erk-learn-command-01-11-0748"
-issue_num = extract_leading_issue_number(branch)  # Returns 4655
-
-branch = "feature-branch"
-issue_num = extract_leading_issue_number(branch)  # Returns None
 ```
 
 ## When to Use This Pattern

@@ -37,7 +37,7 @@ Full resolution — resolves branch name to plan via draft PR lookup, then conve
 
 - **P-prefix**: `P{number}-{slug}` — standard plan branches
 - **Objective format**: `P{number}-O{objective}-{slug}` — plans linked to objectives
-- **Legacy formats**: Handled via `extract_leading_issue_number()`
+- **Legacy formats**: No longer resolved from branch names; use `plan-ref.json`
 
 ## Error Types
 

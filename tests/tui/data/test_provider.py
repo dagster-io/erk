@@ -53,9 +53,8 @@ class TestBuildWorktreeMapping:
         """Pool-managed worktree with P-prefix branch no longer extracts issue number.
 
         The directory name is 'erk-slot-02' (no issue prefix), and the branch name
-        is 'P4280-add-required-kwargs-01-05-2230'. Since extract_leading_issue_number()
-        always returns None, the branch cannot provide an issue number and the worktree
-        is not added to the mapping.
+        is 'P4280-add-required-kwargs-01-05-2230'. P-prefix branches cannot be resolved
+        to plan IDs, so the worktree is not added to the mapping.
         """
         repo_root = tmp_path / "repo"
         repo_root.mkdir()
@@ -105,9 +104,8 @@ class TestBuildWorktreeMapping:
         """Issue-named worktree with P-prefix branch no longer extracts issue number.
 
         The directory name is 'P1234-feature-01-01-1200' (has issue prefix), and the
-        branch name matches. Since extract_leading_issue_number() always returns None,
-        the branch cannot provide an issue number and the worktree is not added to
-        the mapping.
+        branch name matches. P-prefix branches cannot be resolved to plan IDs, so
+        the worktree is not added to the mapping.
         """
         repo_root = tmp_path / "repo"
         repo_root.mkdir()
