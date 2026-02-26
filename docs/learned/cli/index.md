@@ -45,7 +45,7 @@
 - **[output-styling.md](output-styling.md)** — styling CLI output, using colors in CLI, formatting terminal output
 - **[parameter-addition-checklist.md](parameter-addition-checklist.md)** — adding a parameter to a multi-layer command, working with skills that call erk exec scripts, debugging parameter not found errors
 - **[plan-implement.md](plan-implement.md)** — understanding the /erk:plan-implement command, implementing plans from GitHub issues, working with .impl/ folders, debugging plan execution failures
-- **[plan-list-provider-pattern.md](plan-list-provider-pattern.md)** — modifying erk plan list output, understanding how plan list and TUI share data providers, adding columns to plan list display
+- **[plan-list-provider-pattern.md](plan-list-provider-pattern.md)** — modifying erk pr list output, understanding how plan list and TUI share data providers, adding columns to plan list display
 - **[pr-operations.md](pr-operations.md)** — creating PRs programmatically, implementing PR submission workflows, preventing duplicate PR creation
 - **[pr-rewrite.md](pr-rewrite.md)** — using or modifying erk pr rewrite, understanding the PR rewrite pipeline phases, working with squash, commit message generation, or PR updating
 - **[pr-submission.md](pr-submission.md)** — choosing between git-pr-push and pr-submit commands, understanding PR submission workflows, deciding whether to use Graphite or plain git

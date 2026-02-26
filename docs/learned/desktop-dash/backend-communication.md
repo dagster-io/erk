@@ -44,7 +44,7 @@ erkdesk uses two Node.js subprocess APIs, chosen by action duration:
 | Duration  | Node.js API  | IPC Pattern                             | Use Case                                             |
 | --------- | ------------ | --------------------------------------- | ---------------------------------------------------- |
 | <1 second | `execFile()` | Request-response (`ipcMain.handle`)     | Data fetching (`erk exec dash-data`)                 |
-| >1 second | `spawn()`    | Fire-and-forget + events (`ipcMain.on`) | Actions (`erk plan submit`, `erk launch pr-address`) |
+| >1 second | `spawn()`    | Fire-and-forget + events (`ipcMain.on`) | Actions (`erk pr dispatch`, `erk launch pr-address`) |
 
 The split exists because `execFile` buffers all output and returns it at once (simple but blocks the UI), while `spawn` streams chunks as they arrive (complex but keeps the UI responsive).
 
@@ -71,7 +71,7 @@ Both UIs display the same plan data, but execute actions differently:
 | Aspect                       | TUI (Textual)                                   | erkdesk (Electron)                                   |
 | ---------------------------- | ----------------------------------------------- | ---------------------------------------------------- |
 | Data fetching                | In-process via `PlanDataProvider.fetch_plans()` | Subprocess: `erk exec dash-data`                     |
-| Fast actions (close, submit) | In-process via `PlanDataProvider` methods       | Subprocess: `erk exec close-plan`, `erk plan submit` |
+| Fast actions (close, submit) | In-process via `PlanDataProvider` methods       | Subprocess: `erk exec close-plan`, `erk pr dispatch` |
 | Long-running actions         | Subprocess with streaming                       | Subprocess with streaming                            |
 | Action dispatch              | Command palette + keybindings                   | ActionToolbar button bar                             |
 

@@ -22,7 +22,7 @@ The erk system has two distinct code paths for finalizing PRs. Both should behav
 ## Remote Path (GitHub Actions)
 
 - **Entry point:** `plan-implement.yml` workflow
-- **Used when:** Running `erk plan submit` for remote queue
+- **Used when:** Running `erk pr dispatch` for remote queue
 - **Issue reference:** Must be passed to commands OR auto-read from `.impl/issue.json`
 - **PR body update:** Via `get-pr-body-footer` command
 

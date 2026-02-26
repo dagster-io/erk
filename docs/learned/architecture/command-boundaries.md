@@ -81,7 +81,7 @@ Examples:
 
 | Agent Command            | Delegates To                      | Why                                                              |
 | ------------------------ | --------------------------------- | ---------------------------------------------------------------- |
-| `/erk:plan-submit`       | `erk plan submit <issue>`         | Agent finds issue in conversation, CLI handles workflow dispatch |
+| `/erk:pr-dispatch`       | `erk pr dispatch <issue>`         | Agent finds issue in conversation, CLI handles workflow dispatch |
 | `/erk:pr-address-remote` | `erk launch pr-address --pr <pr>` | Agent finds PR in conversation, CLI triggers GitHub workflow     |
 | `/erk:prepare`           | `erk br co --for-plan <issue>`    | Agent finds issue in conversation, CLI creates worktree          |
 

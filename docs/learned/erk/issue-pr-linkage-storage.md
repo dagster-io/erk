@@ -17,13 +17,13 @@ This document describes how erk creates and stores the relationship between GitH
 
 When a plan becomes a PR, erk establishes a linkage that allows:
 
-- `erk plan list` to show which plans have associated PRs
+- `erk pr list` to show which plans have associated PRs
 - PRs to automatically close their source issue when merged
 - The 🔗 indicator to appear for auto-closing PRs
 
 ## How Linkages Are Created
 
-### Via `erk plan submit`
+### Via `erk pr dispatch`
 
 The primary path for creating issue-PR linkages:
 
@@ -59,7 +59,7 @@ Slash commands that create PRs read the issue reference from local storage:
 
 This file maps the current worktree to its source GitHub issue.
 
-- Created by `erk plan submit` (as `.erk/impl-context/`)
+- Created by `erk pr dispatch` (as `.erk/impl-context/`)
 - Created by `erk wt create --from-plan` (as `.impl/`)
 - Read by slash commands when creating PRs
 
@@ -71,13 +71,13 @@ The "Closes" keyword (or equivalent: "Fixes", "Resolves") in the PR body trigger
 
 ### GitHub Timeline Events
 
-GitHub stores cross-reference events on the issue timeline. These are what erk queries to display linkages in `erk plan list`.
+GitHub stores cross-reference events on the issue timeline. These are what erk queries to display linkages in `erk pr list`.
 
 See [GitHub Issue-PR Linkage API Patterns](../architecture/github-pr-linkage-api.md) for query details.
 
 ## How Linkages Are Queried
 
-### `erk plan list`
+### `erk pr list`
 
 Uses GraphQL to query `CrossReferencedEvent` timeline items on each plan issue:
 
@@ -102,11 +102,11 @@ Uses batch queries via `get_prs_linked_to_issues()` for efficient dashboard disp
 | Create PR, then edit body to add `Closes #N` | `willCloseTarget: false`            |
 | Create PR with `Closes #N`, then remove it   | `willCloseTarget: true` (unchanged) |
 
-This timing behavior is documented in [GitHub community discussion #24706](https://github.com/orgs/community/discussions/24706). This is why `erk plan submit` passes the "Closes" text to `create_pr()` rather than adding it via `update_pr_body()`.
+This timing behavior is documented in [GitHub community discussion #24706](https://github.com/orgs/community/discussions/24706). This is why `erk pr dispatch` passes the "Closes" text to `create_pr()` rather than adding it via `update_pr_body()`.
 
 ## Debugging Linkage Issues
 
-### PR Not Showing in `erk plan list`
+### PR Not Showing in `erk pr list`
 
 1. **No cross-reference exists**: PR body/commits don't mention the issue number
 2. **Wrong issue number**: Check `.impl/issue.json` contains correct number
