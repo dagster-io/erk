@@ -811,6 +811,70 @@ def test_impl_planned_pr_preserves_metadata_and_adds_plan_section(tmp_path: Path
     assert "My Plan" in updated_body
 
 
+def test_impl_planned_pr_missing_plan_header_returns_error(tmp_path: Path) -> None:
+    """Test that planned-PR mode returns plan-header-not-found when plan-header is missing."""
+    git = FakeGit(current_branches={tmp_path: "plan-test-01-01"})
+
+    # PR body WITHOUT plan-header metadata block
+    pr_body = "## Summary\n\nSome content without a plan-header block"
+
+    pr_details = PRDetails(
+        number=42,
+        url="https://github.com/owner/repo/pull/42",
+        title="[erk-plan] Test Plan",
+        body=pr_body,
+        state="OPEN",
+        is_draft=True,
+        base_ref_name="master",
+        head_ref_name="plan-test-01-01",
+        is_cross_repository=False,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        owner="test-owner",
+        repo="test-repo",
+    )
+
+    github = FakeGitHub(
+        prs={
+            "plan-test-01-01": PullRequestInfo(
+                number=42,
+                state="OPEN",
+                url="https://github.com/owner/repo/pull/42",
+                is_draft=True,
+                title="[erk-plan] Test Plan",
+                checks_passing=True,
+                owner="test-owner",
+                repo="test-repo",
+            )
+        },
+        pr_details={42: pr_details},
+        pr_diffs={42: "+added line"},
+    )
+
+    executor = FakePromptExecutor(
+        prompt_results=[
+            PromptResult(success=True, output="Generated title\n\nGenerated summary", error=None)
+        ]
+    )
+
+    result = _update_pr_body_impl(
+        git=git,
+        github=github,
+        executor=executor,
+        repo_root=tmp_path,
+        run_id=None,
+        run_url=None,
+        is_planned_pr=True,
+    )
+
+    assert isinstance(result, UpdateError)
+    assert result.error == "plan-header-not-found"
+    assert "plan-header metadata block not found" in result.message
+    # No PR body modification should occur
+    assert len(github.updated_pr_bodies) == 0
+    assert len(github.updated_pr_titles) == 0
+
+
 def test_cli_planned_pr_flag(tmp_path: Path) -> None:
     """Test CLI command with --planned-pr flag takes the planned-PR body path."""
     git = FakeGit(current_branches={tmp_path: "plan-test-01-01"})
