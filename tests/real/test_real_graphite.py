@@ -10,52 +10,6 @@ from unittest.mock import MagicMock, patch
 from erk_shared.gateway.graphite.real import RealGraphite
 
 
-def test_real_graphite_ops_sync() -> None:
-    """Test gt sync with mocked subprocess."""
-    with patch("subprocess.run") as mock_run:
-        ops = RealGraphite()
-        ops.sync(Path("/test"), force=False, quiet=False)
-
-        mock_run.assert_called_once()
-        call_args = mock_run.call_args
-        assert call_args[0][0] == ["gt", "sync", "--no-interactive"]
-        assert call_args[1]["cwd"] == Path("/test")
-        assert call_args[1]["check"] is True
-
-
-def test_real_graphite_ops_sync_with_force() -> None:
-    """Test gt sync with force flag."""
-    with patch("subprocess.run") as mock_run:
-        ops = RealGraphite()
-        ops.sync(Path("/test"), force=True, quiet=False)
-
-        mock_run.assert_called_once()
-        call_args = mock_run.call_args
-        assert call_args[0][0] == ["gt", "sync", "--no-interactive", "-f"]
-
-
-def test_real_graphite_ops_sync_with_quiet() -> None:
-    """Test gt sync with quiet flag."""
-    with patch("subprocess.run") as mock_run:
-        ops = RealGraphite()
-        ops.sync(Path("/test"), force=False, quiet=True)
-
-        mock_run.assert_called_once()
-        call_args = mock_run.call_args
-        assert call_args[0][0] == ["gt", "sync", "--no-interactive", "--quiet"]
-
-
-def test_real_graphite_ops_sync_with_force_and_quiet() -> None:
-    """Test gt sync with both force and quiet flags."""
-    with patch("subprocess.run") as mock_run:
-        ops = RealGraphite()
-        ops.sync(Path("/test"), force=True, quiet=True)
-
-        mock_run.assert_called_once()
-        call_args = mock_run.call_args
-        assert call_args[0][0] == ["gt", "sync", "--no-interactive", "-f", "--quiet"]
-
-
 def test_real_graphite_is_branch_tracked_returns_true_for_tracked() -> None:
     """Test is_branch_tracked returns True when gt returns exit code 0."""
     with patch("erk_shared.gateway.graphite.real.subprocess.run") as mock_run:
@@ -124,34 +78,3 @@ def test_submit_stack_invalidates_branches_cache() -> None:
         assert ops._branches_cache is None
 
 
-def test_sync_invalidates_branches_cache() -> None:
-    """Verify sync() invalidates the branches cache."""
-    with patch("subprocess.run"):
-        ops = RealGraphite()
-        ops._branches_cache = {"stale": "data"}  # type: ignore[assignment]
-
-        ops.sync(Path("/test"), force=False, quiet=False)
-
-        assert ops._branches_cache is None
-
-
-def test_restack_invalidates_branches_cache() -> None:
-    """Verify restack() invalidates the branches cache."""
-    with patch("subprocess.run"):
-        ops = RealGraphite()
-        ops._branches_cache = {"stale": "data"}  # type: ignore[assignment]
-
-        ops.restack(Path("/test"), quiet=False)
-
-        assert ops._branches_cache is None
-
-
-def test_continue_restack_invalidates_branches_cache() -> None:
-    """Verify continue_restack() invalidates the branches cache."""
-    with patch("subprocess.run"):
-        ops = RealGraphite()
-        ops._branches_cache = {"stale": "data"}  # type: ignore[assignment]
-
-        ops.continue_restack(Path("/test"), quiet=False)
-
-        assert ops._branches_cache is None

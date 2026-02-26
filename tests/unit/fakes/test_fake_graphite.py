@@ -148,35 +148,6 @@ def test_fake_graphite_ops_stack_traversal() -> None:
     assert result == ["main", "feature-1", "feature-2"]
 
 
-def test_fake_graphite_ops_sync_noop() -> None:
-    """Test that sync exists and doesn't crash."""
-    ops = FakeGraphite()
-
-    # Should not raise
-    ops.sync(Path("/repo"), force=False, quiet=True)
-
-
-def test_fake_graphite_ops_sync_tracks_calls() -> None:
-    """Test that sync tracks calls via sync_calls property."""
-    ops = FakeGraphite()
-
-    ops.sync(Path("/repo1"), force=True, quiet=False)
-    ops.sync(Path("/repo2"), force=False, quiet=True)
-
-    assert len(ops.sync_calls) == 2
-    assert ops.sync_calls[0] == (Path("/repo1"), True, False)
-    assert ops.sync_calls[1] == (Path("/repo2"), False, True)
-
-
-def test_fake_graphite_ops_sync_raises() -> None:
-    """Test that sync can be configured to raise exceptions."""
-    test_error = RuntimeError("Sync failed")
-    ops = FakeGraphite(sync_raises=test_error)
-
-    with pytest.raises(RuntimeError, match="Sync failed"):
-        ops.sync(Path("/repo"), force=False, quiet=True)
-
-
 def test_fake_graphite_ops_get_prs_from_graphite() -> None:
     """Test that get_prs_from_graphite returns pre-configured data."""
     pr_info = {

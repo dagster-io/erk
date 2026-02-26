@@ -125,38 +125,6 @@ def test_get_child_branches_returns_empty(tmp_path: Path) -> None:
 # Mutating methods raise GraphiteDisabledError
 
 
-def test_sync_raises_error_when_config_disabled(tmp_path: Path) -> None:
-    """sync raises GraphiteDisabledError when disabled via config."""
-    sentinel = GraphiteDisabled(reason=GraphiteDisabledReason.CONFIG_DISABLED)
-
-    with pytest.raises(GraphiteDisabledError) as exc_info:
-        sentinel.sync(tmp_path, force=False, quiet=False)
-
-    assert exc_info.value.reason == GraphiteDisabledReason.CONFIG_DISABLED
-    assert "requires Graphite to be enabled" in str(exc_info.value)
-    assert "erk config set use_graphite true" in str(exc_info.value)
-
-
-def test_sync_raises_error_when_not_installed(tmp_path: Path) -> None:
-    """sync raises GraphiteDisabledError when gt not installed."""
-    sentinel = GraphiteDisabled(reason=GraphiteDisabledReason.NOT_INSTALLED)
-
-    with pytest.raises(GraphiteDisabledError) as exc_info:
-        sentinel.sync(tmp_path, force=False, quiet=False)
-
-    assert exc_info.value.reason == GraphiteDisabledReason.NOT_INSTALLED
-    assert "requires Graphite to be installed" in str(exc_info.value)
-    assert "npm install -g @withgraphite/graphite-cli" in str(exc_info.value)
-
-
-def test_restack_raises_error(tmp_path: Path) -> None:
-    """restack raises GraphiteDisabledError."""
-    sentinel = GraphiteDisabled(reason=GraphiteDisabledReason.CONFIG_DISABLED)
-
-    with pytest.raises(GraphiteDisabledError):
-        sentinel.restack(tmp_path, quiet=False)
-
-
 def test_squash_branch_raises_error(tmp_path: Path) -> None:
     """squash_branch raises GraphiteDisabledError."""
     sentinel = GraphiteDisabled(reason=GraphiteDisabledReason.CONFIG_DISABLED)
@@ -171,14 +139,6 @@ def test_submit_stack_raises_error(tmp_path: Path) -> None:
 
     with pytest.raises(GraphiteDisabledError):
         sentinel.submit_stack(tmp_path, publish=False, restack=False, quiet=False, force=False)
-
-
-def test_continue_restack_raises_error(tmp_path: Path) -> None:
-    """continue_restack raises GraphiteDisabledError."""
-    sentinel = GraphiteDisabled(reason=GraphiteDisabledReason.CONFIG_DISABLED)
-
-    with pytest.raises(GraphiteDisabledError):
-        sentinel.continue_restack(tmp_path, quiet=False)
 
 
 # Error message differences
