@@ -1,0 +1,8 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Update ci.yml .impl dir check to .erk/impl-context (Objective #8365, Node 2.3)",
+  "objective_id": 8365,
+  "node_ids": [
+    "2.3"
+  ]
+}
