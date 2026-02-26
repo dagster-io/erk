@@ -240,9 +240,9 @@ class ClaudePromptExecutor(PromptExecutor):
                     text_pr_title = text_metadata.get("pr_title")
                     if text_pr_title is not None:
                         yield PrTitleEvent(title=str(text_pr_title))
-                    text_issue_number = text_metadata.get("issue_number")
-                    if text_issue_number is not None:
-                        yield IssueNumberEvent(number=int(text_issue_number))
+                    text_plan_number = text_metadata.get("plan_number")
+                    if text_plan_number is not None:
+                        yield IssueNumberEvent(number=int(text_plan_number))
 
                 # Yield tool summaries
                 tool_summary = parsed.get("tool_summary")
@@ -270,9 +270,9 @@ class ClaudePromptExecutor(PromptExecutor):
                     yield PrTitleEvent(title=str(pr_title_value))
 
                 # Yield issue number
-                issue_number_value = parsed.get("issue_number")
-                if issue_number_value is not None:
-                    yield IssueNumberEvent(number=int(issue_number_value))
+                plan_number_value = parsed.get("plan_number")
+                if plan_number_value is not None:
+                    yield IssueNumberEvent(number=int(plan_number_value))
 
                 # Detect zero-turn completions (hook blocking)
                 num_turns = parsed.get("num_turns")
@@ -348,7 +348,7 @@ class ClaudePromptExecutor(PromptExecutor):
 
         Returns:
             Dict with text_content, tool_summary, spinner_update, pr_url, pr_number,
-            pr_title, and issue_number keys, or None if not JSON
+            pr_title, and plan_number keys, or None if not JSON
         """
         # Import here to avoid circular dependency
         from erk.core.output_filter import (
@@ -381,7 +381,7 @@ class ClaudePromptExecutor(PromptExecutor):
             "pr_url": None,
             "pr_number": None,
             "pr_title": None,
-            "issue_number": None,
+            "plan_number": None,
             "num_turns": None,
             "is_error": None,
             "result_text": None,
@@ -445,7 +445,7 @@ class ClaudePromptExecutor(PromptExecutor):
                                 result["pr_url"] = pr_metadata["pr_url"]
                                 result["pr_number"] = pr_metadata["pr_number"]
                                 result["pr_title"] = pr_metadata["pr_title"]
-                                result["issue_number"] = pr_metadata.get("issue_number")
+                                result["plan_number"] = pr_metadata.get("plan_number")
                                 break
 
         # Parse type: result messages for num_turns (hook blocking detection)

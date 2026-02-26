@@ -22,7 +22,7 @@ def test_parse_stream_json_line_extracts_pr_metadata_from_string_content() -> No
             "pr_number": 123,
             "pr_url": "https://github.com/owner/repo/pull/123",
             "pr_title": "Fix bug",
-            "issue_number": 456,
+            "plan_number": 456,
         }
     )
     line = json.dumps(
@@ -38,7 +38,7 @@ def test_parse_stream_json_line_extracts_pr_metadata_from_string_content() -> No
     assert result["pr_url"] == "https://github.com/owner/repo/pull/123"
     assert result["pr_number"] == 123
     assert result["pr_title"] == "Fix bug"
-    assert result["issue_number"] == 456
+    assert result["plan_number"] == 456
 
 
 def test_parse_stream_json_line_extracts_pr_metadata_from_list_content() -> None:
@@ -61,7 +61,7 @@ def test_parse_stream_json_line_extracts_pr_metadata_from_list_content() -> None
             "pr_title": "Add feature",
             "graphite_url": "https://app.graphite.dev/...",
             "branch_name": "feature-branch",
-            "issue_number": 101,
+            "plan_number": 101,
         }
     )
     line = json.dumps(
@@ -84,7 +84,7 @@ def test_parse_stream_json_line_extracts_pr_metadata_from_list_content() -> None
     assert result["pr_url"] == "https://github.com/owner/repo/pull/789"
     assert result["pr_number"] == 789
     assert result["pr_title"] == "Add feature"
-    assert result["issue_number"] == 101
+    assert result["plan_number"] == 101
 
 
 def test_parse_stream_json_line_handles_list_content_without_pr_metadata() -> None:
@@ -231,7 +231,7 @@ https://github.com/dagster-io/erk/pull/1311"""
     assert result["pr_number"] == 1311
     assert result["pr_title"] == "Fix metadata extraction from text"
     assert result["pr_url"] == "https://github.com/dagster-io/erk/pull/1311"
-    assert result["issue_number"] == 1308
+    assert result["plan_number"] == 1308
 
 
 def test_extract_pr_metadata_from_text_extracts_graphite_url() -> None:
@@ -253,7 +253,7 @@ def test_extract_pr_metadata_from_text_ignores_closes_pattern() -> None:
     result = extract_pr_metadata_from_text(text)
 
     assert result["pr_number"] == 100
-    assert result["issue_number"] is None
+    assert result["plan_number"] is None
 
 
 # =============================================================================
@@ -385,35 +385,35 @@ View on Graphite: https://app.graphite.com/github/pr/owner/repo/123"""
         text = "Linked to issue #456"
         result = extract_pr_metadata_from_text(text)
 
-        assert result["issue_number"] == 456
+        assert result["plan_number"] == 456
 
     def test_issue_pattern_mixed_case(self) -> None:
         """Test 'Issue #N' pattern (mixed case)."""
         text = "Linked to Issue #456"
         result = extract_pr_metadata_from_text(text)
 
-        assert result["issue_number"] == 456
+        assert result["plan_number"] == 456
 
     def test_closes_pattern_not_recognized(self) -> None:
         """Test 'closes #N' pattern is no longer recognized."""
         text = "This PR closes #789"
         result = extract_pr_metadata_from_text(text)
 
-        assert result["issue_number"] is None
+        assert result["plan_number"] is None
 
     def test_issue_pattern_matched_closes_ignored(self) -> None:
         """Test that 'issue #N' is matched while 'Closes #N' is ignored."""
         text = "Linked to issue #100. Closes #200"
         result = extract_pr_metadata_from_text(text)
 
-        assert result["issue_number"] == 100
+        assert result["plan_number"] == 100
 
     def test_issue_with_auto_close_context(self) -> None:
         """Test issue extraction with auto-close context."""
         text = "✓ Linked to issue #1308 (will auto-close on merge)"
         result = extract_pr_metadata_from_text(text)
 
-        assert result["issue_number"] == 1308
+        assert result["plan_number"] == 1308
 
     # -------------------------------------------------------------------------
     # Real-world agent output formats
@@ -440,7 +440,7 @@ https://github.com/dagster-io/erk/pull/1311"""
         assert result["pr_number"] == 1311
         assert result["pr_title"] == "Fix metadata extraction from text"
         assert result["pr_url"] == "https://github.com/dagster-io/erk/pull/1311"
-        assert result["issue_number"] == 1308
+        assert result["plan_number"] == 1308
 
     def test_full_agent_output_format_v2(self) -> None:
         """Test extraction from agent output (variation format)."""
@@ -459,7 +459,7 @@ https://github.com/dagster-io/erk/pull/1311"""
         assert result["pr_number"] == 1311
         assert result["pr_title"] == "Extend PR submission metadata to include title"
         assert result["pr_url"] == "https://app.graphite.com/github/pr/dagster-io/erk/1311"
-        assert result["issue_number"] == 1308
+        assert result["plan_number"] == 1308
 
     def test_minimal_success_output(self) -> None:
         """Test extraction from minimal success output."""
@@ -481,7 +481,7 @@ https://github.com/dagster-io/erk/pull/1311"""
         assert result["pr_number"] is None
         assert result["pr_title"] is None
         assert result["pr_url"] is None
-        assert result["issue_number"] is None
+        assert result["plan_number"] is None
 
     def test_no_pr_info(self) -> None:
         """Test with text containing no PR information."""
@@ -491,7 +491,7 @@ https://github.com/dagster-io/erk/pull/1311"""
         assert result["pr_number"] is None
         assert result["pr_title"] is None
         assert result["pr_url"] is None
-        assert result["issue_number"] is None
+        assert result["plan_number"] is None
 
     def test_non_string_input(self) -> None:
         """Test with non-string input returns empty result."""
@@ -500,7 +500,7 @@ https://github.com/dagster-io/erk/pull/1311"""
         assert result["pr_number"] is None
         assert result["pr_title"] is None
         assert result["pr_url"] is None
-        assert result["issue_number"] is None
+        assert result["plan_number"] is None
 
     def test_multiple_pr_numbers_first_wins(self) -> None:
         """Test that first PR number with title wins."""

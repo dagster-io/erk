@@ -184,7 +184,7 @@ class TestItemCompletedAgentMessage:
         )
         assert any(isinstance(e, PrNumberEvent) and e.number == 42 for e in events)
 
-    def test_extracts_issue_number_from_text(self) -> None:
+    def test_extracts_plan_number_from_text(self) -> None:
         events = _parse(
             {
                 "type": "item.completed",

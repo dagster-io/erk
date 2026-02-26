@@ -183,16 +183,16 @@ def extract_pr_metadata(tool_result_content: str) -> dict[str, str | int | None]
         tool_result_content: Content string from tool_result
 
     Returns:
-        Dict with pr_url, pr_number, pr_title, and issue_number (all may be None)
+        Dict with pr_url, pr_number, pr_title, and plan_number (all may be None)
 
     Example:
         >>> content = '{"success": true, "pr_url": "https://...", "pr_number": 123, '
-        >>> content += '"pr_title": "Fix bug", "issue_number": 456}'
+        >>> content += '"pr_title": "Fix bug", "plan_number": 456}'
         >>> extract_pr_metadata(content)
-        {'pr_url': 'https://...', 'pr_number': 123, 'pr_title': 'Fix bug', 'issue_number': 456}
+        {'pr_url': 'https://...', 'pr_number': 123, 'pr_title': 'Fix bug', 'plan_number': 456}
     """
     if not isinstance(tool_result_content, str):
-        return {"pr_url": None, "pr_number": None, "pr_title": None, "issue_number": None}
+        return {"pr_url": None, "pr_number": None, "pr_title": None, "plan_number": None}
 
     # Parse JSON safely - JSON parsing requires exception handling
     data: dict | None = None
@@ -202,21 +202,21 @@ def extract_pr_metadata(tool_result_content: str) -> dict[str, str | int | None]
             if isinstance(parsed, dict):
                 data = parsed
         except json.JSONDecodeError:
-            return {"pr_url": None, "pr_number": None, "pr_title": None, "issue_number": None}
+            return {"pr_url": None, "pr_number": None, "pr_title": None, "plan_number": None}
 
     if data is None:
-        return {"pr_url": None, "pr_number": None, "pr_title": None, "issue_number": None}
+        return {"pr_url": None, "pr_number": None, "pr_title": None, "plan_number": None}
 
     pr_url = data.get("pr_url")
     pr_number = data.get("pr_number")
     pr_title = data.get("pr_title")
-    issue_number = data.get("issue_number")
+    plan_number = data.get("plan_number")
 
     return {
         "pr_url": pr_url if isinstance(pr_url, str) else None,
         "pr_number": pr_number if isinstance(pr_number, int) else None,
         "pr_title": pr_title if isinstance(pr_title, str) else None,
-        "issue_number": issue_number if isinstance(issue_number, int) else None,
+        "plan_number": plan_number if isinstance(plan_number, int) else None,
     }
 
 
@@ -233,7 +233,7 @@ def extract_pr_metadata_from_text(text: str) -> dict[str, str | int | None]:
         text: Agent text output containing PR information
 
     Returns:
-        Dict with pr_url, pr_number, and issue_number (pr_title always None)
+        Dict with pr_url, pr_number, and plan_number (pr_title always None)
 
     Example:
         >>> text = "**PR #123** created\\n- **Link**: https://github.com/o/r/pull/123"
@@ -246,7 +246,7 @@ def extract_pr_metadata_from_text(text: str) -> dict[str, str | int | None]:
         "pr_url": None,
         "pr_number": None,
         "pr_title": None,
-        "issue_number": None,
+        "plan_number": None,
     }
 
     if not isinstance(text, str):
@@ -286,10 +286,10 @@ def extract_pr_metadata_from_text(text: str) -> dict[str, str | int | None]:
             if result["pr_number"] is None:
                 result["pr_number"] = int(graphite_url_match.group(1))
 
-    # Extract issue number from patterns like "issue #123" or "Linked to issue #123"
+    # Extract plan number from patterns like "issue #123" or "Linked to issue #123"
     issue_match = re.search(r"issue\s*#(\d+)", text, re.IGNORECASE)
     if issue_match:
-        result["issue_number"] = int(issue_match.group(1))
+        result["plan_number"] = int(issue_match.group(1))
 
     return result
 
