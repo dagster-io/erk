@@ -82,7 +82,7 @@ query {
 
 ### Implications for Erk
 
-The `erk pr dispatch` command must include "Closes #N" in the **initial** PR body passed to `create_pr()`, not added via a subsequent body update. See `src/erk/cli/commands/pr/dispatch_cmd.py` for the implementation.
+The `erk pr submit` command must include "Closes #N" in the **initial** PR body passed to `create_pr()`, not added via a subsequent body update. See `src/erk/cli/commands/pr/submit_cmd.py` for the implementation.
 
 ## When to Use Each Approach
 

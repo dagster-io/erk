@@ -18,7 +18,7 @@ Run implementations in GitHub Actions for sandboxed, parallel execution.
 
 ## Submitting for Remote Execution
 
-<!-- TODO: erk pr dispatch <issue-number> -->
+<!-- TODO: erk pr submit <issue-number> -->
 
 ## Monitoring Execution
 

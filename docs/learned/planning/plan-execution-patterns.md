@@ -14,11 +14,13 @@ Patterns for executing plans: from issue preparation through PR submission.
 
 ## Branch Naming Conventions
 
-Plan branches follow the pattern `P<issue-number>-<slug>`:
+Plan branches follow the pattern `plnd/<slug>-<timestamp>`:
 
-- `P6967-consolidated-learn-docs` — issue #6967, slugified title
-- The `P` prefix enables learn plan detection during landing
-- `extract_leading_issue_number()` extracts the number from branch names
+- `plnd/consolidated-learn-docs-01-15-1430` — slugified title with timestamp
+- The `plnd/` prefix identifies planned PR branches
+- `plan-ref.json` is the sole source of truth for plan-to-branch mapping
+
+**Legacy format:** Older plans may use the `P<issue-number>-<slug>` pattern (e.g., `P6967-consolidated-learn-docs`). The `P{issue}-` prefix is considered legacy.
 
 ## Worktree Isolation
 

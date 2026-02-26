@@ -726,7 +726,7 @@ There's a critical distinction between **gateways** and **backends**:
   - Need 4 implementations: ABC, Real, Fake, DryRun
   - Fakes provide in-memory simulation
 
-- **Backends** = higher-level abstractions that COMPOSE gateways (GitHubPlanStore)
+- **Backends** = higher-level abstractions that COMPOSE gateways (PlannedPRBackend)
   - Only need ABC + real implementations
   - **NO fake implementation needed** - inject fake gateways instead
 

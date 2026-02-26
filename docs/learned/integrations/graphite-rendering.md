@@ -39,7 +39,7 @@ Graphite does not render `<code>` tags inside `<summary>` elements. The raw HTML
 </details>
 ```
 
-The `DETAILS_OPEN` constant in `packages/erk-shared/src/erk_shared/plan_store/draft_pr_lifecycle.py:89` uses the correct plain-text format. A `_LEGACY_DETAILS_OPEN` constant (line 90) retains the old `<code>` format for backward-compatible parsing only — it is never written.
+The `DETAILS_OPEN` constant in the plan backend implementation uses the correct plain-text format. Legacy formats with `<code>` tags are retained for backward-compatible parsing only — they are never written.
 
 ## Blank Line Required After `</details>`
 

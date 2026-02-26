@@ -331,12 +331,12 @@ def test_command_with_fake_context() -> None:
 ```python
 def test_command_with_monkeypatch(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test command that internally creates dependencies."""
-    fake_store, _ = create_plan_store_with_plans({})
+    fake_backend, _ = create_plan_store_with_plans({})
 
     # Mock the factory that creates the dependency
     monkeypatch.setattr(
-        "my_module.GitHubPlanStore",
-        lambda github_issues: fake_store,
+        "my_module.PlannedPRBackend",
+        lambda github: fake_backend,
     )
 
     runner = CliRunner()

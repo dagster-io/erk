@@ -18,7 +18,6 @@ The meaning of `plan_id` depends on which backend created the plan.
 | Backend          | Provider Name     | plan_id Refers To | Fetch With                          |
 | ---------------- | ----------------- | ----------------- | ----------------------------------- |
 | PlannedPRBackend | `github-draft-pr` | PR number         | `github.get_pr(repo_root, plan_id)` |
-| GitHubPlanStore  | `github`          | Issue number      | `gh issue view <plan_id>`           |
 
 ## Why This Matters
 
