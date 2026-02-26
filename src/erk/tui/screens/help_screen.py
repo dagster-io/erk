@@ -5,6 +5,7 @@ from __future__ import annotations
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Vertical
+from textual.events import Key
 from textual.screen import ModalScreen
 from textual.widgets import Label
 
@@ -98,3 +99,10 @@ class HelpScreen(ModalScreen):
 
             yield Label("")
             yield Label("Press any key to close", id="help-footer")
+
+    def on_key(self, event: Key) -> None:
+        """Consume all keys; dismiss on keys not handled by bindings."""
+        event.prevent_default()
+        event.stop()
+        if event.key not in ("escape", "q", "question_mark"):
+            self.dismiss()

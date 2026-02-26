@@ -8,6 +8,7 @@ from textual import work
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Vertical
+from textual.events import Key
 from textual.screen import ModalScreen
 from textual.widgets import Label, Markdown
 
@@ -184,3 +185,10 @@ class PlanBodyScreen(ModalScreen):
         else:
             label = self._content_type.lower()
             container.mount(Label(f"(No {label} content found)", id="body-empty"))
+
+    def on_key(self, event: Key) -> None:
+        """Consume all keys; dismiss on keys not handled by bindings."""
+        event.prevent_default()
+        event.stop()
+        if event.key not in ("escape", "q", "space"):
+            self.dismiss()
