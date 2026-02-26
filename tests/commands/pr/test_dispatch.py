@@ -434,65 +434,6 @@ def test_dispatch_auto_detects_from_impl_context() -> None:
         assert "Traceback" not in result.output
 
 
-def test_dispatch_auto_detects_from_branch_pr() -> None:
-    """Test auto-detection from current branch's associated PR."""
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        plan_branch = "plnd/auto-detect-branch"
-        pr_42 = _make_pr_42(plan_branch=plan_branch)
-
-        # No .impl/ or .erk/impl-context/ — detection via branch PR lookup
-        fake_gh = FakeGitHub(
-            authenticated=True,
-            polled_run_id="12345",
-            pr_details={42: pr_42},
-            prs_by_branch={plan_branch: pr_42},
-        )
-        fake_issues = FakeGitHubIssues()
-        fake_time = FakeTime()
-        planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=fake_time)
-
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: plan_branch},
-            local_branches={env.cwd: ["main", plan_branch]},
-            default_branches={env.cwd: "main"},
-            remote_urls={(env.cwd, "origin"): "https://github.com/test-owner/test-repo.git"},
-            remote_branches={env.cwd: ["origin/main", f"origin/{plan_branch}"]},
-            repository_roots={env.cwd: env.cwd},
-        )
-
-        graphite = FakeGraphite(
-            authenticated=True,
-            branches={
-                "main": BranchMetadata(
-                    name="main", parent=None, children=[], is_trunk=True, commit_sha=None
-                ),
-            },
-        )
-
-        ctx = build_workspace_test_context(
-            env,
-            git=git,
-            graphite=graphite,
-            github=fake_gh,
-            issues=fake_issues,
-            use_graphite=True,
-            plan_store=planned_pr_backend,
-        )
-
-        result = runner.invoke(cli, ["pr", "dispatch", "--base", "main"], obj=ctx)
-
-        assert "Auto-detected PR #42 from context" in result.output
-        assert len(fake_gh.triggered_workflows) >= 1, (
-            f"Expected workflow trigger, got: {fake_gh.triggered_workflows}\n"
-            f"Output: {result.output}"
-        )
-        _workflow_name, inputs = fake_gh.triggered_workflows[0]
-        assert inputs["plan_id"] == "42"
-        assert "Traceback" not in result.output
-
-
 def test_dispatch_no_args_no_context_fails() -> None:
     """Test that dispatch with no arguments and no context gives helpful error."""
     runner = CliRunner()
