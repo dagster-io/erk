@@ -420,66 +420,6 @@ class TestFilterMode:
             assert app._rows[0].plan_id == 2
 
 
-class TestOpenRow:
-    """Tests for 'o' key open behavior (PR-first, then issue)."""
-
-    @pytest.mark.asyncio
-    async def test_o_opens_pr_when_available(self) -> None:
-        """'o' key opens PR URL when PR is available."""
-        provider = FakePlanDataProvider(
-            plans=[
-                make_plan_row(
-                    123,
-                    "Feature",
-                    pr_number=456,
-                    pr_url="https://github.com/test/repo/pull/456",
-                    plan_url="https://github.com/test/repo/issues/123",
-                )
-            ]
-        )
-        filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
-
-        async with app.run_test() as pilot:
-            await pilot.pause()
-            await pilot.pause()
-
-            # Press 'o' - should open PR (we can't actually open URL in test,
-            # but we can check the status bar message)
-            await pilot.press("o")
-            await pilot.pause()
-
-            status_bar = app.query_one(StatusBar)
-            # Message should indicate PR was opened, not issue
-            assert status_bar._message == "Opened PR #456"
-
-    @pytest.mark.asyncio
-    async def test_o_opens_issue_when_no_pr(self) -> None:
-        """'o' key opens issue URL when no PR is available."""
-        provider = FakePlanDataProvider(
-            plans=[
-                make_plan_row(
-                    123,
-                    "Feature",
-                    plan_url="https://github.com/test/repo/issues/123",
-                )
-            ]
-        )
-        filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
-
-        async with app.run_test() as pilot:
-            await pilot.pause()
-            await pilot.pause()
-
-            await pilot.press("o")
-            await pilot.pause()
-
-            status_bar = app.query_one(StatusBar)
-            # Message should indicate issue was opened
-            assert status_bar._message == "Opened issue #123"
-
-
 class TestPlanDetailScreen:
     """Tests for PlanDetailScreen modal."""
 
@@ -2999,3 +2939,169 @@ class TestStackFilter:
 
             assert app._stack_filter_branches is None
             assert app._stack_filter_label is None
+
+
+class TestObjectiveFilter:
+    """Tests for 'o' objective filter functionality."""
+
+    @pytest.mark.asyncio
+    async def test_o_filters_plans_by_objective(self) -> None:
+        """Pressing 'o' filters table to rows sharing the same objective_issue."""
+        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row(1, "Plan A", objective_issue=42),
+                make_plan_row(2, "Plan B", objective_issue=99),
+                make_plan_row(3, "Plan C", objective_issue=42),
+            ]
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            assert len(app._rows) == 3
+
+            # Row 0 (selected) is plan_id=3 (descending sort), objective_issue=42
+            await pilot.press("o")
+            await pilot.pause()
+
+            assert len(app._rows) == 2
+            plan_ids = {r.plan_id for r in app._rows}
+            assert plan_ids == {1, 3}
+
+    @pytest.mark.asyncio
+    async def test_o_toggles_off_objective_filter(self) -> None:
+        """Pressing 'o' again restores all rows."""
+        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row(1, "Plan A", objective_issue=42),
+                make_plan_row(2, "Plan B", objective_issue=99),
+                make_plan_row(3, "Plan C", objective_issue=42),
+            ]
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Activate objective filter
+            await pilot.press("o")
+            await pilot.pause()
+            assert len(app._rows) == 2
+
+            # Toggle off
+            await pilot.press("o")
+            await pilot.pause()
+            assert len(app._rows) == 3
+
+    @pytest.mark.asyncio
+    async def test_o_on_plan_without_objective_shows_message(self) -> None:
+        """Pressing 'o' on plan with no objective_issue shows status message."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(1, "Plan A")]  # No objective_issue
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("o")
+            await pilot.pause()
+
+            status_bar = app.query_one(StatusBar)
+            assert status_bar._message == "Plan not linked to an objective"
+            assert app._objective_filter_issue is None
+
+    @pytest.mark.asyncio
+    async def test_escape_clears_objective_filter(self) -> None:
+        """Escape clears objective filter."""
+        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row(1, "Plan A", objective_issue=42),
+                make_plan_row(2, "Plan B", objective_issue=99),
+            ]
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Row 0 (selected) is plan_id=2 (descending sort), objective_issue=99
+            await pilot.press("o")
+            await pilot.pause()
+            assert app._objective_filter_issue is not None
+            assert len(app._rows) == 1
+
+            # Escape clears objective filter
+            await pilot.press("escape")
+            await pilot.pause()
+            assert app._objective_filter_issue is None
+            assert len(app._rows) == 2
+
+    @pytest.mark.asyncio
+    async def test_view_switch_clears_objective_filter(self) -> None:
+        """Switching views clears the objective filter."""
+        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row(1, "Plan A", objective_issue=42),
+                make_plan_row(2, "Plan B", objective_issue=99),
+            ]
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Activate objective filter
+            await pilot.press("o")
+            await pilot.pause()
+            assert app._objective_filter_issue is not None
+
+            # Switch view
+            await pilot.press("2")
+            await pilot.pause()
+
+            assert app._objective_filter_issue is None
+            assert app._objective_filter_label is None
+
+    @pytest.mark.asyncio
+    async def test_objective_filter_composes_with_text_filter(self) -> None:
+        """Objective filter and text filter compose -- objective first, then text narrows."""
+        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row(1, "Add feature alpha", objective_issue=42),
+                make_plan_row(2, "Fix bug beta", objective_issue=99),
+                make_plan_row(3, "Add feature gamma", objective_issue=42),
+            ]
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Row 0 (selected) is plan_id=3, objective_issue=42
+            await pilot.press("o")
+            await pilot.pause()
+            assert len(app._rows) == 2  # Plans 1 and 3
+
+            # Now activate text filter
+            await pilot.press("slash")
+            await pilot.pause()
+            await pilot.press("g", "a", "m", "m", "a")
+            await pilot.pause()
+
+            # Text filter narrows further
+            assert len(app._rows) == 1
+            assert app._rows[0].plan_id == 3
