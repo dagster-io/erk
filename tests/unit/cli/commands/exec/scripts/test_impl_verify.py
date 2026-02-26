@@ -25,8 +25,6 @@ def _make_ctx(tmp_path: Path, *, branch: str = BRANCH) -> ErkContext:
     )
 
 
-
-
 def test_impl_verify_succeeds_when_branch_scoped_impl_exists(tmp_path: Path) -> None:
     """Test impl-verify returns success JSON when branch-scoped impl exists."""
     create_impl_folder(tmp_path, "# Plan\n", branch_name=BRANCH, overwrite=False)

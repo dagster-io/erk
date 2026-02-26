@@ -394,20 +394,26 @@ def test_plan_list_sort_activity_with_local_branch() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        # Create worktree directory with .impl/issue.json for plan 1
+        # Create worktree directory with branch-scoped impl folder for plan 1
+        from erk_shared.impl_folder import get_impl_dir, save_plan_ref
+
         repo_name = env.cwd.name
         repo_dir = env.erk_root / repo_name
         feature_wt = repo_dir / "feature-for-issue-1"
         feature_wt.mkdir(parents=True)
 
-        # Create .impl/issue.json linking worktree to issue 1
-        impl_dir = feature_wt / ".impl"
-        impl_dir.mkdir()
-        issue_json = impl_dir / "issue.json"
-        issue_json.write_text(
-            '{"issue_number": 1, "issue_url": "https://github.com/owner/repo/issues/1", '
-            '"created_at": "2025-01-20T10:00:00+00:00", "synced_at": "2025-01-20T10:00:00+00:00"}',
-            encoding="utf-8",
+        # Create branch-scoped .erk/impl-context/<branch>/ with plan ref
+        branch_name = "P1-feature-for-issue-1"
+        impl_dir = get_impl_dir(feature_wt, branch_name=branch_name)
+        impl_dir.parent.mkdir(parents=True, exist_ok=True)
+        save_plan_ref(
+            impl_dir,
+            provider="github",
+            plan_id="1",
+            url="https://github.com/owner/repo/issues/1",
+            labels=(),
+            objective_id=None,
+            node_ids=None,
         )
 
         # Build FakeGit with worktree and branch commit times
@@ -417,13 +423,14 @@ def test_plan_list_sort_activity_with_local_branch() -> None:
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main", is_root=True),
-                    WorktreeInfo(path=feature_wt, branch="P1-feature-for-issue-1", is_root=False),
+                    WorktreeInfo(path=feature_wt, branch=branch_name, is_root=False),
                 ],
             },
             git_common_dirs={env.cwd: env.git_dir},
             trunk_branches={env.cwd: "main"},
+            current_branches={feature_wt: branch_name},
             branch_commits_with_authors={
-                (env.cwd, "P1-feature-for-issue-1", "main", 1): [
+                (env.cwd, branch_name, "main", 1): [
                     {
                         "hash": "abc123",
                         "timestamp": "2025-01-20T12:00:00+00:00",
@@ -494,29 +501,41 @@ def test_plan_list_sort_activity_orders_by_recency() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        from erk_shared.impl_folder import get_impl_dir, save_plan_ref
+
         repo_name = env.cwd.name
         repo_dir = env.erk_root / repo_name
 
         # Create worktree for issue 1
         wt1 = repo_dir / "feature-for-issue-1"
         wt1.mkdir(parents=True)
-        impl1 = wt1 / ".impl"
-        impl1.mkdir()
-        (impl1 / "issue.json").write_text(
-            '{"issue_number": 1, "issue_url": "https://github.com/owner/repo/issues/1", '
-            '"created_at": "2025-01-20T10:00:00+00:00", "synced_at": "2025-01-20T10:00:00+00:00"}',
-            encoding="utf-8",
+        branch1 = "P1-feature-for-issue-1"
+        impl1 = get_impl_dir(wt1, branch_name=branch1)
+        impl1.parent.mkdir(parents=True, exist_ok=True)
+        save_plan_ref(
+            impl1,
+            provider="github",
+            plan_id="1",
+            url="https://github.com/owner/repo/issues/1",
+            labels=(),
+            objective_id=None,
+            node_ids=None,
         )
 
         # Create worktree for issue 2
         wt2 = repo_dir / "feature-for-issue-2"
         wt2.mkdir(parents=True)
-        impl2 = wt2 / ".impl"
-        impl2.mkdir()
-        (impl2 / "issue.json").write_text(
-            '{"issue_number": 2, "issue_url": "https://github.com/owner/repo/issues/2", '
-            '"created_at": "2025-01-20T10:00:00+00:00", "synced_at": "2025-01-20T10:00:00+00:00"}',
-            encoding="utf-8",
+        branch2 = "P2-feature-for-issue-2"
+        impl2 = get_impl_dir(wt2, branch_name=branch2)
+        impl2.parent.mkdir(parents=True, exist_ok=True)
+        save_plan_ref(
+            impl2,
+            provider="github",
+            plan_id="2",
+            url="https://github.com/owner/repo/issues/2",
+            labels=(),
+            objective_id=None,
+            node_ids=None,
         )
 
         # Build FakeGit - issue 2's branch has MORE RECENT commit
@@ -526,14 +545,15 @@ def test_plan_list_sort_activity_orders_by_recency() -> None:
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main", is_root=True),
-                    WorktreeInfo(path=wt1, branch="P1-feature-for-issue-1", is_root=False),
-                    WorktreeInfo(path=wt2, branch="P2-feature-for-issue-2", is_root=False),
+                    WorktreeInfo(path=wt1, branch=branch1, is_root=False),
+                    WorktreeInfo(path=wt2, branch=branch2, is_root=False),
                 ],
             },
             git_common_dirs={env.cwd: env.git_dir},
             trunk_branches={env.cwd: "main"},
+            current_branches={wt1: branch1, wt2: branch2},
             branch_commits_with_authors={
-                (env.cwd, "P1-feature-for-issue-1", "main", 1): [
+                (env.cwd, branch1, "main", 1): [
                     {
                         "hash": "abc123",
                         "timestamp": "2025-01-20T10:00:00+00:00",
@@ -541,7 +561,7 @@ def test_plan_list_sort_activity_orders_by_recency() -> None:
                         "message": "old commit",
                     }
                 ],
-                (env.cwd, "P2-feature-for-issue-2", "main", 1): [
+                (env.cwd, branch2, "main", 1): [
                     {
                         "hash": "def456",
                         "timestamp": "2025-01-20T14:00:00+00:00",

@@ -36,8 +36,17 @@ from erk_shared.gateway.git.remote_ops.types import PullRebaseError
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.metadata.schemas import OBJECTIVE_ISSUE
 from erk_shared.gateway.github.types import PRNotFound
-from erk_shared.impl_folder import create_impl_folder, get_impl_dir, read_plan_ref, resolve_impl_dir, save_plan_ref
-from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR, extract_plan_content
+from erk_shared.impl_folder import (
+    create_impl_folder,
+    get_impl_dir,
+    read_plan_ref,
+    resolve_impl_dir,
+    save_plan_ref,
+)
+from erk_shared.plan_store.planned_pr_lifecycle import (
+    IMPL_CONTEXT_DIR,
+    extract_plan_content,
+)
 
 
 def _get_current_branch(git: Git, cwd: Path) -> str:

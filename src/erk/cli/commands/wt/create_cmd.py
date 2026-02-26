@@ -21,7 +21,13 @@ from erk.cli.subprocess_utils import run_with_error_reporting
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
-from erk_shared.impl_folder import create_impl_folder, get_impl_dir, get_impl_path, resolve_impl_dir, save_plan_ref
+from erk_shared.impl_folder import (
+    create_impl_folder,
+    get_impl_dir,
+    get_impl_path,
+    resolve_impl_dir,
+    save_plan_ref,
+)
 from erk_shared.issue_workflow import (
     IssueBranchSetup,
     IssueValidationFailed,
@@ -929,6 +935,8 @@ def create_wt(
         import shutil
 
         impl_source = resolve_impl_dir(repo.root, branch_name=current_branch)
+        # Type guard: impl_source is guaranteed non-None by the earlier check at line 649-653
+        assert impl_source is not None, "impl_source must be non-None after validation"
         new_branch = ctx.git.branch.get_current_branch(wt_path)
         impl_dest = get_impl_dir(wt_path, branch_name=new_branch or "main")
         impl_dest.parent.mkdir(parents=True, exist_ok=True)

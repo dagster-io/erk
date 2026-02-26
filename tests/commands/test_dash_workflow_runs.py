@@ -50,7 +50,7 @@ def test_list_displays_workflow_run_id_for_plan_with_impl_folder() -> None:
 
         # Create branch-scoped .erk/impl-context/<branch>/ with plan ref
         impl_dir = get_impl_dir(feature_wt, branch_name="feature-branch")
-        impl_dir.parent.mkdir(parents=True, exist_ok=True)
+        impl_dir.mkdir(parents=True, exist_ok=True)
         save_plan_ref(
             impl_dir,
             provider="github",
@@ -148,7 +148,7 @@ def test_plan_list_linkifies_workflow_run_id_with_owner_repo() -> None:
 
         # Create branch-scoped .erk/impl-context/<branch>/ with plan ref
         impl_dir = get_impl_dir(feature_wt, branch_name="feature-branch")
-        impl_dir.parent.mkdir(parents=True, exist_ok=True)
+        impl_dir.mkdir(parents=True, exist_ok=True)
         save_plan_ref(
             impl_dir,
             provider="github",
@@ -248,7 +248,7 @@ def test_plan_list_displays_plain_run_id_without_owner_repo() -> None:
 
         # Create branch-scoped .erk/impl-context/<branch>/ with plan ref
         impl_dir = get_impl_dir(feature_wt, branch_name="feature-branch")
-        impl_dir.parent.mkdir(parents=True, exist_ok=True)
+        impl_dir.mkdir(parents=True, exist_ok=True)
         save_plan_ref(
             impl_dir,
             provider="github",
@@ -343,7 +343,7 @@ def test_plan_list_handles_missing_workflow_run() -> None:
 
         # Create branch-scoped .erk/impl-context/<branch>/ with plan ref
         impl_dir = get_impl_dir(feature_wt, branch_name="feature-branch")
-        impl_dir.parent.mkdir(parents=True, exist_ok=True)
+        impl_dir.mkdir(parents=True, exist_ok=True)
         save_plan_ref(
             impl_dir,
             provider="github",
@@ -407,21 +407,27 @@ def test_plan_list_handles_missing_workflow_run() -> None:
 
 def test_plan_list_handles_batch_query_failure() -> None:
     """Plan list should succeed even if batch workflow query fails."""
+    from erk_shared.impl_folder import get_impl_dir, save_plan_ref
+
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        # Create worktree with .impl/issue.json
+        # Create worktree with branch-scoped impl folder
         repo_name = env.cwd.name
         repo_dir = env.erk_root / repo_name
         feature_wt = repo_dir / "feature-branch"
         feature_wt.mkdir(parents=True)
 
-        impl_dir = feature_wt / ".impl"
-        impl_dir.mkdir()
-        issue_json = impl_dir / "issue.json"
-        issue_json.write_text(
-            '{"issue_number": 222, "issue_url": "https://github.com/owner/repo/issues/222", '
-            '"created_at": "2025-01-20T10:00:00+00:00", "synced_at": "2025-01-20T10:00:00+00:00"}',
-            encoding="utf-8",
+        # Create branch-scoped .erk/impl-context/<branch>/ with plan ref
+        impl_dir = get_impl_dir(feature_wt, branch_name="feature-branch")
+        impl_dir.mkdir(parents=True, exist_ok=True)
+        save_plan_ref(
+            impl_dir,
+            provider="github",
+            plan_id="222",
+            url="https://github.com/owner/repo/issues/222",
+            labels=(),
+            objective_id=None,
+            node_ids=None,
         )
 
         plan = Plan(
@@ -472,34 +478,42 @@ def test_plan_list_handles_batch_query_failure() -> None:
 
 def test_plan_list_displays_multiple_plans_with_different_workflow_runs() -> None:
     """Plan list should display different workflow run IDs for multiple plans."""
+    from erk_shared.impl_folder import get_impl_dir, save_plan_ref
+
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        # Create two worktrees with .impl/issue.json
+        # Create two worktrees with branch-scoped impl folders
         repo_name = env.cwd.name
         repo_dir = env.erk_root / repo_name
 
         # First worktree
         wt1 = repo_dir / "feature-1"
         wt1.mkdir(parents=True)
-        impl1 = wt1 / ".impl"
-        impl1.mkdir()
-        issue1_json = impl1 / "issue.json"
-        issue1_json.write_text(
-            '{"issue_number": 301, "issue_url": "https://github.com/owner/repo/issues/301", '
-            '"created_at": "2025-01-20T10:00:00+00:00", "synced_at": "2025-01-20T10:00:00+00:00"}',
-            encoding="utf-8",
+        impl1 = get_impl_dir(wt1, branch_name="feature-1")
+        impl1.parent.mkdir(parents=True, exist_ok=True)
+        save_plan_ref(
+            impl1,
+            provider="github",
+            plan_id="301",
+            url="https://github.com/owner/repo/issues/301",
+            labels=(),
+            objective_id=None,
+            node_ids=None,
         )
 
         # Second worktree
         wt2 = repo_dir / "feature-2"
         wt2.mkdir(parents=True)
-        impl2 = wt2 / ".impl"
-        impl2.mkdir()
-        issue2_json = impl2 / "issue.json"
-        issue2_json.write_text(
-            '{"issue_number": 302, "issue_url": "https://github.com/owner/repo/issues/302", '
-            '"created_at": "2025-01-20T10:00:00+00:00", "synced_at": "2025-01-20T10:00:00+00:00"}',
-            encoding="utf-8",
+        impl2 = get_impl_dir(wt2, branch_name="feature-2")
+        impl2.parent.mkdir(parents=True, exist_ok=True)
+        save_plan_ref(
+            impl2,
+            provider="github",
+            plan_id="302",
+            url="https://github.com/owner/repo/issues/302",
+            labels=(),
+            objective_id=None,
+            node_ids=None,
         )
 
         # Create two plans with workflow run node_ids in plan-header

@@ -576,31 +576,6 @@ def test_read_plan_ref_roundtrip(tmp_path: Path) -> None:
     assert len(ref.synced_at) > 0
 
 
-def test_read_plan_ref_from_legacy_issue_json(tmp_path: Path) -> None:
-    """Test read_plan_ref falls back to legacy issue.json format."""
-    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
-    impl_dir.mkdir(parents=True)
-
-    # Write legacy issue.json (no plan-ref.json)
-    issue_data = {
-        "issue_number": 42,
-        "issue_url": "https://github.com/owner/repo/issues/42",
-        "created_at": "2025-01-15T10:00:00+00:00",
-        "synced_at": "2025-01-15T10:00:00+00:00",
-        "labels": ["erk-plan"],
-        "objective_issue": 99,
-    }
-    (impl_dir / "issue.json").write_text(json.dumps(issue_data), encoding="utf-8")
-
-    ref = read_plan_ref(impl_dir)
-    assert ref is not None
-    assert ref.provider == "github"
-    assert ref.plan_id == "42"
-    assert ref.url == "https://github.com/owner/repo/issues/42"
-    assert ref.labels == ("erk-plan",)
-    assert ref.objective_id == 99
-
-
 def test_read_plan_ref_prefers_ref_json(tmp_path: Path) -> None:
     """Test read_plan_ref prefers ref.json over legacy issue.json."""
     impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
@@ -677,23 +652,6 @@ def test_has_plan_ref_with_ref_json(tmp_path: Path) -> None:
         objective_id=None,
         node_ids=None,
     )
-
-    assert has_plan_ref(impl_dir) is True
-
-
-def test_has_plan_ref_detects_legacy_file(tmp_path: Path) -> None:
-    """Test has_plan_ref detects legacy issue.json."""
-    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
-    impl_dir.mkdir(parents=True)
-
-    # Write only legacy issue.json file
-    legacy_data = {
-        "issue_number": 42,
-        "issue_url": "http://url",
-        "created_at": "2025-01-15T10:00:00+00:00",
-        "synced_at": "2025-01-15T10:00:00+00:00",
-    }
-    (impl_dir / "issue.json").write_text(json.dumps(legacy_data), encoding="utf-8")
 
     assert has_plan_ref(impl_dir) is True
 
@@ -790,22 +748,6 @@ def test_validate_plan_linkage_neither(tmp_path: Path) -> None:
     assert result is None
 
 
-def test_validate_plan_linkage_legacy_fallback(tmp_path: Path) -> None:
-    """Test validation works with legacy issue.json via read_plan_ref fallback."""
-    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
-    impl_dir.mkdir(parents=True)
-    legacy_data = {
-        "issue_number": 42,
-        "issue_url": "https://github.com/org/repo/issues/42",
-        "created_at": "2025-01-15T10:00:00+00:00",
-        "synced_at": "2025-01-15T10:00:00+00:00",
-    }
-    (impl_dir / "issue.json").write_text(json.dumps(legacy_data), encoding="utf-8")
-
-    result = validate_plan_linkage(impl_dir, "P42-add-feature-01-04-1234")
-    assert result == "42"
-
-
 def test_validate_plan_linkage_planned_pr_with_plan_ref(tmp_path: Path) -> None:
     """Test planned-PR branch returns plan_id from plan-ref.json."""
     impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
@@ -846,17 +788,6 @@ def test_resolve_impl_dir_branch_scoped(tmp_path: Path) -> None:
     assert result == get_impl_dir(tmp_path, branch_name=BRANCH)
 
 
-def test_resolve_impl_dir_legacy_fallback(tmp_path: Path) -> None:
-    """Test resolve_impl_dir finds legacy .impl/ directory."""
-    legacy_dir = tmp_path / ".impl"
-    legacy_dir.mkdir()
-    (legacy_dir / "plan.md").write_text("# Plan\n", encoding="utf-8")
-
-    result = resolve_impl_dir(tmp_path, branch_name="nonexistent-branch")
-    assert result is not None
-    assert result == legacy_dir
-
-
 def test_resolve_impl_dir_discovery(tmp_path: Path) -> None:
     """Test resolve_impl_dir discovers subdir via plan.md search."""
     # Create a branch-scoped dir for a different branch
@@ -886,14 +817,3 @@ def test_resolve_impl_dir_branch_scoped_priority(tmp_path: Path) -> None:
     result = resolve_impl_dir(tmp_path, branch_name=BRANCH)
     assert result is not None
     assert result == get_impl_dir(tmp_path, branch_name=BRANCH)
-
-
-def test_resolve_impl_dir_none_branch_skips_step1(tmp_path: Path) -> None:
-    """Test resolve_impl_dir with None branch goes straight to legacy lookup."""
-    legacy_dir = tmp_path / ".impl"
-    legacy_dir.mkdir()
-    (legacy_dir / "plan.md").write_text("# Plan\n", encoding="utf-8")
-
-    result = resolve_impl_dir(tmp_path, branch_name=None)
-    assert result is not None
-    assert result == legacy_dir

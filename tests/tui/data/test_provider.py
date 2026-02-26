@@ -256,7 +256,7 @@ class TestBuildWorktreeMapping:
         worktree_path.mkdir(parents=True)
         branch_name = "plnd/fix-missing-data-02-19-1416"
 
-        # Create branch-scoped .erk/impl-context/<branch>/plan-ref.json on disk (read_plan_ref does direct I/O)
+        # Create branch-scoped .erk/impl-context/<branch>/plan-ref.json on disk
         impl_dir = get_impl_dir(worktree_path, branch_name=branch_name)
         impl_dir.parent.mkdir(parents=True, exist_ok=True)
         plan_ref_data = {
@@ -325,7 +325,7 @@ class TestBuildWorktreeMapping:
         worktree_path.mkdir(parents=True)
         branch_name = "planned/fix-auth-bug-01-15-1430"
 
-        # Create branch-scoped .erk/impl-context/<branch>/plan-ref.json on disk (read_plan_ref does direct I/O)
+        # Create branch-scoped .erk/impl-context/<branch>/plan-ref.json on disk
         impl_dir = get_impl_dir(worktree_path, branch_name=branch_name)
         impl_dir.parent.mkdir(parents=True, exist_ok=True)
         plan_ref_data = {
@@ -396,7 +396,7 @@ class TestBuildWorktreeMapping:
         worktree_path.mkdir(parents=True)
         branch_name = "planned-fix-auth-bug-01-15-1430"
 
-        # Create branch-scoped .erk/impl-context/<branch>/plan-ref.json — will be read regardless of branch name format
+        # Create branch-scoped plan-ref.json (works for non-standard branch names)
         impl_dir = get_impl_dir(worktree_path, branch_name=branch_name)
         impl_dir.parent.mkdir(parents=True, exist_ok=True)
         plan_ref_data = {

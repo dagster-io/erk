@@ -365,7 +365,7 @@ def test_cleanup_worktree_artifacts_handles_missing_folders(tmp_path) -> None:
 
 
 def test_slot_assign_cleans_up_artifacts_when_reusing_worktree() -> None:
-    """Test that slot assign cleans up .erk/impl-context/ and .erk/scratch/ when reusing worktree."""
+    """Test slot assign cleans up impl-context and scratch when reusing worktree."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
