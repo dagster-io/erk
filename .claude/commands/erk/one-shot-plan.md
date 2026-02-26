@@ -1,5 +1,5 @@
 ---
-description: Create a plan from a one-shot prompt, save it as a GitHub issue, and write results to .impl/ (used by CI workflow)
+description: Create a plan from a one-shot prompt, save it as a GitHub issue, and write results to .erk/impl-context/ (used by CI workflow)
 ---
 
 # One-Shot Plan
@@ -10,7 +10,7 @@ You are running autonomously in a CI workflow. Your job is to read a prompt, exp
 
 ## Step 1: Read the Prompt
 
-Read `.impl/prompt.md` to understand what you need to do.
+Read `.erk/impl-context/prompt.md` to understand what you need to do.
 
 ## Step 2: Read Objective Context (if present)
 
@@ -31,7 +31,7 @@ Use Explore agents and Grep/Glob to understand the relevant areas of the codebas
 
 ## Step 5: Write the Plan
 
-Write a comprehensive implementation plan to `.impl/plan.md`.
+Write a comprehensive implementation plan to `.erk/impl-context/plan.md`.
 
 The plan MUST be self-contained for a separate Claude session to implement. Include:
 
@@ -50,10 +50,10 @@ Check the `$PLAN_ISSUE_NUMBER` environment variable:
 **If `$PLAN_ISSUE_NUMBER` is set (non-empty):** A skeleton plan issue was pre-created at dispatch time. Update it with the real plan content:
 
 ```bash
-erk exec plan-update --plan-number $PLAN_ISSUE_NUMBER --plan-path .impl/plan.md --format json
+erk exec plan-update --plan-number $PLAN_ISSUE_NUMBER --plan-path .erk/impl-context/plan.md --format json
 ```
 
-Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, use `$PLAN_ISSUE_NUMBER` as the `plan_number`. To get the `title`, extract the first `# ` heading from `.impl/plan.md`.
+Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, use `$PLAN_ISSUE_NUMBER` as the `plan_number`. To get the `title`, extract the first `# ` heading from `.erk/impl-context/plan.md`.
 
 **If `$PLAN_ISSUE_NUMBER` is not set (empty):** Fall back to creating a new issue (backwards compatible for direct `erk one-shot` calls without pre-created skeleton):
 
@@ -66,7 +66,7 @@ erk exec marker create --session-id "${CLAUDE_SESSION_ID}" --associated-objectiv
 Then run the save command:
 
 ```bash
-erk exec plan-save --plan-file .impl/plan.md --format json --session-id="${CLAUDE_SESSION_ID}" --created-from-workflow-run-url "$WORKFLOW_RUN_URL"
+erk exec plan-save --plan-file .erk/impl-context/plan.md --format json --session-id="${CLAUDE_SESSION_ID}" --created-from-workflow-run-url "$WORKFLOW_RUN_URL"
 ```
 
 If the `WORKFLOW_RUN_URL` environment variable is not set, omit the `--created-from-workflow-run-url` flag.
@@ -75,7 +75,7 @@ Parse the JSON output. If `success` is not `true`, stop and report the error. Ot
 
 ## Step 7: Write Plan Result
 
-Write the plan result to `.impl/plan-result.json` with the following format:
+Write the plan result to `.erk/impl-context/plan-result.json` with the following format:
 
 ```json
 {"plan_number": <num>, "title": "<title>"}
@@ -86,7 +86,7 @@ Use the `plan_number` and `title` extracted from the Step 6 output.
 ## Important Notes
 
 - This is planning only — do NOT implement any code changes
-- Your outputs are `.impl/plan.md` and `.impl/plan-result.json`
+- Your outputs are `.erk/impl-context/plan.md` and `.erk/impl-context/plan-result.json`
 - The plan must be detailed enough for another agent to implement without additional context
 - Keep the plan focused on the prompt
 - Never modify CHANGELOG.md
