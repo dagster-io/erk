@@ -2365,8 +2365,13 @@ class TestLandPrAsync:
             await pilot.pause()
 
             app._land_pr_async(
-                "test-op", 456, "test-branch", None,
-                plan_id=123, is_learn_plan=True, learn_status="completed_with_plan",
+                "test-op",
+                456,
+                "test-branch",
+                None,
+                plan_id=123,
+                is_learn_plan=True,
+                learn_status="completed_with_plan",
             )
             await pilot.pause(0.3)
 
@@ -2406,8 +2411,13 @@ class TestLandPrAsync:
             count_before = provider.fetch_count
 
             app._land_pr_async(
-                "test-op", 456, "test-branch", None,
-                plan_id=123, is_learn_plan=True, learn_status="completed_with_plan",
+                "test-op",
+                456,
+                "test-branch",
+                None,
+                plan_id=123,
+                is_learn_plan=True,
+                learn_status="completed_with_plan",
             )
             await pilot.pause(0.3)
 
@@ -2439,8 +2449,13 @@ class TestLandPrAsync:
             count_before = provider.fetch_count
 
             app._land_pr_async(
-                "test-op", 456, "test-branch", None,
-                plan_id=123, is_learn_plan=True, learn_status="completed_with_plan",
+                "test-op",
+                456,
+                "test-branch",
+                None,
+                plan_id=123,
+                is_learn_plan=True,
+                learn_status="completed_with_plan",
             )
             await pilot.pause(0.3)
 
@@ -2482,8 +2497,13 @@ class TestLandPrAsync:
             await pilot.pause()
 
             app._land_pr_async(
-                "test-op", 456, "test-branch", 789,
-                plan_id=123, is_learn_plan=True, learn_status="completed_with_plan",
+                "test-op",
+                456,
+                "test-branch",
+                789,
+                plan_id=123,
+                is_learn_plan=True,
+                learn_status="completed_with_plan",
             )
             await pilot.pause(0.3)
 
@@ -2525,8 +2545,13 @@ class TestLandPrAsync:
             await pilot.pause()
 
             app._land_pr_async(
-                "test-op", 456, "test-branch", None,
-                plan_id=123, is_learn_plan=True, learn_status="completed_with_plan",
+                "test-op",
+                456,
+                "test-branch",
+                None,
+                plan_id=123,
+                is_learn_plan=True,
+                learn_status="completed_with_plan",
             )
             await pilot.pause(0.3)
 
@@ -2561,14 +2586,22 @@ class TestLandPrAsync:
             await pilot.pause()
 
             app._land_pr_async(
-                "test-op", 456, "test-branch", None,
-                plan_id=123, is_learn_plan=False, learn_status=None,
+                "test-op",
+                456,
+                "test-branch",
+                None,
+                plan_id=123,
+                is_learn_plan=False,
+                learn_status=None,
             )
             await pilot.pause(0.3)
 
             assert len(captured_calls) == 2
             assert captured_calls[1] == [
-                "erk", "exec", "trigger-async-learn", "123",
+                "erk",
+                "exec",
+                "trigger-async-learn",
+                "123",
             ]
 
     @pytest.mark.asyncio
@@ -2599,8 +2632,13 @@ class TestLandPrAsync:
             await pilot.pause()
 
             app._land_pr_async(
-                "test-op", 456, "test-branch", None,
-                plan_id=123, is_learn_plan=True, learn_status=None,
+                "test-op",
+                456,
+                "test-branch",
+                None,
+                plan_id=123,
+                is_learn_plan=True,
+                learn_status=None,
             )
             await pilot.pause(0.3)
 
@@ -2635,8 +2673,13 @@ class TestLandPrAsync:
             await pilot.pause()
 
             app._land_pr_async(
-                "test-op", 456, "test-branch", None,
-                plan_id=123, is_learn_plan=False, learn_status="completed_with_plan",
+                "test-op",
+                456,
+                "test-branch",
+                None,
+                plan_id=123,
+                is_learn_plan=False,
+                learn_status="completed_with_plan",
             )
             await pilot.pause(0.3)
 
@@ -2675,8 +2718,13 @@ class TestLandPrAsync:
             count_before = provider.fetch_count
 
             app._land_pr_async(
-                "test-op", 456, "test-branch", None,
-                plan_id=123, is_learn_plan=False, learn_status=None,
+                "test-op",
+                456,
+                "test-branch",
+                None,
+                plan_id=123,
+                is_learn_plan=False,
+                learn_status=None,
             )
             await pilot.pause(0.3)
 
@@ -3185,8 +3233,13 @@ class TestOperationTracking:
             app._start_operation(op_id=op_id, label="Landing PR #456...")
 
             app._land_pr_async(
-                op_id, 456, "test-branch", None,
-                plan_id=0, is_learn_plan=False, learn_status=None,
+                op_id,
+                456,
+                "test-branch",
+                None,
+                plan_id=0,
+                is_learn_plan=False,
+                learn_status=None,
             )
             await pilot.pause(0.3)
 
@@ -3220,8 +3273,13 @@ class TestOperationTracking:
             app._start_operation(op_id=op_id, label="Landing PR #456...")
 
             app._land_pr_async(
-                op_id, 456, "test-branch", None,
-                plan_id=0, is_learn_plan=False, learn_status=None,
+                op_id,
+                456,
+                "test-branch",
+                None,
+                plan_id=0,
+                is_learn_plan=False,
+                learn_status=None,
             )
             await pilot.pause(0.3)
 

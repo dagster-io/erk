@@ -58,11 +58,12 @@ def _should_trigger_learn(*, is_learn_plan: bool, learn_status: str | None) -> b
     Mirrors the decision logic in land_cmd._check_learn_status_and_prompt
     but without config checks or session lookups.
     """
-    if is_learn_plan:
-        return False
-    if learn_status in {"completed_no_plan", "completed_with_plan", "plan_completed", "pending"}:
-        return False
-    return True
+    return not is_learn_plan and learn_status not in {
+        "completed_no_plan",
+        "completed_with_plan",
+        "plan_completed",
+        "pending",
+    }
 
 
 def _build_github_url(plan_url: str, resource_type: str, number: int) -> str:
