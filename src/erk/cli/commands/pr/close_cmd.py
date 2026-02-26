@@ -18,7 +18,7 @@ def _close_linked_prs(
     repo_root: Path,
     plan_number: int,
 ) -> list[int]:
-    """Close all OPEN PRs linked to an issue.
+    """Close all OPEN PRs linked to a plan.
 
     Returns list of PR numbers that were closed.
     """
@@ -40,7 +40,7 @@ def _close_linked_prs(
 def pr_close(ctx: ErkContext, identifier: str) -> None:
     """Close a plan by plan number or GitHub URL.
 
-    Closes all OPEN PRs linked to the issue in addition to closing the issue itself.
+    Closes all OPEN PRs linked to the plan in addition to closing the plan itself.
 
     Args:
         identifier: Plan identifier (e.g., "42" or GitHub URL)
