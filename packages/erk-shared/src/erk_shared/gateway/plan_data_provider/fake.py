@@ -312,7 +312,7 @@ def make_plan_row(
         objective_progress_display: Progress display (e.g., "3/7" or "-")
         objective_slug_display: Slug or stripped title fallback (max 25 chars)
         objective_state_display: Sparkline string (e.g., "✓✓✓▶▶○○○○")
-        objective_head_state: Head state of next node (e.g., "ready", "in progress")
+        objective_head_state: Head state of next node (e.g., "ready", "in-progress")
         updated_at: Last update datetime (defaults to same as created_at)
         updated_display: Formatted relative time for last update
         created_at: Creation datetime (defaults to 2025-01-01T00:00:00Z)
