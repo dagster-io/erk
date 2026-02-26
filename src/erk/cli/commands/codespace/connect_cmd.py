@@ -107,7 +107,8 @@ def connect_codespace(
 
         if use_tmux:
             session = session_name if session_name is not None else _tty_session_name()
-            # Force TERM to xterm-256color for tmux — remote may lack terminfo for local terminal (e.g. ghostty)
+            # Force TERM to xterm-256color for tmux — remote may lack
+            # terminfo for local terminal (e.g. ghostty)
             claude_command = (
                 f"TERM=xterm-256color tmux new-session -A -s {session} {claude_command}"
             )
