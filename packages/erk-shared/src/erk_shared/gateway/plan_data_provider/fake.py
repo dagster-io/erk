@@ -51,6 +51,7 @@ class FakePlanDataProvider(PlanDataProvider):
         self._plan_content_by_plan_id: dict[int, str] = {}
         self._objective_content_by_plan_id: dict[int, str] = {}
         self._review_threads_by_pr: dict[int, list[PRReviewThread]] = {}
+        self._stacks_by_branch: dict[str, list[str]] = {}
 
     @property
     def repo_root(self) -> Path:
@@ -214,6 +215,28 @@ class FakePlanDataProvider(PlanDataProvider):
             List of PlanRowData matching the given objective_issue
         """
         return [p for p in self._plans if p.objective_issue == objective_issue]
+
+    def get_branch_stack(self, branch: str) -> list[str] | None:
+        """Fake branch stack lookup.
+
+        Returns the configured stack for a branch, or None.
+
+        Args:
+            branch: The branch name to look up
+
+        Returns:
+            Configured list of branch names, or None
+        """
+        return self._stacks_by_branch.get(branch)
+
+    def set_branch_stack(self, branch: str, stack: list[str]) -> None:
+        """Configure the stack to return for a branch.
+
+        Args:
+            branch: The branch name
+            stack: List of branch names in the stack
+        """
+        self._stacks_by_branch[branch] = stack
 
     def fetch_unresolved_comments(self, pr_number: int) -> list[PRReviewThread]:
         """Fake unresolved comments fetch implementation.
