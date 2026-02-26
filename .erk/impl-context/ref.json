@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Documentation Plan: Delete GitHubPlanStore and PlanStore ABC, consolidate to PlanBackend interface"
+}
