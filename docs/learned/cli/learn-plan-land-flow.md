@@ -39,7 +39,7 @@ Branch names are stable identifiers (set at `erk br co --for-plan` time). PR lab
 
 **Detection sequence**:
 
-1. Read `plan-ref.json` from `.impl/` to get plan ID
+1. Call `ctx.plan_backend.resolve_plan_id_for_branch()` to get plan ID (queries GitHub API for a draft PR associated with the branch via `PlannedPRBackend`)
 2. Check if the corresponding issue exists
 3. Optionally prompt user to trigger async learn (if not already learned)
 4. Populate `state.plan_id` for execution pipeline
