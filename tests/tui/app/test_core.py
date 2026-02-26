@@ -120,8 +120,8 @@ class TestErkDashAppNavigation:
             assert isinstance(app.screen_stack[-1], HelpScreen)
 
     @pytest.mark.asyncio
-    async def test_help_screen_dismisses_on_unmapped_key(self) -> None:
-        """Pressing an unmapped key dismisses HelpScreen."""
+    async def test_help_screen_does_not_dismiss_on_unmapped_key(self) -> None:
+        """Pressing an unmapped key does NOT dismiss HelpScreen."""
         provider = FakePlanDataProvider()
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
@@ -133,8 +133,46 @@ class TestErkDashAppNavigation:
 
             assert isinstance(app.screen_stack[-1], HelpScreen)
 
-            # Press unmapped key — should dismiss
+            # Press unmapped key — should NOT dismiss
             await pilot.press("j")
+            await pilot.pause()
+
+            assert isinstance(app.screen_stack[-1], HelpScreen)
+
+    @pytest.mark.asyncio
+    async def test_help_screen_dismisses_on_escape(self) -> None:
+        """Pressing Esc dismisses HelpScreen."""
+        provider = FakePlanDataProvider()
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.press("?")
+            await pilot.pause()
+            await pilot.pause()
+
+            assert isinstance(app.screen_stack[-1], HelpScreen)
+
+            await pilot.press("escape")
+            await pilot.pause()
+
+            assert not isinstance(app.screen_stack[-1], HelpScreen)
+
+    @pytest.mark.asyncio
+    async def test_help_screen_dismisses_on_q(self) -> None:
+        """Pressing q dismisses HelpScreen."""
+        provider = FakePlanDataProvider()
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.press("?")
+            await pilot.pause()
+            await pilot.pause()
+
+            assert isinstance(app.screen_stack[-1], HelpScreen)
+
+            await pilot.press("q")
             await pilot.pause()
 
             assert not isinstance(app.screen_stack[-1], HelpScreen)
