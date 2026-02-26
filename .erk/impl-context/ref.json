@@ -1,4 +1,9 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Add Model Downgrades to Slash Commands"
+  "plan_id": "8271",
+  "url": "https://github.com/dagster-io/erk/pull/8271",
+  "created_at": "2026-02-26T12:29:44.911957",
+  "synced_at": "2026-02-26T12:29:44.911957",
+  "labels": [],
+  "objective_id": null
 }
