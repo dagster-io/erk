@@ -18,7 +18,7 @@ from erk_shared.gateway.github.issues.types import IssueComment
 from erk_shared.gateway.github.types import PRDetails, PRReviewComment, PRReviewThread
 
 
-def make_pr_details(pr_number: int, branch: str = "feature-branch") -> PRDetails:
+def make_pr_details(pr_number: int, *, branch: str) -> PRDetails:
     """Create test PRDetails."""
     return PRDetails(
         number=pr_number,
@@ -91,7 +91,7 @@ def test_get_pr_feedback_with_pr_number(tmp_path: Path) -> None:
     thread = make_thread(
         "PRRT_1", "src/foo.py", 42, "Fix this code", is_resolved=False, is_outdated=False
     )
-    pr_details = make_pr_details(123)
+    pr_details = make_pr_details(123, branch="feature-branch")
     comments = [make_issue_comment(100, "Please update docs", author="reviewer1", pr_number=123)]
 
     fake_github_issues = FakeGitHubIssues(comments_with_urls={123: comments})
@@ -168,7 +168,7 @@ def test_get_pr_feedback_auto_detect_branch(tmp_path: Path) -> None:
 
 def test_get_pr_feedback_no_comments(tmp_path: Path) -> None:
     """Test with PR that has no comments or threads."""
-    pr_details = make_pr_details(123)
+    pr_details = make_pr_details(123, branch="feature-branch")
 
     fake_github_issues = FakeGitHubIssues(comments_with_urls={123: []})
     fake_github = FakeGitHub(
@@ -207,7 +207,7 @@ def test_get_pr_feedback_include_resolved(tmp_path: Path) -> None:
     resolved = make_thread(
         "PRRT_2", "src/bar.py", 20, "Resolved", is_resolved=True, is_outdated=False
     )
-    pr_details = make_pr_details(123)
+    pr_details = make_pr_details(123, branch="feature-branch")
 
     fake_github_issues = FakeGitHubIssues(comments_with_urls={123: []})
     fake_github = FakeGitHub(
@@ -244,7 +244,7 @@ def test_get_pr_feedback_filters_resolved_by_default(tmp_path: Path) -> None:
     resolved = make_thread(
         "PRRT_2", "src/bar.py", 20, "Resolved", is_resolved=True, is_outdated=False
     )
-    pr_details = make_pr_details(123)
+    pr_details = make_pr_details(123, branch="feature-branch")
 
     fake_github_issues = FakeGitHubIssues(comments_with_urls={123: []})
     fake_github = FakeGitHub(
@@ -296,7 +296,7 @@ def test_get_pr_feedback_filters_null_thread_ids(tmp_path: Path) -> None:
             ),
         ),
     )
-    pr_details = make_pr_details(123)
+    pr_details = make_pr_details(123, branch="feature-branch")
 
     fake_github_issues = FakeGitHubIssues(comments_with_urls={123: []})
     fake_github = FakeGitHub(
@@ -393,7 +393,7 @@ def test_get_pr_feedback_json_structure(tmp_path: Path) -> None:
     thread = make_thread(
         "PRRT_1", "src/foo.py", 42, "Fix this", is_resolved=False, is_outdated=True
     )
-    pr_details = make_pr_details(123)
+    pr_details = make_pr_details(123, branch="feature-branch")
     comments = [make_issue_comment(100, "Discussion comment", author="reviewer", pr_number=123)]
 
     fake_github_issues = FakeGitHubIssues(comments_with_urls={123: comments})
