@@ -256,11 +256,11 @@ jobs:
         if: steps.discover-pr.outputs.has_pr == 'true' && steps.pr.outputs.is_fork != 'true' && steps.check-label.outputs.has_plan_review_label != 'true'
         id: check
         run: |
-          if [ -d ".impl" ]; then
-            echo "Found .impl folder, skipping autofix"
-            echo "has_impl_folder=true" >> $GITHUB_OUTPUT
+          if [ -d ".erk/impl-context" ]; then
+            echo "Found .erk/impl-context folder, skipping autofix"
+            echo "has_impl_context=true" >> $GITHUB_OUTPUT
           else
-            echo "has_impl_folder=false" >> $GITHUB_OUTPUT
+            echo "has_impl_context=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Determine if autofix should run
@@ -269,7 +269,7 @@ jobs:
           if [[ "${{ steps.discover-pr.outputs.has_pr }}" == "true" && \
                 "${{ steps.pr.outputs.is_fork }}" != "true" && \
                 "${{ steps.check-label.outputs.has_plan_review_label }}" != "true" && \
-                "${{ steps.check.outputs.has_impl_folder }}" != "true" ]]; then
+                "${{ steps.check.outputs.has_impl_context }}" != "true" ]]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
