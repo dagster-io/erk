@@ -483,6 +483,6 @@ def test_dispatch_no_args_no_context_fails() -> None:
         result = runner.invoke(cli, ["pr", "dispatch"], obj=ctx)
 
         assert result.exit_code != 0
-        assert "No issue numbers provided and could not auto-detect" in result.output
+        assert "No plan numbers provided and could not auto-detect" in result.output
         assert "erk pr dispatch <number>" in result.output
         assert "Traceback" not in result.output

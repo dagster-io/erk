@@ -356,7 +356,7 @@ def dispatch_one_shot(
                     plan_backend=ctx.plan_backend,
                     github=ctx.github,
                     repo_root=repo.root,
-                    issue_number=plan_issue_number,
+                    plan_number=plan_issue_number,
                     run_id=run_id,
                     dispatched_at=queued_at,
                 )
