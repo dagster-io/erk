@@ -30,7 +30,7 @@ Run implementations in GitHub Actions for sandboxed, parallel execution.
 
 ## Debugging Remote PRs
 
-<!-- TODO: erk pr checkout and erk pr sync for local iteration -->
+<!-- TODO: erk pr checkout for local iteration -->
 
 ## When to Use Remote vs Local
 
