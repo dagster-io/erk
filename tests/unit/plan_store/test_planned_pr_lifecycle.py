@@ -26,13 +26,13 @@ def test_build_plan_stage_body() -> None:
 
 
 def test_build_plan_stage_body_structure() -> None:
-    """Stage 1 body has correct ordering: metadata, details, content, close."""
+    """Stage 1 body has correct ordering: details, content, close, metadata."""
     result = build_plan_stage_body("META", "PLAN")
     meta_idx = result.index("META")
     open_idx = result.index(DETAILS_OPEN)
     plan_idx = result.index("PLAN")
     close_idx = result.index(DETAILS_CLOSE)
-    assert meta_idx < open_idx < plan_idx < close_idx
+    assert open_idx < plan_idx < close_idx < meta_idx
 
 
 # =============================================================================

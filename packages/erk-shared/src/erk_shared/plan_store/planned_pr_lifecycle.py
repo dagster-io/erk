@@ -28,13 +28,12 @@ Stages
 
 1. Plan Creation
    ``plan_save`` / ``PlannedPRBackend.create_plan()`` creates a draft PR.
-   The body contains the plan-header metadata block, the plan content
-   collapsed in a <details> tag, and a checkout footer. The metadata block
-   is self-delimiting via HTML comment markers, so no separator is needed.
+   The body contains the plan content collapsed in a <details> tag,
+   followed by the plan-header metadata block and a checkout footer.
+   The metadata block is self-delimiting via HTML comment markers,
+   so no separator is needed.
 
    Body format::
-
-       [metadata block]
 
        <details>
        <summary>original-plan</summary>
@@ -42,6 +41,8 @@ Stages
        [plan content]
 
        </details>
+
+       [metadata block]
        \\n---\\n
        [checkout footer]
 
@@ -92,7 +93,7 @@ DETAILS_CLOSE = "\n\n</details>"
 
 
 def build_plan_stage_body(metadata_body: str, plan_content: str) -> str:
-    """Build Stage 1 body: metadata + details-wrapped plan.
+    """Build Stage 1 body: details-wrapped plan + metadata at bottom.
 
     The footer is NOT included here because it needs the PR number,
     which isn't known until after ``create_pr`` returns.
@@ -104,7 +105,7 @@ def build_plan_stage_body(metadata_body: str, plan_content: str) -> str:
     Returns:
         Combined PR body ready for ``create_pr`` (without footer)
     """
-    return metadata_body + "\n\n" + DETAILS_OPEN + plan_content + DETAILS_CLOSE
+    return DETAILS_OPEN + plan_content + DETAILS_CLOSE + "\n\n" + metadata_body
 
 
 def build_original_plan_section(plan_content: str) -> str:
