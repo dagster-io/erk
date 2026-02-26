@@ -116,6 +116,8 @@ class TestStreamErkOneShot(unittest.IsolatedAsyncioTestCase):
     @patch("erkbot.runner.asyncio.create_subprocess_exec", new_callable=AsyncMock)
     async def test_stream_one_shot_timeout(self, mock_create: AsyncMock) -> None:
         process = AsyncMock()
+        process.terminate = MagicMock()
+        process.kill = MagicMock()
 
         # readline never returns empty bytes, simulating a process that never finishes
         async def _hang() -> bytes:
