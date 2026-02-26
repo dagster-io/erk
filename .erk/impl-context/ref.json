@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Error when `--new-slot` is used but branch already exists in a worktree"
+}
