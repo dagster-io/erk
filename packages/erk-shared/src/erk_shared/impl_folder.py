@@ -90,7 +90,6 @@ def resolve_impl_dir(base_path: Path, *, branch_name: str | None) -> Path | None
     return None
 
 
-
 def create_impl_folder(
     worktree_path: Path,
     plan_content: str,
