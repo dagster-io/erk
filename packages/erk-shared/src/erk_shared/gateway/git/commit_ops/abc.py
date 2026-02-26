@@ -22,12 +22,13 @@ class GitCommitOps(ABC):
     # ============================================================================
 
     @abstractmethod
-    def stage_files(self, cwd: Path, paths: list[str]) -> None:
+    def stage_files(self, cwd: Path, paths: list[str], *, force: bool) -> None:
         """Stage specific files for commit.
 
         Args:
             cwd: Working directory
             paths: List of file paths to stage (relative to cwd)
+            force: If True, pass -f to git add (required for gitignored paths)
 
         Raises:
             subprocess.CalledProcessError: If git command fails

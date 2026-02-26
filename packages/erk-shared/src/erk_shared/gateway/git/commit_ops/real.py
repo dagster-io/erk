@@ -26,13 +26,17 @@ class RealGitCommitOps(GitCommitOps):
     # Mutation Operations
     # ============================================================================
 
-    def stage_files(self, cwd: Path, paths: list[str]) -> None:
+    def stage_files(self, cwd: Path, paths: list[str], *, force: bool) -> None:
         """Stage specific files for commit."""
         # Wait for index lock if another git operation is in progress
         wait_for_index_lock(cwd, self._time)
 
+        cmd = ["git", "add"]
+        if force:
+            cmd.append("-f")
+        cmd.extend(paths)
         run_subprocess_with_context(
-            cmd=["git", "add", *paths],
+            cmd=cmd,
             operation_context=f"stage files: {', '.join(paths)}",
             cwd=cwd,
         )
