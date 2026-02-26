@@ -9,7 +9,7 @@ tripwires:
   - action: "implementing planned-PR plan without syncing with remote"
     warning: "Before implementing a planned-PR plan, always sync with remote: fetch_branch -> checkout/create_tracking -> pull_rebase"
   - action: "detecting plan backend by checking backend type directly"
-    warning: "Use plan.header_fields.get(BRANCH_NAME) to detect planned-PR plans. This is backend-agnostic and works across all backends."
+    warning: "Use plan.header_fields.get(BRANCH_NAME) to detect planned-PR plans. There is only one backend (planned-PR)."
   - action: "creating a new branch for a planned-PR plan"
     warning: "Planned PR plans already have a branch created during plan-save. Reuse the existing branch, don't create a new one."
   - action: "committing to planned-PR plan branches after checkout without pulling remote"
@@ -63,15 +63,7 @@ The branch name is stored in the plan's header fields. Detection uses a backend-
 
 <!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py:103-112 -->
 
-Reads `plan.header_fields.get(BRANCH_NAME)`. If the result is a non-empty string, this is a planned-PR plan (reuse the existing branch and sync with remote). Otherwise, it is an issue-based plan (generate a new branch name).
-
-## Backend-Aware Branching
-
-The `create_cmd.py` branch creation also handles the two backends explicitly:
-
-<!-- Source: src/erk/cli/commands/branch/create_cmd.py:164-198 -->
-
-For `planned_pr` backend: the branch was created by plan-save and is expected to exist on remote — fetches and creates a tracking branch if needed. For `github` (issue-based) backend: standard path, creates a new branch which must not already exist. Any other backend raises `RuntimeError`.
+Reads `plan.header_fields.get(BRANCH_NAME)`. If the result is a non-empty string, this is a planned-PR plan (reuse the existing branch and sync with remote).
 
 ## Idempotent Design
 
@@ -93,16 +85,6 @@ Both `setup_impl_from_issue.py` and `submit.py` use an identical three-step sync
 Both paths call the same three-step sequence: `fetch_branch()` → `create_tracking_branch()` / `checkout_branch()` → `pull_rebase()`. See the source files for exact call signatures.
 
 PR #7697 added the missing `pull_rebase()` call to the submit path. Without it, the submit path would attempt to push commits onto a branch that had diverged from remote, causing non-fast-forward push failures.
-
-## Issue-Based Plan Branching
-
-For comparison, issue-based plans (legacy) generate fresh branch names:
-
-<!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py:155-157 -->
-
-Calls `generate_issue_branch_name()` with the issue number, plan title, timestamp, and optional objective ID. Branch names follow the pattern `P{issue}-{slugified-title}-{timestamp}`. This is the legacy format; current plans use `plnd/` prefix.
-
-If already on a branch matching the expected pattern (for legacy plans, `P{issue_number}-*`), the existing branch is reused.
 
 ## Auto-Force Push for Plan Implementation Branches
 
