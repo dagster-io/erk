@@ -835,10 +835,7 @@ class TestCommandPaletteFromMain:
 
             app.action_open_run()
 
-            assert (
-                provider.browser.last_launched
-                == "https://github.com/test/repo/actions/runs/789"
-            )
+            assert provider.browser.last_launched == "https://github.com/test/repo/actions/runs/789"
 
     @pytest.mark.asyncio
     async def test_action_open_run_no_run_url(self) -> None:
