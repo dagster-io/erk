@@ -1,5 +1,5 @@
 ---
-title: Branch Reuse in Plan Submit
+title: Branch Reuse in PR Dispatch
 last_audited: "2026-02-17 16:00 PT"
 audit_result: clean
 read_when:
@@ -8,7 +8,7 @@ read_when:
   - "resubmitting a plan issue"
 ---
 
-# Branch Reuse in Plan Submit
+# Branch Reuse in PR Dispatch
 
 When resubmitting a plan issue, `erk pr dispatch` detects existing local branches and prompts the user to reuse or replace them.
 
@@ -34,12 +34,12 @@ Found existing local branch(es) for this issue:
 
 New branch would be: P123-feature-01-15-1600
 
-<branch reuse confirmation prompt — see _prompt_existing_branch_action() in src/erk/cli/commands/submit.py for current wording>
+<branch reuse confirmation prompt>
 ```
 
 ## Detection Logic
 
-The `_find_existing_branches_for_issue()` function searches local branches matching the `P{issue_number}-*` pattern.
+The dispatch workflow searches local branches matching the `P{issue_number}-*` pattern.
 
 **Key behaviors:**
 
@@ -68,10 +68,7 @@ Branch detection occurs **before** computing the new branch name because:
 
 ## Implementation Reference
 
-See `src/erk/cli/commands/pr/dispatch_cmd.py`:
-
-- `_find_existing_branches_for_issue()` - Detection logic
-- `_prompt_existing_branch_action()` - User prompt handling
+See `src/erk/cli/commands/pr/dispatch_cmd.py` for the dispatch workflow.
 
 ## Force Mode (Non-Interactive)
 

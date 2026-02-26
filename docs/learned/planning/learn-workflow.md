@@ -268,7 +268,7 @@ If the parent branch lookup fails (parent issue missing, no branch recorded, etc
 
 ### Implementation Reference
 
-See `get_learn_plan_parent_branch()` in `src/erk/cli/commands/submit.py`.
+See `get_learn_plan_parent_branch()` in `src/erk/cli/commands/pr/dispatch_cmd.py`.
 
 ## CI Environment Behavior
 

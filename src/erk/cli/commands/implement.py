@@ -389,7 +389,7 @@ def implement(
                 f"Could not auto-detect plan number from branch '{current_branch}'.\n\n"
                 f"No .impl/plan-ref.json found. Either:\n"
                 f"  1. Provide TARGET explicitly: erk implement <TARGET>\n"
-                f"  2. Switch to a plan branch: erk plan co <issue>\n"
+                f"  2. Switch to a plan branch: erk pr co <issue>\n"
                 f"  3. Set up .impl/ first: erk exec setup-impl --issue <issue>"
             )
 

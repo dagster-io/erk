@@ -25,66 +25,35 @@ The `PromptExecutor` abstraction provides multiple methods for launching Claude 
 
 ### `execute_interactive()` - Process Replacement
 
-Use when Claude should take over completely and the current command has no more work to do. Uses `os.execvp()` internally - **code after this NEVER executes**.
+<!-- Source: packages/erk-shared/src/erk_shared/core/prompt_executor.py, PromptExecutor.execute_interactive -->
 
-```python
-# Good: Final action before process ends
-executor.execute_interactive(
-    worktree_path=Path("/repos/my-project"),
-    dangerous=False,
-    command="/erk:plan-implement",
-    target_subpath=None,
-)
-# This line NEVER runs - process is replaced
-```
+Use when Claude should take over completely and the current command has no more work to do. Uses `os.execvp()` internally — **code after this NEVER executes**.
+
+Required parameters: `worktree_path`, `dangerous`, `command`, `target_subpath`, `permission_mode` (a `PermissionMode` enum value).
 
 ### `execute_prompt()` - Non-Interactive
 
+<!-- Source: packages/erk-shared/src/erk_shared/core/prompt_executor.py, PromptExecutor.execute_prompt -->
+
 Use for programmatic Claude interactions that don't need a terminal. Returns structured `PromptResult` with success status and output text.
 
-```python
-# Good: Single-shot prompt for automation
-result = executor.execute_prompt(
-    "Generate a commit message for this diff",
-    model="haiku",
-    tools=["Read", "Bash"],
-)
-if result.success:
-    print(result.output)
-```
+Required parameters: `prompt` (positional), `model`, `tools`, `cwd`, `system_prompt`, `dangerous`.
 
 ### `execute_command()` - Programmatic with Metadata
 
-Use when you need to execute a slash command and capture metadata (PR URLs, issue numbers, etc.) without real-time streaming.
+<!-- Source: packages/erk-shared/src/erk_shared/core/prompt_executor.py, PromptExecutor.execute_command -->
 
-```python
-# Good: Capture PR metadata from automated execution
-result = executor.execute_command(
-    "/erk:plan-implement",
-    worktree_path=Path("/repos/my-project"),
-    dangerous=False,
-)
-if result.success and result.pr_url:
-    print(f"PR created: {result.pr_url}")
-```
+Use when you need to execute a slash command and capture metadata (PR URLs, issue numbers, etc.) without real-time streaming. This is a concrete method that collects streaming events from `execute_command_streaming()` and returns a final `CommandResult`.
+
+Required parameters: `command`, `worktree_path`, `dangerous`, `permission_mode`. Optional: `verbose`, `model`, `allow_dangerous`.
 
 ### `execute_command_streaming()` - Real-Time Progress
 
-Use when you need real-time progress updates during command execution.
+<!-- Source: packages/erk-shared/src/erk_shared/core/prompt_executor.py, PromptExecutor.execute_command_streaming -->
 
-```python
-# Good: Display progress as it happens
-for event in executor.execute_command_streaming(
-    "/erk:plan-implement",
-    worktree_path=Path("/repos/my-project"),
-    dangerous=False,
-):
-    match event:
-        case ToolEvent(summary=s):
-            print(f"Tool: {s}")
-        case TextEvent(content=c):
-            print(c)
-```
+Use when you need real-time progress updates during command execution. Yields `ExecutorEvent` union types (`ToolEvent`, `TextEvent`, etc.).
+
+Required parameters: `command`, `worktree_path`, `dangerous`, `permission_mode`. Optional: `verbose`, `debug`, `model`, `allow_dangerous`.
 
 ## Testing with FakePromptExecutor
 
@@ -99,6 +68,8 @@ The fake tracks all calls for assertion via read-only properties.
 | `prompt_calls`      | `execute_prompt()` calls                                    |
 
 ### Simulating Scenarios
+
+Note: The constructor uses the `available` keyword to control simulated availability.
 
 ```python
 # Successful execution
@@ -178,7 +149,7 @@ The `PromptExecutor` ABC is designed to support multiple agent backends. The cur
 
 Several commands bypass `PromptExecutor` and call the `claude` binary directly via `os.execvp()`. These are tracked for refactoring:
 
-- `src/erk/cli/commands/plan/replan_cmd.py`
+- `src/erk/cli/commands/pr/replan_cmd.py`
 - `src/erk/cli/commands/objective/plan_cmd.py`
 - `src/erk/core/interactive_claude.py` (helper that builds `["claude", ...]` args)
 

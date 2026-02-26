@@ -32,7 +32,7 @@ The primary path for creating issue-PR linkages:
 3. Creates draft PR with `Closes #N` in **initial** body
 4. GitHub registers the `CrossReferencedEvent` with `willCloseTarget: true`
 
-**Key implementation**: `src/erk/cli/commands/submit.py`
+**Key implementation**: `src/erk/cli/commands/pr/dispatch_cmd.py`
 
 ### Via `/erk:pr-submit` or `/erk:git-pr-push`
 
@@ -140,7 +140,7 @@ gh pr view --json body -q '.body'
 | Purpose                  | Location                                                     |
 | ------------------------ | ------------------------------------------------------------ |
 | Issue reference reading  | `packages/erk-shared/src/erk_shared/impl_folder.py`          |
-| PR creation with Closes  | `src/erk/cli/commands/submit.py`                             |
+| PR creation with Closes  | `src/erk/cli/commands/pr/`                                   |
 | Get closing text command | `src/erk/cli/commands/exec/scripts/get_closing_text.py`      |
 | Timeline event parsing   | `packages/erk-shared/src/erk_shared/gateway/github/real.py`  |
 | PullRequestInfo type     | `packages/erk-shared/src/erk_shared/gateway/github/types.py` |
