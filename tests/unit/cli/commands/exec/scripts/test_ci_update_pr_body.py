@@ -54,15 +54,13 @@ def test_build_pr_body_includes_summary_and_footer() -> None:
     body = _build_pr_body(
         summary="This is the summary",
         pr_number=123,
-        plan_number=456,
         run_id=None,
         run_url=None,
-        plans_repo=None,
     )
 
     assert "## Summary" in body
     assert "This is the summary" in body
-    assert "Closes #456" in body
+    assert "Closes #" not in body
     assert "erk pr checkout 123" in body
 
 
@@ -71,10 +69,8 @@ def test_build_pr_body_includes_workflow_link_when_provided() -> None:
     body = _build_pr_body(
         summary="Summary",
         pr_number=123,
-        plan_number=456,
         run_id="789",
         run_url="https://github.com/owner/repo/actions/runs/789",
-        plans_repo=None,
     )
 
     assert "Remotely executed" in body
@@ -103,10 +99,8 @@ def test_build_pr_body_omits_workflow_link_when_not_provided() -> None:
     body = _build_pr_body(
         summary="Summary",
         pr_number=123,
-        plan_number=456,
         run_id=None,
         run_url=None,
-        plans_repo=None,
     )
 
     assert "Remotely executed" not in body
@@ -171,10 +165,8 @@ def test_impl_success(tmp_path: Path) -> None:
         github=github,
         executor=executor,
         repo_root=tmp_path,
-        plan_number=456,
         run_id=None,
         run_url=None,
-        plans_repo=None,
         is_planned_pr=False,
     )
 
@@ -203,10 +195,8 @@ def test_impl_no_pr_for_branch(tmp_path: Path) -> None:
         github=github,
         executor=executor,
         repo_root=tmp_path,
-        plan_number=456,
         run_id=None,
         run_url=None,
-        plans_repo=None,
         is_planned_pr=False,
     )
 
@@ -259,10 +249,8 @@ def test_impl_empty_diff(tmp_path: Path) -> None:
         github=github,
         executor=executor,
         repo_root=tmp_path,
-        plan_number=456,
         run_id=None,
         run_url=None,
-        plans_repo=None,
         is_planned_pr=False,
     )
 
@@ -317,10 +305,8 @@ def test_impl_claude_failure(tmp_path: Path) -> None:
         github=github,
         executor=executor,
         repo_root=tmp_path,
-        plan_number=456,
         run_id=None,
         run_url=None,
-        plans_repo=None,
         is_planned_pr=False,
     )
 
@@ -379,10 +365,8 @@ def test_impl_claude_failure_truncates_long_stderr(tmp_path: Path) -> None:
         github=github,
         executor=executor,
         repo_root=tmp_path,
-        plan_number=456,
         run_id=None,
         run_url=None,
-        plans_repo=None,
         is_planned_pr=False,
     )
 
@@ -440,10 +424,8 @@ def test_impl_claude_empty_output(tmp_path: Path) -> None:
         github=github,
         executor=executor,
         repo_root=tmp_path,
-        plan_number=456,
         run_id=None,
         run_url=None,
-        plans_repo=None,
         is_planned_pr=False,
     )
 
@@ -726,15 +708,13 @@ def test_cli_json_output_structure_error(tmp_path: Path) -> None:
 # ============================================================================
 
 
-def test_build_pr_body_planned_pr_no_closes_reference() -> None:
-    """Test that _build_pr_body omits Closes #N when issue_number is None."""
+def test_build_pr_body_no_closes_reference() -> None:
+    """Test that _build_pr_body never includes Closes #N."""
     body = _build_pr_body(
         summary="This is the summary",
         pr_number=123,
-        plan_number=None,
         run_id=None,
         run_url=None,
-        plans_repo=None,
     )
 
     assert "## Summary" in body
@@ -801,10 +781,8 @@ def test_impl_planned_pr_preserves_metadata_and_adds_plan_section(tmp_path: Path
         github=github,
         executor=executor,
         repo_root=tmp_path,
-        plan_number=42,
         run_id=None,
         run_url=None,
-        plans_repo=None,
         is_planned_pr=True,
     )
 

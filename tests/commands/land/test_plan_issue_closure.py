@@ -12,20 +12,16 @@ from unittest.mock import patch
 from erk.cli.commands.objective_helpers import check_and_display_plan_issue_closure
 from erk.core.context import context_for_test
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-from erk_shared.gateway.time.fake import FakeTime
 
 
 def test_returns_none_for_plnd_branch(tmp_path: Path) -> None:
     """plnd/ branches don't encode plan IDs — returns None with no output."""
     issues_ops = FakeGitHubIssues(username="testuser", issues={})
-    fake_time = FakeTime()
-    ctx = context_for_test(issues=issues_ops, cwd=tmp_path, time=fake_time)
+    ctx = context_for_test(issues=issues_ops, cwd=tmp_path)
 
     captured = StringIO()
     with patch("sys.stderr", captured):
-        result = check_and_display_plan_issue_closure(
-            ctx, tmp_path, "plnd/test-feature-01-15-1430", pr_body="Closes #42"
-        )
+        result = check_and_display_plan_issue_closure(ctx, tmp_path, "plnd/test-feature-01-15-1430")
 
     assert result is None
     assert captured.getvalue() == ""
@@ -34,14 +30,11 @@ def test_returns_none_for_plnd_branch(tmp_path: Path) -> None:
 def test_returns_none_for_feature_branch(tmp_path: Path) -> None:
     """Non-plan branches return None with no output."""
     issues_ops = FakeGitHubIssues(username="testuser", issues={})
-    fake_time = FakeTime()
-    ctx = context_for_test(issues=issues_ops, cwd=tmp_path, time=fake_time)
+    ctx = context_for_test(issues=issues_ops, cwd=tmp_path)
 
     captured = StringIO()
     with patch("sys.stderr", captured):
-        result = check_and_display_plan_issue_closure(
-            ctx, tmp_path, "feature-branch", pr_body="Some PR body"
-        )
+        result = check_and_display_plan_issue_closure(ctx, tmp_path, "feature-branch")
 
     assert result is None
     assert captured.getvalue() == ""
@@ -50,14 +43,11 @@ def test_returns_none_for_feature_branch(tmp_path: Path) -> None:
 def test_returns_none_for_p_prefix_branch(tmp_path: Path) -> None:
     """Legacy P-prefix branches no longer resolve plan IDs — returns None."""
     issues_ops = FakeGitHubIssues(username="testuser", issues={})
-    fake_time = FakeTime()
-    ctx = context_for_test(issues=issues_ops, cwd=tmp_path, time=fake_time)
+    ctx = context_for_test(issues=issues_ops, cwd=tmp_path)
 
     captured = StringIO()
     with patch("sys.stderr", captured):
-        result = check_and_display_plan_issue_closure(
-            ctx, tmp_path, "P42-test-feature", pr_body="Closes #42"
-        )
+        result = check_and_display_plan_issue_closure(ctx, tmp_path, "P42-test-feature")
 
     assert result is None
     assert captured.getvalue() == ""

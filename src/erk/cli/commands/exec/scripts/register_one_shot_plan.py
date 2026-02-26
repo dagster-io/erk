@@ -1,6 +1,6 @@
-"""Register a one-shot plan: dispatch metadata, queued comment, PR closing ref.
+"""Register a one-shot plan: dispatch metadata and queued comment.
 
-Composes three independent operations that ``erk pr dispatch`` performs but
+Composes independent operations that ``erk pr dispatch`` performs but
 one-shot cannot do at submit time (the plan issue doesn't exist yet).
 Each operation is best-effort; failures are logged but don't block others.
 """
@@ -11,7 +11,6 @@ from datetime import UTC, datetime
 import click
 
 from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
-from erk.cli.config import load_config
 from erk_shared.context.helpers import (
     require_github,
     require_issues,
@@ -19,7 +18,6 @@ from erk_shared.context.helpers import (
     require_repo_root,
 )
 from erk_shared.gateway.github.issues.types import IssueNotFound
-from erk_shared.gateway.github.types import PRNotFound
 
 
 @click.command(name="register-one-shot-plan")
@@ -38,12 +36,11 @@ def register_one_shot_plan(
     submitted_by: str,
     run_url: str,
 ) -> None:
-    """Register a one-shot plan with issue metadata, comment, and PR closing ref."""
+    """Register a one-shot plan with issue metadata and comment."""
     issues = require_issues(ctx)
     github = require_github(ctx)
     plan_backend = require_plan_backend(ctx)
     repo_root = require_repo_root(ctx)
-    plans_repo = load_config(repo_root).plans_repo
     results: dict[str, object] = {}
 
     # Op 1: dispatch metadata
@@ -87,23 +84,7 @@ def register_one_shot_plan(
     except Exception as exc:
         results["queued_comment"] = {"success": False, "error": str(exc)}
 
-    # Op 3: PR closing reference
-    # Guard: skip when plan_number == pr_number (planned_pr mode).
-    # The draft PR IS the plan — Closes #N would be self-referential.
-    if plan_number == pr_number:
-        results["pr_closing_ref"] = {"success": True, "skipped": "self-referential"}
-    else:
-        try:
-            pr = github.get_pr(repo_root, pr_number)
-            if isinstance(pr, PRNotFound):
-                raise RuntimeError(f"PR #{pr_number} not found")
-            ref = f"Closes {plans_repo}#{plan_number}" if plans_repo else f"Closes #{plan_number}"
-            github.update_pr_body(repo_root, pr_number, f"{pr.body}\n\n---\n\n{ref}")
-            results["pr_closing_ref"] = {"success": True}
-        except Exception as exc:
-            results["pr_closing_ref"] = {"success": False, "error": str(exc)}
-
-    # Op 4: update lifecycle stage to "planned"
+    # Op 3: update lifecycle stage to "planned"
     try:
         plan_backend.update_metadata(
             repo_root,

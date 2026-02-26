@@ -41,7 +41,6 @@ Quick reference for all `erk exec` subcommands.
 | `generate-node-slugs`             | Generate slugs for objective node descriptions from JSON on stdin.         |
 | `generate-pr-address-summary`     | Generate enhanced PR comment for pr-address workflow.                      |
 | `generate-pr-summary`             | Generate PR summary from PR diff using Claude.                             |
-| `get-closing-text`                | Get closing text for PR body based on .impl/plan-ref.json or branch name.  |
 | `get-embedded-prompt`             | Get embedded prompt content from bundled prompts.                          |
 | `get-issue-body`                  | Fetch an issue's body using REST API (avoids GraphQL rate limits).         |
 | `get-issue-timeline-prs`          | Fetch PRs referencing an issue via REST API timeline.                      |
@@ -90,7 +89,7 @@ Quick reference for all `erk exec` subcommands.
 | `push-and-create-pr`              | Push branch and create/find PR, outputting JSON.                           |
 | `quick-submit`                    | Quick commit all changes and submit.                                       |
 | `rebase-with-conflict-resolution` | Rebase onto target branch and resolve conflicts with Claude.               |
-| `register-one-shot-plan`          | Register a one-shot plan with issue metadata, comment, and PR closing ref. |
+| `register-one-shot-plan`          | Register a one-shot plan with issue metadata and comment.                  |
 | `reply-to-discussion-comment`     | Reply to a PR discussion comment with quote and action summary.            |
 | `resolve-review-thread`           | Resolve a PR review thread.                                                |
 | `resolve-review-threads`          | Resolve multiple PR review threads from JSON stdin.                        |
@@ -200,7 +199,7 @@ Update PR body with AI-generated summary and footer.
 | `--plan-id`    | INTEGER | Yes      | Sentinel.UNSET | Plan identifier to close on merge |
 | `--run-id`     | TEXT    | No       | -              | Optional workflow run ID          |
 | `--run-url`    | TEXT    | No       | -              | Optional workflow run URL         |
-| `--planned-pr` | FLAG    | No       | -              | Planned-PR plan (no Closes #N)    |
+| `--planned-pr` | FLAG    | No       | -              | Planned-PR plan (preserves metadata) |
 
 ### ci-verify-autofix
 
@@ -389,12 +388,6 @@ Generate PR summary from PR diff using Claude.
 | Flag          | Type    | Required | Default        | Description            |
 | ------------- | ------- | -------- | -------------- | ---------------------- |
 | `--pr-number` | INTEGER | Yes      | Sentinel.UNSET | PR number to summarize |
-
-### get-closing-text
-
-Get closing text for PR body based on .impl/plan-ref.json or branch name.
-
-**Usage:** `erk exec get-closing-text`
 
 ### get-embedded-prompt
 
@@ -1094,7 +1087,7 @@ Rebase onto target branch and resolve conflicts with Claude.
 
 ### register-one-shot-plan
 
-Register a one-shot plan with issue metadata, comment, and PR closing ref.
+Register a one-shot plan with issue metadata and comment.
 
 **Usage:** `erk exec register-one-shot-plan`
 

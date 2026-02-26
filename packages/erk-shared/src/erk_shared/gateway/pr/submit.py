@@ -36,25 +36,3 @@ def has_checkout_footer_for_pr(body: str, pr_number: int) -> bool:
         True if the body contains 'erk pr checkout <pr_number>'
     """
     return bool(re.search(rf"erk pr checkout {pr_number}\b", body))
-
-
-def has_issue_closing_reference(body: str, issue_number: int, plans_repo: str | None) -> bool:
-    """Check if PR body contains a closing reference for a specific issue.
-
-    Checks for patterns like "Closes #123" (same-repo) or "Closes owner/repo#123"
-    (cross-repo) that GitHub recognizes as issue closing keywords.
-
-    Args:
-        body: The PR body text to check
-        issue_number: The issue number to validate against
-        plans_repo: Target repo in "owner/repo" format, or None for same repo
-
-    Returns:
-        True if the body contains the expected closing reference
-    """
-    if plans_repo is None:
-        # Same-repo: "Closes #123"
-        return bool(re.search(rf"Closes\s+#{issue_number}\b", body, re.IGNORECASE))
-    # Cross-repo: "Closes owner/repo#123"
-    escaped_repo = re.escape(plans_repo)
-    return bool(re.search(rf"Closes\s+{escaped_repo}#{issue_number}\b", body, re.IGNORECASE))
