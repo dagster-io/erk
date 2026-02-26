@@ -91,7 +91,7 @@ This prevents the "branch already tracked" error that occurs when calling `gt tr
 - `erk pr submit` with branch reuse (user chooses existing branch)
 - Any workflow that may operate on previously-tracked branches
 
-See `src/erk/cli/commands/submit.py` for the implementation.
+See `src/erk/cli/commands/pr/submit_cmd.py` for the implementation.
 
 ## Common Errors
 
