@@ -65,7 +65,6 @@ If your local branch has diverged from remote:
 /erk:reconcile-with-remote
 ```
 
-
 This command analyzes the divergence and chooses the appropriate sync strategy.
 
 ## Making Changes
@@ -133,12 +132,12 @@ The `erk land` command:
 
 ## Common Scenarios
 
-| Scenario                  | Command Sequence                                                          |
-| ------------------------- | ------------------------------------------------------------------------- |
-| Review teammate's PR      | `erk pr co 123` then explore/test                                         |
-| Address my PR's comments  | `erk pr co 123` → `/erk:pr-address` → submit                              |
-| Take over remote agent PR | `erk pr co 123` → make changes → submit                                   |
-| Debug CI failure          | `erk pr co 123` → run tests locally → fix → submit                        |
+| Scenario                  | Command Sequence                                                           |
+| ------------------------- | -------------------------------------------------------------------------- |
+| Review teammate's PR      | `erk pr co 123` then explore/test                                          |
+| Address my PR's comments  | `erk pr co 123` → `/erk:pr-address` → submit                               |
+| Take over remote agent PR | `erk pr co 123` → make changes → submit                                    |
+| Debug CI failure          | `erk pr co 123` → run tests locally → fix → submit                         |
 | Sync after force push     | `/erk:reconcile-with-remote` or `erk pr reconcile-with-remote --dangerous` |
 
 ## See Also
