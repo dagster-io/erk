@@ -61,7 +61,7 @@ GitHub automatically closes the issue in the plans repo when the PR merges.
 
 ### Plan Listing
 
-`erk plan list` shows an `impl-repo` column when cross-repo plans exist:
+`erk pr list` shows an `impl-repo` column when cross-repo plans exist:
 
 ```
 #    Title                      impl-repo      Status

@@ -26,7 +26,7 @@ This separation means metadata can be queried from the issue body without fetchi
 - **Field definitions:** `PlanHeaderSchema` in `packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py` — contains all required/optional fields with validation
 - **Block format:** See [Metadata Blocks Reference](../architecture/metadata-blocks.md)
 - **Plan header operations:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py`
-- **Validation:** Run `erk plan check <issue-number>` (see `src/erk/cli/commands/plan/check_cmd.py`)
+- **Validation:** Run `erk pr check <issue-number>` (see `src/erk/cli/commands/pr/check_cmd.py`)
 
 ## Related Documentation
 

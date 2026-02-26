@@ -77,7 +77,7 @@ You should see your branch in the stack output with its parent relationship.
 
 ## Automatic Tracking on Branch Reuse
 
-When reusing an existing branch (e.g., in `erk plan submit`), the code uses LBYL (Look Before You Leap) to avoid re-tracking errors:
+When reusing an existing branch (e.g., in `erk pr dispatch`), the code uses LBYL (Look Before You Leap) to avoid re-tracking errors:
 
 **Pattern:**
 
@@ -88,10 +88,10 @@ This prevents the "branch already tracked" error that occurs when calling `gt tr
 
 **When this occurs:**
 
-- `erk plan submit` with branch reuse (user chooses existing branch)
+- `erk pr dispatch` with branch reuse (user chooses existing branch)
 - Any workflow that may operate on previously-tracked branches
 
-See `src/erk/cli/commands/submit.py` for the implementation.
+See `src/erk/cli/commands/pr/dispatch_cmd.py` for the implementation.
 
 ## Common Errors
 

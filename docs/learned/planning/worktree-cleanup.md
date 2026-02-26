@@ -25,7 +25,7 @@ The split exists because remote (GitHub Actions) and local implementations have 
 
 | Aspect           | `.impl/`                          | `.erk/impl-context/`                      |
 | ---------------- | --------------------------------- | ----------------------------------------- |
-| **Created by**   | Local agent or copied from remote | `erk plan submit` (automation)            |
+| **Created by**   | Local agent or copied from remote | `erk pr dispatch` (automation)            |
 | **Git status**   | In `.gitignore`, never committed  | Committed to branch, visible in PR        |
 | **Owner**        | Human user                        | Workflow automation                       |
 | **Cleanup**      | Manual only, never auto-deleted   | Automatic after CI passes                 |

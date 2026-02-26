@@ -25,23 +25,20 @@ erk dash          # Display plan dashboard
 erk implement     # Implement a plan in current directory
 erk prepare       # Create a worktree from a plan issue
 
-# Most plan management operations are under `erk plan`:
-erk plan submit   # Submit a plan for remote execution
-
-# Plan creation, view/close/log/replan operations are under `erk pr`:
+# Plan management operations are under `erk pr`:
 erk pr create     # Create a new plan issue
 erk pr view       # View a plan
 erk pr close      # Close a plan
 erk pr log        # View plan execution logs
 erk pr replan     # Replan a plan issue
+erk pr dispatch   # Submit a plan for remote execution
 ```
 
 **Why top-level?**
 
 - Highest-frequency entry points: `implement`, `prepare`, and `dash` are the most common workflow starters
 - Natural mental model: "I want to work on a plan" → `erk implement 42`
-- Plan management via `erk plan <subcommand>`: `submit`, `list`, etc.
-- Plan creation/viewing/closing via `erk pr <subcommand>`: `create`, `view`, `close`, `log`, `replan`
+- Plan management via `erk pr <subcommand>`: `create`, `view`, `close`, `log`, `replan`, `dispatch`
 
 ## Command Categories
 
@@ -55,28 +52,19 @@ Only the highest-frequency workflow entry points are at the top level:
 | `implement` | Implement a plan in current directory | Very High |
 | `prepare`   | Create a worktree from a plan issue   | High      |
 
-### `erk plan` Subcommands
-
-Plan submission operations are under the `erk plan` group:
-
-| Subcommand | Description                        |
-| ---------- | ---------------------------------- |
-| `list`     | List open plans                    |
-| `submit`   | Submit a plan for remote execution |
-| `co`       | Check out a plan's branch          |
-| `check`    | Check plan status                  |
-
 ### `erk pr` Subcommands
 
-Plan creation, viewing, closing, and PR operations are under the `erk pr` group:
+Plan and PR operations are under the `erk pr` group:
 
 | Subcommand        | Description                                    |
 | ----------------- | ---------------------------------------------- |
 | `create`          | Create a new plan issue                        |
 | `view`            | View a plan                                    |
 | `close`           | Close a plan                                   |
+| `list`            | List open plans                                |
 | `log`             | View plan execution logs                       |
 | `replan`          | Replan an existing plan issue                  |
+| `dispatch`        | Submit a plan for remote execution             |
 | `submit`          | Submit current branch as a pull request        |
 | `address`         | Address PR review comments with AI resolution  |
 | `check`           | Validate PR rules for the current branch       |
@@ -236,7 +224,7 @@ When adding a new command, use this flowchart to determine placement:
 
 ## Good Patterns
 
-### ✅ Plan Operations: Top-Level vs `erk plan` Subcommands
+### ✅ Plan Operations: Top-Level vs `erk pr` Subcommands
 
 ```bash
 # GOOD: Top-level for highest-frequency entry points
@@ -244,16 +232,14 @@ erk implement 42
 erk prepare 42
 erk dash
 
-# GOOD: erk plan subcommands for plan submission
-erk plan submit 42
-
-# GOOD: erk pr subcommands for plan creation/viewing/closing
+# GOOD: erk pr subcommands for plan management
 erk pr create --file plan.md
 erk pr view 42
 erk pr close 42
+erk pr dispatch 42
 ```
 
-**Why?** Only `implement`, `prepare`, and `dash` are top-level — they are the most common workflow entry points. Plan submission lives under `erk plan`, while create/view/close/log/replan operations live under `erk pr`.
+**Why?** Only `implement`, `prepare`, and `dash` are top-level — they are the most common workflow entry points. All other plan and PR operations live under `erk pr`.
 
 ### ✅ Infrastructure Grouped Under Noun
 
@@ -332,7 +318,7 @@ erk pr view 42            # View specific plan
 erk implement 42          # Set up .impl/ and implement in current directory
 
 # Submit for execution
-erk plan submit 42        # Queue for remote execution
+erk pr dispatch 42        # Queue for remote execution
 
 # Track progress
 erk pr log 42             # View execution history
@@ -374,7 +360,7 @@ erk down                  # Move to child branch
 
 **Step 2: Create command file**
 
-- Plan command: `src/erk/cli/commands/plan/<name>_cmd.py`
+- Plan/PR command: `src/erk/cli/commands/pr/<name>_cmd.py`
 - Worktree command: `src/erk/cli/commands/wt/<name>_cmd.py`
 - Stack command: `src/erk/cli/commands/stack/<name>_cmd.py`
 - Top-level: `src/erk/cli/commands/<name>.py`
@@ -397,7 +383,7 @@ wt_group.add_command(create_wt)  # Grouped under wt
 
 **Step 4: Add tests**
 
-- Plan commands: `tests/commands/plan/test_<name>.py`
+- PR commands: `tests/commands/pr/test_<name>.py`
 - Worktree commands: `tests/commands/wt/test_<name>.py`
 - Stack commands: `tests/commands/stack/test_<name>.py`
 
@@ -406,7 +392,7 @@ wt_group.add_command(create_wt)  # Grouped under wt
 | Component         | Location                                                                                                    |
 | ----------------- | ----------------------------------------------------------------------------------------------------------- |
 | CLI entry point   | `src/erk/cli/cli.py`                                                                                        |
-| Plan commands     | `src/erk/cli/commands/plan/`                                                                                |
+| Plan/PR commands  | `src/erk/cli/commands/pr/`                                                                                  |
 | Worktree commands | `src/erk/cli/commands/wt/`                                                                                  |
 | Stack commands    | `src/erk/cli/commands/stack/`                                                                               |
 | Navigation        | `src/erk/cli/commands/branch/checkout_cmd.py`, `src/erk/cli/commands/up.py`, `src/erk/cli/commands/down.py` |

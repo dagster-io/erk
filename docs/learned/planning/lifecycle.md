@@ -264,9 +264,9 @@ The `erk-plan` label marks issues as implementation plans:
 
 ## Phase 2: Plan Submission
 
-Submission prepares the plan for remote execution via `erk plan submit <issue_number>`.
+Submission prepares the plan for remote execution via `erk pr dispatch <issue_number>`.
 
-**Key responsibility**: `erk plan submit` is the **source of truth** for branch and PR creation. The workflow dispatch (Phase 3) expects these to already exist.
+**Key responsibility**: `erk pr dispatch` is the **source of truth** for branch and PR creation. The workflow dispatch (Phase 3) expects these to already exist.
 
 ### Pre-Submission Validation
 
@@ -278,7 +278,7 @@ Before submission, the command validates:
 
 ### Branch Reuse Detection
 
-Before creating a new branch, `erk plan submit` checks for existing local branches matching `P{issue_number}-*`:
+Before creating a new branch, `erk pr dispatch` checks for existing local branches matching `P{issue_number}-*`:
 
 ```
 Found existing local branch(es) for this issue:
@@ -430,7 +430,7 @@ This ensures only one implementation runs per issue at a time.
 
 #### Phase 3: Use Existing PR
 
-- Use existing PR (created by `erk plan submit`)
+- Use existing PR (created by `erk pr dispatch`)
 - Post `workflow-started` comment to issue
 - Update issue body with `last_dispatched_run_id`
 
@@ -930,7 +930,7 @@ During the planning stage:
 
 - Plan exists only as a GitHub issue with `erk-plan` label
 - No branch has been created yet
-- Branch is created during `erk plan submit` (Phase 2)
+- Branch is created during `erk pr dispatch` (Phase 2)
 
 **Implication:** Workflows that need branch information must verify the plan has been submitted (check for `branch_name` field).
 
@@ -987,7 +987,7 @@ Before dispatching a plan for implementation, validate:
 
 The `get-pr-for-plan` command becomes functional after:
 
-1. **Plan submission** completes (Phase 2: `erk plan submit`)
+1. **Plan submission** completes (Phase 2: `erk pr dispatch`)
 2. **Branch and PR creation** finishes
 3. **Metadata update** writes `branch_name` to plan-header
 
@@ -1013,7 +1013,7 @@ gh pr view "$PR_NUMBER"  # Fails if plan not submitted
 PR_NUMBER=$(erk exec get-pr-for-plan <issue_number>)
 
 if [ "$PR_NUMBER" = "no-branch-in-plan" ]; then
-  echo "Plan has not been submitted yet. Run: erk plan submit <number>"
+  echo "Plan has not been submitted yet. Run: erk pr dispatch <number>"
   exit 1
 fi
 

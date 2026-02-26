@@ -15,7 +15,7 @@ tripwires:
   - action:
       plan-implement exists in WORKFLOW_COMMAND_MAP but erk launch plan-implement
       always raises UsageError
-    warning: use erk plan submit instead
+    warning: use erk pr dispatch instead
   - action: using this pattern
     warning:
       PR workflows automatically update plan issue dispatch metadata when the
@@ -43,7 +43,7 @@ The local variants reference the remote alternatives in their help text, creatin
 
 ### Why plan-implement Is Blocked
 
-`plan-implement` exists in `WORKFLOW_COMMAND_MAP` but `erk launch plan-implement` always raises `UsageError` directing users to `erk plan submit`. The plan-implement workflow requires branch creation, PR setup, and metadata initialization that `erk plan submit` handles as a coordinated sequence. Triggering the workflow directly would skip these prerequisites and produce orphaned workflow runs.
+`plan-implement` exists in `WORKFLOW_COMMAND_MAP` but `erk launch plan-implement` always raises `UsageError` directing users to `erk pr dispatch`. The plan-implement workflow requires branch creation, PR setup, and metadata initialization that `erk pr dispatch` handles as a coordinated sequence. Triggering the workflow directly would skip these prerequisites and produce orphaned workflow runs.
 
 ## Adding a New Workflow
 
@@ -69,7 +69,7 @@ This is a cross-cutting concern — the launch command doesn't know about plans,
 
 ## Anti-Patterns
 
-**DON'T trigger plan-implement via `erk launch`** — always use `erk plan submit`, which handles the full branch + PR + metadata setup sequence.
+**DON'T trigger plan-implement via `erk launch`** — always use `erk pr dispatch`, which handles the full branch + PR + metadata setup sequence.
 
 **DON'T add workflow-specific subcommands under noun groups** — use `erk launch <name>` for all remote workflow triggers. The old pattern (`erk pr fix-conflicts-remote`) was migrated away from intentionally.
 
