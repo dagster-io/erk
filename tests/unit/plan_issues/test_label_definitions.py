@@ -52,17 +52,17 @@ def test_get_erk_label_definitions_contains_erk_objective() -> None:
     assert erk_objective.color == "5319E7"  # Purple
 
 
-def test_get_erk_label_definitions_contains_erk_planned_pr() -> None:
-    """Test that erk-planned-pr label is included with correct properties."""
+def test_get_erk_label_definitions_contains_erk_pr() -> None:
+    """Test that erk-pr label is included with correct properties."""
     labels = get_erk_label_definitions()
 
-    erk_planned_pr_labels = [label for label in labels if label.name == "erk-planned-pr"]
-    assert len(erk_planned_pr_labels) == 1
+    erk_pr_labels = [label for label in labels if label.name == "erk-pr"]
+    assert len(erk_pr_labels) == 1
 
-    erk_planned_pr = erk_planned_pr_labels[0]
-    assert erk_planned_pr.name == "erk-planned-pr"
-    assert erk_planned_pr.description == "Plan managed as a draft PR"
-    assert erk_planned_pr.color == "1D76DB"
+    erk_pr = erk_pr_labels[0]
+    assert erk_pr.name == "erk-pr"
+    assert erk_pr.description == "Plan managed as a draft PR"
+    assert erk_pr.color == "1D76DB"
 
 
 def test_get_erk_label_definitions_contains_no_changes() -> None:
@@ -100,12 +100,12 @@ def test_get_required_erk_labels_returns_three_labels() -> None:
     assert len(labels) == 3
 
 
-def test_get_required_erk_labels_contains_erk_planned_pr() -> None:
-    """Test that erk-planned-pr label is included."""
+def test_get_required_erk_labels_contains_erk_pr() -> None:
+    """Test that erk-pr label is included."""
     labels = get_required_erk_labels()
 
     label_names = [label.name for label in labels]
-    assert "erk-planned-pr" in label_names
+    assert "erk-pr" in label_names
 
 
 def test_get_required_erk_labels_contains_erk_plan() -> None:

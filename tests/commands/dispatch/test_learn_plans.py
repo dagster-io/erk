@@ -14,7 +14,7 @@ from tests.commands.dispatch.conftest import (
 
 def test_is_issue_learn_plan_returns_true_when_erk_learn_label_present() -> None:
     """Test is_issue_learn_plan returns True when erk-learn label is present."""
-    labels = ["erk-planned-pr", "erk-learn"]
+    labels = ["erk-pr", "erk-learn"]
     result = is_issue_learn_plan(labels)
     assert result is True
 
@@ -62,13 +62,13 @@ def test_get_learn_plan_parent_branch_returns_parent_branch(tmp_path: Path) -> N
     # Parent plan with branch_name
     parent_body = _make_parent_plan_body_with_branch("P5637-add-github-01-23-0433")
     parent_plan = create_plan(
-        "5637", "Add generic GitHub API", body=parent_body, labels=["erk-planned-pr", "erk-plan"]
+        "5637", "Add generic GitHub API", body=parent_body, labels=["erk-pr", "erk-plan"]
     )
 
     # Learn plan referencing parent
     learn_body = _make_learn_plan_body_with_parent(learned_from_issue=5637)
     learn_plan = create_plan(
-        "5652", "Extract docs from session", body=learn_body, labels=["erk-planned-pr", "erk-learn"]
+        "5652", "Extract docs from session", body=learn_body, labels=["erk-pr", "erk-learn"]
     )
 
     ctx, _, _, _, _, repo_root = setup_submit_context(
@@ -92,7 +92,7 @@ def test_get_learn_plan_parent_branch_returns_none_without_learned_from(tmp_path
     learn_body = f"{header_block}\n\n# Learn Plan\n\nDocumentation..."
 
     learn_plan = create_plan(
-        "5652", "Extract docs", body=learn_body, labels=["erk-planned-pr", "erk-learn"]
+        "5652", "Extract docs", body=learn_body, labels=["erk-pr", "erk-learn"]
     )
 
     ctx, _, _, _, _, repo_root = setup_submit_context(tmp_path, {"5652": learn_plan})
@@ -107,13 +107,13 @@ def test_get_learn_plan_parent_branch_returns_none_without_parent_branch(tmp_pat
     # Parent plan without branch_name
     parent_body = make_plan_body()  # No branch_name in header
     parent_plan = create_plan(
-        "5637", "Add feature", body=parent_body, labels=["erk-planned-pr", "erk-plan"]
+        "5637", "Add feature", body=parent_body, labels=["erk-pr", "erk-plan"]
     )
 
     # Learn plan referencing parent
     learn_body = _make_learn_plan_body_with_parent(learned_from_issue=5637)
     learn_plan = create_plan(
-        "5652", "Extract docs", body=learn_body, labels=["erk-planned-pr", "erk-learn"]
+        "5652", "Extract docs", body=learn_body, labels=["erk-pr", "erk-learn"]
     )
 
     ctx, _, _, _, _, repo_root = setup_submit_context(

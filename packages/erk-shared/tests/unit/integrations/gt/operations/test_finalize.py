@@ -94,7 +94,7 @@ class TestIsLearnPlan:
             "issue_url": "https://github.com/org/repo/issues/42",
             "created_at": "2025-01-01T00:00:00Z",
             "synced_at": "2025-01-01T00:00:00Z",
-            "labels": ["erk-planned-pr", "erk-learn"],
+            "labels": ["erk-pr", "erk-learn"],
         }
         issue_file.write_text(json.dumps(issue_data), encoding="utf-8")
 

@@ -46,7 +46,7 @@ class TestCreatePlanIssueSuccess:
         assert len(fake_gh.created_issues) == 1
         title, body, labels = fake_gh.created_issues[0]
         assert title == "[erk-plan] My Feature Plan"
-        assert labels == ["erk-planned-pr", "erk-plan"]
+        assert labels == ["erk-pr", "erk-plan"]
 
         # Verify plan content was added as comment
         assert len(fake_gh.added_comments) == 1
@@ -78,15 +78,15 @@ class TestCreatePlanIssueSuccess:
         assert result.success is True
         assert result.title == "Extraction Plan: main"
 
-        # Verify labels include erk-planned-pr and erk-learn (not erk-plan for learn plans)
+        # Verify labels include erk-pr and erk-learn (not erk-plan for learn plans)
         title, body, labels = fake_gh.created_issues[0]
         assert title == "[erk-learn] Extraction Plan: main"
-        assert "erk-planned-pr" in labels
+        assert "erk-pr" in labels
         assert "erk-learn" in labels
         assert "erk-plan" not in labels
 
         # Verify both labels were created
-        assert fake_gh.labels == {"erk-planned-pr", "erk-learn"}
+        assert fake_gh.labels == {"erk-pr", "erk-learn"}
 
     def test_uses_provided_title(self, tmp_path: Path) -> None:
         """Use provided title instead of extracting from H1."""
@@ -159,7 +159,7 @@ class TestCreatePlanIssueSuccess:
 
         assert result.success is True
         _, _, labels = fake_gh.created_issues[0]
-        assert labels == ["erk-planned-pr", "erk-plan", "bug", "priority-high"]
+        assert labels == ["erk-pr", "erk-plan", "bug", "priority-high"]
 
     def test_includes_source_repo_for_cross_repo_plans(self, tmp_path: Path) -> None:
         """Include source_repo in metadata for cross-repo plans."""
@@ -468,16 +468,16 @@ class TestCreatePlanIssueLabelManagement:
         )
 
         assert result.success is True
-        assert "erk-planned-pr" in fake_gh.labels
+        assert "erk-pr" in fake_gh.labels
         assert "erk-plan" in fake_gh.labels
         # Verify labels were created with correct colors
         assert len(fake_gh.created_labels) >= 2
         label_names = [label[0] for label in fake_gh.created_labels]
-        assert "erk-planned-pr" in label_names
+        assert "erk-pr" in label_names
         assert "erk-plan" in label_names
 
     def test_creates_both_labels_for_learn(self, tmp_path: Path) -> None:
-        """Create both erk-planned-pr and erk-learn labels for learn plans."""
+        """Create both erk-pr and erk-learn labels for learn plans."""
         fake_gh = FakeGitHubIssues(username="testuser")
         plan_content = "# Extraction Plan\n\nContent..."
 
@@ -497,14 +497,14 @@ class TestCreatePlanIssueLabelManagement:
         )
 
         assert result.success is True
-        assert "erk-planned-pr" in fake_gh.labels
+        assert "erk-pr" in fake_gh.labels
         assert "erk-learn" in fake_gh.labels
 
     def test_does_not_create_existing_labels(self, tmp_path: Path) -> None:
         """Don't create labels that already exist."""
         fake_gh = FakeGitHubIssues(
             username="testuser",
-            labels={"erk-planned-pr", "erk-plan"},  # Already exist
+            labels={"erk-pr", "erk-plan"},  # Already exist
         )
         plan_content = "# My Plan\n\nContent..."
 
@@ -551,7 +551,7 @@ class TestCreatePlanIssueLabelManagement:
         _, _, labels = fake_gh.created_issues[0]
         # Should not have duplicate erk-plan
         assert labels.count("erk-plan") == 1
-        assert "erk-planned-pr" in labels
+        assert "erk-pr" in labels
         assert "bug" in labels
 
 

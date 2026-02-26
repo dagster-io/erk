@@ -239,10 +239,10 @@ def test_create_ensures_label_exists(tmp_path) -> None:
         # Assert
         assert result.exit_code == 0
 
-        # Verify labels were created (erk-planned-pr + erk-plan)
+        # Verify labels were created (erk-pr + erk-plan)
         assert len(issues.created_labels) == 2
         label_0, description_0, color_0 = issues.created_labels[0]
-        assert label_0 == "erk-planned-pr"
+        assert label_0 == "erk-pr"
         assert description_0 == "Plan managed as a draft PR"
         assert color_0 == "1D76DB"
         label_1, description_1, color_1 = issues.created_labels[1]

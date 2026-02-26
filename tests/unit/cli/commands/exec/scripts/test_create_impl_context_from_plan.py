@@ -38,7 +38,7 @@ def _make_plan_issue(
         body=body,
         state="OPEN",
         url=url,
-        labels=["erk-planned-pr", "erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=now,
         updated_at=now,

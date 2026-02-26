@@ -123,7 +123,7 @@ class TestPlanDataProviderRouting:
         mock_objective_service.get_objective_list_data.assert_not_called()
 
     def test_routes_to_plan_service_for_multi_label_query(self) -> None:
-        """Routes to plan_list_service for multi-label queries (erk-planned-pr + erk-learn)."""
+        """Routes to plan_list_service for multi-label queries (erk-pr + erk-learn)."""
         # Arrange
         mock_objective_service = MagicMock()
         mock_plan_service = MagicMock()
@@ -133,7 +133,7 @@ class TestPlanDataProviderRouting:
 
         # Query filters with multiple labels, but NOT erk-objective
         filters = PlanFilters(
-            labels=("erk-planned-pr", "erk-learn"),
+            labels=("erk-pr", "erk-learn"),
             state="open",
             run_state=None,
             limit=None,

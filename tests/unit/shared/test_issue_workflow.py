@@ -71,7 +71,7 @@ def test_prepare_plan_non_open_generates_warning() -> None:
     """Non-OPEN plan generates warning in result."""
     plan = _make_plan(
         state=PlanState.CLOSED,
-        labels=["erk-planned-pr", "erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         header_fields={"branch_name": "plan-test-01-15-1430"},
     )
     timestamp = datetime(2024, 1, 15, 14, 30)
@@ -119,7 +119,7 @@ def test_prepare_plan_with_objective_id_populates_objective_issue() -> None:
         body="Plan content",
         state=PlanState.OPEN,
         url="https://github.com/org/repo/issues/123",
-        labels=["erk-planned-pr", "erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=datetime(2024, 1, 1),
         updated_at=datetime(2024, 1, 1),

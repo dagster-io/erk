@@ -35,7 +35,7 @@ def _make_issue(
         body=body,
         state=state,
         url=f"https://github.com/test/repo/issues/{number}",
-        labels=["erk-planned-pr", "erk-plan"],
+        labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
         updated_at=datetime(2024, 1, 16, 12, 0, tzinfo=UTC),
@@ -55,7 +55,7 @@ class TestIssueInfoToPlan:
         assert plan.title == "My plan"
         assert plan.state == PlanState.OPEN
         assert plan.url == "https://github.com/test/repo/issues/42"
-        assert plan.labels == ["erk-planned-pr", "erk-plan"]
+        assert plan.labels == ["erk-pr", "erk-plan"]
         assert plan.metadata["number"] == 42
         assert plan.metadata["author"] == "test-user"
 
@@ -211,7 +211,7 @@ def _make_pr_details(
         merge_state_status="CLEAN",
         owner="test",
         repo="repo",
-        labels=("erk-planned-pr", "erk-plan"),
+        labels=("erk-pr", "erk-plan"),
         created_at=created_at or datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
         updated_at=updated_at or datetime(2024, 1, 16, 12, 0, tzinfo=UTC),
         author=author,
