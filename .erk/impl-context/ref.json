@@ -1,0 +1,8 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Objective #8365 Node 2.1 \u2014 Update plan-implement.yml to Eliminate .impl/ Copy",
+  "objective_id": 8365,
+  "node_ids": [
+    "2.1"
+  ]
+}
