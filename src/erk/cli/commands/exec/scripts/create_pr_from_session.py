@@ -81,13 +81,13 @@ def create_pr_from_session(ctx: click.Context, session_id: str | None) -> None:
     )
 
     if not result.success:
-        if result.issue_number is not None:
+        if result.plan_number is not None:
             # Partial success - issue created but comment failed
             output = {
                 "success": False,
                 "error": result.error,
-                "issue_number": result.issue_number,
-                "issue_url": result.issue_url,
+                "issue_number": result.plan_number,
+                "issue_url": result.plan_url,
             }
         else:
             output = {"success": False, "error": result.error}
@@ -97,8 +97,8 @@ def create_pr_from_session(ctx: click.Context, session_id: str | None) -> None:
     # Return success result
     output = {
         "success": True,
-        "issue_number": result.issue_number,
-        "issue_url": result.issue_url,
+        "issue_number": result.plan_number,
+        "issue_url": result.plan_url,
         "title": result.title,
     }
     click.echo(json.dumps(output))

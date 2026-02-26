@@ -98,24 +98,24 @@ def pr_create(
     )
 
     if not result.success:
-        if result.issue_number is not None:
+        if result.plan_number is not None:
             # Partial success - issue created but comment failed
             user_output(
                 click.style("Warning: ", fg="yellow")
                 + f"Plan created but failed to add plan comment: {result.error}"
             )
-            user_output(f"Plan #{result.issue_number} created but incomplete.")
-            user_output(f"URL: {result.issue_url}")
+            user_output(f"Plan #{result.plan_number} created but incomplete.")
+            user_output(f"URL: {result.plan_url}")
         else:
             user_output(click.style("Error: ", fg="red") + str(result.error))
         raise SystemExit(1)
 
     # Display success message with next steps
-    user_output(f"Created plan #{result.issue_number}")
+    user_output(f"Created plan #{result.plan_number}")
     user_output("")
-    user_output(f"Issue: {result.issue_url}")
+    user_output(f"Issue: {result.plan_url}")
     user_output("")
     user_output("Next steps:")
-    user_output(f"  View:       erk get {result.issue_number}")
-    user_output(f"  Checkout:   erk br co --for-plan {result.issue_number}")
-    user_output(f"  Submit:     erk pr submit {result.issue_number}")
+    user_output(f"  View:       erk get {result.plan_number}")
+    user_output(f"  Checkout:   erk br co --for-plan {result.plan_number}")
+    user_output(f"  Submit:     erk pr submit {result.plan_number}")

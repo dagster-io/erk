@@ -568,9 +568,9 @@ class RealPlanDataProvider(PlanDataProvider):
             plan_ref = read_plan_ref(impl_dir)
             if plan_ref is None or not plan_ref.plan_id.isdigit():
                 continue
-            issue_number = int(plan_ref.plan_id)
-            if issue_number not in worktree_by_plan_id:
-                worktree_by_plan_id[issue_number] = (
+            plan_number = int(plan_ref.plan_id)
+            if plan_number not in worktree_by_plan_id:
+                worktree_by_plan_id[plan_number] = (
                     worktree.path.name,
                     worktree.branch,
                 )
