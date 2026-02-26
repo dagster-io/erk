@@ -123,7 +123,7 @@ erk exec plan-update --plan-number 123 --session-id="<session-id>"
 
 ## Plan Mode Integration
 
-When exiting plan mode with an existing linked issue (e.g., from `.impl/issue.json`), consider:
+When exiting plan mode with an existing linked issue (e.g., from `.erk/impl-context/<branch>/ref.json`), consider:
 
 1. **Update existing**: If iterating on the same plan
 2. **Save as new**: If this is a fresh plan unrelated to the linked issue

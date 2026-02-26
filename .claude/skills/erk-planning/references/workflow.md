@@ -67,20 +67,20 @@ gh issue comment 123 --body "Updated plan:
 - Clarified testing requirements"
 ```
 
-## Integration with `.impl/`
+## Integration with `.erk/impl-context/`
 
-When working in a worktree with `.impl/issue.json`:
+When working in a worktree with `.erk/impl-context/<branch>/ref.json`:
 
 ```json
 {
-  "plan_number": 123,
-  "issue_url": "https://github.com/owner/repo/issues/123"
+  "plan_id": 123,
+  "plan_url": "https://github.com/owner/repo/issues/123"
 }
 ```
 
 The plan-update command can use this context:
 
-1. Read issue number from `.impl/issue.json`
+1. Read plan ID from `.erk/impl-context/<branch>/ref.json`
 2. Update that issue with current plan content
 3. Continue implementation
 

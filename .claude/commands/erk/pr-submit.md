@@ -76,7 +76,7 @@ If this fails, display the error and stop.
 
 ### Step 4.5: Link PR to Objective (if applicable)
 
-If `.impl/plan-ref.json` or `.impl/ref.json` exists and contains `objective_id`:
+If `ref.json` exists in `.erk/impl-context/<branch>/` and contains `objective_id`:
 
 ```bash
 erk exec objective-link-pr --pr-number <pr_number>

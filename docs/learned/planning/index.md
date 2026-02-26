@@ -68,5 +68,5 @@
 - **[tripwire-promotion-workflow.md](tripwire-promotion-workflow.md)** — implementing tripwire candidate extraction, promoting tripwire candidates to frontmatter, understanding the learn-to-tripwire pipeline
 - **[tripwire-worthiness-criteria.md](tripwire-worthiness-criteria.md)** — evaluating whether an insight deserves tripwire status, reviewing [TRIPWIRE-CANDIDATE] items from learn workflow, understanding what makes something tripwire-worthy
 - **[workflow-markers.md](workflow-markers.md)** — building multi-step workflows that need state persistence, using erk exec marker commands, implementing objective-to-plan workflows
-- **[workflow.md](workflow.md)** — using .impl/ folders, understanding plan file structure, implementing plans
+- **[workflow.md](workflow.md)** — using .erk/impl-context/ folders, understanding plan file structure, implementing plans
 - **[worktree-cleanup.md](worktree-cleanup.md)** — cleaning up .erk/impl-context/ after plan implementation, debugging leftover .erk/impl-context/ artifacts in a PR, deciding whether to auto-remove an implementation folder
