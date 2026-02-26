@@ -22,7 +22,7 @@ Examples:
     To checkout this PR in a fresh worktree and environment locally, run:
 
     ```
-    source "$(erk pr checkout 1895 --script)" && erk pr sync --dangerous
+    source "$(erk pr checkout 1895 --script)"
     ```
 """
 
