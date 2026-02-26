@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Documentation Plan: Fix modal dismiss keys (Esc/q/Space) in TUI screens"
+}
