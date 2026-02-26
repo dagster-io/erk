@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix Graphite tracking divergence in `erk pr dispatch`"
+}
