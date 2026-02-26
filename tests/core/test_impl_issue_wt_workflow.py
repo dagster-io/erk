@@ -35,6 +35,7 @@ def test_save_and_read_plan_ref(tmp_path: Path) -> None:
         url="https://github.com/owner/repo/issues/42",
         labels=(),
         objective_id=None,
+        node_ids=None,
     )
 
     # Verify file was created
@@ -62,6 +63,7 @@ def test_save_plan_ref_dir_must_exist(tmp_path: Path) -> None:
             url="https://github.com/owner/repo/issues/42",
             labels=(),
             objective_id=None,
+            node_ids=None,
         )
 
 
@@ -85,6 +87,7 @@ def test_has_plan_ref_true_when_file_exists(tmp_path: Path) -> None:
         url="https://github.com/owner/repo/issues/42",
         labels=(),
         objective_id=None,
+        node_ids=None,
     )
 
     assert has_plan_ref(impl_folder) is True
@@ -132,6 +135,7 @@ Test the workflow.
         url=result.url,
         labels=(),
         objective_id=None,
+        node_ids=None,
     )
 
     # Step 4: Verify link was created

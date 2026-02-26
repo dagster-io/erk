@@ -33,7 +33,7 @@ class RoadmapNode:
     id: str
     description: str
     status: RoadmapNodeStatus
-    pr: str | None  # None or "#456" (landed PR number)
+    pr: str | None  # None or "#456" (PR number)
     depends_on: tuple[str, ...] | None  # None = not specified, () = no deps
     slug: str | None  # None = not yet generated, or kebab-case slug
 

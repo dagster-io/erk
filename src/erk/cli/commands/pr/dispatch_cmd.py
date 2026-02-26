@@ -293,6 +293,7 @@ def _dispatch_planned_pr_plan(
         provider="github-draft-pr",
         objective_id=plan.objective_id,
         now_iso=ctx.time.now().isoformat(),
+        node_ids=None,
     )
 
     # Stage, commit, and push

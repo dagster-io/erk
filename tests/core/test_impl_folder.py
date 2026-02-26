@@ -499,6 +499,7 @@ def test_save_plan_ref_success(tmp_path: Path) -> None:
         url="https://github.com/owner/repo/issues/42",
         labels=("erk-plan",),
         objective_id=99,
+        node_ids=None,
     )
 
     ref_file = impl_dir / "ref.json"
@@ -526,6 +527,7 @@ def test_save_plan_ref_dir_not_exists(tmp_path: Path) -> None:
             url="http://url",
             labels=(),
             objective_id=None,
+            node_ids=None,
         )
 
 
@@ -541,6 +543,7 @@ def test_save_plan_ref_no_objective(tmp_path: Path) -> None:
         url="http://url",
         labels=(),
         objective_id=None,
+        node_ids=None,
     )
 
     data = json.loads((impl_dir / "ref.json").read_text(encoding="utf-8"))
@@ -559,6 +562,7 @@ def test_read_plan_ref_roundtrip(tmp_path: Path) -> None:
         url="https://github.com/owner/repo/issues/42",
         labels=("erk-pr", "erk-learn"),
         objective_id=99,
+        node_ids=None,
     )
 
     ref = read_plan_ref(impl_dir)
@@ -671,6 +675,7 @@ def test_has_plan_ref_with_ref_json(tmp_path: Path) -> None:
         url="http://url",
         labels=(),
         objective_id=None,
+        node_ids=None,
     )
 
     assert has_plan_ref(impl_dir) is True
@@ -717,6 +722,7 @@ def test_validate_plan_linkage_both_match(tmp_path: Path) -> None:
         url="https://github.com/org/repo/issues/42",
         labels=(),
         objective_id=None,
+        node_ids=None,
     )
 
     result = validate_plan_linkage(impl_dir, "P42-add-feature-01-04-1234")
@@ -738,6 +744,7 @@ def test_validate_plan_linkage_mismatch_raises(tmp_path: Path) -> None:
         url="https://github.com/org/repo/issues/99",
         labels=(),
         objective_id=None,
+        node_ids=None,
     )
 
     # No longer raises - branch provides no issue number, so no mismatch possible
@@ -768,6 +775,7 @@ def test_validate_plan_linkage_impl_only(tmp_path: Path) -> None:
         url="https://github.com/org/repo/issues/456",
         labels=(),
         objective_id=None,
+        node_ids=None,
     )
 
     result = validate_plan_linkage(impl_dir, "main")
@@ -809,6 +817,7 @@ def test_validate_plan_linkage_planned_pr_with_plan_ref(tmp_path: Path) -> None:
         url="https://github.com/org/repo/pull/789",
         labels=(),
         objective_id=None,
+        node_ids=None,
     )
 
     result = validate_plan_linkage(impl_dir, "plan-fix-auth-bug-01-15-1430")

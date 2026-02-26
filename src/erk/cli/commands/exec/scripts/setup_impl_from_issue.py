@@ -180,6 +180,7 @@ def _setup_planned_pr_plan(
     impl_context_dir = repo_root / IMPL_CONTEXT_DIR
     impl_context_plan = impl_context_dir / "plan.md"
 
+    node_ids: tuple[str, ...] | None = None
     if impl_context_plan.exists():
         # Read from committed .erk/impl-context/ files
         plan_content = impl_context_plan.read_text(encoding="utf-8")
@@ -194,6 +195,9 @@ def _setup_planned_pr_plan(
             raw_title = ref_data.get("title")
             if isinstance(raw_title, str):
                 plan_title = raw_title
+            raw_node_ids = ref_data.get("node_ids")
+            if isinstance(raw_node_ids, list):
+                node_ids = tuple(raw_node_ids)
         # Do not delete here — Step 2d in plan-implement.md handles git rm + commit + push
     else:
         # Fallback: extract from PR body (legacy branch or already cleaned up)
@@ -227,6 +231,7 @@ def _setup_planned_pr_plan(
             url=pr_url,
             labels=(),
             objective_id=objective_id,
+            node_ids=node_ids,
         )
 
     return {

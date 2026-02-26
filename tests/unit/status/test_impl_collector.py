@@ -61,6 +61,7 @@ def test_plan_collector_with_issue_reference(tmp_path: Path) -> None:
         url="https://github.com/owner/repo/issues/42",
         labels=(),
         objective_id=None,
+        node_ids=None,
     )
 
     git = FakeGit(current_branches={tmp_path: BRANCH})

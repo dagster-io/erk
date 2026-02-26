@@ -919,6 +919,7 @@ def create_wt(
             url=setup.issue_url,
             labels=(),
             objective_id=setup.objective_issue,
+            node_ids=None,
         )
 
         if not script and not output_json:
