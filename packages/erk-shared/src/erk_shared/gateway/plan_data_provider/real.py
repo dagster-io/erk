@@ -773,10 +773,12 @@ class RealPlanDataProvider(PlanDataProvider):
                     min_status = graph.min_dep_status(next_node["id"])
                     if node_status == "planning":
                         objective_head_state = "planning"
+                    elif node_status == "in_progress":
+                        objective_head_state = "in-progress"
                     elif min_status is None or min_status in _TERMINAL_STATUSES:
                         objective_head_state = "ready"
                     else:
-                        objective_head_state = min_status.replace("_", " ")
+                        objective_head_state = min_status.replace("_", "-")
 
                     # Collect blocking dep PR numbers for the next node
                     target = next((n for n in graph.nodes if n.id == next_node["id"]), None)
