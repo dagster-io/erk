@@ -44,22 +44,14 @@ This command:
 When remote changes have been pushed (e.g., by CI, remote agents, or teammates), sync your local branch:
 
 ```bash
-# Sync using Graphite (recommended for gt-tracked branches)
-erk pr sync --dangerous
+# Use the automated divergence resolver (recommended)
+/erk:sync-divergence
+
+# Or via CLI
+erk pr sync-divergence --dangerous
 
 # Git-only sync (without Graphite)
 git fetch origin && git rebase origin/<branch>
-```
-
-**Warning**: The `--dangerous` flag is required because syncing can rewrite history. Use `/erk:sync-divergence` if you're unsure about the sync strategy.
-
-### When Divergence Occurs
-
-If your local branch has diverged from remote:
-
-```bash
-# Use the automated divergence resolver
-/erk:sync-divergence
 ```
 
 This command analyzes the divergence and chooses the appropriate sync strategy.
@@ -129,13 +121,13 @@ The `erk land` command:
 
 ## Common Scenarios
 
-| Scenario                  | Command Sequence                                    |
-| ------------------------- | --------------------------------------------------- |
-| Review teammate's PR      | `erk pr co 123` then explore/test                   |
-| Address my PR's comments  | `erk pr co 123` → `/erk:pr-address` → submit        |
-| Take over remote agent PR | `erk pr co 123` → make changes → submit             |
-| Debug CI failure          | `erk pr co 123` → run tests locally → fix → submit  |
-| Sync after force push     | `/erk:sync-divergence` or `erk pr sync --dangerous` |
+| Scenario                  | Command Sequence                                               |
+| ------------------------- | -------------------------------------------------------------- |
+| Review teammate's PR      | `erk pr co 123` then explore/test                              |
+| Address my PR's comments  | `erk pr co 123` → `/erk:pr-address` → submit                   |
+| Take over remote agent PR | `erk pr co 123` → make changes → submit                        |
+| Debug CI failure          | `erk pr co 123` → run tests locally → fix → submit             |
+| Sync after force push     | `/erk:sync-divergence` or `erk pr sync-divergence --dangerous` |
 
 ## See Also
 

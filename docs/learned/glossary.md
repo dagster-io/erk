@@ -260,7 +260,6 @@ When squashing commits on a branch that already has a PR:
 
 This pattern applies to:
 
-- `erk pr sync` (automatically uses force after squash)
 - Manual squash + submit workflows
 - Any workflow that rewrites history on an existing PR branch
 
