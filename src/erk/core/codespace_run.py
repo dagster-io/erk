@@ -55,5 +55,6 @@ def build_codespace_tmux_command(erk_command: str, *, session_name: str) -> str:
         A shell string suitable for passing to codespace SSH
     """
     safe_name = _sanitize_tmux_session_name(session_name)
-    tmux_cmd = f"tmux new-session -A -s {safe_name} {erk_command}"
+    # Force TERM to xterm-256color — remote may lack terminfo for local terminal (e.g. ghostty)
+    tmux_cmd = f"TERM=xterm-256color tmux new-session -A -s {safe_name} {erk_command}"
     return build_codespace_ssh_command(tmux_cmd)
