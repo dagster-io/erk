@@ -32,6 +32,7 @@ erk exec quick-submit
 ```
 
 This command will:
+
 - Stage all changes in the working directory
 - Commit them with the message "update" if there are staged changes
 - Return a JSON response with the result
@@ -60,6 +61,7 @@ Or on error:
 ```
 
 **Decision logic:**
+
 - If `success` is `true`: Report the success message and PR URL to the user
 - If `success` is `false`: Display the error message and ask the user to fix the issue
 
@@ -68,12 +70,14 @@ Or on error:
 Display the result based on the response:
 
 **On success:**
+
 ```
 Changes submitted successfully
 View PR: {pr_url}
 ```
 
 **On failure:**
+
 ```
 Error: {error_message}
 ```
