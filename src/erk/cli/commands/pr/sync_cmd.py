@@ -1,5 +1,10 @@
 """Synchronize current PR branch with remote base.
 
+Note: For the standard plan-save → dispatch → checkout workflow, this command
+is no longer needed. ``erk pr checkout`` now fetches from remote and updates
+the local branch automatically. This command remains available for edge cases
+such as non-plan branches or manual Graphite reconciliation (squash, restack).
+
 This command has two modes:
 
 **With Graphite enabled:**

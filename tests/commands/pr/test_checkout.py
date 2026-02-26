@@ -91,7 +91,11 @@ def test_pr_checkout_same_repo_branch_exists_on_remote() -> None:
 
 
 def test_pr_checkout_same_repo_branch_already_local() -> None:
-    """Test checking out a same-repo PR where branch already exists locally."""
+    """Test checking out a same-repo PR where branch already exists locally.
+
+    Even when the branch exists locally, checkout should fetch from remote
+    and force-update the local branch to match remote state.
+    """
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
@@ -114,9 +118,14 @@ def test_pr_checkout_same_repo_branch_already_local() -> None:
         result = runner.invoke(pr_group, ["checkout", "456"], obj=ctx)
 
         assert result.exit_code == 0
-        # No fetch needed since branch exists locally
-        assert len(git.fetched_branches) == 0
+        # Fetch IS called even when branch exists locally
+        assert ("origin", "existing-branch") in git.fetched_branches
+        # No tracking branch created (branch already exists)
         assert len(git.created_tracking_branches) == 0
+        # Branch force-updated to match remote
+        force_updates = [(b, s, f) for (_cwd, b, s, f) in git.created_branches if f]
+        assert len(force_updates) == 1
+        assert force_updates[0] == ("existing-branch", "origin/existing-branch", True)
         # Worktree should still be created
         assert len(git.added_worktrees) == 1
 
