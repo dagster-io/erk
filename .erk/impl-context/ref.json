@@ -1,4 +1,9 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Split `tests/tui/test_app.py` into a subpackage"
+  "plan_id": "8288",
+  "url": "https://github.com/dagster-io/erk/pull/8288",
+  "created_at": "2026-02-26T14:00:24.448994",
+  "synced_at": "2026-02-26T14:00:24.448994",
+  "labels": [],
+  "objective_id": null
 }
