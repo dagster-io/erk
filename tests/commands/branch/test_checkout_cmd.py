@@ -726,12 +726,130 @@ def test_checkout_for_plan_creates_impl_folder() -> None:
         assert result.exit_code == 0, f"Failed: {result.output}"
         assert "Created .impl/ folder from plan #500" in result.output
 
+        # Verify activation instructions are printed after --for-plan checkout
+        assert "To activate the worktree environment:" in result.output
+        assert "source" in result.output
+        assert "activate.sh" in result.output
+
         # Verify branch-scoped impl folder was created in the worktree
         worktree_path = env.repo.worktrees_dir / "erk-slot-01"
         impl_folder = worktree_path / ".erk" / "impl-context" / "plan-500"
         assert impl_folder.exists()
         assert (impl_folder / "plan.md").exists()
         assert (impl_folder / "ref.json").exists()
+
+
+def test_checkout_for_plan_prints_activation_when_sync_status_fails() -> None:
+    """Test that --for-plan checkout prints activation instructions even when sync status fails.
+
+    Verifies the fix where display_sync_status errors could prevent activation
+    instructions from being printed after --for-plan checkout. This happens when
+    a newly-created tracking branch doesn't have upstream refs fully set up.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        plan = Plan(
+            plan_identifier="600",
+            title="Test activation output",
+            body="# Plan\nTest plan content",
+            state=PlanState.OPEN,
+            url="https://github.com/owner/repo/issues/600",
+            labels=["erk-pr", "erk-plan"],
+            assignees=[],
+            created_at=TEST_PLAN_TIMESTAMP,
+            updated_at=TEST_PLAN_TIMESTAMP,
+            metadata={},
+            objective_id=None,
+        )
+        plan_store, _ = create_plan_store_with_plans({"600": plan})
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "plan-600"]},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, plan_store=plan_store)
+
+        # Simulate display_sync_status raising (get_ahead_behind fails for new branch)
+        with (
+            patch.dict(os.environ, {"ERK_SHELL": "zsh"}),
+            patch(
+                "erk.cli.commands.branch.checkout_cmd.display_sync_status",
+                side_effect=RuntimeError("upstream tracking ref not set"),
+            ),
+        ):
+            result = runner.invoke(branch_group, ["checkout", "--for-plan", "600"], obj=ctx)
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        assert "Created .impl/ folder from plan #600" in result.output
+        # Activation instructions must be printed even when sync status fails
+        assert "To activate the worktree environment:" in result.output
+        assert "source" in result.output
+        assert "activate.sh" in result.output
+
+
+def test_checkout_stacks_in_place_for_plan_prints_activation() -> None:
+    """Test that --for-plan in stack-in-place path prints activation instructions.
+
+    When --for-plan is used and the current worktree is a pool slot (stack-in-place
+    path), the activation instructions should still be printed.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        plan = Plan(
+            plan_identifier="700",
+            title="Stack in place activation",
+            body="# Plan\nStack-in-place plan",
+            state=PlanState.OPEN,
+            url="https://github.com/owner/repo/issues/700",
+            labels=["erk-pr", "erk-plan"],
+            assignees=[],
+            created_at=TEST_PLAN_TIMESTAMP,
+            updated_at=TEST_PLAN_TIMESTAMP,
+            metadata={},
+            objective_id=None,
+        )
+        plan_store, _ = create_plan_store_with_plans({"700": plan})
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "plan-700"]},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
+
+        # Pre-create pool state with cwd assigned to a slot (triggers stack-in-place)
+        existing_state = PoolState.test(
+            pool_size=4,
+            assignments=(
+                SlotAssignment(
+                    slot_name="erk-slot-01",
+                    branch_name="existing-branch",
+                    assigned_at="2024-01-01T10:00:00+00:00",
+                    worktree_path=env.cwd,
+                ),
+            ),
+        )
+        save_pool_state(env.repo.pool_json_path, existing_state)
+
+        ctx = build_workspace_test_context(env, git=git, plan_store=plan_store)
+
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(branch_group, ["checkout", "--for-plan", "700"], obj=ctx)
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        assert "Stacked" in result.output
+        assert "Created .impl/ folder from plan #700" in result.output
+        # Activation instructions must be printed in stack-in-place path
+        assert "To activate the worktree environment:" in result.output
+        assert "source" in result.output
+        assert "activate.sh" in result.output
 
 
 def test_checkout_for_plan_error_both_branch_and_for_plan() -> None:
