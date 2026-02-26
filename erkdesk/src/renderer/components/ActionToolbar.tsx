@@ -17,12 +17,12 @@ interface ActionDef {
 
 const ACTIONS: ActionDef[] = [
   {
-    id: "submit_to_queue",
-    label: "Submit",
+    id: "dispatch_to_queue",
+    label: "Dispatch",
     isAvailable: (plan) => plan.issue_url !== null,
     getCommand: (plan) => ({
       command: "erk",
-      args: ["plan", "submit", String(plan.issue_number)],
+      args: ["pr", "dispatch", String(plan.issue_number)],
     }),
   },
   {

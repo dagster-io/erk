@@ -175,11 +175,11 @@ export function PlanDetail({plan, onClose}: PlanDetailProps) {
           <div className="detail-actions">
             <div className="detail-label">Actions</div>
             <ActionButton
-              label="Submit to Queue"
-              actionKey="submit"
-              status={actionStatuses['submit']}
+              label="Dispatch"
+              actionKey="dispatch"
+              status={actionStatuses['dispatch']}
               disabled={isMerged}
-              onClick={() => executeAction('submit')}
+              onClick={() => executeAction('dispatch')}
             />
             <ActionButton
               label="Address PR Remote"
