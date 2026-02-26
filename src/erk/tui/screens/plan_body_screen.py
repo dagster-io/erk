@@ -187,7 +187,7 @@ class PlanBodyScreen(ModalScreen):
             container.mount(Label(f"(No {label} content found)", id="body-empty"))
 
     def on_key(self, event: Key) -> None:
-        """Consume all keys; dismiss on keys not handled by bindings."""
+        """Consume all keys while modal is open; dismiss on escape, q, or space."""
         event.prevent_default()
         event.stop()
         if event.key not in ("escape", "q", "space"):
