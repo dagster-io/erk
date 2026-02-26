@@ -3,7 +3,7 @@ title: Roadmap Format Versioning
 read_when:
   - extending the roadmap table format with new columns
   - planning backward-compatible parser changes to roadmap tables
-  - understanding the 4-col to 5-col migration
+  - understanding roadmap column format history
 tripwires:
   - action: "adding columns to the roadmap table format"
     warning: "The 4→5 column migration is the established pattern. Read this doc to understand the header-based detection and auto-upgrade strategy before adding columns."
@@ -15,9 +15,9 @@ audit_result: clean
 
 # Roadmap Format Versioning
 
-This document captures the design thinking around extending the roadmap table format, including the completed 4→5 column migration and historical context.
+This document captures the design thinking around the roadmap table format, including the current 4-column canonical format and historical context.
 
-## Current State: 5-Column Format (Canonical)
+## Current State: 4-Column Format (Canonical)
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, RoadmapNode -->
 
@@ -32,9 +32,9 @@ The canonical table format:
 | 1.2  | Add tests   | in-progress | -    |
 ```
 
-## Legacy 4-Column Format (Historical)
+## Legacy Format (Historical)
 
-The old 4-column format where plan and PR shared a single column is no longer actively parsed by `parse_roadmap()`. The parser now requires v2 YAML frontmatter and returns a legacy format error for non-v2 content.
+The old format where plan and PR shared a single column is no longer actively parsed by `parse_roadmap()`. The parser now requires v2+ YAML frontmatter and returns a legacy format error for non-v2 content.
 
 ```markdown
 | Node | Description | Status | PR         |
@@ -43,16 +43,16 @@ The old 4-column format where plan and PR shared a single column is no longer ac
 | 1.2  | Add tests   | -      | plan #6464 |
 ```
 
-The surgical update command uses two functions: `_replace_node_refs_in_body()` updates the YAML frontmatter (source of truth), while `_replace_table_in_text()` updates the rendered 5-column markdown table in the objective-body comment.
+The surgical update command uses two functions: `_replace_node_refs_in_body()` updates the YAML frontmatter (source of truth), while `_replace_table_in_text()` updates the rendered markdown table in the objective-body comment.
 
 ## Migration Strategy: Header-Based Detection
 
-The surgical update command uses **header-based format detection** — it checks for the 5-column header first, then falls back to 4-column. This keeps format detection co-located with the data itself (no version metadata needed in the table).
+The surgical update command uses **header-based format detection** — it checks for the 4-column header (or 5-column with Depends On). This keeps format detection co-located with the data itself (no version metadata needed in the table).
 
 Key design choices:
 
-- **5-col header canonical**: `| Node | Description | Status | Plan | PR |`
-- **4-col handled on write**: When editing a 4-col table in the rendered view, the table is auto-upgraded to 5-col
+- **4-col header canonical**: `| Node | Description | Status | PR |`
+- **5-col conditional**: When nodes have `depends_on`, the header becomes `| Node | Description | Depends On | Status | PR |`
 - **Frontmatter schema v4**: The YAML frontmatter uses `schema_version: "4"` with the `nodes` key (v2 used `steps`). The parser accepts v2, v3, and v4; the renderer always emits v4.
 - **v2/v3/v4 parsing**: `parse_roadmap()` accepts all three schema versions. Returns a legacy format error for non-v2/v3/v4 content (no table-parsing fallback)
 
