@@ -33,11 +33,11 @@ Commands need different behavior depending on invocation context. See the actual
 
 ## Command Categories
 
-| Category | Emoji     | Use For                                   |
-| -------- | --------- | ----------------------------------------- |
-| `ACTION` | lightning | Mutative operations (close, submit, land) |
-| `OPEN`   | link      | Browser navigation (open issue, PR, run)  |
-| `COPY`   | clipboard | Clipboard operations (copy commands)      |
+| Category | Emoji     | Use For                                     |
+| -------- | --------- | ------------------------------------------- |
+| `ACTION` | lightning | Mutative operations (close, dispatch, land) |
+| `OPEN`   | link      | Browser navigation (open issue, PR, run)    |
+| `COPY`   | clipboard | Clipboard operations (copy commands)        |
 
 ## Three-Layer Null Validation
 

@@ -27,7 +27,7 @@ Commands don't check "can I run?" at execution time — they declare upfront wha
 
 2. **Availability depends on `PlanRowData` nullability.** Each `PlanRowData` field is nullable for a reason (no PR yet, no workflow run, etc.). The predicates express which combination of non-null fields a command requires. This makes the availability contract explicit and testable.
 
-3. **Commands that are always available use `lambda _: True`** — these are plan-level operations (close, prepare, submit) that only need the issue number, which is always present.
+3. **Commands that are always available use `lambda _: True`** — these are plan-level operations (close, prepare, dispatch) that only need the issue number, which is always present.
 
 ## Category-to-Execution Pattern Mapping
 
@@ -39,7 +39,7 @@ Categories are not just cosmetic labels — they correlate strongly with executi
 | OPEN     | Browser launch                          | Instant    | None (navigates browser)                   |
 | COPY     | Clipboard write                         | Instant    | None (copies to clipboard)                 |
 
-The key insight is within ACTION: some actions (close, submit) are fast in-process HTTP calls to the GitHub API, while others (land, fix-conflicts, address) are long-running subprocess commands with streaming output. The distinction matters because streaming commands need the `repo_root` capability marker and the full cross-thread UI update pipeline described in [streaming-output.md](streaming-output.md).
+The key insight is within ACTION: some actions (close, dispatch) are fast in-process HTTP calls to the GitHub API, while others (land, fix-conflicts, address) are long-running subprocess commands with streaming output. The distinction matters because streaming commands need the `repo_root` capability marker and the full cross-thread UI update pipeline described in [streaming-output.md](streaming-output.md).
 
 ## Availability Predicate Patterns
 
@@ -49,8 +49,8 @@ Commands fall into four availability tiers:
 
 | Tier               | Predicate                     | Commands                                                        | Rationale                                                     |
 | ------------------ | ----------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------- |
-| Always available   | `lambda _: True`              | close_plan, copy_prepare, copy_prepare_activate, copy_submit    | Only need `plan_id`, which is always present                  |
-| Needs plan URL     | `plan_url is not None`        | submit_to_queue, copy_replan, open_issue                        | Requires the plan to exist on GitHub (not just locally)       |
+| Always available   | `lambda _: True`              | close_plan, copy_prepare, copy_prepare_activate, copy_dispatch  | Only need `plan_id`, which is always present                  |
+| Needs plan URL     | `plan_url is not None`        | dispatch_to_queue, copy_replan, open_issue                      | Requires the plan to exist on GitHub (not just locally)       |
 | Needs local branch | `worktree_branch is not None` | copy_checkout                                                   | Local worktree branch must exist to generate checkout command |
 | Needs PR           | `pr_number is not None`       | fix_conflicts_remote, address_remote, open_pr, copy_pr_checkout | PR must be linked to the plan                                 |
 | Compound condition | Multiple fields non-null      | land_pr (needs PR + OPEN state + run URL)                       | Landing requires all CI infrastructure to be present          |

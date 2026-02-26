@@ -189,7 +189,7 @@ After the learn plan issue is created, a human reviews it and decides whether to
 
 1. Review the plan issue - it contains draft content starters and documentation suggestions
 2. Optionally edit the plan to adjust priorities or content
-3. Submit via `erk pr submit` to queue for implementation
+3. Dispatch via `erk pr dispatch` to queue for implementation
 
 ### Step 5: Implement and Land Learn Plan
 
