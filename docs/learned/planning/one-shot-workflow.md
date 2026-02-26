@@ -58,25 +58,6 @@ The draft PR **is** the plan entity. No skeleton issue is created:
 
 **Branch naming:** `plnd/{slug}-{MM-DD-HHMM}` (e.g., `plnd/my-task-01-15-1430`)
 
-### GitHubPlanStore (legacy)
-
-A skeleton plan issue is created first, then a branch and PR:
-
-1. `create_plan_issue()` creates a skeleton with placeholder content
-2. Branch is created with `plnd/` prefix (issue number is **not** encoded in branch name)
-3. Draft PR is created with `Closes #{issue}` reference
-4. Workflow fills in the actual plan content later
-
-**Placeholder content:**
-
-```
-_One-shot: plan content will be populated by one-shot workflow._
-
-**Prompt:** {prompt}
-```
-
-The skeleton optionally includes `objective_id` when dispatched from an objective roadmap.
-
 The slug is truncated to stay under git's 31-character worktree limit.
 
 ## Objective Integration
@@ -120,11 +101,11 @@ concurrency:
 
 ## Registration Step (Best-Effort Composition)
 
-`src/erk/cli/commands/exec/scripts/register_one_shot_plan.py` performs four independent operations that `erk pr dispatch` normally handles at submit time. Each operation is best-effort -- failures are logged but don't block others:
+`src/erk/cli/commands/exec/scripts/register_one_shot_plan.py` performs four independent operations that `erk pr submit` normally handles at submit time. Each operation is best-effort -- failures are logged but don't block others:
 
 1. **Dispatch metadata** -- the primary metadata source is the CLI dispatch (`write_dispatch_metadata()` in `src/erk/cli/commands/pr/metadata_helpers.py`), with CI registration as a fallback. Writes `run_id`, `node_id`, `dispatched_at` to the plan entity's `plan-header` metadata block.
 2. **Queued comment** -- adds a "Queued for Implementation" emoji comment to the plan with PR link and workflow run URL
-3. **PR closing reference** -- updates the PR body with `Closes #N` to enable auto-close on merge (GitHubPlanStore backend only)
+3. **PR closing reference** -- updates the PR body with `Closes #N` to enable auto-close on merge (handled by PlanBackend)
 4. **Lifecycle stage** -- updates the plan entity's lifecycle stage to "planned"
 
 The command outputs JSON results for each operation with success/error details.
@@ -144,7 +125,7 @@ The CLI write is the primary source; CI registration fills gaps when the CLI cou
 
 ### Divergence Risk: One-Shot vs PR Dispatch
 
-One-shot dispatch and `erk pr dispatch` both push branches and create PRs, but one-shot uses force-push (squash) while pr dispatch may use regular push. After a one-shot dispatch, the local branch may diverge from remote. Always `git pull --rebase` before making local changes to a one-shot branch.
+One-shot dispatch and `erk pr submit` both push branches and create PRs, but one-shot uses force-push (squash) while plan-submit may use regular push. After a one-shot dispatch, the local branch may diverge from remote. Always `git pull --rebase` before making local changes to a one-shot branch.
 
 ## Claude Planning Command
 

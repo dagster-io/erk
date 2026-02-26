@@ -73,11 +73,11 @@ model_name = "claude-sonnet-4-5-20250929"
 package_install_script = "pip install -e ."
 ```
 
-These values are passed as inputs to the GitHub Actions workflow at dispatch time when running `erk pr dispatch`.
+These values are passed as inputs to the GitHub Actions workflow at dispatch time when running `erk pr submit`.
 
 ### How It Works
 
-1. When you run `erk pr dispatch <issue>`, erk looks for a config file at `.erk/workflows/<workflow-name>.toml`
+1. When you run `erk pr submit <issue>`, erk looks for a config file at `.erk/workflows/<workflow-name>.toml`
 2. The filename matches the workflow file (without the `.yml` extension)
 3. Config values are merged with required inputs (issue_number, branch_name, etc.)
 4. If no config file exists, the workflow uses its built-in defaults

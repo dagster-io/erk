@@ -67,17 +67,17 @@ Standard Claude Code plan mode shows this menu when you approve:
 `erk` extends this with additional options:
 
 ```
-○ Save the plan          # Save as GitHub issue, stop here
-○ Implement              # Save to GitHub, then implement
+○ Save the plan          # Save plan, stop here
+○ Implement              # Save plan, then implement
 ○ Incremental            # Implement directly (for quick iterations)
 ○ View/Edit the plan
 ```
 
 Choose **Save the plan**. Claude runs `/erk:plan-save`, which:
 
-1. Creates a GitHub issue with your plan
+1. Saves your plan to the configured backend
 2. Adds the `erk-plan` label
-3. Returns the issue number
+3. Returns the plan identifier
 
 You'll see output like:
 
@@ -85,13 +85,13 @@ You'll see output like:
 Plan saved as issue #1
 ```
 
-### Why Save to GitHub?
+### Why Save Plans?
 
-When you develop a plan in Claude Code, it normally lives only in the conversation—easy to lose when you close the session. By saving as a GitHub issue:
+When you develop a plan in Claude Code, it normally lives only in the conversation—easy to lose when you close the session. By saving it:
 
 - **The plan persists** beyond your session
 - **Anyone can implement it**—you, a teammate, or a CI agent
-- **Progress is tracked effortlessly** through GitHub's issue system
+- **Progress is tracked effortlessly** through your project management system
 
 ## Step 5: Implement the Plan
 
@@ -195,9 +195,9 @@ You've completed the full erk workflow:
 | Phase         | What Happened                                      |
 | ------------- | -------------------------------------------------- |
 | **Plan**      | Created a detailed implementation plan with Claude |
-| **Save**      | Stored the plan as a GitHub issue for tracking     |
+| **Save**      | Stored the plan for tracking                       |
 | **Implement** | Executed the plan in an isolated worktree          |
-| **Submit**    | Created a PR linked to the original issue          |
+| **Submit**    | Created a PR linked to the original plan           |
 | **Land**      | Merged and cleaned up automatically                |
 
 ## Quick Reference

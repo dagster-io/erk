@@ -46,7 +46,7 @@ Key steps:
 
 | Method              | What It Does                                | When to Use                                     |
 | ------------------- | ------------------------------------------- | ----------------------------------------------- |
-| `post_event()`      | Updates metadata AND posts optional comment | Operation should be visible in issue timeline   |
+| `post_event()`      | Updates metadata AND posts optional comment | Operation should be visible in plan timeline    |
 | `update_metadata()` | Updates metadata only                       | Silent state tracking (no user-visible comment) |
 | `add_comment()`     | Posts comment only                          | Informational messages without state changes    |
 
@@ -61,7 +61,7 @@ Key steps:
 
 ## Testing Pattern
 
-See [Backend Testing Composition](../testing/backend-testing-composition.md) for the testing approach. The key pattern: inject `FakeGitHubIssues` into real `GitHubPlanStore`, then assert on fake mutation tracking properties.
+See [Backend Testing Composition](../testing/backend-testing-composition.md) for the testing approach. The key pattern: inject `FakeGitHub` into real `PlannedPRBackend`, then assert on fake mutation tracking properties.
 
 ## Remaining Phase 3 Work
 

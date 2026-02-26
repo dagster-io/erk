@@ -41,6 +41,6 @@ erk config set github_planning true   # enable
 When enabled, erk modifies Claude Code's plan mode behavior:
 
 - Injects session IDs into prompts for tracking
-- Prompts to save plans to GitHub issues when exiting plan mode
+- Prompts to save plans when exiting plan mode
 
-When disabled, plan mode behaves normally without erk's GitHub integration hooks. Use this if you want standard Claude Code plan mode without the GitHub workflow.
+When disabled, plan mode behaves normally without erk's plan storage integration hooks. Use this if you want standard Claude Code plan mode without the plan persistence workflow.

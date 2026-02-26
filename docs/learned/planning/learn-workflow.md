@@ -189,7 +189,7 @@ After the learn plan issue is created, a human reviews it and decides whether to
 
 1. Review the plan issue - it contains draft content starters and documentation suggestions
 2. Optionally edit the plan to adjust priorities or content
-3. Submit via `erk pr dispatch` to queue for implementation
+3. Submit via `erk pr submit` to queue for implementation
 
 ### Step 5: Implement and Land Learn Plan
 
@@ -242,7 +242,7 @@ learned_from_issue: 100 # Parent plan issue number
 
 ## Learn Plan Parent Branch Stacking
 
-When a learn plan is submitted via `erk pr dispatch`, it automatically stacks on its parent plan's branch rather than trunk.
+When a learn plan is submitted via `erk pr submit`, it automatically stacks on its parent plan's branch rather than trunk.
 
 ### Auto-Detection
 
@@ -256,9 +256,11 @@ The submit command calls `get_learn_plan_parent_branch()` which:
 
 ```
 trunk (main)
-    └── P123-feature-branch (parent plan)
-            └── P456-docs-for-feature (learn plan)
+    └── plnd/feature-branch-01-15-1430 (parent plan)
+            └── plnd/docs-for-feature-01-16-0900 (learn plan)
 ```
+
+**Note:** Legacy plans may still use the `P{issue}-` prefix pattern (e.g., `P123-feature-branch`). Current plans use `plnd/` prefix.
 
 This stacking ensures learn plan PRs can be reviewed and merged after their parent features land.
 

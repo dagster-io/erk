@@ -1,6 +1,8 @@
 # Why GitHub Issues for Plans
 
-Why erk stores plans as GitHub issues rather than markdown files in the repository.
+Why erk supports GitHub issues as a plan storage backend rather than just markdown files in the repository.
+
+**Note:** Erk now supports multiple plan storage backends. This document focuses on GitHub Issues, but erk also supports draft-PR based plans. The principles described here apply to plan storage systems in general.
 
 ## The Origin Story: Markdown Files Didn't Work
 
@@ -73,9 +75,26 @@ The plan schema defines what _should_ happen—the implementation steps, success
 
 Past plans become queryable precedent. When an agent encounters an edge case—"how do I handle rate limiting in this codebase?"—it can search previous plans for patterns. The comment streams show not just what was done, but what problems arose and how they were resolved. We can query historical plans and the outcomes they generated to improve future outcomes in the codebase.
 
+## Multiple Backends
+
+Erk now supports multiple plan storage backends:
+
+1. **GitHub Issues** - The original backend, described in detail throughout this document
+2. **Draft Pull Requests** - Plans stored as draft PRs with metadata in the PR description
+
+Both backends implement the same core pattern:
+
+- **Entity**: Discrete, addressable, with stable identity
+- **Metadata**: Structured fields for fast queries
+- **Log**: Append-only history of activities (issue comments or PR comments)
+- **Lifecycle**: States that map to workflow stages (open/closed for issues, draft/ready/merged for PRs)
+- **Hierarchy**: Parent-child relationships between entities
+
+The draft-PR backend offers tighter integration with the PR workflow by collapsing the plan and PR into a single entity, while the GitHub Issues backend maintains separation between planning and implementation artifacts.
+
 ## Looking Forward: Beyond GitHub
 
-GitHub Issues is one implementation of this pattern. The underlying abstraction is:
+The underlying abstraction is portable to other systems:
 
 - **Entity**: Discrete, addressable, with stable identity
 - **Metadata**: Structured fields for fast queries
@@ -83,13 +102,13 @@ GitHub Issues is one implementation of this pattern. The underlying abstraction 
 - **Lifecycle**: States that map to workflow stages
 - **Hierarchy**: Parent-child relationships between entities
 
-Other systems implement this pattern differently. Linear's agent-first primitives (AgentSession, activities) show the pattern generalizing beyond traditional ticketing. The concept is portable even if specific implementations aren't yet.
+Linear's agent-first primitives (AgentSession, activities) show the pattern generalizing beyond traditional ticketing. The concept is portable even if specific implementations aren't yet.
 
 ## Conclusion
 
 GitHub Issues weren't designed for AI agent workflows. But they implement the context graph pattern that agent workflows need: entities with identity, metadata for queries, append-only logs for decision traces, and lifecycle states for coordination.
 
-The "accidental architecture" turned out to be right. Rather than building custom plan infrastructure, erk leverages infrastructure that already exists, already scales, and already integrates with developer workflows.
+The "accidental architecture" turned out to be right. Rather than building custom plan infrastructure, erk leverages infrastructure that already exists, already scales, and already integrates with developer workflows. The addition of draft-PR based plans shows this pattern is flexible enough to support multiple implementations.
 
 ## See Also
 
