@@ -62,7 +62,7 @@ The `exclude_labels` field on `ViewConfig` enables defense-in-depth: Plans view 
 
 ## Cache Strategy
 
-<!-- Source: src/erk/tui/app.py:151 -->
+<!-- Source: src/erk/tui/app.py, _data_cache -->
 
 Data is cached by label tuple: `dict[tuple[str, ...], list[PlanRowData]]`.
 
@@ -72,7 +72,7 @@ Cache is populated in `_load_data()` after each successful fetch and looked up i
 
 ## View Switching Flow
 
-<!-- Source: src/erk/tui/app.py:420 -->
+<!-- Source: src/erk/tui/app.py, _switch_view -->
 
 `_switch_view(mode)` orchestrates the transition:
 
@@ -85,7 +85,7 @@ Cache is populated in `_load_data()` after each successful fetch and looked up i
 
 ## PlanDataTable.reconfigure()
 
-<!-- Source: src/erk/tui/widgets/plan_table.py:117 -->
+<!-- Source: src/erk/tui/widgets/plan_table.py, reconfigure -->
 
 `reconfigure()` preserves the widget instance while rebuilding its columns:
 
@@ -105,9 +105,9 @@ Renders `1:Plans  2:Learn  3:Objectives` with the active view in bold white and 
 
 Left/right arrow keys cycle through views. This is delegated from `PlanDataTable` to the app:
 
-<!-- Source: src/erk/tui/widgets/plan_table.py:109-116 -->
+<!-- Source: src/erk/tui/widgets/plan_table.py, action_cursor_left, action_cursor_right -->
 
-`PlanDataTable` overrides `action_cursor_left` and `action_cursor_right` to delegate to `ErkDashApp.action_previous_view()` and `action_next_view()` respectively. See `src/erk/tui/widgets/plan_table.py:109-116` for the implementation.
+`PlanDataTable` overrides `action_cursor_left` and `action_cursor_right` to delegate to `ErkDashApp.action_previous_view()` and `action_next_view()` respectively.
 
 The app uses `get_next_view_mode()` and `get_previous_view_mode()` from `src/erk/tui/views/types.py` which cycle through `VIEW_CONFIGS` with wrapping (last -> first, first -> last).
 
