@@ -44,9 +44,9 @@ def test_orchestrator_collects_all_data(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
-    # Create impl folder with plan.md and progress.md
-    impl_folder = worktree_path / ".impl"
-    impl_folder.mkdir()
+    # Create impl folder with plan.md and progress.md (branch-scoped)
+    impl_folder = worktree_path / ".erk" / "impl-context" / "test-branch"
+    impl_folder.mkdir(parents=True)
     (impl_folder / "plan.md").write_text("# Test Plan", encoding="utf-8")
     (impl_folder / "progress.md").write_text("# Progress\n\n- [ ] Step 1", encoding="utf-8")
 
@@ -314,8 +314,8 @@ def test_orchestrator_parallel_execution(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
-    impl_folder = worktree_path / ".impl"
-    impl_folder.mkdir()
+    impl_folder = worktree_path / ".erk" / "impl-context" / "branch"
+    impl_folder.mkdir(parents=True)
     (impl_folder / "plan.md").write_text("# Plan", encoding="utf-8")
     (impl_folder / "progress.md").write_text("# Progress\n\n- [ ] Step 1", encoding="utf-8")
 

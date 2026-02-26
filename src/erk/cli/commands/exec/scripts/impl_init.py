@@ -53,13 +53,20 @@ def _validate_impl_folder(cwd: Path | None = None) -> tuple[Path, str]:
     if cwd is None:
         cwd = Path.cwd()
 
-    # Check .impl/ first, then .erk/impl-context/
+    # Check .impl/ first, then .erk/impl-context/<branch>/
     impl_dir = cwd / ".impl"
     impl_type = "impl"
 
     if not impl_dir.exists():
-        impl_dir = cwd / ".erk" / "impl-context"
+        # Search for branch-scoped subdirectory under .erk/impl-context/
+        impl_context_root = cwd / ".erk" / "impl-context"
+        impl_dir = impl_context_root
         impl_type = "impl-context"
+        if impl_context_root.exists():
+            for child in impl_context_root.iterdir():
+                if child.is_dir() and (child / "plan.md").exists():
+                    impl_dir = child
+                    break
 
     if not impl_dir.exists():
         _error_json(

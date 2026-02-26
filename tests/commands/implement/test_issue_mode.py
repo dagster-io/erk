@@ -30,11 +30,11 @@ def test_implement_from_plain_issue_number() -> None:
         result = runner.invoke(implement, ["123"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created .impl/ folder" in result.output
+        assert "✓ Created impl folder" in result.output
 
-        # Verify .impl/ folder exists with correct plan ID
-        plan_ref_path = env.cwd / ".impl" / "plan-ref.json"
-        plan_ref_content = plan_ref_path.read_text(encoding="utf-8")
+        # Verify branch-scoped impl folder exists with correct plan ID
+        impl_dir = env.cwd / ".erk" / "impl-context" / "current"
+        plan_ref_content = (impl_dir / "ref.json").read_text(encoding="utf-8")
         assert '"plan_id": "123"' in plan_ref_content
 
 
@@ -56,13 +56,13 @@ def test_implement_from_issue_number() -> None:
         result = runner.invoke(implement, ["#42"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created .impl/ folder" in result.output
+        assert "✓ Created impl folder" in result.output
 
-        # Verify .impl/ folder exists
-        impl_path = env.cwd / ".impl"
+        # Verify branch-scoped impl folder exists
+        impl_path = env.cwd / ".erk" / "impl-context" / "current"
         assert impl_path.exists()
         assert (impl_path / "plan.md").exists()
-        assert (impl_path / "plan-ref.json").exists()
+        assert (impl_path / "ref.json").exists()
 
 
 def test_implement_from_issue_url() -> None:
@@ -84,11 +84,11 @@ def test_implement_from_issue_url() -> None:
         result = runner.invoke(implement, [url], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created .impl/ folder" in result.output
+        assert "✓ Created impl folder" in result.output
 
-        # Verify plan-ref.json contains correct plan ID
-        plan_ref_path = env.cwd / ".impl" / "plan-ref.json"
-        plan_ref_content = plan_ref_path.read_text(encoding="utf-8")
+        # Verify ref.json contains correct plan ID
+        impl_dir = env.cwd / ".erk" / "impl-context" / "current"
+        plan_ref_content = (impl_dir / "ref.json").read_text(encoding="utf-8")
         assert '"plan_id": "123"' in plan_ref_content
 
 
@@ -110,10 +110,10 @@ def test_implement_creates_impl_folder_in_cwd() -> None:
         result = runner.invoke(implement, ["#42"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created .impl/ folder" in result.output
+        assert "✓ Created impl folder" in result.output
 
-        # Verify .impl/ was created in current directory
-        impl_dir = env.cwd / ".impl"
+        # Verify branch-scoped impl was created in current directory
+        impl_dir = env.cwd / ".erk" / "impl-context" / "current"
         assert impl_dir.exists()
 
 

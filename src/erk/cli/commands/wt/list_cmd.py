@@ -92,18 +92,20 @@ def _get_impl_issue(
     Returns:
         Tuple of (issue number formatted as "#{number}", issue URL) or (None, None) if not found
     """
-    # Try .impl/issue.json first
-    impl_path = get_impl_path(worktree_path, git_ops=ctx.git)
-    if impl_path is not None:
-        # impl_path points to plan.md, get the parent .impl/ directory
-        plan_ref = read_plan_ref(impl_path.parent)
-        if plan_ref is not None:
-            return f"#{plan_ref.plan_id}", plan_ref.url
-
-    # Fallback to git config (no URL available from git config)
-    # If branch not provided, fetch it (for backwards compatibility)
+    # Resolve branch name up front for impl directory lookup
     if branch is None:
         branch = ctx.git.branch.get_current_branch(worktree_path)
+
+    # Try impl folder first
+    if branch is not None:
+        impl_path = get_impl_path(worktree_path, branch_name=branch, git_ops=ctx.git)
+        if impl_path is not None:
+            # impl_path points to plan.md, get the parent impl directory
+            plan_ref = read_plan_ref(impl_path.parent)
+            if plan_ref is not None:
+                return f"#{plan_ref.plan_id}", plan_ref.url
+
+    # Fallback to git config (no URL available from git config)
     if branch is not None:
         issue_num = ctx.git.branch.get_branch_issue(worktree_path, branch)
         if issue_num is not None:
