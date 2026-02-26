@@ -232,8 +232,8 @@ def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | S
                     f"{divergence.behind} commit(s){ahead_msg}.\n\n"
                     "The remote branch has been updated (e.g., by CI or another session).\n\n"
                     "To fix:\n"
-                    "  erk pr sync-divergence --dangerous   # Fetch, rebase, resolve conflicts\n"
-                    "  erk pr submit -f                     # Force push (overrides remote)"
+                    "  erk pr reconcile-with-remote --dangerous  # Reconcile with remote\n"
+                    "  erk pr submit -f                          # Force push"
                 ),
                 details={
                     "branch": state.branch_name,

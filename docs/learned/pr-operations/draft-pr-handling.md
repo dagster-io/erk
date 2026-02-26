@@ -96,7 +96,7 @@ When using Graphite for stacked PRs, draft status does **not** cascade:
 
 **Symptoms**: `gt submit` fails or `erk pr submit` returns `remote_diverged` error with behind count.
 
-**Resolution**: Run `erk pr sync-divergence --dangerous` to fetch, rebase, and resolve conflicts. Or use `erk pr submit -f` to force push (overrides remote). See [Graphite Divergence Detection](../erk/graphite-divergence-detection.md).
+**Resolution**: Run `erk pr reconcile-with-remote --dangerous` to fetch, rebase, and resolve conflicts. Or use `erk pr submit -f` to force push (overrides remote). See [Graphite Divergence Detection](../erk/graphite-divergence-detection.md).
 
 ### .erk/impl-context/ Already Exists
 

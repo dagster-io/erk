@@ -1,4 +1,4 @@
-"""Tests for erk pr sync-divergence command."""
+"""Tests for erk pr reconcile-with-remote command."""
 
 from click.testing import CliRunner
 
@@ -11,8 +11,8 @@ from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
-def test_pr_sync_divergence_success() -> None:
-    """Test successful sync when branch is diverged."""
+def test_pr_reconcile_with_remote_success() -> None:
+    """Test successful reconciliation when branch is diverged."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
@@ -33,7 +33,7 @@ def test_pr_sync_divergence_success() -> None:
 
         ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
-        result = runner.invoke(pr_group, ["sync-divergence", "--dangerous"], obj=ctx)
+        result = runner.invoke(pr_group, ["reconcile-with-remote", "--dangerous"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Branch synced with remote!" in result.output
@@ -41,11 +41,11 @@ def test_pr_sync_divergence_success() -> None:
         # Claude should be invoked for divergence resolution
         assert len(executor.executed_commands) == 1
         command, _, dangerous_flag, _, _ = executor.executed_commands[0]
-        assert command == "/erk:sync-divergence"
+        assert command == "/erk:reconcile-with-remote"
         assert dangerous_flag is True
 
 
-def test_pr_sync_divergence_requires_dangerous_flag() -> None:
+def test_pr_reconcile_with_remote_requires_dangerous_flag() -> None:
     """Test that command fails when --dangerous flag is not provided (default config)."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -67,7 +67,7 @@ def test_pr_sync_divergence_requires_dangerous_flag() -> None:
 
         ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
-        result = runner.invoke(pr_group, ["sync-divergence"], obj=ctx)
+        result = runner.invoke(pr_group, ["reconcile-with-remote"], obj=ctx)
 
         assert result.exit_code != 0
         assert "Missing option '--dangerous'" in result.output
@@ -75,7 +75,7 @@ def test_pr_sync_divergence_requires_dangerous_flag() -> None:
         assert "fix_conflicts_require_dangerous_flag false" in result.output
 
 
-def test_pr_sync_divergence_skip_dangerous_with_config() -> None:
+def test_pr_reconcile_with_remote_skip_dangerous_with_config() -> None:
     """Test that --dangerous flag is not required when config disables requirement."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -109,14 +109,14 @@ def test_pr_sync_divergence_skip_dangerous_with_config() -> None:
         )
 
         # Invoke WITHOUT --dangerous flag
-        result = runner.invoke(pr_group, ["sync-divergence"], obj=ctx)
+        result = runner.invoke(pr_group, ["reconcile-with-remote"], obj=ctx)
 
         # Should succeed without --dangerous when config disables requirement
         assert result.exit_code == 0
         assert "Branch synced with remote!" in result.output
 
 
-def test_pr_sync_divergence_already_in_sync() -> None:
+def test_pr_reconcile_with_remote_already_in_sync() -> None:
     """Test early exit when no divergence."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -138,7 +138,7 @@ def test_pr_sync_divergence_already_in_sync() -> None:
 
         ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
-        result = runner.invoke(pr_group, ["sync-divergence", "--dangerous"], obj=ctx)
+        result = runner.invoke(pr_group, ["reconcile-with-remote", "--dangerous"], obj=ctx)
 
         assert result.exit_code == 0
         assert "already in sync" in result.output
@@ -147,7 +147,7 @@ def test_pr_sync_divergence_already_in_sync() -> None:
         assert len(executor.executed_commands) == 0
 
 
-def test_pr_sync_divergence_behind_only() -> None:
+def test_pr_reconcile_with_remote_behind_only() -> None:
     """Test fast-forward case (behind but not diverged)."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -169,14 +169,14 @@ def test_pr_sync_divergence_behind_only() -> None:
 
         ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
-        result = runner.invoke(pr_group, ["sync-divergence", "--dangerous"], obj=ctx)
+        result = runner.invoke(pr_group, ["reconcile-with-remote", "--dangerous"], obj=ctx)
 
         assert result.exit_code == 0
         assert "behind remote" in result.output
         assert "Fast-forward possible" in result.output
 
 
-def test_pr_sync_divergence_no_remote_branch() -> None:
+def test_pr_reconcile_with_remote_no_remote_branch() -> None:
     """Test error when no remote tracking branch."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -193,14 +193,14 @@ def test_pr_sync_divergence_no_remote_branch() -> None:
 
         ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
-        result = runner.invoke(pr_group, ["sync-divergence", "--dangerous"], obj=ctx)
+        result = runner.invoke(pr_group, ["reconcile-with-remote", "--dangerous"], obj=ctx)
 
         assert result.exit_code != 0
         assert "No remote tracking branch" in result.output
         assert "origin/feature-branch" in result.output
 
 
-def test_pr_sync_divergence_detached_head() -> None:
+def test_pr_reconcile_with_remote_detached_head() -> None:
     """Test error when not on a branch."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -217,13 +217,13 @@ def test_pr_sync_divergence_detached_head() -> None:
 
         ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
-        result = runner.invoke(pr_group, ["sync-divergence", "--dangerous"], obj=ctx)
+        result = runner.invoke(pr_group, ["reconcile-with-remote", "--dangerous"], obj=ctx)
 
         assert result.exit_code != 0
         assert "Not on a branch" in result.output
 
 
-def test_pr_sync_divergence_claude_not_available() -> None:
+def test_pr_reconcile_with_remote_claude_not_available() -> None:
     """Test error when Claude is not installed."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -245,7 +245,7 @@ def test_pr_sync_divergence_claude_not_available() -> None:
 
         ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
-        result = runner.invoke(pr_group, ["sync-divergence", "--dangerous"], obj=ctx)
+        result = runner.invoke(pr_group, ["reconcile-with-remote", "--dangerous"], obj=ctx)
 
         assert result.exit_code != 0
         assert "Claude CLI is required" in result.output
@@ -255,7 +255,7 @@ def test_pr_sync_divergence_claude_not_available() -> None:
         assert len(executor.executed_commands) == 0
 
 
-def test_pr_sync_divergence_aborts_on_semantic_conflict() -> None:
+def test_pr_reconcile_with_remote_aborts_on_semantic_conflict() -> None:
     """Test that command aborts when Claude prompts for user input (semantic conflict)."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -281,14 +281,14 @@ def test_pr_sync_divergence_aborts_on_semantic_conflict() -> None:
 
         ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
-        result = runner.invoke(pr_group, ["sync-divergence", "--dangerous"], obj=ctx)
+        result = runner.invoke(pr_group, ["reconcile-with-remote", "--dangerous"], obj=ctx)
 
         # Should fail with semantic conflict message
         assert result.exit_code != 0
         assert "interactive resolution" in result.output
 
 
-def test_pr_sync_divergence_fails_on_command_error() -> None:
+def test_pr_reconcile_with_remote_fails_on_command_error() -> None:
     """Test that command fails when slash command execution fails."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -313,14 +313,14 @@ def test_pr_sync_divergence_fails_on_command_error() -> None:
 
         ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
-        result = runner.invoke(pr_group, ["sync-divergence", "--dangerous"], obj=ctx)
+        result = runner.invoke(pr_group, ["reconcile-with-remote", "--dangerous"], obj=ctx)
 
         assert result.exit_code != 0
         # Error message from FakePromptExecutor
         assert "failed" in result.output.lower()
 
 
-def test_pr_sync_divergence_fails_when_no_work_events() -> None:
+def test_pr_reconcile_with_remote_fails_when_no_work_events() -> None:
     """Test that command fails when Claude completes but produces no work events."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -346,7 +346,7 @@ def test_pr_sync_divergence_fails_when_no_work_events() -> None:
 
         ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
-        result = runner.invoke(pr_group, ["sync-divergence", "--dangerous"], obj=ctx)
+        result = runner.invoke(pr_group, ["reconcile-with-remote", "--dangerous"], obj=ctx)
 
         # Should fail due to no work events
         assert result.exit_code != 0
