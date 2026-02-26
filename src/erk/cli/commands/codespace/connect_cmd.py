@@ -66,7 +66,8 @@ def connect_codespace(
     else:
         setup_commands = "git pull && uv sync && source .venv/bin/activate"
         claude_command = "claude --dangerously-skip-permissions"
-        remote_command = f"bash -l -c '{export_prefix}{setup_commands} && {claude_command}'"
+        tmux_claude = f"tmux new-session -A -s claude {claude_command}"
+        remote_command = f"bash -l -c '{export_prefix}{setup_commands} && {tmux_claude}'"
 
     # Replace current process with SSH session to codespace
     ctx.codespace.exec_ssh_interactive(codespace.gh_name, remote_command)
