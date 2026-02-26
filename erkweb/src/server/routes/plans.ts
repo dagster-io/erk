@@ -211,9 +211,9 @@ function runErkCommand(
   );
 }
 
-// Submit plan to queue
-router.post('/plans/:issueNumber/submit', (req, res) => {
-  runErkCommand(['plan', 'submit', req.params.issueNumber, '-f'], {timeout: 120_000}, (result) =>
+// Dispatch plan to queue
+router.post('/plans/:issueNumber/dispatch', (req, res) => {
+  runErkCommand(['pr', 'dispatch', req.params.issueNumber, '-f'], {timeout: 120_000}, (result) =>
     res.json(result),
   );
 });
