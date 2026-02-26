@@ -1,0 +1,8 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Update remaining .impl references and tripwires in docs/learned/",
+  "objective_id": 8197,
+  "node_ids": [
+    "4.3+4.4"
+  ]
+}
