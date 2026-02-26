@@ -25,7 +25,7 @@ The dependency graph converts flat roadmap phases into a directed acyclic graph 
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py, ObjectiveNode -->
 
-Frozen dataclass representing a single step in the dependency graph. See `ObjectiveNode` in `packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py`. Fields: `id`, `description`, `status`, `plan`, `pr`, `depends_on`.
+Frozen dataclass representing a single step in the dependency graph. See `ObjectiveNode` in `packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py`. Fields: `id`, `description`, `status`, `pr`, `depends_on`, `slug`.
 
 ### DependencyGraph
 

@@ -11,6 +11,8 @@ tripwires:
     warning: "Check with X_exists() first for cleaner error messages and LBYL compliance."
   - action: "implementing idempotent operations that fail on missing resources"
     warning: "Use LBYL existence check to return early, making the operation truly idempotent."
+  - action: "adding a get_X() method to a gateway ABC without a corresponding X_exists() convenience method"
+    warning: "Gateway ABCs pair fetch methods with lightweight existence checks. Add X_exists() alongside get_X() for LBYL compliance at CLI boundaries."
 ---
 
 # LBYL Gateway Pattern

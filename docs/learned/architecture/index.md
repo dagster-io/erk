@@ -61,6 +61,7 @@
 - **[github-cli-limits.md](github-cli-limits.md)** — using gh pr diff in production code, working with large pull requests (300+ files), encountering HTTP 406 errors from gh CLI, implementing PR file discovery, working with GitHub codespaces in code, implementing codespace operations
 - **[github-cli-quirks.md](github-cli-quirks.md)** — using gh gist create with --filename flag, debugging unexpected gh CLI behavior, working with gh gist commands
 - **[github-gist-api.md](github-gist-api.md)** — constructing gist raw URLs, downloading gist content programmatically, working with single-file gists
+- **[github-graphql-label-semantics.md](github-graphql-label-semantics.md)** — querying GitHub issues or PRs with multiple label filters, debugging unexpected empty results from GitHub GraphQL label queries, implementing label-based filtering for plan or issue views
 - **[github-graphql.md](github-graphql.md)** — using gh api graphql, writing GraphQL queries for GitHub, passing variables to GraphQL queries, fetching data not available in REST API
 - **[github-interface-patterns.md](github-interface-patterns.md)** — calling GitHub API from erk, working with gh api command, fetching PR or issue data efficiently, understanding PRDetails type
 - **[github-issue-autoclose.md](github-issue-autoclose.md)** — understanding why erk no longer uses Closes #N, understanding plan issue closure strategy
@@ -69,6 +70,7 @@
 - **[globalconfig-field-addition.md](globalconfig-field-addition.md)** — adding a new field to GlobalConfig, extending erk's global configuration, adding a user-configurable setting to ~/.erk/config.toml
 - **[graphite-cache-invalidation.md](graphite-cache-invalidation.md)** — implementing mtime-based cache invalidation, caching Graphite branch metadata, optimizing repeated calls to git or graphite operations
 - **[hook-marker-detection.md](hook-marker-detection.md)** — Adding a new hook managed by erk, Implementing version detection for artifacts, Understanding how hook updates work
+- **[http-accelerated-plan-refresh.md](http-accelerated-plan-refresh.md)** — understanding dual-path architecture for plan data fetching, working with HttpClient ABC extensions, optimizing plan list performance
 - **[impl-context-api.md](impl-context-api.md)** — working with .erk/impl-context/ folder, understanding plan submission staging, creating or removing impl-context directories
 - **[impl-folder-lifecycle.md](impl-folder-lifecycle.md)** — working with .impl/ or .erk/impl-context/ folders, understanding remote implementation workflow, debugging plan visibility in PRs
 - **[inference-hoisting.md](inference-hoisting.md)** — adding LLM calls to an exec script, calling PromptExecutor from a CLI command or exec script, working with BranchSlugGenerator or generate_slug_or_fallback, adding --branch-slug or similar pre-computed value flags to exec commands, understanding why exec scripts must be deterministic, refactoring nested LLM calls out of exec scripts
