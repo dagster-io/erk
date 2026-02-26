@@ -91,7 +91,7 @@ describe("App", () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByText("Submit")).toBeInTheDocument();
+      expect(screen.getByText("Dispatch")).toBeInTheDocument();
     });
     expect(screen.getByText("Land")).toBeInTheDocument();
     expect(screen.getByText("Close")).toBeInTheDocument();
@@ -274,15 +274,15 @@ describe("App", () => {
       render(<App />);
 
       await waitFor(() => {
-        expect(screen.getByText("Submit")).toBeInTheDocument();
+        expect(screen.getByText("Dispatch")).toBeInTheDocument();
       });
 
       const user = userEvent.setup();
-      await user.click(screen.getByText("Submit"));
+      await user.click(screen.getByText("Dispatch"));
 
       expect(window.erkdesk.startStreamingAction).toHaveBeenCalledWith("erk", [
-        "plan",
-        "submit",
+        "pr",
+        "dispatch",
         "1",
       ]);
       expect(screen.getByText("Running...")).toBeInTheDocument();
@@ -304,11 +304,11 @@ describe("App", () => {
       render(<App />);
 
       await waitFor(() => {
-        expect(screen.getByText("Submit")).toBeInTheDocument();
+        expect(screen.getByText("Dispatch")).toBeInTheDocument();
       });
 
       const user = userEvent.setup();
-      await user.click(screen.getByText("Submit"));
+      await user.click(screen.getByText("Dispatch"));
       expect(screen.getByText("Running...")).toBeInTheDocument();
 
       await user.click(screen.getByLabelText("Dismiss log panel"));
@@ -325,7 +325,7 @@ describe("App", () => {
       const { unmount } = render(<App />);
 
       await waitFor(() => {
-        expect(screen.getByText("Submit")).toBeInTheDocument();
+        expect(screen.getByText("Dispatch")).toBeInTheDocument();
       });
 
       expect(window.erkdesk.onActionOutput).toHaveBeenCalled();
