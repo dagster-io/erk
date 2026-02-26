@@ -283,4 +283,3 @@ class RealGraphite(Graphite):
             check=False,
         )
         return result.returncode == 0
-

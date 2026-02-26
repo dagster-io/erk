@@ -369,4 +369,3 @@ class Graphite(ABC):
                 error="squash-failed",
                 message=f"Failed to squash: {e}",
             )
-

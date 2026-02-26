@@ -76,5 +76,3 @@ def test_submit_stack_invalidates_branches_cache() -> None:
 
         # Cache should be invalidated after submit_stack
         assert ops._branches_cache is None
-
-
