@@ -57,8 +57,8 @@ from erk_shared.sessions.discovery import (
 )
 
 
-def _extract_issue_number(identifier: str) -> int | None:
-    """Extract issue number from identifier (number or URL).
+def _extract_plan_number(identifier: str) -> int | None:
+    """Extract plan number from identifier (number or URL).
 
     Args:
         identifier: Issue number or GitHub issue URL
@@ -226,15 +226,15 @@ def get_learn_sessions(ctx: click.Context, issue: str | None) -> None:
     # Resolve plan_id: explicit argument or infer from branch
     plan_id: str | None = None
     if issue is not None:
-        issue_number = _extract_issue_number(issue)
-        if issue_number is None:
+        plan_number = _extract_plan_number(issue)
+        if plan_number is None:
             error = GetLearnSessionsErrorDict(
                 success=False,
                 error=f"Invalid issue identifier: {issue}",
             )
             click.echo(json.dumps(error))
             raise SystemExit(1)
-        plan_id = str(issue_number)
+        plan_id = str(plan_number)
     elif branch_name is not None:
         plan_id = plan_backend.resolve_plan_id_for_branch(repo_root, branch_name)
 

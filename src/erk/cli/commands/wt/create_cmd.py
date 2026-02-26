@@ -565,7 +565,7 @@ def create_wt(
     # to ensure we check for .impl at the worktree root, not ctx.cwd
 
     # Initialize variables used in conditional blocks (for type checking)
-    issue_number_parsed: int | None = None
+    plan_number_parsed: int | None = None
     plan: Plan | None = None
 
     # Handle --from-current-branch flag
@@ -612,7 +612,7 @@ def create_wt(
             not name, "Cannot specify both NAME and --from-plan. Use one or the other."
         )
         # Parse issue number from URL or plain number - raises click.ClickException if invalid
-        issue_number_parsed = parse_issue_identifier(from_plan)
+        plan_number_parsed = parse_issue_identifier(from_plan)
         # Note: name will be derived from issue title after fetching
         # Defer fetch until after repo discovery below
         name = None  # Will be set after fetching issue
@@ -653,22 +653,22 @@ def create_wt(
 
     # Handle issue fetching after repo discovery
     if from_plan:
-        # Type narrowing: issue_number_parsed must be set if from_plan is True
-        assert issue_number_parsed is not None, (
-            "issue_number_parsed must be set when from_plan is True"
+        # Type narrowing: plan_number_parsed must be set if from_plan is True
+        assert plan_number_parsed is not None, (
+            "plan_number_parsed must be set when from_plan is True"
         )
 
         # Fetch plan using plan_store (composed from issues layer)
-        result = ctx.plan_store.get_plan(repo.root, str(issue_number_parsed))
+        result = ctx.plan_store.get_plan(repo.root, str(plan_number_parsed))
         if isinstance(result, PlanNotFound):
             user_output(
                 click.style("Error: ", fg="red")
-                + f"Failed to fetch issue #{issue_number_parsed}\n"
-                + f"Details: Issue #{issue_number_parsed} not found\n\n"
+                + f"Failed to fetch issue #{plan_number_parsed}\n"
+                + f"Details: Issue #{plan_number_parsed} not found\n\n"
                 + "Troubleshooting:\n"
                 + "  • Verify issue number is correct\n"
                 + "  • Check repository access: gh auth status\n"
-                + f"  • Try viewing manually: gh issue view {issue_number_parsed}"
+                + f"  • Try viewing manually: gh issue view {plan_number_parsed}"
             )
             raise SystemExit(1)
         plan = result

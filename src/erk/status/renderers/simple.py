@@ -92,15 +92,15 @@ class SimpleRenderer:
         )
 
         # Show GitHub issue link if available (make clickable)
-        if status.plan.issue_number is not None and status.plan.issue_url:
-            id_text = f"#{status.plan.issue_number}"
+        if status.plan.plan_number is not None and status.plan.plan_url:
+            id_text = f"#{status.plan.plan_number}"
             colored_id = click.style(id_text, fg="cyan")
             # Make ID clickable using OSC 8
-            clickable_id = f"\033]8;;{status.plan.issue_url}\033\\{colored_id}\033]8;;\033\\"
+            clickable_id = f"\033]8;;{status.plan.plan_url}\033\\{colored_id}\033]8;;\033\\"
             user_output(f"  Issue: {clickable_id}")
             user_output(
                 click.style(
-                    f"  {status.plan.issue_url}",
+                    f"  {status.plan.plan_url}",
                     fg="white",
                     dim=True,
                 )

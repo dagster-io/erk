@@ -416,7 +416,7 @@ def upgrade_repo(ctx: ErkContext) -> None:
 
 
 @admin_group.command("test-plan-implement-gh-workflow")
-@click.option("--issue", "-i", type=int, help="Existing issue number to use")
+@click.option("--issue", "-i", type=int, help="Existing plan issue number to use")
 @click.option("--watch", "-w", is_flag=True, help="Watch the workflow run after triggering")
 @click.pass_obj
 def test_plan_implement_gh_workflow(ctx: ErkContext, issue: int | None, watch: bool) -> None:
@@ -458,8 +458,8 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, issue: int | None, watch: b
 
     # Step 2: Find or create test issue
     if issue is not None:
-        issue_number = issue
-        user_output(f"Using existing issue #{issue_number}")
+        plan_number = issue
+        user_output(f"Using existing issue #{plan_number}")
     else:
         result = ctx.issues.create_issue(
             repo_root=repo.root,
@@ -467,8 +467,8 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, issue: int | None, watch: b
             body="This issue was created to test the plan-implement workflow. Safe to close.",
             labels=["test"],
         )
-        issue_number = result.number
-        user_output(click.style("✓", fg="green") + f" Created test issue #{issue_number}")
+        plan_number = result.number
+        user_output(click.style("✓", fg="green") + f" Created test issue #{plan_number}")
 
     # Detect trunk branch for PR base
     trunk = ctx.git.branch.detect_trunk_branch(repo.root)
@@ -524,10 +524,10 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, issue: int | None, watch: b
         workflow="plan-implement.yml",
         ref=current_branch,
         inputs={
-            "issue_number": str(issue_number),
+            "plan_id": str(plan_number),
             "submitted_by": username,
             "distinct_id": distinct_id,
-            "issue_title": "Test workflow run",
+            "plan_title": "Test workflow run",
             "branch_name": test_branch,
             "pr_number": str(pr_number),
             "base_branch": trunk,

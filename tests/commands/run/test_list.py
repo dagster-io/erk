@@ -71,7 +71,7 @@ def test_list_runs_single_success_run_with_issue_linkage(tmp_path: Path) -> None
             conclusion="success",
             branch="feat-1",
             head_sha="abc123",
-            display_title="142:abc456",  # New format: issue_number:distinct_id
+            display_title="142:abc456",  # New format: plan_number:distinct_id
         ),
     ]
     github_ops = FakeGitHub(workflow_runs=workflow_runs)
