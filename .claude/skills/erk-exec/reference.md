@@ -61,7 +61,7 @@ Quick reference for all `erk exec` subcommands.
 | `handle-no-changes`               | Handle no-changes scenario gracefully.                                    |
 | `impl-init`                       | Initialize implementation by validating .impl/ folder.                    |
 | `impl-signal`                     | Signal implementation events to GitHub.                                   |
-| `impl-verify`                     | Verify .impl/ folder still exists after implementation.                   |
+| `impl-verify`                     | Verify implementation folder still exists after implementation.           |
 | `land-execute`                    | Execute deferred land operations.                                         |
 | `list-sessions`                   | List Claude Code sessions with metadata for the current project.          |
 | `mark-impl-ended`                 | Update implementation ended event in GitHub issue and local state file.   |
