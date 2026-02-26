@@ -5,6 +5,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal, TypedDict
 
+from erk_shared.non_ideal_state import EnsurableResult
+
 PRState = Literal["OPEN", "MERGED", "CLOSED"]
 
 MergeableStatus = Literal["MERGEABLE", "CONFLICTING", "UNKNOWN"]
@@ -111,7 +113,7 @@ class PRNotFound:
 
 
 @dataclass(frozen=True)
-class PRDetails:
+class PRDetails(EnsurableResult):
     """Comprehensive PR information from a single GitHub API call.
 
     This dataclass contains all commonly-needed PR fields, allowing call sites

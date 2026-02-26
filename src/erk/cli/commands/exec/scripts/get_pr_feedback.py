@@ -24,7 +24,7 @@ from typing import TypedDict
 
 import click
 
-from erk.cli.script_output import exit_with_error
+from erk.cli.script_output import exit_with_error, handle_non_ideal_exit
 from erk_shared.context.helpers import (
     get_current_branch,
     require_github,
@@ -33,50 +33,8 @@ from erk_shared.context.helpers import (
 )
 from erk_shared.gateway.github.checks import GitHubChecks
 from erk_shared.gateway.github.issues.types import IssueComment
-from erk_shared.gateway.github.types import PRDetails, PRReviewThread
-from erk_shared.non_ideal_state import (
-    BranchDetectionFailed,
-    GitHubAPIFailed,
-    NoPRForBranch,
-    PRNotFoundError,
-)
-
-# --- Ensure helpers (LBYL error handling) ---
-
-
-def _ensure_branch(branch_result: str | BranchDetectionFailed) -> str:
-    """Ensure branch was detected, exit with error if not."""
-    if isinstance(branch_result, BranchDetectionFailed):
-        exit_with_error(branch_result.error_type, branch_result.message)
-    assert not isinstance(branch_result, BranchDetectionFailed)
-    return branch_result
-
-
-def _ensure_pr_for_branch(pr_result: PRDetails | NoPRForBranch) -> PRDetails:
-    """Ensure PR lookup by branch succeeded, exit with error if not."""
-    if isinstance(pr_result, NoPRForBranch):
-        exit_with_error(pr_result.error_type, pr_result.message)
-    assert not isinstance(pr_result, NoPRForBranch)
-    return pr_result
-
-
-def _ensure_pr_by_number(pr_result: PRDetails | PRNotFoundError) -> PRDetails:
-    """Ensure PR lookup by number succeeded, exit with error if not."""
-    if isinstance(pr_result, PRNotFoundError):
-        exit_with_error(pr_result.error_type, pr_result.message)
-    assert not isinstance(pr_result, PRNotFoundError)
-    return pr_result
-
-
-def _ensure_comments(
-    comments_result: list[IssueComment] | GitHubAPIFailed,
-) -> list[IssueComment]:
-    """Ensure comments fetch succeeded, exit with error if not."""
-    if isinstance(comments_result, GitHubAPIFailed):
-        exit_with_error(comments_result.error_type, comments_result.message)
-    assert not isinstance(comments_result, GitHubAPIFailed)
-    return comments_result
-
+from erk_shared.gateway.github.types import PRReviewThread
+from erk_shared.non_ideal_state import BranchDetectionFailed
 
 # --- JSON output types ---
 
@@ -142,6 +100,7 @@ def _format_discussion_comment(comment: IssueComment) -> DiscussionCommentDict:
 @click.option("--pr", type=int, default=None, help="PR number (defaults to current branch's PR)")
 @click.option("--include-resolved", is_flag=True, help="Include resolved review threads")
 @click.pass_context
+@handle_non_ideal_exit
 def get_pr_feedback(ctx: click.Context, pr: int | None, include_resolved: bool) -> None:
     """Fetch all PR feedback in a single command.
 
@@ -156,10 +115,13 @@ def get_pr_feedback(ctx: click.Context, pr: int | None, include_resolved: bool) 
 
     # Single PR lookup
     if pr is None:
-        branch = _ensure_branch(GitHubChecks.branch(get_current_branch(ctx)))
-        pr_details = _ensure_pr_for_branch(GitHubChecks.pr_for_branch(github, repo_root, branch))
+        branch = GitHubChecks.branch(get_current_branch(ctx))
+        if isinstance(branch, BranchDetectionFailed):
+            branch.ensure()
+        assert not isinstance(branch, BranchDetectionFailed)  # Type narrowing after NoReturn
+        pr_details = GitHubChecks.pr_for_branch(github, repo_root, branch).ensure()
     else:
-        pr_details = _ensure_pr_by_number(GitHubChecks.pr_by_number(github, repo_root, pr))
+        pr_details = GitHubChecks.pr_by_number(github, repo_root, pr).ensure()
 
     # Parallel fetch of review threads and discussion comments
     with ThreadPoolExecutor(max_workers=2) as executor:
@@ -181,10 +143,7 @@ def get_pr_feedback(ctx: click.Context, pr: int | None, include_resolved: bool) 
         except RuntimeError as e:
             exit_with_error("github-api-failed", str(e))
 
-        comments_result = comments_future.result()
-
-    # Validate comments result
-    comments = _ensure_comments(comments_result)
+        comments = comments_future.result().ensure()
 
     # Filter out threads with invalid IDs
     valid_threads = [t for t in threads if t.id]
