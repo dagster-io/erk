@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Fix CI: git add fails for .erk/impl-context due to .gitignore"
-}
