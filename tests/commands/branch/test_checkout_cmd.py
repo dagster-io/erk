@@ -770,18 +770,14 @@ def test_checkout_for_plan_prints_activation_when_sync_status_fails() -> None:
             default_branches={env.cwd: "main"},
             local_branches={env.cwd: ["main", "plan-600"]},
             existing_paths={env.cwd, env.repo.worktrees_dir},
+            ahead_behind_raises=RuntimeError("upstream tracking ref not set"),
         )
 
         ctx = build_workspace_test_context(env, git=git, plan_store=plan_store)
 
-        # Simulate display_sync_status raising (get_ahead_behind fails for new branch)
-        with (
-            patch.dict(os.environ, {"ERK_SHELL": "zsh"}),
-            patch(
-                "erk.cli.commands.branch.checkout_cmd.display_sync_status",
-                side_effect=RuntimeError("upstream tracking ref not set"),
-            ),
-        ):
+        # get_ahead_behind raises RuntimeError, simulating upstream tracking ref not set.
+        # display_sync_status catches this internally, so activation instructions still print.
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
             result = runner.invoke(branch_group, ["checkout", "--for-plan", "600"], obj=ctx)
 
         assert result.exit_code == 0, f"Failed: {result.output}"

@@ -166,6 +166,7 @@ class FakeGit(Git):
         create_branch_error: BranchAlreadyExists | None = None,
         add_worktree_error: str | None = None,
         remove_worktree_error: str | None = None,
+        ahead_behind_raises: RuntimeError | None = None,
     ) -> None:
         """Create FakeGit with pre-configured state.
 
@@ -228,6 +229,7 @@ class FakeGit(Git):
             create_branch_error: BranchAlreadyExists to return from create_branch()
             add_worktree_error: Error message to raise as RuntimeError from add_worktree()
             remove_worktree_error: Error message to raise as RuntimeError from remove_worktree()
+            ahead_behind_raises: If set, get_ahead_behind() raises this error
         """
         self._worktrees = worktrees or {}
         self._current_branches = current_branches or {}
@@ -354,6 +356,7 @@ class FakeGit(Git):
             delete_branch_raises=self._delete_branch_raises,
             tracking_branch_failures=self._tracking_branch_failures,
             create_branch_error=create_branch_error,
+            ahead_behind_raises=ahead_behind_raises,
         )
         # Link mutation tracking so FakeGit properties see mutations from FakeGitBranchOps
         self._branch_gateway.link_mutation_tracking(

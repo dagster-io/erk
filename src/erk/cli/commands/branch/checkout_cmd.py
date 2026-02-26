@@ -235,11 +235,7 @@ def _perform_checkout(
 
     if should_output_message:
         user_output(user_message)
-        # Display sync status after checkout message (non-critical — don't block activation output)
-        try:
-            display_sync_status(ctx, worktree_path=target_path, branch=branch, script=script)
-        except Exception:
-            pass  # Sync status is informational; activation instructions must still print
+        display_sync_status(ctx, worktree_path=target_path, branch=branch, script=script)
 
         # Print activation instructions for opt-in workflow
         activation_script_path = ensure_worktree_activate_script(

@@ -48,6 +48,7 @@ class FakeGitBranchOps(GitBranchOps):
         delete_branch_raises: dict[str, Exception] | None = None,
         tracking_branch_failures: dict[str, str] | None = None,
         create_branch_error: BranchAlreadyExists | None = None,
+        ahead_behind_raises: RuntimeError | None = None,
     ) -> None:
         """Create FakeGitBranchOps with pre-configured state.
 
@@ -68,6 +69,7 @@ class FakeGitBranchOps(GitBranchOps):
             tracking_branch_failures: Mapping of branch name -> error message to raise
                 when create_tracking_branch is called for that branch
             create_branch_error: If set, create_branch returns this error instead of BranchCreated
+            ahead_behind_raises: If set, get_ahead_behind() raises this error
         """
         self._worktrees = worktrees if worktrees is not None else {}
         self._current_branches = current_branches if current_branches is not None else {}
@@ -94,6 +96,7 @@ class FakeGitBranchOps(GitBranchOps):
             tracking_branch_failures if tracking_branch_failures is not None else {}
         )
         self._create_branch_error = create_branch_error
+        self._ahead_behind_raises = ahead_behind_raises
 
         # Mutation tracking
         self._created_branches: list[
@@ -312,6 +315,8 @@ class FakeGitBranchOps(GitBranchOps):
 
     def get_ahead_behind(self, cwd: Path, branch: str) -> tuple[int, int]:
         """Get number of commits ahead and behind tracking branch."""
+        if self._ahead_behind_raises is not None:
+            raise self._ahead_behind_raises
         return self._ahead_behind.get((cwd, branch), (0, 0))
 
     def get_all_branch_sync_info(self, repo_root: Path) -> dict[str, BranchSyncInfo]:
