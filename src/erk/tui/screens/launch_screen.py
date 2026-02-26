@@ -120,11 +120,14 @@ class LaunchScreen(ModalScreen[str | None]):
             yield Label("Press a key or Esc to cancel", id="launch-footer")
 
     def on_key(self, event: Key) -> None:
-        """Handle key press—dispatch to command if mapped."""
+        """Handle key press—dispatch to command if mapped, dismiss otherwise."""
+        event.prevent_default()
+        event.stop()
         command_id = self._key_to_command_id.get(event.key)
         if command_id is not None:
-            event.prevent_default()
             self.dismiss(command_id)
+        elif event.key not in ("escape", "q"):
+            self.dismiss(None)
 
     def action_dismiss_cancel(self) -> None:
         """Dismiss the screen with no action."""
