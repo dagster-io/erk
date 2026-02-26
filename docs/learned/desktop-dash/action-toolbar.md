@@ -31,7 +31,7 @@ Each action gates on specific `PlanRow` fields. This table captures which fields
 
 | Action        | Gates On                                  | Why                                      |
 | ------------- | ----------------------------------------- | ---------------------------------------- |
-| Submit        | `issue_url !== null`                      | Needs an issue to submit to the queue    |
+| Dispatch      | `issue_url !== null`                      | Needs an issue to dispatch to the queue  |
 | Land          | `pr_number` + `pr_state=OPEN` + `run_url` | Can only land open PRs with completed CI |
 | Address       | `pr_number !== null`                      | Review comments live on the PR           |
 | Fix Conflicts | `pr_number !== null`                      | Conflicts are a PR-level concern         |
