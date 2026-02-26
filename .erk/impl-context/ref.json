@@ -1,0 +1,8 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Rename `issue_number` \u2192 `plan_number` in Phase 8.1",
+  "objective_id": 7724,
+  "node_ids": [
+    "8.1"
+  ]
+}
