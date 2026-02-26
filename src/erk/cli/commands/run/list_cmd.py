@@ -5,7 +5,7 @@ from rich.console import Console
 from rich.table import Table
 
 from erk.cli.commands.pr.list_cmd import format_pr_cell
-from erk.cli.commands.run.shared import extract_issue_number
+from erk.cli.commands.run.shared import extract_plan_number
 from erk.cli.constants import DISPATCH_WORKFLOW_NAME
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
@@ -40,17 +40,17 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
 
     # Filter out runs without plans unless --show-legacy flag is set
     if not show_all:
-        runs = [run for run in runs if extract_issue_number(run.display_title) is not None]
+        runs = [run for run in runs if extract_plan_number(run.display_title) is not None]
         if not runs:
             user_output("No runs with plans found. Use --show-legacy to see all runs.")
             return
 
     # 2. Extract issue numbers from display_title (format: "123:abc456")
-    issue_numbers: list[int] = []
+    plan_numbers: list[int] = []
     for run in runs:
-        issue_num = extract_issue_number(run.display_title)
-        if issue_num is not None:
-            issue_numbers.append(issue_num)
+        plan_num = extract_plan_number(run.display_title)
+        if plan_num is not None:
+            plan_numbers.append(plan_num)
 
     # 3. Fetch issues for titles (using issues interface)
     issues = ctx.issues.list_issues(repo_root=repo.root, labels=["erk-pr", "erk-plan"])
@@ -60,16 +60,16 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
     if not show_all:
         filtered_runs = []
         for run in runs:
-            issue_num = extract_issue_number(run.display_title)
-            if issue_num is None:
+            plan_num = extract_plan_number(run.display_title)
+            if plan_num is None:
                 continue  # Already filtered, but defensive check
 
             # Filter if issue not found
-            if issue_num not in issue_map:
+            if plan_num not in issue_map:
                 continue
 
             # Filter if title is empty
-            issue = issue_map[issue_num]
+            issue = issue_map[plan_num]
             if not issue.title or not issue.title.strip():
                 continue
 
@@ -89,8 +89,8 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
 
     # 4. Batch fetch PRs linked to issues
     pr_linkages: dict[int, list] = {}
-    if issue_numbers and location is not None:
-        pr_linkages = ctx.github.get_prs_linked_to_issues(location, issue_numbers)
+    if plan_numbers and location is not None:
+        pr_linkages = ctx.github.get_prs_linked_to_issues(location, plan_numbers)
 
     # Determine use_graphite for URL selection
     use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
@@ -106,7 +106,7 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
     table.add_column("chks", no_wrap=True)
 
     for run in runs:
-        issue_num = extract_issue_number(run.display_title)
+        plan_num = extract_plan_number(run.display_title)
 
         # Format run-id with link
         workflow_url = None
@@ -122,7 +122,7 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
 
         # Handle legacy runs where we can't parse the issue number
         # Show "X" to indicate "can't parse" vs "-" for "no data"
-        if issue_num is None:
+        if plan_num is None:
             # Legacy format - can't extract issue linkage
             plan_cell = "[dim]X[/dim]"
             title_cell = "[dim]X[/dim]"
@@ -130,18 +130,18 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
             checks_cell = "[dim]X[/dim]"
         else:
             # New format - have issue number, try to get data
-            issue_url = None
+            plan_url = None
             if location is not None:
-                issue_url = f"https://github.com/{location.repo_id.owner}/{location.repo_id.repo}/issues/{issue_num}"
+                plan_url = f"https://github.com/{location.repo_id.owner}/{location.repo_id.repo}/issues/{plan_num}"
             # Make plan number clickable
-            if issue_url:
-                plan_cell = f"[link={issue_url}][cyan]#{issue_num}[/cyan][/link]"
+            if plan_url:
+                plan_cell = f"[link={plan_url}][cyan]#{plan_num}[/cyan][/link]"
             else:
-                plan_cell = f"[cyan]#{issue_num}[/cyan]"
+                plan_cell = f"[cyan]#{plan_num}[/cyan]"
 
             # Get title from issue map
-            if issue_num in issue_map:
-                issue = issue_map[issue_num]
+            if plan_num in issue_map:
+                issue = issue_map[plan_num]
 
                 title = issue.title
                 # Truncate to 50 characters
@@ -154,8 +154,8 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
             # Format PR column
             pr_cell = "-"
             checks_cell = "-"
-            if issue_num in pr_linkages:
-                prs = pr_linkages[issue_num]
+            if plan_num in pr_linkages:
+                prs = pr_linkages[plan_num]
                 selected_pr = select_display_pr(prs, exclude_pr_numbers=None)
                 if selected_pr is not None:
                     graphite_url = ctx.graphite.get_graphite_url(
