@@ -1,4 +1,9 @@
 {
   "provider": "github-draft-pr",
-  "title": "Eliminate \"Closes #N\" from PR Bodies"
+  "plan_id": "8235",
+  "url": "https://github.com/dagster-io/erk/pull/8235",
+  "created_at": "2026-02-25T18:04:15.204328",
+  "synced_at": "2026-02-25T18:04:15.204328",
+  "labels": [],
+  "objective_id": null
 }
