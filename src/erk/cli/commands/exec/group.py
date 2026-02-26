@@ -67,6 +67,7 @@ from erk.cli.commands.exec.scripts.get_pr_context import get_pr_context
 from erk.cli.commands.exec.scripts.get_pr_discussion_comments import (
     get_pr_discussion_comments,
 )
+from erk.cli.commands.exec.scripts.get_pr_feedback import get_pr_feedback
 from erk.cli.commands.exec.scripts.get_pr_for_plan import get_pr_for_plan
 from erk.cli.commands.exec.scripts.get_pr_review_comments import (
     get_pr_review_comments,
@@ -228,6 +229,7 @@ exec_group.add_command(get_pr_context, name="get-pr-context")
 exec_group.add_command(handle_no_changes, name="handle-no-changes")
 exec_group.add_command(get_pr_commits, name="get-pr-commits")
 exec_group.add_command(get_pr_discussion_comments, name="get-pr-discussion-comments")
+exec_group.add_command(get_pr_feedback, name="get-pr-feedback")
 exec_group.add_command(get_pr_review_comments, name="get-pr-review-comments")
 exec_group.add_command(impl_init, name="impl-init")
 exec_group.add_command(impl_signal, name="impl-signal")
