@@ -19,12 +19,16 @@ from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.impl_folder import get_impl_dir
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
 from tests.test_utils.plan_helpers import (
     create_backend_from_issues,
     format_plan_header_body_for_test,
 )
+
+BRANCH = "test/branch"
+"""Test branch name used across tests."""
 
 
 def _make_state(
@@ -137,10 +141,10 @@ def test_updates_pr_title_and_body(tmp_path: Path) -> None:
 
 
 def test_adds_learn_plan_label(tmp_path: Path) -> None:
-    """.impl/ learn plan => adds ERK_SKIP_LEARN_LABEL."""
-    # Create .impl/issue.json with erk-learn label
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    """Branch-scoped impl dir with erk-learn label => adds ERK_SKIP_LEARN_LABEL."""
+    # Create branch-scoped impl dir with issue.json with erk-learn label
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
     issue_json = impl_dir / "issue.json"
     issue_json.write_text(
         json.dumps(
@@ -164,7 +168,7 @@ def test_adds_learn_plan_label(tmp_path: Path) -> None:
         pr_details={42: pr},
     )
     ctx = context_for_test(git=fake_git, github=fake_github, cwd=tmp_path)
-    state = _make_state(cwd=tmp_path)
+    state = _make_state(cwd=tmp_path, branch_name=BRANCH)
 
     result = finalize_pr(ctx, state)
 

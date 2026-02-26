@@ -155,8 +155,8 @@ def test_implement_submit_with_dry_run() -> None:
         assert "/fast-ci" in result.output
         assert "/gt:pr-submit" in result.output
 
-        # Verify no .impl/ created in dry-run
-        assert not (env.cwd / ".impl").exists()
+        # Verify no impl-context/ created in dry-run
+        assert not (env.cwd / ".erk" / "impl-context").exists()
 
 
 # Dangerous Flag Tests
@@ -297,8 +297,8 @@ def test_implement_with_dangerous_flag_in_dry_run() -> None:
         )
         assert expected_cmd in result.output
 
-        # Verify no .impl/ created in dry-run
-        assert not (env.cwd / ".impl").exists()
+        # Verify no impl-context/ created in dry-run
+        assert not (env.cwd / ".erk" / "impl-context").exists()
 
 
 def test_implement_with_dangerous_and_submit_in_dry_run() -> None:
@@ -327,8 +327,8 @@ def test_implement_with_dangerous_and_submit_in_dry_run() -> None:
         # Verify all three commands show the dangerous flag
         assert result.output.count("--dangerously-skip-permissions") == 3
 
-        # Verify no .impl/ created in dry-run
-        assert not (env.cwd / ".impl").exists()
+        # Verify no impl-context/ created in dry-run
+        assert not (env.cwd / ".erk" / "impl-context").exists()
 
 
 def test_implement_plan_file_with_dangerous_flag() -> None:

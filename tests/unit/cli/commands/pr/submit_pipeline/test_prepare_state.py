@@ -10,6 +10,10 @@ from erk.cli.commands.pr.submit_pipeline import (
 )
 from erk.core.context import context_for_test
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.impl_folder import get_impl_dir
+
+BRANCH = "test/branch"
+"""Test branch name used across tests."""
 
 
 def _make_state(
@@ -101,9 +105,9 @@ def test_issue_linkage_mismatch_returns_error(tmp_path: Path) -> None:
     P-prefix branches cannot provide an issue number. The test verifies plan_id
     comes from issue.json without any mismatch error.
     """
-    # Create .impl/issue.json with issue number
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    # Create branch-scoped impl dir with issue.json
+    impl_dir = get_impl_dir(tmp_path, branch_name="P42-some-feature")
+    impl_dir.mkdir(parents=True)
     issue_json = impl_dir / "issue.json"
     issue_json.write_text(
         json.dumps(
@@ -137,8 +141,8 @@ def test_auto_repair_creates_plan_ref_json(tmp_path: Path) -> None:
     P-prefix branches cannot provide an issue number for auto-repair. Without
     plan-ref.json, plan_id remains None.
     """
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name="P42-some-feature")
+    impl_dir.mkdir(parents=True)
 
     fake_git = FakeGit(
         repository_roots={tmp_path: tmp_path},
@@ -154,8 +158,8 @@ def test_auto_repair_creates_plan_ref_json(tmp_path: Path) -> None:
     assert isinstance(result, SubmitState)
     # No auto-repair since branch cannot provide issue number
     assert result.plan_id is None
-    # Verify plan-ref.json was NOT created
-    plan_ref_json = impl_dir / "plan-ref.json"
+    # Verify ref.json was NOT created
+    plan_ref_json = impl_dir / "ref.json"
     assert not plan_ref_json.exists()
 
 
@@ -176,9 +180,9 @@ def test_no_plan_id_from_branch(tmp_path: Path) -> None:
 
 
 def test_plan_id_from_impl_folder(tmp_path: Path) -> None:
-    """.impl/issue.json present => plan_id populated."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    """Branch-scoped impl dir with issue.json present => plan_id populated."""
+    impl_dir = get_impl_dir(tmp_path, branch_name="feature-branch")
+    impl_dir.mkdir(parents=True)
     issue_json = impl_dir / "issue.json"
     issue_json.write_text(
         json.dumps(

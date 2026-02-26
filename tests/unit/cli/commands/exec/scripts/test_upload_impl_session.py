@@ -11,7 +11,7 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.upload_impl_session import upload_impl_session
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.impl_folder import save_plan_ref
+from erk_shared.impl_folder import get_impl_dir, save_plan_ref
 
 BRANCH = "feature/test-branch"
 """Test branch name used across tests."""
@@ -26,9 +26,9 @@ def _make_ctx(tmp_path: Path, *, branch: str = BRANCH) -> ErkContext:
 
 
 def _setup_impl_with_plan_ref(tmp_path: Path, *, plan_id: str) -> None:
-    """Create .impl/ with plan.md and plan-ref.json."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    """Create branch-scoped impl dir with plan.md and ref.json."""
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
     (impl_dir / "plan.md").write_text("# Test Plan", encoding="utf-8")
     save_plan_ref(
         impl_dir,
@@ -56,8 +56,8 @@ def test_no_impl_folder(tmp_path: Path) -> None:
 
 def test_no_plan_ref(tmp_path: Path) -> None:
     """Reports not uploaded when impl folder exists but has no plan reference."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    impl_dir.mkdir(parents=True)
     (impl_dir / "plan.md").write_text("# Test", encoding="utf-8")
 
     runner = CliRunner()

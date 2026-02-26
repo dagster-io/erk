@@ -18,6 +18,9 @@ from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 
+BRANCH = "test/branch"
+"""Test branch name used across tests."""
+
 
 def test_file_setup_creates_impl(tmp_path: Path) -> None:
     """--file creates .impl/ with plan content and exits 0."""
@@ -63,12 +66,13 @@ def test_no_plan_found_exits_1(tmp_path: Path) -> None:
 
 
 def test_existing_impl_no_tracking(tmp_path: Path) -> None:
-    """Auto-detects existing .impl/ without plan tracking."""
+    """Auto-detects existing branch-scoped impl folder without plan tracking."""
+    # Use legacy .impl/ — setup_impl path 3a hardcodes cwd / ".impl" (not yet migrated)
     impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir.mkdir(parents=True)
     (impl_dir / "plan.md").write_text("# Existing Plan\n\nContent.\n", encoding="utf-8")
 
-    git = FakeGit(current_branches={tmp_path: "some-branch"})
+    git = FakeGit(current_branches={tmp_path: BRANCH})
     github = FakeGitHub()
     ctx = ErkContext.for_test(cwd=tmp_path, git=git, github=github, repo_root=tmp_path)
 

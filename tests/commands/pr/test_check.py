@@ -9,6 +9,7 @@ from erk.cli.commands.pr import pr_group
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+from erk_shared.impl_folder import get_impl_dir
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -228,15 +229,16 @@ def test_pr_check_handles_empty_pr_body(tmp_path: Path) -> None:
 
 
 def test_pr_check_passes_when_branch_and_plan_ref_match(tmp_path: Path) -> None:
-    """Test PR check passes with matching branch name and .impl/plan-ref.json."""
+    """Test PR check passes with matching branch name and branch-scoped ref.json."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
-        # Create .impl/plan-ref.json with plan 456
-        impl_dir = env.cwd / ".impl"
-        impl_dir.mkdir()
-        plan_ref_json = impl_dir / "plan-ref.json"
+        # Create branch-scoped impl dir with ref.json for plan 456
+        _branch = "plnd/add-feature-01-04-1234"
+        impl_dir = get_impl_dir(env.cwd, branch_name=_branch)
+        impl_dir.mkdir(parents=True)
+        plan_ref_json = impl_dir / "ref.json"
         plan_ref_json.write_text(
             json.dumps(
                 {
@@ -552,10 +554,13 @@ def test_pr_check_stage_impl_all_checks_pass(tmp_path: Path) -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
-        # Create .impl/ with plan-ref.json (no .erk/impl-context/)
+        # Create impl dir with ref.json at legacy .impl/ path.
+        # Using .impl/ avoids creating .erk/impl-context/ as a parent dir,
+        # so the --stage=impl check for ".erk/impl-context/ not present" passes.
+        _branch = "plnd/add-feature-01-04-1234"
         impl_dir = env.cwd / ".impl"
-        impl_dir.mkdir()
-        plan_ref_json = impl_dir / "plan-ref.json"
+        impl_dir.mkdir(parents=True)
+        plan_ref_json = impl_dir / "ref.json"
         plan_ref_json.write_text(
             json.dumps(
                 {
