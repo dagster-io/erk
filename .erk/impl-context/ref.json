@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Documentation Plan: Add --sync flag to auto-submit PR checkouts to Graphite"
+}
