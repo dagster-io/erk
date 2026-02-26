@@ -496,7 +496,7 @@ class IssuePlanSource:
 
 
 def prepare_plan_source_from_issue(
-    ctx: ErkContext, repo_root: Path, issue_number: str, base_branch: str
+    ctx: ErkContext, repo_root: Path, plan_number: str, base_branch: str
 ) -> IssuePlanSource:
     """Prepare plan source from GitHub issue.
 
@@ -505,7 +505,7 @@ def prepare_plan_source_from_issue(
     Args:
         ctx: Erk context
         repo_root: Repository root path
-        issue_number: GitHub issue number
+        plan_number: GitHub plan number
         base_branch: Base branch for creating the development branch
 
     Returns:
@@ -518,9 +518,9 @@ def prepare_plan_source_from_issue(
     ctx.console.info("Fetching plan from GitHub...")
 
     # Fetch plan from GitHub
-    result = ctx.plan_store.get_plan(repo_root, issue_number)
+    result = ctx.plan_store.get_plan(repo_root, plan_number)
     if isinstance(result, PlanNotFound):
-        ctx.console.error(f"Error: Plan #{issue_number} not found")
+        ctx.console.error(f"Error: Plan #{plan_number} not found")
         raise SystemExit(1)
     plan = result
 
@@ -538,7 +538,7 @@ def prepare_plan_source_from_issue(
     for warning in setup.warnings:
         user_output(click.style("Warning: ", fg="yellow") + warning)
 
-    dry_run_desc = f"Would create worktree from plan #{issue_number}\n  Title: {plan.title}"
+    dry_run_desc = f"Would create worktree from plan #{plan_number}\n  Title: {plan.title}"
 
     plan_source = PlanSource(
         plan_content=setup.plan_content,
