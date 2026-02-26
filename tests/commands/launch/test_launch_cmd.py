@@ -267,7 +267,7 @@ def test_workflow_launch_learn_triggers_workflow(tmp_path: Path) -> None:
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(cli, ["launch", "learn", "--issue", "123"], obj=ctx)
+        result = runner.invoke(cli, ["launch", "learn", "--plan", "123"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Workflow triggered" in result.output
@@ -276,7 +276,7 @@ def test_workflow_launch_learn_triggers_workflow(tmp_path: Path) -> None:
         assert len(github.triggered_workflows) == 1
         workflow, inputs = github.triggered_workflows[0]
         assert workflow == WORKFLOW_COMMAND_MAP["learn"]
-        assert inputs["issue_number"] == "123"
+        assert inputs["plan_number"] == "123"
 
 
 def test_workflow_launch_learn_requires_issue_option(tmp_path: Path) -> None:
@@ -295,7 +295,7 @@ def test_workflow_launch_learn_requires_issue_option(tmp_path: Path) -> None:
         result = runner.invoke(cli, ["launch", "learn"], obj=ctx)
 
         assert result.exit_code == 1
-        assert "--issue is required for learn" in result.output
+        assert "--plan is required for learn" in result.output
 
 
 def test_workflow_launch_plan_implement_shows_usage_error(tmp_path: Path) -> None:
@@ -311,7 +311,7 @@ def test_workflow_launch_plan_implement_shows_usage_error(tmp_path: Path) -> Non
 
         ctx = build_workspace_test_context(env, git=git)
 
-        result = runner.invoke(cli, ["launch", "plan-implement", "--issue", "123"], obj=ctx)
+        result = runner.invoke(cli, ["launch", "plan-implement", "--plan", "123"], obj=ctx)
 
         assert result.exit_code == 2
         assert "erk pr dispatch" in result.output
