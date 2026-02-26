@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Documentation Plan: Simplify PR checkout to eliminate erk pr sync dependency"
+}
