@@ -37,6 +37,18 @@ class NonIdealStateError(Exception):
         super().__init__(state.message)
 
 
+class NonIdealStateMixin:
+    """Provides ensure() for NonIdealState implementations that use message: str as a field.
+
+    Direct Protocol inheritance is blocked for such classes because NonIdealState
+    declares message as @property, creating a descriptor conflict with frozen
+    dataclass field initialization. Use this mixin instead.
+    """
+
+    def ensure(self) -> NoReturn:
+        raise NonIdealStateError(self)  # type: ignore[arg-type]
+
+
 @runtime_checkable
 class NonIdealState(Protocol):
     """Marker interface for non-ideal states.
@@ -57,7 +69,7 @@ class NonIdealState(Protocol):
 
 
 @dataclass(frozen=True)
-class BranchDetectionFailed:
+class BranchDetectionFailed(NonIdealState):
     """Branch could not be detected from current directory."""
 
     @property
@@ -68,12 +80,9 @@ class BranchDetectionFailed:
     def message(self) -> str:
         return "Could not determine current branch"
 
-    def ensure(self) -> NoReturn:
-        raise NonIdealStateError(self)
-
 
 @dataclass(frozen=True)
-class NoPRForBranch:
+class NoPRForBranch(NonIdealState):
     """No PR exists for the specified branch."""
 
     branch: str
@@ -86,12 +95,9 @@ class NoPRForBranch:
     def message(self) -> str:
         return f"No PR found for branch '{self.branch}'"
 
-    def ensure(self) -> NoReturn:
-        raise NonIdealStateError(self)
-
 
 @dataclass(frozen=True)
-class PRNotFoundError:
+class PRNotFoundError(NonIdealState):
     """PR with specified number does not exist."""
 
     pr_number: int
@@ -104,12 +110,9 @@ class PRNotFoundError:
     def message(self) -> str:
         return f"PR #{self.pr_number} not found"
 
-    def ensure(self) -> NoReturn:
-        raise NonIdealStateError(self)
-
 
 @dataclass(frozen=True)
-class GitHubAPIFailed:
+class GitHubAPIFailed(NonIdealStateMixin):
     """GitHub API call failed with an error."""
 
     message: str
@@ -118,12 +121,9 @@ class GitHubAPIFailed:
     def error_type(self) -> str:
         return "github-api-failed"
 
-    def ensure(self) -> NoReturn:
-        raise NonIdealStateError(self)
-
 
 @dataclass(frozen=True)
-class SessionNotFound:
+class SessionNotFound(NonIdealState):
     """Session with specified ID does not exist."""
 
     session_id: str
@@ -135,6 +135,3 @@ class SessionNotFound:
     @property
     def message(self) -> str:
         return f"Session not found: {self.session_id}"
-
-    def ensure(self) -> NoReturn:
-        raise NonIdealStateError(self)
