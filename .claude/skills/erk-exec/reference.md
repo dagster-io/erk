@@ -936,6 +936,7 @@ Save plan as a draft PR.
 | `--learned-from-issue`            | INTEGER | No       | -       | Parent plan issue number (for learn plans)                |
 | `--created-from-workflow-run-url` | TEXT    | No       | -       | GitHub Actions workflow run URL                           |
 | `--branch-slug`                   | TEXT    | No       | -       | Pre-generated branch slug (skips LLM call when provided)  |
+| `--objective`                     | INTEGER | No       | -       | Objective issue number (overrides session marker)         |
 
 ### plan-title-to-filename
 

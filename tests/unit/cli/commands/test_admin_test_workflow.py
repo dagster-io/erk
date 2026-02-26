@@ -38,7 +38,7 @@ def test_happy_path_with_existing_issue() -> None:
         assert len(fake_github.triggered_workflows) == 1
         workflow, inputs = fake_github.triggered_workflows[0]
         assert workflow == "plan-implement.yml"
-        assert inputs["issue_number"] == "42"
+        assert inputs["plan_id"] == "42"
         # Verify output contains run URL
         assert "Workflow triggered successfully" in result.output
         assert "Run URL:" in result.output
@@ -68,7 +68,7 @@ def test_happy_path_creating_new_issue() -> None:
         # Verify workflow was triggered with the new issue number
         assert len(fake_github.triggered_workflows) == 1
         _, inputs = fake_github.triggered_workflows[0]
-        assert inputs["issue_number"] == "1"
+        assert inputs["plan_id"] == "1"
 
 
 def test_happy_path_uses_detected_trunk_branch() -> None:

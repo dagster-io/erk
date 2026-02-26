@@ -1,8 +1,8 @@
 """Shared utilities for run commands."""
 
 
-def extract_issue_number(display_title: str | None) -> int | None:
-    """Extract issue number from display_title format '123:abc456'.
+def extract_plan_number(display_title: str | None) -> int | None:
+    """Extract plan number from display_title format '123:abc456'.
 
     Handles:
     - New format: "123:abc456" → 123
