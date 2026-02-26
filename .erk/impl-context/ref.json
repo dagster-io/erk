@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Eliminate \"Closes #N\" from PR Bodies"
+}
