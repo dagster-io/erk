@@ -52,13 +52,13 @@ class TestPlannedPRNextSteps:
         )
         assert steps.view == "https://github.com/org/repo/pull/42"
 
-    def test_submit_uses_pr_number(self) -> None:
+    def test_dispatch_uses_pr_number(self) -> None:
         steps = PlannedPRNextSteps(
             pr_number=42,
             branch_name="plan-my-feature-02-20",
             url="https://github.com/org/repo/pull/42",
         )
-        assert steps.submit == "erk pr dispatch 42"
+        assert steps.dispatch == "erk pr dispatch 42"
 
     def test_checkout_branch_and_implement_uses_branch_name(self) -> None:
         steps = PlannedPRNextSteps(

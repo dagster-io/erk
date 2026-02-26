@@ -678,7 +678,7 @@ class ErkDashApp(App):
                 )
 
     @work(thread=True)
-    def _submit_to_queue_async(self, plan_id: int) -> None:
+    def _dispatch_to_queue_async(self, plan_id: int) -> None:
         """Dispatch plan to queue in background thread with toast."""
         try:
             subprocess.run(
@@ -783,7 +783,7 @@ class ErkDashApp(App):
             close_plan_fn=self._provider.close_plan,
             notify_fn=self._notify_with_severity,
             refresh_fn=self.action_refresh,
-            submit_to_queue_fn=self._provider.submit_to_queue,
+            dispatch_to_queue_fn=self._provider.dispatch_to_queue,
         )
 
         self.push_screen(
@@ -1092,7 +1092,7 @@ class ErkDashApp(App):
                     close_plan_fn=self._provider.close_plan,
                     notify_fn=self._notify_with_severity,
                     refresh_fn=self.action_refresh,
-                    submit_to_queue_fn=self._provider.submit_to_queue,
+                    dispatch_to_queue_fn=self._provider.dispatch_to_queue,
                 )
                 detail_screen = PlanDetailScreen(
                     row=row,
@@ -1129,8 +1129,8 @@ class ErkDashApp(App):
 
         elif command_id == "submit_to_queue":
             if row.plan_url:
-                self.notify(f"Submitting plan #{row.plan_id} to queue...")
-                self._submit_to_queue_async(row.plan_id)
+                self.notify(f"Dispatching plan #{row.plan_id} to queue...")
+                self._dispatch_to_queue_async(row.plan_id)
 
         elif command_id == "land_pr":
             if row.pr_number and row.pr_head_branch:

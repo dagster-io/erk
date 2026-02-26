@@ -72,11 +72,11 @@ class PlanDataProvider(ABC):
         ...
 
     @abstractmethod
-    def submit_to_queue(self, plan_id: int, plan_url: str) -> None:
-        """Submit a plan to the implementation queue.
+    def dispatch_to_queue(self, plan_id: int, plan_url: str) -> None:
+        """Dispatch a plan to the implementation queue.
 
         Args:
-            plan_id: The plan ID to submit
+            plan_id: The plan ID to dispatch
             plan_url: The plan URL for repository context
         """
         ...

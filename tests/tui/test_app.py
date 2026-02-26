@@ -2508,14 +2508,14 @@ class TestLandPrAsync:
             assert len(captured_calls) == 1
 
 
-class TestSubmitToQueueAsync:
-    """Tests for _submit_to_queue_async subprocess behavior."""
+class TestDispatchToQueueAsync:
+    """Tests for _dispatch_to_queue_async subprocess behavior."""
 
     @pytest.mark.asyncio
-    async def test_submit_to_queue_runs_correct_command(
+    async def test_dispatch_to_queue_runs_correct_command(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        """_submit_to_queue_async should run correct subprocess command."""
+        """_dispatch_to_queue_async should run correct subprocess command."""
         import subprocess
 
         provider = FakePlanDataProvider(
@@ -2537,16 +2537,16 @@ class TestSubmitToQueueAsync:
             await pilot.pause()
             await pilot.pause()
 
-            app._submit_to_queue_async(123)
+            app._dispatch_to_queue_async(123)
             await pilot.pause(0.3)
 
             assert captured_args == ["erk", "pr", "dispatch", "123"]
 
     @pytest.mark.asyncio
-    async def test_submit_to_queue_triggers_refresh_on_success(
+    async def test_dispatch_to_queue_triggers_refresh_on_success(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        """_submit_to_queue_async should trigger refresh after success."""
+        """_dispatch_to_queue_async should trigger refresh after success."""
         import subprocess
 
         provider = FakePlanDataProvider(
@@ -2567,16 +2567,16 @@ class TestSubmitToQueueAsync:
 
             count_before = provider.fetch_count
 
-            app._submit_to_queue_async(123)
+            app._dispatch_to_queue_async(123)
             await pilot.pause(0.3)
 
             assert provider.fetch_count > count_before
 
     @pytest.mark.asyncio
-    async def test_submit_to_queue_no_refresh_on_failure(
+    async def test_dispatch_to_queue_no_refresh_on_failure(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        """_submit_to_queue_async should NOT refresh on failure."""
+        """_dispatch_to_queue_async should NOT refresh on failure."""
         import subprocess
 
         provider = FakePlanDataProvider(
@@ -2597,7 +2597,7 @@ class TestSubmitToQueueAsync:
 
             count_before = provider.fetch_count
 
-            app._submit_to_queue_async(123)
+            app._dispatch_to_queue_async(123)
             await pilot.pause(0.3)
 
             assert provider.fetch_count == count_before
