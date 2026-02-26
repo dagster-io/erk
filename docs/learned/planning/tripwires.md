@@ -48,7 +48,7 @@ Rules triggered by matching actions in code.
 
 **assuming branch names always follow the P-prefix format** → Read [Branch Plan Resolution](branch-plan-resolution.md) first. Branch resolution supports multiple formats (P-prefix, objective). Use resolve_plan_id_for_branch() rather than manual parsing. See branch-plan-resolution.md.
 
-**assuming branch_name is always present in plan-header metadata** → Read [PR Discovery Strategies for Plans](pr-discovery.md) first. branch_name is null until Phase 2 (plan submit). Check the plan metadata field lifecycle in lifecycle.md.
+**assuming branch_name is always present in plan-header metadata** → Read [PR Discovery Strategies for Plans](pr-discovery.md) first. branch_name is null until Phase 2 (pr dispatch). Check the plan metadata field lifecycle in lifecycle.md.
 
 **assuming plan content is in the issue body** → Read [Plan Content Extraction Fallback](metadata-block-fallback.md) first. Schema v2 stores plan content in the FIRST COMMENT, not the issue body. The body contains only the plan-header metadata block. See extract_plan_from_comment() for the extraction logic.
 
@@ -90,7 +90,7 @@ Rules triggered by matching actions in code.
 
 **constructing a PR footer manually instead of using build_pr_body_footer()** → Read [PR Submission Patterns](pr-submission-patterns.md) first. The footer format includes checkout commands and closing references with specific patterns. Use the builder function to ensure validation passes.
 
-**creating a PR without first checking if one already exists for the branch** → Read [PR Submission Patterns](pr-submission-patterns.md) first. The submit pipeline is idempotent — it checks for existing PRs before creating. If building PR creation outside the pipeline, replicate this check to prevent duplicates.
+**creating a PR without first checking if one already exists for the branch** → Read [PR Submission Patterns](pr-submission-patterns.md) first. The dispatch pipeline is idempotent — it checks for existing PRs before creating. If building PR creation outside the pipeline, replicate this check to prevent duplicates.
 
 **creating a learn plan without setting learned_from_issue** → Read [Learn Plans vs. Implementation Plans](learn-vs-implementation-plans.md) first. Learn plans MUST set learned_from_issue to their parent implementation plan's issue number. Without it, base branch auto-detection fails and the learn plan lands on trunk instead of stacking on the parent.
 

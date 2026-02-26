@@ -142,7 +142,7 @@ Dispatch metadata is written in two phases:
 
 The CLI write is the primary source; CI registration fills gaps when the CLI couldn't complete (e.g., network failure during dispatch).
 
-### Divergence Risk: One-Shot vs Plan-Submit
+### Divergence Risk: One-Shot vs PR Dispatch
 
 One-shot dispatch and `erk pr dispatch` both push branches and create PRs, but one-shot uses force-push (squash) while pr dispatch may use regular push. After a one-shot dispatch, the local branch may diverge from remote. Always `git pull --rebase` before making local changes to a one-shot branch.
 
