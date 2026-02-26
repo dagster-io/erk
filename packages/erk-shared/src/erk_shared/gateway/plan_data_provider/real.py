@@ -781,11 +781,14 @@ class RealPlanDataProvider(PlanDataProvider):
                         for dep_id in target.depends_on:
                             if dep_id in node_map:
                                 dep = node_map[dep_id]
-                                if dep.status not in _TERMINAL_STATUSES and dep.pr is not None:
-                                    num = dep.pr.lstrip("#")
-                                    repo_id = self._location.repo_id
-                                    url = f"https://github.com/{repo_id.owner}/{repo_id.repo}/issues/{num}"
-                                    objective_head_plans.append((dep.pr, url))
+                                if dep.status not in _TERMINAL_STATUSES:
+                                    if dep.pr is not None:
+                                        num = dep.pr.lstrip("#")
+                                        repo_id = self._location.repo_id
+                                        url = f"https://github.com/{repo_id.owner}/{repo_id.repo}/pull/{num}"
+                                        objective_head_plans.append((dep.pr, url))
+                                    else:
+                                        objective_head_plans.append((dep.id, ""))
 
         # Format updated_at display
         updated_display = format_relative_time(plan.updated_at.isoformat()) or "-"

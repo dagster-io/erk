@@ -747,7 +747,7 @@ class TestCommentCountsDisplay:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-            learn_issue_states={},
+
         )
 
         assert row.resolved_comment_count == 3
@@ -828,7 +828,7 @@ class TestCommentCountsDisplay:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-            learn_issue_states={},
+
         )
 
         assert row.resolved_comment_count == 0
@@ -895,7 +895,7 @@ class TestCommentCountsDisplay:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-            learn_issue_states={},
+
         )
 
         assert row.resolved_comment_count == 0
@@ -965,7 +965,7 @@ class TestLearnStatusDisplay:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-            learn_issue_states={},
+
         )
 
         assert row.learn_status is None
@@ -1034,7 +1034,7 @@ class TestLearnStatusDisplay:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-            learn_issue_states={},
+
         )
 
         assert row.learn_status == "pending"
@@ -1101,7 +1101,7 @@ class TestLearnStatusDisplay:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-            learn_issue_states={},
+
         )
 
         assert row.learn_status == "completed_no_plan"
@@ -1170,7 +1170,7 @@ class TestLearnStatusDisplay:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-            learn_issue_states={},
+
         )
 
         assert row.learn_status == "completed_with_plan"
@@ -1241,7 +1241,7 @@ class TestLearnStatusDisplay:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-            learn_issue_states={},
+
         )
 
         assert row.learn_status == "plan_completed"
@@ -1305,7 +1305,6 @@ class TestLearnStatusDisplay:
             header_fields=_parse_header_fields(plan_body),
         )
 
-        # Learn issue 456 is closed
         row = provider._build_row_data(
             plan=plan,
             plan_id=123,
@@ -1313,14 +1312,14 @@ class TestLearnStatusDisplay:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-            learn_issue_states={456: True},
         )
 
         assert row.learn_status == "completed_with_plan"
         assert row.learn_plan_issue == 456
-        assert row.learn_plan_issue_closed is True
-        assert row.learn_display == "✅ #456"
-        assert row.learn_display_icon == "✅ #456"
+        # learn_plan_issue_closed is always None (not fetched for perf)
+        assert row.learn_plan_issue_closed is None
+        assert row.learn_display == "📋 #456"
+        assert row.learn_display_icon == "📋 #456"
 
     def test_learn_status_completed_with_plan_open_shows_clipboard(self, tmp_path: Path) -> None:
         """When learn plan issue is open, display clipboard emoji."""
@@ -1378,7 +1377,6 @@ class TestLearnStatusDisplay:
             header_fields=_parse_header_fields(plan_body),
         )
 
-        # Learn issue 456 is open
         row = provider._build_row_data(
             plan=plan,
             plan_id=123,
@@ -1386,12 +1384,12 @@ class TestLearnStatusDisplay:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-            learn_issue_states={456: False},
         )
 
         assert row.learn_status == "completed_with_plan"
         assert row.learn_plan_issue == 456
-        assert row.learn_plan_issue_closed is False
+        # learn_plan_issue_closed is always None (not fetched for perf)
+        assert row.learn_plan_issue_closed is None
         assert row.learn_display == "📋 #456"
         assert row.learn_display_icon == "📋 #456"
 
@@ -1495,7 +1493,6 @@ class TestBlockingDepsPlans:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-            learn_issue_states={},
         )
 
         assert row.objective_head_plans == ()
@@ -1504,18 +1501,16 @@ class TestBlockingDepsPlans:
         """When next node has a non-terminal dep with a plan, it appears in objective_head_plans."""
         provider = self._make_provider(tmp_path)
 
-        # Node 1.1 is in_progress with a plan, node 1.2 depends on it and is pending
+        # Node 1.1 is in_progress with a PR, node 1.2 depends on it and is pending
         body = _make_roadmap_body(
             "- id: '1.1'\n"
             "  description: First step\n"
             "  status: in_progress\n"
-            "  plan: '#100'\n"
-            "  pr: null\n"
+            "  pr: '#100'\n"
             "  depends_on: []\n"
             "- id: '1.2'\n"
             "  description: Second step\n"
             "  status: pending\n"
-            "  plan: null\n"
             "  pr: null\n"
             "  depends_on: ['1.1']\n"
         )
@@ -1541,30 +1536,27 @@ class TestBlockingDepsPlans:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-            learn_issue_states={},
         )
 
         assert len(row.objective_head_plans) == 1
         display, url = row.objective_head_plans[0]
         assert display == "#100"
-        assert url == "https://github.com/test/repo/issues/100"
+        assert url == "https://github.com/test/repo/pull/100"
 
-    def test_blocking_dep_without_plan_not_collected(self, tmp_path: Path) -> None:
-        """When next node has a non-terminal dep without a plan, it is not collected."""
+    def test_blocking_dep_without_pr_shows_node_id(self, tmp_path: Path) -> None:
+        """When next node has a non-terminal dep without a PR, node ID is shown as fallback."""
         provider = self._make_provider(tmp_path)
 
-        # Node 1.1 is in_progress but has no plan
+        # Node 1.1 is in_progress but has no PR
         body = _make_roadmap_body(
             "- id: '1.1'\n"
             "  description: First step\n"
             "  status: in_progress\n"
-            "  plan: null\n"
             "  pr: null\n"
             "  depends_on: []\n"
             "- id: '1.2'\n"
             "  description: Second step\n"
             "  status: pending\n"
-            "  plan: null\n"
             "  pr: null\n"
             "  depends_on: ['1.1']\n"
         )
@@ -1590,33 +1582,32 @@ class TestBlockingDepsPlans:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-            learn_issue_states={},
         )
 
-        assert row.objective_head_plans == ()
+        assert len(row.objective_head_plans) == 1
+        display, url = row.objective_head_plans[0]
+        assert display == "1.1"
+        assert url == ""
 
     def test_multiple_blocking_deps_collected(self, tmp_path: Path) -> None:
         """Multiple non-terminal deps with plans are all collected."""
         provider = self._make_provider(tmp_path)
 
-        # Nodes 1.1 and 1.2 are in_progress with plans, node 1.3 depends on both
+        # Nodes 1.1 and 1.2 are in_progress with PRs, node 1.3 depends on both
         body = _make_roadmap_body(
             "- id: '1.1'\n"
             "  description: First step\n"
             "  status: in_progress\n"
-            "  plan: '#100'\n"
-            "  pr: null\n"
+            "  pr: '#100'\n"
             "  depends_on: []\n"
             "- id: '1.2'\n"
             "  description: Second step\n"
             "  status: in_progress\n"
-            "  plan: '#200'\n"
-            "  pr: null\n"
+            "  pr: '#200'\n"
             "  depends_on: []\n"
             "- id: '1.3'\n"
             "  description: Third step\n"
             "  status: pending\n"
-            "  plan: null\n"
             "  pr: null\n"
             "  depends_on: ['1.1', '1.2']\n"
         )
@@ -1642,7 +1633,6 @@ class TestBlockingDepsPlans:
             workflow_run=None,
             worktree_by_plan_id={},
             use_graphite=False,
-            learn_issue_states={},
         )
 
         assert len(row.objective_head_plans) == 2
