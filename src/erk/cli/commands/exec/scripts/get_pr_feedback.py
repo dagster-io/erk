@@ -34,10 +34,7 @@ from erk_shared.context.helpers import (
 from erk_shared.gateway.github.checks import GitHubChecks
 from erk_shared.gateway.github.issues.types import IssueComment
 from erk_shared.gateway.github.types import PRReviewThread
-from erk_shared.non_ideal_state import (
-    BranchDetectionFailed,
-    GitHubAPIFailed,
-)
+from erk_shared.non_ideal_state import BranchDetectionFailed
 
 # --- JSON output types ---
 
@@ -121,6 +118,7 @@ def get_pr_feedback(ctx: click.Context, pr: int | None, include_resolved: bool) 
         branch = GitHubChecks.branch(get_current_branch(ctx))
         if isinstance(branch, BranchDetectionFailed):
             branch.ensure()
+        assert not isinstance(branch, BranchDetectionFailed)  # Type narrowing after NoReturn
         pr_details = GitHubChecks.pr_for_branch(github, repo_root, branch).ensure()
     else:
         pr_details = GitHubChecks.pr_by_number(github, repo_root, pr).ensure()
@@ -145,12 +143,7 @@ def get_pr_feedback(ctx: click.Context, pr: int | None, include_resolved: bool) 
         except RuntimeError as e:
             exit_with_error("github-api-failed", str(e))
 
-        comments_result = comments_future.result()
-
-    # Validate comments result
-    if isinstance(comments_result, GitHubAPIFailed):
-        comments_result.ensure()
-    comments = comments_result
+        comments = comments_future.result().ensure()
 
     # Filter out threads with invalid IDs
     valid_threads = [t for t in threads if t.id]

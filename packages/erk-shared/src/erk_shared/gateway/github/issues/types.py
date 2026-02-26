@@ -2,6 +2,9 @@
 
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Iterator
+
+from erk_shared.non_ideal_state import EnsurableResult
 
 
 @dataclass(frozen=True)
@@ -58,6 +61,20 @@ class IssueComment:
     url: str
     id: int
     author: str
+
+
+@dataclass(frozen=True)
+class IssueComments(EnsurableResult):
+    """A collection of issue/PR discussion comments.
+
+    Wraps tuple[IssueComment, ...] to enable .ensure() one-liner unwrapping
+    in T | GitHubAPIFailed union return types.
+    """
+
+    comments: tuple[IssueComment, ...]
+
+    def __iter__(self) -> Iterator[IssueComment]:
+        return iter(self.comments)
 
 
 @dataclass(frozen=True)
