@@ -17,6 +17,7 @@ lint:
 
 fix:
 	uv run ruff check --fix --unsafe-fixes
+	prettier --write '**/*.md' --ignore-path .gitignore
 
 ty:
 	uv run ty check
