@@ -190,5 +190,5 @@ class PlanBodyScreen(ModalScreen):
         """Consume all keys; dismiss on keys not handled by bindings."""
         event.prevent_default()
         event.stop()
-        if event.key not in ("escape", "q", "space"):
+        if event.key in ("escape", "q", "space"):
             self.dismiss()
