@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Move objective-update-with-landed-pr to erk/system/"
+  "plan_id": "8387",
+  "url": "https://github.com/dagster-io/erk/pull/8387",
+  "created_at": "2026-02-27T06:54:54.578956",
+  "synced_at": "2026-02-27T06:54:54.578956",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
