@@ -9,7 +9,7 @@ from erk_shared.gateway.browser.abc import BrowserLauncher
 from erk_shared.gateway.browser.fake import FakeBrowserLauncher
 from erk_shared.gateway.clipboard.abc import Clipboard
 from erk_shared.gateway.clipboard.fake import FakeClipboard
-from erk_shared.gateway.github.types import PRReviewThread
+from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread
 from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
 
 
@@ -51,6 +51,7 @@ class FakePlanDataProvider(PlanDataProvider):
         self._plan_content_by_plan_id: dict[int, str] = {}
         self._objective_content_by_plan_id: dict[int, str] = {}
         self._review_threads_by_pr: dict[int, list[PRReviewThread]] = {}
+        self._check_runs_by_pr: dict[int, list[PRCheckRun]] = {}
         self._stacks_by_branch: dict[str, list[str]] = {}
 
     @property
@@ -238,6 +239,28 @@ class FakePlanDataProvider(PlanDataProvider):
         """
         self._stacks_by_branch[branch] = stack
 
+    def fetch_check_runs(self, pr_number: int) -> list[PRCheckRun]:
+        """Fake check runs fetch implementation.
+
+        Returns configured check runs for a PR, or empty list.
+
+        Args:
+            pr_number: The PR number to fetch check runs for
+
+        Returns:
+            Configured list of PRCheckRun for this PR, or empty list
+        """
+        return self._check_runs_by_pr.get(pr_number, [])
+
+    def set_check_runs(self, pr_number: int, check_runs: list[PRCheckRun]) -> None:
+        """Set the check runs to return for a specific PR.
+
+        Args:
+            pr_number: The PR number
+            check_runs: List of PRCheckRun to return
+        """
+        self._check_runs_by_pr[pr_number] = check_runs
+
     def fetch_unresolved_comments(self, pr_number: int) -> list[PRReviewThread]:
         """Fake unresolved comments fetch implementation.
 
@@ -281,6 +304,8 @@ def make_plan_row(
     run_status: str | None = None,
     run_conclusion: str | None = None,
     comment_counts: tuple[int, int] | None = None,
+    checks_passing: bool | None = None,
+    checks_counts: tuple[int, int] | None = None,
     learn_status: str | None = None,
     learn_plan_issue: int | None = None,
     learn_plan_issue_closed: bool | None = None,
@@ -410,6 +435,8 @@ def make_plan_row(
         pr_url=pr_url,
         pr_display=final_pr_display,
         checks_display="-",
+        checks_passing=checks_passing,
+        checks_counts=checks_counts,
         worktree_name=worktree_name,
         exists_locally=exists_locally,
         local_impl_display="-",

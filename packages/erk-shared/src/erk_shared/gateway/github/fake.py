@@ -21,6 +21,7 @@ from erk_shared.gateway.github.types import (
     IssueFilterState,
     MergeError,
     MergeResult,
+    PRCheckRun,
     PRDetails,
     PRListState,
     PRNotFound,
@@ -65,6 +66,7 @@ class FakeGitHub(GitHub):
         merge_should_succeed: bool = True,
         pr_update_should_succeed: bool = True,
         pr_review_threads: dict[int, list[PRReviewThread]] | None = None,
+        pr_check_runs: dict[int, list[PRCheckRun]] | None = None,
         review_threads_rate_limited: bool = False,
         resolve_thread_failures: set[str] | None = None,
         pr_diff_error: str | None = None,
@@ -164,6 +166,7 @@ class FakeGitHub(GitHub):
         self._pr_labels: dict[int, set[str]] = {}
         self._added_labels: list[tuple[int, str]] = []
         self._pr_review_threads = pr_review_threads or {}
+        self._pr_check_runs: dict[int, list[PRCheckRun]] = pr_check_runs or {}
         self._resolved_thread_ids: set[str] = set()
         self._thread_replies: list[tuple[str, str]] = []
         self._pr_review_comments: list[tuple[int, str, str, str, int]] = []
@@ -888,6 +891,14 @@ class FakeGitHub(GitHub):
         # Sort by path, then by line
         result_threads.sort(key=lambda t: (t.path, t.line or 0))
         return result_threads
+
+    def get_pr_check_runs(
+        self,
+        repo_root: Path,
+        pr_number: int,
+    ) -> list[PRCheckRun]:
+        """Get failing check runs for a PR from pre-configured data."""
+        return self._pr_check_runs.get(pr_number, [])
 
     def resolve_review_thread(
         self,

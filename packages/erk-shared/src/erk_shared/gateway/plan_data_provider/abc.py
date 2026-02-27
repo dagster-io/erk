@@ -7,7 +7,7 @@ from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
 from erk.tui.sorting.types import BranchActivity
 from erk_shared.gateway.browser.abc import BrowserLauncher
 from erk_shared.gateway.clipboard.abc import Clipboard
-from erk_shared.gateway.github.types import PRReviewThread
+from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread
 
 
 class PlanDataProvider(ABC):
@@ -165,6 +165,18 @@ class PlanDataProvider(ABC):
 
         Returns:
             Ordered list of branch names in the stack, or None
+        """
+        ...
+
+    @abstractmethod
+    def fetch_check_runs(self, pr_number: int) -> list[PRCheckRun]:
+        """Fetch failing check runs for a pull request.
+
+        Args:
+            pr_number: The PR number to fetch check runs for
+
+        Returns:
+            List of PRCheckRun for failing checks, sorted by name
         """
         ...
 

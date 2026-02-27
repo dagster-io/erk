@@ -161,6 +161,32 @@ GET_ISSUES_WITH_PR_LINKAGES_QUERY = """query(
   }
 }"""
 
+# Query to fetch individual check run details for a PR's status check rollup
+GET_PR_CHECK_RUNS_QUERY = """query($owner: String!, $repo: String!, $number: Int!) {
+  repository(owner: $owner, name: $repo) {
+    pullRequest(number: $number) {
+      statusCheckRollup {
+        contexts(first: 100) {
+          nodes {
+            __typename
+            ... on CheckRun {
+              name
+              status
+              conclusion
+              detailsUrl
+            }
+            ... on StatusContext {
+              context
+              state
+              targetUrl
+            }
+          }
+        }
+      }
+    }
+  }
+}"""
+
 # Query for draft plan PRs with rich details (checks, review threads, mergeability)
 # Used by PlannedPRPlanListService for single-call data fetching.
 # Note: pullRequests connection does not support filterBy for creator or draft status,

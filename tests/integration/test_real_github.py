@@ -1141,3 +1141,103 @@ def test_get_open_prs_with_base_branch_api_failure_returns_empty(
 
         # Should return empty list, not raise
         assert result == []
+
+
+# ============================================================================
+# get_pr_check_runs() Tests
+# ============================================================================
+
+
+def test_get_pr_check_runs_success(monkeypatch: MonkeyPatch) -> None:
+    """Test get_pr_check_runs constructs GraphQL command and parses response."""
+    called_with: list[list[str]] = []
+
+    graphql_response = json.dumps(
+        {
+            "data": {
+                "repository": {
+                    "pullRequest": {
+                        "statusCheckRollup": {
+                            "contexts": {
+                                "nodes": [
+                                    {
+                                        "__typename": "CheckRun",
+                                        "name": "CI / unit-tests",
+                                        "status": "COMPLETED",
+                                        "conclusion": "FAILURE",
+                                        "detailsUrl": "https://github.com/runs/1",
+                                    },
+                                    {
+                                        "__typename": "CheckRun",
+                                        "name": "CI / lint",
+                                        "status": "COMPLETED",
+                                        "conclusion": "SUCCESS",
+                                        "detailsUrl": "https://github.com/runs/2",
+                                    },
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    )
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        called_with.append(cmd)
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=graphql_response,
+            stderr="",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        from erk_shared.gateway.github.types import RepoInfo
+
+        ops = RealGitHub.for_test(repo_info=RepoInfo(owner="owner", name="repo"))
+        result = ops.get_pr_check_runs(Path("/repo"), 42)
+
+        # Verify GraphQL command construction
+        assert len(called_with) == 1
+        cmd = called_with[0]
+        assert cmd[0:3] == ["gh", "api", "graphql"]
+        assert "owner=owner" in " ".join(cmd)
+        assert "repo=repo" in " ".join(cmd)
+        assert "number=42" in " ".join(cmd)
+
+        # Verify response parsing: only failing check returned
+        assert len(result) == 1
+        assert result[0].name == "CI / unit-tests"
+        assert result[0].conclusion == "failure"
+
+
+def test_get_pr_check_runs_empty_rollup(monkeypatch: MonkeyPatch) -> None:
+    """Test get_pr_check_runs returns empty list when statusCheckRollup is null."""
+    graphql_response = json.dumps(
+        {
+            "data": {
+                "repository": {
+                    "pullRequest": {
+                        "statusCheckRollup": None,
+                    }
+                }
+            }
+        }
+    )
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=graphql_response,
+            stderr="",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        from erk_shared.gateway.github.types import RepoInfo
+
+        ops = RealGitHub.for_test(repo_info=RepoInfo(owner="owner", name="repo"))
+        result = ops.get_pr_check_runs(Path("/repo"), 42)
+
+        assert result == []
