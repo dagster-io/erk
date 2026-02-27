@@ -7,6 +7,17 @@ from typing import Any, Literal
 from erk_shared.gateway.github.metadata.types import MetadataBlockSchema
 
 
+def _migrate_issue_number_to_plan_number(data: dict[str, Any]) -> None:
+    """Migrate legacy ``issue_number`` key to ``plan_number`` in-place.
+
+    Several metadata schemas originally used ``issue_number``.  This helper
+    centralises the backward-compatibility migration so each schema's
+    ``validate`` method can call it instead of duplicating the logic.
+    """
+    if "issue_number" in data and "plan_number" not in data:
+        data["plan_number"] = data.pop("issue_number")
+
+
 @dataclass(frozen=True)
 class ImplementationStatusSchema(MetadataBlockSchema):
     """Schema for erk-implementation-status blocks (completion status)."""
@@ -41,9 +52,7 @@ class WorktreeCreationSchema(MetadataBlockSchema):
 
     def validate(self, data: dict[str, Any]) -> None:
         """Validate erk-worktree-creation data structure."""
-        # Normalize legacy field name
-        if "issue_number" in data and "plan_number" not in data:
-            data["plan_number"] = data.pop("issue_number")
+        _migrate_issue_number_to_plan_number(data)
 
         required_fields = {"worktree_name", "branch_name", "timestamp"}
         optional_fields = {"plan_number", "plan_file"}
@@ -90,9 +99,7 @@ class PlanSchema(MetadataBlockSchema):
 
     def validate(self, data: dict[str, Any]) -> None:
         """Validate erk-plan data structure."""
-        # Normalize legacy field name
-        if "issue_number" in data and "plan_number" not in data:
-            data["plan_number"] = data.pop("issue_number")
+        _migrate_issue_number_to_plan_number(data)
 
         required_fields = {"plan_number", "worktree_name", "timestamp"}
         optional_fields = {"plan_file"}
@@ -141,9 +148,7 @@ class SubmissionQueuedSchema(MetadataBlockSchema):
 
     def validate(self, data: dict[str, Any]) -> None:
         """Validate submission-queued data structure."""
-        # Backward compat: migrate old key to new key
-        if "issue_number" in data and "plan_number" not in data:
-            data["plan_number"] = data.pop("issue_number")
+        _migrate_issue_number_to_plan_number(data)
 
         required_fields = {
             "status",
@@ -205,9 +210,7 @@ class WorkflowStartedSchema(MetadataBlockSchema):
 
     def validate(self, data: dict[str, Any]) -> None:
         """Validate workflow-started data structure."""
-        # Backward compat: migrate old key to new key
-        if "issue_number" in data and "plan_number" not in data:
-            data["plan_number"] = data.pop("issue_number")
+        _migrate_issue_number_to_plan_number(data)
 
         required_fields = {
             "status",
