@@ -192,17 +192,15 @@ jobs:
             --run-id "$WORKFLOW_RUN_ID" \
             --run-url "$WORKFLOW_RUN_URL"
 
-      - name: Set up implementation folder
+      - name: Write run metadata to impl-context
         run: |
-          cp -r .erk/impl-context .impl
-          echo "Copied .erk/impl-context/ to .impl/"
-          cat > .impl/run-info.json <<EOF
+          cat > .erk/impl-context/run-info.json <<EOF
           {
             "run_id": "${{ github.run_id }}",
             "run_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           }
           EOF
-          echo "Created .impl/run-info.json"
+          echo "Created .erk/impl-context/run-info.json"
 
       - name: Remove plan staging dirs from git tracking
         env:
@@ -212,14 +210,14 @@ jobs:
           NEEDS_CLEANUP=false
           git config user.name "$SUBMITTED_BY"
           git config user.email "$SUBMITTED_BY@users.noreply.github.com"
-          if [ -d .erk/impl-context/ ]; then
-            git rm -rf .erk/impl-context/
+          if git ls-files --error-unmatch .erk/impl-context/ >/dev/null 2>&1; then
+            git rm -r --cached .erk/impl-context/
             NEEDS_CLEANUP=true
           fi
           if [ "$NEEDS_CLEANUP" = true ]; then
             git commit -m "Remove plan staging dirs before implementation"
             git push origin "$BRANCH_NAME"
-            echo "Removed plan staging dirs from git tracking (content preserved in .impl/)"
+            echo "Removed plan staging dirs from git tracking (content preserved on disk)"
           fi
 
       - name: Save pre-implementation HEAD
@@ -308,7 +306,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           # Check for uncommitted changes (staged or unstaged) excluding .erk/impl-context/ and .impl/
-          UNCOMMITTED=$(git status --porcelain | grep -v '^\s*D.*\.erk/impl-context/' | grep -v '\.impl/' || true)
+          UNCOMMITTED=$(git status --porcelain | grep -v '^\s*D.*\.erk/impl-context/' || true)
 
           # Check for new commits since pre-implementation
           CURRENT_HEAD=$(git rev-parse HEAD)
@@ -403,17 +401,15 @@ jobs:
         run: |
           git fetch origin "$BRANCH_NAME"
           git reset --hard "origin/$BRANCH_NAME"
-          NEEDS_CLEANUP=false
           git config user.name "$SUBMITTED_BY"
           git config user.email "$SUBMITTED_BY@users.noreply.github.com"
-          if [ -d .erk/impl-context/ ]; then
-            git rm -rf .erk/impl-context/
-            NEEDS_CLEANUP=true
-          fi
-          if [ "$NEEDS_CLEANUP" = true ]; then
+          if git ls-files --error-unmatch .erk/impl-context/ >/dev/null 2>&1; then
+            git rm -r --cached .erk/impl-context/
             git commit -m "Remove plan staging dirs after implementation"
             git push origin "$BRANCH_NAME"
-            echo "Cleaned up plan staging dirs"
+            echo "Cleaned up plan staging dirs from git tracking"
+          else
+            echo "No tracked plan staging dirs to clean up"
           fi
 
       - name: Update PR body with implementation summary

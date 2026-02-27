@@ -54,3 +54,7 @@ class DryRunGitStatusOps(GitStatusOps):
     def get_conflicted_files(self, cwd: Path) -> list[str]:
         """Get conflicted files (read-only, delegates to wrapped)."""
         return self._wrapped.get_conflicted_files(cwd)
+
+    def has_tracked_files(self, repo_root: Path, path: str) -> bool:
+        """Check for tracked files (read-only, delegates to wrapped)."""
+        return self._wrapped.has_tracked_files(repo_root, path)

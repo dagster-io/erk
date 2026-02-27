@@ -103,3 +103,16 @@ class RealGitStatusOps(GitStatusOps):
                 # File path starts at position 3
                 conflicted.append(line[3:])
         return conflicted
+
+    def has_tracked_files(self, repo_root: Path, path: str) -> bool:
+        """Check if any files under a relative path are tracked in the git index."""
+        result = subprocess.run(
+            ["git", "ls-files", path],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            return False
+        return bool(result.stdout.strip())

@@ -167,6 +167,7 @@ class FakeGit(Git):
         add_worktree_error: str | None = None,
         remove_worktree_error: str | None = None,
         ahead_behind_raises: RuntimeError | None = None,
+        tracked_paths: set[str] | None = None,
     ) -> None:
         """Create FakeGit with pre-configured state.
 
@@ -230,6 +231,7 @@ class FakeGit(Git):
             add_worktree_error: Error message to raise as RuntimeError from add_worktree()
             remove_worktree_error: Error message to raise as RuntimeError from remove_worktree()
             ahead_behind_raises: If set, get_ahead_behind() raises this error
+            tracked_paths: Set of relative paths tracked in the git index
         """
         self._worktrees = worktrees or {}
         self._current_branches = current_branches or {}
@@ -278,6 +280,7 @@ class FakeGit(Git):
         self._pull_rebase_error = pull_rebase_error
         self._merge_bases = merge_bases or {}
         self._remove_worktree_error = remove_worktree_error
+        self._tracked_paths: set[str] = tracked_paths or set()
 
         # Mutation tracking
         self._deleted_branches: list[str] = []
@@ -412,6 +415,7 @@ class FakeGit(Git):
             file_statuses=self._file_statuses,
             merge_conflicts=self._merge_conflicts,
             conflicted_files=self._conflicted_files,
+            tracked_paths=self._tracked_paths,
         )
         # Link state so FakeGit modifications are visible to status subgateway
         self._status_gateway.link_state(
@@ -419,6 +423,7 @@ class FakeGit(Git):
             file_statuses=self._file_statuses,
             merge_conflicts=self._merge_conflicts,
             conflicted_files=self._conflicted_files,
+            tracked_paths=self._tracked_paths,
         )
 
         # Rebase operations subgateway - linked to FakeGit's state
