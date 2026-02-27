@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Resilient plan-header recovery in `erk pr submit` and `plan-implement`"
+}
