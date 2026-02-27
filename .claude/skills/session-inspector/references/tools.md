@@ -121,7 +121,7 @@ erk exec extract-latest-plan [--session-id SESSION_ID]
 
 ### create-pr-from-session
 
-Extract plan from session and create GitHub issue.
+Extract plan from session and create plan PR.
 
 ```bash
 erk exec create-pr-from-session [--session-id SESSION_ID]
@@ -151,7 +151,7 @@ Or on failure:
 
 ### extract-session-from-issue
 
-Extract session XML content from GitHub issue comments.
+Extract session XML content from plan PR comments.
 
 ```bash
 erk exec extract-session-from-issue <issue-number> [OPTIONS]
