@@ -527,6 +527,90 @@ class TestSyncCommand:
         assert result.exit_code == 1
         assert "not found" in result.output
 
+    def test_sync_cmd_prompts_for_missing_gitignore_entries(self, tmp_path: Path) -> None:
+        """Prompts user to add missing gitignore entries after sync."""
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            bundled_dir = tmp_path / "bundled"
+            bundled_dir.mkdir()
+            nonexistent = tmp_path / "nonexistent"
+
+            # Create .gitignore missing required entries
+            gitignore_path = Path.cwd() / ".gitignore"
+            gitignore_path.write_text("*.pyc\n", encoding="utf-8")
+
+            with patch(
+                "erk.artifacts.sync.ErkPackageInfo.from_project_dir",
+                return_value=_fake_package(
+                    in_erk_repo=True,
+                    bundled_claude_dir=bundled_dir,
+                    bundled_github_dir=nonexistent,
+                ),
+            ):
+                result = runner.invoke(sync_cmd, input="y\n")
+
+            assert result.exit_code == 0
+            assert "Missing .gitignore entries" in result.output
+            gitignore = gitignore_path.read_text(encoding="utf-8")
+            assert ".erk/scratch/" in gitignore
+            assert ".erk/config.local.toml" in gitignore
+            assert ".erk/bin/" in gitignore
+
+    def test_sync_cmd_skips_gitignore_on_decline(self, tmp_path: Path) -> None:
+        """Skips gitignore update when user declines."""
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            bundled_dir = tmp_path / "bundled"
+            bundled_dir.mkdir()
+            nonexistent = tmp_path / "nonexistent"
+
+            # Create .gitignore missing required entries
+            gitignore_path = Path.cwd() / ".gitignore"
+            gitignore_path.write_text("*.pyc\n", encoding="utf-8")
+
+            with patch(
+                "erk.artifacts.sync.ErkPackageInfo.from_project_dir",
+                return_value=_fake_package(
+                    in_erk_repo=True,
+                    bundled_claude_dir=bundled_dir,
+                    bundled_github_dir=nonexistent,
+                ),
+            ):
+                result = runner.invoke(sync_cmd, input="n\n")
+
+            assert result.exit_code == 0
+            assert "Missing .gitignore entries" in result.output
+            gitignore = gitignore_path.read_text(encoding="utf-8")
+            assert ".erk/scratch/" not in gitignore
+            assert ".erk/config.local.toml" not in gitignore
+            assert ".erk/bin/" not in gitignore
+
+    def test_sync_cmd_noop_when_all_gitignore_present(self, tmp_path: Path) -> None:
+        """No prompt when all gitignore entries are present."""
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            bundled_dir = tmp_path / "bundled"
+            bundled_dir.mkdir()
+            nonexistent = tmp_path / "nonexistent"
+
+            Path(".gitignore").write_text(
+                "*.pyc\n.erk/scratch/\n.erk/config.local.toml\n.erk/bin/\n",
+                encoding="utf-8",
+            )
+
+            with patch(
+                "erk.artifacts.sync.ErkPackageInfo.from_project_dir",
+                return_value=_fake_package(
+                    in_erk_repo=True,
+                    bundled_claude_dir=bundled_dir,
+                    bundled_github_dir=nonexistent,
+                ),
+            ):
+                result = runner.invoke(sync_cmd)
+
+            assert result.exit_code == 0
+            assert "Missing .gitignore entries" not in result.output
+
 
 class TestCheckCommandShowsActualArtifacts:
     """Tests for ensuring check shows only actually-installed artifacts."""

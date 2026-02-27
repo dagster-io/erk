@@ -5,6 +5,8 @@ This module contains testable functions for gitignore management.
 
 from pathlib import Path
 
+REQUIRED_GITIGNORE_ENTRIES: list[str] = [".erk/scratch/", ".erk/config.local.toml", ".erk/bin/"]
+
 
 def is_repo_erk_ified(repo_root: Path) -> bool:
     """Check if a repository has been initialized with erk.

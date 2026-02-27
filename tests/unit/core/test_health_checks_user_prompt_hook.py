@@ -117,7 +117,7 @@ def test_check_fails_when_wrong_hook_command(tmp_path: Path) -> None:
     result = check_user_prompt_hook(tmp_path)
 
     assert result.passed is False
-    assert "missing unified hook" in result.message.lower()
+    assert "outdated" in result.message.lower()
     assert result.details is not None
     assert "erk exec user-prompt-hook" in result.details
 

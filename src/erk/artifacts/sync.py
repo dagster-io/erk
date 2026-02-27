@@ -17,6 +17,7 @@ from erk.core.claude_settings import (
     has_exit_plan_hook,
     has_user_prompt_hook,
 )
+from erk.core.init_utils import REQUIRED_GITIGNORE_ENTRIES, add_gitignore_entry
 from erk_shared.context.types import AgentBackend
 
 
@@ -576,10 +577,6 @@ def _sync_hooks(project_dir: Path) -> list[SyncedArtifact]:
 
     settings = json.loads(settings_path.read_text(encoding="utf-8"))
 
-    # Only update if hooks already exist - initial install is via HooksCapability
-    if not has_user_prompt_hook(settings) and not has_exit_plan_hook(settings):
-        return []
-
     updated_settings = add_erk_hooks(settings)
 
     # Only write if hooks actually changed
@@ -605,6 +602,40 @@ def _sync_hooks(project_dir: Path) -> list[SyncedArtifact]:
             )
         )
     return synced
+
+
+def find_missing_gitignore_entries(project_dir: Path) -> list[str]:
+    """Find required gitignore entries that are missing.
+
+    Args:
+        project_dir: Project root directory
+
+    Returns:
+        List of missing gitignore entry strings.
+    """
+    gitignore_path = project_dir / ".gitignore"
+    if not gitignore_path.exists():
+        return []
+
+    content = gitignore_path.read_text(encoding="utf-8")
+    return [entry for entry in REQUIRED_GITIGNORE_ENTRIES if entry not in content]
+
+
+def add_missing_gitignore_entries(project_dir: Path, entries: list[str]) -> None:
+    """Add missing entries to the project's .gitignore file.
+
+    Args:
+        project_dir: Project root directory
+        entries: List of entries to add
+    """
+    gitignore_path = project_dir / ".gitignore"
+    if not gitignore_path.exists():
+        return
+
+    content = gitignore_path.read_text(encoding="utf-8")
+    for entry in entries:
+        content = add_gitignore_entry(content, entry)
+    gitignore_path.write_text(content, encoding="utf-8")
 
 
 def sync_artifacts(

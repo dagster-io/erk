@@ -4,7 +4,12 @@ from pathlib import Path
 
 import click
 
-from erk.artifacts.sync import create_artifact_sync_config, sync_artifacts
+from erk.artifacts.sync import (
+    add_missing_gitignore_entries,
+    create_artifact_sync_config,
+    find_missing_gitignore_entries,
+    sync_artifacts,
+)
 
 
 @click.command("sync")
@@ -14,6 +19,7 @@ def sync_cmd(force: bool) -> None:
 
     Copies bundled artifacts (commands, skills, agents, docs) from the
     installed erk package to the current project's .claude/ directory.
+    Also checks for missing .gitignore entries and offers to add them.
 
     When running in the erk repo itself, this is a no-op since artifacts
     are read directly from source.
@@ -38,3 +44,11 @@ def sync_cmd(force: bool) -> None:
     else:
         click.echo(click.style("✗ ", fg="red") + result.message, err=True)
         raise SystemExit(1)
+
+    # Check for missing gitignore entries
+    missing = find_missing_gitignore_entries(project_dir)
+    if missing:
+        click.echo(f"\nMissing .gitignore entries: {', '.join(missing)}")
+        if click.confirm("Add missing entries to .gitignore?", default=True):
+            add_missing_gitignore_entries(project_dir, missing)
+            click.echo(click.style("✓ ", fg="green") + "Updated .gitignore")

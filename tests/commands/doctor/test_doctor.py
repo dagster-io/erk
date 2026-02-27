@@ -400,7 +400,7 @@ def test_doctor_shows_remediation_for_warnings(monkeypatch: pytest.MonkeyPatch) 
         ctx = build_workspace_test_context(env, git=git, shell=_make_test_shell())
 
         # Mock run_all_checks to return a warning with remediation
-        def mock_run_all_checks(_ctx):  # type: ignore[no-untyped-def]
+        def mock_run_all_checks(_ctx, *, check_hooks):  # type: ignore[no-untyped-def]
             return [
                 # A passing check (no warning)
                 CheckResult(
@@ -434,3 +434,158 @@ def test_doctor_shows_remediation_for_warnings(monkeypatch: pytest.MonkeyPatch) 
         # CRITICAL: Should show remediation section for the warning
         assert "Remediation" in result.output
         assert "test-command" in result.output
+
+
+def test_doctor_remediation_points_to_artifact_sync() -> None:
+    """Test that doctor remediation for gitignore/hooks mentions 'erk artifact sync'."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+
+        # Create .gitignore missing required entries (triggers gitignore check)
+        gitignore_path = env.cwd / ".gitignore"
+        gitignore_path.write_text("*.pyc\n", encoding="utf-8")
+
+        # Create .claude/settings.json with outdated hooks (triggers hook check)
+        settings_path = env.cwd / ".claude" / "settings.json"
+        settings_path.parent.mkdir(parents=True)
+        import json
+
+        settings_path.write_text(
+            json.dumps(
+                {
+                    "hooks": {
+                        "UserPromptSubmit": [
+                            {
+                                "matcher": "*",
+                                "hooks": [
+                                    {
+                                        "type": "command",
+                                        "command": (
+                                            "ERK_HOOK_ID=user-prompt-hook erk exec user-prompt-hook"
+                                        ),
+                                    }
+                                ],
+                            }
+                        ],
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        ctx = build_workspace_test_context(env, git=git, shell=_make_test_shell())
+
+        result = runner.invoke(doctor_cmd, [], obj=ctx)
+
+        assert result.exit_code == 0
+        # Remediation should point to 'erk artifact sync' (not just 'erk init')
+        assert "erk artifact sync" in result.output
+
+
+def test_doctor_hook_outdated_message() -> None:
+    """Test that doctor shows 'outdated' for hooks with old command format."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+
+        # Create settings with outdated hooks
+        settings_path = env.cwd / ".claude" / "settings.json"
+        settings_path.parent.mkdir(parents=True)
+        import json
+
+        settings_path.write_text(
+            json.dumps(
+                {
+                    "hooks": {
+                        "UserPromptSubmit": [
+                            {
+                                "matcher": "*",
+                                "hooks": [
+                                    {
+                                        "type": "command",
+                                        "command": (
+                                            "ERK_HOOK_ID=user-prompt-hook erk exec user-prompt-hook"
+                                        ),
+                                    }
+                                ],
+                            }
+                        ],
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        ctx = build_workspace_test_context(env, git=git, shell=_make_test_shell())
+
+        result = runner.invoke(doctor_cmd, ["--verbose"], obj=ctx)
+
+        assert result.exit_code == 0
+        # Should say "outdated" rather than "not configured" or "missing"
+        assert "outdated" in result.output.lower()
+
+
+def test_doctor_excludes_hook_health_by_default() -> None:
+    """Test that hook health check is excluded by default."""
+    import json
+    import time
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+
+        # Create hook failure logs
+        session_dir = env.cwd / ".erk" / "scratch" / "sessions" / "test-session"
+        hook_dir = session_dir / "hooks" / "my-hook"
+        hook_dir.mkdir(parents=True)
+        log_data = {
+            "kit_id": "test-kit",
+            "hook_id": "test-hook",
+            "exit_code": 1,
+            "exit_status": "error",
+            "timestamp": time.time(),
+            "duration_ms": 100,
+        }
+        (hook_dir / "log1.json").write_text(json.dumps(log_data), encoding="utf-8")
+
+        ctx = build_workspace_test_context(env, git=git, shell=_make_test_shell())
+
+        # Run doctor WITHOUT --check-hooks
+        result = runner.invoke(doctor_cmd, [], obj=ctx)
+
+        assert result.exit_code == 0
+        # Hook health check should not appear (no "hook logs" or failure details)
+        assert "hook logs" not in result.output.lower()
+
+
+def test_doctor_includes_hook_health_with_flag() -> None:
+    """Test that hook health check is included when --check-hooks flag is used."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, shell=_make_test_shell())
+
+        # Run doctor WITH --check-hooks
+        result = runner.invoke(doctor_cmd, ["--check-hooks"], obj=ctx)
+
+        assert result.exit_code == 0
+        # Hook health check should appear (at minimum "No hook logs" message)
+        assert "hook log" in result.output.lower() or "hooks" in result.output.lower()

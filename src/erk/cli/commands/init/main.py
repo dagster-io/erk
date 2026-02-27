@@ -7,7 +7,12 @@ from pathlib import Path
 import click
 import tomlkit
 
-from erk.artifacts.sync import create_artifact_sync_config, sync_artifacts
+from erk.artifacts.sync import (
+    add_missing_gitignore_entries,
+    create_artifact_sync_config,
+    find_missing_gitignore_entries,
+    sync_artifacts,
+)
 from erk.cli.core import discover_repo_context
 from erk.core.capabilities.registry import list_capabilities, list_required_capabilities
 from erk.core.claude_settings import (
@@ -439,6 +444,7 @@ def run_init(
     ctx: ErkContext,
     *,
     force: bool,
+    upgrade: bool,
     statusline_only: bool,
     no_interactive: bool,
 ) -> None:
@@ -448,6 +454,13 @@ def run_init(
     1. Repo verification - checks that you're in a git repository
     2. Project setup - erk-ifies the repo (if not already)
     3. User setup - configures Claude Code status line
+
+    When upgrade=True on an already-erkified repo:
+    - Skips config.toml rewrite (preserves user customizations)
+    - Runs artifact sync with force (updates skills, hooks, commands)
+    - Runs capability install (re-installs required capabilities)
+    - Syncs gitignore entries
+    - Updates required-erk-uv-tool-version file
     """
     # =========================================================================
     # STEP 1: Repo Verification
@@ -525,7 +538,60 @@ def run_init(
     # Check if repo is already erk-ified
     already_erkified = is_repo_erk_ified(repo_root)
 
-    if already_erkified and not force:
+    if already_erkified and not force and upgrade:
+        # Upgrade path: preserve config.toml, update everything else
+        user_output("  Upgrading erk artifacts and configuration...")
+
+        # Resolve backend
+        if ctx.global_config is not None:
+            backend = ctx.global_config.interactive_agent.backend
+        else:
+            backend = "claude"
+
+        # Sync artifacts with force=True to ensure all files are updated
+        config = create_artifact_sync_config(repo_root, backend=backend)
+        sync_result = sync_artifacts(repo_root, True, config=config)
+        if sync_result.success:
+            user_output(click.style("  ✓ ", fg="green") + sync_result.message)
+        else:
+            warn_msg = f"Artifact sync failed: {sync_result.message}"
+            user_output(click.style("  ⚠ ", fg="yellow") + warn_msg)
+
+        # Re-install required capabilities (e.g., hooks)
+        for cap in list_required_capabilities():
+            if backend not in cap.supported_backends:
+                continue
+            check_repo_root = repo_root if cap.scope == "project" else None
+            result = cap.install(check_repo_root, backend=backend)
+            if result.success:
+                user_output(click.style("  ✓ ", fg="green") + result.message)
+            else:
+                warn_msg = f"{cap.name} install failed: {result.message}"
+                user_output(click.style("  ⚠ ", fg="yellow") + warn_msg)
+
+        # Sync gitignore entries
+        interactive = not no_interactive
+        missing = find_missing_gitignore_entries(repo_root)
+        if missing:
+            if interactive:
+                click.echo(f"  Missing .gitignore entries: {', '.join(missing)}")
+                if click.confirm("  Add missing entries to .gitignore?", default=True):
+                    add_missing_gitignore_entries(repo_root, missing)
+                    user_output(click.style("  ✓ ", fg="green") + "Updated .gitignore")
+            else:
+                add_missing_gitignore_entries(repo_root, missing)
+                user_output(click.style("  ✓ ", fg="green") + "Updated .gitignore")
+
+        # Update required version file
+        erk_dir = repo_root / ".erk"
+        version_file = erk_dir / "required-erk-uv-tool-version"
+        version_file.write_text(f"{get_current_version()}\n", encoding="utf-8")
+        user_output(click.style("  ✓ ", fg="green") + "Updated required erk version")
+
+        user_output(click.style("\n✓", fg="green") + " Upgrade complete!")
+        return
+
+    elif already_erkified and not force:
         user_output(click.style("✓", fg="green") + " Repository already configured for erk")
     else:
         # Now re-discover repo with correct erk_root

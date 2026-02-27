@@ -65,7 +65,7 @@ def test_check_fails_when_no_hooks_section(tmp_path: Path) -> None:
 
     assert result.passed is False
     assert result.name == "exit-plan-hook"
-    assert "not configured" in result.message.lower()
+    assert "outdated" in result.message.lower()
 
 
 def test_check_fails_when_wrong_matcher(tmp_path: Path) -> None:
@@ -100,7 +100,7 @@ def test_check_fails_when_wrong_matcher(tmp_path: Path) -> None:
 
     assert result.passed is False
     assert result.name == "exit-plan-hook"
-    assert "not configured" in result.message.lower()
+    assert "outdated" in result.message.lower()
 
 
 def test_check_fails_when_wrong_command(tmp_path: Path) -> None:
@@ -132,7 +132,7 @@ def test_check_fails_when_wrong_command(tmp_path: Path) -> None:
 
     assert result.passed is False
     assert result.name == "exit-plan-hook"
-    assert "not configured" in result.message.lower()
+    assert "outdated" in result.message.lower()
 
 
 def test_check_handles_empty_settings(tmp_path: Path) -> None:
@@ -145,4 +145,4 @@ def test_check_handles_empty_settings(tmp_path: Path) -> None:
 
     assert result.passed is False
     assert result.name == "exit-plan-hook"
-    assert "not configured" in result.message.lower()
+    assert "outdated" in result.message.lower()
