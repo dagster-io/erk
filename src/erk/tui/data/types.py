@@ -98,6 +98,8 @@ class PlanRowData:
     pr_url: str | None
     pr_display: str
     checks_display: str
+    checks_passing: bool | None
+    checks_counts: tuple[int, int] | None
     worktree_name: str
     exists_locally: bool
     local_impl_display: str

@@ -83,6 +83,24 @@ class PRReviewThread:
 
 
 @dataclass(frozen=True)
+class PRCheckRun:
+    """A single CI check run or status context on a PR.
+
+    Attributes:
+        name: Check name (e.g., "CI / unit-tests")
+        status: Run status ("completed", "in_progress", "queued", "pending")
+        conclusion: Result when completed ("success", "failure", "cancelled", etc.).
+            None if not yet completed.
+        detail_url: URL to the check run detail page. None if unavailable.
+    """
+
+    name: str
+    status: str
+    conclusion: str | None
+    detail_url: str | None
+
+
+@dataclass(frozen=True)
 class MergeResult:
     """Success result from merging a PR."""
 

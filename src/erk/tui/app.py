@@ -23,6 +23,7 @@ from erk.tui.commands.types import CommandContext
 from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
 from erk.tui.filtering.logic import filter_plans
 from erk.tui.filtering.types import FilterMode, FilterState
+from erk.tui.screens.check_runs_screen import CheckRunsScreen
 from erk.tui.screens.help_screen import HelpScreen
 from erk.tui.screens.launch_screen import LaunchScreen
 from erk.tui.screens.plan_body_screen import PlanBodyScreen
@@ -98,6 +99,7 @@ class ErkDashApp(App):
         Binding("p", "open_pr", "Open PR"),
         Binding("n", "open_run", "Run"),
         Binding("c", "view_comments", "Comments", show=False),
+        Binding("h", "view_checks", "Checks", show=False),
         Binding("i", "show_implement", "Implement"),
         Binding("v", "view_plan_body", "View", show=False),
         Binding("l", "launch", "Launch"),
@@ -1002,6 +1004,34 @@ class ErkDashApp(App):
                 full_title=row.full_title,
                 resolved_count=row.resolved_comment_count,
                 total_count=row.total_comment_count,
+            )
+        )
+
+    def action_view_checks(self) -> None:
+        """Display failing CI checks in a modal."""
+        row = self._get_selected_row()
+        if row is None:
+            return
+        if row.pr_number is None:
+            if self._status_bar is not None:
+                self._status_bar.set_message("No PR linked to this plan")
+            return
+        if row.checks_passing is None:
+            if self._status_bar is not None:
+                self._status_bar.set_message("No checks available")
+            return
+        if row.checks_passing is True:
+            if self._status_bar is not None:
+                self._status_bar.set_message("All checks passing")
+            return
+        passing_count, total_count = row.checks_counts if row.checks_counts is not None else (0, 0)
+        self.push_screen(
+            CheckRunsScreen(
+                provider=self._provider,
+                pr_number=row.pr_number,
+                full_title=row.full_title,
+                passing_count=passing_count,
+                total_count=total_count,
             )
         )
 

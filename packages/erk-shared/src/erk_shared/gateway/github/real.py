@@ -23,6 +23,7 @@ from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.graphql_queries import (
     ADD_REVIEW_THREAD_REPLY_MUTATION,
     GET_ISSUES_WITH_PR_LINKAGES_QUERY,
+    GET_PR_CHECK_RUNS_QUERY,
     GET_PR_REVIEW_THREADS_QUERY,
     GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY,
     ISSUE_PR_LINKAGE_FRAGMENT,
@@ -52,6 +53,7 @@ from erk_shared.gateway.github.types import (
     IssueFilterState,
     MergeError,
     MergeResult,
+    PRCheckRun,
     PRDetails,
     PRListState,
     PRNotFound,
@@ -1966,6 +1968,99 @@ query {{
         # Sort by path, then by line (None sorts first)
         threads.sort(key=lambda t: (t.path, t.line or 0))
         return threads
+
+    def get_pr_check_runs(
+        self,
+        repo_root: Path,
+        pr_number: int,
+    ) -> list[PRCheckRun]:
+        """Get failing check runs for a PR via GraphQL."""
+        assert self._repo_info is not None, "repo_info required for get_pr_check_runs"
+
+        # GH-API-AUDIT: GraphQL - statusCheckRollup query
+        # WHY GRAPHQL: Need individual check details (name, conclusion, URL)
+        cmd = [
+            "gh",
+            "api",
+            "graphql",
+            "-f",
+            f"query={GET_PR_CHECK_RUNS_QUERY}",
+            "-f",
+            f"owner={self._repo_info.owner}",
+            "-f",
+            f"repo={self._repo_info.name}",
+            "-F",
+            f"number={pr_number}",
+        ]
+        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+        response = json.loads(stdout)
+
+        return self._parse_check_runs_response(response)
+
+    def _parse_check_runs_response(self, response: dict[str, Any]) -> list[PRCheckRun]:
+        """Parse GraphQL statusCheckRollup response into PRCheckRun objects.
+
+        Handles both CheckRun and StatusContext node types from the GraphQL union.
+        Filters to failing checks only and sorts by name.
+        """
+        checks: list[PRCheckRun] = []
+
+        pr_data = response.get("data", {}).get("repository", {}).get("pullRequest")
+        if pr_data is None:
+            return checks
+
+        rollup = pr_data.get("statusCheckRollup")
+        if rollup is None:
+            return checks
+
+        nodes = rollup.get("contexts", {}).get("nodes", [])
+
+        for node in nodes:
+            if node is None:
+                continue
+
+            typename = node.get("__typename")
+
+            if typename == "CheckRun":
+                conclusion = node.get("conclusion")
+                # Filter to failing: non-null conclusion that is not SUCCESS
+                if conclusion is None:
+                    # Still in progress - include as failing/pending
+                    status = node.get("status", "IN_PROGRESS")
+                    checks.append(
+                        PRCheckRun(
+                            name=node.get("name", ""),
+                            status=status.lower(),
+                            conclusion=None,
+                            detail_url=node.get("detailsUrl"),
+                        )
+                    )
+                elif conclusion.upper() != "SUCCESS":
+                    checks.append(
+                        PRCheckRun(
+                            name=node.get("name", ""),
+                            status=node.get("status", "completed").lower(),
+                            conclusion=conclusion.lower(),
+                            detail_url=node.get("detailsUrl"),
+                        )
+                    )
+
+            elif typename == "StatusContext":
+                state = node.get("state", "")
+                # Filter to failing: non-SUCCESS states
+                if state.upper() != "SUCCESS":
+                    is_terminal = state.upper() in ("FAILURE", "ERROR")
+                    checks.append(
+                        PRCheckRun(
+                            name=node.get("context", ""),
+                            status="completed" if is_terminal else "pending",
+                            conclusion=state.lower() if is_terminal else None,
+                            detail_url=node.get("targetUrl"),
+                        )
+                    )
+
+        checks.sort(key=lambda c: c.name)
+        return checks
 
     def resolve_review_thread(
         self,

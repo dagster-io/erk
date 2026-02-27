@@ -13,6 +13,7 @@ from erk_shared.gateway.github.types import (
     IssueFilterState,
     MergeError,
     MergeResult,
+    PRCheckRun,
     PRDetails,
     PRListState,
     PRNotFound,
@@ -557,6 +558,26 @@ class GitHub(ABC):
 
         Returns:
             List of PRReviewThread sorted by (path, line)
+        """
+        ...
+
+    @abstractmethod
+    def get_pr_check_runs(
+        self,
+        repo_root: Path,
+        pr_number: int,
+    ) -> list[PRCheckRun]:
+        """Get failing check runs for a pull request.
+
+        Queries the PR's statusCheckRollup via GraphQL and returns only
+        failing checks (non-success conclusion), sorted by name.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: PR number to query
+
+        Returns:
+            List of PRCheckRun for failing checks, sorted by name
         """
         ...
 

@@ -48,6 +48,7 @@ from erk_shared.gateway.github.metadata.schemas import (
 from erk_shared.gateway.github.types import (
     GitHubRepoId,
     GitHubRepoLocation,
+    PRCheckRun,
     PRReviewThread,
     PullRequestInfo,
     WorkflowRun,
@@ -485,6 +486,17 @@ class RealPlanDataProvider(PlanDataProvider):
         """
         return self._ctx.branch_manager.get_branch_stack(self._location.root, branch)
 
+    def fetch_check_runs(self, pr_number: int) -> list[PRCheckRun]:
+        """Fetch failing check runs for a pull request.
+
+        Args:
+            pr_number: The PR number to fetch check runs for
+
+        Returns:
+            List of PRCheckRun for failing checks, sorted by name
+        """
+        return self._ctx.github.get_pr_check_runs(self._location.root, pr_number)
+
     def fetch_unresolved_comments(self, pr_number: int) -> list[PRReviewThread]:
         """Fetch unresolved review threads for a pull request.
 
@@ -638,6 +650,7 @@ class RealPlanDataProvider(PlanDataProvider):
         pr_has_conflicts: bool | None = None
         pr_review_decision: str | None = None
         pr_checks_passing: bool | None = None
+        pr_checks_counts: tuple[int, int] | None = None
         pr_has_unresolved_comments: bool | None = None
         pr_is_stacked: bool | None = None
 
@@ -664,6 +677,7 @@ class RealPlanDataProvider(PlanDataProvider):
                 pr_has_conflicts = selected_pr.has_conflicts
                 pr_review_decision = selected_pr.review_decision
                 pr_checks_passing = selected_pr.checks_passing
+                pr_checks_counts = selected_pr.checks_counts
                 if selected_pr.base_ref_name is not None:
                     pr_is_stacked = selected_pr.base_ref_name not in ("master", "main")
 
@@ -822,6 +836,8 @@ class RealPlanDataProvider(PlanDataProvider):
             pr_url=pr_url,
             pr_display=pr_display,
             checks_display=checks_display,
+            checks_passing=pr_checks_passing,
+            checks_counts=pr_checks_counts,
             worktree_name=worktree_name,
             exists_locally=exists_locally,
             local_impl_display=local_impl_display,
