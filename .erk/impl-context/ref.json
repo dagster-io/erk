@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Auto-fix markdown (docs-sync + Prettier) in CI"
+}
