@@ -73,6 +73,52 @@ def test_get_workflow_run_handles_empty_workflow_runs() -> None:
     assert result is None, "Expected None when no workflow runs configured"
 
 
+def test_list_workflow_runs_filters_by_branch() -> None:
+    """Test that list_workflow_runs filters runs by branch when specified."""
+    # Arrange
+    run_main = WorkflowRun(
+        run_id="100",
+        status="completed",
+        conclusion="success",
+        branch="main",
+        head_sha="aaa",
+    )
+    run_feature = WorkflowRun(
+        run_id="200",
+        status="in_progress",
+        conclusion=None,
+        branch="feature",
+        head_sha="bbb",
+    )
+    run_feature_2 = WorkflowRun(
+        run_id="300",
+        status="completed",
+        conclusion="failure",
+        branch="feature",
+        head_sha="ccc",
+    )
+    github = FakeGitHub(workflow_runs=[run_main, run_feature, run_feature_2])
+    repo_root = Path("/fake/repo")
+
+    # Act - no branch filter returns all
+    all_runs = github.list_workflow_runs(repo_root, "workflow.yml")
+    assert len(all_runs) == 3
+
+    # Act - filter by "feature" returns only feature runs
+    feature_runs = github.list_workflow_runs(repo_root, "workflow.yml", branch="feature")
+    assert len(feature_runs) == 2
+    assert all(r.branch == "feature" for r in feature_runs)
+
+    # Act - filter by "main" returns only main runs
+    main_runs = github.list_workflow_runs(repo_root, "workflow.yml", branch="main")
+    assert len(main_runs) == 1
+    assert main_runs[0].run_id == "100"
+
+    # Act - filter by non-existent branch returns empty
+    empty_runs = github.list_workflow_runs(repo_root, "workflow.yml", branch="no-such-branch")
+    assert len(empty_runs) == 0
+
+
 def test_get_workflow_runs_by_branches_prefers_in_progress_over_completed() -> None:
     """Test priority logic: in-progress runs preferred over completed runs."""
     # Arrange
