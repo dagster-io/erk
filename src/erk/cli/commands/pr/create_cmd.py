@@ -1,4 +1,4 @@
-"""Command to create a plan issue from markdown content."""
+"""Command to create a plan from markdown content."""
 
 import sys
 from pathlib import Path
@@ -113,7 +113,7 @@ def pr_create(
     # Display success message with next steps
     user_output(f"Created plan #{result.plan_number}")
     user_output("")
-    user_output(f"Issue: {result.plan_url}")
+    user_output(f"Plan: {result.plan_url}")
     user_output("")
     user_output("Next steps:")
     user_output(f"  View:       erk get {result.plan_number}")

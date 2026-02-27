@@ -111,7 +111,7 @@ def _execute_plan(plan_content: str, plan_info: dict[str, int | str] | None) -> 
         plan_info: Plan info dict or None
     """
     if plan_info:
-        tracking_msg = f"GitHub tracking: ENABLED (issue #{plan_info['plan_number']})"
+        tracking_msg = f"GitHub tracking: ENABLED (plan #{plan_info['plan_number']})"
     else:
         tracking_msg = "GitHub tracking: DISABLED (no plan-ref.json)"
 
@@ -128,7 +128,7 @@ The /erk:plan-implement slash command will:
   2. Update .erk/impl-context/progress.md as steps complete"""
 
     if plan_info:
-        msg += f"\n  3. Post progress to GitHub issue #{plan_info['plan_number']}"
+        msg += f"\n  3. Post progress to plan #{plan_info['plan_number']}"
 
     click.echo(msg)
 

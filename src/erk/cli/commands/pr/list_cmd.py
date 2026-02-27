@@ -109,9 +109,9 @@ def pr_filter_options(f: Callable[P, T]) -> Callable[P, T]:
     )(f)
     f = click.option(
         "--sort",
-        type=click.Choice(["issue", "activity"], case_sensitive=False),
-        default="issue",
-        help="Sort order: by issue number (default) or recent branch activity",
+        type=click.Choice(["plan", "activity"], case_sensitive=False),
+        default="plan",
+        help="Sort order: by plan number (default) or recent branch activity",
     )(f)
     return f
 
@@ -360,7 +360,7 @@ def _run_interactive_mode(
         limit: Maximum number of results
         interval: Refresh interval in seconds
         all_users: If True, show plans from all users; if False, filter to authenticated user
-        sort: Sort order ("issue" or "activity")
+        sort: Sort order ("plan" or "activity")
     """
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)

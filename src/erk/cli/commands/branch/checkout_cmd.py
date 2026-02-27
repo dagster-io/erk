@@ -338,7 +338,7 @@ def _setup_impl_for_plan(
     "for_plan",
     type=str,
     default=None,
-    help="GitHub issue/PR number with erk-plan label",
+    help="Plan number or PR with erk-plan label",
 )
 @click.option("--no-slot", is_flag=True, help="Create worktree without slot assignment")
 @click.option(

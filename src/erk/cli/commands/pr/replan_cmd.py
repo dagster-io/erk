@@ -1,4 +1,4 @@
-"""Launch Claude to replan existing erk-plan issue(s)."""
+"""Launch Claude to replan existing plan(s)."""
 
 import click
 
@@ -10,9 +10,9 @@ from erk_shared.context.types import InteractiveAgentConfig
 @click.argument("issue_refs", nargs=-1, required=True)
 @click.pass_obj
 def pr_replan(ctx: ErkContext, issue_refs: tuple[str, ...]) -> None:
-    """Replan existing erk-plan issue(s) against current codebase state.
+    """Replan existing plan(s) against current codebase state.
 
-    ISSUE_REFS are issue numbers or GitHub URLs. Multiple refs can be provided
+    ISSUE_REFS are plan numbers or GitHub URLs. Multiple refs can be provided
     to consolidate plans into a single unified plan.
 
     This command launches Claude in plan mode to re-evaluate existing plan(s)

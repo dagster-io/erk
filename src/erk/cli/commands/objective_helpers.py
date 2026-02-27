@@ -39,16 +39,16 @@ def check_and_display_plan_issue_closure(
 
     result = ctx.plan_store.get_plan(repo_root, plan_id)
     if isinstance(result, PlanNotFound):
-        logger.debug("Plan issue #%d not found, skipping closure check", plan_number)
+        logger.debug("Plan #%d not found, skipping closure check", plan_number)
         return None
 
     if result.state == PlanState.CLOSED:
-        user_output(click.style("✓", fg="green") + f" Closed plan issue #{plan_number}")
+        user_output(click.style("✓", fg="green") + f" Closed plan #{plan_number}")
         return plan_number
 
     # Issue is open — close it directly (no more "Closes #N" auto-close)
     ctx.plan_store.close_plan(repo_root, plan_id)
-    user_output(click.style("✓", fg="green") + f" Closed plan issue #{plan_number}")
+    user_output(click.style("✓", fg="green") + f" Closed plan #{plan_number}")
 
     return plan_number
 

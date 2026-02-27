@@ -416,7 +416,7 @@ def upgrade_repo(ctx: ErkContext) -> None:
 
 
 @admin_group.command("test-plan-implement-gh-workflow")
-@click.option("--issue", "-i", type=int, help="Existing plan issue number to use")
+@click.option("--issue", "-i", type=int, help="Existing plan number to use")
 @click.option("--watch", "-w", is_flag=True, help="Watch the workflow run after triggering")
 @click.pass_obj
 def test_plan_implement_gh_workflow(ctx: ErkContext, issue: int | None, watch: bool) -> None:
@@ -459,7 +459,7 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, issue: int | None, watch: b
     # Step 2: Find or create test issue
     if issue is not None:
         plan_number = issue
-        user_output(f"Using existing issue #{plan_number}")
+        user_output(f"Using existing plan #{plan_number}")
     else:
         result = ctx.issues.create_issue(
             repo_root=repo.root,
@@ -468,7 +468,7 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, issue: int | None, watch: b
             labels=["test"],
         )
         plan_number = result.number
-        user_output(click.style("✓", fg="green") + f" Created test issue #{plan_number}")
+        user_output(click.style("✓", fg="green") + f" Created test plan #{plan_number}")
 
     # Detect trunk branch for PR base
     trunk = ctx.git.branch.detect_trunk_branch(repo.root)

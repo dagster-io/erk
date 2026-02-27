@@ -61,14 +61,18 @@ def _build_github_url(plan_url: str, resource_type: str, number: int) -> str:
     """Build a GitHub URL for a PR or issue from an existing plan URL.
 
     Args:
-        plan_url: Base plan URL (e.g., https://github.com/owner/repo/issues/123)
+        plan_url: Base plan URL (e.g., https://github.com/owner/repo/pull/123)
         resource_type: Either "pull" or "issues"
         number: The PR or issue number
 
     Returns:
         Full URL (e.g., https://github.com/owner/repo/pull/456)
     """
-    base_url = plan_url.rsplit("/issues/", 1)[0]
+    # Try /pull/ first (new plan-as-PR format), fall back to /issues/ (legacy)
+    if "/pull/" in plan_url:
+        base_url = plan_url.rsplit("/pull/", 1)[0]
+    else:
+        base_url = plan_url.rsplit("/issues/", 1)[0]
     return f"{base_url}/{resource_type}/{number}"
 
 
@@ -136,7 +140,7 @@ class ErkDashApp(App):
             provider: Data provider for fetching plan data
             filters: Filter options for the plan list
             refresh_interval: Seconds between auto-refresh (0 to disable)
-            initial_sort: Initial sort state (defaults to by issue number)
+            initial_sort: Initial sort state (defaults to by plan number)
         """
         super().__init__()
         self._provider = provider
@@ -1170,7 +1174,7 @@ class ErkDashApp(App):
         elif command_id == "open_issue":
             if row.plan_url:
                 self._provider.browser.launch(row.plan_url)
-                self.notify(f"Opened issue #{row.plan_id}")
+                self.notify(f"Opened plan #{row.plan_id}")
 
         elif command_id == "open_pr":
             if row.pr_url:
@@ -1343,7 +1347,7 @@ class ErkDashApp(App):
             if row.plan_url:
                 self._provider.browser.launch(row.plan_url)
                 if self._status_bar is not None:
-                    self._status_bar.set_message(f"Opened issue #{row.plan_id}")
+                    self._status_bar.set_message(f"Opened plan #{row.plan_id}")
 
     @on(PlanDataTable.PrClicked)
     def on_pr_clicked(self, event: PlanDataTable.PrClicked) -> None:
@@ -1388,7 +1392,7 @@ class ErkDashApp(App):
                 display, url = row.objective_head_plans[0]
                 self._provider.browser.launch(url)
                 if self._status_bar is not None:
-                    self._status_bar.set_message(f"Opened issue {display}")
+                    self._status_bar.set_message(f"Opened plan {display}")
 
     @on(PlanDataTable.ObjectiveClicked)
     def on_objective_clicked(self, event: PlanDataTable.ObjectiveClicked) -> None:

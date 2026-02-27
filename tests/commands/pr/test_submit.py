@@ -1420,7 +1420,7 @@ plan_comment_id: 1000
         assert result.exit_code == 0
         # Verify Phase 3 shows plan found (PR is the plan with PlannedPRBackend)
         assert "Phase 3: Fetching plan context" in result.output
-        assert "Incorporating plan from issue #123" in result.output
+        assert "Incorporating plan #123" in result.output
 
 
 def test_pr_submit_shows_plan_context_with_objective() -> None:
@@ -1584,7 +1584,7 @@ objective_issue: 5000
         assert result.exit_code == 0
         # Verify Phase 3 shows plan found (PR is the plan with PlannedPRBackend)
         assert "Phase 3: Fetching plan context" in result.output
-        assert "Incorporating plan from issue #123" in result.output
+        assert "Incorporating plan #123" in result.output
 
 
 def test_pr_submit_shows_no_plan_message() -> None:
@@ -1682,7 +1682,7 @@ def test_pr_submit_shows_no_plan_message() -> None:
         assert result.exit_code == 0
         # Verify Phase 3 shows plan found (PR is the plan with PlannedPRBackend)
         assert "Phase 3: Fetching plan context" in result.output
-        assert "Incorporating plan from issue #123" in result.output
+        assert "Incorporating plan #123" in result.output
 
 
 def test_pr_submit_graphite_flow_detects_remote_divergence() -> None:

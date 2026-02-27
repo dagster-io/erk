@@ -92,7 +92,7 @@ def validate_plan_format(
     # Fetch issue from GitHub
     issue = github_issues.get_issue(repo_root, plan_number)
     if isinstance(issue, IssueNotFound):
-        return PlanValidationError(error=f"Issue #{plan_number} not found")
+        return PlanValidationError(error=f"Plan #{plan_number} not found")
 
     issue_body = issue.body if issue.body else ""
 

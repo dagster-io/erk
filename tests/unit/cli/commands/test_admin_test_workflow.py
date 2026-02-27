@@ -27,7 +27,7 @@ def test_happy_path_with_existing_issue() -> None:
 
         assert result.exit_code == 0, f"Command failed: {result.output}"
         # Verify issue 42 was used
-        assert "Using existing issue #42" in result.output
+        assert "Using existing plan #42" in result.output
         # Verify PR was created as draft
         assert len(fake_github.created_prs) == 1
         branch, title, _body, base, draft = fake_github.created_prs[0]
@@ -64,7 +64,7 @@ def test_happy_path_creating_new_issue() -> None:
         title, _body, labels = fake_issues.created_issues[0]
         assert title == "Test workflow run"
         assert "test" in labels
-        assert "Created test issue #1" in result.output
+        assert "Created test plan #1" in result.output
         # Verify workflow was triggered with the new issue number
         assert len(fake_github.triggered_workflows) == 1
         _, inputs = fake_github.triggered_workflows[0]

@@ -115,7 +115,7 @@ def echo_plan_context_status(plan_context: PlanContext | None) -> None:
     if plan_context is not None:
         click.echo(
             click.style(
-                f"   Incorporating plan from issue #{plan_context.plan_id}",
+                f"   Incorporating plan #{plan_context.plan_id}",
                 fg="green",
             )
         )
@@ -195,7 +195,7 @@ def build_plan_details_section(plan_context: PlanContext) -> str:
         "## Implementation Plan",
         "",
         "<details>",
-        f"<summary><strong>Implementation Plan</strong> (Issue #{issue_num})</summary>",
+        f"<summary><strong>Implementation Plan</strong> (Plan #{issue_num})</summary>",
         "",
         plan_context.plan_content,
         "",

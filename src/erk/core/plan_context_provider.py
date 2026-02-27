@@ -1,6 +1,6 @@
 """Plan context provider for PR description generation.
 
-This module provides plan context for branches linked to erk-plan issues,
+This module provides plan context for branches linked to plans,
 enabling more accurate PR descriptions that understand the "why" behind changes.
 """
 

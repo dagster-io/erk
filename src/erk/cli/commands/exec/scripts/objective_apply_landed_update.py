@@ -218,7 +218,7 @@ def objective_apply_landed_update(
     # --- Fetch objective issue ---
     objective = issues.get_issue(repo_root, objective_number)
     if isinstance(objective, IssueNotFound):
-        click.echo(_error_json(f"Objective issue #{objective_number} not found"))
+        click.echo(_error_json(f"Objective #{objective_number} not found"))
         raise SystemExit(1)
 
     # --- Fetch PR details ---

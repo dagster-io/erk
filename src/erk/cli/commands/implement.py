@@ -1,4 +1,4 @@
-"""Command to implement features from GitHub issues or plan files.
+"""Command to implement features from plans or plan files.
 
 This command runs implementation in the current directory using Claude.
 It creates an impl folder (under .erk/impl-context/<branch>/) with the plan

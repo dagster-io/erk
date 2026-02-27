@@ -37,7 +37,7 @@ from erk_shared.plan_store.types import PlanNotFound
     "for_plan",
     type=str,
     default=None,
-    help="GitHub issue number or URL with erk-plan label",
+    help="Plan number or URL with erk-plan label",
 )
 @click.option("--no-slot", is_flag=True, help="Create branch without slot assignment")
 @click.option(

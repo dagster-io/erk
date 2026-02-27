@@ -258,7 +258,7 @@ def test_embeds_plan_in_pr_body(tmp_path: Path) -> None:
     assert "Summary of changes" in updated_body
     assert "## Implementation Plan" in updated_body
     assert "<details>" in updated_body
-    assert "<summary><strong>Implementation Plan</strong> (Issue #1234)</summary>" in updated_body
+    assert "<summary><strong>Implementation Plan</strong> (Plan #1234)</summary>" in updated_body
     assert plan_content in updated_body
     assert "</details>" in updated_body
 
