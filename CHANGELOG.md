@@ -7,118 +7,163 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of 5f7f5299e -->
+## [0.9.0] - 2026-02-27 14:23 PT
+
+### Release Overview
+
+This release completes the migration to draft PRs as the sole plan backend, consolidates CLI commands under `erk pr`, and delivers major TUI dashboard improvements for filtering, async operations, and objective visibility.
+
+#### Draft PR as Sole Plan Backend
+
+**What it solves:** Dual plan backends (GitHub issues vs draft PRs) created complexity — every workflow needed to support both paths, and the issue-based backend lacked native diff views and CI integration.
+
+**How it works:** Draft PRs are now the only plan backend. The `PlanBackendType` enum, `get_plan_backend()`, and all issue-based code paths have been removed. Plan metadata is consolidated to `plan-ref.json`, replacing the legacy `.impl/issue.json`.
+
+**Key features:** No configuration needed — draft PR is the default and only option. Simplified plan-save, plan-implement, and learn pipelines.
+
+#### CLI Consolidation under `erk pr`
+
+**What it solves:** Plan management commands were spread across `erk plan` and `erk pr`, creating confusion about where to find commands.
+
+**How it works:** All plan management commands (create, list, submit, checkout, close, view, log, replan, duplicate-check) are now under `erk pr <verb>`. The `erk plan` group has been removed. Branch names no longer encode plan IDs — plans are linked to branches via `plan-ref.json`.
+
+**Key features:** `erk pr list`, `erk pr checkout`, `erk pr close`, `erk pr replan`, `erk pr duplicate-check`.
+
+#### TUI Dashboard Polish
+
+**What it solves:** The dashboard needed better filtering, async feedback, and objective visibility for managing large numbers of plans.
+
+**How it works:** New filtering modes (by objective with `o`, by stack), persistent status bar messages for async operations, fire-and-forget dispatch, sparkline progress indicators for objectives, and clickable tab labels for mouse-driven navigation.
+
+**Key features:** Objective filter (`o`), stack filter, failing CI checks modal (`h`), clickable ViewBar tabs, "blockers" column in Objectives dashboard, stacked PR indicators.
+
+#### Non-Blocking TUI Operations
+
+**What it solves:** Remote operations (dispatch, address, fix-conflicts) blocked the TUI with modal dialogs, preventing other work during long-running operations.
+
+**How it works:** All remote operations now use a toast+worker pattern — they return immediately with a status notification, and results appear as persistent messages when complete.
+
+**Key features:** Fire-and-forget dispatch, non-blocking fix-conflicts, persistent status bar messages.
+
+---
+
+_The sections below document changes since 0.8.1:_
 
 ### Major Changes
 
-- Consolidate all plan management commands under `erk pr` — commands previously under `erk plan` (create, list, submit, checkout, close, view, log, replan, duplicate-check) are now at `erk pr <verb>`. The `erk plan` group has been removed. (bfb17162d)
-- Remove plan ID encoding from branch names — plans are now linked to branches via `plan-ref.json` instead of embedding issue numbers in branch names (e.g., `plnd/1234-description` format is gone). (41ba25ed2)
-- Remove plan review PR feature — sunsets the ephemeral plan review PR workflow (259820f)
-- Switch default plan backend to draft PR — `draft_pr` is now the default instead of `github` (a7692b4)
+- Consolidate all plan management commands under `erk pr` — commands previously under `erk plan` (create, list, submit, checkout, close, view, log, replan, duplicate-check) are now at `erk pr <verb>`. The `erk plan` group has been removed.
+- Remove plan ID encoding from branch names — plans are now linked to branches via `plan-ref.json` instead of embedding issue numbers in branch names (e.g., `plnd/1234-description` format is gone).
+- Remove plan review PR feature — sunsets the ephemeral plan review PR workflow
+- Switch default plan backend to draft PR — `draft_pr` is now the default instead of `github`
 
 ### Added
 
-- Add persistent status bar messages for workflow operations in the TUI — async results (dispatch, address, fix-conflicts) now appear as persistent messages instead of disappearing notifications. (1026519a8)
-- Add inline objective filter to `erk dash` TUI — press `o` to filter the plan list to a specific objective. (cfeef67ca)
-- Add stack filter to `erk dash` TUI — filter plans by Graphite stack. (aef3007bf)
-- Add `--sync` flag to `erk pr checkout` — automatically submits the checked-out PR to Graphite after checkout. (ec138061b)
-- Add ObjectivePlansScreen modal to `erk dash` TUI — view all plans linked to an objective in an embedded plan table overlay. (e41d00d96)
-- Add automatic tmux session persistence to `erk codespace connect` — sessions now persist in tmux without requiring an explicit flag. (9b5adb89f)
-- Add `erk admin claude-ci` command for managing Claude CI workflows (1af6826)
-- Add "implement locally" copyable command to TUI command palette (152c360)
-- Add copyable variants for close_plan, fix_conflicts_remote, and address_remote in TUI command palette (3cf08a1)
-- Add `copy_land` command to TUI command palette (9338f36)
-- Add `--plan-only` flag to `erk one-shot` for generating plans without implementation (23575c8)
-- Add `-d` short flag for `--delete-current` option in `erk up`/`erk down` commands (1fb2d1e)
-- Bundle missing capability workflows (one-shot, pr-address, pr-fix-conflicts) for external dispatch (509290e)
-- Add local review marker to skip CI reviews when local code review passes (2bbcbfc)
-- Add stacked PR emoji indicator to dashboard for PRs targeting non-master branches (ddd6360)
-- Add `erk plan duplicate-check` for semantic duplicate detection using LLM inference (d3fa221)
-- Add "blockers" column to TUI Objectives dashboard with clickable plan numbers (1ce603c)
-- Add `-d` and `-u` short aliases for `--down` and `--up` flags in `erk land` (152083a)
-- Add diagnostics for dispatch metadata failures with improved TUI feedback (9d8266b)
-- Add keyboard shortcut (`n`) to open GitHub Actions run URL from TUI main list (fcad46de9)
-- Link PR numbers to objective roadmap nodes automatically at submit time (861644307)
+- Add persistent status bar messages for workflow operations in the TUI — async results (dispatch, address, fix-conflicts) now appear as persistent messages instead of disappearing notifications.
+- Add inline objective filter to `erk dash` TUI — press `o` to filter the plan list to a specific objective.
+- Add stack filter to `erk dash` TUI — filter plans by Graphite stack.
+- Add `--sync` flag to `erk pr checkout` — automatically submits the checked-out PR to Graphite after checkout.
+- Add ObjectivePlansScreen modal to `erk dash` TUI — view all plans linked to an objective in an embedded plan table overlay.
+- Add automatic tmux session persistence to `erk codespace connect` — sessions now persist in tmux without requiring an explicit flag.
+- Add `erk admin claude-ci` command for managing Claude CI workflows
+- Add "implement locally" copyable command to TUI command palette
+- Add copyable variants for close_plan, fix_conflicts_remote, and address_remote in TUI command palette
+- Add `copy_land` command to TUI command palette
+- Add `--plan-only` flag to `erk one-shot` for generating plans without implementation
+- Add `-d` short flag for `--delete-current` option in `erk up`/`erk down` commands
+- Bundle missing capability workflows (one-shot, pr-address, pr-fix-conflicts) for external dispatch
+- Add local review marker to skip CI reviews when local code review passes
+- Add stacked PR emoji indicator to dashboard for PRs targeting non-master branches
+- Add `erk plan duplicate-check` for semantic duplicate detection using LLM inference
+- Add "blockers" column to TUI Objectives dashboard with clickable plan numbers
+- Add `-d` and `-u` short aliases for `--down` and `--up` flags in `erk land`
+- Add diagnostics for dispatch metadata failures with improved TUI feedback
+- Add keyboard shortcut (`n`) to open GitHub Actions run URL from TUI main list
+- Link PR numbers to objective roadmap nodes automatically at submit time
+- Add clickable tab labels to ViewBar in `erk dash` TUI for mouse-driven view switching
+- Add `h` keybinding to `erk dash` TUI for viewing failing CI check runs on the selected PR
 
 ### Changed
 
-- Fix-conflicts workflow in plan detail screen now uses toast+async pattern instead of a blocking modal with live subprocess output. (eca302f73)
-- Change TUI Dispatch/Queue keyboard shortcut from `s` to `d`. (85d47e68e)
-- Move metadata blocks to the bottom of planned PR bodies. (8058e8d90)
-- Rename `erk pr sync-divergence` command to `erk pr reconcile-with-remote`. (a406dba12)
-- `erk pr dispatch` now auto-detects the PR number from the current branch when no argument is provided. (9c6b2d13a)
-- Remove "Closes #N" footer from PR bodies — plans no longer auto-close linked issues on merge via PR body footer. (07fdb7f99)
-- Speed up `erk dash` Plans and Learn tabs using a REST+GraphQL two-step fetch. (292c4ba97)
-- Increase log panel height in plan detail screen. (30c3eb48a)
-- Rename `deps-state`/`deps` columns to `head-state`/`head` in Objectives dashboard. (84bf09365)
-- Eliminate `.worker-impl/` directory, consolidating onto `.erk/impl-context/` (223542b)
-- Redesign `erk plan list` to match dashboard layout (a0b042d)
-- Replace `erk pr submit --skip-description` with composable `erk exec push-and-create-pr` (4c5e7ef)
-- Change `erk land` default to direct execution without navigation (b5b0837)
-- Collapse "impling" and "impld" stage labels to "impl" in plan lifecycle display (a2a1d28)
-- Redesign objectives TUI with sparkline progress indicators (7207a79)
-- Move plan-header metadata block to bottom of PR descriptions (0c3e672)
-- Wrap review comment details in collapsible blocks (bf5c49e)
-- Fire-and-forget workflow dispatch — TUI remote operations return immediately instead of blocking until workflow completes (4317d95)
-- Replace `gh pr/issue view --web` commands with clickable URLs in next-steps output (c3969c8)
-- Strip `.erk/impl-context/` before restack in `erk pr sync` to avoid merge conflicts (e3720af)
-- Consolidate PR validation into `--stage=impl` flag on `erk pr check` (e2bd53d)
-- Convert submit pipeline to git plumbing, eliminating race conditions in shared worktrees (ea4a853)
-- Increase workflow dispatch polling timeout to ~62 seconds for `erk plan submit` reliability (368a707)
-- Convert TUI dispatch commands from blocking modals to non-blocking toast+worker pattern (fd8a03c)
-- Remove backend label from statusline output (bc4f326)
-- Remove non-slot worktree after landing instead of leaving detached HEAD state (a637089)
-- Eliminate tmux from codespace remote execution — commands now run directly over SSH (2ef5349a2)
-- Simplify learn triggering in `erk land` with direct issue creation instead of async gist-based pipeline (2f667975a)
-- Improve success output for `erk pr submit` and `erk pr replan` with structured formatting (536f52161)
+- Fix-conflicts workflow in plan detail screen now uses toast+async pattern instead of a blocking modal with live subprocess output.
+- Change TUI Dispatch/Queue keyboard shortcut from `s` to `d`.
+- Move metadata blocks to the bottom of planned PR bodies.
+- Rename `erk pr sync-divergence` command to `erk pr reconcile-with-remote`.
+- `erk pr dispatch` now auto-detects the PR number from the current branch when no argument is provided.
+- Remove "Closes #N" footer from PR bodies — plans no longer auto-close linked issues on merge via PR body footer.
+- Speed up `erk dash` Plans and Learn tabs using a REST+GraphQL two-step fetch.
+- Increase log panel height in plan detail screen.
+- Rename `deps-state`/`deps` columns to `head-state`/`head` in Objectives dashboard.
+- Eliminate `.worker-impl/` directory, consolidating onto `.erk/impl-context/`
+- Redesign `erk plan list` to match dashboard layout
+- Replace `erk pr submit --skip-description` with composable `erk exec push-and-create-pr`
+- Change `erk land` default to direct execution without navigation
+- Collapse "impling" and "impld" stage labels to "impl" in plan lifecycle display
+- Redesign objectives TUI with sparkline progress indicators
+- Move plan-header metadata block to bottom of PR descriptions
+- Wrap review comment details in collapsible blocks
+- Fire-and-forget workflow dispatch — TUI remote operations return immediately instead of blocking until workflow completes
+- Replace `gh pr/issue view --web` commands with clickable URLs in next-steps output
+- Strip `.erk/impl-context/` before restack in `erk pr sync` to avoid merge conflicts
+- Consolidate PR validation into `--stage=impl` flag on `erk pr check`
+- Convert submit pipeline to git plumbing, eliminating race conditions in shared worktrees
+- Increase workflow dispatch polling timeout to ~62 seconds for `erk plan submit` reliability
+- Convert TUI dispatch commands from blocking modals to non-blocking toast+worker pattern
+- Remove backend label from statusline output
+- Remove non-slot worktree after landing instead of leaving detached HEAD state
+- Eliminate tmux from codespace remote execution — commands now run directly over SSH
+- Simplify learn triggering in `erk land` with direct issue creation instead of async gist-based pipeline
+- Improve success output for `erk pr submit` and `erk pr replan` with structured formatting
+- Remove `.impl/issue.json` legacy support and consolidate plan metadata to `plan-ref.json`
 
 ### Fixed
 
-- Fix modal keystroke leakage to the underlying view in TUI screens. (0d105f359)
-- Error correctly when `--new-slot` is used but the branch already exists in another worktree. (9d0a451b7)
-- Fix Graphite tracking divergence in `erk pr dispatch`. (2791dc698)
-- Fix objective head column in dashboard (plan field missing from RoadmapNode/ObjectiveNode). (c9c1e3e9a)
-- Fix learn PRs incorrectly appearing in the Planned PRs tab. (8316a58a3)
-- Fix TUI dispatch command CLI path and user-facing labels after command rename. (007f2e7ef)
-- Fix learn plan PRs being auto-closed when their ephemeral base branch is deleted. (df52c8d97)
-- Fix `erk pr submit` producing zero output on timeout. (338d24fda)
-- Fix silent plan-header metadata loss during PR submit. (334fc5013)
-- Fix PR diff accuracy in `get_diff_to_branch` by switching to three-dot (`...`) git syntax. (e2ad6fe4a)
-- Fix TUI plan submit command crash caused by invalid `-f` flag. (5ba908048)
-- Fix plan-save always basing the new branch off trunk instead of the current branch. (5160fb1fd)
-- Fix `lifecycle_stage` not being updated in all code paths of the PR submit pipeline. (f8b4b9158)
-- Fix `erk land` crash when branch is checked out in another worktree (d7bc5ac)
-- Fix plan-save to include branch_name in skipped_duplicate response (659563d)
-- Fix branch checkout in stack-in-place path (705bac8)
-- Fix WARNING comment accumulation on metadata block updates (60c75f5)
-- Clear error when trigger_workflow finds skipped/cancelled run (2a49eb3)
-- Fix plan-save branches incorrectly stacking on current branch instead of trunk (93df692)
-- Fix `impl-signal started` to include lifecycle_stage transition, preventing stuck "planned" status (ed266b8)
-- Fix objective update after landing for `plnd/` branches (36e6f5d)
-- Fix `erk br co --for-plan` stacking plan branches on current branch instead of trunk (febff7a)
-- Fix `erk land` crash when run from root worktree (8c1acc0)
-- Fix session discovery for draft-PR plans by using header_fields (ae2d5dc)
-- Fix `erk plan check` for draft-PR plan format and simplify branch force-update logic (d315ce4)
-- Fix rocket emoji appearing on draft PRs in lifecycle display (7104464, 45a550f)
-- Fix Graphite tracking divergence by retracking immediately after SHA changes (085f74837)
-- Fix objective update after land with deleted worktree path (24944260b)
-- Fix `gt track` and `gt retrack` to use repo root instead of worktree path (5882310b3)
-- Fix objective-link preservation in replan flow (b93b4b376)
-- Fix `erk br co --for-plan` output to include activation instructions (638445489)
-- Fix plan-header metadata block lost silently in CI update flow (54c362406)
-- Fix auto-match roadmap nodes by PR reference in objective update (60ab97ffe)
-- Fix modal dismiss keys (Esc/q/Space) not working in TUI screens (e7e8f8470)
+- Fix modal keystroke leakage to the underlying view in TUI screens.
+- Error correctly when `--new-slot` is used but the branch already exists in another worktree.
+- Fix Graphite tracking divergence in `erk pr dispatch`.
+- Fix objective head column in dashboard (plan field missing from RoadmapNode/ObjectiveNode).
+- Fix learn PRs incorrectly appearing in the Planned PRs tab.
+- Fix TUI dispatch command CLI path and user-facing labels after command rename.
+- Fix learn plan PRs being auto-closed when their ephemeral base branch is deleted.
+- Fix `erk pr submit` producing zero output on timeout.
+- Fix silent plan-header metadata loss during PR submit.
+- Fix PR diff accuracy in `get_diff_to_branch` by switching to three-dot (`...`) git syntax.
+- Fix TUI plan submit command crash caused by invalid `-f` flag.
+- Fix plan-save always basing the new branch off trunk instead of the current branch.
+- Fix `lifecycle_stage` not being updated in all code paths of the PR submit pipeline.
+- Fix `erk land` crash when branch is checked out in another worktree
+- Fix plan-save to include branch_name in skipped_duplicate response
+- Fix branch checkout in stack-in-place path
+- Fix WARNING comment accumulation on metadata block updates
+- Clear error when trigger_workflow finds skipped/cancelled run
+- Fix plan-save branches incorrectly stacking on current branch instead of trunk
+- Fix `impl-signal started` to include lifecycle_stage transition, preventing stuck "planned" status
+- Fix objective update after landing for `plnd/` branches
+- Fix `erk br co --for-plan` stacking plan branches on current branch instead of trunk
+- Fix `erk land` crash when run from root worktree
+- Fix session discovery for draft-PR plans by using header_fields
+- Fix `erk plan check` for draft-PR plan format and simplify branch force-update logic
+- Fix rocket emoji appearing on draft PRs in lifecycle display
+- Fix Graphite tracking divergence by retracking immediately after SHA changes
+- Fix objective update after land with deleted worktree path
+- Fix `gt track` and `gt retrack` to use repo root instead of worktree path
+- Fix objective-link preservation in replan flow
+- Fix `erk br co --for-plan` output to include activation instructions
+- Fix plan-header metadata block lost silently in CI update flow
+- Fix auto-match roadmap nodes by PR reference in objective update
+- Fix modal dismiss keys (Esc/q/Space) not working in TUI screens
+- Fix `plan_id` not being threaded through land execution pipeline, preventing learn issue creation
+- Fix `erk implement` showing "None" for plan content when PR body contained null `plan_comment_id`
 
 ### Removed
 
-- Delete `erk pr sync` command. Use `erk pr reconcile-with-remote` for conflict resolution. (4c51cdc3a)
-- Delete `-t/--tmux` explicit flag from `erk codespace connect` — tmux persistence is now automatic. (e90483add)
-- Eliminate `--objective-issue` flag from plan-save commands. (8e58ddee8)
-- Eliminate `--no-wait` flag from dispatch workflow commands. (a50fa13f2)
-- Remove GitHub repository variables feature and related infrastructure (a4ba14e)
-- Remove run_url gate from land PR command (9fc1dab)
-- Remove `get_plan_backend()` and `PlanBackendType`, hardcoding draft PR as the only plan backend (4ccfbb0)
-- Remove `plan_backend` parameter and collapse dead github-backend code branches (3acaff2)
+- Delete `erk pr sync` command. Use `erk pr reconcile-with-remote` for conflict resolution.
+- Delete `-t/--tmux` explicit flag from `erk codespace connect` — tmux persistence is now automatic.
+- Eliminate `--objective-issue` flag from plan-save commands.
+- Eliminate `--no-wait` flag from dispatch workflow commands.
+- Remove GitHub repository variables feature and related infrastructure
+- Remove run_url gate from land PR command
+- Remove `get_plan_backend()` and `PlanBackendType`, hardcoding draft PR as the only plan backend
+- Remove `plan_backend` parameter and collapse dead github-backend code branches
 
 ## [0.8.1] - 2026-02-22 08:14 PT
 
