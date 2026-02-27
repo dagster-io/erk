@@ -23,15 +23,13 @@ def _format_check_runs(check_runs: list[PRCheckRun]) -> str:
     if not check_runs:
         return "*No failing checks*"
 
-    parts: list[str] = []
-    for check in check_runs:
+    def _format_single_check(check: PRCheckRun) -> str:
         conclusion_str = check.conclusion or "in progress"
         if check.detail_url is not None:
-            parts.append(f"- **{check.name}** — {conclusion_str} ([details]({check.detail_url}))")
-        else:
-            parts.append(f"- **{check.name}** — {conclusion_str}")
+            return f"- **{check.name}** — {conclusion_str} ([details]({check.detail_url}))"
+        return f"- **{check.name}** — {conclusion_str}"
 
-    return "\n".join(parts)
+    return "\n".join(_format_single_check(check) for check in check_runs)
 
 
 class CheckRunsScreen(ModalScreen):
