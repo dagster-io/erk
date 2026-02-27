@@ -1,0 +1,8 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Reframe index.md and restructure mkdocs.yml navigation around composability layers",
+  "objective_id": 8384,
+  "node_ids": [
+    "1.1"
+  ]
+}
