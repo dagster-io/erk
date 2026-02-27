@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: \"(No plan content found)\" for PR-only plans"
+}
