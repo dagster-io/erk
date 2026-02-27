@@ -90,7 +90,7 @@ Rules triggered by matching actions in code.
 
 **calling allocate_slot_for_branch without sync_pool_assignments running first** → Read [Slot Pool State Sync](slot-pool-state-sync.md) first. Pool sync must run BEFORE find_branch_assignment call. Without it, stale pool.json entries cause silent misassignment — a slot may appear free when it's actually occupied by a different branch.
 
-**calling assemble_pr_body without metadata_prefix for planned-PR plans** → Read [PR Body Assembly](pr-body-assembly.md) first. Planned PR plans require metadata_prefix from extract_metadata_prefix(). Without it, plan-header metadata is lost on every PR rewrite.
+**calling assemble_pr_body without metadata_prefix for planned-PR plans** → Read [PR Body Assembly](pr-body-assembly.md) first. Planned PR plans require metadata_prefix from find_metadata_block(). Without it, plan-header metadata is lost on every PR rewrite.
 
 **calling checkout_branch() in a multi-worktree repository** → Read [Multi-Worktree State Handling](multi-worktree-state.md) first. Verify the target branch is not already checked out in another worktree using `git.worktree.find_worktree_for_branch()`. Git enforces a single-checkout constraint - attempting to checkout a branch held elsewhere causes silent state corruption or unexpected failures.
 
@@ -117,6 +117,8 @@ Rules triggered by matching actions in code.
 **calling gt commands without --no-interactive flag** [pattern: `\bgt\s+(sync|submit|restack|create|modify)`] → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Always use `--no-interactive` with gt commands (gt sync, gt submit, gt restack, etc.). Without this flag, gt may prompt for user input and hang indefinitely. Note: `--force` does NOT prevent prompts - you must use `--no-interactive` separately.
 
 **calling os.chdir() in erk code** [pattern: `os\.chdir\(`] → Read [Erk Architecture Patterns](erk-architecture.md) first. After os.chdir(), regenerate context using regenerate_context(ctx). Stale ctx.cwd causes FileNotFoundError.
+
+**calling resolve_impl_dir() without passing branch_name** → Read [Impl-Folder Discovery Algorithm](impl-folder-discovery.md) first. Branch-scoped lookup is skipped when branch_name is None. Always pass the current branch to get deterministic resolution. Discovery fallback scans for ANY subdirectory with plan.md, which may find the wrong plan.
 
 **calling save_plan_ref with positional arguments** → Read [PlanRef Architecture](plan-ref-architecture.md) first. All parameters after `impl_dir` are keyword-only. Positional calls will fail at runtime.
 
@@ -355,3 +357,5 @@ Rules triggered by matching actions in code.
 **writing complex business logic directly in Click command functions** → Read [CLI-to-Pipeline Boundary Pattern](cli-to-pipeline-boundary.md) first. Extract to pipeline layer when command has >3 distinct steps or complex state management. CLI layer should handle: Click decorators, parameter parsing, output formatting. Pipeline layer should handle: business logic, state management, error types.
 
 **writing multi-phase commands without testing in --print mode** → Read [Claude CLI Execution Modes](claude-cli-execution-modes.md) first. context: fork creates true isolation in interactive mode but loads inline in --print mode. Use Task tool for guaranteed isolation in all modes.
+
+**writing tests for branch-scoped impl-context without configuring FakeGit** → Read [Impl-Folder Discovery Algorithm](impl-folder-discovery.md) first. FakeGit must be configured with current_branches={tmp_path: BRANCH} for resolve_impl_dir() to find branch-scoped directories. Without this, the branch_name parameter is None and discovery falls through to scan.

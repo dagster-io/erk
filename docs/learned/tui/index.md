@@ -16,6 +16,7 @@
 - **[derived-display-columns.md](derived-display-columns.md)** — adding a TUI column that uses an existing PlanRowData field, deciding whether a new column needs gateway/query changes
 - **[dual-handler-pattern.md](dual-handler-pattern.md)** — implementing a TUI command that works from both list and detail views, understanding how MainListCommandProvider and PlanCommandProvider share commands, adding command palette support to a new screen
 - **[frozen-dataclass-field-management.md](frozen-dataclass-field-management.md)** — removing a field from a frozen dataclass, renaming a field in PlanRowData or similar frozen dataclass, getting unexpected constructor errors after field changes
+- **[keyboard-shortcuts.md](keyboard-shortcuts.md)** — adding a new keyboard shortcut to the TUI, checking for shortcut conflicts before binding a new key, understanding what keys are available in the TUI
 - **[lifecycle-display.md](lifecycle-display.md)** — adding a new lifecycle stage to the TUI, changing lifecycle abbreviations or colors, modifying PR status emoji indicators, understanding the stage column in erk dash
 - **[modal-screen-pattern.md](modal-screen-pattern.md)** — adding a new modal screen to the TUI, implementing a ModalScreen subclass, displaying detail views or confirmation dialogs
 - **[modal-widget-embedding.md](modal-widget-embedding.md)** — reusing PlanDataTable in a modal screen, embedding complex widgets in Textual modal screens, handling null safety for optional gateway fields in TUI

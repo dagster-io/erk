@@ -777,9 +777,6 @@ class PlanDetailScreen(ModalScreen):
                         row.pr_number,
                         row.pr_head_branch,
                         row.objective_issue,
-                        plan_id=row.plan_id,
-                        is_learn_plan=row.is_learn_plan,
-                        learn_status=row.learn_status,
                     )
 
     def compose(self) -> ComposeResult:

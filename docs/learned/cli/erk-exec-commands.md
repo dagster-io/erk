@@ -42,11 +42,11 @@ Not all erk exec commands support the `--format` flag. Always check with `erk ex
 
 ### Commands Without Format Flag
 
-| Command              | Output Format | Notes                         |
-| -------------------- | ------------- | ----------------------------- |
-| `get-closing-text`   | Plain text    | Returns closing text or empty |
-| `impl-signal`        | JSON always   | No format flag, always JSON   |
-| `setup-impl-from-pr` | Plain text    | Status messages only          |
+| Command              | Output Format | Notes                       |
+| -------------------- | ------------- | --------------------------- |
+| `get-pr-body-footer` | Plain text    | Returns PR body footer text |
+| `impl-signal`        | JSON always   | No format flag, always JSON |
+| `setup-impl-from-pr` | Plain text    | Status messages only        |
 
 ### Best Practice
 
@@ -194,6 +194,27 @@ erk exec cleanup-impl-context
 ```
 
 Performs `git rm -rf .erk/impl-context/` and commits the deletion.
+
+### Batch Operations
+
+Batch commands read JSON arrays from stdin and process items individually. They continue on individual failures and always exit with code 0.
+
+- `add-plan-labels` — Add labels to multiple plans (stdin: `[{"plan_number": int, "label": str}]`)
+- `close-prs` — Close multiple PRs with comments (stdin: `[{"plan_number": int, "comment": str}]`)
+
+Both use frozen dataclass results with discriminated union error handling.
+
+#### Command Renaming History
+
+These commands were renamed from issue-oriented to PR-oriented terminology:
+
+| Old Name                    | New Name                 |
+| --------------------------- | ------------------------ |
+| `close-issue-with-comment`  | `close-pr`               |
+| `plan-update-issue`         | `plan-update`            |
+| `setup-impl-from-issue`     | `setup-impl-from-pr`     |
+| `issue-title-to-filename`   | `plan-title-to-filename` |
+| `create-issue-from-session` | `create-pr-from-session` |
 
 ### PR Validation Operations
 

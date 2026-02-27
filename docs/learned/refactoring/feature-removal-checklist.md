@@ -107,6 +107,17 @@ After removal, verify complete cleanup:
 grep -r "feature_identifier" src/ packages/ tests/ docs/ .github/ .claude/
 ```
 
+## Case Study: PR #8327 (tmux elimination)
+
+Tmux removal from codespace remote execution (PR #8327):
+
+- 8 files modified, 1 deleted
+- 7 tmux-specific tests removed
+- Documentation cleaned: `codespace-tmux-persistence.md` deleted
+- Verification: `grep -r "tmux" src/` returns 0 results post-removal
+
+This removal was cleaner than PR #7838 because it followed the checklist proactively, removing all artifacts in a single pass rather than discovering them after the fact.
+
 ## Key Insight
 
 Documentation drift during feature removal is a silent failure mode. The code may compile and tests may pass, but stale documentation continues to mislead agents into attempting to use deleted functionality.

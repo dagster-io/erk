@@ -46,6 +46,7 @@
 - **[plan-header-privatization.md](plan-header-privatization.md)** — migrating callers of plan_header.py functions, understanding why plan_header functions are being privatized, working with PlanBackend metadata operations
 - **[plan-id-semantics.md](plan-id-semantics.md)** — calling github.get_pr() or github.get_issue() with a plan_id, writing code that handles both issue-based and planned-PR plans, debugging 404 errors when fetching plan metadata
 - **[plan-lookup-strategy.md](plan-lookup-strategy.md)** — debugging plan lookup issues, understanding plan file discovery, troubleshooting wrong plan saved
+- **[plan-mismatch-recovery.md](plan-mismatch-recovery.md)** — debugging stale plan content in .erk/impl-context/, plan content doesn't match what's on GitHub, re-running implementation setup for an existing plan
 - **[plan-schema.md](plan-schema.md)** — understanding plan issue structure, debugging plan validation errors, working with plan-header or plan-body blocks
 - **[plan-title-prefix-system.md](plan-title-prefix-system.md)** — working with PR titles for plan implementations, understanding the plnd/ prefix on PR titles, debugging why a PR title has or lacks the plnd/ prefix
 - **[planned-pr-backend.md](planned-pr-backend.md)** — working with plan storage or plan backends, adding plan storage behavior without checking plan backend type, understanding how plans are stored as planned pull requests, modifying plan-save or land pipeline for plan handling

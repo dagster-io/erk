@@ -9,7 +9,7 @@ tripwires:
   - action: "reviewing a PR that contains .erk/impl-context/ files"
     warning: "Leave a PR comment telling the author to remove .erk/impl-context/. This is an erk tooling error — the directory should have been cleaned up before implementation. Run: git rm -rf .erk/impl-context/ && git commit -m 'Remove leaked impl-context'"
   - action: "removing git-tracked temporary directories in setup scripts"
-    warning: "Defer deletion to the git cleanup phase (git rm + commit + push), not shutil.rmtree(). setup_impl_from_issue.py reads the files but deliberately does NOT delete them — see the comment at line 202. Deletion is handled by plan-implement.md Step 2d."
+    warning: "Defer deletion to the git cleanup phase (git rm + commit + push), not shutil.rmtree(). setup_impl_from_pr.py reads the files but deliberately does NOT delete them. Deletion is handled by plan-implement.md Step 2d."
     score: 8
   - action: "adding a new setup path to plan-implement without routing through Step 2d"
     warning: "Impl-context cleanup routing: all code paths that set up an implementation context must route through Step 2d in plan-implement.md, which is the single convergence point for .erk/impl-context/ cleanup. Adding a new setup path that bypasses Step 2d will silently skip cleanup, leaving .erk/impl-context/ files in the final PR diff."
@@ -69,7 +69,7 @@ See the `impl_context_exists()` / `remove_impl_context()` LBYL guard in `src/erk
 
 ### Deferred Impl-Context Deletion
 
-`setup_impl_from_issue.py:202` reads the impl-context files but deliberately does NOT delete them. The comment is explicit:
+`setup_impl_from_pr.py` reads the impl-context files but deliberately does NOT delete them. The comment is explicit:
 
 > "Do not delete here — Step 2d in plan-implement.md handles git rm + commit + push"
 

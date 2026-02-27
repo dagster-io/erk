@@ -26,7 +26,7 @@ Exec scripts are Python subprocesses that run to completion without Claude Code 
 
 The skill layer (`.claude/commands/*.md`) is the orchestration boundary. Skills run inside Claude Code with full reasoning capability. They can generate values through LLM inference before invoking exec scripts.
 
-**The original bug**: `plan_save.py` and `setup_impl_from_issue.py` called `generate_slug_or_fallback(executor, title)`, which invoked `PromptExecutor.execute_prompt()` to ask Claude for a branch slug. When these scripts ran inside a Claude Code session (via `/erk:plan-save`), the nested Claude subprocess locked up. The fix moved slug generation into the skill layer, passing the pre-generated slug via `--branch-slug`.
+**The original bug**: `plan_save.py` and `setup_impl_from_pr.py` called `generate_slug_or_fallback(executor, title)`, which invoked `PromptExecutor.execute_prompt()` to ask Claude for a branch slug. When these scripts ran inside a Claude Code session (via `/erk:plan-save`), the nested Claude subprocess locked up. The fix moved slug generation into the skill layer, passing the pre-generated slug via `--branch-slug`.
 
 ## The Rule
 
@@ -48,7 +48,7 @@ Exec script (src/erk/cli/commands/exec/scripts/*.py)
 Two scripts were updated to follow this pattern:
 
 - `plan_save.py` — `--branch-slug` for draft PR branch naming
-- `setup_impl_from_issue.py` — `--branch-slug` for implementation branch naming
+- `setup_impl_from_pr.py` — `--branch-slug` for implementation branch naming
 
 ## Before/After Example
 
@@ -103,7 +103,7 @@ If you find an LLM call inside an exec script, follow these steps:
 **Scripts updated in the inference hoisting PR:**
 
 - `src/erk/cli/commands/exec/scripts/plan_save.py`
-- `src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py`
+- `src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py`
 
 **Skills with generation steps:**
 

@@ -40,9 +40,9 @@ Slash commands that create PRs read the issue reference from local storage:
 
 1. Check for `.erk/impl-context/plan-ref.json` or `.erk/impl-context/ref.json` (with legacy fallback to `.erk/impl-context/issue.json`)
 2. If found, append `Closes #N` to PR body
-3. Uses `erk exec get-closing-text` to read the reference
+3. Uses `erk exec get-pr-body-footer` to read the reference
 
-**Key implementation**: `src/erk/cli/commands/exec/scripts/get_closing_text.py`
+**Key implementation**: `src/erk/cli/commands/exec/scripts/get_pr_body_footer.py`
 
 ## Storage Locations
 
@@ -154,13 +154,13 @@ gh pr view --json body -q '.body'
 
 ## Key Files
 
-| Purpose                  | Location                                                     |
-| ------------------------ | ------------------------------------------------------------ |
-| Issue reference reading  | `packages/erk-shared/src/erk_shared/impl_folder.py`          |
-| PR creation with Closes  | `src/erk/cli/commands/pr/`                                   |
-| Get closing text command | `src/erk/cli/commands/exec/scripts/get_closing_text.py`      |
-| Timeline event parsing   | `packages/erk-shared/src/erk_shared/gateway/github/real.py`  |
-| PullRequestInfo type     | `packages/erk-shared/src/erk_shared/gateway/github/types.py` |
+| Purpose                 | Location                                                     |
+| ----------------------- | ------------------------------------------------------------ |
+| Issue reference reading | `packages/erk-shared/src/erk_shared/impl_folder.py`          |
+| PR creation with Closes | `src/erk/cli/commands/pr/`                                   |
+| Get PR body footer      | `src/erk/cli/commands/exec/scripts/get_pr_body_footer.py`    |
+| Timeline event parsing  | `packages/erk-shared/src/erk_shared/gateway/github/real.py`  |
+| PullRequestInfo type    | `packages/erk-shared/src/erk_shared/gateway/github/types.py` |
 
 ## Related Topics
 

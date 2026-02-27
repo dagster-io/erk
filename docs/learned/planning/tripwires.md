@@ -46,6 +46,8 @@ Rules triggered by matching actions in code.
 
 **assigning opus to a mechanical extraction agent** → Read [Multi-Tier Agent Orchestration](agent-orchestration.md) first. Model escalation: haiku/sonnet for extraction and rule-based work, opus only for creative authoring. See the model escalation decision table.
 
+**assuming .erk/impl-context/plan.md always matches the PR body** → Read [Plan Mismatch Recovery](plan-mismatch-recovery.md) first. Plan content can become stale after CI updates rewrite the PR body. Re-run setup-impl-from-pr to refresh local plan content.
+
 **assuming branch names always follow the P-prefix format** → Read [Branch Plan Resolution](branch-plan-resolution.md) first. Branch resolution supports multiple formats (P-prefix, objective). Use resolve_plan_id_for_branch() rather than manual parsing. See branch-plan-resolution.md.
 
 **assuming branch_name is always present in plan-header metadata** → Read [PR Discovery Strategies for Plans](pr-discovery.md) first. branch_name is null until Phase 2 (pr dispatch). Check the plan metadata field lifecycle in lifecycle.md.
@@ -115,6 +117,8 @@ Rules triggered by matching actions in code.
 **editing plan body content in plan creation, replan, or one-shot dispatch** → Read [One-Shot Workflow](one-shot-workflow.md) first. One-shot metadata block preservation: the metadata block in the plan body (HTML comment with erk:metadata-block markers) must survive all edits. Never strip or overwrite HTML comment blocks that contain erk:metadata-block markers.
 
 **entering Plan Mode in replan or consolidation workflow** → Read [Context Preservation in Replan Workflow](context-preservation-in-replan.md) first. Gather investigation context FIRST (Step 6a). Enter plan mode only after collecting file paths, evidence, and discoveries. Sparse plans are destructive to downstream implementation.
+
+**entering plan mode while merge conflicts exist** → Read [Planning Patterns](planning-patterns.md) first. Check for merge conflicts before entering plan mode. Unresolved conflicts cause plan-save to fail, wasting the planning effort.
 
 **estimating effort for a plan without checking actual files changed** → Read [Complete File Inventory Protocol](complete-inventory-protocol.md) first. Run a file inventory first. Plans that skip inventory systematically undercount configuration, test, and documentation changes.
 
@@ -186,7 +190,7 @@ Rules triggered by matching actions in code.
 
 **removing .erk/impl-context/ during implementation (before CI passes)** → Read [.erk/impl-context/ Cleanup Discipline](worktree-cleanup.md) first. The folder is load-bearing during implementation — Claude reads from it. Only remove after implementation succeeds and CI passes.
 
-**removing git-tracked temporary directories in setup scripts** → Read [Impl-Context Staging Directory](impl-context.md) first. Defer deletion to the git cleanup phase (git rm + commit + push), not shutil.rmtree(). setup_impl_from_issue.py reads the files but deliberately does NOT delete them — see the comment at line 202. Deletion is handled by plan-implement.md Step 2d.
+**removing git-tracked temporary directories in setup scripts** → Read [Impl-Context Staging Directory](impl-context.md) first. Defer deletion to the git cleanup phase (git rm + commit + push), not shutil.rmtree(). setup_impl_from_pr.py reads the files but deliberately does NOT delete them. Deletion is handled by plan-implement.md Step 2d.
 
 **renaming a lifecycle stage value** → Read [Plan Lifecycle](lifecycle.md) first. Update 3 locations: LifecycleStageValue type, valid_stages set, and color conditions in compute_lifecycle_display(). Missing any location causes silent validation failures or incorrect TUI colors.
 
@@ -198,7 +202,7 @@ Rules triggered by matching actions in code.
 
 **reviewing a PR that contains .erk/impl-context/ files** → Read [Impl-Context Staging Directory](impl-context.md) first. Leave a PR comment telling the author to remove .erk/impl-context/. This is an erk tooling error — the directory should have been cleaned up before implementation. Run: git rm -rf .erk/impl-context/ && git commit -m 'Remove leaked impl-context'
 
-**rewriting PR body without preserving metadata** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Extract plan header block on every lifecycle transition via extract_plan_header_block() to prevent metadata loss.
+**rewriting PR body without preserving metadata** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Extract metadata prefix on every lifecycle transition via find_metadata_block() to prevent metadata loss.
 
 **running /erk:learn in CI** → Read [Learn Workflow](learn-workflow.md) first. CI mode skips interactive prompts and auto-proceeds. Check CI/GITHUB_ACTIONS env vars. See CI Environment Behavior section.
 
@@ -218,7 +222,7 @@ Rules triggered by matching actions in code.
 
 **using 'steps' instead of 'nodes' in new plan metadata code** → Read [Schema V3 Migration](schema-v3-migration.md) first. Schema v3 uses 'nodes' (not 'steps'). The parser accepts both for backward compatibility but the renderer always emits v3. See schema-v3-migration.md.
 
-**using `extract_plan_header_block` or `extract_plan_content` without validating separator context** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. The content separator `\n\n---\n\n` can accidentally form from 'Remotely executed' notes + footer delimiter. extract_plan_header_block() validates via `<!-- erk:metadata-block:` marker in the prefix. Never skip this validation.
+**using `find_metadata_block` or `extract_plan_content` without validating separator context** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. The content separator `\n\n---\n\n` can accidentally form from 'Remotely executed' notes + footer delimiter. find_metadata_block() validates via `<!-- erk:metadata-block:` marker in the prefix. Never skip this validation.
 
 **using assertive metadata writes in a best-effort context** → Read [Metadata Update Patterns](metadata-update-patterns.md) first. write_dispatch_metadata() raises on error. maybe_update_plan_dispatch_metadata() uses LBYL guards and silent skip with warning. Choose based on whether failure should block the operation.
 

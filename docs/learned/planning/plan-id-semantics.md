@@ -26,7 +26,7 @@ For planned-PR plans, the plan content lives in a draft PR body — not a separa
 ## Detection Pattern
 
 ```python
-# From setup_impl_from_issue.py
+# From setup_impl_from_pr.py
 pr_result = github.get_pr(repo_root, plan_number)
 if isinstance(pr_result, PRNotFound):
     # Handle missing plan

@@ -56,6 +56,8 @@ Rules triggered by matching actions in code.
 
 **creating a fake that uses **init** when frozen dataclass would work** → Read [Frozen Dataclass Test Doubles](frozen-dataclass-test-doubles.md) first. FakeBranchManager uses frozen dataclass because its state is simple and declarative. FakeGitHub uses **init** because it has 30+ constructor params. Choose based on complexity.
 
+**creating a test file exceeding 500 lines** → Read [Test File Organization Pattern](test-file-organization.md) first. Consider splitting into a subdirectory module. See test-file-organization.md for the pattern and existing precedents.
+
 **creating custom FakeGitHubIssues without passing to build_workspace_test_context** → Read [FakeGitHubIssues Dual-Comment Parameters](fake-github-testing.md) first. Always pass issues=issues to build_workspace_test_context when using custom FakeGitHubIssues. Without it, plan_backend operates on a different instance and metadata writes are invisible.
 
 **creating inline PlanRow test data with all fields** → Read [Erkdesk Component Test Architecture](erkdesk-component-testing.md) first. Use the makePlan() factory with Partial<PlanRow> overrides. PlanRow has 18+ fields; inline objects go stale when the type changes. See any test file for the pattern.
