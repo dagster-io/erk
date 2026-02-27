@@ -32,7 +32,7 @@ def create_plan_saved_marker(session_id: str, repo_root: Path) -> None:
     )
 
 
-def create_plan_saved_issue_marker(session_id: str, repo_root: Path, issue_number: int) -> None:
+def create_plan_saved_issue_marker(session_id: str, repo_root: Path, plan_number: int) -> None:
     """Create marker file storing the issue number of the saved plan.
 
     This marker enables automatic plan updates - when user says "update plan",
@@ -41,11 +41,11 @@ def create_plan_saved_issue_marker(session_id: str, repo_root: Path, issue_numbe
     Args:
         session_id: The session ID for the scratch directory.
         repo_root: The repository root path.
-        issue_number: The GitHub issue number where the plan was saved.
+        plan_number: The plan number where the plan was saved.
     """
     marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
     marker_file = marker_dir / "plan-saved-issue.marker"
-    marker_file.write_text(str(issue_number), encoding="utf-8")
+    marker_file.write_text(str(plan_number), encoding="utf-8")
 
 
 def read_objective_context_marker(session_id: str, repo_root: Path) -> int | None:

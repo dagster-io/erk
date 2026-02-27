@@ -68,7 +68,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
 
     Example:
         >>> ctx = create_minimal_context(debug=False)
-        >>> issue_number = ctx.issues.create_issue(ctx.repo_root, title, body, labels)
+        >>> plan_number = ctx.issues.create_issue(ctx.repo_root, title, body, labels)
     """
     from erk_shared.context.context import ErkContext
     from erk_shared.context.types import LoadedConfig, NoRepoSentinel, RepoContext

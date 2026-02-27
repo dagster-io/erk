@@ -10,25 +10,25 @@ from erk_shared.output.next_steps import (
 
 class TestIssueNextSteps:
     def test_checkout_uses_co(self) -> None:
-        steps = IssueNextSteps(issue_number=99, url="https://github.com/org/repo/issues/99")
+        steps = IssueNextSteps(plan_number=99, url="https://github.com/org/repo/issues/99")
         assert steps.checkout == "erk br co --for-plan 99"
 
     def test_view_returns_url(self) -> None:
-        steps = IssueNextSteps(issue_number=99, url="https://github.com/org/repo/issues/99")
+        steps = IssueNextSteps(plan_number=99, url="https://github.com/org/repo/issues/99")
         assert steps.view == "https://github.com/org/repo/issues/99"
 
     def test_checkout_and_implement_uses_co(self) -> None:
-        steps = IssueNextSteps(issue_number=99, url="https://github.com/org/repo/issues/99")
+        steps = IssueNextSteps(plan_number=99, url="https://github.com/org/repo/issues/99")
         assert steps.checkout_and_implement == (
             'source "$(erk br co --for-plan 99 --script)" && erk implement --dangerous'
         )
 
     def test_checkout_new_slot(self) -> None:
-        steps = IssueNextSteps(issue_number=99, url="https://github.com/org/repo/issues/99")
+        steps = IssueNextSteps(plan_number=99, url="https://github.com/org/repo/issues/99")
         assert steps.checkout_new_slot == "erk br co --new-slot --for-plan 99"
 
     def test_checkout_new_slot_and_implement(self) -> None:
-        steps = IssueNextSteps(issue_number=99, url="https://github.com/org/repo/issues/99")
+        steps = IssueNextSteps(plan_number=99, url="https://github.com/org/repo/issues/99")
         assert steps.checkout_new_slot_and_implement == (
             'source "$(erk br co --new-slot --for-plan 99 --script)" && erk implement --dangerous'
         )

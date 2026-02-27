@@ -81,7 +81,7 @@ def require_issues(ctx: click.Context) -> GitHubIssues:
         >>> @click.pass_context
         >>> def my_command(ctx: click.Context) -> None:
         ...     issues = require_issues(ctx)
-        ...     issues.add_comment(repo_root, issue_number, body)
+        ...     issues.add_comment(repo_root, plan_number, body)
     """
     if ctx.obj is None:
         click.echo("Error: Context not initialized", err=True)

@@ -175,7 +175,7 @@ def test_add_worktree_creation_comment_success(tmp_path: Path) -> None:
     add_worktree_creation_comment(
         github_issues=issues,
         repo_root=tmp_path,
-        issue_number=42,
+        plan_number=42,
         worktree_name="feature-name",
         branch_name="feature-branch",
     )
@@ -218,7 +218,7 @@ def test_add_worktree_creation_comment_issue_not_found(tmp_path: Path) -> None:
         add_worktree_creation_comment(
             github_issues=issues,
             repo_root=tmp_path,
-            issue_number=999,
+            plan_number=999,
             worktree_name="feature-name",
             branch_name="feature-branch",
         )
