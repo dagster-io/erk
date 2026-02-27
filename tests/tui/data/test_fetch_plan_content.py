@@ -7,7 +7,6 @@ from erk_shared.gateway.browser.fake import FakeBrowserLauncher
 from erk_shared.gateway.clipboard.fake import FakeClipboard
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.metadata.plan_header import format_plan_content_comment
 from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
 from erk_shared.gateway.http.fake import FakeHttpClient
 from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
@@ -65,24 +64,7 @@ def _make_provider(tmp_path: Path, *, http_client: FakeHttpClient) -> RealPlanDa
 
 _WARNING = "<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->"
 
-ISSUE_BODY_WITH_COMMENT_ID = f"""{_WARNING}
-<!-- erk:metadata-block:plan-header -->
-<details>
-<summary><code>plan-header</code></summary>
-
-```yaml
-
-schema_version: '2'
-created_at: '2025-01-15T10:30:00Z'
-created_by: user123
-plan_comment_id: 99
-
-```
-
-</details>
-<!-- /erk:metadata-block:plan-header -->"""
-
-ISSUE_BODY_WITH_NULL_COMMENT_ID = f"""{_WARNING}
+BODY_WITH_PLAN_HEADER_METADATA = f"""{_WARNING}
 <!-- erk:metadata-block:plan-header -->
 <details>
 <summary><code>plan-header</code></summary>
@@ -100,29 +82,8 @@ plan_comment_id: null
 <!-- /erk:metadata-block:plan-header -->"""
 
 
-def test_fetch_plan_content_returns_content_from_comment(tmp_path: Path) -> None:
-    """Happy path: issue body has plan_comment_id, HTTP returns comment with content."""
-    http_client = FakeHttpClient()
-    plan_content = "# My Plan\n\n1. Step one\n2. Step two"
-    comment_body = format_plan_content_comment(plan_content)
-    http_client.set_response(
-        "repos/test/repo/issues/comments/99",
-        response={"body": comment_body},
-    )
-
-    provider = _make_provider(tmp_path, http_client=http_client)
-    result = provider.fetch_plan_content(123, ISSUE_BODY_WITH_COMMENT_ID)
-
-    assert result is not None
-    assert "# My Plan" in result
-    assert "1. Step one" in result
-
-    assert len(http_client.requests) == 1
-    assert http_client.requests[0].endpoint == "repos/test/repo/issues/comments/99"
-
-
-def test_fetch_plan_content_planned_pr_body_returned_directly(tmp_path: Path) -> None:
-    """Draft PR plan: plan_body has no metadata block, returned directly without HTTP call."""
+def test_fetch_plan_content_returns_body_directly(tmp_path: Path) -> None:
+    """Plan content without metadata block is returned directly."""
     http_client = FakeHttpClient()
     provider = _make_provider(tmp_path, http_client=http_client)
 
@@ -133,8 +94,8 @@ def test_fetch_plan_content_planned_pr_body_returned_directly(tmp_path: Path) ->
     assert len(http_client.requests) == 0
 
 
-def test_fetch_plan_content_planned_pr_empty_body_returns_none(tmp_path: Path) -> None:
-    """Draft PR plan with empty body returns None."""
+def test_fetch_plan_content_empty_body_returns_none(tmp_path: Path) -> None:
+    """Empty plan body returns None."""
     http_client = FakeHttpClient()
     provider = _make_provider(tmp_path, http_client=http_client)
 
@@ -144,14 +105,19 @@ def test_fetch_plan_content_planned_pr_empty_body_returns_none(tmp_path: Path) -
     assert len(http_client.requests) == 0
 
 
-def test_fetch_plan_content_issue_body_missing_comment_id_returns_none(
+def test_fetch_plan_content_with_embedded_metadata_returns_content(
     tmp_path: Path,
 ) -> None:
-    """Issue body has plan-header block but null comment_id returns None."""
+    """Plan body with embedded plan-header metadata returns the full body.
+
+    This is the bug scenario from plan #8198: a PR body contains a plan-header
+    metadata block (with null plan_comment_id). The old code returned None;
+    the fix returns the body directly.
+    """
     http_client = FakeHttpClient()
     provider = _make_provider(tmp_path, http_client=http_client)
 
-    result = provider.fetch_plan_content(123, ISSUE_BODY_WITH_NULL_COMMENT_ID)
+    result = provider.fetch_plan_content(123, BODY_WITH_PLAN_HEADER_METADATA)
 
-    assert result is None
+    assert result == BODY_WITH_PLAN_HEADER_METADATA
     assert len(http_client.requests) == 0

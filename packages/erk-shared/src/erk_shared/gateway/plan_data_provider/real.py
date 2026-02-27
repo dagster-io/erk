@@ -23,7 +23,6 @@ from erk_shared.gateway.github.metadata.core import (
     extract_objective_from_comment,
     extract_objective_header_comment_id,
     extract_objective_slug,
-    find_metadata_block,
 )
 from erk_shared.gateway.github.metadata.dependency_graph import (
     _TERMINAL_STATUSES,
@@ -33,7 +32,6 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
     compute_objective_head_state,
     find_graph_next_node,
 )
-from erk_shared.gateway.github.metadata.plan_header import extract_plan_from_comment
 from erk_shared.gateway.github.metadata.roadmap import (
     parse_roadmap,
 )
@@ -45,7 +43,6 @@ from erk_shared.gateway.github.metadata.schemas import (
     LEARN_RUN_ID,
     LEARN_STATUS,
     OBJECTIVE_ISSUE,
-    PLAN_COMMENT_ID,
     WORKTREE_NAME,
 )
 from erk_shared.gateway.github.types import (
@@ -361,44 +358,19 @@ class RealPlanDataProvider(PlanDataProvider):
         return result
 
     def fetch_plan_content(self, plan_id: int, plan_body: str) -> str | None:
-        """Fetch plan content from the first comment of an issue, or return body directly.
+        """Return plan content from the PR body.
 
-        For issue-based plans: uses plan_comment_id from the issue body metadata to
-        fetch the specific comment containing the plan content.
-
-        For draft PR plans: plan_body IS the plan content (already extracted from the
-        PR body by PlannedPRPlanListService). No metadata block is present, so return
-        plan_body directly.
+        Plans are PR-based: plan_body is the already-extracted content from
+        PlannedPRPlanListService. Return it directly.
 
         Args:
-            plan_id: The GitHub issue/PR number
-            plan_body: The body text — either an issue body (with plan-header metadata
-                and plan_comment_id) or already-extracted plan content (draft PR case)
+            plan_id: The GitHub PR number
+            plan_body: The extracted plan content from the PR body
 
         Returns:
-            The extracted plan content, or None if not found
+            The plan content, or None if empty
         """
-        # Check for plan-header metadata block to distinguish plan types:
-        # - Draft PR plans: no metadata block; plan_body IS the extracted content
-        # - Issue-based plans: metadata block with plan_comment_id pointing to the comment
-        block = find_metadata_block(plan_body, "plan-header")
-        if block is None:
-            return plan_body if plan_body.strip() else None
-
-        comment_id = block.data.get(PLAN_COMMENT_ID)
-        if not isinstance(comment_id, int):
-            return None
-
-        # Fetch the comment via HTTP client
-        owner = self._location.repo_id.owner
-        repo = self._location.repo_id.repo
-        endpoint = f"repos/{owner}/{repo}/issues/comments/{comment_id}"
-
-        response = self._http_client.get(endpoint)
-        comment_body = response.get("body", "")
-
-        # Extract plan content from comment
-        return extract_plan_from_comment(comment_body)
+        return plan_body if plan_body.strip() else None
 
     def fetch_objective_content(self, plan_id: int, plan_body: str) -> str | None:
         """Fetch objective content from the first comment of an issue.
