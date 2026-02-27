@@ -24,6 +24,8 @@ Rules triggered by matching actions in code.
 
 **continuing to code after discovering scope is larger than expected** → Read [Planless vs Planning Workflow Decision Framework](when-to-switch-pattern.md) first. Stop and switch to planning. Mid-task warning signs (uncertainty accumulating, scope creeping, multiple valid approaches) indicate you should plan. See when-to-switch-pattern.md.
 
+**copying a verbatim code block from erk source into documentation** → Read [Source Pointers](source-pointers.md) first. Verbatim code blocks silently go stale. Use a source pointer instead. Even partial excerpts create the same problem.
+
 **copying erk source code into a docs/learned/ markdown file** → Read [Stale Code Blocks Are Silent Bugs](stale-code-blocks-are-silent-bugs.md) first. Verbatim source in docs silently goes stale. Use a source pointer instead — see source-pointers.md.
 
 **copying non-Python code verbatim** → Read [Language Scope Auditing](language-scope-auditing.md) first. Assuming the verbatim copy prohibition only applies to Python
@@ -50,9 +52,13 @@ Rules triggered by matching actions in code.
 
 **modifying tripwires, read_when, or title in document frontmatter** → Read [Frontmatter and Tripwire Format](frontmatter-tripwire-format.md) first. Run `erk docs sync` before committing. Frontmatter changes affect generated index and tripwire files that must be regenerated.
 
+**referencing private (\_underscore) methods by name in documentation prose** → Read [Source Pointers](source-pointers.md) first. Private methods are implementation details that change frequently. Point to the public API or ABC method instead.
+
 **restructuring or deleting doc content** → Read [Documentation Simplification Patterns](simplification-patterns.md) first. Run 'erk docs sync' after structural changes to regenerate indexes and fix broken cross-references.
 
 **starting a multi-file change without entering plan mode** → Read [Planless vs Planning Workflow Decision Framework](when-to-switch-pattern.md) first. If the change touches 5+ files or has uncertain approach, plan first. See the decision matrix in when-to-switch-pattern.md.
+
+**submitting documentation PR without running code review** → Read [Source Pointers](source-pointers.md) first. Run /local:review or /local:code-review before submitting documentation PRs to catch verbatim code, stale references, and formatting issues.
 
 **two learned docs claiming canonical authority over the same topic** → Read [Canonical Authority Declarations](canonical-authority-declarations.md) first. Contradicts the purpose. Consolidate into one doc, or differentiate scope explicitly (e.g., 'canonical for hook patterns' vs 'canonical for command patterns').
 

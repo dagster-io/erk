@@ -11,7 +11,10 @@ tripwires:
   - action: "Render status indicators from backend-provided display strings"
     warning: "Status indicators must derive from raw state fields via pure functions, not pre-rendered strings. See state-derivation-pattern.md."
     score: 8
-last_audited: "2026-02-20 00:00 PT"
+  - action: "allowing rocket emoji on draft PRs"
+    warning: "Draft PR status must prevent the rocket emoji. A draft PR can have all positive signals yet be unmergeable. Draft status is a blocking indicator."
+    score: 6
+last_audited: "2026-02-25 00:00 PT"
 audit_result: edited
 ---
 
@@ -64,12 +67,14 @@ Three independent derivation functions (PR status, checks status, comments statu
 
 Emoji indicators in the lifecycle column are classified as either **blocking** or **informational**:
 
-- **Blocking indicators** prevent the rocket emoji (🚀) from appearing when a plan reaches the `implemented` stage. Examples: CI failures, unresolved review comments, merge conflicts.
+- **Blocking indicators** prevent the rocket emoji (🚀) from appearing when a plan reaches the `implemented` stage. Examples: CI failures, unresolved review comments, merge conflicts, draft PR status.
 - **Informational indicators** do not prevent the rocket. Example: the pancake emoji (🥞) for stacked PRs.
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py, _build_indicators -->
+**Draft PRs as blocking**: A draft PR can have all positive signals (CI passing, no conflicts, approved review) yet still be unmergeable. Draft status is a blocking indicator because merging a draft PR is typically unintended.
 
-The distinction is implemented in `_build_indicators()` in `lifecycle.py`: a `_non_blocking` set defines which indicators are informational. Any indicator not in this set is considered blocking. When a plan is implemented and has no blocking indicators, the rocket emoji is appended to signal "ready to merge."
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py, format_lifecycle_with_status -->
+
+The distinction is implemented via an internal non-blocking indicator set in `lifecycle.py`: indicators classified as non-blocking are informational, while all others are blocking. When a plan is implemented and has no blocking indicators, the rocket emoji is appended to signal "ready to merge."
 
 See [Stacked PR Indicator](../tui/stacked-pr-indicator.md) for full details on the pancake emoji.
 

@@ -26,6 +26,8 @@ Rules triggered by matching actions in code.
 
 **removing a feature without checking all artifact categories** → Read [Feature Removal Checklist](feature-removal-checklist.md) first. Feature removal leaves scattered artifacts. Use this checklist to verify complete removal across source code, tests, constants, documentation, workflows, CLI commands, and glossary entries.
 
+**renaming a Python package without checking all entry points** → Read [Python Package Rename Checklist](python-package-rename-checklist.md) first. Package renames require updating pyproject.toml scripts, Makefile targets, CI config, and documentation. Use the checklist in python-package-rename-checklist.md.
+
 **renaming display strings without checking test assertions** → Read [Systematic Terminology Renames](systematic-terminology-renames.md) first. After display-string renames, search test assertions: `grep -r '"old_term"' tests/`. Not caught by linters or type checkers.
 
 **running targeted edits after replace_all operations in the same file** → Read [LibCST Systematic Import Refactoring](libcst-systematic-imports.md) first. During type migrations, complete all rename operations before attempting targeted edits. replace_all operations change strings that later edits expect to find.
@@ -33,5 +35,7 @@ Rules triggered by matching actions in code.
 **using replace_all on lines with trailing comments** → Read [LibCST Systematic Import Refactoring](libcst-systematic-imports.md) first. Edit tool's replace_all removes surrounding whitespace, which can collapse lines and cause SyntaxError.
 
 **using replace_all to rename foo to \_foo** → Read [LibCST Systematic Import Refactoring](libcst-systematic-imports.md) first. Corrupts existing \_foo to \_\_foo. Grep for existing underscored forms before applying replace_all renames.
+
+**verifying a CLI entry point with --help without checking if it uses Click or argparse** → Read [Python Package Rename Checklist](python-package-rename-checklist.md) first. Check whether the CLI uses Click or argparse before running --help. Click commands print help and exit 0; argparse may behave differently. For uv-managed packages, use 'uv run <name> --help'.
 
 **writing LibCST transformation logic from scratch** → Read [LibCST Systematic Import Refactoring](libcst-systematic-imports.md) first. The libcst-refactor agent (.claude/agents/libcst-refactor.md) contains battle-tested patterns, gotchas, and a script template. Load it first.

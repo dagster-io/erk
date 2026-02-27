@@ -30,6 +30,8 @@ Rules triggered by matching actions in code.
 
 **adding a new lifecycle stage without updating abbreviation map** → Read [Lifecycle and PR Status Display](lifecycle-display.md) first. The stage column is 8 chars wide. New stages longer than 8 chars need abbreviations in compute_lifecycle_display(). Also update format_lifecycle_with_status() stage detection.
 
+**adding a subprocess call to the TUI without stderr inspection** → Read [TUI Subprocess Feedback Patterns](subprocess-feedback.md) first. TUI subprocess calls should inspect stderr for known success/failure markers. See subprocess-feedback.md for the pattern.
+
 **adding an ACTION command that executes instantly** → Read [TUI Command Architecture](action-inventory.md) first. ACTION category implies mutative operations. Instant operations belong in OPEN or COPY categories.
 
 **adding emoji with Unicode variation selector (\ufe0f) to status indicators** → Read [TUI Status Indicators](status-indicators.md) first. Variation selector forces double-wide rendering in terminals, breaking column alignment. Current safe emoji: 🥞 🚧 👀 💥 ✔ ❌ 🚀. Test any new emoji in terminal before adding.

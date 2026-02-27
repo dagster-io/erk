@@ -14,9 +14,15 @@ Rules triggered by matching actions in code.
 
 **adding <code> inside <summary> elements in PR bodies** → Read [Graphite PR Rendering Quirks](graphite-rendering.md) first. Graphite does not render <code> inside <summary> elements — it displays the raw HTML. Use plain text instead. GitHub renders it correctly, so test on graphite.dev specifically.
 
+**adding a Slack API call without error handling in agent_handler.py** → Read [ErkBot Architecture](erkbot/erkbot-architecture.md) first. ErkBot uses best-effort operations for Slack API calls. Wrap in try/except and log, don't raise. Agent execution should never fail due to a Slack API hiccup.
+
 **adding a force-include entry in pyproject.toml without updating codex_portable.py** → Read [Bundled Artifact Portability](bundled-artifacts.md) first. The portability registry and pyproject.toml force-include must stay in sync. A skill mapped to erk/data/codex/ must appear in codex_portable_skills().
 
 **adding a new Codex event type without updating the parser** → Read [Codex Integration](codex-integration.md) first. All Codex event types must be handled in parse_codex_jsonl_line(). See codex-integration.md.
+
+**adding a new erkbot command type without updating parser.py** → Read [ErkBot Architecture](erkbot/erkbot-architecture.md) first. New commands must be added to both parser.py (parse_erk_command) and slack_handlers.py (the app_mention handler's dispatch logic).
+
+**adding a new event type without updating the AgentEvent union** → Read [ErkBot Agent Event System](erkbot/agent-event-system.md) first. AgentEvent is a Union type in events.py. New event types must be added to it, or they won't be matched in downstream event handlers.
 
 **adding a skill to codex_portable_skills() without verifying it works outside Claude Code** → Read [Bundled Artifact Portability](bundled-artifacts.md) first. Portable skills must not use hooks, TodoWrite, EnterPlanMode, AskUserQuestion, or session log paths. Check against the portability classification table before adding.
 
@@ -44,6 +50,10 @@ Rules triggered by matching actions in code.
 
 **reusing ClaudePromptExecutor parsing logic for Codex** → Read [Codex CLI JSONL Output Format](codex/codex-jsonl-format.md) first. The two formats share almost nothing structurally. A CodexPromptExecutor needs its own parser — don't parameterize the existing Claude parser.
 
+**running uv sync without --package flag for workspace packages** → Read [ErkBot Architecture](erkbot/erkbot-architecture.md) first. For workspace packages like erkbot, use 'uv sync --package erkbot' instead of bare 'uv sync'. Bare sync resolves the root package, not the workspace member.
+
+**starting tmux inside a codespace without setting TERM=xterm-256color** → Read [Codespace Tmux Session Persistence](codespace-tmux-persistence.md) first. Remote tmux requires TERM=xterm-256color. Without it, terminal rendering breaks silently.
+
 **using --ask-for-approval with codex exec** → Read [Codex CLI Reference for Erk Integration](codex/codex-cli-reference.md) first. codex exec hardcodes approval to Never. Only the TUI supports --ask-for-approval. This means exec and TUI need different flag sets for the same PermissionMode.
 
 **using --output-format with codex** → Read [Codex CLI Reference for Erk Integration](codex/codex-cli-reference.md) first. Codex has no --output-format. Use --json (boolean flag) for JSONL. Without --json, output goes to terminal. This affects execute_command_streaming() porting.
@@ -52,6 +62,10 @@ Rules triggered by matching actions in code.
 
 **using --system-prompt or --allowedTools with codex** → Read [Codex CLI Reference for Erk Integration](codex/codex-cli-reference.md) first. Codex has no --system-prompt or --allowedTools. Prepend system prompt to user prompt. Tool restriction is not available — this affects execute_prompt() porting.
 
-**using issue number from .erk/impl-context/plan-ref.json for a checkout footer** → Read [Issue-PR Closing Integration](issue-pr-closing-integration.md) first. The checkout footer requires the PR number, not the issue number. These are different values — the issue is the plan, the PR is the implementation.
+**using attribute access on Claude SDK message objects in erkbot** → Read [ErkBot Agent Event System](erkbot/agent-event-system.md) first. The Claude Agent SDK uses dict-access patterns (.get('key')), not attribute access. See stream.py for the correct pattern.
+
+**using issue number from .impl/plan-ref.json for a checkout footer** → Read [Issue-PR Closing Integration](issue-pr-closing-integration.md) first. The checkout footer requires the PR number, not the issue number. These are different values — the issue is the plan, the PR is the implementation.
+
+**using random session names for tmux in codespaces** → Read [Codespace Tmux Session Persistence](codespace-tmux-persistence.md) first. Use deterministic names for plan sessions (from plan ID) and TTY-derived names for interactive sessions. Random names prevent reconnection.
 
 **using shell=True in subprocess calls for the Slack bot** → Read [Slack Bot Patterns](slack-bot-patterns.md) first. Never use shell=True for security. Pass arguments as a list to prevent shell injection. See runner.py for the pattern.

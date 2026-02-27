@@ -28,9 +28,7 @@ PlannedPRBackend stores plans as GitHub draft pull requests. It is the only acti
 
 The plan backend is hardcoded to `"planned_pr"`. All plans are stored as GitHub draft pull requests via PlannedPRBackend. The former `get_plan_backend()` function and `PlanBackendType` type alias were deleted in PR #7971 (objective #7911 node 1.1).
 
-The `ERK_PLAN_BACKEND` environment variable is no longer read by application code. Setting it has no effect. CI workflows and test fixtures that reference it are vestigial and will be removed in later nodes of objective #7911.
-
-**Note:** Some code still contains `PLAN_BACKEND_SPLIT` comment blocks marking dead branches (e.g., `if "planned_pr" != "planned_pr":` in plan_save.py). These are intentionally preserved for node 1.2 cleanup.
+The `ERK_PLAN_BACKEND` environment variable is no longer read by application code. Setting it has no effect.
 
 <!-- Source: src/erk/core/context.py, create_context -->
 
