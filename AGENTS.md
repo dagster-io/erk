@@ -87,7 +87,7 @@ Erk's plan-oriented workflow works across agent backends with different mechanis
 
 Load the `erk-planning` skill for detailed guidance. Key commands:
 
-- `/erk:plan-save` — save plan to GitHub issue
+- `/erk:plan-save` — save plan as draft PR
 - `/erk:plan-implement` — implement from a saved plan
 - Plan mode and hooks handle lifecycle automatically
 
@@ -97,9 +97,9 @@ Without built-in plan mode, follow this explicit protocol:
 
 1. **Assess complexity**: For complex tasks (3+ files, unclear scope), create a plan first
 2. **Write the plan**: Create a markdown file with implementation steps
-3. **Save to GitHub**: Run `erk pr create --file <path-to-plan.md>` to create a tracked issue
-4. **Implement**: Run `erk implement <issue-number>` to set up a worktree and execute
-5. **Submit**: Run `erk pr submit` after implementation to create the PR
+3. **Save to GitHub**: Run `erk pr create --file <path-to-plan.md>` to create a tracked draft PR
+4. **Implement**: Run `erk implement <plan-number>` to set up a worktree and execute
+5. **Submit**: Run `erk pr submit` after implementation to push the code
 
 **Validation coordination**: When implementing, verify that:
 
@@ -112,8 +112,8 @@ Load the `erk-planning` skill (`$erk-planning`) for detailed workflow guidance.
 ### All Backends
 
 - `erk pr list` — view open plans
-- `erk implement <issue>` — implement a plan in a worktree
-- `erk pr dispatch <issue>` — dispatch for remote implementation
+- `erk implement <plan>` — implement a plan in a worktree
+- `erk pr dispatch <plan>` — dispatch for remote implementation
 
 ---
 
