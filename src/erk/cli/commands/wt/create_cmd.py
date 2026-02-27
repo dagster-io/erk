@@ -643,11 +643,12 @@ def create_wt(
     ensure_erk_metadata_dir(repo)
 
     # Validate impl directory exists if --copy-plan is used (now that we have repo.root)
+    impl_source: Path | None = None
     if copy_plan:
         current_branch = ctx.git.branch.get_current_branch(repo.root)
-        impl_source_check = resolve_impl_dir(repo.root, branch_name=current_branch)
+        impl_source = resolve_impl_dir(repo.root, branch_name=current_branch)
         Ensure.invariant(
-            impl_source_check is not None,
+            impl_source is not None,
             f"No implementation directory found at {repo.root}. "
             "Use 'erk create --from-plan-file <file>' to create a worktree with a plan.",
         )
@@ -931,12 +932,9 @@ def create_wt(
             user_output(f"Created worktree from issue #{setup.issue_number}: {setup.issue_title}")
 
     # Copy impl directory if --copy-plan flag is set
-    if copy_plan:
+    if copy_plan and impl_source is not None:
         import shutil
 
-        impl_source = resolve_impl_dir(repo.root, branch_name=current_branch)
-        # Type guard: impl_source is guaranteed non-None by the earlier check at line 649-653
-        assert impl_source is not None, "impl_source must be non-None after validation"
         # branch is always set when copy_plan=True (mutually exclusive with from_plan)
         impl_dest = get_impl_dir(wt_path, branch_name=branch or "main")
         impl_dest.parent.mkdir(parents=True, exist_ok=True)
