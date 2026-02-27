@@ -255,7 +255,7 @@ def _setup_planned_pr_plan(
 @click.option(
     "--no-impl",
     is_flag=True,
-    help="Skip .impl/ folder creation (for local execution without file overhead)",
+    help="Skip impl-context directory creation (for local execution without file overhead)",
 )
 @click.pass_context
 def setup_impl_from_pr(
@@ -264,7 +264,7 @@ def setup_impl_from_pr(
     session_id: str | None,
     no_impl: bool,
 ) -> None:
-    """Set up .impl/ folder from GitHub PR in current worktree.
+    """Set up impl-context directory from GitHub PR in current worktree.
 
     Fetches plan content from GitHub PR, creates/checks out a feature branch,
     and creates .impl/ folder structure with plan.md, progress.md, and ref.json.

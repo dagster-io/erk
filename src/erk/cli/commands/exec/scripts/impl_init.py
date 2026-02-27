@@ -130,9 +130,9 @@ def _extract_related_docs(plan_content: str) -> dict[str, list[str]]:
 @click.option("--json", "json_output", is_flag=True, default=True, help="Output JSON (default)")
 @click.pass_context
 def impl_init(ctx: click.Context, json_output: bool) -> None:
-    """Initialize implementation by validating .impl/ folder.
+    """Initialize implementation by validating impl-context directory.
 
-    Validates .impl/ folder for /erk:plan-implement.
+    Validates impl-context directory for /erk:plan-implement.
     Returns structured JSON with validation status and related documentation.
     """
     # Validate folder structure
