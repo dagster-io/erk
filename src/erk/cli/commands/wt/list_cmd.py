@@ -1,6 +1,5 @@
 """Fast local-only worktree listing command."""
 
-import json
 from pathlib import Path
 
 import click
