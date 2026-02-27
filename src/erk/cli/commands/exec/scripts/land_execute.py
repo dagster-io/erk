@@ -175,6 +175,7 @@ def land_execute(
             no_delete=no_delete,
             no_cleanup=no_cleanup,
             script=script,
+            plan_number=plan_number,
         )
     except SystemExit as exc:
         if exc.code != 0:

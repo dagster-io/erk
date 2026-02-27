@@ -901,6 +901,7 @@ def _execute_land_directly(
         no_cleanup=not cleanup_confirmed,
         script=script,
         target_child_branch=None,
+        plan_id=plan_id,
     )
 
     # Re-derive main_repo_root from discovery
@@ -1389,6 +1390,7 @@ def _execute_land(
     no_delete: bool,
     no_cleanup: bool,
     script: bool,
+    plan_number: int | None,
 ) -> None:
     """Execute deferred land operations from activation script.
 
@@ -1412,6 +1414,7 @@ def _execute_land(
         no_delete: Whether to preserve branch and slot
         no_cleanup: Whether user declined cleanup during validation
         script: Whether running in script mode
+        plan_number: Plan number for learn issue creation
     """
     # Validate required parameters
     Ensure.invariant(pr_number is not None, "Missing --exec-pr-number in execute mode")
@@ -1432,6 +1435,7 @@ def _execute_land(
         no_cleanup=no_cleanup,
         script=script,
         target_child_branch=target_child_branch,
+        plan_id=str(plan_number) if plan_number is not None else None,
     )
 
     # Re-derive main_repo_root from discovery

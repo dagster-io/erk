@@ -568,13 +568,13 @@ def make_execution_state(
     no_cleanup: bool,
     script: bool,
     target_child_branch: str | None,
+    plan_id: str | None,
 ) -> LandState:
     """Create LandState for the execution pipeline from exec script args.
 
     Re-derives repo_root, main_repo_root, plan_id from the args
     passed through the shell script serialization boundary.
     """
-    plan_id = None
 
     return LandState(
         cwd=cwd,
