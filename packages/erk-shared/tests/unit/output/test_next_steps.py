@@ -45,13 +45,13 @@ def test_planned_pr_next_steps_checkout_uses_pr_number() -> None:
 
 def test_issue_next_steps_checkout_uses_co() -> None:
     """IssueNextSteps.checkout uses erk br co --for-plan."""
-    s = IssueNextSteps(issue_number=99, url="https://github.com/org/repo/issues/99")
+    s = IssueNextSteps(plan_number=99, url="https://github.com/org/repo/issues/99")
     assert s.checkout == "erk br co --for-plan 99"
 
 
 def test_issue_next_steps_view_returns_url() -> None:
     """IssueNextSteps.view returns the URL directly."""
-    s = IssueNextSteps(issue_number=99, url="https://github.com/org/repo/issues/99")
+    s = IssueNextSteps(plan_number=99, url="https://github.com/org/repo/issues/99")
     assert s.view == "https://github.com/org/repo/issues/99"
 
 

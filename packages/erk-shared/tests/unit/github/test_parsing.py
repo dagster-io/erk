@@ -5,43 +5,43 @@ from erk_shared.gateway.github.parsing import (
     construct_pr_url,
     construct_workflow_run_url,
     extract_owner_repo_from_github_url,
-    parse_issue_number_from_url,
+    parse_plan_number_from_url,
     parse_pr_number_from_url,
 )
 
-# Tests for parse_issue_number_from_url
+# Tests for parse_plan_number_from_url
 
 
-def test_parse_issue_number_from_simple_url() -> None:
-    """Test parsing issue number from a standard issue URL."""
+def test_parse_plan_number_from_simple_url() -> None:
+    """Test parsing plan number from a standard issue URL."""
     url = "https://github.com/owner/repo/issues/123"
-    assert parse_issue_number_from_url(url) == 123
+    assert parse_plan_number_from_url(url) == 123
 
 
-def test_parse_issue_number_from_url_with_fragment() -> None:
-    """Test parsing issue number from URL with fragment (anchor)."""
+def test_parse_plan_number_from_url_with_fragment() -> None:
+    """Test parsing plan number from URL with fragment (anchor)."""
     url = "https://github.com/owner/repo/issues/456#issuecomment-789"
-    assert parse_issue_number_from_url(url) == 456
+    assert parse_plan_number_from_url(url) == 456
 
 
-def test_parse_issue_number_from_url_with_query_string() -> None:
-    """Test parsing issue number from URL with query parameters."""
+def test_parse_plan_number_from_url_with_query_string() -> None:
+    """Test parsing plan number from URL with query parameters."""
     url = "https://github.com/owner/repo/issues/789?something=value"
-    assert parse_issue_number_from_url(url) == 789
+    assert parse_plan_number_from_url(url) == 789
 
 
-def test_parse_issue_number_returns_none_for_invalid_url() -> None:
+def test_parse_plan_number_returns_none_for_invalid_url() -> None:
     """Test that non-matching URLs return None."""
-    assert parse_issue_number_from_url("https://github.com/owner/repo") is None
-    assert parse_issue_number_from_url("https://github.com/owner/repo/pull/123") is None
-    assert parse_issue_number_from_url("not-a-url") is None
-    assert parse_issue_number_from_url("") is None
+    assert parse_plan_number_from_url("https://github.com/owner/repo") is None
+    assert parse_plan_number_from_url("https://github.com/owner/repo/pull/123") is None
+    assert parse_plan_number_from_url("not-a-url") is None
+    assert parse_plan_number_from_url("") is None
 
 
-def test_parse_issue_number_returns_none_for_enterprise_url() -> None:
+def test_parse_plan_number_returns_none_for_enterprise_url() -> None:
     """Test that GitHub Enterprise URLs return None (strict github.com matching)."""
     url = "https://github.company.com/owner/repo/issues/123"
-    assert parse_issue_number_from_url(url) is None
+    assert parse_plan_number_from_url(url) is None
 
 
 # Tests for parse_pr_number_from_url

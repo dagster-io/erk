@@ -15,51 +15,30 @@ from erk_shared.gateway.github.pr_footer import (
 )
 
 
-def test_build_pr_body_footer_without_issue_number() -> None:
-    """Test footer generation without issue number."""
-    result = build_pr_body_footer(pr_number=1895, issue_number=None, plans_repo=None)
+def test_build_pr_body_footer_basic() -> None:
+    """Test basic footer generation."""
+    result = build_pr_body_footer(pr_number=1895)
 
     assert "---" in result
     assert 'source "$(erk pr checkout 1895 --script)"' in result
-    assert "Closes #" not in result
-
-
-def test_build_pr_body_footer_with_issue_number() -> None:
-    """Test footer includes Closes #N when issue_number is provided."""
-    result = build_pr_body_footer(pr_number=1895, issue_number=123, plans_repo=None)
-
-    assert "---" in result
-    assert "Closes #123" in result
-    assert 'source "$(erk pr checkout 1895 --script)"' in result
-
-
-def test_build_pr_body_footer_issue_number_before_checkout() -> None:
-    """Test that Closes #N appears before the checkout command."""
-    result = build_pr_body_footer(pr_number=456, issue_number=789, plans_repo=None)
-
-    closes_pos = result.find("Closes #789")
-    checkout_pos = result.find("erk pr checkout 456")
-
-    assert closes_pos != -1
-    assert checkout_pos != -1
-    assert closes_pos < checkout_pos
 
 
 def test_build_pr_body_footer_includes_checkout_command() -> None:
-    """Test that footer includes checkout command without sync."""
-    result = build_pr_body_footer(pr_number=100, issue_number=None, plans_repo=None)
+    """Test that footer includes checkout command."""
+    result = build_pr_body_footer(pr_number=100)
 
     assert 'source "$(erk pr checkout 100 --script)"' in result
     # sync is no longer needed — checkout fetches and updates local branch
     assert "erk pr sync" not in result
 
 
-def test_build_pr_body_footer_cross_repo_issue() -> None:
-    """Test footer uses owner/repo#N format for cross-repo plans."""
-    result = build_pr_body_footer(pr_number=100, issue_number=123, plans_repo="owner/plans-repo")
+def test_build_pr_body_footer_different_pr_numbers() -> None:
+    """Test footer with different PR numbers."""
+    result1 = build_pr_body_footer(pr_number=456)
+    result2 = build_pr_body_footer(pr_number=789)
 
-    assert "Closes owner/plans-repo#123" in result
-    assert "Closes #123" not in result
+    assert 'source "$(erk pr checkout 456 --script)"' in result1
+    assert 'source "$(erk pr checkout 789 --script)"' in result2
 
 
 # ============================================================================

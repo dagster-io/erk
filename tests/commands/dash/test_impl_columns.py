@@ -74,7 +74,7 @@ last_dispatched_node_id: 'WFR_all_flag'
         issues = FakeGitHubIssues(issues={200: plan_to_issue(plan)})
         github = FakeGitHub(
             issues_data=[plan_to_issue(plan)],
-            pr_issue_linkages={200: [pr]},
+            pr_plan_linkages={200: [pr]},
             workflow_runs_by_node_id={"WFR_all_flag": workflow_run},
         )
         plan_service = build_fake_plan_list_service(

@@ -27,7 +27,7 @@ from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
 from erk_shared.gateway.github.parsing import (
-    parse_issue_number_from_url,
+    parse_plan_number_from_url,
     parse_pr_number_from_url,
 )
 from erk_shared.gateway.github.types import PRNotFound
@@ -68,7 +68,7 @@ def _parse_checkout_reference(reference: str) -> _PrRef | _PlanRef:
         return _PrRef(int(reference))
 
     # GitHub issue URL → plan
-    plan_number = parse_issue_number_from_url(reference)
+    plan_number = parse_plan_number_from_url(reference)
     if plan_number is not None:
         return _PlanRef(plan_number)
 

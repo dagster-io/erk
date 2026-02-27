@@ -120,10 +120,10 @@ class DryRunGitHub(GitHub):
     def get_prs_linked_to_issues(
         self,
         location: GitHubRepoLocation,
-        issue_numbers: list[int],
+        plan_numbers: list[int],
     ) -> dict[int, list[PullRequestInfo]]:
         """Delegate read operation to wrapped implementation."""
-        return self._wrapped.get_prs_linked_to_issues(location, issue_numbers)
+        return self._wrapped.get_prs_linked_to_issues(location, plan_numbers)
 
     def get_workflow_runs_by_branches(
         self, repo_root: Path, workflow: str, branches: list[str]
@@ -348,11 +348,11 @@ class DryRunGitHub(GitHub):
         self,
         *,
         location: GitHubRepoLocation,
-        issue_numbers: list[int],
+        plan_numbers: list[int],
     ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_issues_by_numbers_with_pr_linkages(
-            location=location, issue_numbers=issue_numbers
+            location=location, plan_numbers=plan_numbers
         )
 
     def create_commit_status(

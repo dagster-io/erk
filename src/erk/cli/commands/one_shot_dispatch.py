@@ -371,7 +371,7 @@ def dispatch_one_shot(
                 metadata_block = create_submission_queued_block(
                     queued_at=queued_at,
                     submitted_by=submitted_by,
-                    issue_number=plan_number,
+                    plan_number=plan_number,
                     validation_results={"issue_is_open": True, "has_erk_plan_label": True},
                     expected_workflow="one-shot",
                 )
