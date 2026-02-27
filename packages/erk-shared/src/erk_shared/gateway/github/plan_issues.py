@@ -1,18 +1,15 @@
-"""Create Schema v2 plan issues with metadata-only body and plan content comment.
+"""GitHub issue creation for objectives and label management.
 
-This module consolidates the 6-step workflow for creating plan issues:
-1. Get GitHub username (fail if not authenticated)
-2. Extract title from plan H1 (or use provided)
-3. Ensure all required labels exist
-4. Create issue with metadata-only body
-5. Add first comment with plan content
-6. Handle partial failures (issue created but comment failed)
+This module contains:
+- create_objective_issue(): Create objective issues with roadmap metadata
+- Label management utilities (definitions, ensuring labels exist)
+- CreatePlanIssueResult: Result type shared by objective issue creation
 
-All callers should use create_plan_issue() instead of duplicating this logic.
+Plan creation now uses create_plan_draft_pr() from plan_store.create_plan_draft_pr.
 """
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC
 from pathlib import Path
 
 from erk_shared.gateway.github.issues.abc import GitHubIssues
@@ -20,14 +17,8 @@ from erk_shared.gateway.github.metadata.core import (
     create_objective_header_block,
     extract_raw_metadata_blocks,
     format_objective_content_comment,
-    format_plan_commands_section,
     render_metadata_block,
     update_objective_header_comment_id,
-)
-from erk_shared.gateway.github.metadata.plan_header import (
-    format_plan_content_comment,
-    format_plan_header_body,
-    update_plan_header_comment_id,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
     parse_roadmap_frontmatter,
@@ -78,184 +69,6 @@ class CreatePlanIssueResult:
     plan_url: str | None
     title: str
     error: str | None
-
-
-def create_plan_issue(
-    github_issues: GitHubIssues,
-    repo_root: Path,
-    plan_content: str,
-    *,
-    title: str | None,
-    extra_labels: list[str] | None,
-    title_tag: str | None,
-    source_repo: str | None,
-    objective_id: int | None,
-    created_from_session: str | None,
-    created_from_workflow_run_url: str | None,
-    learned_from_issue: int | None,
-    lifecycle_stage: str | None,
-) -> CreatePlanIssueResult:
-    """Create Schema v2/v3 plan issue with proper structure.
-
-    Handles the complete workflow:
-    1. Get GitHub username (fail if not authenticated)
-    2. Extract title from plan H1 (or use provided)
-    3. Ensure all labels exist
-    4. Create issue with metadata-only body
-    5. Add first comment with plan-body block
-
-    Args:
-        github_issues: GitHubIssues interface (real, fake, or dry-run)
-        repo_root: Repository root directory
-        plan_content: The full plan markdown content
-        title: Optional title (extracted from H1 if None)
-        extra_labels: Additional labels beyond erk-plan (include "erk-learn" for learn plans)
-        title_tag: Tag for issue title (defaults based on labels, may be prefix or suffix)
-        source_repo: For cross-repo plans, the implementation repo in "owner/repo" format
-        objective_id: Optional parent objective issue number
-        created_from_session: Optional session ID that created this plan
-        created_from_workflow_run_url: Optional workflow run URL that created this plan
-        learned_from_issue: Optional parent plan issue number (for learn plans, enables
-            auto-update when learn plan lands)
-        lifecycle_stage: Optional initial lifecycle stage (e.g., "prompted", "planned")
-
-    Returns:
-        CreatePlanIssueResult with success status and details
-
-    Note:
-        Does NOT raise exceptions. All errors returned in result.
-        Partial success (issue created, comment failed) is possible.
-    """
-    # Step 1: Get GitHub username
-    username = github_issues.get_current_username()
-    if username is None:
-        return CreatePlanIssueResult(
-            success=False,
-            plan_number=None,
-            plan_url=None,
-            title="",
-            error="Could not get GitHub username (gh CLI not authenticated?)",
-        )
-
-    # Step 2: Extract or use provided title
-    if title is None:
-        title = extract_title_from_plan(plan_content)
-
-    # Step 3: Determine labels - erk-pr + type-specific label
-    # Learn plans are identified by having "erk-learn" in extra_labels
-    is_learn_plan = extra_labels is not None and _LABEL_ERK_LEARN in extra_labels
-    labels = [_LABEL_ERK_PR]
-    if is_learn_plan:
-        labels.append(_LABEL_ERK_LEARN)
-    else:
-        labels.append(_LABEL_ERK_PLAN)
-
-    # Add remaining extra_labels (excluding already-added ones)
-    if extra_labels:
-        for label in extra_labels:
-            if label not in labels:
-                labels.append(label)
-
-    # Ensure labels exist
-    label_errors = _ensure_labels_exist(github_issues, repo_root, labels)
-    if label_errors:
-        return CreatePlanIssueResult(
-            success=False,
-            plan_number=None,
-            plan_url=None,
-            title=title,
-            error=label_errors,
-        )
-
-    # Step 4: Determine title tag
-    if title_tag is None:
-        if is_learn_plan:
-            title_tag = "[erk-learn]"
-        else:
-            title_tag = "[erk-plan]"
-
-    # Build issue title with marker prefix for consistency
-    issue_title = f"{title_tag} {title}"
-
-    # Standard and extraction plans: metadata body + plan content in comment
-    created_at = datetime.now(UTC).isoformat()
-    issue_body = format_plan_header_body(
-        created_at=created_at,
-        created_by=username,
-        worktree_name=None,
-        branch_name=None,
-        plan_comment_id=None,
-        last_dispatched_run_id=None,
-        last_dispatched_node_id=None,
-        last_dispatched_at=None,
-        last_local_impl_at=None,
-        last_local_impl_event=None,
-        last_local_impl_session=None,
-        last_local_impl_user=None,
-        last_remote_impl_at=None,
-        last_remote_impl_run_id=None,
-        last_remote_impl_session_id=None,
-        source_repo=source_repo,
-        objective_issue=objective_id,
-        created_from_session=created_from_session,
-        created_from_workflow_run_url=created_from_workflow_run_url,
-        last_learn_session=None,
-        last_learn_at=None,
-        learn_status=None,
-        learn_plan_issue=None,
-        learn_plan_pr=None,
-        learned_from_issue=learned_from_issue,
-        lifecycle_stage=lifecycle_stage,
-    )
-
-    # Create issue
-    try:
-        result = github_issues.create_issue(
-            repo_root=repo_root,
-            title=issue_title,
-            body=issue_body,
-            labels=labels,
-        )
-    except RuntimeError as e:
-        return CreatePlanIssueResult(
-            success=False,
-            plan_number=None,
-            plan_url=None,
-            title=title,
-            error=f"Failed to create GitHub issue: {e}",
-        )
-
-    # Step 5: Add first comment with plan content
-    plan_comment = format_plan_content_comment(plan_content.strip())
-    try:
-        comment_id = github_issues.add_comment(repo_root, result.number, plan_comment)
-    except RuntimeError as e:
-        # Partial success - issue created but comment failed
-        return CreatePlanIssueResult(
-            success=False,
-            plan_number=result.number,
-            plan_url=result.url,
-            title=title,
-            error=f"Issue #{result.number} created but failed to add plan comment: {e}",
-        )
-
-    # Step 6: Update issue body with plan_comment_id for direct lookup
-    updated_body = update_plan_header_comment_id(issue_body, comment_id)
-
-    # Step 7: Add commands section for standard plans only (not learn)
-    if not is_learn_plan:
-        commands_section = format_plan_commands_section(result.number)
-        updated_body = updated_body + "\n\n" + commands_section
-
-    github_issues.update_issue_body(repo_root, result.number, BodyText(content=updated_body))
-
-    return CreatePlanIssueResult(
-        success=True,
-        plan_number=result.number,
-        plan_url=result.url,
-        title=title,
-        error=None,
-    )
 
 
 def _build_objective_roadmap_block(plan_content: str) -> str | None:

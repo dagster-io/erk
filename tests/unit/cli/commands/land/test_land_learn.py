@@ -1,4 +1,4 @@
-"""Tests for land_learn module: learn issue creation logic."""
+"""Tests for land_learn module: learn plan creation logic."""
 
 from datetime import UTC, datetime
 from pathlib import Path
@@ -6,13 +6,14 @@ from pathlib import Path
 import pytest
 
 from erk.cli.commands.land_learn import (
-    _create_learn_issue_impl,
-    _create_learn_issue_with_sessions,
-    _should_create_learn_issue,
+    _create_learn_pr_impl,
+    _create_learn_pr_with_sessions,
+    _should_create_learn_pr,
 )
 from erk.cli.commands.land_pipeline import LandState
 from erk.core.context import context_for_test
 from erk_shared.context.types import GlobalConfig, LoadedConfig
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRDetails
@@ -80,7 +81,7 @@ def _land_state(
 
 
 # ---------------------------------------------------------------------------
-# _should_create_learn_issue
+# _should_create_learn_pr
 # ---------------------------------------------------------------------------
 
 
@@ -91,7 +92,7 @@ def test_returns_local_config_when_set(tmp_path: Path) -> None:
         global_config=GlobalConfig.test(tmp_path, prompt_learn_on_land=False),
         cwd=tmp_path,
     )
-    assert _should_create_learn_issue(ctx) is True
+    assert _should_create_learn_pr(ctx) is True
 
 
 def test_falls_back_to_global_config_when_local_unset(tmp_path: Path) -> None:
@@ -101,7 +102,7 @@ def test_falls_back_to_global_config_when_local_unset(tmp_path: Path) -> None:
         global_config=GlobalConfig.test(tmp_path, prompt_learn_on_land=False),
         cwd=tmp_path,
     )
-    assert _should_create_learn_issue(ctx) is False
+    assert _should_create_learn_pr(ctx) is False
 
 
 def test_returns_true_when_both_unset(tmp_path: Path) -> None:
@@ -111,34 +112,36 @@ def test_returns_true_when_both_unset(tmp_path: Path) -> None:
         global_config=None,
         cwd=tmp_path,
     )
-    assert _should_create_learn_issue(ctx) is True
+    assert _should_create_learn_pr(ctx) is True
 
 
 # ---------------------------------------------------------------------------
-# _create_learn_issue_with_sessions
+# _create_learn_pr_with_sessions
 # ---------------------------------------------------------------------------
 
 
 def test_returns_early_when_plan_id_is_none(tmp_path: Path) -> None:
     """No-op when state.plan_id is None."""
     fake_issues = FakeGitHubIssues(username="testuser")
-    ctx = context_for_test(issues=fake_issues, cwd=tmp_path)
+    fake_github = FakeGitHub(issues_gateway=fake_issues)
+    ctx = context_for_test(github=fake_github, issues=fake_issues, cwd=tmp_path)
     state = _land_state(tmp_path, plan_id=None, merged_pr_number=99)
 
-    _create_learn_issue_with_sessions(ctx, state=state)
+    _create_learn_pr_with_sessions(ctx, state=state)
 
-    assert len(fake_issues.created_issues) == 0
+    assert len(fake_github.created_prs) == 0
 
 
 def test_returns_early_when_merged_pr_number_is_none(tmp_path: Path) -> None:
     """No-op when state.merged_pr_number is None."""
     fake_issues = FakeGitHubIssues(username="testuser")
-    ctx = context_for_test(issues=fake_issues, cwd=tmp_path)
+    fake_github = FakeGitHub(issues_gateway=fake_issues)
+    ctx = context_for_test(github=fake_github, issues=fake_issues, cwd=tmp_path)
     state = _land_state(tmp_path, plan_id="100", merged_pr_number=None)
 
-    _create_learn_issue_with_sessions(ctx, state=state)
+    _create_learn_pr_with_sessions(ctx, state=state)
 
-    assert len(fake_issues.created_issues) == 0
+    assert len(fake_github.created_prs) == 0
 
 
 def test_shows_warning_on_exception(
@@ -146,19 +149,19 @@ def test_shows_warning_on_exception(
     capsys: pytest.CaptureFixture[str],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Exception in _create_learn_issue_impl is caught and shown as warning."""
+    """Exception in _create_learn_pr_impl is caught and shown as warning."""
     from erk.cli.commands import land_learn as learn_mod
 
     def _raise(*_args: object, **_kwargs: object) -> None:
         raise RuntimeError("simulated network error")
 
-    monkeypatch.setattr(learn_mod, "_create_learn_issue_impl", _raise)
+    monkeypatch.setattr(learn_mod, "_create_learn_pr_impl", _raise)
 
     ctx = context_for_test(cwd=tmp_path)
     state = _land_state(tmp_path, plan_id="100", merged_pr_number=99)
 
     # Should NOT raise — exception is caught
-    _create_learn_issue_with_sessions(ctx, state=state)
+    _create_learn_pr_with_sessions(ctx, state=state)
 
     captured = capsys.readouterr()
     assert "Warning" in captured.err
@@ -166,23 +169,25 @@ def test_shows_warning_on_exception(
 
 
 # ---------------------------------------------------------------------------
-# _create_learn_issue_impl
+# _create_learn_pr_impl
 # ---------------------------------------------------------------------------
 
 
 def test_skips_when_config_disabled(tmp_path: Path) -> None:
     """Returns early when prompt_learn_on_land is False."""
     fake_issues = FakeGitHubIssues(username="testuser")
+    fake_github = FakeGitHub(issues_gateway=fake_issues)
     ctx = context_for_test(
+        github=fake_github,
         issues=fake_issues,
         local_config=LoadedConfig.test(prompt_learn_on_land=False),
         cwd=tmp_path,
     )
     state = _land_state(tmp_path, plan_id="100", merged_pr_number=99)
 
-    _create_learn_issue_impl(ctx, state=state)
+    _create_learn_pr_impl(ctx, state=state)
 
-    assert len(fake_issues.created_issues) == 0
+    assert len(fake_github.created_prs) == 0
 
 
 def test_skips_for_erk_learn_plan(tmp_path: Path) -> None:
@@ -206,9 +211,9 @@ def test_skips_for_erk_learn_plan(tmp_path: Path) -> None:
     )
     state = _land_state(tmp_path, plan_id="100", merged_pr_number=99)
 
-    _create_learn_issue_impl(ctx, state=state)
+    _create_learn_pr_impl(ctx, state=state)
 
-    assert len(fake_issues.created_issues) == 0
+    assert len(fake_github.created_prs) == 0
 
 
 def test_skips_when_plan_not_found(tmp_path: Path) -> None:
@@ -227,16 +232,16 @@ def test_skips_when_plan_not_found(tmp_path: Path) -> None:
     # plan_id "999" has no PR configured in FakeGitHub
     state = _land_state(tmp_path, plan_id="999", merged_pr_number=99)
 
-    _create_learn_issue_impl(ctx, state=state)
+    _create_learn_pr_impl(ctx, state=state)
 
-    assert len(fake_issues.created_issues) == 0
+    assert len(fake_github.created_prs) == 0
 
 
-def test_creates_issue_and_shows_success(
+def test_creates_pr_and_shows_success(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Happy path: plan found, not erk-learn, creates learn issue."""
+    """Happy path: plan found, not erk-learn, creates learn draft PR."""
     pr = _make_pr_details(
         pr_number=100,
         branch="feature",
@@ -246,29 +251,25 @@ def test_creates_issue_and_shows_success(
     fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn", "erk-plan"})
     fake_github = FakeGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
     fake_time = FakeTime()
+    fake_git = FakeGit(trunk_branches={tmp_path: "main"})
     plan_store = PlannedPRBackend(fake_github, fake_issues, time=fake_time)
 
     ctx = context_for_test(
+        git=fake_git,
         github=fake_github,
         issues=fake_issues,
         plan_store=plan_store,
+        time=fake_time,
         cwd=tmp_path,
     )
     state = _land_state(tmp_path, plan_id="100", merged_pr_number=42)
 
-    _create_learn_issue_impl(ctx, state=state)
+    _create_learn_pr_impl(ctx, state=state)
 
-    # Issue should have been created
-    assert len(fake_issues.created_issues) == 1
-    title, _body, labels = fake_issues.created_issues[0]
-    assert "Learn: Add widgets" in title
-    assert "erk-learn" in labels
-
-    # Plan content with source references is in the first comment
-    assert len(fake_issues.added_comments) >= 1
-    _plan_number, comment_body, _comment_id = fake_issues.added_comments[0]
-    assert "#100" in comment_body
-    assert "#42" in comment_body
+    # Draft PR should have been created
+    assert len(fake_github.created_prs) == 1
+    _branch, pr_title, _body, _base, _draft = fake_github.created_prs[0]
+    assert "Learn: Add widgets" in pr_title
 
     # Success output
     captured = capsys.readouterr()

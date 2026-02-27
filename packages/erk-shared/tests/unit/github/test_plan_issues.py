@@ -1,565 +1,172 @@
-"""Tests for plan_issues.py - Schema v2 plan issue creation."""
+"""Tests for plan_issues.py - objective issue creation and create_plan_draft_pr."""
 
 from pathlib import Path
 
 import pytest
 
+from erk_shared.gateway.branch_manager.fake import FakeBranchManager
+from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.plan_issues import (
     CreatePlanIssueResult,
     create_objective_issue,
-    create_plan_issue,
 )
 from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.plan_store.create_plan_draft_pr import (
+    CreatePlanDraftPRResult,
+    create_plan_draft_pr,
+)
 
 
-class TestCreatePlanIssueSuccess:
-    """Test successful plan issue creation scenarios."""
+def _create_plan(
+    *,
+    tmp_path: Path,
+    plan_content: str = "# My Feature Plan\n\nImplementation steps...",
+    title: str | None = None,
+    labels: list[str] | None = None,
+    source_repo: str | None = None,
+    objective_id: int | None = None,
+    created_from_session: str | None = None,
+    learned_from_issue: int | None = None,
+    fake_github: FakeGitHub | None = None,
+    fake_issues: FakeGitHubIssues | None = None,
+    fake_git: FakeGit | None = None,
+    fake_time: FakeTime | None = None,
+) -> CreatePlanDraftPRResult:
+    """Helper to create a plan draft PR with sensible defaults."""
+    if fake_issues is None:
+        fake_issues = FakeGitHubIssues(username="testuser")
+    if fake_github is None:
+        fake_github = FakeGitHub(issues_gateway=fake_issues)
+    if fake_git is None:
+        fake_git = FakeGit(trunk_branches={tmp_path: "main"})
+    if fake_time is None:
+        fake_time = FakeTime()
+    if labels is None:
+        labels = ["erk-pr", "erk-plan"]
 
-    def test_creates_standard_plan_issue(self, tmp_path: Path) -> None:
-        """Create a standard plan issue with minimal options."""
-        fake_gh = FakeGitHubIssues(username="testuser")
-        plan_content = "# My Feature Plan\n\nImplementation steps..."
+    return create_plan_draft_pr(
+        git=fake_git,
+        github=fake_github,
+        github_issues=fake_issues,
+        branch_manager=FakeBranchManager(),
+        time=fake_time,
+        repo_root=tmp_path,
+        cwd=tmp_path,
+        plan_content=plan_content,
+        title=title,
+        labels=labels,
+        source_repo=source_repo,
+        objective_id=objective_id,
+        created_from_session=created_from_session,
+        created_from_workflow_run_url=None,
+        learned_from_issue=learned_from_issue,
+    )
 
-        result = create_plan_issue(
-            github_issues=fake_gh,
-            repo_root=tmp_path,
-            plan_content=plan_content,
-            title=None,
-            extra_labels=None,
-            title_tag=None,
-            source_repo=None,
-            objective_id=None,
-            created_from_session=None,
-            created_from_workflow_run_url=None,
-            learned_from_issue=None,
-            lifecycle_stage=None,
-        )
+
+class TestCreatePlanDraftPRSuccess:
+    """Test successful draft PR creation scenarios."""
+
+    def test_creates_standard_plan_pr(self, tmp_path: Path) -> None:
+        """Create a standard plan draft PR with minimal options."""
+        fake_issues = FakeGitHubIssues(username="testuser")
+        fake_github = FakeGitHub(issues_gateway=fake_issues)
+
+        result = _create_plan(tmp_path=tmp_path, fake_github=fake_github, fake_issues=fake_issues)
 
         assert result.success is True
         assert result.plan_number == 1
         assert result.plan_url is not None
         assert result.title == "My Feature Plan"
+        assert result.branch_name is not None
         assert result.error is None
 
-        # Verify issue was created with correct title and labels
-        assert len(fake_gh.created_issues) == 1
-        title, body, labels = fake_gh.created_issues[0]
-        assert title == "[erk-plan] My Feature Plan"
-        assert labels == ["erk-pr", "erk-plan"]
+        # Verify draft PR was created
+        assert len(fake_github.created_prs) == 1
 
-        # Verify plan content was added as comment
-        assert len(fake_gh.added_comments) == 1
-        issue_num, comment, _comment_id = fake_gh.added_comments[0]
-        assert issue_num == 1
-        assert "My Feature Plan" in comment
-        assert "Implementation steps" in comment
+    def test_creates_learn_plan_pr(self, tmp_path: Path) -> None:
+        """Create a learn plan draft PR with learn-specific labels."""
+        fake_issues = FakeGitHubIssues(username="testuser")
+        fake_github = FakeGitHub(issues_gateway=fake_issues)
 
-    def test_creates_learn_plan_issue(self, tmp_path: Path) -> None:
-        """Create a learn plan issue with learn-specific labels."""
-        fake_gh = FakeGitHubIssues(username="testuser")
-        plan_content = "# Extraction Plan: main\n\nAnalysis..."
-
-        result = create_plan_issue(
-            github_issues=fake_gh,
-            repo_root=tmp_path,
-            plan_content=plan_content,
-            title=None,
-            extra_labels=["erk-learn"],
-            title_tag=None,
-            source_repo=None,
-            objective_id=None,
-            created_from_session=None,
-            created_from_workflow_run_url=None,
-            learned_from_issue=None,
-            lifecycle_stage=None,
+        result = _create_plan(
+            tmp_path=tmp_path,
+            plan_content="# Extraction Plan: main\n\nAnalysis...",
+            labels=["erk-pr", "erk-learn"],
+            fake_github=fake_github,
+            fake_issues=fake_issues,
         )
 
         assert result.success is True
         assert result.title == "Extraction Plan: main"
 
-        # Verify labels include erk-pr and erk-learn (not erk-plan for learn plans)
-        title, body, labels = fake_gh.created_issues[0]
-        assert title == "[erk-learn] Extraction Plan: main"
-        assert "erk-pr" in labels
-        assert "erk-learn" in labels
-        assert "erk-plan" not in labels
-
-        # Verify both labels were created
-        assert fake_gh.labels == {"erk-pr", "erk-learn"}
+        # Verify draft PR was created with learn tag
+        assert len(fake_github.created_prs) == 1
+        _branch, pr_title, _body, _base, _draft = fake_github.created_prs[0]
+        assert "[erk-learn]" in pr_title
 
     def test_uses_provided_title(self, tmp_path: Path) -> None:
         """Use provided title instead of extracting from H1."""
-        fake_gh = FakeGitHubIssues(username="testuser")
-        plan_content = "# Wrong Title\n\nContent..."
-
-        result = create_plan_issue(
-            github_issues=fake_gh,
-            repo_root=tmp_path,
-            plan_content=plan_content,
+        result = _create_plan(
+            tmp_path=tmp_path,
+            plan_content="# Wrong Title\n\nContent...",
             title="Correct Title",
-            extra_labels=None,
-            title_tag=None,
-            source_repo=None,
-            objective_id=None,
-            created_from_session=None,
-            created_from_workflow_run_url=None,
-            learned_from_issue=None,
-            lifecycle_stage=None,
         )
 
         assert result.success is True
         assert result.title == "Correct Title"
-        title, _, _ = fake_gh.created_issues[0]
-        assert title == "[erk-plan] Correct Title"
 
-    def test_uses_custom_title_tag(self, tmp_path: Path) -> None:
-        """Use custom title tag."""
-        fake_gh = FakeGitHubIssues(username="testuser")
-        plan_content = "# My Plan\n\nContent..."
-
-        result = create_plan_issue(
-            github_issues=fake_gh,
-            repo_root=tmp_path,
-            plan_content=plan_content,
-            title=None,
-            extra_labels=None,
-            title_tag="[custom-suffix]",
-            source_repo=None,
-            objective_id=None,
-            created_from_session=None,
-            created_from_workflow_run_url=None,
-            learned_from_issue=None,
-            lifecycle_stage=None,
-        )
+    def test_branch_name_contains_title_slug(self, tmp_path: Path) -> None:
+        """Branch name should be derived from title."""
+        result = _create_plan(tmp_path=tmp_path)
 
         assert result.success is True
-        title, _, _ = fake_gh.created_issues[0]
-        assert title == "[custom-suffix] My Plan"
-
-    def test_adds_extra_labels(self, tmp_path: Path) -> None:
-        """Add extra labels beyond erk-plan."""
-        fake_gh = FakeGitHubIssues(username="testuser")
-        plan_content = "# My Plan\n\nContent..."
-
-        result = create_plan_issue(
-            github_issues=fake_gh,
-            repo_root=tmp_path,
-            plan_content=plan_content,
-            title=None,
-            extra_labels=["bug", "priority-high"],
-            title_tag=None,
-            source_repo=None,
-            objective_id=None,
-            created_from_session=None,
-            created_from_workflow_run_url=None,
-            learned_from_issue=None,
-            lifecycle_stage=None,
-        )
-
-        assert result.success is True
-        _, _, labels = fake_gh.created_issues[0]
-        assert labels == ["erk-pr", "erk-plan", "bug", "priority-high"]
-
-    def test_includes_source_repo_for_cross_repo_plans(self, tmp_path: Path) -> None:
-        """Include source_repo in metadata for cross-repo plans."""
-        fake_gh = FakeGitHubIssues(username="testuser")
-        plan_content = "# Cross-Repo Plan\n\nContent..."
-
-        result = create_plan_issue(
-            github_issues=fake_gh,
-            repo_root=tmp_path,
-            plan_content=plan_content,
-            title=None,
-            extra_labels=None,
-            title_tag=None,
-            source_repo="owner/impl-repo",
-            objective_id=None,
-            created_from_session=None,
-            created_from_workflow_run_url=None,
-            learned_from_issue=None,
-            lifecycle_stage=None,
-        )
-
-        assert result.success is True
-        # Metadata is in the issue body - verify body contains source_repo
-        _, body, _ = fake_gh.created_issues[0]
-        assert "source_repo:" in body
-        assert "owner/impl-repo" in body
-        # Schema version remains 2 (source_repo is just an optional field)
-        assert "schema_version: '2'" in body
-
-    def test_omits_source_repo_for_same_repo_plans(self, tmp_path: Path) -> None:
-        """Omit source_repo for same-repo plans."""
-        fake_gh = FakeGitHubIssues(username="testuser")
-        plan_content = "# Same-Repo Plan\n\nContent..."
-
-        result = create_plan_issue(
-            github_issues=fake_gh,
-            repo_root=tmp_path,
-            plan_content=plan_content,
-            title=None,
-            extra_labels=None,
-            title_tag=None,
-            source_repo=None,
-            objective_id=None,
-            created_from_session=None,
-            created_from_workflow_run_url=None,
-            learned_from_issue=None,
-            lifecycle_stage=None,
-        )
-
-        assert result.success is True
-        _, body, _ = fake_gh.created_issues[0]
-        # source_repo should not appear in the body
-        assert "source_repo:" not in body
-        # Schema version is always 2
-        assert "schema_version: '2'" in body
+        assert result.branch_name is not None
+        assert result.branch_name.startswith("plnd/")
 
 
-class TestCreatePlanIssueTitleExtraction:
-    """Test title learn from various plan formats."""
+class TestCreatePlanDraftPRTitleExtraction:
+    """Test title extraction from various plan formats."""
 
     def test_extracts_h1_title(self, tmp_path: Path) -> None:
         """Extract title from H1 heading."""
-        fake_gh = FakeGitHubIssues(username="testuser")
-        plan_content = "# Feature: Add Auth\n\nDetails..."
-
-        result = create_plan_issue(
-            github_issues=fake_gh,
-            repo_root=tmp_path,
-            plan_content=plan_content,
-            title=None,
-            extra_labels=None,
-            title_tag=None,
-            source_repo=None,
-            objective_id=None,
-            created_from_session=None,
-            created_from_workflow_run_url=None,
-            learned_from_issue=None,
-            lifecycle_stage=None,
+        result = _create_plan(
+            tmp_path=tmp_path,
+            plan_content="# Feature: Add Auth\n\nDetails...",
         )
 
         assert result.title == "Feature: Add Auth"
 
     def test_strips_plan_prefix(self, tmp_path: Path) -> None:
         """Strip common plan prefixes from title."""
-        fake_gh = FakeGitHubIssues(username="testuser")
-        plan_content = "# Plan: Add Feature X\n\nDetails..."
-
-        result = create_plan_issue(
-            github_issues=fake_gh,
-            repo_root=tmp_path,
-            plan_content=plan_content,
-            title=None,
-            extra_labels=None,
-            title_tag=None,
-            source_repo=None,
-            objective_id=None,
-            created_from_session=None,
-            created_from_workflow_run_url=None,
-            learned_from_issue=None,
-            lifecycle_stage=None,
+        result = _create_plan(
+            tmp_path=tmp_path,
+            plan_content="# Plan: Add Feature X\n\nDetails...",
         )
 
         assert result.title == "Add Feature X"
 
-    def test_strips_implementation_plan_prefix(self, tmp_path: Path) -> None:
-        """Strip 'Implementation Plan:' prefix from title."""
-        fake_gh = FakeGitHubIssues(username="testuser")
-        plan_content = "# Implementation Plan: Refactor Y\n\nDetails..."
 
-        result = create_plan_issue(
-            github_issues=fake_gh,
-            repo_root=tmp_path,
-            plan_content=plan_content,
-            title=None,
-            extra_labels=None,
-            title_tag=None,
-            source_repo=None,
-            objective_id=None,
-            created_from_session=None,
-            created_from_workflow_run_url=None,
-            learned_from_issue=None,
-            lifecycle_stage=None,
-        )
+class TestCreatePlanDraftPRResultDataclass:
+    """Test CreatePlanDraftPRResult and CreatePlanIssueResult dataclasses."""
 
-        assert result.title == "Refactor Y"
-
-
-class TestCreatePlanIssueErrors:
-    """Test error handling scenarios."""
-
-    def test_fails_when_not_authenticated(self, tmp_path: Path) -> None:
-        """Fail when GitHub username cannot be retrieved."""
-        fake_gh = FakeGitHubIssues(username=None)
-        plan_content = "# My Plan\n\nContent..."
-
-        result = create_plan_issue(
-            github_issues=fake_gh,
-            repo_root=tmp_path,
-            plan_content=plan_content,
-            title=None,
-            extra_labels=None,
-            title_tag=None,
-            source_repo=None,
-            objective_id=None,
-            created_from_session=None,
-            created_from_workflow_run_url=None,
-            learned_from_issue=None,
-            lifecycle_stage=None,
-        )
-
-        assert result.success is False
-        assert result.plan_number is None
-        assert result.plan_url is None
-        assert result.error is not None
-        assert "not authenticated" in result.error.lower()
-
-    def test_fails_on_label_creation_error(self, tmp_path: Path) -> None:
-        """Fail when label creation fails."""
-
-        class FailingLabelGitHubIssues(FakeGitHubIssues):
-            def ensure_label_exists(
-                self, repo_root: Path, label: str, description: str, color: str
-            ) -> None:
-                raise RuntimeError("Permission denied")
-
-        fake_gh = FailingLabelGitHubIssues(username="testuser")
-        plan_content = "# My Plan\n\nContent..."
-
-        result = create_plan_issue(
-            github_issues=fake_gh,
-            repo_root=tmp_path,
-            plan_content=plan_content,
-            title=None,
-            extra_labels=None,
-            title_tag=None,
-            source_repo=None,
-            objective_id=None,
-            created_from_session=None,
-            created_from_workflow_run_url=None,
-            learned_from_issue=None,
-            lifecycle_stage=None,
-        )
-
-        assert result.success is False
-        assert result.plan_number is None
-        assert result.error is not None
-        assert "Failed to ensure labels exist" in result.error
-
-    def test_fails_on_issue_creation_error(self, tmp_path: Path) -> None:
-        """Fail when issue creation fails."""
-
-        class FailingIssueGitHubIssues(FakeGitHubIssues):
-            def create_issue(self, repo_root: Path, title: str, body: str, labels: list[str]):
-                raise RuntimeError("API rate limit exceeded")
-
-        fake_gh = FailingIssueGitHubIssues(username="testuser")
-        plan_content = "# My Plan\n\nContent..."
-
-        result = create_plan_issue(
-            github_issues=fake_gh,
-            repo_root=tmp_path,
-            plan_content=plan_content,
-            title=None,
-            extra_labels=None,
-            title_tag=None,
-            source_repo=None,
-            objective_id=None,
-            created_from_session=None,
-            created_from_workflow_run_url=None,
-            learned_from_issue=None,
-            lifecycle_stage=None,
-        )
-
-        assert result.success is False
-        assert result.plan_number is None
-        assert result.error is not None
-        assert "Failed to create GitHub issue" in result.error
-
-
-class TestCreatePlanIssuePartialSuccess:
-    """Test partial success scenarios (issue created, comment failed)."""
-
-    def test_reports_partial_success_when_comment_fails(self, tmp_path: Path) -> None:
-        """Report partial success when issue created but comment fails."""
-
-        class FailingCommentGitHubIssues(FakeGitHubIssues):
-            def add_comment(self, repo_root: Path, number: int, body: str) -> int:
-                # Issue 1 exists because create_issue was called
-                raise RuntimeError("Comment too large")
-
-        fake_gh = FailingCommentGitHubIssues(username="testuser")
-        plan_content = "# My Plan\n\nContent..."
-
-        result = create_plan_issue(
-            github_issues=fake_gh,
-            repo_root=tmp_path,
-            plan_content=plan_content,
-            title=None,
-            extra_labels=None,
-            title_tag=None,
-            source_repo=None,
-            objective_id=None,
-            created_from_session=None,
-            created_from_workflow_run_url=None,
-            learned_from_issue=None,
-            lifecycle_stage=None,
-        )
-
-        # Partial success: issue created but comment failed
-        assert result.success is False
-        assert result.plan_number == 1  # Issue was created
-        assert result.plan_url is not None
-        assert result.error is not None
-        assert "created but failed to add plan comment" in result.error
-
-    def test_partial_success_preserves_title(self, tmp_path: Path) -> None:
-        """Preserve extracted title even on partial success."""
-
-        class FailingCommentGitHubIssues(FakeGitHubIssues):
-            def add_comment(self, repo_root: Path, number: int, body: str) -> int:
-                raise RuntimeError("Network error")
-
-        fake_gh = FailingCommentGitHubIssues(username="testuser")
-        plan_content = "# Important Feature\n\nContent..."
-
-        result = create_plan_issue(
-            github_issues=fake_gh,
-            repo_root=tmp_path,
-            plan_content=plan_content,
-            title=None,
-            extra_labels=None,
-            title_tag=None,
-            source_repo=None,
-            objective_id=None,
-            created_from_session=None,
-            created_from_workflow_run_url=None,
-            learned_from_issue=None,
-            lifecycle_stage=None,
-        )
-
-        assert result.success is False
-        assert result.title == "Important Feature"
-
-
-class TestCreatePlanIssueLabelManagement:
-    """Test label creation and management."""
-
-    def test_creates_erk_plan_label_if_missing(self, tmp_path: Path) -> None:
-        """Create erk-plan label if it doesn't exist."""
-        fake_gh = FakeGitHubIssues(username="testuser")
-        plan_content = "# My Plan\n\nContent..."
-
-        result = create_plan_issue(
-            github_issues=fake_gh,
-            repo_root=tmp_path,
-            plan_content=plan_content,
-            title=None,
-            extra_labels=None,
-            title_tag=None,
-            source_repo=None,
-            objective_id=None,
-            created_from_session=None,
-            created_from_workflow_run_url=None,
-            learned_from_issue=None,
-            lifecycle_stage=None,
-        )
-
-        assert result.success is True
-        assert "erk-pr" in fake_gh.labels
-        assert "erk-plan" in fake_gh.labels
-        # Verify labels were created with correct colors
-        assert len(fake_gh.created_labels) >= 2
-        label_names = [label[0] for label in fake_gh.created_labels]
-        assert "erk-pr" in label_names
-        assert "erk-plan" in label_names
-
-    def test_creates_both_labels_for_learn(self, tmp_path: Path) -> None:
-        """Create both erk-pr and erk-learn labels for learn plans."""
-        fake_gh = FakeGitHubIssues(username="testuser")
-        plan_content = "# Extraction Plan\n\nContent..."
-
-        result = create_plan_issue(
-            github_issues=fake_gh,
-            repo_root=tmp_path,
-            plan_content=plan_content,
-            title=None,
-            extra_labels=["erk-learn"],
-            title_tag=None,
-            source_repo=None,
-            objective_id=None,
-            created_from_session=None,
-            created_from_workflow_run_url=None,
-            learned_from_issue=None,
-            lifecycle_stage=None,
-        )
-
-        assert result.success is True
-        assert "erk-pr" in fake_gh.labels
-        assert "erk-learn" in fake_gh.labels
-
-    def test_does_not_create_existing_labels(self, tmp_path: Path) -> None:
-        """Don't create labels that already exist."""
-        fake_gh = FakeGitHubIssues(
-            username="testuser",
-            labels={"erk-pr", "erk-plan"},  # Already exist
-        )
-        plan_content = "# My Plan\n\nContent..."
-
-        result = create_plan_issue(
-            github_issues=fake_gh,
-            repo_root=tmp_path,
-            plan_content=plan_content,
-            title=None,
-            extra_labels=None,
-            title_tag=None,
-            source_repo=None,
-            objective_id=None,
-            created_from_session=None,
-            created_from_workflow_run_url=None,
-            learned_from_issue=None,
-            lifecycle_stage=None,
-        )
-
-        assert result.success is True
-        # Label should not have been re-created
-        assert len(fake_gh.created_labels) == 0
-
-    def test_deduplicates_extra_labels(self, tmp_path: Path) -> None:
-        """Don't duplicate labels if extra_labels includes erk-plan."""
-        fake_gh = FakeGitHubIssues(username="testuser")
-        plan_content = "# My Plan\n\nContent..."
-
-        result = create_plan_issue(
-            github_issues=fake_gh,
-            repo_root=tmp_path,
-            plan_content=plan_content,
-            title=None,
-            extra_labels=["erk-plan", "bug"],  # erk-plan would be duplicate
-            title_tag=None,
-            source_repo=None,
-            objective_id=None,
-            created_from_session=None,
-            created_from_workflow_run_url=None,
-            learned_from_issue=None,
-            lifecycle_stage=None,
-        )
-
-        assert result.success is True
-        _, _, labels = fake_gh.created_issues[0]
-        # Should not have duplicate erk-plan
-        assert labels.count("erk-plan") == 1
-        assert "erk-pr" in labels
-        assert "bug" in labels
-
-
-class TestCreatePlanIssueResultDataclass:
-    """Test CreatePlanIssueResult dataclass."""
-
-    def test_result_is_frozen(self) -> None:
+    def test_draft_pr_result_is_frozen(self) -> None:
         """Verify result is immutable."""
+        result = CreatePlanDraftPRResult(
+            success=True,
+            plan_number=1,
+            plan_url="https://example.com/1",
+            branch_name="plnd/test-01-15-1430",
+            title="Test",
+            error=None,
+        )
+
+        with pytest.raises(AttributeError):
+            result.success = False  # type: ignore[misc]
+
+    def test_plan_issue_result_is_frozen(self) -> None:
+        """Verify CreatePlanIssueResult is immutable."""
         result = CreatePlanIssueResult(
             success=True,
             plan_number=1,
@@ -570,22 +177,6 @@ class TestCreatePlanIssueResultDataclass:
 
         with pytest.raises(AttributeError):
             result.success = False  # type: ignore[misc]
-
-    def test_result_fields(self) -> None:
-        """Verify all fields are accessible."""
-        result = CreatePlanIssueResult(
-            success=False,
-            plan_number=42,
-            plan_url="https://github.com/test/repo/issues/42",
-            title="My Title",
-            error="Something went wrong",
-        )
-
-        assert result.success is False
-        assert result.plan_number == 42
-        assert result.plan_url == "https://github.com/test/repo/issues/42"
-        assert result.title == "My Title"
-        assert result.error == "Something went wrong"
 
 
 class TestCreateObjectiveIssue:
@@ -868,100 +459,3 @@ class TestCreateObjectiveIssueSlugValidation:
         # Verify no slug in body
         _, body, _ = fake_gh.created_issues[0]
         assert "slug:" not in body
-
-
-class TestCreatePlanIssueCommandsSection:
-    """Test that commands section is added correctly."""
-
-    def test_standard_plan_includes_commands_section(self, tmp_path: Path) -> None:
-        """Standard plans should include commands section with correct issue number."""
-        fake_gh = FakeGitHubIssues(username="testuser")
-        plan_content = "# My Feature Plan\n\nImplementation steps..."
-
-        result = create_plan_issue(
-            github_issues=fake_gh,
-            repo_root=tmp_path,
-            plan_content=plan_content,
-            title=None,
-            extra_labels=None,
-            title_tag=None,
-            source_repo=None,
-            objective_id=None,
-            created_from_session=None,
-            created_from_workflow_run_url=None,
-            learned_from_issue=None,
-            lifecycle_stage=None,
-        )
-
-        assert result.success is True
-        assert result.plan_number == 1
-
-        # Verify issue body was updated with commands section
-        assert len(fake_gh.updated_bodies) == 1
-        issue_num, updated_body = fake_gh.updated_bodies[0]
-        assert issue_num == 1
-
-        # Check for commands section with correct issue number
-        assert "## Commands" in updated_body
-        assert "erk br co --for-plan 1" in updated_body
-        assert "erk pr dispatch 1" in updated_body
-
-    def test_learn_plan_does_not_include_commands_section(self, tmp_path: Path) -> None:
-        """Extraction plans should NOT include commands section."""
-        fake_gh = FakeGitHubIssues(username="testuser")
-        plan_content = "# Extraction Plan\n\nAnalysis..."
-
-        result = create_plan_issue(
-            github_issues=fake_gh,
-            repo_root=tmp_path,
-            plan_content=plan_content,
-            title=None,
-            extra_labels=["erk-learn"],
-            title_tag=None,
-            source_repo=None,
-            objective_id=None,
-            created_from_session=None,
-            created_from_workflow_run_url=None,
-            learned_from_issue=None,
-            lifecycle_stage=None,
-        )
-
-        assert result.success is True
-        assert result.plan_number == 1
-
-        # Verify issue body was updated but without commands section
-        assert len(fake_gh.updated_bodies) == 1
-        issue_num, updated_body = fake_gh.updated_bodies[0]
-        assert issue_num == 1
-
-        # Commands section should NOT be present
-        assert "## Commands" not in updated_body
-        assert "erk br co --for-plan" not in updated_body
-
-    def test_commands_section_uses_correct_plan_number(self, tmp_path: Path) -> None:
-        """Commands section should reference the actual plan number."""
-        fake_gh = FakeGitHubIssues(username="testuser", next_issue_number=42)
-        plan_content = "# My Plan\n\nContent..."
-
-        result = create_plan_issue(
-            github_issues=fake_gh,
-            repo_root=tmp_path,
-            plan_content=plan_content,
-            title=None,
-            extra_labels=None,
-            title_tag=None,
-            source_repo=None,
-            objective_id=None,
-            created_from_session=None,
-            created_from_workflow_run_url=None,
-            learned_from_issue=None,
-            lifecycle_stage=None,
-        )
-
-        assert result.success is True
-        assert result.plan_number == 42
-
-        # Verify commands reference issue 42, not 1
-        _, updated_body = fake_gh.updated_bodies[0]
-        assert "erk br co --for-plan 42" in updated_body
-        assert "erk pr dispatch 42" in updated_body

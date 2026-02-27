@@ -9,8 +9,9 @@ from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
-from erk_shared.gateway.github.plan_issues import create_plan_issue
+from erk_shared.output.next_steps import format_planned_pr_next_steps_plain
 from erk_shared.output.output import user_output
+from erk_shared.plan_store.create_plan_draft_pr import create_plan_draft_pr
 
 
 @click.command("create")
@@ -29,7 +30,7 @@ def pr_create(
     title: str | None,
     label: tuple[str, ...],
 ) -> None:
-    """Create a plan from markdown content.
+    """Create a plan as a draft PR from markdown content.
 
     Supports two input modes:
     - File: --file PATH (recommended for automation)
@@ -70,8 +71,11 @@ def pr_create(
     # Validate content is not empty
     Ensure.not_empty(content.strip(), "Plan content is empty. Provide a non-empty plan.")
 
-    # Convert extra labels tuple to list
-    extra_labels = list(label) if label else None
+    # Build labels: erk-pr + erk-plan + any extra
+    labels = ["erk-pr", "erk-plan"]
+    for extra in label:
+        if extra not in labels:
+            labels.append(extra)
 
     # Determine source_repo for cross-repo plans
     # When plans_repo is configured, plans are stored in a separate repo
@@ -81,41 +85,42 @@ def pr_create(
     if plans_repo is not None and repo.github is not None:
         source_repo = f"{repo.github.owner}/{repo.github.repo}"
 
-    # Use consolidated create_plan_issue for the entire workflow
-    result = create_plan_issue(
+    # Create plan as a draft PR
+    result = create_plan_draft_pr(
+        git=ctx.git,
+        github=ctx.github,
         github_issues=ctx.issues,
+        branch_manager=ctx.branch_manager,
+        time=ctx.time,
         repo_root=repo_root,
+        cwd=ctx.cwd,
         plan_content=content,
         title=title,
-        extra_labels=extra_labels,
-        title_tag=None,
+        labels=labels,
         source_repo=source_repo,
         objective_id=None,
         created_from_session=None,
         created_from_workflow_run_url=None,
         learned_from_issue=None,
-        lifecycle_stage="planned",
     )
 
     if not result.success:
-        if result.plan_number is not None:
-            # Partial success - issue created but comment failed
-            user_output(
-                click.style("Warning: ", fg="yellow")
-                + f"Plan created but failed to add plan comment: {result.error}"
-            )
-            user_output(f"Plan #{result.plan_number} created but incomplete.")
-            user_output(f"URL: {result.plan_url}")
-        else:
-            user_output(click.style("Error: ", fg="red") + str(result.error))
+        user_output(click.style("Error: ", fg="red") + str(result.error))
         raise SystemExit(1)
 
     # Display success message with next steps
     user_output(f"Created plan #{result.plan_number}")
     user_output("")
     user_output(f"Plan: {result.plan_url}")
+    user_output(f"Branch: {result.branch_name}")
     user_output("")
-    user_output("Next steps:")
-    user_output(f"  View:       erk get {result.plan_number}")
-    user_output(f"  Checkout:   erk br co --for-plan {result.plan_number}")
-    user_output(f"  Submit:     erk pr submit {result.plan_number}")
+    if (
+        result.plan_number is not None
+        and result.branch_name is not None
+        and result.plan_url is not None
+    ):
+        user_output(
+            format_planned_pr_next_steps_plain(
+                result.plan_number, branch_name=result.branch_name, url=result.plan_url
+            )
+        )

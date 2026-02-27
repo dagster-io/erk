@@ -1,14 +1,11 @@
-"""Create GitHub issue from plan content (via stdin) with erk-plan label.
+"""Create GitHub draft PR from plan content (via stdin) with erk-plan label.
 
 This exec command handles the complete workflow for creating a plan:
 1. Read plan from stdin
-2. Extract title from plan
-3. Ensure erk-plan label exists
-4. Create GitHub issue with plan body and label
+2. Create a branch from origin/trunk
+3. Commit plan.md + ref.json to branch via git plumbing
+4. Push branch and create draft PR
 5. Return structured JSON result
-
-This replaces the complex shell orchestration in the slash command with a single,
-well-tested Python command that uses the ABC interface for GitHub operations.
 """
 
 import json
@@ -16,24 +13,25 @@ import sys
 
 import click
 
-from erk_shared.context.helpers import require_issues as require_github_issues
-from erk_shared.context.helpers import require_repo_root
-from erk_shared.gateway.github.metadata.core import format_plan_issue_body
-from erk_shared.gateway.github.types import BodyText
-from erk_shared.plan_utils import extract_title_from_plan
+from erk_shared.context.helpers import (
+    require_branch_manager,
+    require_cwd,
+    require_git,
+    require_github,
+    require_issues,
+    require_repo_root,
+    require_time,
+)
+from erk_shared.plan_store.create_plan_draft_pr import create_plan_draft_pr
 
 
 @click.command(name="create-plan-from-context")
 @click.pass_context
 def create_plan_from_context(ctx: click.Context) -> None:
-    """Create GitHub issue from plan content with erk-plan label.
+    """Create GitHub draft PR from plan content with erk-plan label.
 
-    Reads plan content from stdin, extracts title, ensures erk-plan label exists,
-    creates issue with collapsible plan body and execution commands, and returns JSON result.
-
-    Workflow:
-    1. Create issue with plan body wrapped in collapsible metadata block
-    2. Update issue body to include execution commands (using returned issue number)
+    Reads plan content from stdin, creates a branch, commits plan files,
+    pushes, and creates a draft PR. Returns JSON result.
 
     Usage:
         echo "$plan" | erk exec create-plan-from-context
@@ -43,11 +41,16 @@ def create_plan_from_context(ctx: click.Context) -> None:
         1: Error (empty plan, gh failure, etc.)
 
     Output:
-        JSON object: {"success": true, "plan_number": 123, "plan_url": "..."}
+        JSON object: {"success": true, "plan_number": 123, "plan_url": "...", "branch_name": "..."}
     """
-    # Get GitHub Issues from context (LBYL check in helper)
-    github = require_github_issues(ctx)
+    # Get dependencies from context
+    git = require_git(ctx)
+    github = require_github(ctx)
+    github_issues = require_issues(ctx)
+    branch_manager = require_branch_manager(ctx)
+    time = require_time(ctx)
     repo_root = require_repo_root(ctx)
+    cwd = require_cwd(ctx)
 
     # Read plan from stdin
     plan = sys.stdin.read()
@@ -57,59 +60,34 @@ def create_plan_from_context(ctx: click.Context) -> None:
         click.echo("Error: Empty plan content received", err=True)
         raise SystemExit(1)
 
-    # Extract title (pure function call)
-    title = extract_title_from_plan(plan)
+    # Create plan as a draft PR
+    result = create_plan_draft_pr(
+        git=git,
+        github=github,
+        github_issues=github_issues,
+        branch_manager=branch_manager,
+        time=time,
+        repo_root=repo_root,
+        cwd=cwd,
+        plan_content=plan,
+        title=None,
+        labels=["erk-pr", "erk-plan"],
+        source_repo=None,
+        objective_id=None,
+        created_from_session=None,
+        created_from_workflow_run_url=None,
+        learned_from_issue=None,
+    )
 
-    # Initial body: just the plan content (without commands, since we don't have issue number yet)
-    # We'll update it after creation with the full formatted body including commands
-    initial_body = plan.strip()
-
-    # Ensure labels exist (ABC interface)
-    try:
-        github.ensure_label_exists(
-            repo_root=repo_root,
-            label="erk-pr",
-            description="Plan managed as a draft PR",
-            color="1D76DB",
-        )
-        github.ensure_label_exists(
-            repo_root=repo_root,
-            label="erk-plan",
-            description="Implementation plan for manual execution",
-            color="0E8A16",
-        )
-    except RuntimeError as e:
-        click.echo(f"Error: Failed to ensure label exists: {e}", err=True)
-        raise SystemExit(1) from e
-
-    # Create issue (ABC interface with EAFP pattern)
-    # Add [erk-plan] prefix to title for visibility
-    issue_title = f"[erk-plan] {title}"
-    try:
-        result = github.create_issue(
-            repo_root=repo_root,
-            title=issue_title,
-            body=initial_body,
-            labels=["erk-pr", "erk-plan"],
-        )
-    except RuntimeError as e:
-        click.echo(f"Error: Failed to create GitHub issue: {e}", err=True)
-        raise SystemExit(1) from e
-
-    # Now that we have the issue number, format the complete body with commands
-    formatted_body = format_plan_issue_body(plan.strip(), result.number, url=result.url)
-
-    # Update the issue body with the formatted version
-    try:
-        github.update_issue_body(repo_root, result.number, BodyText(content=formatted_body))
-    except RuntimeError as e:
-        click.echo(f"Error: Failed to update issue body: {e}", err=True)
-        raise SystemExit(1) from e
+    if not result.success:
+        click.echo(f"Error: {result.error}", err=True)
+        raise SystemExit(1)
 
     # Output structured JSON
     output = {
         "success": True,
-        "plan_number": result.number,
-        "plan_url": result.url,
+        "plan_number": result.plan_number,
+        "plan_url": result.plan_url,
+        "branch_name": result.branch_name,
     }
     click.echo(json.dumps(output))
