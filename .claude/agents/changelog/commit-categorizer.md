@@ -102,6 +102,8 @@ Use the commit details from the JSON output (subject, body, files_changed) to ca
 
 **IMPORTANT: Major Changes must be USER-VISIBLE.** The test: "Does an end user running `erk` commands see significantly different behavior?" Internal architecture improvements, gateway refactoring, retry mechanisms, schema-driven config, and infrastructure changes are NEVER Major Changes—they are implementation details that should be filtered entirely.
 
+**Not every release needs Major Changes.** Do not force a roll-up or a collection of fixes into this category just to have one. Only use Major Changes when the change is genuinely significant enough to warrant special attention in a release announcement.
+
 **Major Change Entry Requirements:**
 
 When writing a Major Change entry, always include:
@@ -215,7 +217,7 @@ Changes to development tooling used only by erk developers should be filtered:
 
 #### Roll-Up Detection
 
-When multiple commits are part of a larger initiative, group them under a single Major Change entry:
+When multiple commits are part of a larger initiative, group them under a single entry in the appropriate category (Added, Changed, Fixed, or Removed). Only elevate to Major Changes if the consolidated initiative would independently qualify as a major change.
 
 **Detection patterns:**
 
@@ -225,8 +227,9 @@ When multiple commits are part of a larger initiative, group them under a single
 
 **Roll-up examples:**
 
-- 5+ commits about "kit" removal -> "Eliminate kit infrastructure entirely"
-- 3+ commits about "artifact sync" -> "Add unified artifact distribution system"
+- 5+ commits about "kit" removal -> single Removed entry: "Eliminate kit infrastructure entirely"
+- 3+ commits about "artifact sync" -> single Added entry: "Add unified artifact distribution system"
+- Multiple bug fix commits on same subsystem -> single Fixed entry
 - Multiple "objective skill" commits -> single entry or filter entirely
 
 **Presentation:**
@@ -235,7 +238,7 @@ When roll-up detected, include in proposal:
 
 ```
 **Detected Roll-Up:** {n} commits appear related to "{topic}"
-Suggest consolidating into single Major Change: "{proposed description}"
+Suggest consolidating into single {Category} entry: "{proposed description}"
 Commits: {list of hashes}
 ```
 
