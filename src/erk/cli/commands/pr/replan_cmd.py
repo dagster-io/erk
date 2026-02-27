@@ -7,17 +7,17 @@ from erk_shared.context.types import InteractiveAgentConfig
 
 
 @click.command("replan")
-@click.argument("issue_refs", nargs=-1, required=True)
+@click.argument("plan_refs", nargs=-1, required=True)
 @click.pass_obj
-def pr_replan(ctx: ErkContext, issue_refs: tuple[str, ...]) -> None:
+def pr_replan(ctx: ErkContext, plan_refs: tuple[str, ...]) -> None:
     """Replan existing plan(s) against current codebase state.
 
-    ISSUE_REFS are plan numbers or GitHub URLs. Multiple refs can be provided
+    PLAN_REFS are plan numbers or GitHub URLs. Multiple refs can be provided
     to consolidate plans into a single unified plan.
 
     This command launches Claude in plan mode to re-evaluate existing plan(s)
     against the current codebase, creating a fresh plan that incorporates
-    any changes. Original issues are closed after the new plan is created.
+    any changes. Original plans are closed after the new plan is created.
 
     Examples:
         erk pr replan 2521
@@ -37,8 +37,8 @@ def pr_replan(ctx: ErkContext, issue_refs: tuple[str, ...]) -> None:
     )
 
     # Replace current process with Claude
-    click.echo(f"Launching Claude to replan: {', '.join(issue_refs)}")
-    command = f"/erk:replan {' '.join(issue_refs)}"
+    click.echo(f"Launching Claude to replan: {', '.join(plan_refs)}")
+    command = f"/erk:replan {' '.join(plan_refs)}"
     try:
         ctx.agent_launcher.launch_interactive(config, command=command)
     except RuntimeError as e:

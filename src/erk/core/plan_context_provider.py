@@ -15,10 +15,10 @@ from erk_shared.plan_store.types import PlanNotFound
 
 @dataclass(frozen=True)
 class PlanContext:
-    """Context from an erk-plan issue for PR generation.
+    """Context from an erk plan for PR generation.
 
     Attributes:
-        plan_id: The plan identifier (e.g., "123" for GitHub issue numbers)
+        plan_id: The plan identifier (e.g., "123" for plan numbers)
         plan_content: The full plan markdown content
         objective_summary: Optional summary of the parent objective (e.g., "Objective #123: Title")
     """
@@ -29,7 +29,7 @@ class PlanContext:
 
 
 class PlanContextProvider:
-    """Provides plan context for branches linked to erk-plan issues.
+    """Provides plan context for branches linked to erk plans.
 
     This provider extracts plan content from the plan backend when a branch
     is associated with a plan. Uses PlanBackend.get_plan_for_branch() to

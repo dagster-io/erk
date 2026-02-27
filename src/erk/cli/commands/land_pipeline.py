@@ -425,7 +425,7 @@ def merge_pr(ctx: ErkContext, state: LandState) -> LandState | LandError:
 
 
 def create_learn_issue(ctx: ErkContext, state: LandState) -> LandState | LandError:
-    """Create a learn plan issue with preprocessed sessions for the landed plan."""
+    """Create a learn plan with preprocessed sessions for the landed plan."""
     if state.plan_id is None or state.merged_pr_number is None:
         return state
 

@@ -59,7 +59,7 @@ class BranchSlugGenerator:
         then validates the output meets slug requirements.
 
         Args:
-            title: Plan or issue title to distill into a slug
+            title: Plan title to distill into a slug
 
         Returns:
             BranchSlugResult with success status and slug or error
@@ -139,7 +139,7 @@ def generate_slug_or_fallback(executor: PromptExecutor, title: str) -> str:
 
     Args:
         executor: PromptExecutor for LLM inference
-        title: Plan or issue title
+        title: Plan title
 
     Returns:
         LLM-generated slug on success, raw title on failure

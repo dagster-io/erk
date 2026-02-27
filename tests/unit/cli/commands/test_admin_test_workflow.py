@@ -10,7 +10,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
 def test_happy_path_with_existing_issue() -> None:
-    """Command succeeds with --issue flag, using existing issue number."""
+    """Command succeeds with --plan flag, using existing plan number."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         fake_github = FakeGitHub()
@@ -22,11 +22,11 @@ def test_happy_path_with_existing_issue() -> None:
         )
 
         result = runner.invoke(
-            cli, ["admin", "test-plan-implement-gh-workflow", "--issue", "42"], obj=ctx
+            cli, ["admin", "test-plan-implement-gh-workflow", "--plan", "42"], obj=ctx
         )
 
         assert result.exit_code == 0, f"Command failed: {result.output}"
-        # Verify issue 42 was used
+        # Verify plan 42 was used
         assert "Using existing plan #42" in result.output
         # Verify PR was created as draft
         assert len(fake_github.created_prs) == 1
@@ -45,7 +45,7 @@ def test_happy_path_with_existing_issue() -> None:
 
 
 def test_happy_path_creating_new_issue() -> None:
-    """Command succeeds without --issue, creating a new issue."""
+    """Command succeeds without --plan, creating a new plan."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         fake_github = FakeGitHub()
@@ -65,7 +65,7 @@ def test_happy_path_creating_new_issue() -> None:
         assert title == "Test workflow run"
         assert "test" in labels
         assert "Created test plan #1" in result.output
-        # Verify workflow was triggered with the new issue number
+        # Verify workflow was triggered with the new plan number
         assert len(fake_github.triggered_workflows) == 1
         _, inputs = fake_github.triggered_workflows[0]
         assert inputs["plan_id"] == "1"
@@ -92,7 +92,7 @@ def test_happy_path_uses_detected_trunk_branch() -> None:
         )
 
         result = runner.invoke(
-            cli, ["admin", "test-plan-implement-gh-workflow", "--issue", "42"], obj=ctx
+            cli, ["admin", "test-plan-implement-gh-workflow", "--plan", "42"], obj=ctx
         )
 
         assert result.exit_code == 0, f"Command failed: {result.output}"

@@ -366,7 +366,7 @@ def branch_checkout(
     a worktree is automatically created. If the branch exists on origin but
     not locally, a tracking branch and worktree are created automatically.
 
-    Use --for-plan to resolve a plan issue/PR and set up .erk/impl-context/ after checkout.
+    Use --for-plan to resolve a plan and set up .erk/impl-context/ after checkout.
 
     Examples:
 
@@ -382,7 +382,7 @@ def branch_checkout(
     if for_plan is not None and branch is not None:
         user_output(
             "Error: Cannot specify both BRANCH and --for-plan.\n"
-            "Use --for-plan to derive branch name from issue, or provide BRANCH directly."
+            "Use --for-plan to derive branch name from plan, or provide BRANCH directly."
         )
         raise SystemExit(1) from None
 
