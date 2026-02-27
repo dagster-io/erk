@@ -1,4 +1,4 @@
-"""Trigger async learn workflow for a plan issue.
+"""Trigger async learn workflow for a plan.
 
 This exec command orchestrates the full local learn pipeline:
 1. Discovers session sources for the plan

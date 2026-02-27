@@ -1,4 +1,4 @@
-"""Extract arbitrary metadata fields from a plan issue's plan-header block.
+"""Extract arbitrary metadata fields from a plan's plan-header block.
 
 Usage:
     erk exec get-plan-metadata <plan-number> <field-name>
@@ -49,7 +49,7 @@ def get_plan_metadata(
     plan_number: int,
     field_name: str,
 ) -> None:
-    """Extract a metadata field from a plan issue's plan-header block.
+    """Extract a metadata field from a plan's plan-header block.
 
     Fetches the issue, extracts the plan-header block, and returns the
     specified field value. Returns null if the field doesn't exist.

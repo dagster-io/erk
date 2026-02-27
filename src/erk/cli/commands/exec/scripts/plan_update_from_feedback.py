@@ -1,4 +1,4 @@
-"""Update a plan issue's plan-body comment with new content.
+"""Update a plan's plan-body comment with new content.
 
 Usage:
     erk exec plan-update-from-feedback <plan-number> --plan-path PATH
@@ -56,7 +56,7 @@ def _update_plan_from_feedback_impl(
     plan_number: int,
     plan_content: str,
 ) -> PlanUpdateFromFeedbackSuccess:
-    """Update the plan-body comment on a plan issue.
+    """Update the plan-body comment on a plan.
 
     Args:
         backend: PlanBackend for plan operations
@@ -113,7 +113,7 @@ def plan_update_from_feedback(
     plan_path: str | None,
     plan_content: str | None,
 ) -> None:
-    """Update a plan issue's plan-body comment with new content.
+    """Update a plan's plan-body comment with new content.
 
     Requires exactly one of --plan-path or --plan-content.
     """

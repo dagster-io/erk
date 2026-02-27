@@ -4,19 +4,19 @@ Usage:
     erk exec create-pr-from-session [--session-id SESSION_ID]
 
 This command combines plan extraction from Claude session files with GitHub
-issue creation. It extracts the latest ExitPlanMode plan, ensures the erk-plan
-label exists, and creates a GitHub issue with the plan content.
+PR creation. It extracts the latest ExitPlanMode plan, ensures the erk-plan
+label exists, and creates a GitHub PR with the plan content.
 
 SCHEMA VERSION 2: This command uses the new two-step creation flow:
 1. Create issue with metadata-only body (using format_plan_header_body())
 2. Add first comment with plan content (using format_plan_content_comment())
 
 Output:
-    JSON result on stdout: {"success": true, "issue_number": N, "issue_url": "..."}
+    JSON result on stdout: {"success": true, "plan_number": N, "plan_url": "..."}
     Error messages on stderr with exit code 1 on failure
 
 Exit Codes:
-    0: Success - issue created
+    0: Success - PR created
     1: Error - no plan found, gh CLI not available, or other error
 """
 
@@ -44,7 +44,7 @@ from erk_shared.gateway.github.plan_issues import create_plan_issue
 def create_pr_from_session(ctx: click.Context, session_id: str | None) -> None:
     """Extract plan from Claude session and create GitHub PR.
 
-    Combines plan extraction with GitHub issue creation in a single operation.
+    Combines plan extraction with GitHub PR creation in a single operation.
 
     Schema Version 2 format:
     - Issue body: metadata-only (schema_version, created_at, created_by, worktree_name)
@@ -86,8 +86,8 @@ def create_pr_from_session(ctx: click.Context, session_id: str | None) -> None:
             output = {
                 "success": False,
                 "error": result.error,
-                "issue_number": result.plan_number,
-                "issue_url": result.plan_url,
+                "plan_number": result.plan_number,
+                "plan_url": result.plan_url,
             }
         else:
             output = {"success": False, "error": result.error}
@@ -97,8 +97,8 @@ def create_pr_from_session(ctx: click.Context, session_id: str | None) -> None:
     # Return success result
     output = {
         "success": True,
-        "issue_number": result.plan_number,
-        "issue_url": result.plan_url,
+        "plan_number": result.plan_number,
+        "plan_url": result.plan_url,
         "title": result.title,
     }
     click.echo(json.dumps(output))

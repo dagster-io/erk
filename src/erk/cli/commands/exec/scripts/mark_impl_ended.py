@@ -1,6 +1,6 @@
-"""Mark implementation ended by updating GitHub issue metadata.
+"""Mark implementation ended by updating plan metadata.
 
-This exec command updates the plan-header metadata block in a GitHub issue
+This exec command updates the plan-header metadata block in a plan
 with the appropriate event fields based on the execution environment:
 - Local machine: Updates last_local_impl_* fields (timestamp, event="ended", session, user)
 - GitHub Actions: Updates last_remote_impl_at field
@@ -67,9 +67,9 @@ class MarkImplError:
 )
 @click.pass_context
 def mark_impl_ended(ctx: click.Context, session_id: str | None) -> None:
-    """Update implementation ended event in GitHub issue and local state file.
+    """Update implementation ended event in plan metadata and local state file.
 
-    Reads issue number from .erk/impl-context/plan-ref.json, fetches the issue from GitHub,
+    Reads plan number from .erk/impl-context/plan-ref.json, fetches the plan from GitHub,
     updates the plan-header block with current event metadata, and posts back.
 
     Also writes .erk/impl-context/local-run-state.json for fast local access.
@@ -92,8 +92,8 @@ def mark_impl_ended(ctx: click.Context, session_id: str | None) -> None:
     if plan_ref is None or impl_dir is None:
         result = MarkImplError(
             success=False,
-            error_type="no-issue-reference",
-            message="No issue reference found in implementation folder",
+            error_type="no-plan-reference",
+            message="No plan reference found in implementation folder",
         )
         click.echo(json.dumps(asdict(result), indent=2))
         raise SystemExit(0)

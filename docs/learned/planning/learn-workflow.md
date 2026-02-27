@@ -157,7 +157,7 @@ After creating the learn plan, the skill calls:
 erk exec track-learn-result \
     --issue <parent-issue-number> \
     --status completed_with_plan \
-    --plan-issue <learn-plan-issue-number>
+    --learn-plan <learn-plan-number>
 ```
 
 This sets `learn_status` and `learn_plan_issue` on the parent plan.

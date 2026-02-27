@@ -1,6 +1,6 @@
-"""Track learn evaluation completion on a plan issue.
+"""Track learn evaluation completion on a plan.
 
-This exec script posts a tracking comment to the plan issue and updates
+This exec script posts a tracking comment to the plan and updates
 the plan-header metadata block to record that learn evaluation was performed.
 It replaces the tracking side-effect in `erk learn --no-interactive`.
 
@@ -87,7 +87,7 @@ def _do_track(
     session_id: str | None,
     time: Time,
 ) -> None:
-    """Post tracking comment and update plan-header on the plan issue.
+    """Post tracking comment and update plan-header on the plan.
 
     Args:
         backend: PlanBackend interface for metadata updates and comments
@@ -149,7 +149,7 @@ def _do_track(
 )
 @click.pass_context
 def track_learn_evaluation(ctx: click.Context, issue: str | None, session_id: str | None) -> None:
-    """Track learn evaluation completion on a plan issue.
+    """Track learn evaluation completion on a plan.
 
     ISSUE can be a plan number (e.g., "123") or a full GitHub URL.
     If not provided, infers from .erk/impl-context/plan-ref.json on the current branch.

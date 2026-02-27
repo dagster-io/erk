@@ -227,8 +227,8 @@ def _extract_plan_created_event(data: dict) -> Event | None:
     metadata: PlanCreatedMetadata = {}
     if "worktree_name" in data:
         metadata["worktree_name"] = data["worktree_name"]
-    if "issue_number" in data:
-        metadata["plan_number"] = data["issue_number"]
+    if "plan_number" in data:
+        metadata["plan_number"] = data["plan_number"]
 
     return Event(
         timestamp=timestamp,

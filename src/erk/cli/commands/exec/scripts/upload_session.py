@@ -2,14 +2,14 @@
 
 This exec command creates an `async-learn/{plan_id}` branch, commits the session
 JSONL file to `.erk/session/{session_id}.jsonl`, and optionally updates the
-plan-header metadata in the associated erk-plan issue.
+plan-header metadata in the associated plan.
 
 Usage:
     # Upload from local session file
     erk exec upload-session --session-file /path/to/session.jsonl \\
         --session-id abc-123 --source local --plan-id 2521
 
-    # Upload and update plan issue
+    # Upload and update plan
     erk exec upload-session --session-file /path/to/session.jsonl \\
         --session-id abc-123 --source remote --plan-id 2521
 

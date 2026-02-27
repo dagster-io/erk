@@ -8,7 +8,7 @@ Options:
     --plan-file PATH: Use specific plan file (highest priority)
     --session-id ID: Session ID for scoped plan lookup
     --plan-type standard|learn: Plan type (default: standard)
-    --learned-from-issue INT: Parent plan issue (for learn plans)
+    --learned-from-issue INT: Parent plan number (for learn plans)
     --created-from-workflow-run-url URL: Workflow run URL
 
 Objective linking: use --objective to pass directly, or rely on
@@ -133,7 +133,7 @@ def _save_as_planned_pr(
         plan_type: Plan type (standard or learn)
         output_format: Output format (json or display)
         plan_file: Original plan file path (for snapshot)
-        learned_from_issue: Parent plan issue number (for learn plans)
+        learned_from_issue: Parent plan number (for learn plans)
         created_from_workflow_run_url: GitHub Actions workflow run URL
         branch_slug: Pre-generated branch slug (skips LLM call when provided)
         node_ids: Objective roadmap node IDs to associate with this plan
@@ -334,7 +334,7 @@ def _save_plan_via_planned_pr(
         plan_file: Explicit plan file path (highest priority)
         session_id: Session ID for dedup and markers
         plan_type: Plan type (standard or learn)
-        learned_from_issue: Parent plan issue number (for learn plans)
+        learned_from_issue: Parent plan number (for learn plans)
         created_from_workflow_run_url: GitHub Actions workflow run URL
         branch_slug: Pre-generated branch slug (skips LLM call when provided)
         objective: Objective issue number from CLI flag (overrides session marker)
@@ -460,7 +460,7 @@ def _save_plan_via_planned_pr(
     "--learned-from-issue",
     type=int,
     default=None,
-    help="Parent plan issue number (for learn plans)",
+    help="Parent plan number (for learn plans)",
 )
 @click.option(
     "--created-from-workflow-run-url",

@@ -1,6 +1,6 @@
 """Unit tests for track-learn-result exec script.
 
-Tests learn result tracking on plan issues.
+Tests learn result tracking on plans.
 Uses fakes for fast, reliable testing without subprocess calls.
 """
 
@@ -57,7 +57,7 @@ def test_track_learn_result_completed_no_plan(tmp_path: Path) -> None:
     assert output["success"] is True
     assert output["plan_id"] == "42"
     assert output["learn_status"] == "completed_no_plan"
-    assert output["learn_plan_issue"] is None
+    assert output["learn_plan_number"] is None
 
     # Verify plan-header was updated
     updated_pr = fake_github.get_pr(cwd, 42)
@@ -69,7 +69,7 @@ def test_track_learn_result_completed_no_plan(tmp_path: Path) -> None:
 
 
 def test_track_learn_result_completed_with_plan(tmp_path: Path) -> None:
-    """Test tracking completed_with_plan status with plan issue."""
+    """Test tracking completed_with_plan status with learn plan."""
     plan_body = format_plan_header_body_for_test(learn_status="pending")
     issue = create_test_issue(42, "Test Plan #42", plan_body)
     fake_issues = FakeGitHubIssues(issues={42: issue})
@@ -83,7 +83,7 @@ def test_track_learn_result_completed_with_plan(tmp_path: Path) -> None:
         cwd = Path.cwd()
         result = runner.invoke(
             track_learn_result,
-            ["--plan-id", "42", "--status", "completed_with_plan", "--plan-issue", "456"],
+            ["--plan-id", "42", "--status", "completed_with_plan", "--learn-plan", "456"],
             obj=ErkContext.for_test(
                 github=fake_github,
                 plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
@@ -97,9 +97,9 @@ def test_track_learn_result_completed_with_plan(tmp_path: Path) -> None:
     assert output["success"] is True
     assert output["plan_id"] == "42"
     assert output["learn_status"] == "completed_with_plan"
-    assert output["learn_plan_issue"] == 456
+    assert output["learn_plan_number"] == 456
 
-    # Verify plan-header was updated with both status and plan issue
+    # Verify plan-header was updated with both status and learn plan
     updated_pr = fake_github.get_pr(cwd, 42)
     assert not isinstance(updated_pr, PRNotFound)
     block = find_metadata_block(updated_pr.body, "plan-header")
@@ -113,8 +113,8 @@ def test_track_learn_result_completed_with_plan(tmp_path: Path) -> None:
 # ============================================================================
 
 
-def test_track_learn_result_requires_plan_issue_for_completed_with_plan(tmp_path: Path) -> None:
-    """Test error when completed_with_plan is missing --plan-issue."""
+def test_track_learn_result_requires_learn_plan_for_completed_with_plan(tmp_path: Path) -> None:
+    """Test error when completed_with_plan is missing --learn-plan."""
     plan_body = format_plan_header_body_for_test(learn_status="pending")
     issue = create_test_issue(42, "Test Plan #42", plan_body)
     fake_issues = FakeGitHubIssues(issues={42: issue})
@@ -140,11 +140,11 @@ def test_track_learn_result_requires_plan_issue_for_completed_with_plan(tmp_path
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert "plan-issue is required" in output["message"]
+    assert "learn-plan is required" in output["message"]
 
 
-def test_track_learn_result_rejects_plan_issue_for_completed_no_plan(tmp_path: Path) -> None:
-    """Test error when completed_no_plan has --plan-issue."""
+def test_track_learn_result_rejects_learn_plan_for_completed_no_plan(tmp_path: Path) -> None:
+    """Test error when completed_no_plan has --learn-plan."""
     plan_body = format_plan_header_body_for_test(learn_status="pending")
     issue = create_test_issue(42, "Test Plan #42", plan_body)
     fake_issues = FakeGitHubIssues(issues={42: issue})
@@ -158,7 +158,7 @@ def test_track_learn_result_rejects_plan_issue_for_completed_no_plan(tmp_path: P
         cwd = Path.cwd()
         result = runner.invoke(
             track_learn_result,
-            ["--plan-id", "42", "--status", "completed_no_plan", "--plan-issue", "456"],
+            ["--plan-id", "42", "--status", "completed_no_plan", "--learn-plan", "456"],
             obj=ErkContext.for_test(
                 github=fake_github,
                 plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
@@ -207,7 +207,7 @@ def test_track_learn_result_pending_review_with_plan_pr(tmp_path: Path) -> None:
     assert output["success"] is True
     assert output["plan_id"] == "42"
     assert output["learn_status"] == "pending_review"
-    assert output["learn_plan_issue"] is None
+    assert output["learn_plan_number"] is None
     assert output["learn_plan_pr"] == 789
 
     # Verify plan-header was updated with both status and plan PR
@@ -249,8 +249,8 @@ def test_track_learn_result_pending_review_requires_plan_pr(tmp_path: Path) -> N
     assert "plan-pr is required" in output["message"]
 
 
-def test_track_learn_result_pending_review_rejects_plan_issue(tmp_path: Path) -> None:
-    """Test error when pending_review has --plan-issue."""
+def test_track_learn_result_pending_review_rejects_learn_plan(tmp_path: Path) -> None:
+    """Test error when pending_review has --learn-plan."""
     plan_body = format_plan_header_body_for_test(learn_status="pending")
     issue = create_test_issue(42, "Test Plan #42", plan_body)
     fake_issues = FakeGitHubIssues(issues={42: issue})
@@ -271,7 +271,7 @@ def test_track_learn_result_pending_review_rejects_plan_issue(tmp_path: Path) ->
                 "pending_review",
                 "--plan-pr",
                 "789",
-                "--plan-issue",
+                "--learn-plan",
                 "456",
             ],
             obj=ErkContext.for_test(
@@ -285,7 +285,7 @@ def test_track_learn_result_pending_review_rejects_plan_issue(tmp_path: Path) ->
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert "plan-issue should not be provided" in output["message"]
+    assert "learn-plan should not be provided" in output["message"]
 
 
 def test_track_learn_result_completed_with_plan_rejects_plan_pr(tmp_path: Path) -> None:
@@ -308,7 +308,7 @@ def test_track_learn_result_completed_with_plan_rejects_plan_pr(tmp_path: Path) 
                 "42",
                 "--status",
                 "completed_with_plan",
-                "--plan-issue",
+                "--learn-plan",
                 "456",
                 "--plan-pr",
                 "789",

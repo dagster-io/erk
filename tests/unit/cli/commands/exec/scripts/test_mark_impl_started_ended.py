@@ -250,7 +250,7 @@ def test_mark_impl_started_no_plan_ref(tmp_path: Path) -> None:
     assert result.exit_code == 0  # Graceful degradation
     output = json.loads(result.output)
     assert output["success"] is False
-    assert output["error_type"] == "no-issue-reference"
+    assert output["error_type"] == "no-plan-reference"
 
 
 # ============================================================================
@@ -418,4 +418,4 @@ def test_mark_impl_ended_no_plan_ref(tmp_path: Path) -> None:
     assert result.exit_code == 0  # Graceful degradation
     output = json.loads(result.output)
     assert output["success"] is False
-    assert output["error_type"] == "no-issue-reference"
+    assert output["error_type"] == "no-plan-reference"
