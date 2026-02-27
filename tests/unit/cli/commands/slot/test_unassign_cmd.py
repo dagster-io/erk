@@ -256,7 +256,7 @@ def test_slot_unassign_fails_with_uncommitted_changes() -> None:
 
 
 def test_slot_unassign_uses_existing_placeholder_branch() -> None:
-    """Test unassigning uses existing placeholder branch without creating new one."""
+    """Test unassigning force-updates existing placeholder branch to trunk."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
@@ -296,8 +296,13 @@ def test_slot_unassign_uses_existing_placeholder_branch() -> None:
         # Verify placeholder branch was checked out
         assert (worktree_path, "__erk-slot-01-br-stub__") in git_ops.branch.checked_out_branches
 
-        # Verify NO branch was created (placeholder already existed)
-        assert len(git_ops.branch.created_branches) == 0
+        # Verify placeholder was force-updated to trunk (so slot starts fresh)
+        assert (
+            env.cwd,
+            "__erk-slot-01-br-stub__",
+            "main",
+            True,
+        ) in git_ops.branch.created_branches
 
 
 def test_slot_unassign_creates_placeholder_via_git_not_branch_manager() -> None:

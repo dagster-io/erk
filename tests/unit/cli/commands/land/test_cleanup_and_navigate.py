@@ -1441,3 +1441,114 @@ def test_cleanup_non_slot_worktree_calls_safe_chdir_before_removal(
 
     # Verify worktree was removed after safe_chdir
     assert non_slot_worktree_path in fake_git.removed_worktrees
+
+
+def test_cleanup_slot_without_assignment_updates_stub_to_trunk(
+    tmp_path: Path,
+) -> None:
+    """Test that _cleanup_slot_without_assignment force-updates placeholder to trunk.
+
+    When a slot worktree has no pool assignment (branch checked out via 'gt get'),
+    the placeholder stub branch may be stale from pool init time. The cleanup
+    should force-update the placeholder to trunk before checking it out, so the
+    slot starts fresh for the next assignment.
+    """
+    slot_worktree_path = tmp_path / "worktrees" / "erk-slot-01"
+    slot_worktree_path.mkdir(parents=True)
+    main_repo_root = tmp_path / "main-repo"
+    main_repo_root.mkdir(parents=True)
+    (main_repo_root / ".git").mkdir()
+    pool_json_path = main_repo_root / "pool.json"
+
+    # Create empty pool state (no assignments — simulates 'gt get' checkout)
+    empty_state = PoolState.test(assignments=())
+    save_pool_state(pool_json_path, empty_state)
+
+    placeholder_branch = "__erk-slot-01-br-stub__"
+
+    fake_git = FakeGit(
+        worktrees={
+            main_repo_root: [WorktreeInfo(path=slot_worktree_path, branch="feature-branch")]
+        },
+        git_common_dirs={main_repo_root: main_repo_root / ".git"},
+        default_branches={main_repo_root: "main"},
+        trunk_branches={main_repo_root: "main"},
+        local_branches={main_repo_root: ["main", "feature-branch", placeholder_branch]},
+        existing_paths={
+            slot_worktree_path,
+            main_repo_root,
+            main_repo_root / ".git",
+            pool_json_path,
+        },
+    )
+
+    fake_graphite = FakeGraphite(
+        branches={
+            "feature-branch": BranchMetadata(
+                name="feature-branch",
+                parent="main",
+                children=[],
+                is_trunk=False,
+                commit_sha=None,
+            ),
+        },
+    )
+
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        cwd=slot_worktree_path,
+    )
+
+    repo = RepoContext(
+        root=main_repo_root,
+        repo_name="test-repo",
+        repo_dir=main_repo_root,
+        worktrees_dir=tmp_path / "worktrees",
+        pool_json_path=pool_json_path,
+        github=GitHubRepoId(owner="owner", repo="repo"),
+    )
+
+    try:
+        _cleanup_and_navigate(
+            ctx=ctx,
+            repo=repo,
+            branch="feature-branch",
+            worktree_path=slot_worktree_path,
+            script=False,
+            pull_flag=False,
+            force=True,
+            is_current_branch=False,
+            target_child_branch=None,
+            no_delete=False,
+            skip_activation_output=False,
+            cleanup_confirmed=True,
+        )
+    except SystemExit:
+        pass  # Expected - function raises SystemExit(0) at end
+
+    # Verify placeholder was force-updated to trunk before checkout
+    # The tuple format is (repo_root, branch_name, start_point, force)
+    force_update_calls = [
+        (root, branch, start, force)
+        for root, branch, start, force in fake_git.branch.created_branches
+        if branch == placeholder_branch and force
+    ]
+    assert len(force_update_calls) == 1, (
+        f"Expected one force-update of placeholder to trunk. "
+        f"Got created_branches: {fake_git.branch.created_branches}"
+    )
+    assert force_update_calls[0][2] == "main", "Placeholder should be updated to trunk"
+
+    # Verify placeholder branch was checked out
+    checkout_calls = [
+        (path, branch)
+        for path, branch in fake_git.checked_out_branches
+        if branch == placeholder_branch
+    ]
+    assert len(checkout_calls) == 1, "Should have checked out placeholder branch"
+    assert checkout_calls[0][0] == slot_worktree_path
+
+    # Verify feature branch was deleted
+    deleted_branches = [branch for _path, branch in fake_graphite.delete_branch_calls]
+    assert "feature-branch" in deleted_branches
