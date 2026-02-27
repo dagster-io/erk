@@ -52,16 +52,51 @@ jobs:
       - name: Run ruff linting
         run: make lint
 
-  prettier:
+  markdown-fix:
     needs: check-submission
     if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Checkout PR branch (not detached HEAD) so we can push fixes
+          ref: ${{ github.head_ref || github.ref }}
+      - uses: ./.github/actions/setup-python-uv
       - uses: ./.github/actions/setup-prettier
-      - name: Check markdown formatting
-        run: prettier --check '**/*.md' --ignore-path .gitignore
+      - name: Sync documentation
+        run: make docs-fix
+      - name: Fix markdown formatting
+        run: prettier --write '**/*.md' --ignore-path .gitignore
+      - name: Commit and push if changes
+        run: |
+          if git diff --quiet; then
+            echo "No formatting changes needed"
+            exit 0
+          fi
+
+          # On push to master: fail instead of auto-committing
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "::error::Markdown files need formatting or docs are out of sync"
+            git diff --stat
+            exit 1
+          fi
+
+          # On fork PRs: fail instead of auto-committing (can't push to fork)
+          HEAD_REPO="${{ github.event.pull_request.head.repo.full_name }}"
+          BASE_REPO="${{ github.event.pull_request.base.repo.full_name }}"
+          if [ "$HEAD_REPO" != "$BASE_REPO" ]; then
+            echo "::error::Markdown issues found (cannot auto-fix fork PRs)"
+            exit 1
+          fi
+
+          # Auto-fix: commit and push
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add '*.md'
+          git commit -m "Auto-fix markdown formatting (docs-sync + Prettier)"
+          git push
+          echo "::notice::Auto-fixed markdown and pushed"
 
   docs-check:
     needs: check-submission
@@ -158,7 +193,7 @@ jobs:
   # === Autofix (runs after ALL checks) ===
   autofix:
     needs:
-      [format, lint, prettier, docs-check, ty, unit-tests, integration-tests]
+      [format, lint, markdown-fix, docs-check, ty, unit-tests, integration-tests]
     if: |
       false &&
       vars.CLAUDE_ENABLED != 'false' &&
@@ -170,7 +205,7 @@ jobs:
       (github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')) &&
       (needs.format.result == 'failure' ||
        needs.lint.result == 'failure' ||
-       needs.prettier.result == 'failure' ||
+       needs.markdown-fix.result == 'failure' ||
        needs.docs-check.result == 'failure' ||
        needs.ty.result == 'failure')
     runs-on: ubuntu-latest
@@ -319,7 +354,7 @@ jobs:
           # Collect all job outcomes for Claude's context
           echo "format_result=${{ needs.format.result }}" >> $GITHUB_OUTPUT
           echo "lint_result=${{ needs.lint.result }}" >> $GITHUB_OUTPUT
-          echo "prettier_result=${{ needs.prettier.result }}" >> $GITHUB_OUTPUT
+          echo "markdown_fix_result=${{ needs.markdown-fix.result }}" >> $GITHUB_OUTPUT
           echo "docs_result=${{ needs.docs-check.result }}" >> $GITHUB_OUTPUT
           echo "ty_result=${{ needs.ty.result }}" >> $GITHUB_OUTPUT
           echo "unit_tests_result=${{ needs.unit-tests.result }}" >> $GITHUB_OUTPUT
@@ -341,8 +376,8 @@ jobs:
             errors+="$(uv run ruff check . 2>&1 || true)\n\n"
           fi
 
-          if [ "${{ needs.prettier.result }}" = "failure" ]; then
-            errors+="=== PRETTIER ERRORS ===\n"
+          if [ "${{ needs.markdown-fix.result }}" = "failure" ]; then
+            errors+="=== MARKDOWN-FIX ERRORS ===\n"
             errors+="$(prettier --check '**/*.md' --ignore-path .gitignore 2>&1 || true)\n\n"
           fi
 
@@ -374,7 +409,7 @@ jobs:
           if ! prompt=$(erk exec get-embedded-prompt ci-autofix \
             --var "format=${{ needs.format.result }}" \
             --var "lint=${{ needs.lint.result }}" \
-            --var "prettier=${{ needs.prettier.result }}" \
+            --var "markdown-fix=${{ needs.markdown-fix.result }}" \
             --var "docs-check=${{ needs.docs-check.result }}" \
             --var "ty=${{ needs.ty.result }}" \
             --var "unit-tests=${{ needs.unit-tests.result }}" \
