@@ -72,7 +72,7 @@ The erk plan lifecycle manages implementation plans from creation through automa
 | `.erk/impl-context/progress.md`   | Mutable progress tracking                                      |
 | `.erk/impl-context/plan-ref.json` | Plan reference (provider-agnostic, replaces legacy issue.json) |
 | `.erk/impl-context/run-info.json` | GitHub Actions run reference (remote only)                     |
-| `.impl/`                          | Local implementation folder + Claude's working copy            |
+| `.erk/impl-context/`              | Remote implementation folder (GitHub Actions)                  |
 
 ### Which Phase Am I In?
 
@@ -442,7 +442,7 @@ This ensures only one implementation runs per issue at a time.
 
 #### Phase 4: Implementation
 
-- Copy `.erk/impl-context/` to `.impl/` (Claude reads `.impl/`)
+- Copy `.erk/impl-context/` to `.erk/impl-context/` (Claude reads `.erk/impl-context/`)
 - Create `.erk/impl-context/run-info.json` with workflow run details
 - Execute `/erk:plan-implement` with Claude
 
@@ -461,14 +461,14 @@ This ensures only one implementation runs per issue at a time.
 
 Implementation executes the plan, whether locally or via GitHub Actions.
 
-### `.erk/impl-context/` vs `.impl/`
+### `.erk/impl-context/` vs `.erk/impl-context/`
 
 | Folder               | Purpose                                      | Git Status                       |
 | -------------------- | -------------------------------------------- | -------------------------------- |
 | `.erk/impl-context/` | Remote implementation (GitHub Actions)       | Committed, then deleted          |
-| `.impl/`             | Local implementation + Claude's working copy | In `.gitignore`, never committed |
+| `.erk/impl-context/` | Local implementation + Claude's working copy | In `.gitignore`, never committed |
 
-In GitHub Actions, `.erk/impl-context/` is copied to `.impl/` before Claude runs.
+In GitHub Actions, `.erk/impl-context/` is copied to `.erk/impl-context/` before Claude runs.
 
 ### `.erk/impl-context/run-info.json`
 
