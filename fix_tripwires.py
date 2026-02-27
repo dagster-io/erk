@@ -110,6 +110,7 @@ def fix_tripwires_format(content: str) -> str:
 
 
 def main():
+    print("Running fix_tripwires script")
     if len(sys.argv) < 2:
         print("Usage: python fix_tripwires.py <file1.md> [file2.md ...]")
         sys.exit(1)
