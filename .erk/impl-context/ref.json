@@ -1,8 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Update erk-exec and skill documentation for .erk/impl-context/ unification",
+  "plan_id": "8371",
+  "url": "https://github.com/dagster-io/erk/pull/8371",
+  "created_at": "2026-02-27T00:06:20.602403",
+  "synced_at": "2026-02-27T00:06:20.602403",
+  "labels": [],
   "objective_id": 8365,
-  "node_ids": [
-    "3.2"
-  ]
+  "node_ids": null
 }
