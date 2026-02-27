@@ -12,9 +12,10 @@ from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 
 
-def test_create_plan_issue_success() -> None:
-    """Test successful issue creation from plan."""
+def test_create_plan_from_context_success() -> None:
+    """Test successful draft PR creation from plan."""
     fake_gh = FakeGitHubIssues()
+    fake_github = FakeGitHub(issues_gateway=fake_gh)
     runner = CliRunner()
 
     plan = "# My Feature\n\n- Step 1\n- Step 2"
@@ -22,42 +23,39 @@ def test_create_plan_issue_success() -> None:
     result = runner.invoke(
         create_plan_from_context,
         input=plan,
-        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+        obj=ErkContext.for_test(github=fake_github),
     )
 
     assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_number"] == 1
-    assert "github.com/test-owner/test-repo/issues/1" in output["plan_url"]
+    assert output["plan_number"] == 999
+    assert "branch_name" in output
 
-    # Verify behavior through fake's mutation tracking
-    assert len(fake_gh.created_issues) == 1
-    title, body, labels = fake_gh.created_issues[0]
-    assert title == "[erk-plan] My Feature"
-    assert "erk-pr" in labels
-    assert "erk-plan" in labels
-    assert "Step 1" in body
+    # Verify draft PR was created
+    assert len(fake_github.created_prs) == 1
 
 
-def test_create_plan_issue_empty_plan() -> None:
+def test_create_plan_from_context_empty_plan() -> None:
     """Test error handling for empty plan."""
     fake_gh = FakeGitHubIssues()
+    fake_github = FakeGitHub(issues_gateway=fake_gh)
     runner = CliRunner()
 
     result = runner.invoke(
         create_plan_from_context,
         input="",
-        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+        obj=ErkContext.for_test(github=fake_github),
     )
 
     assert result.exit_code == 1
     assert "Error: Empty plan content" in result.output
 
 
-def test_create_plan_issue_unicode() -> None:
-    """Test issue creation with unicode content."""
+def test_create_plan_from_context_unicode() -> None:
+    """Test draft PR creation with unicode content."""
     fake_gh = FakeGitHubIssues()
+    fake_github = FakeGitHub(issues_gateway=fake_gh)
     runner = CliRunner()
 
     plan = "# café Feature 你好\n\n- Unicode test"
@@ -65,92 +63,9 @@ def test_create_plan_issue_unicode() -> None:
     result = runner.invoke(
         create_plan_from_context,
         input=plan,
-        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+        obj=ErkContext.for_test(github=fake_github),
     )
 
     assert result.exit_code == 0
-    # Verify issue was created (title will have unicode characters)
-    assert len(fake_gh.created_issues) == 1
-
-
-def test_create_plan_issue_ensures_label() -> None:
-    """Test that command ensures erk-plan label exists."""
-    fake_gh = FakeGitHubIssues()
-    runner = CliRunner()
-
-    plan = "# Test Plan\n\n- Step"
-
-    result = runner.invoke(
-        create_plan_from_context,
-        input=plan,
-        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
-    )
-
-    assert result.exit_code == 0
-    # Verify labels were created (erk-pr + erk-plan)
-    assert len(fake_gh.created_labels) == 2
-    label_0, description_0, color_0 = fake_gh.created_labels[0]
-    assert label_0 == "erk-pr"
-    assert description_0 == "Plan managed as a draft PR"
-    assert color_0 == "1D76DB"
-    label_1, description_1, color_1 = fake_gh.created_labels[1]
-    assert label_1 == "erk-plan"
-    assert description_1 == "Implementation plan for manual execution"
-    assert color_1 == "0E8A16"
-
-
-def test_create_plan_issue_h2_title() -> None:
-    """Test title extraction falls back to H2."""
-    fake_gh = FakeGitHubIssues()
-    runner = CliRunner()
-
-    plan = "## Secondary Title\n\n- Step"
-
-    result = runner.invoke(
-        create_plan_from_context,
-        input=plan,
-        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
-    )
-
-    assert result.exit_code == 0
-    # Verify issue was created with H2 title (with [erk-plan] prefix)
-    assert len(fake_gh.created_issues) == 1
-    title, _body, _labels = fake_gh.created_issues[0]
-    assert title == "[erk-plan] Secondary Title"
-
-
-def test_create_plan_issue_preserves_body() -> None:
-    """Test that full plan content is preserved in issue body."""
-    fake_gh = FakeGitHubIssues()
-    runner = CliRunner()
-
-    plan = """# Feature Plan
-
-## Context
-
-Background information
-
-## Steps
-
-1. First step
-2. Second step
-
-## Testing
-
-Test instructions
-"""
-
-    result = runner.invoke(
-        create_plan_from_context,
-        input=plan,
-        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
-    )
-
-    assert result.exit_code == 0
-    # Verify full plan content is preserved
-    assert len(fake_gh.created_issues) == 1
-    _title, body, _labels = fake_gh.created_issues[0]
-    assert "## Context" in body
-    assert "## Steps" in body
-    assert "## Testing" in body
-    assert "First step" in body
+    # Verify draft PR was created
+    assert len(fake_github.created_prs) == 1

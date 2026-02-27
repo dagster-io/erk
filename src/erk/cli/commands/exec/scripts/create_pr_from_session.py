@@ -1,22 +1,19 @@
-"""Extract plan from Claude session and create GitHub PR.
+"""Extract plan from Claude session and create GitHub draft PR.
 
 Usage:
     erk exec create-pr-from-session [--session-id SESSION_ID]
 
 This command combines plan extraction from Claude session files with GitHub
-issue creation. It extracts the latest ExitPlanMode plan, ensures the erk-plan
-label exists, and creates a GitHub issue with the plan content.
-
-SCHEMA VERSION 2: This command uses the new two-step creation flow:
-1. Create issue with metadata-only body (using format_plan_header_body())
-2. Add first comment with plan content (using format_plan_content_comment())
+draft PR creation. It extracts the latest ExitPlanMode plan, creates a branch,
+commits the plan, and creates a draft PR.
 
 Output:
-    JSON result on stdout: {"success": true, "issue_number": N, "issue_url": "..."}
+    JSON result on stdout:
+        {"success": true, "plan_number": N, "plan_url": "...", "branch_name": "..."}
     Error messages on stderr with exit code 1 on failure
 
 Exit Codes:
-    0: Success - issue created
+    0: Success - draft PR created
     1: Error - no plan found, gh CLI not available, or other error
 """
 
@@ -25,14 +22,16 @@ import json
 import click
 
 from erk_shared.context.helpers import (
+    require_branch_manager,
     require_claude_installation,
     require_cwd,
+    require_git,
+    require_github,
+    require_issues,
     require_repo_root,
+    require_time,
 )
-from erk_shared.context.helpers import (
-    require_issues as require_github_issues,
-)
-from erk_shared.gateway.github.plan_issues import create_plan_issue
+from erk_shared.plan_store.create_plan_draft_pr import create_plan_draft_pr
 
 
 @click.command(name="create-pr-from-session")
@@ -42,16 +41,16 @@ from erk_shared.gateway.github.plan_issues import create_plan_issue
 )
 @click.pass_context
 def create_pr_from_session(ctx: click.Context, session_id: str | None) -> None:
-    """Extract plan from Claude session and create GitHub PR.
+    """Extract plan from Claude session and create GitHub draft PR.
 
-    Combines plan extraction with GitHub issue creation in a single operation.
-
-    Schema Version 2 format:
-    - Issue body: metadata-only (schema_version, created_at, created_by, worktree_name)
-    - First comment: plan content wrapped in markers
+    Combines plan extraction with draft PR creation in a single operation.
     """
     # Get dependencies from context
-    github = require_github_issues(ctx)
+    git = require_git(ctx)
+    github = require_github(ctx)
+    github_issues = require_issues(ctx)
+    branch_manager = require_branch_manager(ctx)
+    time = require_time(ctx)
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
     claude_installation = require_claude_installation(ctx)
@@ -64,41 +63,36 @@ def create_pr_from_session(ctx: click.Context, session_id: str | None) -> None:
         click.echo(json.dumps(result))
         raise SystemExit(1)
 
-    # Use consolidated create_plan_issue for the entire workflow
-    result = create_plan_issue(
-        github_issues=github,
+    # Create plan as a draft PR
+    result = create_plan_draft_pr(
+        git=git,
+        github=github,
+        github_issues=github_issues,
+        branch_manager=branch_manager,
+        time=time,
         repo_root=repo_root,
+        cwd=cwd,
         plan_content=plan_text,
         title=None,
-        extra_labels=None,
-        title_tag=None,
+        labels=["erk-pr", "erk-plan"],
         source_repo=None,
         objective_id=None,
         created_from_session=session_id,
         created_from_workflow_run_url=None,
         learned_from_issue=None,
-        lifecycle_stage="planned",
     )
 
     if not result.success:
-        if result.plan_number is not None:
-            # Partial success - issue created but comment failed
-            output = {
-                "success": False,
-                "error": result.error,
-                "issue_number": result.plan_number,
-                "issue_url": result.plan_url,
-            }
-        else:
-            output = {"success": False, "error": result.error}
+        output = {"success": False, "error": result.error}
         click.echo(json.dumps(output))
         raise SystemExit(1)
 
     # Return success result
     output = {
         "success": True,
-        "issue_number": result.plan_number,
-        "issue_url": result.plan_url,
+        "plan_number": result.plan_number,
+        "plan_url": result.plan_url,
+        "branch_name": result.branch_name,
         "title": result.title,
     }
     click.echo(json.dumps(output))

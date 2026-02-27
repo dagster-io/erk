@@ -30,8 +30,8 @@ Quick reference for all `erk exec` subcommands.
 | `close-pr`                        | Close a plan with a comment.                                                |
 | `close-prs`                       | Batch close multiple plan PRs with comments from JSON stdin.                |
 | `create-impl-context-from-plan`   | Create .erk/impl-context/ folder from plan content.                         |
-| `create-plan-from-context`        | Create GitHub issue from plan content with erk-plan label.                  |
-| `create-pr-from-session`          | Extract plan from Claude session and create GitHub PR.                      |
+| `create-plan-from-context`        | Create GitHub draft PR from plan content with erk-plan label.               |
+| `create-pr-from-session`          | Extract plan from Claude session and create GitHub draft PR.                |
 | `dash-data`                       | Serialize plan dashboard data to JSON.                                      |
 | `detect-plan-from-branch`         | Detect plan number from the current git branch.                             |
 | `detect-trunk-branch`             | Detect whether repo uses main or master as trunk branch.                    |
@@ -267,13 +267,13 @@ Create .erk/impl-context/ folder from plan content.
 
 ### create-plan-from-context
 
-Create GitHub issue from plan content with erk-plan label.
+Create GitHub draft PR from plan content with erk-plan label.
 
 **Usage:** `erk exec create-plan-from-context`
 
 ### create-pr-from-session
 
-Extract plan from Claude session and create GitHub PR.
+Extract plan from Claude session and create GitHub draft PR.
 
 **Usage:** `erk exec create-pr-from-session`
 

@@ -15,7 +15,7 @@ from pathlib import Path
 
 import click
 
-from erk.cli.commands.land_learn import _create_learn_issue_with_sessions
+from erk.cli.commands.land_learn import _create_learn_pr_with_sessions
 from erk.cli.commands.navigation_helpers import check_clean_working_tree
 from erk.cli.commands.objective_helpers import get_objective_for_branch
 from erk.cli.core import discover_repo_context
@@ -329,7 +329,7 @@ def validate_pr(ctx: ErkContext, state: LandState) -> LandState | LandError:
 
 
 def resolve_plan_id(ctx: ErkContext, state: LandState) -> LandState | LandError:
-    """Resolve plan ID for branch (used by create_learn_issue execution step).
+    """Resolve plan ID for branch (used by create_learn_pr execution step).
 
     Populates: plan_id.
     """
@@ -424,12 +424,12 @@ def merge_pr(ctx: ErkContext, state: LandState) -> LandState | LandError:
     return dataclasses.replace(state, merged_pr_number=merged_pr_number)
 
 
-def create_learn_issue(ctx: ErkContext, state: LandState) -> LandState | LandError:
-    """Create a learn plan with preprocessed sessions for the landed plan."""
+def create_learn_pr(ctx: ErkContext, state: LandState) -> LandState | LandError:
+    """Create a learn plan as a draft PR with preprocessed sessions for the landed plan."""
     if state.plan_id is None or state.merged_pr_number is None:
         return state
 
-    _create_learn_issue_with_sessions(ctx, state=state)
+    _create_learn_pr_with_sessions(ctx, state=state)
     return state
 
 
@@ -475,7 +475,7 @@ def _validation_pipeline() -> tuple[LandStep, ...]:
 def _execution_pipeline() -> tuple[LandStep, ...]:
     return (
         merge_pr,
-        create_learn_issue,
+        create_learn_pr,
         cleanup_and_navigate,
     )
 

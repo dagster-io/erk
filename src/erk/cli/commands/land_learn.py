@@ -11,15 +11,15 @@ from typing import TYPE_CHECKING
 import click
 
 from erk.core.context import ErkContext
-from erk_shared.gateway.github.plan_issues import create_plan_issue
 from erk_shared.output.output import user_output
+from erk_shared.plan_store.create_plan_draft_pr import create_plan_draft_pr
 from erk_shared.plan_store.types import PlanNotFound
 
 if TYPE_CHECKING:
     from erk.cli.commands.land_pipeline import LandState
 
 
-def _should_create_learn_issue(ctx: ErkContext) -> bool:
+def _should_create_learn_pr(ctx: ErkContext) -> bool:
     """Check config hierarchy to determine if learn plan should be created on land.
 
     Checks local_config first (repo or local override), falls back to global_config.
@@ -31,15 +31,15 @@ def _should_create_learn_issue(ctx: ErkContext) -> bool:
     return True
 
 
-def _create_learn_issue_with_sessions(
+def _create_learn_pr_with_sessions(
     ctx: ErkContext,
     *,
     state: LandState,
 ) -> None:
-    """Create a learn plan with session info for the landed plan.
+    """Create a learn plan as a draft PR with session info for the landed plan.
 
     This is a fire-and-forget operation that never blocks landing.
-    Creates a plan with erk-learn label so the replan flow can pick it up.
+    Creates a draft PR with erk-learn label so the replan flow can pick it up.
 
     Args:
         ctx: ErkContext
@@ -49,12 +49,12 @@ def _create_learn_issue_with_sessions(
         return
 
     try:
-        _create_learn_issue_impl(ctx, state=state)
+        _create_learn_pr_impl(ctx, state=state)
     except Exception as exc:
         user_output(click.style("Warning: ", fg="yellow") + f"Could not create learn plan: {exc}")
 
 
-def _create_learn_issue_impl(
+def _create_learn_pr_impl(
     ctx: ErkContext,
     *,
     state: LandState,
@@ -65,7 +65,7 @@ def _create_learn_issue_impl(
         return
 
     # Check config
-    if not _should_create_learn_issue(ctx):
+    if not _should_create_learn_pr(ctx):
         return
 
     # Fetch plan to check labels — skip learn plans (cycle prevention)
@@ -79,7 +79,7 @@ def _create_learn_issue_impl(
     sessions = ctx.plan_backend.find_sessions_for_plan(state.main_repo_root, plan_id)
     all_session_ids = sessions.all_session_ids()
 
-    # Build learn issue body
+    # Build learn plan body
     if all_session_ids:
         session_lines = [f"- `{sid}`" for sid in all_session_ids]
     else:
@@ -92,20 +92,23 @@ def _create_learn_issue_impl(
         f"## Sessions\n\n{session_section}"
     )
 
-    # Create the learn plan
-    result = create_plan_issue(
+    # Create the learn plan as a draft PR
+    result = create_plan_draft_pr(
+        git=ctx.git,
+        github=ctx.github,
         github_issues=ctx.issues,
+        branch_manager=ctx.branch_manager,
+        time=ctx.time,
         repo_root=state.main_repo_root,
+        cwd=state.cwd,
         plan_content=plan_content,
         title=f"Learn: {plan_result.title}",
-        extra_labels=["erk-learn"],
-        title_tag="[erk-learn]",
+        labels=["erk-pr", "erk-learn"],
         source_repo=None,
         objective_id=None,
         created_from_session=None,
         created_from_workflow_run_url=None,
         learned_from_issue=int(plan_id),
-        lifecycle_stage="planned",
     )
 
     if result.success:
