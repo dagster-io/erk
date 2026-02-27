@@ -1,0 +1,8 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Complete objective #7724 \u2014 Rename issue_number to plan_number (nodes 9.2, 9.4, 9.5)",
+  "objective_id": 7724,
+  "node_ids": [
+    "9.2"
+  ]
+}
