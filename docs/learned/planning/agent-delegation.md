@@ -27,7 +27,7 @@ Subagent delegation should be avoided when:
 2. **Steps involve direct user interaction** — User prompts (e.g., "Should I close this?") must happen in the caller agent's context. Subagents cannot relay interactive prompts.
 3. **Context is already available** — If all data was fetched in Step 1, subsequent steps can use it directly without delegating.
 
-**Case Study:** `/erk:objective-update-with-landed-pr` (PR #7336) was refactored from subagent delegation to inline execution because Steps 3 (prose reconciliation) and 7 (closing prompt) required caller-level model quality and user interaction.
+**Case Study:** `/erk:system:objective-update-with-landed-pr` (PR #7336) was refactored from subagent delegation to inline execution because Steps 3 (prose reconciliation) and 7 (closing prompt) required caller-level model quality and user interaction.
 
 ## Overview
 

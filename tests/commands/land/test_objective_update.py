@@ -156,7 +156,7 @@ def test_land_execute_triggers_objective_update() -> None:
         # land-execute should call the prompt executor for objective update
         assert len(executor.executed_commands) == 1
         cmd = executor.executed_commands[0][0]
-        assert "/erk:objective-update-with-landed-pr" in cmd
+        assert "/erk:system:objective-update-with-landed-pr" in cmd
         assert "--objective 100" in cmd
         assert "--pr 123" in cmd
         assert f"--branch {feature_branch}" in cmd

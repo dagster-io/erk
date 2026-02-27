@@ -286,7 +286,7 @@ def test_land_execute_with_objective_triggers_update() -> None:
         # Claude executor should have been called for objective update
         assert len(executor.executed_commands) == 1
         cmd = executor.executed_commands[0][0]
-        assert "/erk:objective-update-with-landed-pr" in cmd
+        assert "/erk:system:objective-update-with-landed-pr" in cmd
         assert "--objective 200" in cmd
         assert "--pr 123" in cmd
         assert f"--branch {feature_branch}" in cmd

@@ -8,7 +8,7 @@ tripwires:
   - action: "using full-body update for single-cell changes"
     warning: "Full-body updates replace the entire table. For single-node PR updates, use surgical update (update-objective-node) to preserve other cells and avoid race conditions."
   - action: "using surgical update for complete table rewrites"
-    warning: "Surgical updates only change one node. For rewriting roadmaps after landing PRs (status + layout changes), use full-body update (objective-update-with-landed-pr)."
+    warning: "Surgical updates only change one node. For rewriting roadmaps after landing PRs (status + layout changes), use full-body update (system:objective-update-with-landed-pr)."
   - action: "directly mutating issue body markdown without using either command"
     warning: "Direct body mutation skips status computation. The surgical command writes computed status atomically; bypassing it leaves status stale. See roadmap-mutation-semantics.md."
   - action: "using None/empty string interchangeably in update-objective-node parameters"
