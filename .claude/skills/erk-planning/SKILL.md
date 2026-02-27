@@ -1,9 +1,9 @@
 ---
 name: erk-planning
 description: >
-  This skill documents plan issue management in erk. Use when creating, updating,
-  or working with erk-plan GitHub issues. Covers plan issue structure, the planning
-  workflow, and when to update vs create new issues.
+  This skill documents plan management in erk. Use when creating, updating,
+  or working with erk-plan GitHub PRs. Covers plan structure, the planning
+  workflow, and when to update vs create new plans.
 ---
 
 # Erk Planning Skill
@@ -12,9 +12,9 @@ description: >
 
 Load this skill when user mentions:
 
-- "update plan", "update the plan", "update issue"
+- "update plan", "update the plan"
 - "modify the plan", "change the plan"
-- "edit the issue", "update the issue"
+- "edit the plan"
 
 **When these triggers fire and a plan was saved in this session:**
 
@@ -27,17 +27,17 @@ Load this skill when user mentions:
 
 ## Overview
 
-Erk-plans are GitHub issues that track implementation plans. They have a two-part structure:
+Erk-plans are GitHub PRs that track implementation plans. They have a two-part structure:
 
-- **Issue body**: Machine-readable metadata (timestamps, comment IDs, dispatch info)
+- **PR body**: Machine-readable metadata (timestamps, comment IDs, dispatch info)
 - **First comment**: Human-readable plan content in a `plan-body` metadata block
 
 This separation keeps metadata parseable while plan content remains readable.
 
-## Plan Issue Structure
+## Plan Structure
 
 ```
-Issue #123: "Add feature X [erk-plan]"
+PR #123: "Add feature X [erk-plan]"
 ├── Body (metadata only):
 │   <!-- erk:metadata-block:plan-header -->
 │   created_at: 2025-01-05T12:00:00Z
@@ -65,7 +65,7 @@ Issue #123: "Add feature X [erk-plan]"
 
 ## Quick Reference
 
-### Creating a Plan Issue
+### Creating a Plan
 
 After writing a plan in plan mode:
 
@@ -77,7 +77,7 @@ After writing a plan in plan mode:
 erk exec plan-save --format display --session-id="<session-id>"
 ```
 
-### Updating an Existing Plan Issue
+### Updating an Existing Plan
 
 When you need to modify a plan that's already saved to GitHub:
 
@@ -103,7 +103,7 @@ erk exec plan-update --plan-number 123 --session-id="<session-id>"
 1. **Fetch existing plan** (if not in local files):
 
    ```bash
-   gh issue view 123 --comments --json comments
+   gh pr view 123 --comments --json comments
    ```
 
    Extract content from `plan-body` block in first comment.
@@ -118,7 +118,7 @@ erk exec plan-update --plan-number 123 --session-id="<session-id>"
 
 4. **Optionally add a comment** explaining what changed:
    ```bash
-   gh issue comment 123 --body "Updated plan: added step 3 for edge case handling"
+   gh pr comment 123 --body "Updated plan: added step 3 for edge case handling"
    ```
 
 ## Plan Mode Integration
@@ -137,13 +137,13 @@ The `plan-update` command finds plan content from:
 
 ## Related Commands
 
-| Command                 | Purpose                                 |
-| ----------------------- | --------------------------------------- |
-| `/erk:plan-save`        | Create new plan issue from current plan |
-| `/local:plan-update`    | Update existing plan issue              |
-| `/erk:plan-implement`   | Save plan and immediately implement     |
-| `/erk:replan`           | Analyze and recreate obsolete plan      |
-| `erk implement <issue>` | Implement a saved plan                  |
+| Command                 | Purpose                              |
+| ----------------------- | ------------------------------------ |
+| `/erk:plan-save`        | Create new plan PR from current plan |
+| `/local:plan-update`    | Update existing plan                 |
+| `/erk:plan-implement`   | Save plan and immediately implement  |
+| `/erk:replan`           | Analyze and recreate obsolete plan   |
+| `erk implement <issue>` | Implement a saved plan               |
 
 ## Resources
 

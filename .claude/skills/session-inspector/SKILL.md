@@ -19,7 +19,7 @@ in `~/.claude/projects/`. The skill enables:
 - Preprocessing sessions to readable XML format
 - Analyzing context window consumption
 - Extracting plans from sessions
-- Creating GitHub issues from session content
+- Creating plan PRs from session content
 - Debugging agent subprocess execution
 - Understanding the two-stage extraction pipeline
 
@@ -45,7 +45,7 @@ All commands invoked via `erk exec <command>`:
 | `list-sessions`              | List sessions with metadata for current worktree |
 | `preprocess-session`         | Convert JSONL to compressed XML                  |
 | `extract-latest-plan`        | Extract most recent plan from session            |
-| `create-pr-from-session`     | Create GitHub issue from session plan            |
+| `create-pr-from-session`     | Create plan PR from session plan                 |
 | `extract-session-from-issue` | Extract session content from GitHub issue        |
 
 ### Slash Commands
@@ -105,13 +105,13 @@ erk exec extract-latest-plan [--session-id SESSION_ID]
 Extracts most recent plan from session. Uses session-scoped lookup via slug field,
 falls back to mtime-based lookup if no session-specific plan found.
 
-### 4. Create GitHub Issue from Session
+### 4. Create Plan PR from Session
 
 ```bash
 erk exec create-pr-from-session [--session-id SESSION_ID]
 ```
 
-Extracts plan and creates GitHub issue with session content. Returns JSON with
+Extracts plan and creates plan PR with session content. Returns JSON with
 issue_number and issue_url.
 
 ### 5. Render Session for GitHub

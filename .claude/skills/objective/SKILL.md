@@ -2,7 +2,7 @@
 name: objective
 description: >
   This skill should be used when managing objectives - coherent goals that require 2+ plans/PRs
-  to complete. Use when users want to create multi-plan tracking issues, log progress across
+  to complete. Use when users want to create multi-plan tracking documents, log progress across
   related PRs, capture lessons learned, or coordinate work that spans multiple erk-plans.
   Objectives are human-first coordination documents, not executable plans.
 ---

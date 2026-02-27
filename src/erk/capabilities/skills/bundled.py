@@ -23,7 +23,7 @@ def bundled_skills() -> dict[str, str]:
         "fake-driven-testing": "5-layer test architecture with fakes",
         "erk-diff-analysis": "Code diff analysis for commit messages",
         "erk-exec": "Erk exec subcommand reference",
-        "erk-planning": "Plan issue management",
+        "erk-planning": "Plan management",
         "objective": "Objective tracking and management",
         "gh": "GitHub CLI integration",
         "gt": "Graphite stacked PR management",
