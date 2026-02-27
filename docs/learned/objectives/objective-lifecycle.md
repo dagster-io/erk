@@ -365,7 +365,7 @@ All roadmap steps completed:
 │                                                          │
 │ erk land (or gt submit + gh pr merge)                    │
 │   ↓                                                      │
-│ erk system:objective-update-with-landed-pr                │
+│ erk system:objective-update-with-landed-pr               │
 │   ↓                                                      │
 │ - Post action comment                                    │
 │ - Update roadmap: pr="#N", status="done"                 │
