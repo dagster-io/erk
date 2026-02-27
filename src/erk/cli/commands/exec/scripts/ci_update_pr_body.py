@@ -54,6 +54,7 @@ from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.metadata.core import find_metadata_block, render_metadata_block
+from erk_shared.gateway.github.metadata.types import MetadataBlock
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer, build_remote_execution_note
 from erk_shared.gateway.github.types import BodyText, PRNotFound
 from erk_shared.gateway.gt.prompts import get_commit_message_prompt, truncate_diff
@@ -84,7 +85,6 @@ class UpdateError:
         "claude-execution-failed",
         "claude-empty-output",
         "github-api-failed",
-        "plan-header-not-found",
     ]
     message: str
     stderr: str | None
@@ -130,32 +130,30 @@ def _build_prompt(
 Generate a commit message for this diff:"""
 
 
-def _build_pr_body(
+def _build_pr_summary(
     *,
     summary: str,
-    pr_number: int,
     run_id: str | None,
     run_url: str | None,
 ) -> str:
-    """Build the full PR body with summary, optional workflow link, and footer.
+    """Build the PR summary section (without footer).
+
+    The caller is responsible for appending the footer after any metadata blocks,
+    ensuring correct ordering: summary + plan_section + metadata + footer.
 
     Args:
         summary: AI-generated PR summary
-        pr_number: PR number for checkout instructions
         run_id: Optional workflow run ID
         run_url: Optional workflow run URL
 
     Returns:
-        Formatted PR body markdown
+        Formatted PR summary markdown (no footer)
     """
     parts = [f"## Summary\n\n{summary}"]
 
     # Add workflow link if provided
     if run_id is not None and run_url is not None:
         parts.append(build_remote_execution_note(run_id, run_url))
-
-    # Add footer with checkout instructions
-    parts.append(build_pr_body_footer(pr_number))
 
     return "\n".join(parts)
 
@@ -261,39 +259,41 @@ def _update_pr_body_impl(
     title, summary = _parse_title_and_summary(result.output)
 
     # Build full PR body
+    footer = build_pr_body_footer(pr_number)
+
     if is_planned_pr:
         # For planned-PR plans: preserve metadata prefix, include original plan section
         plan_header = find_metadata_block(pr_result.body, "plan-header")
         if plan_header is None:
-            return UpdateError(
-                success=False,
-                error="plan-header-not-found",
-                message=(
-                    "plan-header metadata block not found in PR body for planned-PR plan. "
-                    "The plan-header was lost in a previous step. "
-                    "Inspect the PR body and check for earlier CI step failures."
-                ),
-                stderr=None,
+            # Reconstruct a minimal plan-header from the PR's own metadata
+            plan_header = MetadataBlock(
+                key="plan-header",
+                data={
+                    "schema_version": "1",
+                    "created_at": pr_result.created_at.isoformat(),
+                    "created_by": pr_result.author,
+                    "plan_header_recovered": True,
+                },
             )
         plan_content = extract_plan_content(pr_result.body)
         original_plan_section = build_original_plan_section(plan_content)
 
         metadata_text = render_metadata_block(plan_header)
 
-        summary_body = _build_pr_body(
+        summary_body = _build_pr_summary(
             summary=summary,
-            pr_number=pr_number,
             run_id=run_id,
             run_url=run_url,
         )
-        pr_body = summary_body + original_plan_section + "\n\n" + metadata_text
+        # Correct ordering: summary + plan_section + metadata + footer
+        pr_body = summary_body + original_plan_section + "\n\n" + metadata_text + footer
     else:
-        pr_body = _build_pr_body(
+        summary_body = _build_pr_summary(
             summary=summary,
-            pr_number=pr_number,
             run_id=run_id,
             run_url=run_url,
         )
+        pr_body = summary_body + footer
 
     # Update PR title and body
     try:

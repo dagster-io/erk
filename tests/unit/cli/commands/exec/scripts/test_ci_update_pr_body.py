@@ -12,7 +12,7 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.ci_update_pr_body import (
     UpdateError,
     UpdateSuccess,
-    _build_pr_body,
+    _build_pr_summary,
     _build_prompt,
     _parse_title_and_summary,
     _update_pr_body_impl,
@@ -51,26 +51,24 @@ def test_build_prompt_contains_diff_and_context(tmp_path: Path) -> None:
     assert "Parent branch: main" in prompt
 
 
-def test_build_pr_body_includes_summary_and_footer() -> None:
-    """Test that _build_pr_body includes all required sections."""
-    body = _build_pr_body(
+def test_build_pr_summary_includes_summary() -> None:
+    """Test that _build_pr_summary includes the summary section."""
+    body = _build_pr_summary(
         summary="This is the summary",
-        pr_number=123,
         run_id=None,
         run_url=None,
     )
 
     assert "## Summary" in body
     assert "This is the summary" in body
-    assert "Closes #" not in body
-    assert "erk pr checkout 123" in body
+    # Footer is no longer included by _build_pr_summary
+    assert "erk pr checkout" not in body
 
 
-def test_build_pr_body_includes_workflow_link_when_provided() -> None:
-    """Test that _build_pr_body includes workflow link when run_id and run_url are provided."""
-    body = _build_pr_body(
+def test_build_pr_summary_includes_workflow_link_when_provided() -> None:
+    """Test that _build_pr_summary includes workflow link when run_id and run_url are provided."""
+    body = _build_pr_summary(
         summary="Summary",
-        pr_number=123,
         run_id="789",
         run_url="https://github.com/owner/repo/actions/runs/789",
     )
@@ -96,11 +94,10 @@ def test_parse_title_and_summary_single_line() -> None:
     assert summary == ""
 
 
-def test_build_pr_body_omits_workflow_link_when_not_provided() -> None:
-    """Test that _build_pr_body omits workflow link when run_id or run_url is None."""
-    body = _build_pr_body(
+def test_build_pr_summary_omits_workflow_link_when_not_provided() -> None:
+    """Test that _build_pr_summary omits workflow link when run_id or run_url is None."""
+    body = _build_pr_summary(
         summary="Summary",
-        pr_number=123,
         run_id=None,
         run_url=None,
     )
@@ -710,11 +707,10 @@ def test_cli_json_output_structure_error(tmp_path: Path) -> None:
 # ============================================================================
 
 
-def test_build_pr_body_no_closes_reference() -> None:
-    """Test that _build_pr_body never includes Closes #N."""
-    body = _build_pr_body(
+def test_build_pr_summary_no_closes_reference() -> None:
+    """Test that _build_pr_summary never includes Closes #N."""
+    body = _build_pr_summary(
         summary="This is the summary",
-        pr_number=123,
         run_id=None,
         run_url=None,
     )
@@ -722,7 +718,6 @@ def test_build_pr_body_no_closes_reference() -> None:
     assert "## Summary" in body
     assert "This is the summary" in body
     assert "Closes #" not in body
-    assert "erk pr checkout 123" in body
 
 
 def test_impl_planned_pr_preserves_metadata_and_adds_plan_section(tmp_path: Path) -> None:
@@ -811,12 +806,14 @@ def test_impl_planned_pr_preserves_metadata_and_adds_plan_section(tmp_path: Path
     assert "My Plan" in updated_body
 
 
-def test_impl_planned_pr_missing_plan_header_returns_error(tmp_path: Path) -> None:
-    """Test that planned-PR mode returns plan-header-not-found when plan-header is missing."""
+def test_impl_planned_pr_missing_plan_header_recovers(tmp_path: Path) -> None:
+    """Test that planned-PR mode reconstructs plan-header when it's missing."""
     git = FakeGit(current_branches={tmp_path: "plan-test-01-01"})
 
     # PR body WITHOUT plan-header metadata block
     pr_body = "## Summary\n\nSome content without a plan-header block"
+
+    from datetime import UTC, datetime
 
     pr_details = PRDetails(
         number=42,
@@ -832,6 +829,8 @@ def test_impl_planned_pr_missing_plan_header_returns_error(tmp_path: Path) -> No
         merge_state_status="CLEAN",
         owner="test-owner",
         repo="test-repo",
+        created_at=datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC),
+        author="test-user",
     )
 
     github = FakeGitHub(
@@ -867,12 +866,17 @@ def test_impl_planned_pr_missing_plan_header_returns_error(tmp_path: Path) -> No
         is_planned_pr=True,
     )
 
-    assert isinstance(result, UpdateError)
-    assert result.error == "plan-header-not-found"
-    assert "plan-header metadata block not found" in result.message
-    # No PR body modification should occur
-    assert len(github.updated_pr_bodies) == 0
-    assert len(github.updated_pr_titles) == 0
+    # Should succeed with recovered plan-header, not return an error
+    assert isinstance(result, UpdateSuccess)
+    assert result.pr_number == 42
+    assert result.title == "Generated title"
+
+    # Verify body was updated with recovered plan-header
+    assert len(github.updated_pr_bodies) == 1
+    _pr_num, updated_body = github.updated_pr_bodies[0]
+    assert "plan-header" in updated_body
+    assert "plan_header_recovered: true" in updated_body
+    assert "created_by: test-user" in updated_body
 
 
 def test_cli_planned_pr_flag(tmp_path: Path) -> None:
@@ -957,3 +961,156 @@ def test_cli_planned_pr_flag(tmp_path: Path) -> None:
     # Should have original plan section
     assert "original-plan" in updated_body
     assert "My Plan" in updated_body
+
+
+# ============================================================================
+# 5. Body Ordering Tests
+# ============================================================================
+
+
+def test_impl_planned_pr_body_ordering(tmp_path: Path) -> None:
+    """Test that planned-PR body has correct ordering: summary, plan section, metadata, footer."""
+    git = FakeGit(current_branches={tmp_path: "plan-test-01-01"})
+
+    # Build a PR body with metadata prefix and plan content (planned-PR format)
+    metadata_body = format_plan_header_body_for_test()
+    plan_content = "# My Plan\n\n## Steps\n\n1. Do thing"
+    pr_body = build_plan_stage_body(metadata_body, plan_content)
+
+    pr_details = PRDetails(
+        number=42,
+        url="https://github.com/owner/repo/pull/42",
+        title="[erk-plan] Test Plan",
+        body=pr_body,
+        state="OPEN",
+        is_draft=True,
+        base_ref_name="master",
+        head_ref_name="plan-test-01-01",
+        is_cross_repository=False,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        owner="test-owner",
+        repo="test-repo",
+        labels=("erk-plan",),
+    )
+
+    github = FakeGitHub(
+        prs={
+            "plan-test-01-01": PullRequestInfo(
+                number=42,
+                state="OPEN",
+                url="https://github.com/owner/repo/pull/42",
+                is_draft=True,
+                title="[erk-plan] Test Plan",
+                checks_passing=True,
+                owner="test-owner",
+                repo="test-repo",
+            )
+        },
+        pr_details={42: pr_details},
+        pr_diffs={42: "+added line"},
+    )
+
+    executor = FakePromptExecutor(
+        prompt_results=[
+            PromptResult(success=True, output="Generated title\n\nGenerated summary", error=None)
+        ]
+    )
+
+    result = _update_pr_body_impl(
+        git=git,
+        github=github,
+        executor=executor,
+        repo_root=tmp_path,
+        run_id=None,
+        run_url=None,
+        is_planned_pr=True,
+    )
+
+    assert isinstance(result, UpdateSuccess)
+
+    _pr_num, updated_body = github.updated_pr_bodies[0]
+
+    # Verify ordering: summary < plan section < metadata < footer
+    summary_pos = updated_body.find("## Summary")
+    plan_section_pos = updated_body.find("original-plan")
+    metadata_pos = updated_body.find("<!-- erk:metadata-block:plan-header -->")
+    footer_pos = updated_body.rfind("\n---\n")
+
+    assert summary_pos >= 0, "Summary section not found"
+    assert plan_section_pos >= 0, "Plan section not found"
+    assert metadata_pos >= 0, "Metadata block not found"
+    assert footer_pos >= 0, "Footer separator not found"
+
+    assert summary_pos < plan_section_pos, "Summary must come before plan section"
+    assert plan_section_pos < metadata_pos, "Plan section must come before metadata"
+    assert metadata_pos < footer_pos, "Metadata must come before footer"
+
+
+def test_impl_non_planned_pr_body_has_footer(tmp_path: Path) -> None:
+    """Test that non-planned-PR body includes footer after summary."""
+    git = FakeGit(current_branches={tmp_path: "feature-branch"})
+
+    pr_details = PRDetails(
+        number=123,
+        url="https://github.com/owner/repo/pull/123",
+        title="Test PR",
+        body="Old body",
+        state="OPEN",
+        is_draft=False,
+        base_ref_name="main",
+        head_ref_name="feature-branch",
+        is_cross_repository=False,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        owner="test-owner",
+        repo="test-repo",
+    )
+
+    github = FakeGitHub(
+        prs={
+            "feature-branch": PullRequestInfo(
+                number=123,
+                state="OPEN",
+                url="https://github.com/owner/repo/pull/123",
+                is_draft=False,
+                title="Test PR",
+                checks_passing=True,
+                owner="test-owner",
+                repo="test-repo",
+            )
+        },
+        pr_details={123: pr_details},
+        pr_diffs={123: "+added line\n-removed line"},
+    )
+
+    executor = FakePromptExecutor(
+        prompt_results=[
+            PromptResult(
+                success=True,
+                output="Generated PR title\n\nGenerated PR summary",
+                error=None,
+            )
+        ]
+    )
+
+    result = _update_pr_body_impl(
+        git=git,
+        github=github,
+        executor=executor,
+        repo_root=tmp_path,
+        run_id=None,
+        run_url=None,
+        is_planned_pr=False,
+    )
+
+    assert isinstance(result, UpdateSuccess)
+
+    _pr_num, updated_body = github.updated_pr_bodies[0]
+
+    # Footer should be present
+    assert "erk pr checkout 123" in updated_body
+    # Summary should come before footer
+    summary_pos = updated_body.find("## Summary")
+    footer_pos = updated_body.rfind("\n---\n")
+    assert summary_pos < footer_pos, "Summary must come before footer"
