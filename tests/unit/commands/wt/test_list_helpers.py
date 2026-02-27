@@ -92,10 +92,10 @@ def test_get_impl_issue_from_impl_folder(tmp_path: Path) -> None:
     plan_file = impl_dir / "plan.md"
     plan_file.write_text("# Plan", encoding="utf-8")
 
-    # Create issue.json (legacy format, still supported by read_plan_ref)
-    issue_file = impl_dir / "issue.json"
-    issue_file.write_text(
-        '{"issue_number": 42, "issue_url": "https://github.com/owner/repo/issues/42", '
+    # Create ref.json (plan-ref format)
+    ref_file = impl_dir / "ref.json"
+    ref_file.write_text(
+        '{"provider": "github", "plan_id": "42", "url": "https://github.com/owner/repo/issues/42", '
         '"created_at": "2024-01-01T00:00:00Z", "synced_at": "2024-01-01T00:00:00Z"}',
         encoding="utf-8",
     )

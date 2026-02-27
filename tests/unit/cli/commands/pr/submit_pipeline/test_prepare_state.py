@@ -103,17 +103,18 @@ def test_issue_linkage_mismatch_returns_error(tmp_path: Path) -> None:
     """Branch with P-prefix cannot extract issue number, no mismatch possible.
 
     P-prefix branches cannot provide an issue number. The test verifies plan_id
-    comes from issue.json without any mismatch error.
+    comes from ref.json without any mismatch error.
     """
-    # Create branch-scoped impl dir with issue.json
+    # Create branch-scoped impl dir with ref.json
     impl_dir = get_impl_dir(tmp_path, branch_name="P42-some-feature")
     impl_dir.mkdir(parents=True)
-    issue_json = impl_dir / "issue.json"
-    issue_json.write_text(
+    ref_json = impl_dir / "ref.json"
+    ref_json.write_text(
         json.dumps(
             {
-                "issue_number": 99,
-                "issue_url": "https://github.com/owner/repo/issues/99",
+                "provider": "github",
+                "plan_id": "99",
+                "url": "https://github.com/owner/repo/issues/99",
                 "created_at": "2025-01-01T00:00:00+00:00",
                 "synced_at": "2025-01-01T00:00:00+00:00",
             }
@@ -133,7 +134,7 @@ def test_issue_linkage_mismatch_returns_error(tmp_path: Path) -> None:
 
     # No mismatch error since branch cannot provide issue number
     assert isinstance(result, SubmitState)
-    assert result.plan_id == "99"  # From issue.json
+    assert result.plan_id == "99"  # From ref.json
 
 
 def test_auto_repair_creates_plan_ref_json(tmp_path: Path) -> None:
@@ -181,15 +182,16 @@ def test_no_plan_id_from_branch(tmp_path: Path) -> None:
 
 
 def test_plan_id_from_impl_folder(tmp_path: Path) -> None:
-    """Branch-scoped impl dir with issue.json present => plan_id populated."""
+    """Branch-scoped impl dir with ref.json present => plan_id populated."""
     impl_dir = get_impl_dir(tmp_path, branch_name="feature-branch")
     impl_dir.mkdir(parents=True)
-    issue_json = impl_dir / "issue.json"
-    issue_json.write_text(
+    ref_json = impl_dir / "ref.json"
+    ref_json.write_text(
         json.dumps(
             {
-                "issue_number": 55,
-                "issue_url": "https://github.com/owner/repo/issues/55",
+                "provider": "github",
+                "plan_id": "55",
+                "url": "https://github.com/owner/repo/issues/55",
                 "created_at": "2025-01-01T00:00:00+00:00",
                 "synced_at": "2025-01-01T00:00:00+00:00",
             }

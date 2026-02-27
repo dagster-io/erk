@@ -7,7 +7,7 @@ This module provides a two-layer PR submission architecture:
 The core layer handles:
 - Auth checks (gh auth)
 - Uncommitted changes detection/commit
-- Issue linking (reads .impl/issue.json)
+- Issue linking (reads .impl/plan-ref.json)
 - git push -u origin <branch>
 - gh pr create (or update existing)
 - PR footer with checkout instructions

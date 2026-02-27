@@ -632,84 +632,16 @@ class TestBuildGhLabel:
 
 
 class TestGetIssueNumber:
-    """Test issue number loading from .impl/plan-ref.json (with legacy issue.json fallback)."""
+    """Test issue number loading from .impl/plan-ref.json."""
 
     def test_no_git_root_returns_none(self) -> None:
         """Empty git root should return None."""
         result = get_issue_number("")
         assert result is None
 
-    def test_missing_issue_file_returns_none(self) -> None:
-        """Missing issue.json file should return None."""
+    def test_missing_plan_ref_file_returns_none(self) -> None:
+        """Missing plan-ref.json file should return None."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            result = get_issue_number(tmpdir)
-            assert result is None
-
-    def test_valid_issue_json_returns_number(self) -> None:
-        """Valid issue.json with number field should return the number."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            impl_dir = Path(tmpdir) / ".impl"
-            impl_dir.mkdir()
-            issue_file = impl_dir / "issue.json"
-            issue_file.write_text('{"number": 456}')
-
-            result = get_issue_number(tmpdir)
-            assert result == 456
-
-    def test_valid_issue_json_with_issue_number_key(self) -> None:
-        """Valid issue.json with issue_number field should return the number."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            impl_dir = Path(tmpdir) / ".impl"
-            impl_dir.mkdir()
-            issue_file = impl_dir / "issue.json"
-            issue_file.write_text(
-                '{"issue_number": 901, "issue_url": "https://github.com/owner/repo/issues/901"}'
-            )
-
-            result = get_issue_number(tmpdir)
-            assert result == 901
-
-    def test_issue_json_with_extra_fields(self) -> None:
-        """issue.json with extra fields should still return the number."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            impl_dir = Path(tmpdir) / ".impl"
-            impl_dir.mkdir()
-            issue_file = impl_dir / "issue.json"
-            issue_file.write_text('{"number": 789, "title": "Fix bug", "state": "open"}')
-
-            result = get_issue_number(tmpdir)
-            assert result == 789
-
-    def test_malformed_json_returns_none(self) -> None:
-        """Malformed JSON should return None."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            impl_dir = Path(tmpdir) / ".impl"
-            impl_dir.mkdir()
-            issue_file = impl_dir / "issue.json"
-            issue_file.write_text('{"number": not valid json}')
-
-            result = get_issue_number(tmpdir)
-            assert result is None
-
-    def test_missing_number_field_returns_none(self) -> None:
-        """JSON without number field should return None."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            impl_dir = Path(tmpdir) / ".impl"
-            impl_dir.mkdir()
-            issue_file = impl_dir / "issue.json"
-            issue_file.write_text('{"title": "Some issue"}')
-
-            result = get_issue_number(tmpdir)
-            assert result is None
-
-    def test_non_integer_number_returns_none(self) -> None:
-        """JSON with non-integer number field should return None."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            impl_dir = Path(tmpdir) / ".impl"
-            impl_dir.mkdir()
-            issue_file = impl_dir / "issue.json"
-            issue_file.write_text('{"number": "not an int"}')
-
             result = get_issue_number(tmpdir)
             assert result is None
 
@@ -726,22 +658,8 @@ class TestGetIssueNumber:
             result = get_issue_number(tmpdir)
             assert result == 42
 
-    def test_plan_ref_json_preferred_over_issue_json(self) -> None:
-        """plan-ref.json should be preferred over issue.json."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            impl_dir = Path(tmpdir) / ".impl"
-            impl_dir.mkdir()
-            # Write both with different numbers
-            plan_ref_file = impl_dir / "plan-ref.json"
-            plan_ref_file.write_text('{"provider": "github", "plan_id": "99", "url": "u"}')
-            issue_file = impl_dir / "issue.json"
-            issue_file.write_text('{"issue_number": 42}')
-
-            result = get_issue_number(tmpdir)
-            assert result == 99
-
     def test_plan_ref_json_non_numeric_plan_id_returns_none(self) -> None:
-        """plan-ref.json with non-numeric plan_id falls back to issue.json."""
+        """plan-ref.json with non-numeric plan_id returns None."""
         with tempfile.TemporaryDirectory() as tmpdir:
             impl_dir = Path(tmpdir) / ".impl"
             impl_dir.mkdir()
@@ -753,60 +671,16 @@ class TestGetIssueNumber:
 
 
 class TestGetObjectiveIssue:
-    """Test objective issue loading from .impl/plan-ref.json (with legacy issue.json fallback)."""
+    """Test objective issue loading from .impl/plan-ref.json."""
 
     def test_no_git_root_returns_none(self) -> None:
         """Empty git root should return None."""
         result = get_objective_issue("")
         assert result is None
 
-    def test_missing_issue_file_returns_none(self) -> None:
-        """Missing issue.json file should return None."""
+    def test_missing_plan_ref_file_returns_none(self) -> None:
+        """Missing plan-ref.json file should return None."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            result = get_objective_issue(tmpdir)
-            assert result is None
-
-    def test_valid_issue_json_with_objective_returns_number(self) -> None:
-        """Valid issue.json with objective_issue field should return the number."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            impl_dir = Path(tmpdir) / ".impl"
-            impl_dir.mkdir()
-            issue_file = impl_dir / "issue.json"
-            issue_file.write_text('{"issue_number": 123, "objective_issue": 456}')
-
-            result = get_objective_issue(tmpdir)
-            assert result == 456
-
-    def test_issue_json_without_objective_returns_none(self) -> None:
-        """JSON without objective_issue field should return None."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            impl_dir = Path(tmpdir) / ".impl"
-            impl_dir.mkdir()
-            issue_file = impl_dir / "issue.json"
-            issue_file.write_text('{"issue_number": 123}')
-
-            result = get_objective_issue(tmpdir)
-            assert result is None
-
-    def test_malformed_json_returns_none(self) -> None:
-        """Malformed JSON should return None."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            impl_dir = Path(tmpdir) / ".impl"
-            impl_dir.mkdir()
-            issue_file = impl_dir / "issue.json"
-            issue_file.write_text('{"objective_issue": not valid json}')
-
-            result = get_objective_issue(tmpdir)
-            assert result is None
-
-    def test_non_integer_objective_returns_none(self) -> None:
-        """JSON with non-integer objective_issue field should return None."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            impl_dir = Path(tmpdir) / ".impl"
-            impl_dir.mkdir()
-            issue_file = impl_dir / "issue.json"
-            issue_file.write_text('{"objective_issue": "not an int"}')
-
             result = get_objective_issue(tmpdir)
             assert result is None
 
@@ -823,31 +697,13 @@ class TestGetObjectiveIssue:
             result = get_objective_issue(tmpdir)
             assert result == 789
 
-    def test_plan_ref_json_preferred_over_issue_json_for_objective(self) -> None:
-        """plan-ref.json should be preferred over issue.json for objective."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            impl_dir = Path(tmpdir) / ".impl"
-            impl_dir.mkdir()
-            plan_ref_file = impl_dir / "plan-ref.json"
-            plan_ref_file.write_text(
-                '{"provider": "github", "plan_id": "42", "url": "u", "objective_id": 100}'
-            )
-            issue_file = impl_dir / "issue.json"
-            issue_file.write_text('{"issue_number": 42, "objective_issue": 200}')
-
-            result = get_objective_issue(tmpdir)
-            assert result == 100
-
     def test_plan_ref_json_without_objective_returns_none(self) -> None:
-        """plan-ref.json without objective_id should return None (not fall back)."""
+        """plan-ref.json without objective_id should return None."""
         with tempfile.TemporaryDirectory() as tmpdir:
             impl_dir = Path(tmpdir) / ".impl"
             impl_dir.mkdir()
             plan_ref_file = impl_dir / "plan-ref.json"
             plan_ref_file.write_text('{"provider": "github", "plan_id": "42", "url": "u"}')
-            # Even if issue.json has an objective, plan-ref.json takes priority
-            issue_file = impl_dir / "issue.json"
-            issue_file.write_text('{"issue_number": 42, "objective_issue": 200}')
 
             result = get_objective_issue(tmpdir)
             assert result is None

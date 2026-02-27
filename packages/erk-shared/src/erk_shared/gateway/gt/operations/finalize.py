@@ -16,14 +16,14 @@ ERK_SKIP_LEARN_LABEL = "erk-skip-learn"
 def is_learn_plan(impl_dir: Path) -> bool:
     """Check if the plan in the impl folder is a learn plan.
 
-    Checks the labels stored in .impl/issue.json for the "erk-learn" label.
+    Checks the labels stored in .impl/plan-ref.json for the "erk-learn" label.
 
     Args:
         impl_dir: Path to .impl/ directory
 
     Returns:
         True if "erk-learn" label is present, False otherwise (including if
-        issue.json doesn't exist or labels field is missing)
+        plan-ref.json doesn't exist or labels field is missing)
     """
     plan_ref = read_plan_ref(impl_dir)
     if plan_ref is None:
