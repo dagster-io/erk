@@ -548,28 +548,15 @@ def test_pr_check_stage_impl_passes_when_impl_context_absent(tmp_path: Path) -> 
 
 
 def test_pr_check_stage_impl_all_checks_pass(tmp_path: Path) -> None:
-    """Test --stage=impl all checks pass when PR is properly configured and impl-context absent."""
+    """Test --stage=impl checks pass when PR is properly configured and impl-context absent.
+
+    After impl folder cleanup (git rm), the impl-context directory is not present on disk.
+    The plan reference check is optional (only added if impl dir found), so this test
+    verifies the impl-context cleanup check and other PR body checks pass.
+    """
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
-
-        # Create impl dir with ref.json at legacy .impl/ path.
-        # Using .impl/ avoids creating .erk/impl-context/ as a parent dir,
-        # so the --stage=impl check for ".erk/impl-context/ not present" passes.
-        impl_dir = env.cwd / ".impl"
-        impl_dir.mkdir(parents=True)
-        plan_ref_json = impl_dir / "ref.json"
-        plan_ref_json.write_text(
-            json.dumps(
-                {
-                    "provider": "github",
-                    "plan_id": "456",
-                    "url": "https://github.com/owner/repo/issues/456",
-                    "created_at": "2025-01-01T00:00:00Z",
-                    "synced_at": "2025-01-01T00:00:00Z",
-                }
-            )
-        )
 
         pr_body = (
             "## Summary\nThis PR adds a feature.\n\n"
@@ -613,7 +600,6 @@ def test_pr_check_stage_impl_all_checks_pass(tmp_path: Path) -> None:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             current_branches={env.cwd: branch},
-            existing_paths={env.cwd, impl_dir},
         )
 
         ctx = build_workspace_test_context(env, git=git, github=github)
@@ -621,6 +607,5 @@ def test_pr_check_stage_impl_all_checks_pass(tmp_path: Path) -> None:
 
         assert result.exit_code == 0
         assert "[PASS] .erk/impl-context/ not present (cleaned up)" in result.output
-        assert "[PASS] Plan reference found (#456)" in result.output
         assert "[PASS] PR body contains checkout footer" in result.output
         assert "All checks passed" in result.output

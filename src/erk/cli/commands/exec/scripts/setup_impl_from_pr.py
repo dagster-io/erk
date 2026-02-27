@@ -36,8 +36,17 @@ from erk_shared.gateway.git.remote_ops.types import PullRebaseError
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.metadata.schemas import OBJECTIVE_ISSUE
 from erk_shared.gateway.github.types import PRNotFound
-from erk_shared.impl_folder import create_impl_folder, get_impl_dir, read_plan_ref, save_plan_ref
-from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR, extract_plan_content
+from erk_shared.impl_folder import (
+    create_impl_folder,
+    get_impl_dir,
+    read_plan_ref,
+    resolve_impl_dir,
+    save_plan_ref,
+)
+from erk_shared.plan_store.planned_pr_lifecycle import (
+    IMPL_CONTEXT_DIR,
+    extract_plan_content,
+)
 
 
 def _get_current_branch(git: Git, cwd: Path) -> str:
@@ -124,18 +133,18 @@ def _setup_planned_pr_plan(
     cwd = require_cwd(ctx)
     git = require_git(ctx)
 
-    # Early exit: if .impl/ is already set up for this issue (e.g., CI pre-populated it),
+    # Early exit: if impl/ is already set up for this issue (e.g., CI pre-populated it),
     # skip branch switching. Switching to the plan branch would abandon the implementation
     # branch, causing work to land on the wrong branch.
-    impl_dir = cwd / ".impl"
-    if impl_dir.exists():
+    current_branch = _get_current_branch(git, cwd)
+    impl_dir = resolve_impl_dir(cwd, branch_name=current_branch)
+    if impl_dir is not None:
         existing_ref = read_plan_ref(impl_dir)
         if existing_ref is not None and existing_ref.plan_id == str(plan_number):
             click.echo(
-                f"Found existing .impl/ for plan #{plan_number}, skipping branch setup",
+                f"Found existing impl dir for plan #{plan_number}, skipping branch setup",
                 err=True,
             )
-            current_branch = _get_current_branch(git, cwd)
             impl_path_str = str(impl_dir) if not no_impl else None
             return {
                 "success": True,

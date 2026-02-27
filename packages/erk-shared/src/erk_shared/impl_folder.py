@@ -57,9 +57,8 @@ def resolve_impl_dir(base_path: Path, *, branch_name: str | None) -> Path | None
     Resolution order:
     1. Branch-scoped: get_impl_dir(base_path, branch_name=branch_name) if branch_name
        provided and directory exists
-    2. Legacy: base_path / ".impl" if exists
-    3. Discovery: search base_path / IMPL_DIR_RELATIVE for any subdir containing plan.md
-    4. Return None if not found
+    2. Discovery: search base_path / IMPL_DIR_RELATIVE for any subdir containing plan.md
+    3. Return None if not found
 
     Args:
         base_path: Repository root or worktree path
@@ -74,19 +73,16 @@ def resolve_impl_dir(base_path: Path, *, branch_name: str | None) -> Path | None
         if branch_dir.exists():
             return branch_dir
 
-    # Step 2: Legacy .impl/ lookup
-    legacy_dir = base_path / ".impl"
-    if legacy_dir.exists():
-        return legacy_dir
-
-    # Step 3: Discovery — search IMPL_DIR_RELATIVE for any subdir with plan.md
+    # Step 2: Discovery — search IMPL_DIR_RELATIVE for any subdir with plan.md or progress.md
     impl_context_root = base_path / IMPL_DIR_RELATIVE
     if impl_context_root.exists():
         for child in impl_context_root.iterdir():
-            if child.is_dir() and (child / "plan.md").exists():
+            if child.is_dir() and (
+                (child / "plan.md").exists() or (child / "progress.md").exists()
+            ):
                 return child
 
-    # Step 4: Not found
+    # Step 3: Not found
     return None
 
 
@@ -303,19 +299,18 @@ def _parse_ref_json(ref_file: Path) -> PlanRef | None:
 
 
 def read_plan_ref(impl_dir: Path) -> PlanRef | None:
-    """Read plan reference from .impl/plan-ref.json, with legacy fallback.
+    """Read plan reference from impl dir (plan-ref.json or ref.json).
 
     1. Try plan-ref.json first (new format)
-    2. Fall back to issue.json (legacy), mapping fields
+    2. Try ref.json (same schema, different filename)
     3. Return None if neither file exists or is valid
 
     Args:
-        impl_dir: Path to .impl/ directory
+        impl_dir: Path to impl directory
 
     Returns:
         PlanRef if file exists and is valid, None otherwise
     """
-    # Try plan-ref.json, then ref.json (same schema, different filenames)
     for filename in ("plan-ref.json", "ref.json"):
         ref_file = impl_dir / filename
         if not ref_file.exists():
@@ -325,56 +320,23 @@ def read_plan_ref(impl_dir: Path) -> PlanRef | None:
         if result is not None:
             return result
 
-    # Fall back to legacy issue.json
-    issue_file = impl_dir / "issue.json"
-    if not issue_file.exists():
-        return None
-
-    try:
-        data = json.loads(issue_file.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        return None
-
-    required_fields = ["issue_number", "issue_url", "created_at", "synced_at"]
-    if any(f not in data for f in required_fields):
-        return None
-
-    labels_list = data.get("labels", [])
-    labels = tuple(labels_list) if isinstance(labels_list, list) else ()
-
-    raw_node_ids = data.get("node_ids")
-    node_ids = tuple(raw_node_ids) if isinstance(raw_node_ids, list) else None
-
-    return PlanRef(
-        provider="github",
-        plan_id=str(data["issue_number"]),
-        url=data["issue_url"],
-        created_at=data["created_at"],
-        synced_at=data["synced_at"],
-        labels=labels,
-        objective_id=data.get("objective_issue"),
-        node_ids=node_ids,
-    )
+    return None
 
 
 def has_plan_ref(impl_dir: Path) -> bool:
-    """Check if plan reference exists (either plan-ref.json or legacy issue.json).
+    """Check if plan reference exists (plan-ref.json or ref.json).
 
     Args:
-        impl_dir: Path to .impl/ directory
+        impl_dir: Path to impl directory
 
     Returns:
-        True if either plan-ref.json or issue.json exists, False otherwise
+        True if plan-ref.json or ref.json exists, False otherwise
     """
-    return (
-        (impl_dir / "plan-ref.json").exists()
-        or (impl_dir / "ref.json").exists()
-        or (impl_dir / "issue.json").exists()
-    )
+    return (impl_dir / "plan-ref.json").exists() or (impl_dir / "ref.json").exists()
 
 
 def validate_plan_linkage(impl_dir: Path, branch_name: str) -> str | None:
-    """Return plan_id from plan-ref.json.
+    """Return plan_id from plan-ref.json or legacy issue.json.
 
     Plan-ref.json is the sole source of truth for plan-to-branch mapping.
     Branch names no longer encode issue numbers.
@@ -384,11 +346,22 @@ def validate_plan_linkage(impl_dir: Path, branch_name: str) -> str | None:
         branch_name: Current git branch name (unused, kept for interface compat)
 
     Returns:
-        Plan ID (as string) from plan-ref.json, or None if not found.
+        Plan ID (as string) from plan-ref.json or legacy issue.json, or None if not found.
     """
     plan_ref = read_plan_ref(impl_dir)
     if plan_ref is not None:
         return plan_ref.plan_id
+
+    # Fallback: read legacy issue.json for backward compatibility
+    issue_file = impl_dir / "issue.json"
+    if issue_file.exists():
+        try:
+            data = json.loads(issue_file.read_text(encoding="utf-8"))
+            if "issue_number" in data:
+                return str(data["issue_number"])
+        except json.JSONDecodeError:
+            pass
+
     return None
 
 

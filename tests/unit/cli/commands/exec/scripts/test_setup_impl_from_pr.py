@@ -18,7 +18,7 @@ from erk_shared.gateway.git.remote_ops.types import PullRebaseError
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.impl_folder import save_plan_ref
+from erk_shared.impl_folder import get_impl_dir, save_plan_ref
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 
@@ -249,9 +249,8 @@ def test_planned_pr_plan_skips_checkout_when_impl_exists(tmp_path: Path) -> None
     )
     fake_graphite = FakeGraphite()
 
-    # Pre-create .impl/ with matching plan_id (simulating CI setup).
-    # Uses legacy .impl/ — setup_impl_from_issue early-exit check hardcodes cwd / ".impl".
-    impl_dir = tmp_path / ".impl"
+    # Pre-create branch-scoped impl dir with matching plan_id (simulating CI setup).
+    impl_dir = get_impl_dir(tmp_path, branch_name=ci_branch)
     impl_dir.mkdir(parents=True)
     save_plan_ref(
         impl_dir,
@@ -286,7 +285,7 @@ def test_planned_pr_plan_skips_checkout_when_impl_exists(tmp_path: Path) -> None
     assert len(fake_git.pull_rebase_calls) == 0
 
     # Output should indicate we skipped branch setup
-    assert f"Found existing .impl/ for plan #{pr_number}, skipping branch setup" in result.output
+    assert f"Found existing impl dir for plan #{pr_number}, skipping branch setup" in result.output
 
     # JSON output should have the CI branch, not the plan branch
     output_lines = result.output.strip().split("\n")

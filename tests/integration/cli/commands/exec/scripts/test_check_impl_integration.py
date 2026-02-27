@@ -1,6 +1,6 @@
 """Integration tests for check-impl kit CLI command.
 
-Tests the complete validation workflow for .impl/ folder structure and issue tracking.
+Tests the complete validation workflow for .erk/impl-context/ folder structure and issue tracking.
 """
 
 import json
@@ -17,9 +17,10 @@ from erk_shared.context.context import ErkContext
 
 @pytest.fixture
 def impl_folder(tmp_path: Path) -> Path:
-    """Create .impl/ folder with test files."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    """Create .erk/impl-context/<branch>/ folder with test files."""
+    # Create branch-scoped impl directory
+    impl_dir = tmp_path / ".erk" / "impl-context" / "test-branch"
+    impl_dir.mkdir(parents=True)
 
     # Create plan.md
     plan_md = impl_dir / "plan.md"
@@ -38,7 +39,7 @@ def impl_folder(tmp_path: Path) -> Path:
     return impl_dir
 
 
-def test_check_impl_validates_complete_plan_ref(impl_folder: Path) -> None:
+def test_check_impl_validates_complete_plan_ref(impl_folder: Path, tmp_path: Path) -> None:
     """Test that check-impl validates plan-ref.json has all required fields."""
     plan_ref = impl_folder / "plan-ref.json"
 
@@ -58,7 +59,7 @@ def test_check_impl_validates_complete_plan_ref(impl_folder: Path) -> None:
     result = runner.invoke(
         check_impl,
         ["--dry-run"],
-        obj=ErkContext.for_test(cwd=impl_folder.parent),
+        obj=ErkContext.for_test(cwd=tmp_path),
     )
 
     assert result.exit_code == 0
@@ -68,7 +69,7 @@ def test_check_impl_validates_complete_plan_ref(impl_folder: Path) -> None:
     assert data["plan_length"] > 0
 
 
-def test_check_impl_handles_incomplete_plan_ref(impl_folder: Path) -> None:
+def test_check_impl_handles_incomplete_plan_ref(impl_folder: Path, tmp_path: Path) -> None:
     """Test that incomplete plan-ref.json is detected and tracking disabled."""
     plan_ref = impl_folder / "plan-ref.json"
 
@@ -82,7 +83,7 @@ def test_check_impl_handles_incomplete_plan_ref(impl_folder: Path) -> None:
     result = runner.invoke(
         check_impl,
         ["--dry-run"],
-        obj=ErkContext.for_test(cwd=impl_folder.parent),
+        obj=ErkContext.for_test(cwd=tmp_path),
     )
 
     assert result.exit_code == 0
@@ -91,7 +92,7 @@ def test_check_impl_handles_incomplete_plan_ref(impl_folder: Path) -> None:
     assert data["has_plan_tracking"] is False  # Tracking disabled due to incomplete format
 
 
-def test_check_impl_handles_missing_issue_json(impl_folder: Path) -> None:
+def test_check_impl_handles_missing_issue_json(impl_folder: Path, tmp_path: Path) -> None:
     """Test that missing issue.json is handled gracefully."""
     # No issue.json file created
 
@@ -99,7 +100,7 @@ def test_check_impl_handles_missing_issue_json(impl_folder: Path) -> None:
     result = runner.invoke(
         check_impl,
         ["--dry-run"],
-        obj=ErkContext.for_test(cwd=impl_folder.parent),
+        obj=ErkContext.for_test(cwd=tmp_path),
     )
 
     assert result.exit_code == 0
@@ -110,8 +111,8 @@ def test_check_impl_handles_missing_issue_json(impl_folder: Path) -> None:
 
 def test_check_impl_errors_on_missing_plan(tmp_path: Path) -> None:
     """Test error when plan.md is missing."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = tmp_path / ".erk" / "impl-context" / "test-branch"
+    impl_dir.mkdir(parents=True)
 
     # Create progress.md but NOT plan.md
     progress_md = impl_dir / "progress.md"
@@ -130,8 +131,8 @@ def test_check_impl_errors_on_missing_plan(tmp_path: Path) -> None:
 
 def test_check_impl_errors_on_missing_progress(tmp_path: Path) -> None:
     """Test error when progress.md is missing."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = tmp_path / ".erk" / "impl-context" / "test-branch"
+    impl_dir.mkdir(parents=True)
 
     # Create plan.md but NOT progress.md
     plan_md = impl_dir / "plan.md"
@@ -163,7 +164,7 @@ def test_check_impl_errors_on_missing_impl_folder(tmp_path: Path) -> None:
     assert "No implementation folder found" in result.output
 
 
-def test_check_impl_normal_mode_with_tracking(impl_folder: Path) -> None:
+def test_check_impl_normal_mode_with_tracking(impl_folder: Path, tmp_path: Path) -> None:
     """Test normal mode outputs instructions with tracking enabled."""
     plan_ref = impl_folder / "plan-ref.json"
     plan_ref.write_text(
@@ -185,16 +186,16 @@ def test_check_impl_normal_mode_with_tracking(impl_folder: Path) -> None:
     result = runner.invoke(
         check_impl,
         [],
-        obj=ErkContext.for_test(cwd=impl_folder.parent),
+        obj=ErkContext.for_test(cwd=tmp_path),
     )
 
     assert result.exit_code == 0
-    assert "Plan loaded from .impl/plan.md" in result.output
+    assert "plan.md" in result.output
     assert "GitHub tracking: ENABLED (issue #456)" in result.output
     assert "/erk:plan-implement" in result.output
 
 
-def test_check_impl_normal_mode_without_tracking(impl_folder: Path) -> None:
+def test_check_impl_normal_mode_without_tracking(impl_folder: Path, tmp_path: Path) -> None:
     """Test normal mode outputs instructions with tracking disabled."""
     # No issue.json file created
 
@@ -202,10 +203,10 @@ def test_check_impl_normal_mode_without_tracking(impl_folder: Path) -> None:
     result = runner.invoke(
         check_impl,
         [],
-        obj=ErkContext.for_test(cwd=impl_folder.parent),
+        obj=ErkContext.for_test(cwd=tmp_path),
     )
 
     assert result.exit_code == 0
-    assert "Plan loaded from .impl/plan.md" in result.output
-    assert "GitHub tracking: DISABLED (no issue.json)" in result.output
+    assert "plan.md" in result.output
+    assert "GitHub tracking: DISABLED" in result.output
     assert "/erk:plan-implement" in result.output

@@ -124,6 +124,7 @@ def test_issue_linkage_mismatch_returns_error(tmp_path: Path) -> None:
         repository_roots={tmp_path: tmp_path},
         current_branches={tmp_path: "P42-some-feature"},
         trunk_branches={tmp_path: "main"},
+        remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
     )
     ctx = context_for_test(git=fake_git, cwd=tmp_path)
     state = _make_state(cwd=tmp_path)
@@ -199,6 +200,7 @@ def test_plan_id_from_impl_folder(tmp_path: Path) -> None:
         repository_roots={tmp_path: tmp_path},
         current_branches={tmp_path: "feature-branch"},
         trunk_branches={tmp_path: "main"},
+        remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
     )
     ctx = context_for_test(git=fake_git, cwd=tmp_path)
     state = _make_state(cwd=tmp_path)

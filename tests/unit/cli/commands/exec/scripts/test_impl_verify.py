@@ -25,21 +25,6 @@ def _make_ctx(tmp_path: Path, *, branch: str = BRANCH) -> ErkContext:
     )
 
 
-def test_impl_verify_succeeds_when_legacy_impl_exists(tmp_path: Path) -> None:
-    """Test impl-verify returns success JSON when .impl/ exists."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
-
-    runner = CliRunner()
-    result = runner.invoke(impl_verify, obj=_make_ctx(tmp_path))
-
-    assert result.exit_code == 0
-    data = json.loads(result.output)
-    assert data["valid"] is True
-    assert "impl_dir" in data
-    assert data["impl_dir"].endswith(".impl")
-
-
 def test_impl_verify_succeeds_when_branch_scoped_impl_exists(tmp_path: Path) -> None:
     """Test impl-verify returns success JSON when branch-scoped impl exists."""
     create_impl_folder(tmp_path, "# Plan\n", branch_name=BRANCH, overwrite=False)

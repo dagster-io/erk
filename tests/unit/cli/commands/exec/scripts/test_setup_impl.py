@@ -16,6 +16,7 @@ from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.impl_folder import get_impl_dir
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 
 BRANCH = "test/branch"
@@ -67,8 +68,7 @@ def test_no_plan_found_exits_1(tmp_path: Path) -> None:
 
 def test_existing_impl_no_tracking(tmp_path: Path) -> None:
     """Auto-detects existing branch-scoped impl folder without plan tracking."""
-    # Use legacy .impl/ — setup_impl path 3a hardcodes cwd / ".impl" (not yet migrated)
-    impl_dir = tmp_path / ".impl"
+    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
     impl_dir.mkdir(parents=True)
     (impl_dir / "plan.md").write_text("# Existing Plan\n\nContent.\n", encoding="utf-8")
 

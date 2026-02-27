@@ -113,10 +113,10 @@ def _execute_plan(plan_content: str, plan_info: dict[str, int | str] | None) -> 
     if plan_info:
         tracking_msg = f"GitHub tracking: ENABLED (issue #{plan_info['plan_number']})"
     else:
-        tracking_msg = "GitHub tracking: DISABLED (no issue.json)"
+        tracking_msg = "GitHub tracking: DISABLED (no plan-ref.json)"
 
     msg = f"""
-Plan loaded from .impl/plan.md
+Plan loaded from plan.md
 
 {tracking_msg}
 

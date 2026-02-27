@@ -9,18 +9,20 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
 def test_create_copy_plan_success() -> None:
-    """Test --copy-plan copies .impl directory to new worktree."""
+    """Test --copy-plan copies plan directory to new worktree."""
+    from erk_shared.impl_folder import get_impl_dir
+
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        # Setup: Create .impl directory in current worktree (at repo root)
-        plan_dir = env.cwd / ".impl"
-        plan_dir.mkdir()
-        (plan_dir / "plan.md").write_text("# Plan content", encoding="utf-8")
+        # Setup: Create branch-scoped impl folder in current worktree (at repo root)
+        source_impl_dir = get_impl_dir(env.cwd, branch_name="main")
+        source_impl_dir.mkdir(parents=True, exist_ok=True)
+        (source_impl_dir / "plan.md").write_text("# Plan content", encoding="utf-8")
         progress_content = (
             "---\ncompleted_steps: 2\ntotal_steps: 5\n---\n\n"
             "- [x] Step 1\n- [x] Step 2\n- [ ] Step 3"
         )
-        (plan_dir / "progress.md").write_text(progress_content, encoding="utf-8")
+        (source_impl_dir / "progress.md").write_text(progress_content, encoding="utf-8")
 
         # Setup: Configure git state
         git = FakeGit(
@@ -50,25 +52,26 @@ def test_create_copy_plan_success() -> None:
             print(f"stdout: {result.stdout}")
         assert result.exit_code == 0
 
-        # Assert: .impl directory copied to new worktree
-        new_wt_plan = env.erk_root / "repos" / env.cwd.name / "worktrees" / "new-feature" / ".impl"
-        assert new_wt_plan.exists(), ".impl directory should exist in new worktree"
-        assert new_wt_plan.is_dir(), ".impl should be a directory"
+        # Assert: plan directory copied to new worktree at branch-scoped path
+        new_wt_path = env.erk_root / "repos" / env.cwd.name / "worktrees" / "new-feature"
+        new_wt_impl = get_impl_dir(new_wt_path, branch_name="new-feature")
+        assert new_wt_impl.exists(), "impl directory should exist in new worktree"
+        assert new_wt_impl.is_dir(), "impl should be a directory"
 
         # Assert: plan.md copied with correct content
-        assert (new_wt_plan / "plan.md").exists(), "plan.md should be copied"
-        plan_content = (new_wt_plan / "plan.md").read_text(encoding="utf-8")
+        assert (new_wt_impl / "plan.md").exists(), "plan.md should be copied"
+        plan_content = (new_wt_impl / "plan.md").read_text(encoding="utf-8")
         assert plan_content == "# Plan content", "plan.md content should match source"
 
         # Assert: progress.md copied with correct content
-        assert (new_wt_plan / "progress.md").exists(), "progress.md should be copied"
-        progress_content = (new_wt_plan / "progress.md").read_text(encoding="utf-8")
+        assert (new_wt_impl / "progress.md").exists(), "progress.md should be copied"
+        progress_content = (new_wt_impl / "progress.md").read_text(encoding="utf-8")
         assert "completed_steps: 2" in progress_content, "YAML front matter should be preserved"
         assert "- [x] Step 1" in progress_content, "Checkbox states should be preserved"
         assert "- [ ] Step 3" in progress_content, "Pending checkboxes should be preserved"
 
         # Assert: Success message in output
-        assert "Copied .impl" in result.output or "✓" in result.output
+        assert "Copied" in result.output or "✓" in result.output
 
 
 def test_create_copy_plan_missing_plan_error() -> None:
@@ -100,8 +103,8 @@ def test_create_copy_plan_missing_plan_error() -> None:
         # Assert: Command failed with error
         assert result.exit_code != 0
 
-        # Assert: Error message mentions missing .impl
-        assert "No .impl directory found" in result.output
+        # Assert: Error message mentions missing implementation directory
+        assert "No implementation directory found" in result.output
         assert str(env.cwd) in result.output
 
 
@@ -149,11 +152,13 @@ def test_create_copy_plan_mutual_exclusion_with_plan_file() -> None:
 
 def test_create_copy_plan_preserves_progress() -> None:
     """Test --copy-plan preserves progress.md checkboxes exactly."""
+    from erk_shared.impl_folder import get_impl_dir
+
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        # Setup: Create .impl with mixed checkbox states at repo root
-        plan_dir = env.cwd / ".impl"
-        plan_dir.mkdir()
+        # Setup: Create branch-scoped impl with mixed checkbox states at repo root
+        plan_dir = get_impl_dir(env.cwd, branch_name="main")
+        plan_dir.mkdir(parents=True, exist_ok=True)
         (plan_dir / "plan.md").write_text("# Plan", encoding="utf-8")
 
         original_progress = """---
@@ -197,7 +202,8 @@ total_steps: 6
         assert result.exit_code == 0
 
         # Assert: progress.md copied with exact content
-        new_wt_plan = env.erk_root / "repos" / env.cwd.name / "worktrees" / "phase-2" / ".impl"
+        new_wt_path = env.erk_root / "repos" / env.cwd.name / "worktrees" / "phase-2"
+        new_wt_plan = get_impl_dir(new_wt_path, branch_name="phase-2")
         copied_progress = (new_wt_plan / "progress.md").read_text(encoding="utf-8")
 
         assert copied_progress == original_progress, "Progress should be copied exactly as-is"
@@ -205,11 +211,13 @@ total_steps: 6
 
 def test_create_copy_plan_preserves_yaml_front_matter() -> None:
     """Test --copy-plan preserves YAML front matter in progress.md."""
+    from erk_shared.impl_folder import get_impl_dir
+
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        # Setup: Create .impl with YAML front matter at repo root
-        plan_dir = env.cwd / ".impl"
-        plan_dir.mkdir()
+        # Setup: Create branch-scoped impl with YAML front matter at repo root
+        plan_dir = get_impl_dir(env.cwd, branch_name="main")
+        plan_dir.mkdir(parents=True, exist_ok=True)
         (plan_dir / "plan.md").write_text("# Plan", encoding="utf-8")
 
         original_progress = """---
@@ -250,7 +258,8 @@ custom_field: some_value
         assert result.exit_code == 0
 
         # Assert: YAML front matter preserved
-        new_wt_plan = env.erk_root / "repos" / env.cwd.name / "worktrees" / "next-phase" / ".impl"
+        new_wt_path = env.erk_root / "repos" / env.cwd.name / "worktrees" / "next-phase"
+        new_wt_plan = get_impl_dir(new_wt_path, branch_name="next-phase")
         copied_progress = (new_wt_plan / "progress.md").read_text(encoding="utf-8")
 
         assert "completed_steps: 5" in copied_progress, "completed_steps preserved"

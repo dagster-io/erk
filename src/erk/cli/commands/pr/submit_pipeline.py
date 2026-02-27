@@ -798,8 +798,8 @@ def link_pr_to_objective_nodes(ctx: ErkContext, state: SubmitState) -> SubmitSta
     if state.pr_number is None:
         return state
 
-    impl_dir = state.cwd / ".impl"
-    if not impl_dir.exists():
+    impl_dir = resolve_impl_dir(state.cwd, branch_name=state.branch_name)
+    if impl_dir is None:
         return state
 
     plan_ref = read_plan_ref(impl_dir)

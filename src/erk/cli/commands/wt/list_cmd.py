@@ -1,5 +1,6 @@
 """Fast local-only worktree listing command."""
 
+import json
 from pathlib import Path
 
 import click
@@ -80,7 +81,7 @@ def _format_sync_from_batch(all_sync: dict[str, BranchSyncInfo], branch: str | N
 def _get_impl_issue(
     ctx: ErkContext, worktree_path: Path, *, branch: str | None
 ) -> tuple[str | None, str | None]:
-    """Get impl issue number and URL from plan-ref.json.
+    """Get impl issue number and URL from plan-ref.json or legacy issue.json.
 
     Args:
         ctx: Erk context with git operations
@@ -96,9 +97,20 @@ def _get_impl_issue(
     impl_path = get_impl_path(worktree_path, branch_name=branch, git_ops=ctx.git)
     if impl_path is not None:
         # impl_path points to plan.md, get the parent impl directory
-        plan_ref = read_plan_ref(impl_path.parent)
+        impl_dir = impl_path.parent
+        plan_ref = read_plan_ref(impl_dir)
         if plan_ref is not None:
             return f"#{plan_ref.plan_id}", plan_ref.url
+
+        # Fallback: read legacy issue.json
+        issue_file = impl_dir / "issue.json"
+        if issue_file.exists():
+            try:
+                data = json.loads(issue_file.read_text(encoding="utf-8"))
+                if "issue_number" in data and "issue_url" in data:
+                    return f"#{data['issue_number']}", data["issue_url"]
+            except json.JSONDecodeError:
+                pass
 
     return None, None
 
