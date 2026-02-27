@@ -343,6 +343,35 @@ def test_pr_rewrite_planned_pr_backend_preserves_metadata() -> None:
         assert "Closes #" not in updated_body
 
 
+def test_pr_rewrite_retracks_graphite_branch_after_amend() -> None:
+    """Test that rewrite retracks Graphite branch immediately after amending commit.
+
+    The retrack must happen right after amend (before push or PR update) so that
+    Graphite's cache stays consistent even if subsequent operations fail.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        git, graphite, github, executor = _make_rewrite_fakes(env, branch_name="feature")
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            github=github,
+            graphite=graphite,
+            prompt_executor=executor,
+            use_graphite=True,
+        )
+
+        result = runner.invoke(pr_group, ["rewrite"], obj=ctx)
+
+        assert result.exit_code == 0, result.output
+        # Verify retrack_branch was called with repo root and branch name
+        assert len(graphite.retrack_branch_calls) == 1
+        retrack_cwd, retrack_branch = graphite.retrack_branch_calls[0]
+        assert retrack_cwd == env.git_dir
+        assert retrack_branch == "feature"
+
+
 def test_pr_rewrite_skips_lifecycle_when_plan_not_resolved() -> None:
     """Rewrite skips lifecycle update when plan cannot be resolved from branch name."""
     runner = CliRunner()

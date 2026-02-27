@@ -252,6 +252,14 @@ def _checkout_pr(
     else:
         _fetch_and_update_branch(ctx, repo, branch_name=branch_name, pr_number=pr_number)
 
+        # Retrack immediately after force-update if branch was already tracked by Graphite.
+        # This prevents divergence if subsequent operations (worktree creation, rebase) fail.
+        if (
+            ctx.graphite_branch_ops is not None
+            and ctx.branch_manager.get_parent_branch(repo.root, branch_name) is not None
+        ):
+            ctx.graphite_branch_ops.retrack_branch(repo.root, branch_name)
+
     # Create worktree using shared helper
     worktree_path, already_existed = ensure_branch_has_worktree(
         ctx, repo, branch_name=branch_name, no_slot=no_slot, force=force
@@ -280,20 +288,18 @@ def _checkout_pr(
                 f"Run: cd {worktree_path} && git rebase origin/{pr.base_ref_name}"
             )
 
-    # Graphite integration: Track or retrack if needed (for new worktrees only)
-    should_submit_to_graphite = (
+    # Graphite integration: Track untracked branches (for new worktrees only).
+    # Retracking for already-tracked branches is handled above immediately after
+    # force-update, so we only need to handle the "untracked" case here.
+    should_track_with_graphite = (
         ctx.branch_manager.is_graphite_managed()
         and not already_existed
         and not pr.is_cross_repository
     )
-    if should_submit_to_graphite:
-        parent = ctx.branch_manager.get_parent_branch(repo.root, branch_name)
-        if parent is None:
+    if should_track_with_graphite:
+        if ctx.branch_manager.get_parent_branch(repo.root, branch_name) is None:
             ctx.console.info("Tracking branch with Graphite...")
             ctx.branch_manager.track_branch(repo.root, branch_name, pr.base_ref_name)
-        elif ctx.graphite.is_branch_diverged_from_tracking(ctx.git, repo.root, branch_name):
-            ctx.console.info("Retracking diverged branch with Graphite...")
-            ctx.branch_manager.retrack_branch(repo.root, branch_name)
 
     # Navigate and display checkout result
     navigate_and_display_checkout(
@@ -308,7 +314,7 @@ def _checkout_pr(
         script_message_existing=f'echo "Went to existing worktree for PR #{pr_number}"',
         script_message_new=f'echo "Checked out PR #{pr_number} at $(pwd)"',
         post_cd_commands=["gt submit --no-interactive"]
-        if should_submit_to_graphite and sync
+        if should_track_with_graphite and sync
         else None,
     )
 
