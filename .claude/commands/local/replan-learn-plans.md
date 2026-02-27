@@ -22,9 +22,9 @@ Queries all open erk-learn plans and passes them to `/erk:replan` for consolidat
 
 ## Agent Instructions
 
-### Step 1: Query Open erk-learn Issues
+### Step 1: Query Open erk-learn Plans
 
-Fetch all open issues with the `erk-learn` label, including their full label list for filtering:
+Fetch all open plans with the `erk-learn` label, including their full label list for filtering:
 
 ```bash
 gh api repos/dagster-io/erk/issues \
@@ -40,31 +40,31 @@ Note: Uses REST API (not `gh issue list`) to avoid GraphQL rate limits.
 
 ### Step 1b: Filter Out Already-Consolidated Plans
 
-From the results, filter out any issues that have the `erk-consolidated` label.
+From the results, filter out any plans that have the `erk-consolidated` label.
 
 These are plans that were themselves created by a previous consolidation and should not be re-consolidated.
 
-If any issues were filtered out, report to user:
+If any plans were filtered out, report to user:
 
 ```
 Filtered out N already-consolidated plan(s): #X, #Y, ...
 ```
 
-Store the filtered results as a list of issues with their numbers and titles.
+Store the filtered results as a list of plans with their numbers and titles.
 
 ### Step 2: Handle Edge Cases
 
-Based on the number of **filtered** issues (after excluding `erk-consolidated`):
+Based on the number of **filtered** plans (after excluding `erk-consolidated`):
 
-#### 2a: Zero Issues
+#### 2a: Zero Plans
 
-If no open erk-learn issues found (after filtering):
+If no open erk-learn plans found (after filtering):
 
 ```
 No open erk-learn plans found. Nothing to replan.
 ```
 
-If issues were found but ALL had `erk-consolidated` label:
+If plans were found but ALL had `erk-consolidated` label:
 
 ```
 All N open erk-learn plans are already consolidated. Nothing new to consolidate.
@@ -72,14 +72,14 @@ All N open erk-learn plans are already consolidated. Nothing new to consolidate.
 
 Stop here.
 
-#### 2b: One Issue
+#### 2b: One Plan
 
-If exactly one issue found, present it and ask the user:
+If exactly one plan found, present it and ask the user:
 
 ```
 Found 1 open erk-learn plan:
 
-| Issue | Title | Created |
+| Plan  | Title | Created |
 | ----- | ----- | ------- |
 | #<number> | <title> | <date> |
 
@@ -88,19 +88,19 @@ This single plan can be replanned to update it against the current codebase.
 
 Use AskUserQuestion with options:
 
-- "Replan this issue" - Proceed with single replan
+- "Replan this plan" - Proceed with single replan
 - "Cancel" - Exit without action
 
 If user cancels, stop here.
 
-#### 2c: Multiple Issues
+#### 2c: Multiple Plans
 
-If 2+ issues found, present the list:
+If 2+ plans found, present the list:
 
 ```
 Found <N> open erk-learn plans:
 
-| Issue | Title | Created |
+| Plan  | Title | Created |
 | ----- | ----- | ------- |
 | #<number1> | <title1> | <date1> |
 | #<number2> | <title2> | <date2> |
@@ -118,15 +118,15 @@ If user cancels, stop here.
 
 ### Step 3: Invoke /erk:replan
 
-Build the issue list and invoke the replan skill:
+Build the plan list and invoke the replan skill:
 
-**For single issue:**
+**For single plan:**
 
 ```
-/erk:replan <issue_number>
+/erk:replan <plan_number>
 ```
 
-**For multiple issues:**
+**For multiple plans:**
 
 ```
 /erk:replan <issue1> <issue2> <issue3> ...

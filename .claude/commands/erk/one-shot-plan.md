@@ -55,7 +55,7 @@ erk exec plan-update --plan-number $PLAN_ISSUE_NUMBER --plan-path .erk/impl-cont
 
 Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, use `$PLAN_ISSUE_NUMBER` as the `plan_number`. To get the `title`, extract the first `# ` heading from `.erk/impl-context/plan.md`.
 
-**If `$PLAN_ISSUE_NUMBER` is not set (empty):** Fall back to creating a new issue (backwards compatible for direct `erk one-shot` calls without pre-created skeleton):
+**If `$PLAN_ISSUE_NUMBER` is not set (empty):** Fall back to creating a new draft PR (backwards compatible for direct `erk one-shot` calls without pre-created skeleton):
 
 If the `$OBJECTIVE_ISSUE` environment variable is set (non-empty), create the objective-context marker before saving:
 

@@ -1,6 +1,6 @@
 ---
 description: Implement a plan from GitHub, file path, current branch, or current .erk/impl-context/ folder
-argument-hint: "[<issue-number-or-url-or-path>]"
+argument-hint: "[<plan-number-or-url-or-path>]"
 ---
 
 # /erk:plan-implement
@@ -18,7 +18,7 @@ This is the primary implementation workflow - it orchestrates:
 - Must be in a git repository managed by erk
 - GitHub CLI (`gh`) must be authenticated
 - One of:
-  - An issue number, URL, or file path argument
+  - A plan number, URL, or file path argument
   - An existing impl directory under `.erk/impl-context/`
   - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
   - A plan in `~/.claude/plans/` (from plan mode)
@@ -28,7 +28,7 @@ This is the primary implementation workflow - it orchestrates:
 ```bash
 /erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
 /erk:plan-implement 2521               # Fetch and implement plan #2521
-/erk:plan-implement https://github.com/owner/repo/issues/2521  # URL form
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
 /erk:plan-implement ./my-plan.md       # Implement from local markdown file
 ```
 
@@ -83,16 +83,16 @@ Generate a branch slug from the plan title (the first `# ` heading in the plan f
 - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
 - Store as `BRANCH_SLUG`
 
-Save the current plan to GitHub and capture the issue number:
+Save the current plan to GitHub and capture the plan number:
 
 ```bash
 erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
 ```
 
-Parse the JSON output to get `issue_number`, then:
+Parse the JSON output to get `plan_number`, then:
 
 ```bash
-erk exec setup-impl --issue <issue_number>
+erk exec setup-impl --issue <plan_number>
 ```
 
 The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
@@ -201,7 +201,7 @@ This validates PR submission readiness including implementation-specific checks
 
 ### Step 13: Output Format
 
-- **Start**: "Setting up implementation..." or "Fetching plan from issue #X..."
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
 - **After setup**: "Implementation environment ready, reading plan..."
 - **Each phase**: "Phase X: [brief description]" with code changes
 - **End**: "Plan execution complete. [Summary]"

@@ -9,7 +9,7 @@ Assesses whether a PR or plan's intended work is already represented in master, 
 ## Usage
 
 ```bash
-/local:check-relevance 2521              # Auto-detect PR or plan by issue number
+/local:check-relevance 2521              # Auto-detect PR or plan by number
 /local:check-relevance --pr 2521         # Explicitly check a PR
 /local:check-relevance --plan 2521       # Explicitly check a plan
 ```
@@ -52,7 +52,7 @@ gh pr diff <NUMBER>
 **For Plans:**
 
 ```bash
-# Get plan issue body
+# Get plan body
 erk exec get-issue-body <NUMBER>
 ```
 
@@ -227,7 +227,7 @@ Options:
 
 Options:
 
-- "Close and create new issue for remaining work"
+- "Close and create new plan for remaining work"
 - "Keep open and update description"
 - "Let me review manually first"
 
@@ -266,21 +266,11 @@ erk exec close-pr <NUMBER> --comment "Closing: This work is already represented 
 gh api repos/dagster-io/erk/issues/<NUMBER>/labels -X POST -f "labels[]=<label>"
 ```
 
-**Create follow-up issue:**
+**Create follow-up plan:**
 
-```bash
-gh api repos/dagster-io/erk/issues -X POST \
-  -f title="[Follow-up] <remaining work from #NUMBER>" \
-  -f body="Follow-up from #<NUMBER> which was partially implemented.
+Create a follow-up plan using `/erk:plan-save` or `erk exec plan-save` with a markdown file describing the remaining work from #NUMBER.
 
-## Remaining Work
-<list of items not found in master>
-
-## Original Context
-See #<NUMBER> for original context."
-```
-
-Report the action taken and provide links to any new issues created.
+Report the action taken and provide links to any new plans created.
 
 ---
 

@@ -23,7 +23,7 @@ Update an existing plan with the current session's plan content.
 Extract the plan number from the argument:
 
 - If numeric (e.g., `42`), use directly
-- If URL (e.g., `https://github.com/owner/repo/issues/42`), extract the number from the path
+- If URL (e.g., `https://github.com/owner/repo/pull/42`), extract the number from the path
 
 If no argument provided, check `ref.json` in `.erk/impl-context/<branch>/` for a linked plan number.
 

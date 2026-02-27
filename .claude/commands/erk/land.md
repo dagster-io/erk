@@ -101,12 +101,12 @@ erk exec get-plan-metadata <plan-number> objective_issue
 {
   "success": true,
   "value": 3400,
-  "issue_number": 3509,
+  "plan_number": 3509,
   "field": "objective_issue"
 }
 ```
 
-- If `success` is `true` and `value` is an integer, record that objective issue number
+- If `success` is `true` and `value` is an integer, record that objective number
 - If `success` is `true` and `value` is `null`, there's no objective link
 - If `success` is `false`, warn and skip objective workflow (fail-open behavior)
 

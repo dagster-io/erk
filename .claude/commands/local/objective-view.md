@@ -9,7 +9,7 @@ Displays progress and associations for an objective issue, including roadmap sta
 ## Usage
 
 ```bash
-/local:objective-view <issue_number>
+/local:objective-view <objective_number>
 ```
 
 ---
@@ -18,23 +18,23 @@ Displays progress and associations for an objective issue, including roadmap sta
 
 ### Step 1: Validate Arguments
 
-Parse `$ARGUMENTS` for the issue number. If no issue number provided, display error:
+Parse `$ARGUMENTS` for the objective number. If no objective number provided, display error:
 
 ```
-Error: Issue number required.
-Usage: /local:objective-view <issue_number>
+Error: Objective number required.
+Usage: /local:objective-view <objective_number>
 ```
 
 ### Step 2: Fetch Objective Issue
 
 ```bash
-erk exec get-issue-body <issue_number>
+erk exec get-issue-body <objective_number>
 ```
 
 Parse the JSON output to get:
 
-- `body`: The issue body content
-- `title`: The issue title
+- `body`: The objective body content
+- `title`: The objective title
 - `state`: OPEN or CLOSED
 - `created_at`: Creation timestamp
 - `labels`: List of labels
@@ -48,7 +48,7 @@ Error: Issue #<number> is not an erk-objective issue (missing erk-objective labe
 ### Step 3: Fetch Comment Count
 
 ```bash
-gh api repos/dagster-io/erk/issues/<issue_number> --jq '.comments'
+gh api repos/dagster-io/erk/issues/<objective_number> --jq '.comments'
 ```
 
 This returns the comment count directly from the issue.
@@ -56,7 +56,7 @@ This returns the comment count directly from the issue.
 ### Step 4: Fetch Associated PRs
 
 ```bash
-erk exec get-issue-timeline-prs <issue_number>
+erk exec get-issue-timeline-prs <objective_number>
 ```
 
 Parse JSON output to get list of PRs that reference this objective. The output has format:
@@ -72,7 +72,7 @@ Parse JSON output to get list of PRs that reference this objective. The output h
 ### Step 5: Fetch Associated Plans
 
 ```bash
-erk exec get-plans-for-objective <issue_number>
+erk exec get-plans-for-objective <objective_number>
 ```
 
 Parse JSON output to get plans linked to this objective. The output has format:
@@ -85,7 +85,7 @@ Parse JSON output to get plans linked to this objective. The output has format:
 }
 ```
 
-Note: This command fetches erk-plan issues and filters by `objective_id` in the plan-header metadata block.
+Note: This command fetches plans and filters by `objective_id` in the plan-header metadata block.
 
 ### Step 6: Analyze Roadmap Progress
 
@@ -218,6 +218,6 @@ This objective is closed. View history in browser:
 
 ## Error Handling
 
-- **Issue not found:** Display "Error: Issue #<number> not found."
+- **Objective not found:** Display "Error: Objective #<number> not found."
 - **GitHub API rate limited:** Display "Error: GitHub API rate limited. Try again later."
 - **Roadmap parsing fails:** Display roadmap section as-is with note: "Could not parse roadmap structure automatically."
