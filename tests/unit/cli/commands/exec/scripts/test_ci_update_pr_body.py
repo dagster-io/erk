@@ -5,6 +5,7 @@ Uses FakeGit, FakeGitHub, and FakePromptExecutor for dependency injection.
 """
 
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 
 from click.testing import CliRunner
@@ -812,8 +813,6 @@ def test_impl_planned_pr_missing_plan_header_recovers(tmp_path: Path) -> None:
 
     # PR body WITHOUT plan-header metadata block
     pr_body = "## Summary\n\nSome content without a plan-header block"
-
-    from datetime import UTC, datetime
 
     pr_details = PRDetails(
         number=42,
