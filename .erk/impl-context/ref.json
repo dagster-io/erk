@@ -1,8 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Plan: Update CLAUDE.md and AGENTS.md Plan Terminology",
-  "objective_id": 8381,
-  "node_ids": [
-    "1.1"
-  ]
-}
