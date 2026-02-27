@@ -45,7 +45,7 @@ hash = "7ef0e14d529d4b6e"
 version = "0.5.5"
 hash = "41e6315161251bb9"
 
-[artifacts.files."commands/erk/objective-update-with-landed-pr.md"]
+[artifacts.files."commands/erk/system/objective-update-with-landed-pr.md"]
 version = "0.5.5"
 hash = "031d1a8fd555ecd8"
 

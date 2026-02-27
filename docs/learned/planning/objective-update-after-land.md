@@ -25,10 +25,11 @@ The script always exits 0. The merge has already succeeded at this point — obj
 
 ## How It Works
 
-1. Click command takes three required options: `--objective`, `--pr`, `--branch`
-2. Builds a command string for the `/erk:objective-update-with-landed-pr` slash command
-3. Executes via `stream_command_with_feedback()` with `permission_mode="edits"` and `dangerous=True`
-4. Returns `CommandResult` — handles both success and error cases without raising
+1. Click command takes three required options (`--objective`, `--pr`, `--branch`) and one optional (`--plan-number`)
+2. Delegates to `run_objective_update_after_land()` in `objective_helpers.py`
+3. The helper builds a command string for the `/erk:system:objective-update-with-landed-pr` slash command
+4. Executes via `stream_command_with_feedback()` with `permission_mode="edits"` and `dangerous=True`
+5. Returns `CommandResult` — handles both success and error cases without raising
 
 ## Activation
 

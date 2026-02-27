@@ -50,7 +50,7 @@ def test_objective_update_after_land_success() -> None:
         assert len(executor.executed_commands) == 1
         cmd, _path, dangerous, _verbose, _model = executor.executed_commands[0]
         expected = (
-            "/erk:objective-update-with-landed-pr "
+            "/erk:system:objective-update-with-landed-pr "
             "--pr 123 --objective 42 --branch P42-my-feature --auto-close"
         )
         assert cmd == expected
@@ -87,7 +87,7 @@ def test_objective_update_after_land_failure_shows_retry() -> None:
 
         assert "Starting objective update..." in result.output
         assert "failed" in result.output.lower()
-        assert "/erk:objective-update-with-landed-pr" in result.output
+        assert "/erk:system:objective-update-with-landed-pr" in result.output
         assert "manually" in result.output.lower()
 
         # Should have tried to call Claude executor

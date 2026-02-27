@@ -129,7 +129,7 @@ def run_objective_update_after_land(
 
     plan_arg = f" --plan {plan}" if plan is not None else ""
     cmd = (
-        f"/erk:objective-update-with-landed-pr "
+        f"/erk:system:objective-update-with-landed-pr "
         f"--pr {pr} --objective {objective} --branch {branch}{plan_arg} --auto-close"
     )
 
@@ -149,4 +149,4 @@ def run_objective_update_after_land(
         user_output(
             click.style("⚠", fg="yellow") + f" Objective update failed: {result.error_message}"
         )
-        user_output("  Run '/erk:objective-update-with-landed-pr' manually to retry")
+        user_output("  Run '/erk:system:objective-update-with-landed-pr' manually to retry")

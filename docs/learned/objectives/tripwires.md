@@ -88,6 +88,6 @@ Rules triggered by matching actions in code.
 
 **using plan-\* metadata block names for objective data** → Read [Objective v2 Storage Format](objective-storage-format.md) first. Metadata block names must match their entity type: plan-header/plan-body for plans, objective-header/objective-roadmap/objective-body for objectives.
 
-**using surgical update for complete table rewrites** → Read [Roadmap Mutation Patterns](roadmap-mutation-patterns.md) first. Surgical updates only change one node. For rewriting roadmaps after landing PRs (status + layout changes), use full-body update (objective-update-with-landed-pr).
+**using surgical update for complete table rewrites** → Read [Roadmap Mutation Patterns](roadmap-mutation-patterns.md) first. Surgical updates only change one node. For rewriting roadmaps after landing PRs (status + layout changes), use full-body update (system:objective-update-with-landed-pr).
 
 **writing objective content directly to issue body** → Read [Objective Create Workflow](objective-create-workflow.md) first. Issue body holds only metadata blocks. Full content goes in the first comment (objective-body block). See the 3-layer storage model.
