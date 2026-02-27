@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "assuming branch names always follow the P-prefix format"
     warning: "Branch resolution supports multiple formats (P-prefix, objective). Use resolve_plan_id_for_branch() rather than manual parsing. See branch-plan-resolution.md."
+  - action: "extracting plan ID from branch name instead of using plan-ref.json"
+    warning: "plan-ref.json is sole source of truth. validate_plan_linkage() only reads plan-ref.json. get_branch_issue() and resolve_plan_id_for_branch() always return None."
 ---
 
 # Branch Plan Resolution

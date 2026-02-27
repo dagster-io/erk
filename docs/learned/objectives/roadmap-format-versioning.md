@@ -6,11 +6,11 @@ read_when:
   - understanding roadmap column format history
 tripwires:
   - action: "adding columns to the roadmap table format"
-    warning: "The 4→5 column migration is the established pattern. Read this doc to understand the header-based detection and auto-upgrade strategy before adding columns."
-  - action: "adding step_type, issue, or depends_on fields to RoadmapNode"
-    warning: "These fields were planned but never built. The parser, serializer, and all callers would need coordinated changes."
-last_audited: "2026-02-17 16:00 PT"
-audit_result: clean
+    warning: "Read this doc to understand the header-based detection and rendering strategy before adding columns."
+  - action: "referencing a 'plan' field on RoadmapNode"
+    warning: "The plan field was removed (PR #8128). RoadmapNode has: id, description, status, pr, depends_on, slug. Plan references are no longer tracked in the roadmap."
+last_audited: "2026-02-26 00:00 PT"
+audit_result: edited
 ---
 
 # Roadmap Format Versioning
@@ -21,9 +21,9 @@ This document captures the design thinking around the roadmap table format, incl
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, RoadmapNode -->
 
-The `RoadmapNode` dataclass has six fields (`id`, `description`, `status`, `pr`, `depends_on`, `slug`). The `pr` field holds a PR reference (`"#123"`) for both in-progress and landed PRs and is `str | None`. The `depends_on` field holds explicit dependencies (`tuple[str, ...] | None`), and `slug` holds a kebab-case identifier (`str | None`).
+The `RoadmapNode` dataclass has six fields (`id`, `description`, `status`, `pr`, `depends_on`, `slug`). The `pr` field holds a PR reference (`"#123"`) for both in-progress and landed PRs and is `str | None`. The `depends_on` field holds explicit dependencies (`tuple[str, ...] | None`), and `slug` holds a kebab-case identifier (`str | None`). The `plan` field was removed in PR #8128 — plan references are no longer tracked in the roadmap table.
 
-The canonical table format:
+The canonical rendered table format:
 
 ```markdown
 | Node | Description | Status      | PR   |
@@ -32,16 +32,18 @@ The canonical table format:
 | 1.2  | Add tests   | in-progress | -    |
 ```
 
-## Legacy Format (Historical)
-
-The old format where plan and PR shared a single column is no longer actively parsed by `parse_roadmap()`. The parser now requires v2+ YAML frontmatter and returns a legacy format error for non-v2 content.
+When dependencies are present, a 5-column format is rendered:
 
 ```markdown
-| Node | Description | Status | PR         |
-| ---- | ----------- | ------ | ---------- |
-| 1.1  | Add auth    | done   | #123       |
-| 1.2  | Add tests   | -      | plan #6464 |
+| Node | Description | Depends On | Status  | PR   |
+| ---- | ----------- | ---------- | ------- | ---- |
+| 1.1  | Add auth    | -          | done    | #123 |
+| 1.2  | Add tests   | 1.1        | pending | -    |
 ```
+
+## Legacy Formats (Historical)
+
+Previous formats are no longer actively parsed by `parse_roadmap()`. The parser requires v2+ YAML frontmatter and returns a legacy format error for non-v2+ content. Historical formats included a separate Plan column and a combined PR column with `plan #N` syntax.
 
 The surgical update command uses two functions: `update_node_in_frontmatter()` updates the YAML frontmatter (source of truth), while `rerender_comment_roadmap()` updates the rendered markdown table in the objective-body comment.
 
@@ -56,15 +58,15 @@ Key design choices:
 - **Frontmatter schema v4**: The YAML frontmatter uses `schema_version: "4"` with the `nodes` key (v2 used `steps`). The parser accepts v2, v3, and v4; the renderer always emits v4.
 - **v2/v3/v4 parsing**: `parse_roadmap()` accepts all three schema versions. Returns a legacy format error for non-v2/v3/v4 content (no table-parsing fallback)
 
-## Historical: Planned 7-Column Extension (Never Built)
+## Historical: Planned Extension Fields (Never Built)
 
-The original plan added three more columns: **Type** (task/milestone/research), **Issue** (GitHub issue reference), and **Depends On** (step ID dependencies). This was never implemented. If revisited, follow the same header-based detection pattern established by the 4→5 migration.
+The original plan added columns for **Type** (task/milestone/research) and **Issue** (GitHub issue reference). These were never implemented. The `depends_on` field was later added to `RoadmapNode` and is rendered as a column when present.
 
 ## Status Inference: Write-Time Only
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, update_node_in_frontmatter -->
 
-Status inference exists only at **write time** in `update_node_in_frontmatter()`: when no explicit status is provided, it infers `in_progress` from a PR reference or preserves the existing status. The parser (`parse_roadmap()`) reads the explicit `status` field from YAML frontmatter with no inference — what's stored is what's returned.
+Status inference exists only at **write time** in `update_node_in_frontmatter()`: when no explicit status is provided, it infers `in_progress` from a PR reference or preserves the existing status. There is no plan-based inference (the `plan` field no longer exists). The parser (`parse_roadmap()`) reads the explicit `status` field from YAML frontmatter with no inference — what's stored is what's returned.
 
 ## Related Documentation
 

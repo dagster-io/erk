@@ -16,17 +16,11 @@ Rules triggered by matching actions in code.
 
 **accessing phase names from graph operations without calling enrich_phase_names()** → Read [Phase Name Enrichment](phase-name-enrichment.md) first. Phase names come from markdown headers, not from the parser. After graph_from_phases(), call enrich_phase_names(graph, issue_body) to populate phase names. Without enrichment, phase.name is None.
 
-**adding a new exec command without registering in the exec group** → Read [Objective Exec Command Consolidation](exec-command-consolidation.md) first. New exec scripts must be registered in the Click exec command group and follow the existing pattern: Click command with typed options, LBYL validation, structured result TypedDict.
-
 **adding a new roadmap mutation site without updating this document** → Read [Objective Lifecycle](objective-lifecycle.md) first. All roadmap mutation sites must be documented in objective-lifecycle.md
 
 **adding a new validation check** → Read [Roadmap Validation Architecture](roadmap-validation.md) first. Structural checks go in parse_roadmap() and return warnings alongside data. Semantic checks go in validate_objective() and produce pass/fail results. Don't mix levels.
 
-**adding a required parameter to objective-apply-landed-update without fallback discovery** → Read [Objective Exec Command Consolidation](exec-command-consolidation.md) first. The script auto-fills missing parameters from git/plan state. New parameters should follow the same pattern: explicit flag first, then auto-discovery fallback.
-
-**adding columns to the roadmap table format** → Read [Roadmap Format Versioning](roadmap-format-versioning.md) first. The 4→5 column migration is the established pattern. Read this doc to understand the header-based detection and auto-upgrade strategy before adding columns.
-
-**adding step_type, issue, or depends_on fields to RoadmapNode** → Read [Roadmap Format Versioning](roadmap-format-versioning.md) first. These fields were planned but never built. The parser, serializer, and all callers would need coordinated changes.
+**adding columns to the roadmap table format** → Read [Roadmap Format Versioning](roadmap-format-versioning.md) first. Read this doc to understand the header-based detection and rendering strategy before adding columns.
 
 **adding structural validation to check_cmd.py** → Read [Objective Check Command — Semantic Validation](objective-roadmap-check.md) first. Structural validation (phase headers, table format) belongs in roadmap.py (packages/erk-shared). check_cmd.py handles semantic validation only.
 
@@ -52,6 +46,8 @@ Rules triggered by matching actions in code.
 
 **importing parse_roadmap into a new consumer** → Read [Roadmap Shared Parser Architecture](roadmap-parser-api.md) first. The shared module lives in erk_shared.gateway.github.metadata.roadmap and is consumed by both exec scripts and CLI commands. Import from this shared location.
 
+**inferring done status from PR reference alone** → Read [Roadmap Status System](roadmap-status-system.md) first. Explicit status always wins. PR → infers in_progress (NOT done). No plan-based inference exists anymore.
+
 **inferring status from PR column when explicit status is set** → Read [Roadmap Status System](roadmap-status-system.md) first. Explicit status values (done, in_progress, pending, blocked, skipped, planning) always take priority over PR-based inference. Only '-' or empty values trigger PR-based inference.
 
 **looking for phase names in RoadmapNode fields** → Read [Phase Name Enrichment](phase-name-enrichment.md) first. Nodes are stored flat. Phase membership is derived from node ID prefix. Phase names come from markdown headers via enrich_phase_names().
@@ -64,13 +60,15 @@ Rules triggered by matching actions in code.
 
 **modifying roadmap validation without understanding the two-level architecture** → Read [Roadmap Validation Architecture](roadmap-validation.md) first. Validation is split between parse_roadmap() (structural) and validate_objective() (semantic). Read this doc to understand which level your change belongs in.
 
-**passing None for optional discovery flags and assuming defaults** → Read [Objective Exec Command Consolidation](exec-command-consolidation.md) first. Optional discovery flags (--plan, --objective, --pr) have complex fallback chains. Test edge cases where the fallback source is unavailable (branch deleted, plan not found, PR not created).
-
 **raising exceptions from validate_objective()** → Read [Objective Check Command — Semantic Validation](objective-roadmap-check.md) first. validate_objective() returns discriminated unions, never raises. Only CLI presentation functions (\_output_json, \_output_human) raise SystemExit.
+
+**referencing a 'plan' field on RoadmapNode** → Read [Roadmap Format Versioning](roadmap-format-versioning.md) first. The plan field was removed (PR #8128). RoadmapNode has: id, description, status, pr, depends_on, slug. Plan references are no longer tracked in the roadmap.
 
 **running objective-fetch-context on master without --branch** → Read [Objective Lifecycle](objective-lifecycle.md) first. Auto-discovery fails on non-plan branches. Pass `--branch` explicitly when on master.
 
 **storing objective content directly in the issue body** → Read [Objective v2 Storage Format](objective-storage-format.md) first. Objective content goes in the first comment (objective-body block), not the issue body. The issue body holds only metadata blocks (objective-header, objective-roadmap).
+
+**treating planning status as a terminal status for dependency satisfaction** → Read [Dependency Graph Architecture](dependency-graph.md) first. planning is NOT in \_TERMINAL_STATUSES — nodes with planning status do NOT satisfy dependencies.
 
 **treating status as a single-source value** → Read [Roadmap Status System](roadmap-status-system.md) first. Status resolution uses a two-tier system: explicit values first, then PR-based inference. Always check both the Status and PR columns.
 

@@ -14,6 +14,8 @@ tripwires:
   - action: "using git stash in scripts that have running processes dependent on working tree state"
     warning: "git stash changes working tree state which affects running processes. If code is executing from the working tree (e.g., Python scripts), stashing can cause import errors or missing file errors in the running process."
     score: 4
+  - action: "using two-dot syntax (branch..HEAD) in git diff"
+    warning: "git diff comparisons MUST use three-dot (branch...HEAD) to diff from merge-base. Two-dot is correct for git rev-list but WRONG for git diff."
 ---
 
 # Git Operation Patterns

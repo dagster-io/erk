@@ -20,6 +20,10 @@ tripwires:
   - action: "changing cleanup or deletion behavior without updating test assertions"
     warning: "When behavior changes from 'delete X' to 'preserve X', update test assertions to verify the new behavior (e.g., assert file persists instead of asserting it was deleted). Stale assertions silently validate the old behavior."
     score: 4
+  - action: "asserting user_output() content against capsys stdout"
+    warning: "user_output() routes to stderr. When testing code that calls user_output(), assert against capsys.readouterr().err, not .out."
+  - action: "using context_for_test() with wrong parameter name for issues"
+    warning: "erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError."
 ---
 
 # Erk Test Reference

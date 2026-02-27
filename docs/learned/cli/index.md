@@ -46,6 +46,7 @@
 - **[optional-arguments.md](optional-arguments.md)** — making a CLI argument optional, inferring CLI arguments from context, implementing branch-based argument defaults
 - **[output-styling.md](output-styling.md)** — styling CLI output, using colors in CLI, formatting terminal output
 - **[parameter-addition-checklist.md](parameter-addition-checklist.md)** — adding a parameter to a multi-layer command, working with skills that call erk exec scripts, debugging parameter not found errors
+- **[parameter-removal-checklist.md](parameter-removal-checklist.md)** — removing a CLI parameter or option, deprecating a CLI flag, cleaning up unused CLI options
 - **[plan-implement.md](plan-implement.md)** — understanding the /erk:plan-implement command, implementing plans from GitHub issues, working with .erk/impl-context/ folders, debugging plan execution failures
 - **[plan-list-provider-pattern.md](plan-list-provider-pattern.md)** — modifying erk pr list output, understanding how plan list and TUI share data providers, adding columns to plan list display
 - **[pr-operations.md](pr-operations.md)** — creating PRs programmatically, implementing PR submission workflows, preventing duplicate PR creation

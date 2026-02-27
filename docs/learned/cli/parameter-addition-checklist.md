@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "adding a parameter to erk exec without updating calling command"
     warning: "5-step verification required. Parameter additions must thread through skill argument-hint, command invocations, AND exec script. Miss any layer and you get silent failures or discovery problems. See parameter-addition-checklist.md."
+  - action: "removing a CLI parameter without checking all consumers"
+    warning: "When removing a CLI parameter, verify: (1) @click.option decorator, (2) function signature, (3) all call sites, (4) helper functions, (5) ctx.invoke calls. Then run erk-dev gen-exec-reference-docs."
 last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 ---

@@ -47,6 +47,10 @@ tripwires:
   - action: "adding a new field to ErkContext dataclass"
     warning: "Update ALL factory functions. Grep: `grep -r 'ErkContext(' packages/erk-shared/src/ src/erk/core/context.py` to find all construction sites. Missing a factory causes runtime errors or silent None values."
     score: 6
+  - action: "adding LBYL guards that only check a subset of required fields"
+    warning: "Functions with 'skip silently' contracts must validate ALL preconditions with LBYL guards. Checking one field (e.g., schema_version) is insufficient — use set operations to verify all required fields."
+  - action: "calling .read_text() or .write_text() without encoding parameter"
+    warning: "Always pass encoding='utf-8' to .read_text() and .write_text(). Python's default encoding varies by platform."
 ---
 
 # Erk Architecture Patterns

@@ -11,17 +11,19 @@ tripwires:
   - action: "adding footer before PR creation"
     warning: "PR footer needs the PR number, which isn't known until after create_pr returns. Add footer AFTER PR creation."
   - action: "rewriting PR body without preserving metadata"
-    warning: "Extract metadata prefix on every lifecycle transition via extract_metadata_prefix() to prevent metadata loss."
+    warning: "Extract plan header block on every lifecycle transition via extract_plan_header_block() to prevent metadata loss."
   - action: "parsing plan content without backward compatibility"
     warning: "extract_plan_content() handles both details-wrapped and old flat format. Always use it instead of manual parsing."
-  - action: "using `extract_metadata_prefix` or `extract_plan_content` without validating separator context"
-    warning: "The content separator `\\n\\n---\\n\\n` can accidentally form from 'Remotely executed' notes + footer delimiter. extract_metadata_prefix() validates via `<!-- erk:metadata-block:` marker in the prefix. Never skip this validation."
+  - action: "using `extract_plan_header_block` or `extract_plan_content` without validating separator context"
+    warning: "The content separator `\\n\\n---\\n\\n` can accidentally form from 'Remotely executed' notes + footer delimiter. extract_plan_header_block() validates via `<!-- erk:metadata-block:` marker in the prefix. Never skip this validation."
   - action: "adding <code> inside <summary> elements in PR bodies"
     warning: "Graphite doesn't render <code> inside <summary> — use plain text instead. GitHub renders it but Graphite does not. The correct format is <summary>original-plan</summary> not <summary><code>original-plan</code></summary>."
     score: 8
   - action: "marking a planned-PR plan as 'implementation complete' and referencing itself as the implementing PR"
     warning: "Self-referential close prevention: when a planned PR IS the plan, it cannot close itself. The plan's implementation-complete event cannot reference the plan PR as the implementing PR. One-shot dispatch guards against this — do not remove the guard."
     score: 9
+  - action: "executing push_and_create_pr before capture_existing_pr_body"
+    warning: "capture_existing_pr_body MUST execute before push_and_create_pr. gt submit overwrites the PR body, losing plan-header metadata."
 ---
 
 # Planned PR Lifecycle
@@ -83,7 +85,7 @@ All in `packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py`:
 | `build_plan_stage_body(metadata_body, plan_content)` | Build Stage 1 body: metadata + separator + details-wrapped plan. Footer NOT included (needs PR number).     |
 | `build_original_plan_section(plan_content)`          | Wrap plan content in `<details><summary>original-plan</summary>` section. Used by both Stage 1 and Stage 2. |
 | `extract_plan_content(pr_body)`                      | Extract plan content from PR body at any lifecycle stage. Handles both details-wrapped and old flat format. |
-| `extract_metadata_prefix(pr_body)`                   | Extract metadata block + content separator for preservation during stage transitions.                       |
+| `extract_plan_header_block(pr_body)`                 | Extract metadata block + content separator for preservation during stage transitions.                       |
 
 ## Separator Semantics
 
@@ -98,9 +100,9 @@ These are distinct: `find()` matches the first (content), `rsplit()` matches the
 
 The content separator `\n\n---\n\n` can accidentally form when "Remotely executed" notes or other text end with a blank line followed by the footer delimiter `\n---\n`. This creates a false positive for `find()`.
 
-<!-- Source: packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py:186-192 -->
+<!-- Source: packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py -->
 
-`extract_metadata_prefix()` defends against this by validating that `<!-- erk:metadata-block:` appears in the prefix (line 190). If the marker is absent, the function returns an empty string rather than treating the accidental separator as the real content boundary.
+`extract_plan_content()` defends against this by validating that `<!-- erk:metadata-block:` appears in the prefix (line 168). If the marker is absent, the function returns an empty string rather than treating the accidental separator as the real content boundary.
 
 The asymmetric search strategy reinforces this:
 

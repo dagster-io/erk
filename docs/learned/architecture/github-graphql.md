@@ -207,6 +207,51 @@ The `isResolved` field on `PullRequestReviewThread` is **GraphQL-only**. REST AP
 
 See: [GitHub Community Discussion #24854](https://github.com/orgs/community/discussions/24854)
 
+## Batched Issue/PR Queries with Aliases
+
+When fetching multiple issues or PRs in a single request, use the `issueOrPullRequest` union type with aliased fields:
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/real.py, _build_issues_by_numbers_query -->
+
+```graphql
+query {
+  repository(owner: "owner", name: "repo") {
+    issue_123: issueOrPullRequest(number: 123) {
+      ... on Issue {
+        number
+        title
+        body
+        state
+      }
+      ... on PullRequest {
+        number
+        title
+        body
+        state
+      }
+    }
+    issue_456: issueOrPullRequest(number: 456) {
+      ... on Issue {
+        number
+        title
+        body
+        state
+      }
+      ... on PullRequest {
+        number
+        title
+        body
+        state
+      }
+    }
+  }
+}
+```
+
+**Why `issueOrPullRequest` instead of `issue`?** The `issue` query returns a 404 for merged PRs. `issueOrPullRequest` handles both types transparently, which matters for plan lists that mix issue-based plans and draft-PR plans.
+
+**Alias pattern:** Each issue gets `issue_{number}` as its alias key. The response parser accesses `response["data"]["repository"]["issue_123"]` for each number. See `_build_issues_by_numbers_query()` in `real.py`.
+
 ## Related Topics
 
 - [GitHub Interface Patterns](github-interface-patterns.md) - REST API patterns

@@ -206,6 +206,23 @@ Property names should match user-facing output labels. When the CLI displays a l
 
 **Source:** `packages/erk-shared/src/erk_shared/output/next_steps.py`
 
+## String Method Preferences
+
+Prefer `str.removesuffix()` and `str.removeprefix()` (Python 3.9+) over manual slicing:
+
+```python
+# WRONG: Manual slicing
+if name.endswith("_cmd"):
+    name = name[:-4]
+
+# CORRECT: removesuffix
+name = name.removesuffix("_cmd")
+```
+
+## Pydantic Field() Exception
+
+Pydantic `Field()` with defaults is an exception to erk's "no default parameters" rule. This applies only to Pydantic config/settings classes (e.g., `BaseSettings` subclasses in `packages/erkbot/src/erkbot/config.py`), NOT to regular functions or dataclasses.
+
 ## Single-Use Locals Line-Length Exception
 
 When a single-use local variable is introduced solely to avoid a line-length violation, prefer shortening the variable name rather than ignoring the single-use locals rule. A shorter but still descriptive name keeps the code compact without introducing an unnecessary intermediate binding:

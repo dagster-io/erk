@@ -69,12 +69,11 @@ Returns `True` if either `plan-ref.json` or legacy `issue.json` exists.
 
 ### `validate_plan_linkage(impl_dir, branch_name) -> str | None`
 
-Validates that branch name and plan reference agree:
+Returns plan_id from plan-ref.json. Plan-ref.json is the sole source of truth for plan-to-branch mapping. Branch names no longer encode issue numbers.
 
-- Extracts issue number from branch name (pattern: `P{issue}-{slug}`)
-- Reads plan reference from impl directory
-- Raises `ValueError` if both sources disagree
-- Returns `plan_id` as string if discoverable, `None` otherwise
+- Reads plan reference from impl directory via `read_plan_ref()`
+- The `branch_name` parameter is unused (kept for interface compatibility)
+- Returns `plan_id` as string if plan-ref.json exists, `None` otherwise
 
 ## The `plan_id` String-to-Int Conversion Pattern
 

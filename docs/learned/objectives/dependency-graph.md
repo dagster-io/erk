@@ -9,6 +9,8 @@ tripwires:
     warning: "Use DependencyGraph.next_node() instead. find_next_node() is position-based and ignores dependencies."
   - action: "using ObjectiveValidationSuccess.graph without checking issue_body for enrichment"
     warning: "ObjectiveValidationSuccess includes issue_body specifically for phase name enrichment. Pass result.issue_body to enrich_phase_names() when you need phase names in display contexts."
+  - action: "treating planning status as a terminal status for dependency satisfaction"
+    warning: "planning is NOT in _TERMINAL_STATUSES — nodes with planning status do NOT satisfy dependencies."
 last_audited: "2026-02-17 00:00 PT"
 audit_result: clean
 ---

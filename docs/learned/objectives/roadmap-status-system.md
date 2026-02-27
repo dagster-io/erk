@@ -11,6 +11,8 @@ tripwires:
     warning: "Status resolution uses a two-tier system: explicit values first, then PR-based inference. Always check both the Status and PR columns."
   - action: "expecting status to auto-update when PR column is edited manually"
     warning: "Only the update-objective-node command writes computed status. Manual PR edits leave status unchanged — set status to '-' to re-enable inference."
+  - action: "inferring done status from PR reference alone"
+    warning: "Explicit status always wins. PR → infers in_progress (NOT done). No plan-based inference exists anymore."
 last_audited: "2026-02-17 16:00 PT"
 audit_result: edited
 ---
@@ -94,7 +96,20 @@ Status inference (Tier 2) determines what status _should be_ from PR columns. Va
 | Intentional hold despite existing PR  | Set Status to `pending` manually        | Overrides the PR inference deliberately         |
 | Quick fix via GitHub UI               | Update both cells, or set Status to `-` | Avoids the stale-status trap                    |
 
+## Next-Node Selection: Three-Tier Fallback
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py, find_graph_next_node -->
+
+`find_graph_next_node()` (in `dependency_graph.py`) selects the next actionable node using a three-tier priority chain:
+
+1. **`pending`** — Nodes that haven't started (highest priority)
+2. **`planning`** — Nodes dispatched for planning but not yet in progress
+3. **`in_progress`** — Nodes with active implementation
+
+This ensures objectives with only `in_progress` or `planning` remaining steps still show a "next step" in the TUI and JSON APIs. The `planning` status is **not** in `_TERMINAL_STATUSES` (`done`, `skipped`), so nodes with `planning` status do NOT satisfy dependency constraints.
+
 ## Related Documentation
 
 - [Roadmap Mutation Semantics](../architecture/roadmap-mutation-semantics.md) — Details on the write-side behavior and the command vs direct mutation decision
 - [Roadmap Parser](roadmap-parser.md) — Full parsing rules, table format, and validation
+- [Dependency Graph Architecture](dependency-graph.md) — DependencyGraph types and traversal

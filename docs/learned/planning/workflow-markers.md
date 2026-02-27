@@ -28,7 +28,9 @@ erk exec marker create --name objective-context --value "5503"
 erk exec marker create --name roadmap-step --value "1B.4"
 ```
 
-The `exit-plan-mode` hook reads `objective-context` to update the objective issue when the plan is saved.
+The `plan-save` command reads `objective-context` directly to link the plan to its objective. The `roadmap-step` marker provides the specific node ID being planned.
+
+The `objective-context` marker is the PRIMARY mechanism for objective linking — there is no CLI flag alternative. It must be created before entering plan mode (step 5 of objective-plan), before gathering code context. If missing, plan-save cannot call update-objective-node, and the objective roadmap table silently fails to update.
 
 ### Plan Issue Tracking
 

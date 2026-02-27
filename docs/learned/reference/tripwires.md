@@ -36,6 +36,8 @@ Rules triggered by matching actions in code.
 
 **using regex to extract JSON from LLM output** → Read [LLM JSON Parsing](llm-json-parsing.md) first. Use extract_json_dict() which uses JSONDecoder.raw_decode() — more robust than regex for nested JSON structures.
 
+**using two-dot syntax (branch..HEAD) in git diff** → Read [Git Diff Dot Notation Syntax](git-diff-syntax.md) first. git diff comparisons MUST use three-dot (branch...HEAD) to diff from merge-base. Two-dot is correct for git rev-list but WRONG for git diff.
+
 **writing implementation-focused changelog entries** → Read [Changelog Standards and Format](changelog-standards.md) first. Entries must describe user-visible behavior, not internal implementation. Ask: 'Does an erk user see different behavior?'
 
 **writing manual fence-stripping code to extract JSON from LLM output** → Read [LLM JSON Parsing](llm-json-parsing.md) first. Use extract_json_dict() from erk.core.llm_json instead. It handles fences, preamble, and trailing text via raw_decode().
