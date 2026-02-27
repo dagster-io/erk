@@ -1,0 +1,5 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Delete .impl/issue.json Legacy Support (Objective #7724 Node 9.6)",
+  "objective_id": 7724
+}
