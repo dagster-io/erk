@@ -72,7 +72,6 @@ The erk plan lifecycle manages implementation plans from creation through automa
 | `.erk/impl-context/progress.md`   | Mutable progress tracking                                      |
 | `.erk/impl-context/plan-ref.json` | Plan reference (provider-agnostic, replaces legacy issue.json) |
 | `.erk/impl-context/run-info.json` | GitHub Actions run reference (remote only)                     |
-| `.erk/impl-context/`              | Remote implementation folder (GitHub Actions)                  |
 
 ### Which Phase Am I In?
 
@@ -442,7 +441,7 @@ This ensures only one implementation runs per issue at a time.
 
 #### Phase 4: Implementation
 
-- Copy `.erk/impl-context/` to `.erk/impl-context/` (Claude reads `.erk/impl-context/`)
+- Recreate `.erk/impl-context/` with fresh plan content, then untrack from git (Claude reads `.erk/impl-context/` directly)
 - Create `.erk/impl-context/run-info.json` with workflow run details
 - Execute `/erk:plan-implement` with Claude
 
@@ -461,14 +460,9 @@ This ensures only one implementation runs per issue at a time.
 
 Implementation executes the plan, whether locally or via GitHub Actions.
 
-### `.erk/impl-context/` vs `.erk/impl-context/`
+### `.erk/impl-context/` Folder
 
-| Folder               | Purpose                                      | Git Status                       |
-| -------------------- | -------------------------------------------- | -------------------------------- |
-| `.erk/impl-context/` | Remote implementation (GitHub Actions)       | Committed, then deleted          |
-| `.erk/impl-context/` | Local implementation + Claude's working copy | In `.gitignore`, never committed |
-
-In GitHub Actions, `.erk/impl-context/` is copied to `.erk/impl-context/` before Claude runs.
+`.erk/impl-context/` is used for both local and remote implementation. In GitHub Actions, it is initially committed (to transfer plan content to the branch), then untracked before Claude runs so implementation changes don't conflict with it. After implementation, it is cleaned up in a separate commit.
 
 ### `.erk/impl-context/run-info.json`
 
@@ -596,15 +590,7 @@ The cleanup happens in a specific sequence:
 3. **Remove `.erk/impl-context/`** - Cleanup commit (this step)
 4. **Push changes** - Both commits pushed to PR
 
-**Key distinction:**
-
-- **`.erk/impl-context/`**: CI automatically removes this after validation passes. This is the ephemeral working copy visible in the PR diff. It's safe to delete because the plan content is also available in `.impl/` for local use.
-
-- **`.impl/`**: Requires user review and manual deletion. This is the local working directory that should be preserved until the user confirms completion. Never auto-delete this folder - it serves as documentation of what was planned vs. what was implemented.
-
 **Clear sequence**: CI passes → remove `.erk/impl-context/` → commit → push
-
-This pattern ensures that transient artifacts (`.erk/impl-context/`) are cleaned up automatically while permanent local artifacts (`.impl/`) remain for user review.
 
 ### PR Ready for Review
 
