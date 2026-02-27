@@ -37,11 +37,13 @@ This is the primary implementation workflow - it orchestrates:
 ## CRITICAL: PR Operations
 
 **NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
 - `gh pr edit` — destroys plan-header metadata block
 - `gh pr ready` — bypasses lifecycle tracking
 - `gh pr close` / `gh pr merge`
 
 All PR operations are handled by `erk pr submit` in Step 12. It automatically:
+
 - Generates the PR title and body
 - Preserves the plan-header metadata block
 - Marks draft PRs as ready for review
