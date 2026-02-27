@@ -3,7 +3,7 @@
 This module provides shared utilities for managing branch-scoped impl directories
 under .erk/impl-context/<branch>/:
 - plan.md: Immutable implementation plan
-- ref.json: Provider-agnostic plan reference (optional, replaces legacy plan-ref.json/issue.json)
+- plan-ref.json: Provider-agnostic plan reference
 
 These utilities are used by both erk (for local operations) and erk-kits
 (for kit CLI commands).
@@ -336,7 +336,7 @@ def has_plan_ref(impl_dir: Path) -> bool:
 
 
 def validate_plan_linkage(impl_dir: Path, branch_name: str) -> str | None:
-    """Return plan_id from plan-ref.json or legacy issue.json.
+    """Return plan_id from plan-ref.json.
 
     Plan-ref.json is the sole source of truth for plan-to-branch mapping.
     Branch names no longer encode issue numbers.
@@ -346,21 +346,11 @@ def validate_plan_linkage(impl_dir: Path, branch_name: str) -> str | None:
         branch_name: Current git branch name (unused, kept for interface compat)
 
     Returns:
-        Plan ID (as string) from plan-ref.json or legacy issue.json, or None if not found.
+        Plan ID (as string) from plan-ref.json, or None if not found.
     """
     plan_ref = read_plan_ref(impl_dir)
     if plan_ref is not None:
         return plan_ref.plan_id
-
-    # Fallback: read legacy issue.json for backward compatibility
-    issue_file = impl_dir / "issue.json"
-    if issue_file.exists():
-        try:
-            data = json.loads(issue_file.read_text(encoding="utf-8"))
-            if "issue_number" in data:
-                return str(data["issue_number"])
-        except json.JSONDecodeError:
-            pass
 
     return None
 

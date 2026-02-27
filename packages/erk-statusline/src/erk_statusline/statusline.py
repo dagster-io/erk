@@ -204,31 +204,20 @@ def get_worktree_info_via_gateway(ctx: StatuslineContext, repo_root: Path) -> tu
     return False, ""
 
 
-def _load_impl_data(impl_dir: Path) -> tuple[dict, str] | None:
-    """Load JSON data from .impl/plan-ref.json or legacy issue.json.
-
-    Tries plan-ref.json first (new format), falls back to issue.json (legacy).
+def _load_impl_data(impl_dir: Path) -> dict | None:
+    """Load JSON data from .impl/plan-ref.json.
 
     Args:
         impl_dir: Path to .impl/ directory
 
     Returns:
-        Tuple of (parsed_data, format_type) where format_type is "plan-ref" or "issue",
-        or None if no valid data found.
+        Parsed JSON data, or None if file doesn't exist or is invalid.
     """
     plan_ref_file = impl_dir / "plan-ref.json"
     if plan_ref_file.is_file():
         try:
             with open(plan_ref_file, encoding="utf-8") as f:
-                return json.load(f), "plan-ref"
-        except json.JSONDecodeError:
-            pass
-
-    issue_file = impl_dir / "issue.json"
-    if issue_file.is_file():
-        try:
-            with open(issue_file, encoding="utf-8") as f:
-                return json.load(f), "issue"
+                return json.load(f)
         except json.JSONDecodeError:
             pass
 
@@ -236,7 +225,7 @@ def _load_impl_data(impl_dir: Path) -> tuple[dict, str] | None:
 
 
 def get_issue_number(git_root: str) -> int | None:
-    """Load issue number from .impl/plan-ref.json (or legacy issue.json) file.
+    """Load issue number from .impl/plan-ref.json file.
 
     Args:
         git_root: Absolute path to git repository root
@@ -247,24 +236,18 @@ def get_issue_number(git_root: str) -> int | None:
     if not git_root:
         return None
 
-    result = _load_impl_data(Path(git_root) / ".impl")
-    if result is None:
+    data = _load_impl_data(Path(git_root) / ".impl")
+    if data is None:
         return None
 
-    data, fmt = result
-    if fmt == "plan-ref":
-        plan_id = data.get("plan_id")
-        if isinstance(plan_id, str) and plan_id.isdigit():
-            return int(plan_id)
-    else:
-        issue_number = data.get("issue_number") or data.get("number")
-        if isinstance(issue_number, int):
-            return issue_number
+    plan_id = data.get("plan_id")
+    if isinstance(plan_id, str) and plan_id.isdigit():
+        return int(plan_id)
     return None
 
 
 def get_objective_issue(git_root: str) -> int | None:
-    """Load objective issue number from .impl/plan-ref.json (or legacy issue.json) file.
+    """Load objective issue number from .impl/plan-ref.json file.
 
     Args:
         git_root: Absolute path to git repository root
@@ -275,15 +258,11 @@ def get_objective_issue(git_root: str) -> int | None:
     if not git_root:
         return None
 
-    result = _load_impl_data(Path(git_root) / ".impl")
-    if result is None:
+    data = _load_impl_data(Path(git_root) / ".impl")
+    if data is None:
         return None
 
-    data, fmt = result
-    if fmt == "plan-ref":
-        objective = data.get("objective_id")
-    else:
-        objective = data.get("objective_issue")
+    objective = data.get("objective_id")
     if isinstance(objective, int):
         return objective
     return None
@@ -1082,8 +1061,8 @@ def build_gh_label(
     Args:
         repo_info: Repository and PR information
         github_data: GitHub data from GraphQL query (for checks status and comments)
-        issue_number: Optional issue number from .impl/issue.json
-        objective_issue: Optional objective issue number from .impl/issue.json
+        issue_number: Optional issue number from .impl/plan-ref.json
+        objective_issue: Optional objective issue number from .impl/plan-ref.json
 
     Returns:
         TokenSeq for the complete GitHub label like:

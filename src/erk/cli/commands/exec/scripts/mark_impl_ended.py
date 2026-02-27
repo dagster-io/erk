@@ -69,7 +69,7 @@ class MarkImplError:
 def mark_impl_ended(ctx: click.Context, session_id: str | None) -> None:
     """Update implementation ended event in GitHub issue and local state file.
 
-    Reads issue number from .erk/impl-context/issue.json, fetches the issue from GitHub,
+    Reads issue number from .erk/impl-context/plan-ref.json, fetches the issue from GitHub,
     updates the plan-header block with current event metadata, and posts back.
 
     Also writes .erk/impl-context/local-run-state.json for fast local access.

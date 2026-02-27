@@ -2,7 +2,7 @@
 
 This exec command validates .erk/impl-context/ folder for /erk:plan-implement:
 - Validates .erk/impl-context/ folder structure (plan.md exists)
-- Checks for GitHub issue tracking (issue.json)
+- Checks for GitHub issue tracking (plan-ref.json)
 - Parses "Related Documentation" section for skills and docs
 
 Usage:
