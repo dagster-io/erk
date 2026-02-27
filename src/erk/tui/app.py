@@ -1369,11 +1369,6 @@ class ErkDashApp(App):
         if self._table is not None:
             self._table.focus()
 
-    @on(ViewBar.ViewTabClicked)
-    def on_view_tab_clicked(self, event: ViewBar.ViewTabClicked) -> None:
-        """Handle click on a view bar tab - switch to that view."""
-        self._switch_view(event.view_mode)
-
     @on(PlanDataTable.PlanClicked)
     def on_plan_clicked(self, event: PlanDataTable.PlanClicked) -> None:
         """Handle click on plan cell - open issue in browser."""
