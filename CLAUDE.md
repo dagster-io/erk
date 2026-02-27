@@ -28,7 +28,7 @@ f"erk exec marker create --session-id {session_id} ..."
 Erk modifies plan mode to add a save-or-implement decision:
 
 1. Claude is prompted: "Save the plan to GitHub, or implement now?"
-2. **Save**: Claude runs `/erk:plan-save` to create a GitHub issue
+2. **Save**: Claude runs `/erk:plan-save` to save the plan as a draft PR
 3. **Implement now**: Claude proceeds to implementation
 
 ### devrun Agent Restrictions
