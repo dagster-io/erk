@@ -38,8 +38,8 @@ from erk_statusline.statusline import (
     get_git_root_via_gateway,
     get_git_status_via_gateway,
     get_github_repo_via_gateway,
-    get_plan_number,
     get_objective_issue,
+    get_plan_number,
     get_pr_info_via_branch_manager,
     get_repo_info,
     get_worktree_info_via_gateway,
@@ -657,7 +657,7 @@ class TestGetPlanNumber:
             assert result == 456
 
     def test_valid_plan_json_with_issue_number_key(self) -> None:
-        """Valid issue.json with issue_number field should return the number (legacy backward compat)."""
+        """Valid issue.json with issue_number field returns the number."""
         with tempfile.TemporaryDirectory() as tmpdir:
             impl_dir = Path(tmpdir) / ".impl"
             impl_dir.mkdir()
