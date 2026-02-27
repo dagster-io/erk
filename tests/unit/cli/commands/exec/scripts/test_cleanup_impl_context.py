@@ -24,9 +24,12 @@ def _create_impl_context(repo_root: Path) -> Path:
 
 
 def test_cleanup_removes_existing_impl_context(tmp_path: Path) -> None:
-    """Cleans up .erk/impl-context/ when it exists."""
+    """Cleans up .erk/impl-context/ when it exists and is tracked."""
     _create_impl_context(tmp_path)
-    git = FakeGit(current_branches={tmp_path: "plnd/test-branch-01-15-1430"})
+    git = FakeGit(
+        current_branches={tmp_path: "plnd/test-branch-01-15-1430"},
+        tracked_paths={".erk/impl-context/plan.md", ".erk/impl-context/ref.json"},
+    )
     ctx = ErkContext.for_test(cwd=tmp_path, git=git, repo_root=tmp_path)
 
     runner = CliRunner()
@@ -63,10 +66,34 @@ def test_cleanup_not_found_when_no_impl_context(tmp_path: Path) -> None:
     assert len(git.commit.commits) == 0
 
 
+def test_cleanup_skips_when_not_tracked(tmp_path: Path) -> None:
+    """Skips cleanup when .erk/impl-context/ exists on disk but is not git-tracked."""
+    _create_impl_context(tmp_path)
+    git = FakeGit(current_branches={tmp_path: "plnd/test-branch-01-15-1430"})
+    ctx = ErkContext.for_test(cwd=tmp_path, git=git, repo_root=tmp_path)
+
+    runner = CliRunner()
+    result = runner.invoke(cleanup_impl_context, obj=ctx)
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["cleaned"] is False
+    assert output["reason"] == "not_tracked"
+
+    # Directory should still exist on disk
+    assert (tmp_path / IMPL_CONTEXT_DIR).exists()
+
+    # No git operations should have been invoked
+    assert len(git.commit.commits) == 0
+
+
 def test_cleanup_pushes_to_current_branch(tmp_path: Path) -> None:
     """Pushes the cleanup commit to the current branch."""
     _create_impl_context(tmp_path)
-    git = FakeGit(current_branches={tmp_path: "plnd/my-plan-01-15-1430"})
+    git = FakeGit(
+        current_branches={tmp_path: "plnd/my-plan-01-15-1430"},
+        tracked_paths={".erk/impl-context/plan.md", ".erk/impl-context/ref.json"},
+    )
     ctx = ErkContext.for_test(cwd=tmp_path, git=git, repo_root=tmp_path)
 
     runner = CliRunner()

@@ -83,3 +83,16 @@ class GitStatusOps(ABC):
             List of file paths with conflicts
         """
         ...
+
+    @abstractmethod
+    def has_tracked_files(self, repo_root: Path, path: str) -> bool:
+        """Check if any files under a relative path are tracked in the git index.
+
+        Args:
+            repo_root: Path to the git repository root
+            path: Relative path to check (e.g., ".erk/impl-context")
+
+        Returns:
+            True if any files under the path are tracked, False otherwise
+        """
+        ...

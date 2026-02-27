@@ -87,12 +87,14 @@ class TestLinkState:
         file_statuses: dict[Path, tuple[list[str], list[str], list[str]]] = {}
         merge_conflicts: dict[tuple[str, str], bool] = {}
         conflicted_files: list[str] = []
+        tracked_paths: set[str] = set()
 
         ops.link_state(
             staged_repos=staged_repos,
             file_statuses=file_statuses,
             merge_conflicts=merge_conflicts,
             conflicted_files=conflicted_files,
+            tracked_paths=tracked_paths,
         )
 
         # Modify external state
@@ -100,9 +102,11 @@ class TestLinkState:
         file_statuses[cwd] = (["file.py"], [], [])
         merge_conflicts[("main", "feature")] = True
         conflicted_files.append("conflict.py")
+        tracked_paths.add(".erk/impl-context/plan.md")
 
         # Verify ops sees changes
         assert ops.has_staged_changes(repo)
         assert ops.has_uncommitted_changes(cwd)
         assert ops.check_merge_conflicts(cwd, "main", "feature")
         assert ops.get_conflicted_files(cwd) == ["conflict.py"]
+        assert ops.has_tracked_files(repo, ".erk/impl-context")

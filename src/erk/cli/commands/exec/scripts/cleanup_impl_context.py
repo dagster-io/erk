@@ -48,6 +48,12 @@ def cleanup_impl_context(ctx: click.Context) -> None:
         click.echo(json.dumps({"cleaned": False, "reason": "not_found"}))
         return
 
+    # Skip cleanup if files exist on disk but are not git-tracked.
+    # This happens in CI after the workflow runs git rm --cached.
+    if not git.status.has_tracked_files(repo_root, ".erk/impl-context"):
+        click.echo(json.dumps({"cleaned": False, "reason": "not_tracked"}))
+        return
+
     # Phase 1: Remove from filesystem
     remove_impl_context(repo_root)
 

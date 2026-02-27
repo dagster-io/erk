@@ -28,6 +28,7 @@ class FakeGitStatusOps(GitStatusOps):
         file_statuses: dict[Path, tuple[list[str], list[str], list[str]]] | None = None,
         merge_conflicts: dict[tuple[str, str], bool] | None = None,
         conflicted_files: list[str] | None = None,
+        tracked_paths: set[str] | None = None,
     ) -> None:
         """Create FakeGitStatusOps with pre-configured state.
 
@@ -36,11 +37,13 @@ class FakeGitStatusOps(GitStatusOps):
             file_statuses: Mapping of cwd -> (staged, modified, untracked) files
             merge_conflicts: Mapping of (base_branch, head_branch) -> has conflicts
             conflicted_files: List of files with merge conflicts
+            tracked_paths: Set of relative paths tracked in the git index
         """
         self._staged_repos = staged_repos if staged_repos is not None else set()
         self._file_statuses = file_statuses if file_statuses is not None else {}
         self._merge_conflicts = merge_conflicts if merge_conflicts is not None else {}
         self._conflicted_files = conflicted_files if conflicted_files is not None else []
+        self._tracked_paths: set[str] = tracked_paths if tracked_paths is not None else set()
 
     def has_staged_changes(self, repo_root: Path) -> bool:
         """Report whether the repository has staged changes."""
@@ -63,6 +66,10 @@ class FakeGitStatusOps(GitStatusOps):
         """Get list of files with merge conflicts."""
         return list(self._conflicted_files)
 
+    def has_tracked_files(self, repo_root: Path, path: str) -> bool:
+        """Check if any files under a relative path are tracked in the git index."""
+        return any(tp.startswith(path) for tp in self._tracked_paths)
+
     # ============================================================================
     # Link State (for integration with FakeGit)
     # ============================================================================
@@ -74,6 +81,7 @@ class FakeGitStatusOps(GitStatusOps):
         file_statuses: dict[Path, tuple[list[str], list[str], list[str]]],
         merge_conflicts: dict[tuple[str, str], bool],
         conflicted_files: list[str],
+        tracked_paths: set[str],
     ) -> None:
         """Link this fake's state to FakeGit's state dictionaries.
 
@@ -86,8 +94,10 @@ class FakeGitStatusOps(GitStatusOps):
             file_statuses: FakeGit's _file_statuses dict
             merge_conflicts: FakeGit's _merge_conflicts dict
             conflicted_files: FakeGit's _conflicted_files list
+            tracked_paths: FakeGit's _tracked_paths set
         """
         self._staged_repos = staged_repos
         self._file_statuses = file_statuses
         self._merge_conflicts = merge_conflicts
         self._conflicted_files = conflicted_files
+        self._tracked_paths = tracked_paths
