@@ -121,8 +121,8 @@ When command interacts with filesystem:
 def test_command_with_filesystem(tmp_path: Path) -> None:
     """Test command with real filesystem paths."""
     # Arrange: Set up test directory structure
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = tmp_path / ".erk" / "impl-context"
+    impl_dir.mkdir(parents=True)
     (impl_dir / "plan.md").write_text("# Test Plan")
 
     fake_git = FakeGit()
@@ -404,14 +404,14 @@ result = runner.invoke(
     my_command,
     obj=ErkContext.for_test(cwd=Path("/fake/worktree")),
 )
-# Command tries to read /fake/worktree/.impl/plan.md - fails!
+# Command tries to read /fake/worktree/.erk/impl-context/plan.md - fails!
 ```
 
 ```python
 # CORRECT: Use tmp_path fixture
 def test_command(tmp_path: Path) -> None:
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = tmp_path / ".erk" / "impl-context"
+    impl_dir.mkdir(parents=True)
     (impl_dir / "plan.md").write_text("# Test")
 
     result = runner.invoke(
@@ -430,8 +430,8 @@ Some erk CLI commands use `Path.cwd()` internally rather than receiving the path
 def test_command_with_cwd(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Test command that reads from current working directory."""
     # Arrange: Setup test files in tmp_path
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    impl_dir = tmp_path / ".erk" / "impl-context"
+    impl_dir.mkdir(parents=True)
     (impl_dir / "plan.md").write_text("# Test Plan\n\nContent here.")
 
     # Change to the test directory BEFORE invoking command
@@ -465,10 +465,10 @@ def test_command_with_cwd(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> No
 
 ```python
 def test_impl_init_success(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test impl-init with valid .impl folder."""
-    # Arrange: Create .impl folder with plan
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
+    """Test impl-init with valid .erk/impl-context folder."""
+    # Arrange: Create .erk/impl-context folder with plan
+    impl_dir = tmp_path / ".erk" / "impl-context"
+    impl_dir.mkdir(parents=True)
     (impl_dir / "plan.md").write_text("# Implementation Plan\n\n## Phase 1\n...")
 
     # Change to test directory

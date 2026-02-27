@@ -73,7 +73,7 @@ Calls `github.get_pr(repo_root, plan_number)` and reads `pr_result.head_ref_name
 - If branch exists locally, it checks out and syncs
 - If branch only exists on remote, it creates tracking and checks out
 
-This is why `plan-implement` always calls `setup-impl-from-pr` even when `.impl/` already exists with plan tracking.
+This is why `plan-implement` always calls `setup-impl-from-pr` even when `.erk/impl-context/` already exists with plan tracking.
 
 ## Pattern Consistency: Setup and Submit
 

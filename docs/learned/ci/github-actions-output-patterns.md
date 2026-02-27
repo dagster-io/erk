@@ -70,7 +70,7 @@ GitHub Actions has no type system. Everything is a string, including booleans an
 - name: Check condition
   id: check
   run: |
-    if [ -d ".impl" ]; then
+    if [ -d ".erk/impl-context" ]; then
       echo "skip=true" >> $GITHUB_OUTPUT
     else
       echo "skip=false" >> $GITHUB_OUTPUT

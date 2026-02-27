@@ -71,7 +71,7 @@ See the `erk-exec` skill for complete workflow guidance and the full command ref
 ### Plan Operations
 
 - `get-plan-metadata` - Read plan issue metadata
-- `setup-impl-from-pr` - Prepare .impl/ folder
+- `setup-impl-from-pr` - Prepare .erk/impl-context/ folder
 
 ### Session Operations
 
@@ -127,12 +127,12 @@ Consolidated entry point for implementation setup. Handles all plan sources:
 ```bash
 erk exec setup-impl --issue 2521              # From issue number
 erk exec setup-impl --file ./my-plan.md       # From local file
-erk exec setup-impl                           # Auto-detect from .impl/, branch, or fail
+erk exec setup-impl                           # Auto-detect from .erk/impl-context/, branch, or fail
 ```
 
 **What it does:**
 
-1. Detects plan source (issue, file, existing `.impl/`, or branch name)
+1. Detects plan source (issue, file, existing `.erk/impl-context/`, or branch name)
 2. Delegates to `setup-impl-from-pr` for issue-based plans
 3. Runs `impl-init` validation
 4. Cleans up `.erk/impl-context/` staging directory (git rm + commit + push)
@@ -141,6 +141,7 @@ erk exec setup-impl                           # Auto-detect from .impl/, branch,
 
 - `--issue` - Issue number to fetch plan from
 - `--file` - Local markdown file path
+- `--no-impl` - Create branch only, skip `.erk/impl-context/` folder creation
 
 **Output:** JSON with `success`, `source`, `plan_number`, `has_plan_tracking`, `valid`, `related_docs`
 
@@ -150,12 +151,12 @@ Creates implementation environment from a plan issue:
 
 1. Fetches plan from GitHub issue
 2. Creates/checks out implementation branch (e.g., `P123-feature-01-15-1430`)
-3. Creates `.impl/` folder with plan content
+3. Creates `.erk/impl-context/` folder with plan content
 4. Saves issue reference for PR linking
 
 **Flags:**
 
-- `--no-impl` - Create branch only, skip `.impl/` folder creation
+- `--no-impl` - Create branch only, skip `.erk/impl-context/` folder creation
 
 **Branch behavior:**
 
@@ -164,6 +165,25 @@ Creates implementation environment from a plan issue:
 - If on feature branch: Stacks new branch on current branch
 
 **Important:** After `create_branch()`, explicit `checkout_branch()` is called because GraphiteBranchManager restores the original branch after tracking.
+
+---
+
+#### setup-impl
+
+Consolidated entry point for implementation setup. Handles all plan sources:
+
+```bash
+erk exec setup-impl --issue 2521              # From issue number
+erk exec setup-impl --file ./my-plan.md       # From local file
+erk exec setup-impl                           # Auto-detect from .erk/impl-context/, branch, or fail
+```
+
+**What it does:**
+
+1. Detects plan source (issue, file, existing `.erk/impl-context/`, or branch name)
+2. Delegates to `setup-impl-from-pr` for issue-based plans
+3. Runs `impl-init` validation
+4. Cleans up `.erk/impl-context/` staging directory (git rm + commit + push)
 
 #### cleanup-impl-context
 

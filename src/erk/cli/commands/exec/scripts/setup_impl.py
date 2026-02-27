@@ -2,10 +2,10 @@
 
 Replaces the entire Steps 0-2d decision tree in plan-implement.md with a
 single command. Handles argument parsing, source detection, branch creation,
-.impl/ setup, and impl-context cleanup.
+.erk/impl-context/ setup, and impl-context cleanup.
 
 Usage:
-    erk exec setup-impl                              # Auto-detect from .impl/ or branch
+    erk exec setup-impl                              # Auto-detect from .erk/impl-context/ or branch
     erk exec setup-impl --issue 2521                 # Set up from issue #2521
     erk exec setup-impl --file ./my-plan.md          # Set up from local file
 
@@ -86,7 +86,7 @@ def _setup_from_file(
 ) -> dict[str, object]:
     """Set up implementation from a local markdown file.
 
-    Creates a feature branch and .impl/ folder from the file content.
+    Creates a feature branch and .erk/impl-context/ folder from the file content.
 
     Args:
         ctx: Click context.
@@ -166,7 +166,7 @@ def setup_impl(ctx: click.Context, plan_number: int | None, file_path: Path | No
     Handles all setup paths for plan-implement:
     1. --issue: Set up from a GitHub issue/PR
     2. --file: Set up from a local markdown file
-    3. (no args): Auto-detect from .impl/ or branch, or fail
+    3. (no args): Auto-detect from .erk/impl-context/ or branch, or fail
 
     Runs impl-init validation, cleanup of .erk/impl-context/,
     and outputs plan metadata for the agent.

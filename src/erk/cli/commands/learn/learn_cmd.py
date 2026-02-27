@@ -84,7 +84,7 @@ def learn_cmd(
     """Extract insights from sessions associated with a plan.
 
     ISSUE can be a plan issue number (e.g., "123") or a full GitHub URL.
-    If not provided, infers from .impl/plan-ref.json on the current branch.
+    If not provided, infers from .erk/impl-context/plan-ref.json on the current branch.
 
     Discovers all Claude Code sessions related to the plan:
     - Planning session (created the plan)
@@ -122,7 +122,7 @@ def learn_cmd(
             + "No issue specified and could not infer from branch name"
         )
         user_output("Usage: erk learn <issue-number>")
-        user_output("Or run from a plan branch with .impl/plan-ref.json")
+        user_output("Or run from a plan branch with .erk/impl-context/plan-ref.json")
         raise SystemExit(1)
 
     # Discover repository context

@@ -114,7 +114,7 @@ When implementing a planned-PR plan, the `.erk/impl-context/` staging directory 
 
 **Cleanup pattern:**
 
-1. `setup_impl_from_issue.py` reads the files into `.impl/` but does NOT delete them (deferred cleanup)
+1. `setup_impl_from_pr.py` reads the files into `.erk/impl-context/` but does NOT delete them (deferred cleanup)
 2. `plan-implement.md` Step 2d performs the actual `git rm -rf .erk/impl-context/ && git commit && git push`
 3. The step is **idempotent** — safe to run when the directory doesn't exist
 

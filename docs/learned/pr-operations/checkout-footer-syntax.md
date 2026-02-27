@@ -5,7 +5,7 @@ read_when:
   - debugging erk pr check validation failures
   - working on the submit pipeline or git-pr-push command
 tripwires:
-  - action: "writing checkout footer with issue number from .impl/plan-ref.json"
+  - action: "writing checkout footer with issue number from .erk/impl-context/plan-ref.json"
     warning: "Use PR number (from create_pr result), NOT issue number. The checkout command requires a PR number. Issue numbers in checkout footers cause erk pr check validation failures."
   - action: "writing gh pr checkout in a PR footer"
     warning: "The checkout footer uses `erk pr checkout <number> --script`, NOT `gh pr checkout`. The footer format has changed."
@@ -33,12 +33,12 @@ See `build_pr_body_footer()` in `packages/erk-shared/src/erk_shared/gateway/gith
 
 ## PR Number vs Issue Number
 
-The single most common agent mistake is using the issue number from `.impl/plan-ref.json` instead of the PR number in the checkout command. These are different GitHub entities:
+The single most common agent mistake is using the issue number from `.erk/impl-context/plan-ref.json` instead of the PR number in the checkout command. These are different GitHub entities:
 
-| Source                     | Use for checkout footer?    | Why                                                  |
-| -------------------------- | --------------------------- | ---------------------------------------------------- |
-| `create_pr()` return value | Yes — this is the PR number | `erk pr checkout` requires a PR number               |
-| `.impl/plan-ref.json`      | Never                       | Plan issue number != PR number; validation will fail |
+| Source                            | Use for checkout footer?    | Why                                                  |
+| --------------------------------- | --------------------------- | ---------------------------------------------------- |
+| `create_pr()` return value        | Yes — this is the PR number | `erk pr checkout` requires a PR number               |
+| `.erk/impl-context/plan-ref.json` | Never                       | Plan issue number != PR number; validation will fail |
 
 ```python
 # WRONG: Using issue number

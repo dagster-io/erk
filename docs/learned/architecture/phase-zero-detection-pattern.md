@@ -100,7 +100,7 @@ fi
 Check for presence/absence of files:
 
 ```bash
-if [ -f ".impl/plan.md" ]; then
+if [ -f ".erk/impl-context/plan.md" ]; then
   # Plan implementation mode
 else
   # Ad-hoc development mode

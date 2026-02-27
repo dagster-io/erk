@@ -159,7 +159,7 @@ Erk plan branches follow the pattern `plnd/{slug}-{timestamp}`:
 - `plnd/add-p-prefix-to-branch-nam-12-09-0934`
 - `plnd/fix-auth-bug-01-15-1430`
 
-**Plan-to-branch mapping**: Plan issue numbers are **not** encoded in branch names. `.impl/plan-ref.json` is the sole source of truth for mapping plans to branches.
+**Plan-to-branch mapping**: Plan issue numbers are **not** encoded in branch names. `.erk/impl-context/plan-ref.json` is the sole source of truth for mapping plans to branches.
 
 #### With Objective ID
 
@@ -203,28 +203,28 @@ When writing CLI commands, use the correct path level for file lookups:
 | Path                      | What it represents             | When to use                                            |
 | ------------------------- | ------------------------------ | ------------------------------------------------------ |
 | `ctx.cwd`                 | Where the user ran the command | **Rarely correct** - only for user-relative operations |
-| `repo.root` / `repo_root` | Git worktree root              | `.erk/`, `.impl/` lookups, git operations              |
+| `repo.root` / `repo_root` | Git worktree root              | `.erk/`, `.erk/impl-context/` lookups, git operations  |
 
-### Common Pattern: `.impl/` Lookup
+### Common Pattern: `.erk/impl-context/` Lookup
 
-`.impl/` lives at the worktree root:
+`.erk/impl-context/` lives at the worktree root:
 
 ```python
-impl_dir = repo_root / ".impl"
+impl_context_dir = repo_root / ".erk" / "impl-context"
 ```
 
 ### Common Mistake
 
-**❌ Wrong**: Using `ctx.cwd` for `.impl/` lookup
+**❌ Wrong**: Using `ctx.cwd` for `.erk/impl-context/` lookup
 
 ```python
-impl_dir = ctx.cwd / ".impl"  # Wrong - user may run from any subdirectory
+impl_context_dir = ctx.cwd / ".erk" / "impl-context"  # Wrong - user may run from any subdirectory
 ```
 
 **✅ Correct**: Using worktree root
 
 ```python
-impl_dir = repo_root / ".impl"
+impl_context_dir = repo_root / ".erk" / "impl-context"
 ```
 
 ---
@@ -665,17 +665,17 @@ Wraps real implementation, prints messages instead of executing destructive oper
 
 ### Plan Folder
 
-A `.impl/` folder containing implementation plans and progress tracking for a feature.
+A `.erk/impl-context/` folder containing implementation plans and progress tracking for a feature.
 
 **Usage**: `erk create --from-plan-file my-plan.md my-feature`
 
 **Behavior**:
 
-- Plan file is converted to `.impl/` folder structure in the new worktree
+- Plan file is converted to `.erk/impl-context/` folder structure in the new worktree
 - Contains two files:
   - `plan.md` - Immutable implementation plan
   - `progress.md` - Mutable progress tracking with checkboxes
-- `.impl/` is gitignored (not committed)
+- `.erk/impl-context/` is gitignored (not committed)
 - Useful for keeping implementation notes with the working code
 
 **Benefits**:
@@ -694,7 +694,7 @@ echo "## Implementation Plan\n1. Step 1\n2. Step 2" > plan.md
 erk create --from-plan-file plan.md my-feature
 
 # Plan structure created:
-# ~/erks/erk/my-feature/.impl/
+# ~/erks/erk/my-feature/.erk/impl-context/
 #   ├── plan.md        (immutable)
 #   └── progress.md    (mutable, with checkboxes)
 ```
@@ -875,7 +875,7 @@ A GitHub label added to PRs that originate from learn plans. When `erk land` det
 **Applied by**:
 
 - `erk pr dispatch` when the source issue has `plan_type: learn`
-- `gt finalize` when the `.impl/plan.md` has `plan_type: learn`
+- `gt finalize` when the `.erk/impl-context/plan.md` has `plan_type: learn`
 
 **Checked by**:
 

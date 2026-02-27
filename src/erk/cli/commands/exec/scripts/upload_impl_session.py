@@ -1,7 +1,7 @@
 """Upload current implementation session for async learn.
 
 Replaces the inline bash logic in plan-implement.md Step 10b.
-Reads plan reference from .impl/, captures session info, and uploads
+Reads plan reference from .erk/impl-context/, captures session info, and uploads
 using the same mechanism as upload-session.
 
 Fixes the --issue-number vs --plan-id bug in the original bash.
@@ -57,7 +57,7 @@ def _output_not_uploaded(reason: str) -> None:
 def upload_impl_session(ctx: click.Context, session_id: str) -> None:
     """Upload current implementation session for async learn.
 
-    Reads plan reference from .impl/ to get the plan_id, captures
+    Reads plan reference from .erk/impl-context/ to get the plan_id, captures
     session info from Claude installation, and uploads the session
     to a git branch for async learn processing.
 

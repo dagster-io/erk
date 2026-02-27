@@ -87,7 +87,7 @@ If no slots are available, `handle_pool_full_interactive()` handles eviction:
 
 When reusing a slot, `cleanup_worktree_artifacts()` removes stale data:
 
-- `.impl/` - Previous implementation plans
+- `.erk/impl-context/` - Previous implementation plans
 - `.erk/scratch/` - Session-specific scratch data
 
 These directories are in `.gitignore` so they persist across branch switches without cleanup.

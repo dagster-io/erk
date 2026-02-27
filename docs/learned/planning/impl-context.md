@@ -4,7 +4,7 @@ read_when:
   - "working with .erk/impl-context/ files"
   - "debugging plan content missing from a draft-PR implementation"
   - "reviewing a PR that contains .erk/impl-context/ files"
-  - "understanding how draft-PR plans transfer content to .impl/"
+  - "understanding how draft-PR plans transfer content to .erk/impl-context/"
 tripwires:
   - action: "reviewing a PR that contains .erk/impl-context/ files"
     warning: "Leave a PR comment telling the author to remove .erk/impl-context/. This is an erk tooling error — the directory should have been cleaned up before implementation. Run: git rm -rf .erk/impl-context/ && git commit -m 'Remove leaked impl-context'"
@@ -45,9 +45,9 @@ See: `src/erk/cli/commands/exec/scripts/plan_save.py:163-182`
 
 The directory is cleaned up before implementation begins via a two-phase deferred cleanup pattern. All five setup paths converge at **Step 2d** in `plan-implement.md`, which is the single cleanup point:
 
-1. **`setup_impl_from_issue.py`** (Phase 1, read-only) — Reads `plan.md` and `ref.json`, copies content into `.impl/`, but deliberately does NOT delete the directory. See comment at `src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py:202`: "Do not delete here — Step 2d in plan-implement.md handles git rm + commit + push"
+1. **`setup_impl_from_pr.py`** (Phase 1, read-only) — Reads `plan.md` and `ref.json`, copies content into `.erk/impl-context/`, but deliberately does NOT delete the directory. See comment at `src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:202`: "Do not delete here — Step 2d in plan-implement.md handles git rm + commit + push"
 
-2. **`plan-implement.md` Step 2d** (Phase 2, git cleanup — convergence point) — All five setup paths (ISSUE_ARG, FILE_ARG, existing `.impl/` with issue tracking, existing `.impl/` without issue tracking, fallback plan-save) reach this step. Performs the actual deletion with `git rm -rf .erk/impl-context/ && git commit && git push`. This deferred approach ensures removal is committed, not just deleted from the local filesystem. The step is **idempotent** — safe to run even when the directory doesn't exist.
+2. **`plan-implement.md` Step 2d** (Phase 2, git cleanup — convergence point) — All five setup paths (ISSUE_ARG, FILE_ARG, existing `.erk/impl-context/` with issue tracking, existing `.erk/impl-context/` without issue tracking, fallback plan-save) reach this step. Performs the actual deletion with `git rm -rf .erk/impl-context/ && git commit && git push`. This deferred approach ensures removal is committed, not just deleted from the local filesystem. The step is **idempotent** — safe to run even when the directory doesn't exist.
 
 3. **`plan-implement.yml` CI workflow** — Cleans up before the implementation agent runs, as a safety net for remote execution.
 

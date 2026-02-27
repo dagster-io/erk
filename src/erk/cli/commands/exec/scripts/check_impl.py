@@ -1,6 +1,6 @@
-"""Check .impl/ folder structure and validate prerequisites.
+"""Check .erk/impl-context/ folder structure and validate prerequisites.
 
-This exec command validates that .impl/ folder has required files
+This exec command validates that .erk/impl-context/ folder has required files
 (plan.md, progress.md) and checks for optional GitHub issue tracking.
 
 Usage:
@@ -20,7 +20,7 @@ Examples:
     {"valid": true, "has_plan_tracking": true, "plan_length": 1234}
 
     $ erk exec check-impl
-    Plan loaded from .impl/plan.md
+    Plan loaded from .erk/impl-context/plan.md
     GitHub tracking: ENABLED (issue #123)
     ...
 """
@@ -42,7 +42,7 @@ def _error(msg: str) -> NoReturn:
 
 
 def _validate_impl_folder(ctx: click.Context) -> Path:
-    """Validate implementation folder exists and has required files.
+    """Validate .erk/impl-context/ folder exists and has required files.
 
     Uses resolve_impl_dir() for branch-scoped discovery.
 
@@ -80,7 +80,7 @@ def _get_plan_reference(impl_dir: Path, *, silent: bool = False) -> dict[str, in
     """Get plan reference if available, None if not (non-fatal).
 
     Args:
-        impl_dir: Path to .impl/ directory
+        impl_dir: Path to .erk/impl-context/ directory
         silent: If True, don't print info message when tracking disabled
 
     Returns:
@@ -116,7 +116,7 @@ def _execute_plan(plan_content: str, plan_info: dict[str, int | str] | None) -> 
         tracking_msg = "GitHub tracking: DISABLED (no plan-ref.json)"
 
     msg = f"""
-Plan loaded from plan.md
+Plan loaded from .erk/impl-context/plan.md
 
 {tracking_msg}
 
@@ -125,7 +125,7 @@ To implement:
 
 The /erk:plan-implement slash command will:
   1. Execute implementation steps
-  2. Update progress.md as steps complete"""
+  2. Update .erk/impl-context/progress.md as steps complete"""
 
     if plan_info:
         msg += f"\n  3. Post progress to GitHub issue #{plan_info['plan_number']}"
@@ -137,9 +137,9 @@ The /erk:plan-implement slash command will:
 @click.option("--dry-run", is_flag=True, help="Validate and output JSON")
 @click.pass_context
 def check_impl(ctx: click.Context, dry_run: bool) -> None:
-    """Check implementation folder structure and validate prerequisites.
+    """Check .erk/impl-context/ folder structure and validate prerequisites.
 
-    Validates that implementation folder exists with required files (plan.md, progress.md).
+    Validates that .erk/impl-context/ folder exists with required files (plan.md, progress.md).
     Checks for optional plan-ref.json to enable GitHub progress tracking.
 
     In dry-run mode, outputs JSON with validation status.

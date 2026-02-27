@@ -142,6 +142,6 @@ This enables:
 
 ## Related Topics
 
-- [Impl Folder Lifecycle](impl-folder-lifecycle.md) - How .impl/ tracks implementation state
+- [Impl Folder Lifecycle](impl-folder-lifecycle.md) - How .erk/impl-context/ tracks implementation state
 - [Markers](markers.md) - How impl-started/ended comments are created
 - [Gateway ABC Implementation](gateway-abc-implementation.md) - How create_gist is implemented across gateway layers

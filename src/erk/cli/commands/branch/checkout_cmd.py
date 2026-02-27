@@ -327,7 +327,7 @@ def _setup_impl_for_plan(
         result.output_for_shell_integration()
         sys.exit(0)
 
-    user_output(f"Created .impl/ folder from plan #{setup.issue_number}")
+    user_output(f"Created .erk/impl-context/ folder from plan #{setup.issue_number}")
 
 
 @alias("co")
@@ -366,7 +366,7 @@ def branch_checkout(
     a worktree is automatically created. If the branch exists on origin but
     not locally, a tracking branch and worktree are created automatically.
 
-    Use --for-plan to resolve a plan issue/PR and set up .impl/ after checkout.
+    Use --for-plan to resolve a plan issue/PR and set up .erk/impl-context/ after checkout.
 
     Examples:
 
@@ -374,7 +374,7 @@ def branch_checkout(
 
         erk br co unchecked-branch       # Auto-create worktree
 
-        erk br co --for-plan 123         # Checkout plan branch with .impl/ setup
+        erk br co --for-plan 123         # Checkout plan branch with .erk/impl-context/ setup
 
     If multiple worktrees contain the branch, all options are shown.
     """

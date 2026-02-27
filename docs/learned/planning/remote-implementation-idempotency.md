@@ -40,7 +40,7 @@ Check if current branch name matches the expected prefix:
 P{issue_number}-*
 ```
 
-If already on a matching branch, output the existing branch name and continue with `.impl/` setup.
+If already on a matching branch, output the existing branch name and continue with `.erk/impl-context/` setup.
 
 ## User Experience
 

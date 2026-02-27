@@ -15,7 +15,7 @@ tripwires:
 
 # Impl-Context API
 
-The `.erk/impl-context/` folder is a staging directory committed to the branch during plan submission. Unlike `.impl/` (ephemeral, local, never committed), `.erk/impl-context/` is visible in the draft PR immediately and removed before implementation begins.
+The `.erk/impl-context/` folder is a staging directory committed to the branch during plan submission. It is visible in the draft PR immediately and removed before implementation begins.
 
 ## Three-Function API
 
@@ -82,5 +82,5 @@ create_impl_context(...)
 
 ## Related Documentation
 
-- [Impl Folder Lifecycle](impl-folder-lifecycle.md) — Full lifecycle of .impl/ and .erk/impl-context/ folders
+- [Impl Folder Lifecycle](impl-folder-lifecycle.md) — Full lifecycle of .erk/impl-context/ and local working directory folders
 - [Plan Ref Architecture](plan-ref-architecture.md) — ref.json schema and migration

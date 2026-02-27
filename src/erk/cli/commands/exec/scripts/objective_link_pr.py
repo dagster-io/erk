@@ -1,6 +1,6 @@
 """Link a PR number to objective roadmap nodes at submit time.
 
-Reads node_ids and objective_id from .impl/ref.json, then updates the
+Reads node_ids and objective_id from .erk/impl-context/ref.json, then updates the
 objective's roadmap table to set each node's PR cell to the newly created PR.
 
 Usage:
@@ -45,7 +45,7 @@ def objective_link_pr(
     *,
     pr_number: int,
 ) -> None:
-    """Link PR number to objective roadmap nodes from impl-context metadata."""
+    """Link PR number to objective roadmap nodes from .erk/impl-context/ metadata."""
     cwd = require_cwd(ctx)
     git = require_git(ctx)
     current_branch = git.branch.get_current_branch(cwd)

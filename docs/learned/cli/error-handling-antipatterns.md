@@ -80,9 +80,9 @@ if not branch_name:
 
 ```python
 def get_plan_folder() -> Path:
-    impl_path = Path(".impl")
+    impl_path = Path(".erk/impl-context")
     if not impl_path.exists():
-        raise RuntimeError("No .impl/ folder found in current directory")
+        raise RuntimeError("No .erk/impl-context/ folder found in current directory")
     return impl_path
 ```
 
@@ -90,10 +90,10 @@ def get_plan_folder() -> Path:
 
 ```python
 def get_plan_folder() -> Path:
-    impl_path = Path(".impl")
+    impl_path = Path(".erk/impl-context")
     if not impl_path.exists():
         raise UserFacingCliError(
-            "No .impl/ folder found in current directory\n\n"
+            "No .erk/impl-context/ folder found in current directory\n\n"
             "Run 'erk plan-implement' to set up an implementation environment"
         )
     return impl_path

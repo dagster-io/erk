@@ -39,7 +39,7 @@ The `--ignore-path .gitignore` pattern creates automatic synchronization:
 - No duplication of ignore patterns across `.gitignore` and `.prettierignore`
 - Agents working on formatting don't need to coordinate changes across multiple ignore files
 
-When `.erk/scratch/` or `.impl/` are added to `.gitignore`, they're immediately excluded from Prettier without a second step.
+When `.erk/scratch/` or `.erk/impl-context/` are added to `.gitignore`, they're immediately excluded from Prettier without a second step.
 
 ## Working Around the Constraint
 

@@ -12,7 +12,7 @@ read_when:
 
 Rules triggered by matching actions in code.
 
-**assuming one-shot plan and implementation run in the same Claude session** → Read [One-Shot Workflow](one-shot-workflow.md) first. They run in separate sessions. The plan is written to `.impl/plan.md` and the implementer reads it fresh. No context carries over.
+**assuming one-shot plan and implementation run in the same Claude session** → Read [One-Shot Workflow](one-shot-workflow.md) first. They run in separate sessions. The plan is written to `.erk/impl-context/plan.md` and the implementer reads it fresh. No context carries over.
 
 **loading erk-diff-analysis skill more than once per session** → Read [Skill-Based Commit Message Generation](commit-messages.md) first. Skills persist for the entire session. Check conversation history for 'erk-diff-analysis' before reloading.
 

@@ -198,12 +198,12 @@ def branch_create(
             raise SystemExit(1) from None
         user_output(f"Created branch: {branch_name}")
 
-    # If --no-slot is specified, we're done (but warn about .impl if --for-plan was used)
+    # If --no-slot is specified, we're done (but warn about impl context if --for-plan was used)
     if no_slot:
         if setup is not None:
             user_output(
                 click.style("Note: ", fg="yellow")
-                + ".impl folder not created (no worktree allocated)"
+                + ".erk/impl-context/ folder not created (no worktree allocated)"
             )
         return
 
@@ -277,7 +277,7 @@ def branch_create(
             result.output_for_shell_integration()
             sys.exit(0)
 
-        user_output(f"Created .impl/ folder from plan #{setup.issue_number}")
+        user_output(f"Created .erk/impl-context/ folder from plan #{setup.issue_number}")
 
         # Write activation script
         activate_script_path = write_worktree_activate_script(

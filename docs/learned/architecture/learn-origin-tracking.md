@@ -42,7 +42,7 @@ When a PR is landed via `erk land`, the command normally queues the worktree for
 
 When creating a PR from a learn plan (`submit.py`, `finalize.py`):
 
-- Check `plan_type` field in plan-header metadata or `.impl/plan.md`
+- Check `plan_type` field in plan-header metadata or `.erk/impl-context/plan.md`
 - If learn plan, add `erk-skip-learn` label via `github.add_label_to_pr()`
 
 ### PR Landing

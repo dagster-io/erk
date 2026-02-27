@@ -36,12 +36,12 @@ Rules triggered by matching actions in code.
 
 **using gh pr ready instead of the gateway's mark_pr_ready method** → Read [Draft PR Handling](draft-pr-handling.md) first. mark_pr_ready uses REST API to preserve GraphQL quota. Don't shell out to gh pr ready directly.
 
-**using issue number from .impl/plan-ref.json in a checkout footer** → Read [PR Validation Rules](pr-validation-rules.md) first. Checkout footers require the PR number (from create_pr return value), NOT the plan issue number. See pr-validation-rules.md.
+**using issue number from .erk/impl-context/plan-ref.json in a checkout footer** → Read [PR Validation Rules](pr-validation-rules.md) first. Checkout footers require the PR number (from create_pr return value), NOT the plan issue number. See pr-validation-rules.md.
 
 **using raw gh pr view or gh pr create in Python code** → Read [PR Creation Decision Logic](pr-creation-patterns.md) first. Use the typed GitHub gateway (get_pr_for_branch, create_pr) instead of shelling out. The gateway returns PRDetails | PRNotFound for LBYL handling.
 
 **working on branch after erk pr submit** → Read [Git-Only PR Submission Path](pr-submission-workflow.md) first. Squash-force-push causes branch divergence. Run `git pull --rebase` after erk pr submit before making further changes.
 
-**writing checkout footer with issue number from .impl/plan-ref.json** → Read [Checkout Footer Syntax](checkout-footer-syntax.md) first. Use PR number (from create_pr result), NOT issue number. The checkout command requires a PR number. Issue numbers in checkout footers cause erk pr check validation failures.
+**writing checkout footer with issue number from .erk/impl-context/plan-ref.json** → Read [Checkout Footer Syntax](checkout-footer-syntax.md) first. Use PR number (from create_pr result), NOT issue number. The checkout command requires a PR number. Issue numbers in checkout footers cause erk pr check validation failures.
 
 **writing gh pr checkout in a PR footer** → Read [Checkout Footer Syntax](checkout-footer-syntax.md) first. The checkout footer uses `erk pr checkout <number> --script`, NOT `gh pr checkout`. The footer format has changed.

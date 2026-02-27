@@ -724,7 +724,7 @@ def test_checkout_for_plan_creates_impl_folder() -> None:
             result = runner.invoke(branch_group, ["checkout", "--for-plan", "500"], obj=ctx)
 
         assert result.exit_code == 0, f"Failed: {result.output}"
-        assert "Created .impl/ folder from plan #500" in result.output
+        assert "Created .erk/impl-context/ folder from plan #500" in result.output
 
         # Verify activation instructions are printed after --for-plan checkout
         assert "To activate the worktree environment:" in result.output
@@ -781,7 +781,7 @@ def test_checkout_for_plan_prints_activation_when_sync_status_fails() -> None:
             result = runner.invoke(branch_group, ["checkout", "--for-plan", "600"], obj=ctx)
 
         assert result.exit_code == 0, f"Failed: {result.output}"
-        assert "Created .impl/ folder from plan #600" in result.output
+        assert "Created .erk/impl-context/ folder from plan #600" in result.output
         # Activation instructions must be printed even when sync status fails
         assert "To activate the worktree environment:" in result.output
         assert "source" in result.output
@@ -841,7 +841,7 @@ def test_checkout_stacks_in_place_for_plan_prints_activation() -> None:
 
         assert result.exit_code == 0, f"Failed: {result.output}"
         assert "Stacked" in result.output
-        assert "Created .impl/ folder from plan #700" in result.output
+        assert "Created .erk/impl-context/ folder from plan #700" in result.output
         # Activation instructions must be printed in stack-in-place path
         assert "To activate the worktree environment:" in result.output
         assert "source" in result.output

@@ -29,7 +29,7 @@ The orchestrator calls sub-commands as Python functions (not subprocess calls), 
 
 The `setup-impl` command (`src/erk/cli/commands/exec/scripts/setup_impl.py`) demonstrates this pattern:
 
-1. **Detects plan source** (issue, file, existing `.impl/`, or branch name)
+1. **Detects plan source** (issue, file, existing `.erk/impl-context/`, or branch name)
 2. **Delegates** to `setup_impl_from_pr` for the heavy lifting
 3. **Validates** by running `impl-init`
 4. **Cleans up** `.erk/impl-context/` staging directory

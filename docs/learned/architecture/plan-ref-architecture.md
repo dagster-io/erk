@@ -14,20 +14,20 @@ tripwires:
 
 # PlanRef Architecture
 
-PlanRef is the provider-agnostic plan reference abstraction stored in `.impl/plan-ref.json`. It replaced the GitHub-specific `IssueReference` to support future plan providers.
+PlanRef is the provider-agnostic plan reference abstraction stored in `.erk/impl-context/plan-ref.json`. It replaced the GitHub-specific `IssueReference` to support future plan providers.
 
 ## Why PlanRef Replaced IssueReference
 
 The original `IssueReference` was tightly coupled to GitHub:
 
 - Fields: `issue_number` (int), `issue_url` (str)
-- File: `.impl/issue.json`
+- File: `.erk/impl-context/issue.json`
 - Only supported GitHub issues as plan storage
 
 PlanRef generalizes this:
 
 - Fields: `provider`, `plan_id` (str), `url`, `labels`, `objective_id`
-- File: `.impl/plan-ref.json`
+- File: `.erk/impl-context/plan-ref.json`
 - Designed for any plan provider (GitHub, Jira, Linear, etc.)
 
 ## PlanRef Dataclass

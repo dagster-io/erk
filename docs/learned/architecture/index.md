@@ -72,7 +72,7 @@
 - **[hook-marker-detection.md](hook-marker-detection.md)** — Adding a new hook managed by erk, Implementing version detection for artifacts, Understanding how hook updates work
 - **[http-accelerated-plan-refresh.md](http-accelerated-plan-refresh.md)** — understanding dual-path architecture for plan data fetching, working with HttpClient ABC extensions, optimizing plan list performance
 - **[impl-context-api.md](impl-context-api.md)** — working with .erk/impl-context/ folder, understanding plan submission staging, creating or removing impl-context directories
-- **[impl-folder-lifecycle.md](impl-folder-lifecycle.md)** — working with .impl/ or .erk/impl-context/ folders, understanding remote implementation workflow, debugging plan visibility in PRs
+- **[impl-folder-lifecycle.md](impl-folder-lifecycle.md)** — working with .erk/impl-context/ folders, understanding remote implementation workflow, debugging plan visibility in PRs
 - **[inference-hoisting.md](inference-hoisting.md)** — adding LLM calls to an exec script, calling PromptExecutor from a CLI command or exec script, working with BranchSlugGenerator or generate_slug_or_fallback, adding --branch-slug or similar pre-computed value flags to exec commands, understanding why exec scripts must be deterministic, refactoring nested LLM calls out of exec scripts
 - **[interactive-agent-config.md](interactive-agent-config.md)** — Working with global config loading (GlobalConfig), Implementing interactive agent launch behavior, Adding new agent configuration options
 - **[issue-reference-flow.md](issue-reference-flow.md)** — issue references not appearing in PRs, debugging 'Closes #N' in PR body, working with plan-ref.json, closing reference lost after erk pr submit

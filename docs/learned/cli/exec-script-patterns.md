@@ -29,12 +29,12 @@ Without context injection, testing requires filesystem manipulation:
 ```python
 # WRONG: Impossible to test without changing directories
 def my_command() -> None:
-    progress_file = Path.cwd() / ".impl" / "progress.md"
+    progress_file = Path.cwd() / ".erk/impl-context" / "progress.md"
     if progress_file.exists():
         # ... process file
 ```
 
-This forces tests to use `monkeypatch.chdir()` or actually create `.impl/` directories in test fixtures. When multiple tests run in parallel, directory changes create race conditions.
+This forces tests to use `monkeypatch.chdir()` or actually create `.erk/impl-context/` directories in test fixtures. When multiple tests run in parallel, directory changes create race conditions.
 
 With context injection, tests inject a controlled `cwd` value:
 
@@ -43,7 +43,7 @@ With context injection, tests inject a controlled `cwd` value:
 @click.pass_context
 def my_command(ctx: click.Context) -> None:
     cwd = require_cwd(ctx)
-    progress_file = cwd / ".impl" / "progress.md"
+    progress_file = cwd / ".erk/impl-context" / "progress.md"
     if progress_file.exists():
         # ... process file
 

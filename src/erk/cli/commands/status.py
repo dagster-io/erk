@@ -44,7 +44,7 @@ def status_cmd(ctx: ErkContext) -> None:
         GitStatusCollector(),
         GraphiteStackCollector(),
         GitHubPRCollector(),
-        PlanFileCollector(),
+        PlanFileCollector(),  # Checks .erk/impl-context/ for plan files
     ]
 
     # Create orchestrator

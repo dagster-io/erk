@@ -41,7 +41,7 @@ Three functions in `erk_shared/impl_folder.py`:
 
 ## Consumers
 
-Commands that should auto-read from `.impl/plan-ref.json`:
+Commands that should auto-read from `.erk/impl-context/plan-ref.json`:
 
 | Command              | Auto-reads? | Purpose                     |
 | -------------------- | ----------- | --------------------------- |
@@ -50,7 +50,7 @@ Commands that should auto-read from `.impl/plan-ref.json`:
 
 ## Fallback: Extracting from Existing PR Body
 
-When `.impl/plan-ref.json` is missing during finalize, the system uses a fallback mechanism to preserve closing references:
+When `.erk/impl-context/plan-ref.json` is missing during finalize, the system uses a fallback mechanism to preserve closing references:
 
 1. **Fetch current PR body** from GitHub
 2. **Extract footer** (content after `---` delimiter)
@@ -59,26 +59,26 @@ When `.impl/plan-ref.json` is missing during finalize, the system uses a fallbac
 
 **Precedence:**
 
-| Source                 | Priority    | When Used                         |
-| ---------------------- | ----------- | --------------------------------- |
-| `.impl/plan-ref.json`  | 1 (highest) | Authoritative source when present |
-| `.impl/issue.json`     | 2           | Legacy fallback (read_plan_ref)   |
-| Extracted from PR body | 3           | Fallback when neither file exists |
-| None                   | 4           | No closing reference added        |
+| Source                            | Priority    | When Used                         |
+| --------------------------------- | ----------- | --------------------------------- |
+| `.erk/impl-context/plan-ref.json` | 1 (highest) | Authoritative source when present |
+| `.erk/impl-context/issue.json`    | 2           | Legacy fallback (read_plan_ref)   |
+| Extracted from PR body            | 3           | Fallback when neither file exists |
+| None                              | 4           | No closing reference added        |
 
 **Why This Matters:**
 
 Running `erk pr submit` multiple times can trigger finalize, which completely rebuilds the PR body. Without this fallback, closing references would be lost if:
 
-- `.impl/plan-ref.json` was deleted between submit runs
-- `.impl/` directory doesn't exist (auto-repair only runs if directory exists)
+- `.erk/impl-context/plan-ref.json` was deleted between submit runs
+- `.erk/impl-context/` directory doesn't exist (auto-repair only runs if directory exists)
 - Issue was manually added to PR body (not stored in plan-ref.json)
 
 **Implementation:** See `extract_closing_reference()` in `erk_shared/gateway/github/pr_footer.py`.
 
 ## Anti-Pattern
 
-**Don't require explicit `--issue-number` when `.impl/plan-ref.json` exists.**
+**Don't require explicit `--issue-number` when `.erk/impl-context/plan-ref.json` exists.**
 
 This creates unnecessary coupling between callers and the issue reference system. Commands should transparently read from the standard location.
 
@@ -91,14 +91,14 @@ This creates unnecessary coupling between callers and the issue reference system
 └─────────┬───────────┘
           │
           ▼
-┌─────────────────────┐
-│ .impl/plan-ref.json │
-│ {                   │
-│   "provider": "github",│
-│   "plan_id": "123", │
-│   "url": "..."      │
-│ }                   │
-└─────────┬───────────┘
+┌────────────────────────────┐
+│ .erk/impl-context/plan-ref.json │
+│ {                           │
+│   "provider": "github",     │
+│   "plan_id": "123",         │
+│   "url": "..."              │
+│ }                           │
+└─────────┬────────────────────┘
           │
           ▼
 ┌─────────────────────┐

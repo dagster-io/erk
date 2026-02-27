@@ -17,7 +17,7 @@ tripwires:
     warning: "Always clean .erk/impl-context/ with `git rm -rf .erk/impl-context/` and commit. Transient artifacts cause CI formatter failures (Prettier)."
   - action: "implementing PR body generation with checkout footers"
     warning: "HTML `<details>` tags will fail `has_checkout_footer_for_pr()` validation. Use plain text backtick format: `` `gh pr checkout <number>` ``"
-  - action: "calling commands that depend on `.impl/plan-ref.json` metadata"
+  - action: "calling commands that depend on `.erk/impl-context/plan-ref.json` metadata"
     warning: "Verify metadata file exists in worktree; if missing, operations silently return empty values. read_plan_ref() tries plan-ref.json first, falls back to legacy issue.json."
   - action: "delegating batch file renames from a plan"
     warning: "Verify each file path exists before delegating. Wrong paths cause silent coverage gaps in rename operations."
@@ -65,14 +65,13 @@ The erk plan lifecycle manages implementation plans from creation through automa
 
 ### Key File Locations at a Glance
 
-| Location               | Purpose                                                        |
-| ---------------------- | -------------------------------------------------------------- |
-| `~/.claude/plans/*.md` | Local plan storage (sorted by modification time)               |
-| `.impl/plan.md`        | Immutable plan in worktree (local implementation)              |
-| `.impl/progress.md`    | Mutable progress tracking                                      |
-| `.impl/plan-ref.json`  | Plan reference (provider-agnostic, replaces legacy issue.json) |
-| `.impl/run-info.json`  | GitHub Actions run reference (remote only)                     |
-| `.erk/impl-context/`   | Remote implementation folder (GitHub Actions)                  |
+| Location                          | Purpose                                                        |
+| --------------------------------- | -------------------------------------------------------------- |
+| `~/.claude/plans/*.md`            | Local plan storage (sorted by modification time)               |
+| `.erk/impl-context/plan.md`       | Immutable plan in worktree (local implementation)              |
+| `.erk/impl-context/progress.md`   | Mutable progress tracking                                      |
+| `.erk/impl-context/plan-ref.json` | Plan reference (provider-agnostic, replaces legacy issue.json) |
+| `.erk/impl-context/run-info.json` | GitHub Actions run reference (remote only)                     |
 
 ### Which Phase Am I In?
 
@@ -442,8 +441,8 @@ This ensures only one implementation runs per issue at a time.
 
 #### Phase 4: Implementation
 
-- Copy `.erk/impl-context/` to `.impl/` (Claude reads `.impl/`)
-- Create `.impl/run-info.json` with workflow run details
+- Recreate `.erk/impl-context/` with fresh plan content, then untrack from git (Claude reads `.erk/impl-context/` directly)
+- Create `.erk/impl-context/run-info.json` with workflow run details
 - Execute `/erk:plan-implement` with Claude
 
 #### Phase 5: Submission
@@ -461,16 +460,11 @@ This ensures only one implementation runs per issue at a time.
 
 Implementation executes the plan, whether locally or via GitHub Actions.
 
-### `.erk/impl-context/` vs `.impl/`
+### `.erk/impl-context/` Folder
 
-| Folder               | Purpose                                      | Git Status                       |
-| -------------------- | -------------------------------------------- | -------------------------------- |
-| `.erk/impl-context/` | Remote implementation (GitHub Actions)       | Committed, then deleted          |
-| `.impl/`             | Local implementation + Claude's working copy | In `.gitignore`, never committed |
+`.erk/impl-context/` is used for both local and remote implementation. In GitHub Actions, it is initially committed (to transfer plan content to the branch), then untracked before Claude runs so implementation changes don't conflict with it. After implementation, it is cleaned up in a separate commit.
 
-In GitHub Actions, `.erk/impl-context/` is copied to `.impl/` before Claude runs.
-
-### `.impl/run-info.json`
+### `.erk/impl-context/run-info.json`
 
 Created in GitHub Actions to track the workflow run:
 
@@ -485,7 +479,7 @@ Created in GitHub Actions to track the workflow run:
 
 The implementation command:
 
-1. Validates `.impl/` exists with `plan.md` and `progress.md`
+1. Validates `.erk/impl-context/` exists with `plan.md` and `progress.md`
 2. Creates TodoWrite entries for tracking
 3. Posts start comment to GitHub issue (if linked)
 4. Executes each phase sequentially
@@ -495,7 +489,7 @@ The implementation command:
 
 ### Progress Tracking
 
-Progress is tracked in `.impl/progress.md`:
+Progress is tracked in `.erk/impl-context/progress.md`:
 
 ```markdown
 ---
@@ -596,15 +590,7 @@ The cleanup happens in a specific sequence:
 3. **Remove `.erk/impl-context/`** - Cleanup commit (this step)
 4. **Push changes** - Both commits pushed to PR
 
-**Key distinction:**
-
-- **`.erk/impl-context/`**: CI automatically removes this after validation passes. This is the ephemeral working copy used during remote implementation. It's safe to delete because it's already been copied to `.impl/` for Claude's use.
-
-- **`.impl/`**: Requires user review and manual deletion. This is the original plan that should be preserved until the user confirms completion. Never auto-delete this folder - it serves as documentation of what was planned vs. what was implemented.
-
 **Clear sequence**: CI passes → remove `.erk/impl-context/` → commit → push
-
-This pattern ensures that transient artifacts (`.erk/impl-context/`) are cleaned up automatically while permanent artifacts (`.impl/`) remain for user review.
 
 ### PR Ready for Review
 
@@ -879,11 +865,11 @@ gh run view 1234567890 --json displayTitle -q '.displayTitle' | cut -d: -f1
 
 ---
 
-## `.impl/plan-ref.json` Dependency Contract
+## `.erk/impl-context/plan-ref.json` Dependency Contract
 
-The `.impl/plan-ref.json` file (with legacy fallback to `issue.json`) is a critical worktree setup contract. Several commands depend on it:
+The `.erk/impl-context/plan-ref.json` file (with legacy fallback to `issue.json`) is a critical worktree setup contract. Several commands depend on it:
 
-### Commands That Read `.impl/plan-ref.json`
+### Commands That Read `.erk/impl-context/plan-ref.json`
 
 | Command                     | Behavior if Missing                         |
 | --------------------------- | ------------------------------------------- |
@@ -895,7 +881,7 @@ The `.impl/plan-ref.json` file (with legacy fallback to `issue.json`) is a criti
 
 The most insidious failure is with `get-closing-text`:
 
-1. Worktree setup skips creating `.impl/plan-ref.json`
+1. Worktree setup skips creating `.erk/impl-context/plan-ref.json`
 2. Implementation proceeds normally
 3. PR is created without "Closes #N" in commit message
 4. Issue remains open after PR merge
@@ -910,7 +896,7 @@ When setting up implementation environments:
 
 ```bash
 # Always verify after setup
-if [ ! -f .impl/plan-ref.json ] && [ ! -f .impl/issue.json ]; then
+if [ ! -f .erk/impl-context/plan-ref.json ] && [ ! -f .erk/impl-context/issue.json ]; then
   echo "ERROR: Missing plan-ref.json - issue linking will fail"
   exit 1
 fi
@@ -1117,7 +1103,7 @@ See [Planned PR Lifecycle](planned-pr-lifecycle.md) for body format details and 
 
 ## Related Documentation
 
-- [Planning Workflow](workflow.md) - `.impl/` folder structure and commands
+- [Planning Workflow](workflow.md) - `.erk/impl-context/` folder structure and commands
 - [Planned PR Lifecycle](planned-pr-lifecycle.md) - Planned PR body format and stage transitions
 - [Planned PR Branch Sync](planned-pr-branch-sync.md) - Branch sync during planned-PR implementation
 - [Exec Command Patterns](../cli/exec-command-patterns.md) - Available `erk exec` commands

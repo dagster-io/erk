@@ -7,7 +7,7 @@ tripwires:
   - action: "constructing a checkout footer string manually"
     warning: "Use build_pr_body_footer() from the gateway layer. Manual construction risks format drift from the validator regex."
   - action: "using issue number in checkout footer instead of PR number"
-    warning: "Checkout footer requires the PR number (from gh pr create output), NOT the plan issue number from .impl/plan-ref.json."
+    warning: "Checkout footer requires the PR number (from gh pr create output), NOT the plan issue number from .erk/impl-context/plan-ref.json."
 last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 ---
@@ -50,14 +50,14 @@ For the full three-part contract (generator, parser, validator) and migration st
 
 The most frequent footer validation failure comes from confusing two different numbers:
 
-| Number           | Source                | Used In                    |
-| ---------------- | --------------------- | -------------------------- |
-| **Issue number** | `.impl/plan-ref.json` | `Closes #N` reference      |
-| **PR number**    | `gh pr create` output | `erk pr checkout N` footer |
+| Number           | Source                            | Used In                    |
+| ---------------- | --------------------------------- | -------------------------- |
+| **Issue number** | `.erk/impl-context/plan-ref.json` | `Closes #N` reference      |
+| **PR number**    | `gh pr create` output             | `erk pr checkout N` footer |
 
 These are never the same number. The issue is created during planning; the PR is created during submission.
 
-**Why agents make this mistake:** During footer construction, `.impl/plan-ref.json` is readily available — the issue was created before implementation started. The PR number only exists after the PR creation API call returns. This temporal gap makes the issue number tempting to reach for. The submit pipeline solves this via a two-phase approach: create the PR with a placeholder footer (`pr_number=0`), then immediately update with the real PR number.
+**Why agents make this mistake:** During footer construction, `.erk/impl-context/plan-ref.json` is readily available — the issue was created before implementation started. The PR number only exists after the PR creation API call returns. This temporal gap makes the issue number tempting to reach for. The submit pipeline solves this via a two-phase approach: create the PR with a placeholder footer (`pr_number=0`), then immediately update with the real PR number.
 
 <!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, _core_submit_flow -->
 

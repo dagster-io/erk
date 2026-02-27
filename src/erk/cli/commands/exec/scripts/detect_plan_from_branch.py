@@ -2,7 +2,7 @@
 
 Uses github.get_pr_for_branch() to look up the associated PR for plnd/ branches.
 Plan-ref.json is the primary source; this exec script is the fallback when no
-.impl/ folder exists yet.
+.erk/impl-context/ folder exists yet.
 
 Usage:
     erk exec detect-plan-from-branch

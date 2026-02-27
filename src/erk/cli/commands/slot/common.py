@@ -494,9 +494,8 @@ def handle_pool_full_interactive(
 def cleanup_worktree_artifacts(worktree_path: Path) -> None:
     """Remove stale artifacts from a worktree before reuse.
 
-    Cleans up legacy .impl/, branch-scoped .erk/impl-context/, and
-    .erk/scratch/ folders which persist across branch switches since
-    they are in .gitignore.
+    Cleans up branch-scoped .erk/impl-context/ and .erk/scratch/ folders
+    which persist across branch switches since they are in .gitignore.
 
     Args:
         worktree_path: Path to the worktree to clean up
@@ -584,7 +583,7 @@ def allocate_slot_for_branch(
         branch_name: Name of existing branch to assign
         force: Auto-unassign oldest if pool is full (no interactive prompt)
         reuse_inactive_slots: Try to reuse unassigned worktrees first
-        cleanup_artifacts: Remove .impl/ and .erk/scratch/ on worktree reuse
+        cleanup_artifacts: Remove .erk/impl-context/ and .erk/scratch/ on worktree reuse
 
     Returns:
         SlotAllocationResult with slot info

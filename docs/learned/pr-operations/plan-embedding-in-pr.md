@@ -49,4 +49,4 @@ This separation is verified by a dedicated test that asserts `<details>` appears
 
 - [PR Body Formatting](../architecture/pr-body-formatting.md) — The two-target pattern this feature depends on
 - [PR Submit Phases](pr-submit-phases.md) — Phase 3 (plan fetch) and Phase 6 (embedding) context
-- [Plan Implementation Workflow](../planning/workflow.md) — When `.impl/` context is available
+- [Plan Implementation Workflow](../planning/workflow.md) — When `.erk/impl-context/` context is available

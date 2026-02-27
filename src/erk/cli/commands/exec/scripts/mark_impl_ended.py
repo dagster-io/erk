@@ -5,7 +5,7 @@ with the appropriate event fields based on the execution environment:
 - Local machine: Updates last_local_impl_* fields (timestamp, event="ended", session, user)
 - GitHub Actions: Updates last_remote_impl_at field
 
-Also writes .impl/local-run-state.json for fast local access (no GitHub API needed).
+Also writes .erk/impl-context/local-run-state.json for fast local access (no GitHub API needed).
 
 Usage:
     erk exec mark-impl-ended
@@ -69,10 +69,10 @@ class MarkImplError:
 def mark_impl_ended(ctx: click.Context, session_id: str | None) -> None:
     """Update implementation ended event in GitHub issue and local state file.
 
-    Reads issue number from .impl/issue.json, fetches the issue from GitHub,
+    Reads issue number from .erk/impl-context/issue.json, fetches the issue from GitHub,
     updates the plan-header block with current event metadata, and posts back.
 
-    Also writes .impl/local-run-state.json for fast local access.
+    Also writes .erk/impl-context/local-run-state.json for fast local access.
 
     Detects execution environment:
     - Local machine: Updates last_local_impl_* fields (timestamp, event="ended", session, user)

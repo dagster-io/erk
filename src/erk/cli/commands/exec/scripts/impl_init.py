@@ -1,7 +1,7 @@
-"""Initialize implementation by validating .impl/ folder.
+"""Initialize implementation by validating .erk/impl-context/ folder.
 
-This exec command validates .impl/ folder for /erk:plan-implement:
-- Validates .impl/ folder structure (plan.md exists)
+This exec command validates .erk/impl-context/ folder for /erk:plan-implement:
+- Validates .erk/impl-context/ folder structure (plan.md exists)
 - Checks for GitHub issue tracking (issue.json)
 - Parses "Related Documentation" section for skills and docs
 
@@ -40,7 +40,7 @@ def _error_json(error_type: str, message: str) -> NoReturn:
 
 
 def _validate_impl_folder(ctx: click.Context) -> Path:
-    """Validate implementation folder exists and has required files.
+    """Validate .erk/impl-context/ folder exists and has required files.
 
     Uses resolve_impl_dir() for branch-scoped discovery.
 
@@ -130,9 +130,9 @@ def _extract_related_docs(plan_content: str) -> dict[str, list[str]]:
 @click.option("--json", "json_output", is_flag=True, default=True, help="Output JSON (default)")
 @click.pass_context
 def impl_init(ctx: click.Context, json_output: bool) -> None:
-    """Initialize implementation by validating impl-context directory.
+    """Initialize implementation by validating .erk/impl-context/ folder.
 
-    Validates impl-context directory for /erk:plan-implement.
+    Validates .erk/impl-context/ folder for /erk:plan-implement.
     Returns structured JSON with validation status and related documentation.
     """
     # Validate folder structure

@@ -144,7 +144,7 @@ def prepare_state(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitEr
     trunk_branch = ctx.git.branch.detect_trunk_branch(repo_root)
     parent_branch = ctx.branch_manager.get_parent_branch(repo_root, branch_name) or trunk_branch
 
-    # Plan ID discovery via plan-ref.json (or legacy issue.json) in resolved impl dir
+    # Plan ID discovery via plan-ref.json in resolved .erk/impl-context/ dir
     impl_dir = resolve_impl_dir(cwd, branch_name=branch_name)
     plan_id: str | None = None
     if impl_dir is not None:
@@ -794,7 +794,7 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
 
 
 def link_pr_to_objective_nodes(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
-    """Link the PR to objective roadmap nodes if .impl/ contains node_ids."""
+    """Link the PR to objective roadmap nodes if .erk/impl-context/ contains node_ids."""
     if state.pr_number is None:
         return state
 

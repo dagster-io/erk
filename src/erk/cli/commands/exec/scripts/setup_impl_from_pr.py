@@ -1,7 +1,7 @@
-"""Set up .impl/ folder from GitHub PR in current worktree.
+"""Set up .erk/impl-context/ folder from GitHub PR in current worktree.
 
 This exec command fetches a plan from a GitHub PR, creates a feature branch,
-checks it out, and creates the .impl/ folder structure for implementation.
+checks it out, and creates the .erk/impl-context/ folder structure for implementation.
 
 Usage:
     erk exec setup-impl-from-pr <plan-number> [--session-id <id>]
@@ -10,12 +10,13 @@ Output:
     Structured JSON output with success status and folder details
 
 Exit Codes:
-    0: Success (.impl/ folder created, branch checked out)
+    0: Success (.erk/impl-context/ folder created, branch checked out)
     1: Error (PR not found, plan fetch failed, git operations failed)
 
 Examples:
     $ erk exec setup-impl-from-pr 1028
-    {"success": true, "impl_path": "/path/to/.impl", "plan_number": 1028, "branch": "P1028-..."}
+    {"success": true, "impl_path": "/path/to/.erk/impl-context",
+     "plan_number": 1028, "branch": "P1028-..."}
 """
 
 import json
@@ -125,7 +126,7 @@ def _setup_planned_pr_plan(
     Args:
         ctx: Click context
         plan_number: PR number for the planned-PR plan
-        no_impl: Skip .impl/ folder creation
+        no_impl: Skip .erk/impl-context/ folder creation
 
     Returns:
         Success output dict
@@ -133,9 +134,10 @@ def _setup_planned_pr_plan(
     cwd = require_cwd(ctx)
     git = require_git(ctx)
 
-    # Early exit: if impl/ is already set up for this issue (e.g., CI pre-populated it),
-    # skip branch switching. Switching to the plan branch would abandon the implementation
-    # branch, causing work to land on the wrong branch.
+    # Early exit: if .erk/impl-context/ is already set up for this issue
+    # (e.g., CI pre-populated it), skip branch switching. Switching to the
+    # plan branch would abandon the implementation branch, causing work to
+    # land on the wrong branch.
     current_branch = _get_current_branch(git, cwd)
     impl_dir = resolve_impl_dir(cwd, branch_name=current_branch)
     if impl_dir is not None:
@@ -219,7 +221,7 @@ def _setup_planned_pr_plan(
             if isinstance(raw_objective, int):
                 objective_id = raw_objective
 
-    # Create .impl/ folder with plan content (unless --no-impl)
+    # Create .erk/impl-context/ folder with plan content (unless --no-impl)
     impl_path_str: str | None = None
 
     if not no_impl:
@@ -264,7 +266,7 @@ def _setup_planned_pr_plan(
 @click.option(
     "--no-impl",
     is_flag=True,
-    help="Skip impl-context directory creation (for local execution without file overhead)",
+    help="Skip .erk/impl-context/ folder creation (for local execution without file overhead)",
 )
 @click.pass_context
 def setup_impl_from_pr(
@@ -273,10 +275,10 @@ def setup_impl_from_pr(
     session_id: str | None,
     no_impl: bool,
 ) -> None:
-    """Set up impl-context directory from GitHub PR in current worktree.
+    """Set up .erk/impl-context/ folder from GitHub PR in current worktree.
 
     Fetches plan content from GitHub PR, creates/checks out a feature branch,
-    and creates .impl/ folder structure with plan.md, progress.md, and ref.json.
+    and creates .erk/impl-context/ folder structure with plan.md, progress.md, and ref.json.
 
     PLAN_NUMBER: GitHub PR number containing the plan
 
@@ -284,7 +286,7 @@ def setup_impl_from_pr(
     1. Fetches the plan from the draft PR
     2. Creates a feature branch from current branch (stacked) or trunk
     3. Checks out the new branch in the current worktree
-    4. Creates .impl/ folder with plan content
+    4. Creates .erk/impl-context/ folder with plan content
     5. Saves plan reference for PR linking
     """
     output = _setup_planned_pr_plan(ctx, plan_number=plan_number, no_impl=no_impl)

@@ -8,7 +8,7 @@ read_when:
 last_audited: "2026-02-17 16:00 PT"
 audit_result: clean
 tripwires:
-  - action: "using issue number from .impl/plan-ref.json in a checkout footer"
+  - action: "using issue number from .erk/impl-context/plan-ref.json in a checkout footer"
     warning: "Checkout footers require the PR number, not the issue number. The issue is the plan; the PR is the implementation. See the PR Number vs Issue Number section."
   - action: "creating a PR without first checking if one already exists for the branch"
     warning: "The dispatch pipeline is idempotent — it checks for existing PRs before creating. If building PR creation outside the pipeline, replicate this check to prevent duplicates."
@@ -18,7 +18,7 @@ tripwires:
 
 # PR Submission Patterns
 
-Cross-cutting patterns for reliable, idempotent PR creation in erk. The dispatch pipeline touches git, GitHub API, Graphite, and the `.impl/` metadata system — mistakes in any layer cascade into validation failures or duplicate artifacts.
+Cross-cutting patterns for reliable, idempotent PR creation in erk. The dispatch pipeline touches git, GitHub API, Graphite, and the `.erk/impl-context/` metadata system — mistakes in any layer cascade into validation failures or duplicate artifacts.
 
 ## Idempotency: Why Every PR Operation Must Be Re-Runnable
 
@@ -53,12 +53,12 @@ See `_core_submit_flow()` in `src/erk/cli/commands/pr/submit_pipeline.py` for th
 
 Agents regularly confuse these two identifiers because both are readily available during submission. The distinction is critical:
 
-| Identifier   | Source                | Used for                   |
-| ------------ | --------------------- | -------------------------- |
-| Issue number | `.impl/plan-ref.json` | `Closes #N` in PR body     |
-| PR number    | `gh pr create` output | `erk pr checkout N` footer |
+| Identifier   | Source                            | Used for                   |
+| ------------ | --------------------------------- | -------------------------- |
+| Issue number | `.erk/impl-context/plan-ref.json` | `Closes #N` in PR body     |
+| PR number    | `gh pr create` output             | `erk pr checkout N` footer |
 
-**Why agents get this wrong:** During plan-based workflows, `.impl/plan-ref.json` is immediately accessible and contains a number. The checkout footer also needs a number. The temptation to use the available number for both purposes is strong — but the checkout footer validator matches the _PR_ number, not the issue number, and `erk pr checkout` only accepts PR numbers.
+**Why agents get this wrong:** During plan-based workflows, `.erk/impl-context/plan-ref.json` is immediately accessible and contains a number. The checkout footer also needs a number. The temptation to use the available number for both purposes is strong — but the checkout footer validator matches the _PR_ number, not the issue number, and `erk pr checkout` only accepts PR numbers.
 
 **The diagnostic signal:** If `erk pr check` reports "PR body missing checkout footer" but the footer visually appears present, the number is probably wrong. Compare the number in the footer against `gh pr view --json number`.
 
@@ -75,7 +75,7 @@ The escalation to source investigation after two failures is the key discipline.
 
 ## Closing Reference Preservation on Re-Submit
 
-When re-submitting a PR that already has a closing reference but no local `.impl/` folder (e.g., after worktree recreation), the pipeline extracts the existing reference from the PR body rather than losing it. Without this, re-submitting from a fresh worktree would silently drop the issue linkage, causing the plan issue to remain open after PR merge.
+When re-submitting a PR that already has a closing reference but no local `.erk/impl-context/` folder (e.g., after worktree recreation), the pipeline extracts the existing reference from the PR body rather than losing it. Without this, re-submitting from a fresh worktree would silently drop the issue linkage, causing the plan issue to remain open after PR merge.
 
 <!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, _extract_closing_ref_from_pr -->
 

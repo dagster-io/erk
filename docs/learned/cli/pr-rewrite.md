@@ -38,7 +38,7 @@ The command executes six phases sequentially:
 
 **Learn plan label handling**: Detects learn plan origin via `is_learn_plan()` and adds `ERK_SKIP_LEARN_LABEL` to skip redundant learn processing.
 
-**Issue discovery**: Uses shared `discover_issue_for_footer()` for two-step issue discovery (`.impl/plan-ref.json` primary, with legacy `.impl/issue.json` fallback, then existing PR body fallback).
+**Issue discovery**: Uses shared `discover_issue_for_footer()` for two-step issue discovery (`.erk/impl-context/plan-ref.json` primary, with legacy `.erk/impl-context/issue.json` fallback, then existing PR body fallback).
 
 ## Flags
 
