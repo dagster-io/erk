@@ -22,9 +22,7 @@ Objective linking: if a plan was created via `/erk:objective-plan`, the session'
 The plan is saved using the configured backend:
 
 - **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
-- **Issue backend** (`PLAN_BACKEND = "github"`): Creates a GitHub issue. Metadata in the issue body, plan content in the first comment.
-
-The JSON output contract is the same for both backends (`plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`).
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
 
 ## Agent Instructions
 
@@ -101,7 +99,7 @@ Expected objective: #<expected>
 Actual: <actual-or-null>
 
 The plan was saved but without the correct objective link.
-Fix: Close <"draft PR" if plan_backend=="draft_pr", else "issue"> #<plan_number>,
+Fix: Close draft PR #<plan_number>,
 ensure the objective-context marker exists, and re-run /erk:plan-save.
 ```
 
@@ -127,7 +125,7 @@ If the marker doesn't exist (command fails), skip this step - the plan wasn't cr
 erk exec update-objective-node <objective-issue> --node "$step_id" --pr "#<plan_number>" --status in_progress
 ```
 
-This atomically fetches the issue body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
 
 3. **Report the update:**
 
@@ -141,22 +139,20 @@ Display: `Updated objective #<objective-issue> roadmap: node <step_id> → plan 
 
 Display: `Plan already saved as #<plan_number> (duplicate skipped)`
 
-If `branch_name` is present in the JSON, display the same next-steps block as the success case below (using the `plan_backend` field to choose the correct format).
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
 
 If `branch_name` is absent, display only: `View PR: <plan_url>`
 
 Return immediately (skip Steps 3, 3.5 above if not already executed).
 
-**Otherwise, on success**, display based on `plan_backend` from JSON output:
-
-**Header (both backends):**
+**Otherwise, on success**, display:
 
 ```
-Plan "<title>" saved as <"draft PR" if plan_backend=="draft_pr", else "issue"> #<plan_number>
+Plan "<title>" saved as draft PR #<plan_number>
 URL: <issue_url>
 ```
 
-**Slot options block (used by both backends below):**
+**Slot options block:**
 
 The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
 
@@ -192,7 +188,7 @@ OR exit Claude Code first, then run one of:
   Dispatch to Queue: erk pr dispatch <plan_number>
 ```
 
-**If `plan_backend` is `"draft_pr"`:**
+**Next steps block:**
 
 ```
 Next steps:
@@ -201,22 +197,6 @@ View PR: <plan_url>
 
 In Claude Code:
   Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
-
-OR exit Claude Code first, then run one of:
-  Checkout: erk br co --for-plan <plan_number>
-  Dispatch to Queue: erk pr dispatch <plan_number>
-```
-
-**If `plan_backend` is `"github"` (or absent):**
-
-```
-Next steps:
-
-View Issue: <plan_url>
-
-In Claude Code:
-  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
-  Plan review: /erk:plan-review — Submit plan as PR for human review before implementation
 
 OR exit Claude Code first, then run one of:
   Checkout: erk br co --for-plan <plan_number>
@@ -237,12 +217,12 @@ On failure, display the error message and suggest:
 
 ## Session Tracking
 
-After successfully saving a plan, the issue number is stored in a marker file that enables automatic plan updates in the same session.
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
 
-**To read the saved issue number:**
+**To read the saved plan number:**
 
 ```bash
 erk exec marker read --session-id "${CLAUDE_SESSION_ID}" plan-saved-issue
 ```
 
-This returns the issue number (exit code 0) or exits with code 1 if no plan was saved in this session.
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.

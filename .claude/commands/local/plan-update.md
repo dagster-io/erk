@@ -1,11 +1,11 @@
 ---
-description: Update an existing plan issue with the current session's plan
+description: Update an existing plan with the current session's plan
 argument-hint: <plan-number>
 ---
 
 # /local:plan-update
 
-Update an existing GitHub plan issue with the current session's plan content.
+Update an existing plan with the current session's plan content.
 
 ## Usage
 
@@ -18,16 +18,16 @@ Update an existing GitHub plan issue with the current session's plan content.
 
 ## Agent Instructions
 
-### Step 1: Parse Issue Number
+### Step 1: Parse Plan Number
 
-Extract the issue number from the argument:
+Extract the plan number from the argument:
 
 - If numeric (e.g., `42`), use directly
 - If URL (e.g., `https://github.com/owner/repo/issues/42`), extract the number from the path
 
-If no argument provided, check `ref.json` in `.erk/impl-context/<branch>/` for a linked issue number.
+If no argument provided, check `ref.json` in `.erk/impl-context/<branch>/` for a linked plan number.
 
-If still no issue number, ask the user for the issue number.
+If still no plan number, ask the user for the plan number.
 
 ### Step 2: Run Update Command
 
@@ -40,19 +40,19 @@ erk exec plan-update --plan-number <plan> --format display --session-id="${CLAUD
 On success with `--format display`, display the command output verbatim. On success with `--format json`, parse the JSON and display:
 
 - If `branch_updated` is true: `"Plan updated on PR #N (branch synced)"`
-- If `branch_name` is null (issue-backed plan): `"Plan updated on issue #N"`
+- If `branch_name` is null: `"Plan updated on #N"`
 - If `branch_name` is set but `branch_updated` is false: `"Plan updated on PR #N (warning: branch push failed)"`
 
 On failure, display the error and suggest:
 
 - Checking that a plan exists (enter plan mode and exit it first)
-- Verifying the issue number is correct (`gh issue view <number>`)
+- Verifying the plan number is correct (`gh pr view <number>`)
 - Checking GitHub CLI authentication (`gh auth status`)
 
 ---
 
 ## Related
 
-- `/erk:plan-save` - Create new plan issue (instead of updating)
+- `/erk:plan-save` - Create new plan (instead of updating)
 - `/erk:replan` - Recreate an obsolete plan from scratch
 - `erk-planning` skill - Complete plan management documentation

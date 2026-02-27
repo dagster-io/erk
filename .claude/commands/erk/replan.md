@@ -1,11 +1,11 @@
 ---
-description: Replan an existing erk-plan issue against current codebase state
-argument-hint: <issue-number-or-url>
+description: Replan an existing plan against current codebase state
+argument-hint: <plan-number-or-url>
 ---
 
 # /erk:replan
 
-Recomputes existing erk-plan issue(s) against the current codebase state, creating a new plan and closing the original(s).
+Recomputes existing plan(s) against the current codebase state, creating a new plan and closing the original(s).
 
 Supports consolidating multiple plans into a single unified plan.
 
@@ -21,16 +21,16 @@ Supports consolidating multiple plans into a single unified plan.
 
 ## Agent Instructions
 
-### Step 1: Parse Issue References
+### Step 1: Parse Plan References
 
 Split `$ARGUMENTS` on whitespace. For each argument:
 
-- If numeric (e.g., `2521`), use directly as issue number
+- If numeric (e.g., `2521`), use directly as plan number
 - If URL (e.g., `https://github.com/owner/repo/issues/2521`), extract the number from the path
 
-Store all issue numbers in a list. Set `CONSOLIDATION_MODE=true` if multiple issues provided.
+Store all plan numbers in a list. Set `CONSOLIDATION_MODE=true` if multiple plans provided.
 
-If no argument provided, ask the user for the issue number.
+If no argument provided, ask the user for the plan number.
 
 ### Step 2: Validate Plans and Extract Metadata (Delegated)
 
@@ -41,7 +41,7 @@ Launch a Task agent with:
 - `subagent_type`: `general-purpose`
 - `model`: `haiku`
 
-**Agent prompt** (adapt issue numbers from Step 1):
+**Agent prompt** (adapt plan numbers from Step 1):
 
 > For each of the following plan numbers: [list plan numbers]
 >
@@ -86,23 +86,23 @@ Launch a Task agent with:
 1. **If VALIDATION is FAIL**: Display each error and abort:
 
    ```
-   Error: Issue #<number> is not an erk plan issue (missing both erk-plan and erk-learn labels).
+   Error: Plan #<number> is not a valid plan (missing both erk-plan and erk-learn labels).
    ```
 
    ```
-   Error: Issue #<number> not found.
+   Error: Plan #<number> not found.
    ```
 
 2. **If WARNINGS present**: Display each warning but continue:
 
    ```
-   Warning: Issue #<number> is already closed. Proceeding with replan anyway.
+   Warning: Plan #<number> is already closed. Proceeding with replan anyway.
    ```
 
 3. **Store extracted data**:
    - `IS_LEARN_PLAN` from the summary
    - `CONSOLIDATION_MODE` from the summary
-   - Each issue's title (from the ISSUES table)
+   - Each plan's title (from the ISSUES table)
    - Resolved `objective_issue`:
      - If OBJECTIVE_STATUS is `AGREED:<number>`, use that number
      - If OBJECTIVE_STATUS is `AGREED:none`, no objective
@@ -218,9 +218,9 @@ Then read the agent's findings from the output.
 
 Only after ALL agents have completed should you proceed to Step 5.
 
-### Step 5: Post Investigation to Original Issue(s)
+### Step 5: Post Investigation to Original Plan(s)
 
-Before creating the new plan, post investigation findings to each original issue as a comment:
+Before creating the new plan, post investigation findings to each original plan as a comment:
 
 ```bash
 gh issue comment <original_number> --body "## Deep Investigation Notes (for implementing agent)
@@ -243,7 +243,7 @@ Note: This plan is being consolidated with #<other_numbers> into a unified plan.
 
 ### Step 6: Create New Plan (Always)
 
-**Always create a new plan issue**, regardless of implementation status.
+**Always create a new plan**, regardless of implementation status.
 
 #### 6a: Gather Investigation Context
 
@@ -331,11 +331,11 @@ Use EnterPlanMode to create an updated plan.
 
 ## Source Plans
 
-| #   | Title              | Items Merged |
-| --- | ------------------ | ------------ |
-| 123 | [Title from issue] | X items      |
-| 456 | [Title from issue] | Y items      |
-| 789 | [Title from issue] | Z items      |
+| #   | Title             | Items Merged |
+| --- | ----------------- | ------------ |
+| 123 | [Title from plan] | X items      |
+| 456 | [Title from plan] | Y items      |
+| 789 | [Title from plan] | Z items      |
 
 ## What Changed Since Original Plans
 
@@ -384,7 +384,7 @@ Items by source:
 After the user approves the plan in Plan Mode:
 
 1. Exit Plan Mode
-2. Run `/erk:plan-save` to create the new GitHub issue:
+2. Run `/erk:plan-save` to create the new plan:
    - **If any source plan(s) had `erk-learn` label** (`IS_LEARN_PLAN=true`): Add `--plan-type=learn` to the command
    - **If the source plan(s) had an `objective_issue`**: Pass `--objective=<number>` to `/erk:plan-save`:
      ```
@@ -426,8 +426,8 @@ Display final summary:
 **Single plan:**
 
 ```
-✓ Created new plan issue #<new_number>
-✓ Closed original issue #<original_number>
+✓ Created new plan #<new_number>
+✓ Closed original plan #<original_number>
 
 Next steps:
 - Review the new plan: gh issue view <new_number>
@@ -437,8 +437,8 @@ Next steps:
 **Consolidated plans:**
 
 ```
-✓ Created consolidated plan issue #<new_number>
-✓ Closed original issues: #123, #456, #789
+✓ Created consolidated plan #<new_number>
+✓ Closed original plans: #123, #456, #789
 
 Source plans consolidated:
 - #123: [title]
@@ -454,13 +454,13 @@ Next steps:
 
 ## Error Cases
 
-| Error                    | Message                                                                                         |
-| ------------------------ | ----------------------------------------------------------------------------------------------- |
-| Issue not found          | `Error: Issue #<number> not found.`                                                             |
-| Not a plan               | `Error: Issue #<number> is not an erk plan issue (missing both erk-plan and erk-learn labels).` |
-| No plan content          | `Error: No plan content found in issue #<number>.`                                              |
-| GitHub CLI not available | `Error: GitHub CLI (gh) not available. Run: brew install gh && gh auth login`                   |
-| No network               | `Error: Unable to reach GitHub. Check network connectivity.`                                    |
+| Error                    | Message                                                                                   |
+| ------------------------ | ----------------------------------------------------------------------------------------- |
+| Plan not found           | `Error: Plan #<number> not found.`                                                        |
+| Not a plan               | `Error: Plan #<number> is not a valid plan (missing both erk-plan and erk-learn labels).` |
+| No plan content          | `Error: No plan content found in plan #<number>.`                                         |
+| GitHub CLI not available | `Error: GitHub CLI (gh) not available. Run: brew install gh && gh auth login`             |
+| No network               | `Error: Unable to reach GitHub. Check network connectivity.`                              |
 
 ---
 
@@ -470,5 +470,5 @@ Next steps:
 - **DO NOT skip codebase analysis** - Always verify current state before replanning
 - **Use Explore agent** for comprehensive codebase searches (Task tool with subagent_type=Explore)
 - **Parallel investigation** for multiple plans (run_in_background: true)
-- Original issue(s) closed only after the new plan is successfully created
-- The new plan references all original issue(s) for traceability
+- Original plan(s) closed only after the new plan is successfully created
+- The new plan references all original plan(s) for traceability

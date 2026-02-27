@@ -72,9 +72,9 @@ gh pr list --head <branch-name> --state all --limit 1 --json number -q '.[0].num
 
 **If no PR found:** Report error and exit - cannot land without a PR.
 
-### Step 4: Extract Plan Issue Number
+### Step 4: Extract Plan Number
 
-The plan issue number is no longer encoded in branch names. Instead, use `plan-ref.json` to resolve the plan ID:
+The plan number is no longer encoded in branch names. Instead, use `plan-ref.json` to resolve the plan ID:
 
 1. Check if `ref.json` exists in `.erk/impl-context/<branch>/`
 2. If exists, read the `plan_id` field from the JSON file
@@ -171,7 +171,7 @@ The command lands normally (no blocking) when:
 | Scenario                          | Action                          |
 | --------------------------------- | ------------------------------- |
 | Branch has no P-prefix            | Land normally, skip objective   |
-| Plan issue not found              | Warn, land normally             |
+| Plan not found                    | Warn, land normally             |
 | `objective_issue` is null/missing | Land normally, skip objective   |
 | `--skip-objective` flag passed    | Land normally, skip objective   |
 | Objective update fails            | Warn but report landing success |

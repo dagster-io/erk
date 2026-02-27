@@ -14,7 +14,7 @@ Create an implementation plan for a specific node in an objective's dependency g
 /erk:objective-plan 3679
 /erk:objective-plan 3679 --node 2.1
 /erk:objective-plan https://github.com/owner/repo/issues/3679
-/erk:objective-plan  # prompts for issue reference
+/erk:objective-plan  # prompts for objective reference
 ```
 
 ---
@@ -39,7 +39,7 @@ This skips the interactive selection flow (Steps 1-4 below) since the node is al
 
 If `--node` was NOT provided, proceed with the full interactive flow.
 
-Parse `$ARGUMENTS` to extract the issue reference:
+Parse `$ARGUMENTS` to extract the objective reference:
 
 - If argument is a URL: extract issue number from path
 - If argument is a number: use directly
@@ -59,7 +59,7 @@ If no argument is provided, check if the current branch is associated with a pla
    - Legacy pattern: `^P(\d+)-` (e.g., `P5731-some-title-01-23-2354`)
    - Current format: Branch names use `plnd/` prefix; plan ID is resolved via plan-ref.json
 
-3. If plan issue found, get its objective:
+3. If plan found, get its objective:
 
    ```bash
    erk exec get-plan-metadata <plan-issue-number> objective_issue
@@ -88,7 +88,7 @@ If no argument is provided, check if the current branch is associated with a pla
    ```
 
 4. If `value` is not null, use it as the default and inform the user:
-   "Using objective #<value> from current branch's plan #<plan-issue>. Run with explicit argument to override."
+   "Using objective #<value> from current branch's plan #<plan-number>. Run with explicit argument to override."
 
 If no default found from current branch, prompt user using AskUserQuestion with "What objective issue should I work from?"
 

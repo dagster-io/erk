@@ -1,11 +1,11 @@
 ---
-description: Implement a plan from GitHub issue, file path, current branch, or current .erk/impl-context/ folder
+description: Implement a plan from GitHub, file path, current branch, or current .erk/impl-context/ folder
 argument-hint: "[<issue-number-or-url-or-path>]"
 ---
 
 # /erk:plan-implement
 
-Implement a plan - either from a GitHub issue, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
 
 This is the primary implementation workflow - it orchestrates:
 
@@ -27,7 +27,7 @@ This is the primary implementation workflow - it orchestrates:
 
 ```bash
 /erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
-/erk:plan-implement 2521               # Fetch and implement issue #2521
+/erk:plan-implement 2521               # Fetch and implement plan #2521
 /erk:plan-implement https://github.com/owner/repo/issues/2521  # URL form
 /erk:plan-implement ./my-plan.md       # Implement from local markdown file
 ```
@@ -51,7 +51,7 @@ erk exec setup-impl [--issue <N> | --file <path>]
 
 This single command handles:
 
-- Fetching plan from GitHub issue/PR (draft-PR or issue-based)
+- Fetching plan from GitHub (draft PR)
 - Setting up from a local markdown file
 - Auto-detecting from existing impl directory under `.erk/impl-context/`
 - Auto-detecting plan number from branch name (P{number}-... or PR lookup)
@@ -62,7 +62,7 @@ This single command handles:
 
 Otherwise, generate a branch slug and set up from the specified issue:
 
-1. Fetch the title: `gh pr view <ISSUE_ARG> --json title -q .title` (for draft-PR plans) or `gh issue view <ISSUE_ARG> --json title -q .title` (for issue plans). Try PR first, fall back to issue.
+1. Fetch the title: `gh pr view <ISSUE_ARG> --json title -q .title`
 2. Generate a branch slug from the title:
    - 2-4 hyphenated lowercase words, max 30 characters
    - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
@@ -126,7 +126,7 @@ erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2>/dev/null || 
 
 This also deletes the Claude plan file (from `~/.claude/plans/`) since:
 
-- The content has been saved to GitHub issue
+- The content has been saved to GitHub
 - The content has been snapshotted to `.erk/scratch/`
 - Keeping it could cause confusion if the user tries to re-save
 
@@ -221,4 +221,4 @@ This validates PR submission readiness including implementation-specific checks
 ## Related Commands
 
 - `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
-- `/erk:replan` - Re-plan an existing issue with current codebase state
+- `/erk:replan` - Re-plan an existing plan with current codebase state

@@ -55,7 +55,7 @@ erk exec get-issue-body <plan-number>
 Parse the JSON output and check the `labels` array. If `erk-learn` is present, stop with this error:
 
 ```
-Error: Issue #<issue-number> is a learn plan (has erk-learn label).
+Error: Plan #<plan-number> is a learn plan (has erk-learn label).
 Cannot learn from a learn plan - this would create documentation cycles.
 ```
 
@@ -127,7 +127,7 @@ If no sessions are found, inform the user and stop.
 Tell the user:
 
 ```
-Found N session(s) for plan #<issue-number>:
+Found N session(s) for plan #<plan-number>:
   - N local session(s) from ~/.claude/projects/
   - N remote session(s) from GitHub Actions
 ```
@@ -311,7 +311,7 @@ Task(
     Load and follow the agent instructions in `.claude/agents/learn/existing-docs-checker.md`
 
     Input:
-    - plan_title: <title from plan issue>
+    - plan_title: <title from the plan>
     - pr_title: <PR title if available, or empty string>
     - search_hints: <key terms extracted from plan title, comma-separated>
     - output_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/existing-docs-check.md
@@ -428,7 +428,7 @@ Task(
     - diff_analysis_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/diff-analysis.md" (or null if no PR)
     - existing_docs_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/existing-docs-check.md"
     - pr_comments_analysis_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/pr-comments-analysis.md" (or null if no PR)
-    - plan_title: <title from plan issue>
+    - plan_title: <title from the plan>
     - output_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/gap-analysis.md
 
     ## Output Routing
@@ -467,7 +467,7 @@ Task(
     - gap_analysis_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/gap-analysis.md"
     - session_analysis_paths: [".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/session-<id>.md", ...]
     - diff_analysis_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/diff-analysis.md" (or null if no PR)
-    - plan_title: <title from plan issue>
+    - plan_title: <title from the plan>
     - pr_number: <PR number if available, else null>
     - output_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/learn-plan.md
 
@@ -710,7 +710,7 @@ Parse the JSON output to get `issue_number`, `plan_backend`, `title`, and `issue
 Display the result:
 
 ```
-Learn plan saved as <"draft PR" if plan_backend=="draft_pr", else "issue"> #<issue_number>: <title>
+Learn plan saved as draft PR #<plan_number>: <title>
 URL: <issue_url>
 ```
 
@@ -724,7 +724,7 @@ erk exec store-tripwire-candidates \
     --candidates-file .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/tripwire-candidates.json
 ```
 
-This stores the tripwire candidates as a machine-readable metadata block comment on the learn plan issue, enabling `erk land` to read them directly without regex parsing. The store command automatically normalizes common schema drift (wrong root keys, field aliases, extra fields) before validation.
+This stores the tripwire candidates as a machine-readable metadata block comment on the learn plan, enabling `erk land` to read them directly without regex parsing. The store command automatically normalizes common schema drift (wrong root keys, field aliases, extra fields) before validation.
 
 Parse the JSON output. If `count` is 0, no comment was added (no candidates found by the extractor). This is normal and not an error.
 
@@ -740,7 +740,7 @@ erk exec track-learn-result \
 ```
 
 This sets `learn_status: completed_with_plan` and `learn_plan_issue: <N>` on the parent plan,
-enabling the TUI to show the linked learn plan issue.
+enabling the TUI to show the linked learn plan.
 
 **If plan validation failed (no actionable documentation):**
 
@@ -774,7 +774,7 @@ If other learn plans exist (count > 1):
 ```
 Post-learn actions:
   1. Submit for implementation (Recommended) — Queue for remote implementation
-  2. Review in browser — Open <"draft PR" if plan_backend=="draft_pr", else "issue"> in web browser for review/editing
+  2. Review in browser — Open draft PR in web browser for review/editing
   3. Consolidate with other learn plans — Merge overlapping learn plans
   4. Done — Finish learn workflow
 ```
@@ -784,7 +784,7 @@ If no other learn plans (count <= 1):
 ```
 Post-learn actions:
   1. Submit for implementation (Recommended) — Queue for remote implementation
-  2. Review in browser — Open <"draft PR" if plan_backend=="draft_pr", else "issue"> in web browser for review/editing
+  2. Review in browser — Open draft PR in web browser for review/editing
   3. Done — Finish learn workflow
 ```
 
