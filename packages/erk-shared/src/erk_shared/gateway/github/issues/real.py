@@ -554,9 +554,9 @@ class RealGitHubIssues(GitHubIssues):
     def get_prs_referencing_issue(
         self,
         repo_root: Path,
-        issue_number: int,
+        plan_number: int,
     ) -> list[PRReference]:
-        """Get PRs referencing issue via REST timeline API.
+        """Get PRs referencing plan via REST timeline API.
 
         Uses the timeline endpoint to find cross-referenced PRs.
         """
@@ -564,7 +564,7 @@ class RealGitHubIssues(GitHubIssues):
         base_cmd = [
             "gh",
             "api",
-            f"repos/{{owner}}/{{repo}}/issues/{issue_number}/timeline",
+            f"repos/{{owner}}/{{repo}}/issues/{plan_number}/timeline",
             "--jq",
             '[.[] | select(.event == "cross-referenced") '
             "| select(.source.issue.pull_request) "

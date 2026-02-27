@@ -938,8 +938,8 @@ class TestCreatePlanIssueCommandsSection:
         assert "## Commands" not in updated_body
         assert "erk br co --for-plan" not in updated_body
 
-    def test_commands_section_uses_correct_issue_number(self, tmp_path: Path) -> None:
-        """Commands section should reference the actual issue number."""
+    def test_commands_section_uses_correct_plan_number(self, tmp_path: Path) -> None:
+        """Commands section should reference the actual plan number."""
         fake_gh = FakeGitHubIssues(username="testuser", next_issue_number=42)
         plan_content = "# My Plan\n\nContent..."
 

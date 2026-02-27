@@ -219,21 +219,21 @@ def parse_aggregated_check_counts(
     return (passing, total_count)
 
 
-def parse_issue_number_from_url(url: str) -> int | None:
-    """Extract issue number from GitHub issue URL.
+def parse_plan_number_from_url(url: str) -> int | None:
+    """Extract plan number from GitHub issue URL.
 
     Args:
         url: GitHub issue URL (e.g., "https://github.com/owner/repo/issues/123")
 
     Returns:
-        Issue number as int, or None if URL doesn't match expected pattern.
+        Plan number as int, or None if URL doesn't match expected pattern.
         Also handles URLs with query strings or fragments like
         "https://github.com/owner/repo/issues/789#issuecomment-123"
 
     Example:
-        >>> parse_issue_number_from_url("https://github.com/owner/repo/issues/123")
+        >>> parse_plan_number_from_url("https://github.com/owner/repo/issues/123")
         123
-        >>> parse_issue_number_from_url("https://github.com/owner/repo/issues/789#issuecomment-123")
+        >>> parse_plan_number_from_url("https://github.com/owner/repo/issues/789#issuecomment-123")
         789
     """
     match = re.match(r"https://github\.com/[^/]+/[^/]+/issues/(\d+)", url)
@@ -301,13 +301,13 @@ def construct_pr_url(owner: str, repo: str, pr_number: int) -> str:
     return f"https://github.com/{owner}/{repo}/pull/{pr_number}"
 
 
-def construct_issue_url(owner: str, repo: str, issue_number: int) -> str:
+def construct_issue_url(owner: str, repo: str, plan_number: int) -> str:
     """Construct GitHub issue URL.
 
     Args:
         owner: Repository owner
         repo: Repository name
-        issue_number: Issue number
+        plan_number: Plan issue number
 
     Returns:
         Issue URL
@@ -316,7 +316,7 @@ def construct_issue_url(owner: str, repo: str, issue_number: int) -> str:
         >>> construct_issue_url("dagster-io", "erk", 456)
         "https://github.com/dagster-io/erk/issues/456"
     """
-    return f"https://github.com/{owner}/{repo}/issues/{issue_number}"
+    return f"https://github.com/{owner}/{repo}/issues/{plan_number}"
 
 
 def parse_gh_auth_status_output(output: str) -> tuple[bool, str | None, str | None]:

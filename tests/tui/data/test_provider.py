@@ -517,7 +517,7 @@ class TestClosePlan:
         # Configure fake GitHub to return empty PR linkages
         from erk_shared.gateway.github.fake import FakeGitHub
 
-        github = FakeGitHub(pr_issue_linkages={})
+        github = FakeGitHub(pr_plan_linkages={})
 
         ctx = create_test_context(
             git=git,
@@ -575,7 +575,7 @@ class TestClosePlan:
         from erk_shared.gateway.github.types import PullRequestInfo
 
         github = FakeGitHub(
-            pr_issue_linkages={
+            pr_plan_linkages={
                 123: [
                     PullRequestInfo(
                         number=456,
@@ -696,7 +696,7 @@ class TestCommentCountsDisplay:
             git_common_dirs={repo_root: repo_root / ".git"},
         )
 
-        github = FakeGitHub(pr_issue_linkages={})
+        github = FakeGitHub(pr_plan_linkages={})
 
         ctx = create_test_context(
             git=git,
@@ -776,7 +776,7 @@ class TestCommentCountsDisplay:
             git_common_dirs={repo_root: repo_root / ".git"},
         )
 
-        github = FakeGitHub(pr_issue_linkages={})
+        github = FakeGitHub(pr_plan_linkages={})
 
         ctx = create_test_context(
             git=git,
@@ -856,7 +856,7 @@ class TestCommentCountsDisplay:
             git_common_dirs={repo_root: repo_root / ".git"},
         )
 
-        github = FakeGitHub(pr_issue_linkages={})
+        github = FakeGitHub(pr_plan_linkages={})
 
         ctx = create_test_context(
             git=git,
@@ -926,7 +926,7 @@ class TestLearnStatusDisplay:
             git_common_dirs={repo_root: repo_root / ".git"},
         )
 
-        github = FakeGitHub(pr_issue_linkages={})
+        github = FakeGitHub(pr_plan_linkages={})
 
         ctx = create_test_context(
             git=git,
@@ -992,7 +992,7 @@ class TestLearnStatusDisplay:
             git_common_dirs={repo_root: repo_root / ".git"},
         )
 
-        github = FakeGitHub(pr_issue_linkages={})
+        github = FakeGitHub(pr_plan_linkages={})
 
         ctx = create_test_context(
             git=git,
@@ -1058,7 +1058,7 @@ class TestLearnStatusDisplay:
             git_common_dirs={repo_root: repo_root / ".git"},
         )
 
-        github = FakeGitHub(pr_issue_linkages={})
+        github = FakeGitHub(pr_plan_linkages={})
 
         ctx = create_test_context(
             git=git,
@@ -1124,7 +1124,7 @@ class TestLearnStatusDisplay:
             git_common_dirs={repo_root: repo_root / ".git"},
         )
 
-        github = FakeGitHub(pr_issue_linkages={})
+        github = FakeGitHub(pr_plan_linkages={})
 
         ctx = create_test_context(
             git=git,
@@ -1194,7 +1194,7 @@ class TestLearnStatusDisplay:
             git_common_dirs={repo_root: repo_root / ".git"},
         )
 
-        github = FakeGitHub(pr_issue_linkages={})
+        github = FakeGitHub(pr_plan_linkages={})
 
         ctx = create_test_context(
             git=git,
@@ -1264,7 +1264,7 @@ class TestLearnStatusDisplay:
             git_common_dirs={repo_root: repo_root / ".git"},
         )
 
-        github = FakeGitHub(pr_issue_linkages={})
+        github = FakeGitHub(pr_plan_linkages={})
 
         ctx = create_test_context(
             git=git,
@@ -1336,7 +1336,7 @@ class TestLearnStatusDisplay:
             git_common_dirs={repo_root: repo_root / ".git"},
         )
 
-        github = FakeGitHub(pr_issue_linkages={})
+        github = FakeGitHub(pr_plan_linkages={})
 
         ctx = create_test_context(
             git=git,
@@ -1434,7 +1434,7 @@ class TestBlockingDepsPlans:
 
         ctx = create_test_context(
             git=git,
-            github=FakeGitHub(pr_issue_linkages={}),
+            github=FakeGitHub(pr_plan_linkages={}),
             cwd=repo_root,
             repo=_make_repo_context(repo_root, tmp_path),
         )
@@ -1756,7 +1756,7 @@ class TestFetchPlansByIds:
             git_common_dirs={repo_root: repo_root / ".git"},
         )
         github = FakeGitHub(
-            pr_issue_linkages=pr_linkages or {},
+            pr_plan_linkages=pr_linkages or {},
             issues_data=issues_data or [],
         )
         ctx = create_test_context(
@@ -1875,7 +1875,7 @@ class TestAppendTimingLog:
 
         ctx = create_test_context(
             git=git,
-            github=FakeGitHub(pr_issue_linkages={}),
+            github=FakeGitHub(pr_plan_linkages={}),
             cwd=repo_root,
             repo=_make_repo_context(repo_root, tmp_path),
         )

@@ -344,7 +344,7 @@ def _dispatch_planned_pr_plan(
         metadata_block = create_submission_queued_block(
             queued_at=queued_at,
             submitted_by=submitted_by,
-            issue_number=plan_number,
+            plan_number=plan_number,
             validation_results=validation_results,
             expected_workflow=DISPATCH_WORKFLOW_METADATA_NAME,
         )

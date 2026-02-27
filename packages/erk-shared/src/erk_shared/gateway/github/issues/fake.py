@@ -445,15 +445,15 @@ class FakeGitHubIssues(GitHubIssues):
     def get_prs_referencing_issue(
         self,
         repo_root: Path,
-        issue_number: int,
+        plan_number: int,
     ) -> list[PRReference]:
-        """Get PRs referencing issue from configured state.
+        """Get PRs referencing plan from configured state.
 
         Returns:
             List of PRReference from pr_references constructor arg,
-            or empty list if no references configured for this issue.
+            or empty list if no references configured for this plan.
         """
-        return self._pr_references.get(issue_number, [])
+        return self._pr_references.get(plan_number, [])
 
     def add_reaction_to_comment(
         self,

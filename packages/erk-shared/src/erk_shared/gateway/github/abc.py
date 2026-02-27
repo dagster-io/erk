@@ -194,21 +194,21 @@ class GitHub(ABC):
     def get_prs_linked_to_issues(
         self,
         location: GitHubRepoLocation,
-        issue_numbers: list[int],
+        plan_numbers: list[int],
     ) -> dict[int, list[PullRequestInfo]]:
         """Get PRs linked to issues via GitHub's development references.
 
         Queries GitHub for PRs that reference issues in their description
-        or via GitHub's "Closes #N" linking. Returns a mapping of issue
+        or via GitHub's "Closes #N" linking. Returns a mapping of plan
         numbers to PRs.
 
         Args:
             location: GitHub repository location (local path + owner/repo identity)
-            issue_numbers: List of issue numbers to query
+            plan_numbers: List of plan numbers to query
 
         Returns:
-            Mapping of issue_number -> list of PRs linked to that issue.
-            Returns empty dict if no PRs link to any of the issues.
+            Mapping of plan_number -> list of PRs linked to that plan.
+            Returns empty dict if no PRs link to any of the plans.
         """
         ...
 
@@ -347,7 +347,7 @@ class GitHub(ABC):
         Returns:
             Tuple of (issues, pr_linkages) where:
             - issues: List of IssueInfo objects
-            - pr_linkages: Mapping of issue_number -> list of linked PRs
+            - pr_linkages: Mapping of plan_number -> list of linked PRs
         """
         ...
 
@@ -747,7 +747,7 @@ class GitHub(ABC):
         self,
         *,
         location: GitHubRepoLocation,
-        issue_numbers: list[int],
+        plan_numbers: list[int],
     ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
         """Fetch specific issues by number with full PR linkage data.
 
@@ -757,12 +757,12 @@ class GitHub(ABC):
 
         Args:
             location: GitHub repository location (local root + repo identity)
-            issue_numbers: List of issue/PR numbers to fetch
+            plan_numbers: List of plan/PR numbers to fetch
 
         Returns:
             Tuple of (issues, pr_linkages) where:
             - issues: List of IssueInfo objects for found issues
-            - pr_linkages: Mapping of issue_number -> list of linked PRs
+            - pr_linkages: Mapping of plan_number -> list of linked PRs
         """
         ...
 

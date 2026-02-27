@@ -444,7 +444,7 @@ class RealPlanDataProvider(PlanDataProvider):
 
         issues, pr_linkages = self._ctx.github.get_issues_by_numbers_with_pr_linkages(
             location=self._location,
-            issue_numbers=list(plan_ids),
+            plan_numbers=list(plan_ids),
         )
 
         # Convert IssueInfo -> Plan

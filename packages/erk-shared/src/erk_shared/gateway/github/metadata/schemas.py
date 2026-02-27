@@ -141,11 +141,15 @@ class SubmissionQueuedSchema(MetadataBlockSchema):
 
     def validate(self, data: dict[str, Any]) -> None:
         """Validate submission-queued data structure."""
+        # Backward compat: migrate old key to new key
+        if "issue_number" in data and "plan_number" not in data:
+            data["plan_number"] = data.pop("issue_number")
+
         required_fields = {
             "status",
             "queued_at",
             "submitted_by",
-            "issue_number",
+            "plan_number",
             "validation_results",
             "expected_workflow",
             "trigger_mechanism",
@@ -181,11 +185,11 @@ class SubmissionQueuedSchema(MetadataBlockSchema):
         if len(data["trigger_mechanism"]) == 0:
             raise ValueError("trigger_mechanism must not be empty")
 
-        # Validate issue_number
-        if not isinstance(data["issue_number"], int):
-            raise ValueError("issue_number must be an integer")
-        if data["issue_number"] <= 0:
-            raise ValueError("issue_number must be positive")
+        # Validate plan_number
+        if not isinstance(data["plan_number"], int):
+            raise ValueError("plan_number must be an integer")
+        if data["plan_number"] <= 0:
+            raise ValueError("plan_number must be positive")
 
         # Validate validation_results is a dict
         if not isinstance(data["validation_results"], dict):
@@ -201,12 +205,16 @@ class WorkflowStartedSchema(MetadataBlockSchema):
 
     def validate(self, data: dict[str, Any]) -> None:
         """Validate workflow-started data structure."""
+        # Backward compat: migrate old key to new key
+        if "issue_number" in data and "plan_number" not in data:
+            data["plan_number"] = data.pop("issue_number")
+
         required_fields = {
             "status",
             "started_at",
             "workflow_run_id",
             "workflow_run_url",
-            "issue_number",
+            "plan_number",
         }
         optional_fields = {"branch_name", "worktree_path"}
 
@@ -235,11 +243,11 @@ class WorkflowStartedSchema(MetadataBlockSchema):
         if len(data["workflow_run_url"]) == 0:
             raise ValueError("workflow_run_url must not be empty")
 
-        # Validate issue_number
-        if not isinstance(data["issue_number"], int):
-            raise ValueError("issue_number must be an integer")
-        if data["issue_number"] <= 0:
-            raise ValueError("issue_number must be positive")
+        # Validate plan_number
+        if not isinstance(data["plan_number"], int):
+            raise ValueError("plan_number must be an integer")
+        if data["plan_number"] <= 0:
+            raise ValueError("plan_number must be positive")
 
         # Validate optional fields if present
         if "branch_name" in data:

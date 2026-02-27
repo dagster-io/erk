@@ -38,7 +38,7 @@ from erk_statusline.statusline import (
     get_git_root_via_gateway,
     get_git_status_via_gateway,
     get_github_repo_via_gateway,
-    get_issue_number,
+    get_plan_number,
     get_objective_issue,
     get_pr_info_via_branch_manager,
     get_repo_info,
@@ -376,7 +376,7 @@ class TestBuildGhLabel:
         )
         github_data = None
 
-        result = build_gh_label(repo_info, github_data, issue_number=None, objective_issue=None)
+        result = build_gh_label(repo_info, github_data, plan_number=None, objective_issue=None)
 
         # Render TokenSeq to text to verify format
         result_text = result.render()
@@ -406,7 +406,7 @@ class TestBuildGhLabel:
             from_fallback=False,
         )
 
-        result = build_gh_label(repo_info, github_data, issue_number=None, objective_issue=None)
+        result = build_gh_label(repo_info, github_data, plan_number=None, objective_issue=None)
 
         # Render TokenSeq to text to verify format
         result_text = result.render()
@@ -414,8 +414,8 @@ class TestBuildGhLabel:
         assert "#123" in result_text
         assert result_text.endswith(")")
 
-    def test_with_issue_number_includes_issue(self) -> None:
-        """When issue number is provided, should include plan:#456 in label."""
+    def test_with_plan_number_includes_plan(self) -> None:
+        """When plan number is provided, should include plan:#456 in label."""
         repo_info = RepoInfo(
             owner="testowner",
             repo="testrepo",
@@ -436,7 +436,7 @@ class TestBuildGhLabel:
             from_fallback=False,
         )
 
-        result = build_gh_label(repo_info, github_data, issue_number=456, objective_issue=None)
+        result = build_gh_label(repo_info, github_data, plan_number=456, objective_issue=None)
 
         # Render TokenSeq to text to verify format
         result_text = result.render()
@@ -446,8 +446,8 @@ class TestBuildGhLabel:
         assert "#456" in result_text
         assert result_text.endswith(")")
 
-    def test_without_issue_number_omits_issue(self) -> None:
-        """When issue number is None, should not include plan: in label."""
+    def test_without_plan_number_omits_plan(self) -> None:
+        """When plan number is None, should not include plan: in label."""
         repo_info = RepoInfo(
             owner="testowner",
             repo="testrepo",
@@ -458,7 +458,7 @@ class TestBuildGhLabel:
         )
         github_data = None
 
-        result = build_gh_label(repo_info, github_data, issue_number=None, objective_issue=None)
+        result = build_gh_label(repo_info, github_data, plan_number=None, objective_issue=None)
 
         # Render TokenSeq to text to verify format
         result_text = result.render()
@@ -486,7 +486,7 @@ class TestBuildGhLabel:
             from_fallback=False,
         )
 
-        result = build_gh_label(repo_info, github_data, issue_number=None, objective_issue=None)
+        result = build_gh_label(repo_info, github_data, plan_number=None, objective_issue=None)
 
         result_text = result.render()
         assert "cmts:" in result_text
@@ -514,7 +514,7 @@ class TestBuildGhLabel:
             from_fallback=False,
         )
 
-        result = build_gh_label(repo_info, github_data, issue_number=None, objective_issue=None)
+        result = build_gh_label(repo_info, github_data, plan_number=None, objective_issue=None)
 
         result_text = result.render()
         assert "cmts:" in result_text
@@ -542,7 +542,7 @@ class TestBuildGhLabel:
             from_fallback=False,
         )
 
-        result = build_gh_label(repo_info, github_data, issue_number=None, objective_issue=None)
+        result = build_gh_label(repo_info, github_data, plan_number=None, objective_issue=None)
 
         result_text = result.render()
         assert "cmts:" not in result_text
@@ -569,7 +569,7 @@ class TestBuildGhLabel:
             from_fallback=False,
         )
 
-        result = build_gh_label(repo_info, github_data, issue_number=456, objective_issue=789)
+        result = build_gh_label(repo_info, github_data, plan_number=456, objective_issue=789)
 
         result_text = result.render()
         # Note: render() includes ANSI codes between labels and numbers
@@ -590,7 +590,7 @@ class TestBuildGhLabel:
         )
         github_data = None
 
-        result = build_gh_label(repo_info, github_data, issue_number=456, objective_issue=None)
+        result = build_gh_label(repo_info, github_data, plan_number=456, objective_issue=None)
 
         result_text = result.render()
         assert "obj:" not in result_text
@@ -622,7 +622,7 @@ class TestBuildGhLabel:
             from_fallback=True,  # Data came from GitHub API fallback
         )
 
-        result = build_gh_label(repo_info, github_data, issue_number=None, objective_issue=None)
+        result = build_gh_label(repo_info, github_data, plan_number=None, objective_issue=None)
 
         result_text = result.render()
         # Should NOT contain warning emoji - fallback indicator was removed
@@ -631,21 +631,21 @@ class TestBuildGhLabel:
         assert "#123" in result_text
 
 
-class TestGetIssueNumber:
-    """Test issue number loading from .impl/plan-ref.json (with legacy issue.json fallback)."""
+class TestGetPlanNumber:
+    """Test plan number loading from .impl/plan-ref.json (with legacy issue.json fallback)."""
 
     def test_no_git_root_returns_none(self) -> None:
         """Empty git root should return None."""
-        result = get_issue_number("")
+        result = get_plan_number("")
         assert result is None
 
-    def test_missing_issue_file_returns_none(self) -> None:
-        """Missing issue.json file should return None."""
+    def test_missing_plan_file_returns_none(self) -> None:
+        """Missing plan file should return None."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            result = get_issue_number(tmpdir)
+            result = get_plan_number(tmpdir)
             assert result is None
 
-    def test_valid_issue_json_returns_number(self) -> None:
+    def test_valid_plan_json_returns_number(self) -> None:
         """Valid issue.json with number field should return the number."""
         with tempfile.TemporaryDirectory() as tmpdir:
             impl_dir = Path(tmpdir) / ".impl"
@@ -653,11 +653,11 @@ class TestGetIssueNumber:
             issue_file = impl_dir / "issue.json"
             issue_file.write_text('{"number": 456}')
 
-            result = get_issue_number(tmpdir)
+            result = get_plan_number(tmpdir)
             assert result == 456
 
-    def test_valid_issue_json_with_issue_number_key(self) -> None:
-        """Valid issue.json with issue_number field should return the number."""
+    def test_valid_plan_json_with_issue_number_key(self) -> None:
+        """Valid issue.json with issue_number field should return the number (legacy backward compat)."""
         with tempfile.TemporaryDirectory() as tmpdir:
             impl_dir = Path(tmpdir) / ".impl"
             impl_dir.mkdir()
@@ -666,10 +666,10 @@ class TestGetIssueNumber:
                 '{"issue_number": 901, "issue_url": "https://github.com/owner/repo/issues/901"}'
             )
 
-            result = get_issue_number(tmpdir)
+            result = get_plan_number(tmpdir)
             assert result == 901
 
-    def test_issue_json_with_extra_fields(self) -> None:
+    def test_plan_json_with_extra_fields(self) -> None:
         """issue.json with extra fields should still return the number."""
         with tempfile.TemporaryDirectory() as tmpdir:
             impl_dir = Path(tmpdir) / ".impl"
@@ -677,7 +677,7 @@ class TestGetIssueNumber:
             issue_file = impl_dir / "issue.json"
             issue_file.write_text('{"number": 789, "title": "Fix bug", "state": "open"}')
 
-            result = get_issue_number(tmpdir)
+            result = get_plan_number(tmpdir)
             assert result == 789
 
     def test_malformed_json_returns_none(self) -> None:
@@ -688,7 +688,7 @@ class TestGetIssueNumber:
             issue_file = impl_dir / "issue.json"
             issue_file.write_text('{"number": not valid json}')
 
-            result = get_issue_number(tmpdir)
+            result = get_plan_number(tmpdir)
             assert result is None
 
     def test_missing_number_field_returns_none(self) -> None:
@@ -699,7 +699,7 @@ class TestGetIssueNumber:
             issue_file = impl_dir / "issue.json"
             issue_file.write_text('{"title": "Some issue"}')
 
-            result = get_issue_number(tmpdir)
+            result = get_plan_number(tmpdir)
             assert result is None
 
     def test_non_integer_number_returns_none(self) -> None:
@@ -710,7 +710,7 @@ class TestGetIssueNumber:
             issue_file = impl_dir / "issue.json"
             issue_file.write_text('{"number": "not an int"}')
 
-            result = get_issue_number(tmpdir)
+            result = get_plan_number(tmpdir)
             assert result is None
 
     def test_plan_ref_json_returns_number(self) -> None:
@@ -723,7 +723,7 @@ class TestGetIssueNumber:
                 '{"provider": "github", "plan_id": "42", "url": "https://example.com"}'
             )
 
-            result = get_issue_number(tmpdir)
+            result = get_plan_number(tmpdir)
             assert result == 42
 
     def test_plan_ref_json_preferred_over_issue_json(self) -> None:
@@ -737,7 +737,7 @@ class TestGetIssueNumber:
             issue_file = impl_dir / "issue.json"
             issue_file.write_text('{"issue_number": 42}')
 
-            result = get_issue_number(tmpdir)
+            result = get_plan_number(tmpdir)
             assert result == 99
 
     def test_plan_ref_json_non_numeric_plan_id_returns_none(self) -> None:
@@ -748,7 +748,7 @@ class TestGetIssueNumber:
             plan_ref_file = impl_dir / "plan-ref.json"
             plan_ref_file.write_text('{"provider": "linear", "plan_id": "PROJ-123", "url": "u"}')
 
-            result = get_issue_number(tmpdir)
+            result = get_plan_number(tmpdir)
             assert result is None
 
 
