@@ -33,7 +33,6 @@ from pathlib import Path
 
 import click
 
-from erk.cli.commands.exec.scripts.cleanup_impl_context import cleanup_impl_context
 from erk.cli.commands.exec.scripts.detect_plan_from_branch import _detect_plan_from_branch_impl
 from erk.cli.commands.exec.scripts.impl_init import _extract_related_docs, _validate_impl_folder
 from erk_shared.context.helpers import (
@@ -215,8 +214,6 @@ def setup_impl(ctx: click.Context, plan_number: int | None, file_path: Path | No
         # File-based plan (no tracking) - just validate
         if (impl_dir / "plan.md").exists():
             init_result = _run_impl_init(ctx)
-            # Run cleanup and output
-            ctx.invoke(cleanup_impl_context)
             click.echo(
                 json.dumps(
                     {
@@ -302,9 +299,6 @@ def _handle_issue_setup(ctx: click.Context, *, plan_number: int) -> None:
             )
         )
         raise SystemExit(1) from None
-
-    # Run cleanup-impl-context
-    ctx.invoke(cleanup_impl_context)
 
     # Output combined result
     click.echo(

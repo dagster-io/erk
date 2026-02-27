@@ -45,6 +45,7 @@ from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_LEARN_LABEL, is_l
 from erk_shared.gateway.gt.prompts import truncate_diff
 from erk_shared.gateway.pr.diff_extraction import filter_diff_excluded_files
 from erk_shared.gateway.pr.graphite_enhance import should_enhance_with_graphite
+from erk_shared.impl_context import impl_context_exists, remove_impl_context
 from erk_shared.impl_folder import (
     has_plan_ref,
     read_plan_ref,
@@ -184,6 +185,26 @@ def prepare_state(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitEr
     )
 
 
+def cleanup_impl_for_submit(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
+    """Remove .erk/impl-context/ if present and git-tracked.
+
+    Inserted after prepare_state (which discovers plan_id) and before commit_wip
+    (which adds implementation changes). The cleanup commit is local-only; the
+    push happens later in push_and_create_pr.
+    """
+    if not impl_context_exists(state.repo_root):
+        return state
+
+    if not ctx.git.status.has_tracked_files(state.repo_root, ".erk/impl-context"):
+        return state
+
+    remove_impl_context(state.repo_root)
+    ctx.git.commit.stage_files(state.repo_root, [".erk/impl-context/"], force=True)
+    ctx.git.commit.commit(state.repo_root, "Remove .erk/impl-context/ before submission")
+
+    return state
+
+
 def commit_wip(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
     """Check for uncommitted changes; if present, add_all + commit."""
     if ctx.git.status.has_uncommitted_changes(state.cwd):
@@ -224,8 +245,10 @@ def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | S
     if not state.quiet:
         click.echo(click.style("Phase 1: Graphite Submit", bold=True))
 
-    # Auto-force for plan implementations (branches always diverge from remote)
-    is_plan_impl = state.plan_id is not None
+    # Auto-force for plan implementations (branches always diverge from remote).
+    # Fall back to branch prefix when cleanup already deleted .erk/impl-context/
+    # but the first submit attempt failed before pushing.
+    is_plan_impl = state.plan_id is not None or state.branch_name.startswith("plnd/")
     effective_force = state.force or is_plan_impl
 
     # Pre-check: detect remote divergence before gt submit
@@ -909,6 +932,7 @@ def link_pr_to_objective_nodes(ctx: ErkContext, state: SubmitState) -> SubmitSta
 def _push_and_create_pipeline() -> tuple[SubmitStep, ...]:
     return (
         prepare_state,
+        cleanup_impl_for_submit,
         commit_wip,
         capture_existing_pr_body,
         push_and_create_pr,
@@ -938,6 +962,7 @@ def run_push_and_create_pipeline(ctx: ErkContext, state: SubmitState) -> SubmitS
 def _submit_pipeline() -> tuple[SubmitStep, ...]:
     return (
         prepare_state,
+        cleanup_impl_for_submit,
         commit_wip,
         capture_existing_pr_body,
         push_and_create_pr,
