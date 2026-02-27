@@ -20,7 +20,7 @@ from erk_shared.output.output import user_output
     type=click.Path(exists=True, path_type=Path),
     help="Plan file to read",
 )
-@click.option("--title", "-t", type=str, help="Issue title (default: extract from H1)")
+@click.option("--title", "-t", type=str, help="Plan title (default: extract from H1)")
 @click.option("--label", "-l", multiple=True, help="Additional labels")
 @click.pass_obj
 def pr_create(
@@ -29,7 +29,7 @@ def pr_create(
     title: str | None,
     label: tuple[str, ...],
 ) -> None:
-    """Create a plan issue from markdown content.
+    """Create a plan from markdown content.
 
     Supports two input modes:
     - File: --file PATH (recommended for automation)

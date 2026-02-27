@@ -448,7 +448,7 @@ def test_generate_includes_plan_context_in_prompt(tmp_path: Path) -> None:
     # Verify plan context was included in the prompt
     assert len(executor.prompt_calls) == 1
     prompt, _, _ = executor.prompt_calls[0]
-    assert "Implementation Plan (Issue #123)" in prompt
+    assert "Implementation Plan (Plan #123)" in prompt
     assert "Fix Authentication Bug" in prompt
     assert "session expiration" in prompt
     assert "primary source of truth" in prompt
@@ -484,7 +484,7 @@ def test_generate_includes_plan_context_with_objective_summary(tmp_path: Path) -
     assert result.success is True
     assert len(executor.prompt_calls) == 1
     prompt, _, _ = executor.prompt_calls[0]
-    assert "Implementation Plan (Issue #456)" in prompt
+    assert "Implementation Plan (Plan #456)" in prompt
     assert "Parent Objective" in prompt
     assert "Objective #100: Improve Observability" in prompt
 
@@ -523,7 +523,7 @@ def test_generate_includes_both_plan_and_commit_messages(tmp_path: Path) -> None
     assert len(executor.prompt_calls) == 1
     prompt, _, _ = executor.prompt_calls[0]
     # Both should be present
-    assert "Implementation Plan (Issue #789)" in prompt
+    assert "Implementation Plan (Plan #789)" in prompt
     assert "Refactor API" in prompt
     assert "Developer's Commit Messages" in prompt
     assert "WIP: Started refactoring" in prompt

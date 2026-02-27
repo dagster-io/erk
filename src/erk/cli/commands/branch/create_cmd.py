@@ -99,14 +99,14 @@ def branch_create(
     5. Assign the branch to the slot
 
     Use --no-slot to create a branch without assigning it to a slot.
-    Use --for-plan to create a branch from a GitHub issue with erk-plan label.
+    Use --for-plan to create a branch from a plan with erk-plan label.
     Use `erk br assign` to assign an EXISTING branch to a slot.
     """
     # Mutual exclusivity validation
     if for_plan is not None and branch_name is not None:
         user_output(
             "Error: Cannot specify both BRANCH and --for-plan.\n"
-            "Use --for-plan to derive branch name from issue, or provide BRANCH directly."
+            "Use --for-plan to derive branch name from plan, or provide BRANCH directly."
         )
         raise SystemExit(1) from None
 

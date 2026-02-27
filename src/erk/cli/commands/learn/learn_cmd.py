@@ -1,11 +1,11 @@
 """Learn command for extracting insights from plan implementations.
 
-This command discovers all Claude Code sessions associated with a plan issue
+This command discovers all Claude Code sessions associated with a plan
 and optionally launches Claude with the /erk:learn skill.
 
 Note: Session data retrieval and tracking are handled by separate exec scripts:
 - `erk exec get-learn-sessions` - Returns JSON with session data
-- `erk exec track-learn-evaluation` - Posts tracking comment to issue
+- `erk exec track-learn-evaluation` - Posts tracking comment to plan
 """
 
 from dataclasses import dataclass
@@ -41,10 +41,10 @@ def _extract_plan_number(identifier: str) -> int | None:
     """Extract plan number from identifier (number or URL).
 
     Args:
-        identifier: Issue number or GitHub issue URL
+        identifier: Plan number or GitHub URL
 
     Returns:
-        Issue number or None if invalid
+        Plan number or None if invalid
     """
     # Try direct number (LBYL: check before converting)
     if identifier.isdigit():

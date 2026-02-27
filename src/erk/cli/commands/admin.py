@@ -416,10 +416,10 @@ def upgrade_repo(ctx: ErkContext) -> None:
 
 
 @admin_group.command("test-plan-implement-gh-workflow")
-@click.option("--issue", "-i", type=int, help="Existing plan number to use")
+@click.option("--plan", "-p", type=int, help="Existing plan number to use")
 @click.option("--watch", "-w", is_flag=True, help="Watch the workflow run after triggering")
 @click.pass_obj
-def test_plan_implement_gh_workflow(ctx: ErkContext, issue: int | None, watch: bool) -> None:
+def test_plan_implement_gh_workflow(ctx: ErkContext, plan: int | None, watch: bool) -> None:
     """Test the plan-implement.yml GitHub Actions workflow.
 
     This command automates testing of plan-implement workflow changes by:
@@ -456,9 +456,9 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, issue: int | None, watch: b
         raise UserFacingCliError(push_result.message)
     user_output(click.style("✓", fg="green") + f" Branch '{current_branch}' pushed to origin")
 
-    # Step 2: Find or create test issue
-    if issue is not None:
-        plan_number = issue
+    # Step 2: Find or create test plan
+    if plan is not None:
+        plan_number = plan
         user_output(f"Using existing plan #{plan_number}")
     else:
         result = ctx.issues.create_issue(

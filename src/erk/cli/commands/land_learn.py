@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 
 def _should_create_learn_issue(ctx: ErkContext) -> bool:
-    """Check config hierarchy to determine if learn issue should be created on land.
+    """Check config hierarchy to determine if learn plan should be created on land.
 
     Checks local_config first (repo or local override), falls back to global_config.
     """
@@ -36,10 +36,10 @@ def _create_learn_issue_with_sessions(
     *,
     state: LandState,
 ) -> None:
-    """Create a learn plan issue with session info for the landed plan.
+    """Create a learn plan with session info for the landed plan.
 
     This is a fire-and-forget operation that never blocks landing.
-    Creates a GitHub issue with erk-learn label so the replan flow can pick it up.
+    Creates a plan with erk-learn label so the replan flow can pick it up.
 
     Args:
         ctx: ErkContext
@@ -51,7 +51,7 @@ def _create_learn_issue_with_sessions(
     try:
         _create_learn_issue_impl(ctx, state=state)
     except Exception as exc:
-        user_output(click.style("Warning: ", fg="yellow") + f"Could not create learn issue: {exc}")
+        user_output(click.style("Warning: ", fg="yellow") + f"Could not create learn plan: {exc}")
 
 
 def _create_learn_issue_impl(
@@ -59,7 +59,7 @@ def _create_learn_issue_impl(
     *,
     state: LandState,
 ) -> None:
-    """Inner implementation for learn issue creation (raises on error)."""
+    """Inner implementation for learn plan creation (raises on error)."""
     plan_id = state.plan_id
     if plan_id is None:
         return
@@ -92,7 +92,7 @@ def _create_learn_issue_impl(
         f"## Sessions\n\n{session_section}"
     )
 
-    # Create the learn issue
+    # Create the learn plan
     result = create_plan_issue(
         github_issues=ctx.issues,
         repo_root=state.main_repo_root,
@@ -115,5 +115,5 @@ def _create_learn_issue_impl(
         )
     elif result.error:
         user_output(
-            click.style("Warning: ", fg="yellow") + f"Learn issue creation failed: {result.error}"
+            click.style("Warning: ", fg="yellow") + f"Learn plan creation failed: {result.error}"
         )

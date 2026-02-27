@@ -85,7 +85,7 @@ class PlanDuplicateChecker:
 
         Args:
             new_plan_content: Full markdown content of the new plan.
-            existing_plans: List of existing open plan issues (already filtered
+            existing_plans: List of existing open plans (already filtered
                 by caller — no erk-learn plans should be included).
 
         Returns:

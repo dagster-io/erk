@@ -37,7 +37,7 @@ class CommitMessageRequest:
         current_branch: Name of the current branch
         parent_branch: Name of the parent branch
         commit_messages: Optional list of existing commit messages for context
-        plan_context: Optional plan context from linked erk-plan issue
+        plan_context: Optional plan context from linked erk plan
     """
 
     diff_file: Path
@@ -208,7 +208,7 @@ class CommitMessageGenerator:
         if plan_context is not None:
             context_section += f"""
 
-## Implementation Plan (Issue #{plan_context.plan_id})
+## Implementation Plan (Plan #{plan_context.plan_id})
 
 The following plan describes the intent and rationale for these changes:
 

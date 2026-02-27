@@ -525,8 +525,8 @@ def create_wt(
     Reads config.toml for env templates and post-create commands (if present).
     If --from-plan-file is provided, derives name from the plan filename and creates
     an implementation context folder in the worktree.
-    If --from-plan is provided, fetches the GitHub issue, validates the erk-plan label,
-    derives name from the issue title, and creates an impl folder with plan-ref.json metadata.
+    If --from-plan is provided, fetches the plan, validates the erk-plan label,
+    derives name from the plan title, and creates an impl folder with plan-ref.json metadata.
     If --from-current-branch is provided, moves the current branch to the new worktree.
     If --from-branch is provided, creates a worktree from an existing branch.
 
@@ -564,7 +564,7 @@ def create_wt(
         not (copy_plan and (from_plan_file is not None or from_plan is not None)),
         "--copy-plan and --from-plan-file/--from-plan are mutually exclusive. "
         "Use --copy-plan to copy from current worktree OR --from-plan-file <file> to use a plan "
-        "file OR --from-plan <number> to use a GitHub issue.",
+        "file OR --from-plan <number> to use a plan.",
     )
 
     # Note: --copy-plan validation is deferred until after repo discovery
@@ -612,16 +612,16 @@ def create_wt(
         # Note: Apply ensure_unique_worktree_name() and truncation after getting erks_dir
         name = base_name
 
-    # Handle --from-plan flag (GitHub issue)
+    # Handle --from-plan flag
     elif from_plan:
         Ensure.invariant(
             not name, "Cannot specify both NAME and --from-plan. Use one or the other."
         )
-        # Parse issue number from URL or plain number - raises click.ClickException if invalid
+        # Parse plan number from URL or plain number - raises click.ClickException if invalid
         plan_number_parsed = parse_issue_identifier(from_plan)
-        # Note: name will be derived from issue title after fetching
+        # Note: name will be derived from plan title after fetching
         # Defer fetch until after repo discovery below
-        name = None  # Will be set after fetching issue
+        name = None  # Will be set after fetching plan
 
     # Regular create (no special flags)
     else:
@@ -653,18 +653,18 @@ def create_wt(
             "Use 'erk create --from-plan-file <file>' to create a worktree with a plan.",
         )
 
-    # Track linked branch name and setup for issue-based worktrees
+    # Track linked branch name and setup for plan-based worktrees
     linked_branch_name: str | None = None
     setup: IssueBranchSetup | None = None
 
-    # Handle issue fetching after repo discovery
+    # Handle plan fetching after repo discovery
     if from_plan:
         # Type narrowing: plan_number_parsed must be set if from_plan is True
         assert plan_number_parsed is not None, (
             "plan_number_parsed must be set when from_plan is True"
         )
 
-        # Fetch plan using plan_store (composed from issues layer)
+        # Fetch plan using plan_store
         result = ctx.plan_store.get_plan(repo.root, str(plan_number_parsed))
         if isinstance(result, PlanNotFound):
             user_output(
@@ -832,7 +832,7 @@ def create_wt(
             skip_remote_check=skip_remote_check,
         )
     elif linked_branch_name:
-        # Issue-based worktree: use the branch created for this issue
+        # Plan-based worktree: use the branch created for this plan
         use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
         add_worktree(
             ctx,
@@ -903,7 +903,7 @@ def create_wt(
             if not script and not output_json:
                 user_output(f"Moved implementation context to {impl_folder_destination}")
 
-    # Create implementation context folder if GitHub issue provided
+    # Create implementation context folder if plan provided
     if from_plan:
         # Type narrowing: setup must be set if from_plan is True
         assert setup is not None, "setup must be set when from_plan is True"

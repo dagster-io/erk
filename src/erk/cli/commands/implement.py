@@ -5,7 +5,7 @@ It creates an impl folder (under .erk/impl-context/<branch>/) with the plan
 content and invokes Claude for execution.
 
 Usage:
-- GitHub issue mode: erk implement 123 or erk implement <URL>
+- Plan number mode: erk implement 123 or erk implement <URL>
 - Plan file mode: erk implement path/to/plan.md
 - Auto-detect mode: erk implement (on plan branch with plan-ref.json)
 """
@@ -332,7 +332,7 @@ def implement(
 
     TARGET can be:
     - Plan number (e.g., #123 or 123)
-    - GitHub issue URL (e.g., https://github.com/user/repo/issues/123)
+    - GitHub URL (e.g., https://github.com/user/repo/issues/123)
     - Path to plan file (e.g., ./my-feature-plan.md)
     - Omitted (auto-detects plan number from plan-ref.json)
 
@@ -397,8 +397,8 @@ def implement(
                 f"Could not auto-detect plan number from branch '{current_branch}'.\n\n"
                 f"No plan-ref.json found. Either:\n"
                 f"  1. Provide TARGET explicitly: erk implement <TARGET>\n"
-                f"  2. Switch to a plan branch: erk pr co <issue>\n"
-                f"  3. Set up impl first: erk exec setup-impl --issue <issue>"
+                f"  2. Switch to a plan branch: erk pr co <plan>\n"
+                f"  3. Set up impl first: erk exec setup-impl --plan <plan>"
             )
 
         # Use detected plan number as target
