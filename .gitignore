@@ -18,7 +18,7 @@ activate.sh
 .erk/bin/
 .erk/scratch/
 .erk/impl-context/
-.impl/
+.impl/  # legacy; kept to avoid accidentally committing old worktree artifacts
 .erk/config.local.toml
 .env
 
