@@ -99,14 +99,17 @@ class PlanDataProvider(ABC):
 
     @abstractmethod
     def fetch_plan_content(self, plan_id: int, plan_body: str) -> str | None:
-        """Fetch plan content from the first comment of an issue.
+        """Return plan content from the PR body.
+
+        Plans are PR-based: plan_body is the already-extracted content.
+        Return it directly, or None if empty.
 
         Args:
-            plan_id: The GitHub issue number
-            plan_body: The issue body (to extract plan_comment_id from metadata)
+            plan_id: The GitHub PR number
+            plan_body: The extracted plan content from the PR body
 
         Returns:
-            The extracted plan content, or None if not found
+            The plan content, or None if empty
         """
         ...
 
