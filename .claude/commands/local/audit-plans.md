@@ -1,10 +1,10 @@
 ---
-description: Audit open erk-plan issues for staleness and validity
+description: Audit open plans for staleness and validity
 ---
 
 # /local:audit-plans
 
-Audits open erk-plan issues to identify stale or completed plans that may need attention or closing.
+Audits open plans to identify stale or completed plans that may need attention or closing.
 
 ## Usage
 
@@ -44,7 +44,7 @@ If `$ARGUMENTS` does not contain `--all`, limit analysis to the oldest 20 plans.
 
 For each plan, extract metadata and analyze status:
 
-**2.1 Get issue body:**
+**2.1 Get plan body:**
 
 ```bash
 gh api repos/dagster-io/erk/issues/<NUMBER> --jq '.body'
@@ -52,7 +52,7 @@ gh api repos/dagster-io/erk/issues/<NUMBER> --jq '.body'
 
 **2.2 Parse plan-header metadata:**
 
-Look for the `<plan-header>` block in the issue body containing YAML:
+Look for the `<plan-header>` block in the plan body containing YAML:
 
 ```yaml
 plan_comment_id: 3710772890 # Where to fetch plan body
@@ -184,7 +184,7 @@ Report results and any failures.
 
 ### Plan Header Schema
 
-The `<plan-header>` block in issue body contains:
+The `<plan-header>` block in the plan body contains:
 
 ```yaml
 schema_version: "1"

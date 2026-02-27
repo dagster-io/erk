@@ -4,7 +4,7 @@ description: Replan all open erk-learn plans via consolidation workflow
 
 # /local:replan-learn-plans
 
-Queries all open erk-learn plan issues and passes them to `/erk:replan` for consolidation into a single unified documentation plan.
+Queries all open erk-learn plans and passes them to `/erk:replan` for consolidation into a single unified documentation plan.
 
 ## Rationale
 
@@ -132,7 +132,7 @@ Build the issue list and invoke the replan skill:
 /erk:replan <issue1> <issue2> <issue3> ...
 ```
 
-Use the Skill tool with `skill: "erk:replan"` and `args: "<space-separated issue numbers>"`.
+Use the Skill tool with `skill: "erk:replan"` and `args: "<space-separated plan numbers>"`.
 
 **IMPORTANT:** The `/erk:replan` skill will launch background Explore agents for deep investigation. Per Step 4e of that skill, you MUST wait for ALL background agents to complete before creating the consolidated plan. Use `timeout: 600000` (10 minutes) when calling TaskOutput to wait for each agent. Do not proceed to plan creation until every investigation agent has returned its findings.
 
@@ -194,5 +194,5 @@ Each step should specify:
 ## Related Commands
 
 - `/erk:replan` - Underlying replan/consolidation workflow
-- `/local:audit-plans` - Audit all open erk-plan issues
+- `/local:audit-plans` - Audit all open plans
 - `/erk:learn` - Generate documentation plans from sessions

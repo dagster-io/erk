@@ -11,7 +11,7 @@ Assesses whether a PR or plan's intended work is already represented in master, 
 ```bash
 /local:check-relevance 2521              # Auto-detect PR or plan by issue number
 /local:check-relevance --pr 2521         # Explicitly check a PR
-/local:check-relevance --plan 2521       # Explicitly check a plan issue
+/local:check-relevance --plan 2521       # Explicitly check a plan
 ```
 
 ---
@@ -25,7 +25,7 @@ Parse `$ARGUMENTS` to determine input:
 **Step 1.1: Extract number and type**
 
 - `--pr <number>`: Treat as PR
-- `--plan <number>`: Treat as plan issue
+- `--plan <number>`: Treat as plan
 - `<number>` only: Auto-detect (check for `erk-plan` label)
 
 **Step 1.2: Auto-detect type (if not explicit)**

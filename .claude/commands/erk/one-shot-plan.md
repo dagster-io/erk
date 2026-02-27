@@ -1,10 +1,10 @@
 ---
-description: Create a plan from a one-shot prompt, save it as a GitHub issue, and write results to .erk/impl-context/ (used by CI workflow)
+description: Create a plan from a one-shot prompt, save it as a draft PR, and write results to .erk/impl-context/ (used by CI workflow)
 ---
 
 # One-Shot Plan
 
-You are running autonomously in a CI workflow. Your job is to read a prompt, explore the codebase, create a detailed implementation plan, and save it as a GitHub issue.
+You are running autonomously in a CI workflow. Your job is to read a prompt, explore the codebase, create a detailed implementation plan, and save it as a draft PR.
 
 **Important:** You are ONLY planning, not implementing. The plan must be self-contained — a separate Claude session will implement it with no access to your exploration context.
 
@@ -43,11 +43,11 @@ The plan MUST be self-contained for a separate Claude session to implement. Incl
 
 Follow the planning conventions in `docs/learned/planning/` if available.
 
-## Step 6: Save Plan to GitHub Issue
+## Step 6: Save Plan to GitHub
 
 Check the `$PLAN_ISSUE_NUMBER` environment variable:
 
-**If `$PLAN_ISSUE_NUMBER` is set (non-empty):** A skeleton plan issue was pre-created at dispatch time. Update it with the real plan content:
+**If `$PLAN_ISSUE_NUMBER` is set (non-empty):** A skeleton plan was pre-created at dispatch time. Update it with the real plan content:
 
 ```bash
 erk exec plan-update --plan-number $PLAN_ISSUE_NUMBER --plan-path .erk/impl-context/plan.md --format json

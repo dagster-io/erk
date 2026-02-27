@@ -18,7 +18,7 @@ Streamlines the "plan small change -> implement -> submit" loop for PR iteration
 
 ### Step 1: Create Marker File
 
-Before entering plan mode, create the incremental-plan marker to skip the "save as GitHub issue?" prompt later.
+Before entering plan mode, create the incremental-plan marker to skip the "save to GitHub?" prompt later.
 
 ```bash
 erk exec marker create --session-id "${CLAUDE_SESSION_ID}" incremental-plan
@@ -50,7 +50,7 @@ When the plan is ready, call ExitPlanMode.
 
 The incremental-plan marker you created in Step 1 will cause the exit-plan-mode-hook to:
 
-- Skip the "save as GitHub issue?" prompt
+- Skip the "save to GitHub?" prompt
 - Proceed directly to implementation
 
 ### Step 5: Implement the Change
@@ -97,6 +97,6 @@ Next: Run /local:quick-submit to commit and push.
 ## Important Notes
 
 - **DO NOT skip Step 1** - The marker must be created before entering plan mode
-- **DO NOT save to GitHub** - This workflow skips issue creation
+- **DO NOT save to GitHub** - This workflow skips saving to GitHub
 - **DO NOT create a new branch** - Changes go to the current branch
 - The marker is automatically deleted when the exit-plan-mode-hook processes it
