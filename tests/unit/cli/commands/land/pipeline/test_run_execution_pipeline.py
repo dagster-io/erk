@@ -78,6 +78,7 @@ def test_merge_pr_step_succeeds(tmp_path: Path) -> None:
         no_cleanup=False,
         script=False,
         target_child_branch=None,
+        plan_id=None,
     )
 
     result = merge_pr(ctx, state)
@@ -118,6 +119,7 @@ def test_execution_pipeline_stops_on_merge_error(tmp_path: Path) -> None:
         no_cleanup=False,
         script=False,
         target_child_branch=None,
+        plan_id=None,
     )
 
     result = run_execution_pipeline(ctx, state)
@@ -141,6 +143,7 @@ def test_make_execution_state_no_cleanup_sets_cleanup_confirmed_false(tmp_path: 
         no_cleanup=True,
         script=False,
         target_child_branch=None,
+        plan_id=None,
     )
 
     assert state.cleanup_confirmed is False
@@ -160,6 +163,7 @@ def test_make_execution_state_default_cleanup_confirmed_true(tmp_path: Path) -> 
         no_cleanup=False,
         script=False,
         target_child_branch=None,
+        plan_id=None,
     )
 
     assert state.cleanup_confirmed is True
