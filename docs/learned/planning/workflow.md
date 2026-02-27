@@ -1,7 +1,7 @@
 ---
 title: Planning Workflow
 read_when:
-  - "using .impl/ folders"
+  - "using .erk/impl-context/ folders"
   - "understanding plan file structure"
   - "implementing plans"
 last_audited: "2026-02-15 18:50 PT"
@@ -10,44 +10,44 @@ audit_result: edited
 
 # Planning Workflow
 
-This guide explains the `.impl/` folder protocol used in erk for managing implementation plans.
+This guide explains the `.erk/impl-context/` protocol used in erk for managing implementation plans.
 
 ## Overview
 
-Erk uses `.impl/` folders to track implementation progress for plans executed locally by agents.
+Erk uses `.erk/impl-context/<branch>/` directories to track implementation progress for plans executed locally by agents.
 
-## .impl/ Folders
+## .erk/impl-context/ Directories
 
 **Purpose**: Track implementation progress for plans executed locally.
 
 **Characteristics**:
 
-- NOT tracked in git (in `.gitignore`)
+- Branch-scoped (multiple impl directories possible, one per branch)
+- Briefly committed during plan-save, then cleaned up
 - Created by planning commands
-- Contains `plan.md`, `progress.md`, and optional `issue.json`
-- Never committed to repository
+- Contains `plan.md`, `progress.md`, and `ref.json`
 
 ### Location
 
-The `.impl/` folder lives at the **worktree root**:
+The impl directory is branch-scoped under `.erk/impl-context/`:
 
 ```
-{worktree_root}/.impl/
+{worktree_root}/.erk/impl-context/<branch>/
 ```
 
 **Path Resolution**:
 
 ```python
-impl_dir = repo_root / ".impl"
+impl_dir = resolve_impl_dir()  # from erk.impl_folder
 ```
 
 **Structure**:
 
 ```
-.impl/
+.erk/impl-context/<branch>/
 ├── plan.md         # Immutable implementation plan
 ├── progress.md     # Mutable progress tracking (checkboxes)
-└── issue.json      # Optional GitHub issue reference
+└── ref.json        # GitHub plan reference (plan_id, plan_url)
 ```
 
 ## Local Implementation Workflow
@@ -86,7 +86,7 @@ This command:
 
 1. Saves the plan to GitHub as an issue
 2. Creates a feature branch (stacked if on feature branch, otherwise from trunk)
-3. Sets up `.impl/` folder with plan content
+3. Sets up the impl directory under `.erk/impl-context/<branch>/` with plan content
 4. Executes the implementation phases
 5. Runs CI and creates a PR
 
@@ -119,7 +119,7 @@ erk implement <issue-number>
 
 This command:
 
-- Sets up the `.impl/` folder in the current directory with plan content from the issue
+- Sets up the impl directory under `.erk/impl-context/<branch>/` with plan content from the issue
 - Links to the GitHub issue for progress tracking
 
 ## Plan Save Workflow
@@ -186,7 +186,7 @@ See `src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py` for the full impl
 
 ## Progress Tracking
 
-The `.impl/progress.md` file tracks completion status:
+The `progress.md` file in the impl directory tracks completion status:
 
 ```markdown
 ---
@@ -266,9 +266,9 @@ During planning, examined the authentication flow:
 
 ## Important Notes
 
-- **Never commit `.impl/` folders** - They're in `.gitignore` for a reason
-- **Safe to delete after implementation** - Once the work is committed, `.impl/` can be removed
-- **One plan per worktree** - Each worktree has its own `.impl/` folder
+- **Never commit `.erk/impl-context/` permanently** - It is briefly committed during plan-save, then cleaned up
+- **Safe to delete after implementation** - Once the work is committed, the impl directory can be removed
+- **One plan per branch (branch-scoped)** - Each branch has its own impl directory under `.erk/impl-context/<branch>/`
 
 ## Remote Implementation via GitHub Actions
 

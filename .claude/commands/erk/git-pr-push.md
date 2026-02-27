@@ -88,10 +88,10 @@ Load the `erk-diff-analysis` skill for commit message generation guidance.
 
 ### Step 3.5: Add Planned Prefix (if from plan)
 
-If this worktree was created from a plan (`.impl/` directory exists), prepend `plnd/` to the PR title:
+If this worktree was created from a plan (an `.erk/impl-context/` subdirectory containing `ref.json` exists), prepend `plnd/` to the PR title:
 
 ```bash
-if [ -d ".impl" ]; then
+if ls .erk/impl-context/*/ref.json 1>/dev/null 2>&1; then
     # Extract the title before creating the commit
     # (we'll apply the prefix when creating the commit message below)
     has_impl_dir=true
@@ -204,7 +204,7 @@ gh pr edit "$pr_number" --body "${current_body}${footer}"
 
 ### Step 7.75: Link PR to Objective (if applicable)
 
-If `.impl/plan-ref.json` or `.impl/ref.json` exists:
+If `ref.json` exists in the resolved impl directory (`.erk/impl-context/<branch>/ref.json`):
 
 ```bash
 erk exec objective-link-pr --pr-number "$pr_number"

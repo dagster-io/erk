@@ -1,15 +1,15 @@
 ---
-description: Implement a plan from GitHub issue, file path, current branch, or current .impl folder
+description: Implement a plan from GitHub issue, file path, current branch, or current .erk/impl-context/ folder
 argument-hint: "[<issue-number-or-url-or-path>]"
 ---
 
 # /erk:plan-implement
 
-Implement a plan - either from a GitHub issue, a markdown file, an existing `.impl/` folder, or by saving the current plan first.
+Implement a plan - either from a GitHub issue, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
 
 This is the primary implementation workflow - it orchestrates:
 
-1. Setting up the `.impl/` folder (from issue, file, existing folder, or fresh plan)
+1. Setting up the impl directory under `.erk/impl-context/<branch>/` (from issue, file, existing folder, or fresh plan)
 2. Executing the implementation
 3. Running CI and submitting the PR
 
@@ -19,14 +19,14 @@ This is the primary implementation workflow - it orchestrates:
 - GitHub CLI (`gh`) must be authenticated
 - One of:
   - An issue number, URL, or file path argument
-  - An existing `.impl/` folder
+  - An existing impl directory under `.erk/impl-context/`
   - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
   - A plan in `~/.claude/plans/` (from plan mode)
 
 ## Usage
 
 ```bash
-/erk:plan-implement                    # Use .impl/, detect from branch, or save current plan
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
 /erk:plan-implement 2521               # Fetch and implement issue #2521
 /erk:plan-implement https://github.com/owner/repo/issues/2521  # URL form
 /erk:plan-implement ./my-plan.md       # Implement from local markdown file
@@ -43,7 +43,7 @@ Parse `$ARGUMENTS` and run the consolidated setup command:
 - **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
 - **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
 - **If path to file** (anything else non-empty): `erk exec setup-impl --file <path>`
-- **If empty**: `erk exec setup-impl` (auto-detects from `.impl/`, branch, or fails)
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
 
 ```bash
 erk exec setup-impl [--issue <N> | --file <path>]
@@ -53,10 +53,10 @@ This single command handles:
 
 - Fetching plan from GitHub issue/PR (draft-PR or issue-based)
 - Setting up from a local markdown file
-- Auto-detecting from existing `.impl/` folder
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
 - Auto-detecting plan number from branch name (P{number}-... or PR lookup)
 - Creating/checking out the feature branch
-- Creating `.impl/` folder with plan content
+- Creating impl directory under `.erk/impl-context/<branch>/` with plan content
 - Running impl-init validation
 - Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
 
@@ -101,7 +101,7 @@ If this fails, display the error and stop.
 
 ### Step 2: Read Plan and Load Context
 
-Read `.impl/plan.md` to understand:
+Read `plan.md` from the impl directory set up in Step 1 to understand:
 
 - Overall goal and context
 - Context & Understanding sections (API quirks, architectural insights, pitfalls)
@@ -143,7 +143,7 @@ For each phase:
 4. **Mark phase as completed** (in TodoWrite)
 5. **Report progress**: changes made, what's next
 
-**Important:** `.impl/plan.md` is immutable - NEVER edit during implementation
+**Important:** `plan.md` is immutable - NEVER edit during implementation
 
 ### Step 7: Report Progress
 
@@ -165,24 +165,24 @@ erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2>/dev/null || tr
 erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2>/dev/null || true
 ```
 
-This reads plan reference from `.impl/`, captures session info, and uploads for async learn processing.
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
 
-### Step 11: Verify .impl/ Preserved
+### Step 11: Verify Impl Directory Preserved
 
-**CRITICAL GUARDRAIL**: Verify the .impl/ folder was NOT deleted.
+**CRITICAL GUARDRAIL**: Verify the impl directory was NOT deleted.
 
 ```bash
 erk exec impl-verify
 ```
 
-If this fails, you have violated instructions. The .impl/ folder must be preserved for user review.
+If this fails, you have violated instructions. The impl directory must be preserved for user review.
 
 ### Step 12: Run CI Iteratively
 
 1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
 2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
 
-**CRITICAL**: Never delete `.impl/` - leave for user review (no auto-commit).
+**CRITICAL**: Never delete the impl directory - leave for user review (no auto-commit).
 
 ### Step 13: Submit PR
 

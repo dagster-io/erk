@@ -76,7 +76,7 @@ gh pr list --head <branch-name> --state all --limit 1 --json number -q '.[0].num
 
 The plan issue number is no longer encoded in branch names. Instead, use `plan-ref.json` to resolve the plan ID:
 
-1. Check if `.impl/plan-ref.json` exists
+1. Check if `ref.json` exists in `.erk/impl-context/<branch>/`
 2. If exists, read the `plan_id` field from the JSON file
 3. If not found, check for legacy `P<number>-*` branch prefix pattern for backwards compatibility
 

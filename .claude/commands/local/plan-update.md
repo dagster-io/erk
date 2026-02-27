@@ -25,7 +25,7 @@ Extract the issue number from the argument:
 - If numeric (e.g., `42`), use directly
 - If URL (e.g., `https://github.com/owner/repo/issues/42`), extract the number from the path
 
-If no argument provided, check `.impl/issue.json` for a linked issue number.
+If no argument provided, check `ref.json` in `.erk/impl-context/<branch>/` for a linked issue number.
 
 If still no issue number, ask the user for the issue number.
 

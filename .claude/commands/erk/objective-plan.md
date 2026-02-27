@@ -55,7 +55,7 @@ If no argument is provided, check if the current branch is associated with a pla
    git rev-parse --abbrev-ref HEAD
    ```
 
-2. Check if `.impl/plan-ref.json` exists and extract the plan ID from it. If not found, check for legacy P-prefix pattern for backwards compatibility:
+2. Check if `ref.json` exists in `.erk/impl-context/<branch>/` and extract the plan ID from it. If not found, check for legacy P-prefix pattern for backwards compatibility:
    - Legacy pattern: `^P(\d+)-` (e.g., `P5731-some-title-01-23-2354`)
    - Current format: Branch names use `plnd/` prefix; plan ID is resolved via plan-ref.json
 

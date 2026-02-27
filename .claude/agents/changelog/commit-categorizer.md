@@ -30,7 +30,7 @@ This command:
 
 - Parses CHANGELOG.md to find the "As of <commit>" marker
 - Gets commits using `--first-parent` (excludes feature branch commits)
-- Excludes paths: `.claude/`, `docs/learned/`, `.impl/`
+- Excludes paths: `.claude/`, `docs/learned/`, `.erk/impl-context/`
 - Returns JSON with commit details including PR numbers
 
 **JSON output structure:**
