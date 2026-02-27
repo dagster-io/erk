@@ -54,7 +54,7 @@ The documentation is organized by topic category:
 
 ## Project Planning Files
 
-**`.impl/`** - Local implementation planning folder
+**`.erk/impl-context/`** - Local implementation planning folder
 
 - Contains `plan.md` (immutable reference) and `progress.md` (mutable tracking)
 - See [Planning](planning/) for workflow details

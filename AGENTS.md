@@ -104,8 +104,8 @@ Without built-in plan mode, follow this explicit protocol:
 **Validation coordination**: When implementing, verify that:
 
 - `erk exec impl-init --json` returns `"valid": true` before starting work
-- `.impl/plan.md` is treated as immutable during implementation
-- `erk exec impl-verify` confirms `.impl/` is preserved after implementation
+- `.erk/impl-context/plan.md` is treated as immutable during implementation
+- `erk exec impl-verify` confirms `.erk/impl-context/` is preserved after implementation
 
 Load the `erk-planning` skill (`$erk-planning`) for detailed workflow guidance.
 
@@ -167,15 +167,15 @@ Before launching Plan or Explore agents, search for relevant documentation:
 
 This grep step is mandatory for ALL coding tasks. It costs milliseconds and prevents re-learning lessons already documented.
 
-| Topic Area               | Check First                                  |
-| ------------------------ | -------------------------------------------- |
-| Session logs, ~/.claude/ | `docs/learned/sessions/`                     |
-| CLI commands, Click      | `docs/learned/cli/`                          |
-| Testing patterns         | `docs/learned/testing/`                      |
-| Hooks                    | `docs/learned/hooks/`                        |
-| Planning, .impl/         | `docs/learned/planning/`                     |
-| Architecture patterns    | `docs/learned/architecture/`                 |
-| TUI, Textual             | `docs/learned/tui/`, `docs/learned/textual/` |
+| Topic Area                   | Check First                                  |
+| ---------------------------- | -------------------------------------------- |
+| Session logs, ~/.claude/     | `docs/learned/sessions/`                     |
+| CLI commands, Click          | `docs/learned/cli/`                          |
+| Testing patterns             | `docs/learned/testing/`                      |
+| Hooks                        | `docs/learned/hooks/`                        |
+| Planning, .erk/impl-context/ | `docs/learned/planning/`                     |
+| Architecture patterns        | `docs/learned/architecture/`                 |
+| TUI, Textual                 | `docs/learned/tui/`, `docs/learned/textual/` |
 
 **Anti-pattern:** Skipping the grep because the task "seems simple"
 **Anti-pattern:** Going straight to source files without checking docs/learned/

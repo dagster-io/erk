@@ -1,7 +1,7 @@
-"""Verify implementation folder still exists after implementation.
+"""Verify .erk/impl-context/ folder still exists after implementation.
 
 This exec command is a guardrail for /erk:plan-implement to ensure the agent
-did not delete the implementation folder during implementation. The implementation
+did not delete the .erk/impl-context/ folder during implementation. The implementation
 folder MUST be preserved for user review.
 
 The canonical location is .erk/impl-context/<branch>/, with legacy .impl/ as
@@ -36,7 +36,7 @@ from erk_shared.impl_folder import resolve_impl_dir
 @click.command(name="impl-verify")
 @click.pass_context
 def impl_verify(ctx: click.Context) -> None:
-    """Verify implementation folder still exists after implementation."""
+    """Verify .erk/impl-context/ folder still exists after implementation."""
     cwd = require_cwd(ctx)
     git = require_git(ctx)
     branch_name = git.branch.get_current_branch(cwd)
@@ -48,10 +48,10 @@ def impl_verify(ctx: click.Context) -> None:
         result = {
             "valid": False,
             "error": (
-                "Implementation folder was deleted during implementation."
+                ".erk/impl-context/ folder was deleted during implementation."
                 " This violates instructions."
             ),
-            "action": "The implementation folder must be preserved for user review.",
+            "action": "The .erk/impl-context/ folder must be preserved for user review.",
         }
         click.echo(json.dumps(result))
         raise SystemExit(1)

@@ -293,7 +293,7 @@ class DependencyStatus:
 
 @dataclass(frozen=True)
 class PlanStatus:
-    """Status of .impl/ folder."""
+    """Status of .erk/impl-context/ folder."""
 
     exists: bool
     path: Path | None

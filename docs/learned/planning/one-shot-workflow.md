@@ -77,13 +77,13 @@ The `.github/workflows/one-shot.yml` workflow has two jobs:
 
 1. Validates secrets (ERK_QUEUE_GH_PAT)
 2. Checks out the branch and sets up tools
-3. Writes prompt to `.impl/prompt.md`
+3. Writes prompt to `.erk/impl-context/prompt.md`
 4. Runs `/erk:one-shot-plan` Claude command with environment variables:
    - `WORKFLOW_RUN_URL` -- current workflow run URL
    - `OBJECTIVE_ISSUE` -- objective issue number (if from roadmap)
    - `NODE_ID` -- specific roadmap node ID
    - `PLAN_ISSUE_NUMBER` -- plan entity number (PR number for planned-PR backend)
-5. Validates Claude produced `.impl/plan.md` and `.impl/plan-result.json`
+5. Validates Claude produced `.erk/impl-context/plan.md` and `.erk/impl-context/plan-result.json`
 6. Runs `erk exec register-one-shot-plan` for metadata registration
 7. Optionally updates objective roadmap step
 
@@ -131,10 +131,10 @@ One-shot dispatch and `erk pr submit` both push branches and create PRs, but one
 
 `.claude/commands/erk/one-shot-plan.md` defines what Claude does during the plan job:
 
-1. Reads prompt from `.impl/prompt.md`
+1. Reads prompt from `.erk/impl-context/prompt.md`
 2. Fetches objective context if `$OBJECTIVE_ISSUE` is set
 3. Explores codebase following documentation-first discovery
-4. Writes a comprehensive, self-contained plan to `.impl/plan.md`
+4. Writes a comprehensive, self-contained plan to `.erk/impl-context/plan.md`
 5. Saves plan to GitHub issue:
    - If `$PLAN_ISSUE_NUMBER` is set: updates the pre-created entity
    - Otherwise: creates a new issue (backward compatible)

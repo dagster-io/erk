@@ -81,7 +81,7 @@ def _format_sync_from_batch(all_sync: dict[str, BranchSyncInfo], branch: str | N
 def _get_impl_issue(
     ctx: ErkContext, worktree_path: Path, *, branch: str | None
 ) -> tuple[str | None, str | None]:
-    """Get impl issue number and URL from plan-ref.json or legacy issue.json.
+    """Get implementation issue number and URL from plan-ref.json or legacy issue.json.
 
     Args:
         ctx: Erk context with git operations
@@ -194,7 +194,7 @@ def _list_worktrees(ctx: ErkContext, *, show_last_commit: bool, show_all: bool) 
     - branch: Branch name or (=) if matches worktree name
     - pr: PR emoji + number from Graphite cache
     - sync: Ahead/behind status
-    - impl: Issue number from .impl/issue.json
+    - impl: Issue number from .erk/impl-context/plan-ref.json
 
     Args:
         ctx: Erk context

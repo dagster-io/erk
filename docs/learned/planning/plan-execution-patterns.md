@@ -27,7 +27,7 @@ Plan branches follow the pattern `plnd/<slug>-<timestamp>`:
 Each plan implementation runs in an isolated worktree:
 
 1. `erk br co --for-plan <issue-number>` creates a new worktree from the plan issue
-2. The worktree gets its own `.impl/` folder with the plan content
+2. The worktree gets its own `.erk/impl-context/` folder with the plan content
 3. Implementation happens entirely within the worktree
 4. After PR lands, the worktree is cleaned up
 
@@ -45,7 +45,7 @@ After implementation:
 2. The PR description is generated from the plan content
 3. If the plan has a GitHub issue, the PR links to it
 
-## .impl/ Folder Lifecycle
+## .erk/impl-context/ Folder Lifecycle
 
 1. **Created**: by `erk exec setup-impl-from-pr` or manually
 2. **Contains**: `plan.md` (immutable) and `plan-ref.json` (tracking)
@@ -55,5 +55,5 @@ After implementation:
 
 ## Related Documentation
 
-- [Planning Workflow](workflow.md) — .impl/ folder structure and commands
+- [Planning Workflow](workflow.md) — .erk/impl-context/ folder structure and commands
 - [Plan Lifecycle](lifecycle.md) — Complete lifecycle from creation through merge

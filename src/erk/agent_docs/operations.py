@@ -57,7 +57,7 @@ CATEGORY_DESCRIPTIONS: dict[str, str] = {
         "Explore when creating or debugging hooks. Add docs here for hook development patterns."
     ),
     "planning": (
-        "Explore when working with plans, .impl/ folders, or agent delegation. "
+        "Explore when working with plans, .erk/impl-context/ folders, or agent delegation. "
         "Add docs here for planning workflow patterns."
     ),
     "reference": (
@@ -90,7 +90,7 @@ CATEGORY_ROUTING_HINTS: dict[str, str] = {
     "testing": "`tests/`",
     "ci": "`.github/workflows/`, `.github/actions/`",
     "tui": "`src/erk/tui/`",
-    "planning": "`.impl/`, `.erk/impl-context/`, planning workflows",
+    "planning": "`.erk/impl-context/`, planning workflows",
     "sessions": "`~/.claude/projects/`, session analysis",
     "textual": "Textual framework code",
     "hooks": "`.claude/hooks/`, hook development",

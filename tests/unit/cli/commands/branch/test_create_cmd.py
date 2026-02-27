@@ -399,7 +399,7 @@ def test_branch_create_for_plan_creates_branch_and_impl_folder(tmp_path) -> None
         assert "plan-123" in result.output
         assert "Assigned" in result.output
         assert "erk-slot-01" in result.output
-        assert "Created .impl/ folder from plan #123" in result.output
+        assert "Created .erk/impl-context/ folder from plan #123" in result.output
         assert "source" in result.output  # Activation script path
         # Default mode is "implement", so we expect the implement instructions
         assert "To activate and start implementation:" in result.output
@@ -476,7 +476,7 @@ def test_branch_create_for_plan_with_issue_url(tmp_path) -> None:
 
         assert result.exit_code == 0
         assert "plan-456" in result.output
-        assert "Created .impl/ folder from plan #456" in result.output
+        assert "Created .erk/impl-context/ folder from plan #456" in result.output
 
 
 def test_branch_create_for_plan_with_no_slot_skips_impl() -> None:
@@ -922,7 +922,7 @@ def test_branch_create_for_plan_stacks_in_place_creates_impl() -> None:
         assert result.exit_code == 0
         assert "Stacked" in result.output
         assert "in place" in result.output
-        assert "Created .impl/ folder from plan #300" in result.output
+        assert "Created .erk/impl-context/ folder from plan #300" in result.output
 
         # Verify assignment tip was updated
         state = load_pool_state(repo.pool_json_path)

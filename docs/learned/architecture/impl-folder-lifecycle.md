@@ -1,7 +1,7 @@
 ---
 title: Implementation Folder Lifecycle
 read_when:
-  - "working with .impl/ or .erk/impl-context/ folders"
+  - "working with .erk/impl-context/ folders"
   - "understanding remote implementation workflow"
   - "debugging plan visibility in PRs"
 last_audited: "2026-02-16 14:20 PT"
@@ -22,25 +22,25 @@ The erk system uses two distinct folders for implementation plans, each with dif
 | Lifecycle  | Created before remote impl, deleted after completion |
 | Committed  | Yes (visible in PR diff)                             |
 
-## .impl/ (Local, Never Committed)
+## .impl/ (Local, Working Directory - Deprecated)
 
-| Property   | Value                                               |
-| ---------- | --------------------------------------------------- |
-| Created by | Copy of .erk/impl-context/ OR local `erk implement` |
-| Purpose    | Working directory for implementation                |
-| Contains   | plan.md, plan-ref.json, plus run-info.json          |
-| Lifecycle  | Exists during implementation only                   |
-| Committed  | Never (in .gitignore)                               |
+| Property   | Value                                                        |
+| ---------- | ------------------------------------------------------------ |
+| Created by | Copy of .erk/impl-context/ OR local `erk implement` (legacy) |
+| Purpose    | Working directory for implementation (superseded)            |
+| Contains   | plan.md, plan-ref.json, plus run-info.json                   |
+| Lifecycle  | Being phased out in favor of .erk/impl-context/              |
+| Committed  | Never (in .gitignore)                                        |
 
-## Copy Step (Remote Only)
+## Copy Step (Remote Only - Transitional)
 
-The workflow copies `.erk/impl-context/` to `.impl/` before implementation:
+During the deprecation period, the workflow copies `.erk/impl-context/` to `.impl/` before implementation:
 
 ```bash
 cp -r .erk/impl-context .impl
 ```
 
-This ensures the implementation environment is identical whether local or remote.
+This ensures the implementation environment is identical whether local or remote. **Note:** This copy step will be removed once `.impl/` is fully deprecated.
 
 ## Why Two Folders?
 

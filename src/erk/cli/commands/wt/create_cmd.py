@@ -437,7 +437,7 @@ def _create_json_response(
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
     help=(
         "Path to a plan markdown file. Will derive worktree name from filename "
-        "and create impl folder with plan.md in the worktree. "
+        "and create implementation context folder with plan.md in the worktree. "
         "Worktree names are automatically suffixed with the current date (-YY-MM-DD) "
         "and versioned if duplicates exist."
     ),
@@ -463,7 +463,7 @@ def _create_json_response(
     is_flag=True,
     default=False,
     help=(
-        "Copy .impl directory from current worktree to new worktree. "
+        "Copy .erk/impl-context/ directory from current worktree to new worktree. "
         "Useful for multi-phase workflows where each phase builds on the previous plan. "
         "Mutually exclusive with --from-plan."
     ),
@@ -524,7 +524,7 @@ def create_wt(
 
     Reads config.toml for env templates and post-create commands (if present).
     If --from-plan-file is provided, derives name from the plan filename and creates
-    an impl folder in the worktree.
+    an implementation context folder in the worktree.
     If --from-plan is provided, fetches the GitHub issue, validates the erk-plan label,
     derives name from the issue title, and creates an impl folder with plan-ref.json metadata.
     If --from-current-branch is provided, moves the current branch to the new worktree.
@@ -877,8 +877,8 @@ def create_wt(
         post_create_commands=cfg.post_create_commands or None,
     )
 
-    # Create impl folder if plan file provided
-    # Track impl folder destination: set to .impl/ path only if
+    # Create implementation context folder if plan file provided
+    # Track impl folder destination: set to .erk/impl-context/ path only if
     # --from-plan-file or --from-plan was provided
     impl_folder_destination: Path | None = None
     if from_plan_file:
@@ -897,13 +897,13 @@ def create_wt(
         # Handle --keep-plan-file flag
         if keep_plan_file:
             if not script and not output_json:
-                user_output(f"Copied plan to {impl_folder_destination}")
+                user_output(f"Copied implementation context to {impl_folder_destination}")
         else:
             from_plan_file.unlink()  # Remove source file
             if not script and not output_json:
-                user_output(f"Moved plan to {impl_folder_destination}")
+                user_output(f"Moved implementation context to {impl_folder_destination}")
 
-    # Create impl folder if GitHub issue provided
+    # Create implementation context folder if GitHub issue provided
     if from_plan:
         # Type narrowing: setup must be set if from_plan is True
         assert setup is not None, "setup must be set when from_plan is True"
@@ -911,7 +911,7 @@ def create_wt(
             "linked_branch_name must be set when from_plan is True"
         )
 
-        # Create impl folder in new worktree
+        # Create implementation context folder in new worktree
         # Use overwrite=False since fresh worktree should not have impl folder
         impl_folder_destination = create_impl_folder(
             wt_path, setup.plan_content, branch_name=linked_branch_name, overwrite=False
@@ -931,7 +931,7 @@ def create_wt(
         if not script and not output_json:
             user_output(f"Created worktree from issue #{setup.issue_number}: {setup.issue_title}")
 
-    # Copy impl directory if --copy-plan flag is set
+    # Copy implementation context directory if --copy-plan flag is set
     if copy_plan and impl_source is not None:
         import shutil
 
@@ -949,7 +949,7 @@ def create_wt(
             user_output(
                 "  "
                 + click.style("✓", fg="green")
-                + f" Copied impl dir from {click.style(str(repo.root), fg='yellow')}"
+                + f" Copied implementation context from {click.style(str(repo.root), fg='yellow')}"
             )
 
     # Post-create commands (suppress output if JSON mode)

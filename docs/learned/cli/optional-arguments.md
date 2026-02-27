@@ -14,26 +14,26 @@ Pattern for making CLI arguments optional by inferring them from context when no
 
 ## Pattern Overview
 
-When a CLI command needs a value that can be inferred from context (branch name, .impl/ folder, etc.), make the argument optional and implement inference fallback.
+When a CLI command needs a value that can be inferred from context (branch name, .erk/impl-context/ folder, etc.), make the argument optional and implement inference fallback.
 
 ## Inference Priority Order
 
 1. **Explicit CLI argument** - User-provided value takes precedence
-2. **plan-ref.json** - Check `.impl/plan-ref.json` for plan ID
-3. **.impl/issue.json file** - Check local implementation tracking (legacy)
+2. **plan-ref.json** - Check `.erk/impl-context/plan-ref.json` for plan ID
+3. **.erk/impl-context/issue.json file** - Check local implementation tracking (legacy)
 4. **Error with helpful message** - Explain what was expected
 
 ## Implementation Pattern
 
 <!-- Source: src/erk/cli/commands/pr/dispatch_cmd.py, dispatch_cmd -->
 
-See the `dispatch_cmd()` function in `src/erk/cli/commands/pr/dispatch_cmd.py` or `check_cmd()` in `src/erk/cli/commands/pr/check_cmd.py` for concrete examples of this pattern. The key sequence is: check for an explicit argument first, then fall back to `read_plan_ref()` on the `.impl/` directory, then raise a `ClickException` if neither source provides a value.
+See the `dispatch_cmd()` function in `src/erk/cli/commands/pr/dispatch_cmd.py` or `check_cmd()` in `src/erk/cli/commands/pr/check_cmd.py` for concrete examples of this pattern. The key sequence is: check for an explicit argument first, then fall back to `read_plan_ref()` on the `.erk/impl-context/` directory, then raise a `ClickException` if neither source provides a value.
 
 ## When to Use This Pattern
 
 **Good candidates for optional arguments:**
 
-- Issue numbers (inferable from branch name or .impl/)
+- Issue numbers (inferable from branch name or .erk/impl-context/)
 - Repository identifiers (inferable from git remote)
 - Project paths (inferable from current directory)
 

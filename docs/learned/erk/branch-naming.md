@@ -15,7 +15,7 @@ audit_result: clean
 
 # Branch Naming Conventions
 
-All erk-managed plan branches use the `plnd/` prefix. Plan issue numbers are **not** encoded in branch names — `.impl/plan-ref.json` is the sole source of truth for plan-to-branch mapping.
+All erk-managed plan branches use the `plnd/` prefix. Plan issue numbers are **not** encoded in branch names — `.erk/impl-context/plan-ref.json` is the sole source of truth for plan-to-branch mapping.
 
 ## Canonical Function
 
@@ -53,7 +53,7 @@ plnd/O{objective}-{slug}-{MM-DD-HHMM}
 
 Since branch names do not encode plan issue numbers, `plan-ref.json` is the sole mechanism for mapping plans to branches:
 
-- **`.impl/plan-ref.json`** in each worktree contains `provider`, `plan_id`, `url`, etc.
+- **`.erk/impl-context/plan-ref.json`** in each worktree contains `provider`, `plan_id`, `url`, etc.
 - **`PlannedPRBackend.get_plan_for_branch()`** resolves plans by looking up the PR associated with the branch
 
 ## Extraction Functions

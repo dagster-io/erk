@@ -137,7 +137,7 @@ class HookInput:
     current_branch: str | None
     worktree_name: str | None  # Directory name of current worktree
     pr_number: int | None  # PR number if exists for current branch
-    plan_number: int | None  # Plan number from .impl/plan-ref.json
+    plan_number: int | None  # Plan number from .erk/impl-context/plan-ref.json
     editor: str | None  # Value of EDITOR env var for TUI detection
 
     @classmethod
@@ -265,7 +265,7 @@ def build_blocking_message(
         plan_title: Title extracted from plan file, if available.
         worktree_name: Directory name of current worktree.
         pr_number: PR number if exists for current branch.
-        plan_number: Plan number from .impl/plan-ref.json.
+        plan_number: Plan number from .erk/impl-context/plan-ref.json.
         editor: Value of EDITOR env var for TUI detection.
     """
     # Build context lines for the question

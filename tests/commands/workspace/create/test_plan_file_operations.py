@@ -176,7 +176,7 @@ def test_create_with_keep_plan_file_flag() -> None:
         assert (impl_dir / "plan.md").exists()
         # Original plan file should still exist (copied, not moved)
         assert plan_file.exists()
-        assert "Copied plan to" in result.output
+        assert "Copied implementation context to" in result.output
 
 
 def test_create_keep_plan_file_without_plan_file_fails() -> None:

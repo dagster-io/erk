@@ -26,7 +26,7 @@ Path B (setup) ──┘
 ```
 
 1. Each setup path handles its own initialization
-2. All paths write to a shared intermediate state (e.g., `.impl/` folder)
+2. All paths write to a shared intermediate state (e.g., `.erk/impl-context/` folder)
 3. A single convergence function handles cleanup regardless of which path ran
 
 ## Canonical Example: Plan Implementation Setup
@@ -36,7 +36,7 @@ Path B (setup) ──┘
 - `_setup_planned_pr_plan()` — fetches plan from draft PR via `github.get_pr()`
 - `_setup_issue_plan()` — fetches plan from issue via `plan_backend.get_plan()`
 
-Both paths create identical `.impl/` folder contents. Neither path deletes `.erk/impl-context/` — that cleanup is deferred to the convergence point in `/erk:plan-implement` Step 2d:
+Both paths create identical `.erk/impl-context/` folder contents. Neither path deletes `.erk/impl-context/` — that cleanup is deferred to the convergence point in `/erk:plan-implement` Step 2d:
 
 ```bash
 git rm -rf .erk/impl-context/ && git commit && git push

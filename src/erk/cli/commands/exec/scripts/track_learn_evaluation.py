@@ -152,7 +152,7 @@ def track_learn_evaluation(ctx: click.Context, issue: str | None, session_id: st
     """Track learn evaluation completion on a plan issue.
 
     ISSUE can be a plan number (e.g., "123") or a full GitHub URL.
-    If not provided, infers from .impl/plan-ref.json on the current branch.
+    If not provided, infers from .erk/impl-context/plan-ref.json on the current branch.
 
     Posts a tracking comment to record that learn was invoked.
     """

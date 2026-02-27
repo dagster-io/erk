@@ -390,8 +390,7 @@ def _detect_plan_number_from_context(
 ) -> int | None:
     """Detect plan PR number from local context when no argument given.
 
-    Uses resolve_impl_dir() for unified discovery across legacy .impl/
-    and branch-scoped .erk/impl-context/ directories.
+    Uses resolve_impl_dir() for unified discovery across .erk/impl-context/ directories.
 
     Args:
         repo: Repository context

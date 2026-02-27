@@ -25,7 +25,7 @@ For the mechanics of each workflow, see the planning workflow documentation in `
 
 Choosing the wrong workflow has asymmetric costs:
 
-- **Planning a trivial change** wastes minutes on overhead (issue creation, `.impl/` setup, progress tracking). Low cost.
+- **Planning a trivial change** wastes minutes on overhead (issue creation, `.erk/impl-context/` setup, progress tracking). Low cost.
 - **Skipping planning on a complex change** leads to scope creep, missed edge cases, poor architectural decisions, and potentially hours of wasted implementation. High cost.
 
 The decision framework below biases toward the lower-cost mistake: when in doubt, plan.
@@ -73,4 +73,4 @@ These signals indicate you should stop coding and switch to planning. They're or
 ## Related Documentation
 
 - [Plan Lifecycle](../planning/lifecycle.md) — Understanding plan phases and state transitions
-- [Planning Workflow](../planning/workflow.md) — `.impl/` folder structure and commands
+- [Planning Workflow](../planning/workflow.md) — `.erk/impl-context/` folder structure and commands

@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class PlanFileCollector(StatusCollector):
-    """Collects information about .impl/ folder."""
+    """Collects information about .erk/impl-context/ folder."""
 
     @property
     def name(self) -> str:
@@ -24,14 +24,14 @@ class PlanFileCollector(StatusCollector):
         return "plan"
 
     def is_available(self, ctx: ErkContext, worktree_path: Path) -> bool:
-        """Check if plan.md exists in the branch-scoped impl directory.
+        """Check if plan.md exists in .erk/impl-context/ directory.
 
         Args:
             ctx: Erk context
             worktree_path: Path to worktree
 
         Returns:
-            True if plan.md exists in the impl directory
+            True if plan.md exists in .erk/impl-context/
         """
         branch = ctx.git.branch.get_current_branch(worktree_path)
         if branch is None:
@@ -40,7 +40,7 @@ class PlanFileCollector(StatusCollector):
         return impl_path is not None
 
     def collect(self, ctx: ErkContext, worktree_path: Path, repo_root: Path) -> PlanStatus | None:
-        """Collect implementation folder information.
+        """Collect .erk/impl-context/ folder information.
 
         Args:
             ctx: Erk context

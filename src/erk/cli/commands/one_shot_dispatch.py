@@ -224,9 +224,7 @@ def dispatch_one_shot(
         ctx.git.branch.create_branch(repo.root, branch_name, trunk, force=False)
         user_output(click.style("  \u2713 Branch created", dim=True))
 
-        # Write prompt to .erk/impl-context/prompt.md directly on the branch (no checkout).
-        # (.impl/ is in .gitignore; .erk/impl-context/ is the committable counterpart
-        # that the remote workflow copies into .impl/)
+        # Write prompt to .erk/impl-context/prompt.md directly on the branch (no checkout)
         current_step = "Committing prompt file"
         user_output("Committing prompt file...")
         ctx.git.commit.commit_files_to_branch(
@@ -309,7 +307,7 @@ def dispatch_one_shot(
         user_output(click.style(f"  \u2192 PR #{pr_number}", dim=True))
 
         # Build workflow inputs
-        # Truncate prompt for workflow input (full text is in .erk/impl-context/prompt.md)
+        # Truncate prompt for workflow input (full text committed to branch)
         max_input_len = 500
         truncated_prompt = params.prompt[:max_input_len]
         if len(params.prompt) > max_input_len:

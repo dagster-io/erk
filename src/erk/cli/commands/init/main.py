@@ -201,7 +201,7 @@ def _create_prompt_hooks_directory(repo_root: Path) -> None:
 def _run_gitignore_prompts(repo_root: Path) -> None:
     """Run interactive prompts for .gitignore entries.
 
-    Offers to add .env, .erk/scratch/, .impl/, and .erk/local.toml to .gitignore.
+    Offers to add .env, .erk/scratch/, and .erk/local.toml to .gitignore.
 
     Args:
         repo_root: Path to the repository root

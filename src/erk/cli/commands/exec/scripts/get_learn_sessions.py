@@ -209,7 +209,7 @@ def get_learn_sessions(ctx: click.Context, issue: str | None) -> None:
     """Get session information for a plan issue.
 
     ISSUE can be a plan issue number (e.g., "123") or a full GitHub URL.
-    If not provided, infers from .impl/plan-ref.json on the current branch.
+    If not provided, infers from .erk/impl-context/plan-ref.json on the current branch.
 
     Returns JSON with session IDs and paths for use by /erk:learn skill.
     """

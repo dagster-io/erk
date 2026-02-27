@@ -5,7 +5,7 @@ audit_result: clean
 read_when:
   - "understanding the /erk:plan-implement command"
   - "implementing plans from GitHub issues"
-  - "working with .impl/ folders"
+  - "working with .erk/impl-context/ folders"
   - "debugging plan execution failures"
 tripwires:
   - action: "editing or deleting .impl/ folder during implementation"
@@ -28,11 +28,11 @@ The command follows a priority-based source resolution pattern that determines w
 
 **Priority 1: Explicit argument**
 
-- Issue number → Fetch from GitHub, create branch, setup `.impl/`
+- Issue number → Fetch from GitHub, create branch, setup `.erk/impl-context/`
 - File path → Local plan, create branch from file, no issue tracking
 - Empty → Fall through to Priority 2
 
-**Priority 2: Existing `.impl/` folder**
+**Priority 2: Existing `.erk/impl-context/` folder**
 
 - Valid folder → Skip setup, proceed directly to implementation
 - Invalid folder → Fall through to Priority 3
@@ -41,7 +41,7 @@ The command follows a priority-based source resolution pattern that determines w
 
 - Save plan to GitHub issue → Setup from new issue → Implement
 
-This priority order prevents destructive operations (saving plans when `.impl/` exists) and enables flexible workflow restart.
+This priority order prevents destructive operations (saving plans when `.erk/impl-context/` exists) and enables flexible workflow restart.
 
 ## `.impl/` vs `.erk/impl-context/` Distinction
 
@@ -112,13 +112,13 @@ This is **by design** — file-based plans are for throwaway experiments, not tr
 
 ### Skipped Setup Phase Confusion
 
-When `.impl/` already exists and is valid, the command skips directly to implementation. This causes confusion when:
+When `.erk/impl-context/` already exists and is valid, the command skips directly to implementation. This causes confusion when:
 
-- User expects fresh plan fetch from GitHub (stale `.impl/plan.md`)
-- Issue was updated but `.impl/` contains old version
+- User expects fresh plan fetch from GitHub (stale `.erk/impl-context/plan.md`)
+- Issue was updated but `.erk/impl-context/` contains old version
 - Branch name doesn't match current issue
 
-**Solution:** Delete `.impl/` folder to force setup phase re-execution.
+**Solution:** Delete `.erk/impl-context/` folder to force setup phase re-execution.
 
 ### Hook Overrides for CI
 
@@ -155,7 +155,7 @@ git commit -m "Clean up after implementation"
 
 **Why wrong:** `.impl/` is in `.gitignore` (never staged), so this command fails. More importantly, `.impl/` must be preserved for user review of what-was-planned vs what-was-implemented.
 
-**Correct:** Only delete `.erk/impl-context/` (committed artifact), never `.impl/` (gitignored artifact).
+**Correct:** Only delete `.erk/impl-context/` (committed artifact) after CI validation passes, never `.impl/` (gitignored artifact).
 
 ### Anti-Pattern: Committing `.impl/` for "Documentation"
 
@@ -203,5 +203,5 @@ This is determined by trunk detection: branches named "main" or "master" are tru
 ## Related Documentation
 
 - [Plan Lifecycle](../planning/lifecycle.md) - Complete plan states and transitions across all phases
-- [Planning Workflow](../planning/workflow.md) - `.impl/` folder structure and file contracts
+- [Planning Workflow](../planning/workflow.md) - `.erk/impl-context/` folder structure and file contracts
 - [Branch Manager Abstraction](../architecture/branch-manager-abstraction.md) - How branch creation delegates to Graphite when available

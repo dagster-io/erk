@@ -34,7 +34,7 @@ The private `_REQUIRED_REF_FIELDS` tuple in `packages/erk-shared/src/erk_shared/
 
 1. **plan-ref.json** — Current format, written by `save_plan_ref()`
 2. **ref.json** — Same schema as plan-ref.json, used by `.erk/impl-context/`
-3. **issue.json** — Legacy format with different field names
+3. **issue.json** — Legacy format with different field names (in `.erk/impl-context/`)
 
 The function returns `None` if no valid file is found.
 
@@ -63,7 +63,7 @@ The `provider` is hardcoded to `"github"` for legacy files.
 
 ## ref.json Schema
 
-Used by both `.impl/ref.json` and `.erk/impl-context/ref.json`:
+Used by `.erk/impl-context/ref.json`:
 
 ```json
 {

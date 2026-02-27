@@ -54,13 +54,13 @@ Rules triggered by matching actions in code.
 
 **assuming remote sessions skip local preprocessing** → Read [Async Learn Local Preprocessing](async-learn-local-preprocessing.md) first. Since PR #6974, remote sessions go through the same \_preprocess_session_direct() pipeline as local sessions. They are downloaded first, then preprocessed identically.
 
-**automatically removing .impl/ folder** → Read [.erk/impl-context/ vs .impl/ Cleanup Discipline](worktree-cleanup.md) first. NEVER auto-delete .impl/. It belongs to the user for plan-vs-implementation review. Only .erk/impl-context/ is auto-cleaned.
+**automatically removing .erk/impl-context/ folder** → Read [.erk/impl-context/ vs .erk/impl-context/ Cleanup Discipline](worktree-cleanup.md) first. NEVER auto-delete .erk/impl-context/. It belongs to the user for plan-vs-implementation review. Only .erk/impl-context/ is auto-cleaned.
 
 **backfilling labels on existing issues without considering updated_at side effects** → Read [Plan Label Assignment Scheme](label-scheme.md) first. GitHub label operations change the issue's updated_at timestamp. This affects sort order in list views and may confuse users.
 
 **calling `create_impl_context()` without checking `impl_context_exists()` first** → Read [Impl-Context Staging Directory](impl-context.md) first. Both submit paths use LBYL: `if impl_context_exists(): remove_impl_context()` before creating. Stale .erk/impl-context/ from a prior failed submission causes errors.
 
-**calling commands that depend on `.impl/plan-ref.json` metadata** → Read [Plan Lifecycle](lifecycle.md) first. Verify metadata file exists in worktree; if missing, operations silently return empty values. read_plan_ref() tries plan-ref.json first, falls back to legacy issue.json.
+**calling commands that depend on `.erk/impl-context/plan-ref.json` metadata** → Read [Plan Lifecycle](lifecycle.md) first. Verify metadata file exists in worktree; if missing, operations silently return empty values. read_plan_ref() tries plan-ref.json first, falls back to legacy issue.json.
 
 **calling gh issue view with a plan_id from PlannedPRBackend** → Read [Plan ID Semantics](plan-id-semantics.md) first. For planned-PR plans, plan_id is a PR number, not an issue number. Use gh pr view instead. Check provider type before assuming plan_id semantics.
 
@@ -180,9 +180,9 @@ Rules triggered by matching actions in code.
 
 **relying on agent instructions as the sole enforcement for a critical operation** → Read [Workflow Reliability Patterns](reliability-patterns.md) first. Agent behavior is non-deterministic. Critical operations need a deterministic workflow step as the final safety net.
 
-**removing .erk/impl-context/ during implementation (before CI passes)** → Read [.erk/impl-context/ vs .impl/ Cleanup Discipline](worktree-cleanup.md) first. The folder is load-bearing during implementation — Claude reads from it (via copy to .impl/). Only remove after implementation succeeds and CI passes.
+**removing .erk/impl-context/ during implementation (before CI passes)** → Read [.erk/impl-context/ vs .erk/impl-context/ Cleanup Discipline](worktree-cleanup.md) first. The folder is load-bearing during implementation — Claude reads from it (via copy to .erk/impl-context/). Only remove after implementation succeeds and CI passes.
 
-**removing git-tracked temporary directories in setup scripts** → Read [Impl-Context Staging Directory](impl-context.md) first. Defer deletion to the git cleanup phase (git rm + commit + push), not shutil.rmtree(). setup_impl_from_issue.py reads the files but deliberately does NOT delete them — see the comment at line 202. Deletion is handled by plan-implement.md Step 2d.
+**removing git-tracked temporary directories in setup scripts** → Read [Impl-Context Staging Directory](impl-context.md) first. Defer deletion to the git cleanup phase (git rm + commit + push), not shutil.rmtree(). setup_impl_from_pr.py reads the files but deliberately does NOT delete them — see the comment at line 202. Deletion is handled by plan-implement.md Step 2d.
 
 **renaming a lifecycle stage value** → Read [Plan Lifecycle](lifecycle.md) first. Update 3 locations: LifecycleStageValue type, valid_stages set, and color conditions in compute_lifecycle_display(). Missing any location causes silent validation failures or incorrect TUI colors.
 
@@ -202,7 +202,7 @@ Rules triggered by matching actions in code.
 
 **saving a plan linked to an objective** → Read [Plan Lifecycle](lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives.
 
-**staging .erk/impl-context/ deletion without an immediate commit** → Read [.erk/impl-context/ vs .impl/ Cleanup Discipline](worktree-cleanup.md) first. A downstream `git reset --hard` will silently discard staged-only deletions. Always commit+push cleanup atomically. See reliability-patterns.md.
+**staging .erk/impl-context/ deletion without an immediate commit** → Read [.erk/impl-context/ vs .erk/impl-context/ Cleanup Discipline](worktree-cleanup.md) first. A downstream `git reset --hard` will silently discard staged-only deletions. Always commit+push cleanup atomically. See reliability-patterns.md.
 
 **staging git changes (git add/git rm) without an immediate commit before a git reset --hard** → Read [Workflow Reliability Patterns](reliability-patterns.md) first. git reset --hard silently discards staged changes. Commit and push cleanup BEFORE any reset step.
 
@@ -218,7 +218,7 @@ Rules triggered by matching actions in code.
 
 **using gh issue view on a plan ID without checking plan backend type** → Read [Planned PR Backend](planned-pr-backend.md) first. Planned PR plan IDs are PR numbers. Using gh issue view on a planned-PR plan produces a confusing 404. Route to gh pr view based on backend type.
 
-**using issue number from .impl/plan-ref.json in a checkout footer** → Read [PR Submission Patterns](pr-submission-patterns.md) first. Checkout footers require the PR number, not the issue number. The issue is the plan; the PR is the implementation. See the PR Number vs Issue Number section.
+**using issue number from .erk/impl-context/plan-ref.json in a checkout footer** → Read [PR Submission Patterns](pr-submission-patterns.md) first. Checkout footers require the PR number, not the issue number. The issue is the plan; the PR is the implementation. See the PR Number vs Issue Number section.
 
 **using issue timeline API as the primary PR lookup path** → Read [PR Discovery Strategies for Plans](pr-discovery.md) first. The primary path is branch_name from plan-header → get_pr_for_branch(). Timeline API is a separate strategy for when branch_name is unavailable.
 

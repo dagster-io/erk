@@ -30,7 +30,7 @@ Linear pipelines solve this by **deferring the dispatch decision**. Discovery ha
 
 <!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, prepare_state -->
 
-Step 1 (`prepare_state()`) resolves 6 fields: `repo_root`, `branch_name`, `parent_branch`, `trunk_branch`, `issue_number`, and validates `.impl/plan-ref.json` linkage (with legacy `.impl/issue.json` fallback).
+Step 1 (`prepare_state()`) resolves 6 fields: `repo_root`, `branch_name`, `parent_branch`, `trunk_branch`, `issue_number`, and validates `.erk/impl-context/plan-ref.json` linkage (with legacy `.erk/impl-context/issue.json` fallback).
 
 **Why consolidate all discovery in one step?**
 
@@ -67,17 +67,17 @@ The pipeline has 10 steps: prepare, commit WIP, capture existing PR body, push+P
 
 **Decision test:** If the step can fail independently and that failure requires distinct error handling, it deserves to be a separate step.
 
-## Auto-Repair Pattern: .impl/ Reference File Creation
+## Auto-Repair Pattern: .erk/impl-context/ Reference File Creation
 
 <!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, prepare_state, auto-repair section -->
 
-`prepare_state()` auto-creates the `.impl/` reference file if the issue number is inferred from the branch name but the file is missing.
+`prepare_state()` auto-creates the `.erk/impl-context/` reference file if the issue number is inferred from the branch name but the file is missing.
 
-**Why auto-repair instead of erroring?** Early erk workflows created `.impl/` but not a reference file. Erroring would break existing worktrees. Auto-repair maintains forward compatibility while migrating to the new structure.
+**Why auto-repair instead of erroring?** Early erk workflows created `.erk/impl-context/` but not a reference file. Erroring would break existing worktrees. Auto-repair maintains forward compatibility while migrating to the new structure.
 
 **Why in prepare_state() instead of a separate "repair" step?** Because the repair needs `issue_number` (discovered in prepare), `repo_root` (discovered in prepare), and `remote_url` (fetched for repair). Preparing and repairing are coupled — no value in separating them.
 
-**When to remove this:** When no worktrees exist with `.impl/` but missing a reference file, grep for `.impl` directories and check for `plan-ref.json` or `issue.json` presence. If all have one, the auto-repair is dead code.
+**When to remove this:** When no worktrees exist with `.erk/impl-context/` but missing a reference file, grep for `.erk/impl-context` directories and check for `plan-ref.json` or `issue.json` presence. If all have one, the auto-repair is dead code.
 
 ## Why Amend the Local Commit: Git Hygiene vs Metadata Footer
 

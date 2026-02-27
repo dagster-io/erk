@@ -80,5 +80,5 @@ Enter plan mode only when exploration is complete. The plan should be writable i
 ## Related Documentation
 
 - [Plan Lifecycle](lifecycle.md) - Complete lifecycle from creation through merge
-- [Planning Workflow](workflow.md) - `.impl/` folder structure and commands
+- [Planning Workflow](workflow.md) - `.erk/impl-context/` folder structure and commands
 - [Exploration Strategies](exploration-strategies.md) - Two-stage Explore-then-Plan workflow

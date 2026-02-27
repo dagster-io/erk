@@ -317,7 +317,7 @@ erk dash                  # Display plan dashboard
 erk pr view 42            # View specific plan
 
 # Work on a plan
-erk implement 42          # Set up .impl/ and implement in current directory
+erk implement 42          # Set up .erk/impl-context/ and implement in current directory
 
 # Submit for execution
 erk pr dispatch 42        # Queue for remote execution
