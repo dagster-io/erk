@@ -167,24 +167,14 @@ erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2>/dev/null || 
 
 This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
 
-### Step 11: Verify Impl Directory Preserved
-
-**CRITICAL GUARDRAIL**: Verify the impl directory was NOT deleted.
-
-```bash
-erk exec impl-verify
-```
-
-If this fails, you have violated instructions. The impl directory must be preserved for user review.
-
-### Step 12: Run CI Iteratively
+### Step 11: Run CI Iteratively
 
 1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
 2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
 
 **CRITICAL**: Never delete the impl directory - leave for user review (no auto-commit).
 
-### Step 13: Submit PR
+### Step 12: Submit PR
 
 Push the branch and create or update the PR using the Graphite-aware submit pipeline:
 
@@ -209,7 +199,7 @@ erk pr check --stage=impl
 This validates PR submission readiness including implementation-specific checks
 (e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
 
-### Step 14: Output Format
+### Step 13: Output Format
 
 - **Start**: "Setting up implementation..." or "Fetching plan from issue #X..."
 - **After setup**: "Implementation environment ready, reading plan..."
