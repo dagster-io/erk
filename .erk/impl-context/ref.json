@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Auto-fix markdown (docs-sync + Prettier) in CI"
+  "plan_id": "8410",
+  "url": "https://github.com/dagster-io/erk/pull/8410",
+  "created_at": "2026-02-27T20:18:28.500803",
+  "synced_at": "2026-02-27T20:18:28.500803",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
