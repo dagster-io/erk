@@ -1067,3 +1067,34 @@ def test_close_pr_updates_branch_lookup() -> None:
     result = ops.get_pr_for_branch(sentinel_path(), "my-branch")
     assert not isinstance(result, PRNotFound)
     assert result.state == "CLOSED"
+
+
+# ============================================================================
+# get_ci_summary_logs
+# ============================================================================
+
+
+def test_get_ci_summary_logs_returns_configured_logs() -> None:
+    """FakeGitHub returns pre-configured ci-summarize log text for a run ID."""
+    log_text = "=== ERK-CI-SUMMARY:lint ===\n- Issue\n=== /ERK-CI-SUMMARY:lint ==="
+    ops = FakeGitHub(ci_summary_logs={"run-123": log_text})
+
+    result = ops.get_ci_summary_logs(sentinel_path(), "run-123")
+
+    assert result == log_text
+
+
+def test_get_ci_summary_logs_returns_none_for_unknown_run() -> None:
+    """FakeGitHub returns None when no ci-summarize logs are configured for a run ID."""
+    ops = FakeGitHub()
+
+    result = ops.get_ci_summary_logs(sentinel_path(), "run-999")
+
+    assert result is None
+
+
+def test_get_ci_summary_logs_default_empty() -> None:
+    """FakeGitHub with no ci_summary_logs argument returns None for any run ID."""
+    ops = FakeGitHub()
+
+    assert ops.get_ci_summary_logs(sentinel_path(), "any-run") is None

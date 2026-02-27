@@ -192,6 +192,23 @@ class GitHub(ABC):
         ...
 
     @abstractmethod
+    def get_ci_summary_logs(self, repo_root: Path, run_id: str) -> str | None:
+        """Fetch logs from the ci-summarize job in a workflow run.
+
+        Looks for a job named "ci-summarize" in the given run and returns
+        its raw log text containing ERK-CI-SUMMARY markers.
+
+        Args:
+            repo_root: Repository root directory
+            run_id: GitHub Actions run ID
+
+        Returns:
+            Raw log text from the ci-summarize job, or None if the job
+            doesn't exist or hasn't completed yet
+        """
+        ...
+
+    @abstractmethod
     def get_prs_linked_to_issues(
         self,
         location: GitHubRepoLocation,

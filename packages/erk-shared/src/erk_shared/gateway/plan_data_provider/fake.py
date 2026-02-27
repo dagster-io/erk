@@ -52,6 +52,7 @@ class FakePlanDataProvider(PlanDataProvider):
         self._objective_content_by_plan_id: dict[int, str] = {}
         self._review_threads_by_pr: dict[int, list[PRReviewThread]] = {}
         self._check_runs_by_pr: dict[int, list[PRCheckRun]] = {}
+        self._ci_summaries_by_pr: dict[int, dict[str, str]] = {}
         self._stacks_by_branch: dict[str, list[str]] = {}
 
     @property
@@ -282,6 +283,28 @@ class FakePlanDataProvider(PlanDataProvider):
             threads: List of PRReviewThread to return
         """
         self._review_threads_by_pr[pr_number] = threads
+
+    def fetch_ci_summaries(self, pr_number: int) -> dict[str, str]:
+        """Fake CI summaries fetch implementation.
+
+        Returns configured summaries for a PR, or empty dict.
+
+        Args:
+            pr_number: The PR number to fetch summaries for
+
+        Returns:
+            Configured mapping of check name to summary text, or empty dict
+        """
+        return self._ci_summaries_by_pr.get(pr_number, {})
+
+    def set_ci_summaries(self, pr_number: int, summaries: dict[str, str]) -> None:
+        """Set the CI summaries to return for a specific PR.
+
+        Args:
+            pr_number: The PR number
+            summaries: Mapping of check name to summary text
+        """
+        self._ci_summaries_by_pr[pr_number] = summaries
 
 
 def make_plan_row(

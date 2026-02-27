@@ -18,6 +18,7 @@ from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
 from erk.tui.sorting.types import BranchActivity
 from erk_shared.gateway.browser.abc import BrowserLauncher
 from erk_shared.gateway.clipboard.abc import Clipboard
+from erk_shared.gateway.github.ci_summary_parsing import parse_ci_summaries
 from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
 from erk_shared.gateway.github.metadata.core import (
     extract_objective_from_comment,
@@ -49,6 +50,7 @@ from erk_shared.gateway.github.types import (
     GitHubRepoId,
     GitHubRepoLocation,
     PRCheckRun,
+    PRNotFound,
     PRReviewThread,
     PullRequestInfo,
     WorkflowRun,
@@ -510,6 +512,38 @@ class RealPlanDataProvider(PlanDataProvider):
         return self._ctx.github.get_pr_review_threads(
             self._location.root, pr_number, include_resolved=False
         )
+
+    def fetch_ci_summaries(self, pr_number: int) -> dict[str, str]:
+        """Fetch CI failure summaries for a pull request.
+
+        Finds the latest CI workflow run for this PR's head branch,
+        looks for a ci-summarize job, and parses its log markers.
+
+        Args:
+            pr_number: The PR number to fetch summaries for
+
+        Returns:
+            Mapping of check name to summary text, or empty dict
+        """
+        # Get PR details to find head branch
+        pr_result = self._ctx.github.get_pr(self._location.root, pr_number)
+        if isinstance(pr_result, PRNotFound):
+            return {}
+
+        # Find CI workflow runs for this PR's head branch
+        runs_by_branch = self._ctx.github.get_workflow_runs_by_branches(
+            self._location.root, "ci.yml", [pr_result.head_ref_name]
+        )
+        run = runs_by_branch.get(pr_result.head_ref_name)
+        if run is None:
+            return {}
+
+        # Fetch ci-summarize job logs
+        log_text = self._ctx.github.get_ci_summary_logs(self._location.root, str(run.run_id))
+        if log_text is None:
+            return {}
+
+        return parse_ci_summaries(log_text)
 
     def _append_timing_log(self, timings: FetchTimings, row_count: int) -> None:
         """Append timing data to .erk/scratch/dash-timings.log for post-execution analysis.

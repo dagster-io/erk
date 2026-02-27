@@ -37,6 +37,7 @@ from erk.artifacts.paths import get_bundled_github_dir
 AVAILABLE_PROMPTS = frozenset(
     {
         "ci-autofix",
+        "ci-summarize",
         "dignified-python-review",
     }
 )

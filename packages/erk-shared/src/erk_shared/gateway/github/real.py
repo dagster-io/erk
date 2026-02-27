@@ -667,6 +667,49 @@ class RealGitHub(GitHub):
         )
         return result.stdout
 
+    def get_ci_summary_logs(self, repo_root: Path, run_id: str) -> str | None:
+        """Fetch logs from the ci-summarize job in a workflow run.
+
+        Finds the ci-summarize job in the run, then fetches its logs.
+
+        Args:
+            repo_root: Repository root directory
+            run_id: GitHub Actions run ID
+
+        Returns:
+            Raw log text, or None if the job doesn't exist or hasn't completed
+        """
+        # GH-API-AUDIT: REST - get job list for a run
+        result = run_subprocess_with_context(
+            cmd=[
+                "gh",
+                "api",
+                f"repos/{{owner}}/{{repo}}/actions/runs/{run_id}/jobs",
+                "--jq",
+                '.jobs[] | select(.name == "ci-summarize") | .id',
+            ],
+            operation_context=f"find ci-summarize job in run {run_id}",
+            cwd=repo_root,
+        )
+        job_id = result.stdout.strip()
+        if job_id == "":
+            return None
+
+        # GH-API-AUDIT: REST - get job logs
+        result = run_subprocess_with_context(
+            cmd=[
+                "gh",
+                "api",
+                f"repos/{{owner}}/{{repo}}/actions/jobs/{job_id}/logs",
+            ],
+            operation_context=f"fetch ci-summarize job logs (job {job_id})",
+            cwd=repo_root,
+        )
+        log_text = result.stdout
+        if not log_text.strip():
+            return None
+        return log_text
+
     def get_prs_linked_to_issues(
         self,
         location: GitHubRepoLocation,
