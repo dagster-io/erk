@@ -1220,7 +1220,10 @@ class ErkDashApp(App):
             self._copy_checkout_command(row)
 
         elif command_id == "copy_pr_checkout":
-            cmd = f'source "$(erk pr checkout {row.pr_number} --script)"'
+            cmd = (
+                f'source "$(erk pr checkout {row.pr_number} --script)"'
+                " && gt submit --no-interactive"
+            )
             self._provider.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
