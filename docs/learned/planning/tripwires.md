@@ -54,7 +54,7 @@ Rules triggered by matching actions in code.
 
 **assuming remote sessions skip local preprocessing** → Read [Async Learn Local Preprocessing](async-learn-local-preprocessing.md) first. Since PR #6974, remote sessions go through the same \_preprocess_session_direct() pipeline as local sessions. They are downloaded first, then preprocessed identically.
 
-**automatically removing .erk/impl-context/ folder** → Read [.erk/impl-context/ vs .erk/impl-context/ Cleanup Discipline](worktree-cleanup.md) first. NEVER auto-delete .erk/impl-context/. It belongs to the user for plan-vs-implementation review. Only .erk/impl-context/ is auto-cleaned.
+**automatically removing .erk/impl-context/ folder** → Read [.erk/impl-context/ Cleanup Discipline](worktree-cleanup.md) first. NEVER auto-delete .erk/impl-context/ before implementation completes. It belongs to the user for plan-vs-implementation review. Only remove after CI passes.
 
 **backfilling labels on existing issues without considering updated_at side effects** → Read [Plan Label Assignment Scheme](label-scheme.md) first. GitHub label operations change the issue's updated_at timestamp. This affects sort order in list views and may confuse users.
 
@@ -180,9 +180,9 @@ Rules triggered by matching actions in code.
 
 **relying on agent instructions as the sole enforcement for a critical operation** → Read [Workflow Reliability Patterns](reliability-patterns.md) first. Agent behavior is non-deterministic. Critical operations need a deterministic workflow step as the final safety net.
 
-**removing .erk/impl-context/ during implementation (before CI passes)** → Read [.erk/impl-context/ vs .erk/impl-context/ Cleanup Discipline](worktree-cleanup.md) first. The folder is load-bearing during implementation — Claude reads from it (via copy to .erk/impl-context/). Only remove after implementation succeeds and CI passes.
+**removing .erk/impl-context/ during implementation (before CI passes)** → Read [.erk/impl-context/ Cleanup Discipline](worktree-cleanup.md) first. The folder is load-bearing during implementation — Claude reads from it. Only remove after implementation succeeds and CI passes.
 
-**removing git-tracked temporary directories in setup scripts** → Read [Impl-Context Staging Directory](impl-context.md) first. Defer deletion to the git cleanup phase (git rm + commit + push), not shutil.rmtree(). setup_impl_from_pr.py reads the files but deliberately does NOT delete them — see the comment at line 202. Deletion is handled by plan-implement.md Step 2d.
+**removing git-tracked temporary directories in setup scripts** → Read [Impl-Context Staging Directory](impl-context.md) first. Defer deletion to the git cleanup phase (git rm + commit + push), not shutil.rmtree(). setup_impl_from_issue.py reads the files but deliberately does NOT delete them — see the comment at line 202. Deletion is handled by plan-implement.md Step 2d.
 
 **renaming a lifecycle stage value** → Read [Plan Lifecycle](lifecycle.md) first. Update 3 locations: LifecycleStageValue type, valid_stages set, and color conditions in compute_lifecycle_display(). Missing any location causes silent validation failures or incorrect TUI colors.
 
@@ -202,7 +202,7 @@ Rules triggered by matching actions in code.
 
 **saving a plan linked to an objective** → Read [Plan Lifecycle](lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives.
 
-**staging .erk/impl-context/ deletion without an immediate commit** → Read [.erk/impl-context/ vs .erk/impl-context/ Cleanup Discipline](worktree-cleanup.md) first. A downstream `git reset --hard` will silently discard staged-only deletions. Always commit+push cleanup atomically. See reliability-patterns.md.
+**staging .erk/impl-context/ deletion without an immediate commit** → Read [.erk/impl-context/ Cleanup Discipline](worktree-cleanup.md) first. A downstream `git reset --hard` will silently discard staged-only deletions. Always commit+push cleanup atomically. See reliability-patterns.md.
 
 **staging git changes (git add/git rm) without an immediate commit before a git reset --hard** → Read [Workflow Reliability Patterns](reliability-patterns.md) first. git reset --hard silently discards staged changes. Commit and push cleanup BEFORE any reset step.
 
