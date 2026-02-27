@@ -44,7 +44,7 @@ When working with erk-plan issues:
 | -------------------- | ---------------------------- |
 | `plan-save`          | Save plan (backend-aware)    |
 | `get-plan-metadata`  | Get metadata from plan issue |
-| `setup-impl-from-pr` | Set up .impl/ from PR        |
+| `setup-impl-from-pr` | Set up impl-context from PR  |
 | `get-issue-body`     | Fetch issue body (REST API)  |
 | `update-issue-body`  | Update issue body (REST API) |
 

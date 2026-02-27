@@ -65,7 +65,7 @@ def objective_link_pr(
     *,
     pr_number: int,
 ) -> None:
-    """Link PR number to objective roadmap nodes from .impl/ metadata."""
+    """Link PR number to objective roadmap nodes from impl-context metadata."""
     cwd = require_cwd(ctx)
 
     impl_dir = _find_impl_dir(cwd)
