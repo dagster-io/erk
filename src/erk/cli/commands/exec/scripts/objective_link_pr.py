@@ -63,7 +63,7 @@ def objective_link_pr(
         click.echo(json.dumps({"success": False, "reason": "no_objective_id"}))
         return
 
-    if plan_ref.node_ids is None or len(plan_ref.node_ids) == 0:
+    if not plan_ref.node_ids:
         click.echo(json.dumps({"success": False, "reason": "no_node_ids"}))
         return
 
