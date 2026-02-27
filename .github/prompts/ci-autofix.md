@@ -6,7 +6,7 @@ Fix the style/formatting errors. You have full context of all CI job results.
 
 - format: {{ format }}
 - lint: {{ lint }}
-- prettier: {{ prettier }}
+- markdown-fix: {{ markdown-fix }}
 - docs-check: {{ docs-check }}
 - ty: {{ ty }}
 - unit-tests: {{ unit-tests }} (NOT auto-fixable)
