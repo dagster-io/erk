@@ -1,0 +1,8 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Fix Click help strings and module docstrings (Nodes 4.1 + 4.4 + 4.5)",
+  "objective_id": 8381,
+  "node_ids": [
+    "4.1"
+  ]
+}
