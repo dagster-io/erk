@@ -45,7 +45,7 @@ def objective_link_pr(
     *,
     pr_number: int,
 ) -> None:
-    """Link PR number to objective roadmap nodes from .impl/ metadata."""
+    """Link PR number to objective roadmap nodes from impl-context metadata."""
     cwd = require_cwd(ctx)
     git = require_git(ctx)
     current_branch = git.branch.get_current_branch(cwd)

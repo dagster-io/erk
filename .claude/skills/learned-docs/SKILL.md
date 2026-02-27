@@ -56,7 +56,7 @@ Good:
 read_when:
   - "creating or closing plans"
   - "understanding plan states"
-  - "working with .impl/ folders"
+  - "working with .erk/impl-context/ directories"
 ```
 
 Bad:

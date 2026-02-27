@@ -59,7 +59,7 @@ Quick reference for all `erk exec` subcommands.
 | `get-pr-review-comments`          | Fetch PR review comments for agent context injection.                     |
 | `get-pr-view`                     | Fetch PR details using REST API (avoids GraphQL rate limits).             |
 | `handle-no-changes`               | Handle no-changes scenario gracefully.                                    |
-| `impl-init`                       | Initialize implementation by validating .impl/ folder.                    |
+| `impl-init`                       | Initialize implementation by validating impl-context directory.           |
 | `impl-signal`                     | Signal implementation events to GitHub.                                   |
 | `impl-verify`                     | Verify implementation folder still exists after implementation.           |
 | `land-execute`                    | Execute deferred land operations.                                         |
@@ -74,7 +74,7 @@ Quick reference for all `erk exec` subcommands.
 | `normalize-tripwire-candidates`   | Normalize agent-produced tripwire candidate JSON in-place.                |
 | `objective-apply-landed-update`   | Apply mechanical updates to an objective after landing a PR.              |
 | `objective-fetch-context`         | Fetch all context for objective update in a single call.                  |
-| `objective-link-pr`               | Link PR number to objective roadmap nodes from .impl/ metadata.           |
+| `objective-link-pr`               | Link PR number to objective roadmap nodes from impl-context metadata.     |
 | `objective-post-action-comment`   | Post a formatted action comment to an objective issue.                    |
 | `objective-render-roadmap`        | Render a complete roadmap section from JSON input on stdin.               |
 | `objective-save-to-issue`         | Save plan as objective GitHub issue.                                      |
@@ -101,7 +101,7 @@ Quick reference for all `erk exec` subcommands.
 | `set-local-review-marker`         | Set local review marker on PR to skip CI reviews.                         |
 | `set-pr-description`              | Update PR title and body with agent-provided values.                      |
 | `setup-impl`                      | Consolidated implementation setup.                                        |
-| `setup-impl-from-pr`              | Set up .impl/ folder from GitHub PR in current worktree.                  |
+| `setup-impl-from-pr`              | Set up impl-context directory from GitHub PR in current worktree.         |
 | `store-tripwire-candidates`       | Store tripwire candidates as a metadata comment on a plan issue.          |
 | `track-learn-evaluation`          | Track learn evaluation completion on a plan issue.                        |
 | `track-learn-result`              | Track learn workflow result on a plan issue.                              |
@@ -626,7 +626,7 @@ Handle no-changes scenario gracefully.
 
 ### impl-init
 
-Initialize implementation by validating .impl/ folder.
+Initialize implementation by validating impl-context directory.
 
 **Usage:** `erk exec impl-init`
 
@@ -867,7 +867,7 @@ Fetch all context for objective update in a single call.
 
 ### objective-link-pr
 
-Link PR number to objective roadmap nodes from .impl/ metadata.
+Link PR number to objective roadmap nodes from impl-context metadata.
 
 **Usage:** `erk exec objective-link-pr`
 
@@ -1214,7 +1214,7 @@ Consolidated implementation setup.
 
 ### setup-impl-from-pr
 
-Set up .impl/ folder from GitHub PR in current worktree.
+Set up impl-context directory from GitHub PR in current worktree.
 
 **Usage:** `erk exec setup-impl-from-pr` <plan_number>
 
@@ -1226,10 +1226,10 @@ Set up .impl/ folder from GitHub PR in current worktree.
 
 **Options:**
 
-| Flag           | Type | Required | Default | Description                                                             |
-| -------------- | ---- | -------- | ------- | ----------------------------------------------------------------------- |
-| `--session-id` | TEXT | No       | -       | Claude session ID for marker creation                                   |
-| `--no-impl`    | FLAG | No       | -       | Skip .impl/ folder creation (for local execution without file overhead) |
+| Flag           | Type | Required | Default | Description                                                                      |
+| -------------- | ---- | -------- | ------- | -------------------------------------------------------------------------------- |
+| `--session-id` | TEXT | No       | -       | Claude session ID for marker creation                                            |
+| `--no-impl`    | FLAG | No       | -       | Skip impl-context directory creation (for local execution without file overhead) |
 
 ### store-tripwire-candidates
 
