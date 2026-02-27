@@ -1,0 +1,8 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Update erk-exec and skill documentation for .erk/impl-context/ unification",
+  "objective_id": 8365,
+  "node_ids": [
+    "3.2"
+  ]
+}
