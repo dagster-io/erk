@@ -347,7 +347,7 @@ def test_check_invalid_identifier_fails() -> None:
         # Assert
         assert result.exit_code == 1
         assert "Error:" in result.output
-        assert "Invalid issue number or URL" in result.output
+        assert "Invalid plan number or URL" in result.output
 
 
 # =============================================================================

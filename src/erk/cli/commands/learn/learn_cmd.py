@@ -60,7 +60,7 @@ def _extract_plan_number(identifier: str) -> int | None:
 
 
 @click.command("learn")
-@click.argument("issue", type=str, required=False)
+@click.argument("plan", type=str, required=False)
 @click.option(
     "-i",
     "--interactive",
@@ -76,14 +76,14 @@ def _extract_plan_number(identifier: str) -> int | None:
 @click.pass_obj
 def learn_cmd(
     ctx: ErkContext,
-    issue: str | None,
+    plan: str | None,
     interactive: bool,
     *,
     dangerous: bool,
 ) -> None:
     """Extract insights from sessions associated with a plan.
 
-    ISSUE can be a plan issue number (e.g., "123") or a full GitHub URL.
+    PLAN can be a plan number (e.g., "123") or a full GitHub URL.
     If not provided, infers from .erk/impl-context/plan-ref.json on the current branch.
 
     Discovers all Claude Code sessions related to the plan:
@@ -107,10 +107,10 @@ def learn_cmd(
 
     # Resolve plan_id: explicit argument or infer from branch
     plan_id: str | None = None
-    if issue is not None:
-        plan_number = _extract_plan_number(issue)
+    if plan is not None:
+        plan_number = _extract_plan_number(plan)
         if plan_number is None:
-            user_output(click.style(f"Error: Invalid issue identifier: {issue}", fg="red"))
+            user_output(click.style(f"Error: Invalid plan identifier: {plan}", fg="red"))
             raise SystemExit(1)
         plan_id = str(plan_number)
     elif branch_name is not None:
@@ -119,9 +119,9 @@ def learn_cmd(
     if plan_id is None:
         user_output(
             click.style("Error: ", fg="red")
-            + "No issue specified and could not infer from branch name"
+            + "No plan specified and could not infer from branch name"
         )
-        user_output("Usage: erk learn <issue-number>")
+        user_output("Usage: erk learn <plan-number>")
         user_output("Or run from a plan branch with .erk/impl-context/plan-ref.json")
         raise SystemExit(1)
 

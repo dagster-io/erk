@@ -107,7 +107,7 @@ def plan_update(
     plan_id = str(plan_number)
     plan_result = backend.get_plan(repo_root, plan_id)
     if isinstance(plan_result, PlanNotFound):
-        _handle_update_error(f"Issue #{plan_number} not found")
+        _handle_update_error(f"Plan #{plan_number} not found")
 
     # Narrow type for type checker (PlanNotFound case exits above)
     assert not isinstance(plan_result, PlanNotFound)
@@ -148,7 +148,7 @@ def plan_update(
 
     # Step 6: Output success
     if output_format == "display":
-        click.echo(f"Plan updated on issue #{plan_number}")
+        click.echo(f"Plan #{plan_number} updated")
         click.echo(f"Title: {full_title}")
         click.echo(f"URL: {plan_result.url}")
         if branch_updated:

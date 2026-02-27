@@ -200,5 +200,5 @@ def test_creates_issue_when_not_provided() -> None:
         assert "test" in labels
 
         # Verify output shows success
-        assert "Created test issue #1" in result.output
+        assert "Created test plan #1" in result.output
         assert "Workflow triggered successfully!" in result.output

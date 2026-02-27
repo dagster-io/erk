@@ -245,7 +245,7 @@ def test_close_plan_invalid_identifier() -> None:
 
         # Assert
         assert result.exit_code != 0
-        assert "Invalid issue number or URL" in result.output
+        assert "Invalid plan number or URL" in result.output
         assert "not-a-number" in result.output
 
 
@@ -264,7 +264,7 @@ def test_close_plan_invalid_url_format() -> None:
 
         # Assert
         assert result.exit_code != 0
-        assert "Invalid issue number or URL" in result.output
+        assert "Invalid plan number or URL" in result.output
         assert "https://github.com/owner/repo/issues/456" in result.output
 
 

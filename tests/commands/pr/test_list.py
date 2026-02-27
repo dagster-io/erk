@@ -348,7 +348,7 @@ def test_plan_list_sort_issue_default() -> None:
             env, issues=issues, github=github, plan_list_service=plan_service
         )
 
-        result = runner.invoke(cli, ["pr", "list", "--sort", "issue"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list", "--sort", "plan"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Found 2 plan(s)" in result.output

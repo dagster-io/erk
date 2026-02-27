@@ -77,14 +77,14 @@ def _update_plan_from_feedback_impl(
     if isinstance(plan_result, PlanNotFound):
         raise PlanUpdateFromFeedbackException(
             error="issue_not_found",
-            message=f"Issue #{plan_number} not found",
+            message=f"Plan #{plan_number} not found",
         )
 
     # Validate erk-plan label
     if "erk-plan" not in plan_result.labels:
         raise PlanUpdateFromFeedbackException(
             error="missing_erk_plan_label",
-            message=f"Issue #{plan_number} does not have the erk-plan label",
+            message=f"Plan #{plan_number} does not have the erk-plan label",
         )
 
     # Update plan content via PlanBackend

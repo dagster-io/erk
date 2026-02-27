@@ -408,7 +408,7 @@ def test_no_plan_context_after_pxxxx_removal() -> None:
 
         assert result.exit_code == 0
         # Old plan-context message should NOT appear (plan found via PR, not issue)
-        assert "Incorporating plan from issue #123" not in result.output
+        assert "Incorporating plan #123" not in result.output
 
         # PR body should not contain plan content from issue #123's comment
         _, updated_body = github.updated_pr_bodies[0]

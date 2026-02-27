@@ -1,7 +1,7 @@
 """Service for efficiently fetching plan list data via batched API calls.
 
 Uses GraphQL nodes(ids: [...]) for O(1) batch lookup of workflow runs (~200ms for any N).
-All plan issues store last_dispatched_node_id in the plan-header metadata block.
+All plans store last_dispatched_node_id in the plan-header metadata block.
 
 Performance optimization: When PR linkages are needed, uses unified GraphQL query via
 get_issues_with_pr_linkages() to fetch issues + PR linkages in a single API call (~600ms),

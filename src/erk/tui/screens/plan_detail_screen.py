@@ -27,6 +27,16 @@ if TYPE_CHECKING:
     from erk_shared.gateway.clipboard.abc import Clipboard
 
 
+def _extract_repo_base_url(plan_url: str) -> str:
+    """Extract repository base URL from a plan URL.
+
+    Handles both /pull/ (new plan-as-PR format) and /issues/ (legacy).
+    """
+    if "/pull/" in plan_url:
+        return plan_url.rsplit("/pull/", 1)[0]
+    return plan_url.rsplit("/issues/", 1)[0]
+
+
 class PlanDetailScreen(ModalScreen):
     """Modal screen showing detailed plan information as an Action Hub."""
 
@@ -802,11 +812,11 @@ class PlanDetailScreen(ModalScreen):
                 yield Label("Learn", classes="info-label")
                 # Make clickable if there's a plan issue, PR, or workflow run
                 if self._row.learn_plan_pr is not None and self._row.plan_url:
-                    base_url = self._row.plan_url.rsplit("/issues/", 1)[0]
+                    base_url = _extract_repo_base_url(self._row.plan_url)
                     pr_url = f"{base_url}/pull/{self._row.learn_plan_pr}"
                     yield ClickableLink(self._row.learn_display, pr_url, classes="info-value")
                 elif self._row.learn_plan_issue is not None and self._row.plan_url:
-                    base_url = self._row.plan_url.rsplit("/issues/", 1)[0]
+                    base_url = _extract_repo_base_url(self._row.plan_url)
                     issue_url = f"{base_url}/issues/{self._row.learn_plan_issue}"
                     yield ClickableLink(self._row.learn_display, issue_url, classes="info-value")
                 elif self._row.learn_run_url is not None:
@@ -827,7 +837,7 @@ class PlanDetailScreen(ModalScreen):
                     )
                     if self._row.plan_url:
                         objective_url = (
-                            self._row.plan_url.rsplit("/issues/", 1)[0]
+                            _extract_repo_base_url(self._row.plan_url)
                             + f"/issues/{self._row.objective_issue}"
                         )
                         yield ClickableLink(display_text, objective_url, classes="info-value")

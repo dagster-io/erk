@@ -272,5 +272,5 @@ def test_creates_issue_and_shows_success(
 
     # Success output
     captured = capsys.readouterr()
-    assert "Created learn issue" in captured.err
+    assert "Created learn plan" in captured.err
     assert "#100" in captured.err

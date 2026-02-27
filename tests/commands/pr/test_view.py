@@ -180,7 +180,7 @@ def test_view_plan_not_found() -> None:
         # Assert
         assert result.exit_code == 1
         assert "Error" in result.output
-        assert "Issue #999 not found" in result.output
+        assert "Plan #999 not found" in result.output
 
 
 def test_view_plan_minimal_fields() -> None:
@@ -260,7 +260,7 @@ def test_view_plan_invalid_url() -> None:
         # Assert
         assert result.exit_code == 1
         assert "Error" in result.output
-        assert "Invalid issue number or URL" in result.output
+        assert "Invalid plan number or URL" in result.output
 
 
 def test_view_plan_with_header_info() -> None:

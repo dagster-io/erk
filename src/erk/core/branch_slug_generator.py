@@ -1,7 +1,7 @@
 """Branch slug generation via LLM inference.
 
 This module provides branch name slug generation using a fast LLM call
-to distill plan/issue titles into meaningful 2-4 word slugs before they
+to distill plan titles into meaningful 2-4 word slugs before they
 enter the branch naming pipeline.
 
 Follows the CommitMessageGenerator pattern from src/erk/core/commit_message_generator.py.

@@ -131,7 +131,7 @@ def test_plan_update_display_format() -> None:
     )
 
     assert result.exit_code == 0
-    assert "Plan updated on issue #99" in result.output
+    assert "Plan #99 updated" in result.output
     assert "Title: [erk-plan] Display Test" in result.output
     assert "URL: " in result.output
 

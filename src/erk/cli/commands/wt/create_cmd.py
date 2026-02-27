@@ -452,7 +452,7 @@ def _create_json_response(
     "from_plan",
     type=str,
     help=(
-        "GitHub issue number or URL with erk-plan label. Fetches issue content "
+        "Plan number or URL with erk-plan label. Fetches plan content "
         "and creates worktree with impl folder and plan-ref.json metadata. "
         "Worktree names are automatically suffixed with the current date (-YY-MM-DD) "
         "and versioned if duplicates exist."
@@ -669,12 +669,12 @@ def create_wt(
         if isinstance(result, PlanNotFound):
             user_output(
                 click.style("Error: ", fg="red")
-                + f"Failed to fetch issue #{plan_number_parsed}\n"
-                + f"Details: Issue #{plan_number_parsed} not found\n\n"
+                + f"Failed to fetch plan #{plan_number_parsed}\n"
+                + f"Details: Plan #{plan_number_parsed} not found\n\n"
                 + "Troubleshooting:\n"
-                + "  • Verify issue number is correct\n"
+                + "  • Verify plan number is correct\n"
                 + "  • Check repository access: gh auth status\n"
-                + f"  • Try viewing manually: gh issue view {plan_number_parsed}"
+                + f"  • Try viewing manually: gh pr view {plan_number_parsed}"
             )
             raise SystemExit(1)
         plan = result
@@ -929,7 +929,7 @@ def create_wt(
         )
 
         if not script and not output_json:
-            user_output(f"Created worktree from issue #{setup.plan_number}: {setup.issue_title}")
+            user_output(f"Created worktree from plan #{setup.plan_number}: {setup.issue_title}")
 
     # Copy implementation context directory if --copy-plan flag is set
     if copy_plan and impl_source is not None:

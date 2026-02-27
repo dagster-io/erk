@@ -132,7 +132,7 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
             # New format - have issue number, try to get data
             plan_url = None
             if location is not None:
-                plan_url = f"https://github.com/{location.repo_id.owner}/{location.repo_id.repo}/issues/{plan_num}"
+                plan_url = f"https://github.com/{location.repo_id.owner}/{location.repo_id.repo}/pull/{plan_num}"
             # Make plan number clickable
             if plan_url:
                 plan_cell = f"[link={plan_url}][cyan]#{plan_num}[/cyan][/link]"

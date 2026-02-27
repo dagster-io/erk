@@ -1,6 +1,6 @@
-"""Learn issue creation for the land command.
+"""Learn plan creation for the land command.
 
-Handles creating erk-learn plan issues when a PR is landed.
+Handles creating erk-learn plans when a PR is landed.
 Extracted to avoid circular imports between land_cmd and land_pipeline.
 """
 
@@ -111,7 +111,7 @@ def _create_learn_issue_impl(
     if result.success:
         user_output(
             click.style("✓", fg="green")
-            + f" Created learn issue #{result.plan_number} for plan #{plan_id}"
+            + f" Created learn plan #{result.plan_number} for plan #{plan_id}"
         )
     elif result.error:
         user_output(

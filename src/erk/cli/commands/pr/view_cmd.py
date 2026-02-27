@@ -270,7 +270,7 @@ def pr_view(ctx: ErkContext, identifier: str | None, *, full: bool) -> None:
             raise SystemExit(1)
 
     if isinstance(result, PlanNotFound):
-        user_output(click.style("Error: ", fg="red") + f"Issue #{plan_id} not found")
+        user_output(click.style("Error: ", fg="red") + f"Plan #{plan_id} not found")
         raise SystemExit(1)
     plan = result
 
