@@ -1,0 +1,8 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Migrate stack/move_cmd.py to Ensure-Based Error Handling",
+  "objective_id": 7160,
+  "node_ids": [
+    "3.1"
+  ]
+}
