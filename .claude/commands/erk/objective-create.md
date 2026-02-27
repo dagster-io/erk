@@ -256,7 +256,7 @@ The user may:
 
 Continue iterating until the user approves.
 
-### Step 6: Write to Plan File and Create Issue
+### Step 6: Write to Plan File and Create Objective
 
 Once approved:
 
@@ -283,19 +283,19 @@ Once approved:
    - **Invalid:** `Build-Auth` (uppercase), `123-start` (starts with digit), `my--slug` (consecutive hyphens), `ab` (too short)
    - If the backend rejects the slug, fix it according to the rules above and retry
 
-3. **Create the GitHub issue with validation:**
+3. **Create the objective with validation:**
 
    ```bash
    erk exec objective-save-to-issue --session-id=<session-id> --slug=<generated-slug> --format=display --validate
    ```
 
-   This creates the issue and validates the roadmap in one step.
+   This creates the objective and validates the roadmap in one step.
    If validation fails, fix the objective content and re-run.
 
 4. **Report success:**
 
    ```
-   Objective created: #<number>
+   Objective #<number> created
    URL: <issue-url>
    Roadmap validation: clean
 

@@ -1,6 +1,6 @@
 ---
 description: Create an implementation plan for a known objective node (inner skill)
-argument-hint: "<issue-number> --node <node-id>"
+argument-hint: "<objective-number> --node <node-id>"
 allowed-tools: Bash, Task, Skill, AskUserQuestion, EnterPlanMode
 ---
 
@@ -16,7 +16,7 @@ This skips interactive node selection (Steps 3-4 of the outer command) since the
 /erk:system:objective-plan-node 3679 --node 2.1
 ```
 
-Both `<issue-number>` and `--node <node-id>` are required.
+Both `<objective-number>` and `--node <node-id>` are required.
 
 ---
 
@@ -26,10 +26,10 @@ Both `<issue-number>` and `--node <node-id>` are required.
 
 Parse `$ARGUMENTS` to extract:
 
-- **Issue number**: The numeric issue reference (required)
+- **Objective number**: The numeric objective reference (required)
 - **Node ID**: The `--node` value (required)
 
-If either is missing, STOP and report: "ERROR: Both issue number and --node are required. Usage: /erk:system:objective-plan-node <issue-number> --node <node-id>"
+If either is missing, STOP and report: "ERROR: Both objective number and --node are required. Usage: /erk:system:objective-plan-node <objective-number> --node <node-id>"
 
 ### Step 2: Create Objective Context Marker
 
@@ -40,19 +40,19 @@ Use the Task tool with `subagent_type: "general-purpose"` and `model: "haiku"`:
 **Task Prompt:**
 
 ```
-Fetch and validate objective #<issue-number> and return a structured summary.
+Fetch and validate objective #<objective-number> and return a structured summary.
 
 CRITICAL: Do NOT write scripts or code. Only use the Bash tool to run the erk CLI commands listed below.
 
 Instructions:
-1. Run: erk exec get-issue-body <issue-number>
+1. Run: erk exec get-issue-body <objective-number>
 2. Validate this is an objective:
    - Check for 'erk-objective' label
-   - If 'erk-plan' label instead: return error "This is an erk-plan issue, not an objective"
+   - If 'erk-plan' label instead: return error "This is an erk-plan PR, not an objective"
    - If neither label: include warning but proceed
 3. Create objective context marker:
-   erk exec marker create --session-id "${CLAUDE_SESSION_ID}" --associated-objective <issue-number> objective-context
-4. Run: erk objective check <issue-number> --json-output --allow-legacy
+   erk exec marker create --session-id "${CLAUDE_SESSION_ID}" --associated-objective <objective-number> objective-context
+4. Run: erk objective check <objective-number> --json-output --allow-legacy
 5. Format the JSON output from step 4 into the structured summary below. Do NOT write Python or any other scripts to parse the data — just read the JSON output directly and format it yourself.
 
 OBJECTIVE: #<number> — <title>
@@ -83,7 +83,7 @@ Only include nodes with status "pending" in PENDING_NODES section.
 Use the "next_step" field from check output as RECOMMENDED.
 ```
 
-Replace `<issue-number>` with the parsed issue number.
+Replace `<objective-number>` with the parsed objective number.
 
 ### Step 2.5: Verify Objective Context Marker
 
@@ -110,7 +110,7 @@ Replace `<node-id>` with the node ID from arguments.
 Then mark the node as `planning` in the objective's roadmap (best-effort — may already be marked by the CLI):
 
 ```bash
-erk exec update-objective-node <issue-number> --node <node-id> --status planning
+erk exec update-objective-node <objective-number> --node <node-id> --status planning
 ```
 
 If this fails, continue with planning — the CLI may have already marked it.
@@ -167,7 +167,7 @@ After saving, the JSON output includes `objective_issue`. Check that it matches 
 If verification is needed:
 
 ```bash
-erk exec get-plan-metadata <new-issue-number> objective_issue
+erk exec get-plan-metadata <new-plan-number> objective_issue
 ```
 
 Check that `value` matches the expected objective number.
@@ -187,9 +187,9 @@ Check that `value` matches the expected objective number.
 
 | Scenario                                | Action                                                           |
 | --------------------------------------- | ---------------------------------------------------------------- |
-| Missing issue number or node ID         | Report error with usage instructions                             |
-| Issue not found                         | Report error and exit                                            |
-| Issue is erk-plan                       | Redirect to `/erk:plan-implement`                                |
+| Missing objective number or node ID     | Report error with usage instructions                             |
+| Objective not found                     | Report error and exit                                            |
+| Reference is erk-plan                   | Redirect to `/erk:plan-implement`                                |
 | Node not found in roadmap               | Report error and list available nodes                            |
 | Marker creation fails                   | Report error with manual command                                 |
 | Verification fails (no objective_issue) | `/erk:plan-save` handles automatically; follow remediation steps |

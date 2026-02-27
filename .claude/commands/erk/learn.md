@@ -31,7 +31,7 @@ Learn pipeline for plan #<plan-number> (using preprocessed materials):
   1. Read preprocessed materials from .erk/impl-context/
   2. Launch analysis agents (session, diff, docs check, PR comments)
   3. Synthesize findings into a documentation plan
-  4. Save plan as a new GitHub issue
+  4. Save plan as a draft PR
 ```
 
 **When no `.erk/impl-context/`:**
@@ -41,12 +41,12 @@ Learn pipeline for plan #<plan-number>:
   1. Discover and preprocess session logs
   2. Launch analysis agents (session, diff, docs check, PR comments)
   3. Synthesize findings into a documentation plan
-  4. Save plan as a new GitHub issue
+  4. Save plan as a draft PR
 ```
 
 ### Step 1: Validate Plan Type
 
-First, check if the issue is a learn plan. **Learn plans cannot generate additional learn plans** - this would create documentation cycles.
+First, check if the plan is a learn plan. **Learn plans cannot generate additional learn plans** - this would create documentation cycles.
 
 ```bash
 erk exec get-issue-body <plan-number>
@@ -59,7 +59,7 @@ Error: Plan #<plan-number> is a learn plan (has erk-learn label).
 Cannot learn from a learn plan - this would create documentation cycles.
 ```
 
-If the issue is NOT a learn plan, proceed to Step 2.
+If the plan is NOT a learn plan, proceed to Step 2.
 
 ### Step 2: Check for Preprocessed Materials
 
@@ -285,7 +285,7 @@ Task(
 
     Input:
     - pr_number: <pr-number>
-    - issue_number: <issue-number>
+    - plan_number: <plan-number>
     - output_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/diff-analysis.md
 
     ## Output Routing
@@ -686,7 +686,7 @@ Parse the JSON output:
 - If `valid: false` → Skip saving, proceed to Step 9 with `completed_no_plan`
 - If `valid: true` → Continue with save below
 
-**If plan is valid**, save it as a GitHub issue:
+**If plan is valid**, save it as a draft PR:
 
 ```bash
 # Build command with optional workflow run URL for backlink
@@ -705,16 +705,16 @@ fi
 eval "$CMD"
 ```
 
-Parse the JSON output to get `issue_number`, `plan_backend`, `title`, and `issue_url` (the new learn plan number).
+Parse the JSON output to get `plan_number`, `plan_backend`, `title`, and `plan_url` (the new learn plan number).
 
 Display the result:
 
 ```
 Learn plan saved as draft PR #<plan_number>: <title>
-URL: <issue_url>
+URL: <plan_url>
 ```
 
-### Step 8: Store Tripwire Candidates on Learn Plan Issue
+### Step 8: Store Tripwire Candidates on Learn Plan PR
 
 **If plan was valid and saved**, store tripwire candidates as a metadata comment:
 
@@ -791,7 +791,7 @@ Post-learn actions:
 **Execute the selected action:**
 
 - **Submit**: Run `/erk:pr-dispatch`
-- **Review**: Display the `issue_url` from the JSON output for the user to click. Then inform the user they can run `/erk:pr-dispatch` when ready.
+- **Review**: Display the `plan_url` from the JSON output for the user to click. Then inform the user they can run `/erk:pr-dispatch` when ready.
 - **Consolidate**: Run `/local:replan-learn-plans`
 - **Done**: Proceed directly to Step 11
 

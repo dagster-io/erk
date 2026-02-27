@@ -1,6 +1,6 @@
 ---
 description: Create an implementation plan from an objective node
-argument-hint: "<issue-number-or-url> [--node <node-id>]"
+argument-hint: "<objective-number-or-url> [--node <node-id>]"
 allowed-tools: Bash, Task, Skill, AskUserQuestion, EnterPlanMode
 ---
 
@@ -28,7 +28,7 @@ Parse `$ARGUMENTS` for `--node <node-id>`. If `--node` is present along with an 
 **Invoke the inner skill immediately** via the Skill tool:
 
 ```
-/erk:system:objective-plan-node <issue-number> --node <node-id>
+/erk:system:objective-plan-node <objective-number> --node <node-id>
 ```
 
 This skips the interactive selection flow (Steps 1-4 below) since the node is already known. The inner skill handles marker creation, marking as planning, context gathering, plan mode, and saving.
@@ -41,7 +41,7 @@ If `--node` was NOT provided, proceed with the full interactive flow.
 
 Parse `$ARGUMENTS` to extract the objective reference:
 
-- If argument is a URL: extract issue number from path
+- If argument is a URL: extract objective number from path
 - If argument is a number: use directly
 - If no argument provided: try to get the default from current branch's plan (see below), then prompt if no default
 
@@ -62,7 +62,7 @@ If no argument is provided, check if the current branch is associated with a pla
 3. If plan found, get its objective:
 
    ```bash
-   erk exec get-plan-metadata <plan-issue-number> objective_issue
+   erk exec get-plan-metadata <plan-number> objective_issue
    ```
 
    This returns JSON like:
@@ -99,19 +99,19 @@ Use the Task tool with `subagent_type: "general-purpose"` and `model: "haiku"` t
 **Task Prompt:**
 
 ```
-Fetch and validate objective #<issue-number> and return a structured summary.
+Fetch and validate objective #<objective-number> and return a structured summary.
 
 CRITICAL: Do NOT write scripts or code. Only use the Bash tool to run the erk CLI commands listed below.
 
 Instructions:
-1. Run: erk exec get-issue-body <issue-number>
+1. Run: erk exec get-issue-body <objective-number>
 2. Validate this is an objective:
    - Check for 'erk-objective' label
-   - If 'erk-plan' label instead: return error "This is an erk-plan issue, not an objective"
+   - If 'erk-plan' label instead: return error "This is an erk-plan PR, not an objective"
    - If neither label: include warning but proceed
 3. Create objective context marker:
-   erk exec marker create --session-id "${CLAUDE_SESSION_ID}" --associated-objective <issue-number> objective-context
-4. Run: erk objective check <issue-number> --json-output --allow-legacy
+   erk exec marker create --session-id "${CLAUDE_SESSION_ID}" --associated-objective <objective-number> objective-context
+4. Run: erk objective check <objective-number> --json-output --allow-legacy
 5. Format the JSON output from step 4 into the structured summary below. Do NOT write Python or any other scripts to parse the data — just read the JSON output directly and format it yourself.
 
 OBJECTIVE: #<number> — <title>
@@ -142,7 +142,7 @@ Only include nodes with status "pending" in PENDING_NODES section.
 Use the "next_step" field from check output as RECOMMENDED.
 ```
 
-Replace `<issue-number>` with the issue number from Step 1.
+Replace `<objective-number>` with the objective number from Step 1.
 
 **Important:** The Task agent handles all JSON parsing and marker creation. The main conversation only receives the formatted summary.
 
@@ -195,7 +195,7 @@ If all nodes are complete or have plans in progress, report appropriately:
 After the user selects a node, invoke the inner skill via the Skill tool:
 
 ```
-/erk:system:objective-plan-node <issue-number> --node <selected-node-id>
+/erk:system:objective-plan-node <objective-number> --node <selected-node-id>
 ```
 
 The inner skill handles marker creation, marking as planning, context gathering, plan mode, and saving. **STOP here** — the inner skill takes over.
@@ -216,8 +216,8 @@ The inner skill handles marker creation, marking as planning, context gathering,
 
 | Scenario                                | Action                                                           |
 | --------------------------------------- | ---------------------------------------------------------------- |
-| Issue not found                         | Report error and exit                                            |
-| Issue is erk-plan                       | Redirect to `/erk:plan-implement`                                |
+| Objective not found                     | Report error and exit                                            |
+| Reference is erk-plan                   | Redirect to `/erk:plan-implement`                                |
 | No pending nodes                        | Report all nodes complete, suggest closing                       |
 | Invalid argument format                 | Prompt for valid issue number                                    |
 | Roadmap not parseable                   | Ask user to specify which node to plan                           |

@@ -27,9 +27,9 @@ Run after landing a PR:
 Check `$ARGUMENTS` for optional overrides:
 
 - `--pr <number>`: PR number that was just landed
-- `--objective <number>`: Objective issue number to update
+- `--objective <number>`: Objective number to update
 - `--branch <name>`: Original branch name
-- `--plan <number>`: Plan issue number (enables direct plan lookup, avoids branch-based discovery which may fail after branch deletion)
+- `--plan <number>`: Plan number (enables direct plan lookup, avoids branch-based discovery which may fail after branch deletion)
 - `--auto-close`: If set and all nodes are complete, close objective without asking
 
 Run a single command that fetches context, updates roadmap nodes to done, and posts an action comment:
@@ -51,7 +51,7 @@ erk exec objective-apply-landed-update [--pr <number>] [--objective <number>] [-
 This returns JSON with:
 
 - `objective`: Issue body, title, labels, URL, `objective_content` (prose from first comment)
-- `plan`: Plan issue body and title
+- `plan`: Plan body and title
 - `pr`: PR title, body, URL
 - `roadmap`: Parsed roadmap with `summary`, `next_node`, `all_complete`
 - `node_updates`: List of nodes updated to done (with `previous_pr`)

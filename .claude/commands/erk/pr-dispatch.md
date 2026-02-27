@@ -20,7 +20,7 @@ Search the conversation from bottom to top for these patterns (in priority order
 
 1. **Draft PR reference**: `saved as draft PR #<number>` or `draft PR #<number>`
 2. **Pull request URL**: `https://github.com/<owner>/<repo>/pull/<number>`
-3. **Plan URL**: `https://github.com/.../issues/<number>` or `https://github.com/.../pull/<number>`
+3. **Plan URL**: `https://github.com/.../pull/<number>` (legacy: `https://github.com/.../issues/<number>`)
 
 Extract the plan number from the most recent match.
 

@@ -26,8 +26,8 @@ Run after closing a plan:
 
 Extract from `$ARGUMENTS`:
 
-- `--plan <number>`: Plan issue number that was just closed (required)
-- `--objective <number>`: Objective issue number to update (required)
+- `--plan <number>`: Plan number that was just closed (required)
+- `--objective <number>`: Objective number to update (required)
 
 Fetch objective and plan context:
 
@@ -38,7 +38,7 @@ erk exec objective-fetch-context --plan <plan-number> --objective <objective-num
 This returns JSON with:
 
 - `objective`: Issue body, title, labels, URL
-- `plan`: Plan issue body and title
+- `plan`: Plan body and title
 - `roadmap.phases`: Serialized roadmap phases
 - `roadmap.summary`: Node counts (done, pending, etc.)
 - `roadmap.next_node`: First pending node or null

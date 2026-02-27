@@ -13,7 +13,7 @@ Supports consolidating multiple plans into a single unified plan.
 
 ```bash
 /erk:replan 2521                          # Single plan replan
-/erk:replan https://github.com/owner/repo/issues/2521
+/erk:replan https://github.com/owner/repo/pull/2521
 /erk:replan 123 456 789                   # Consolidate multiple plans
 ```
 
@@ -26,7 +26,7 @@ Supports consolidating multiple plans into a single unified plan.
 Split `$ARGUMENTS` on whitespace. For each argument:
 
 - If numeric (e.g., `2521`), use directly as plan number
-- If URL (e.g., `https://github.com/owner/repo/issues/2521`), extract the number from the path
+- If URL (e.g., `https://github.com/owner/repo/pull/2521`), extract the number from the path
 
 Store all plan numbers in a list. Set `CONSOLIDATION_MODE=true` if multiple plans provided.
 
@@ -52,10 +52,10 @@ Launch a Task agent with:
 >
 > ```
 > VALIDATION: PASS or FAIL
-> CONSOLIDATION_MODE: true or false (true if multiple issues)
-> IS_LEARN_PLAN: true or false (true if ANY issue has erk-learn label)
+> CONSOLIDATION_MODE: true or false (true if multiple plans)
+> IS_LEARN_PLAN: true or false (true if ANY plan has erk-learn label)
 >
-> ISSUES:
+> PLANS:
 > # | Title | State | erk-plan | erk-learn | objective_issue
 > <number> | <title> | <open/closed> | <yes/no> | <yes/no> | <number or none>
 > ...
@@ -71,15 +71,15 @@ Launch a Task agent with:
 >
 > Rules for OBJECTIVE_STATUS:
 >
-> - AGREED:<number> — all issues that have an objective_issue share the same value
-> - AGREED:none — no issues have an objective_issue
-> - CONFLICT — issues have different objective_issue values
+> - AGREED:<number> — all plans that have an objective_issue share the same value
+> - AGREED:none — no plans have an objective_issue
+> - CONFLICT — plans have different objective_issue values
 >
 > Rules for VALIDATION:
 >
-> - FAIL if any issue does not exist
-> - FAIL if any issue is missing BOTH the erk-plan AND erk-learn labels (must have at least one)
-> - PASS otherwise (closed issues are warnings, not failures)
+> - FAIL if any plan does not exist
+> - FAIL if any plan is missing BOTH the erk-plan AND erk-learn labels (must have at least one)
+> - PASS otherwise (closed plans are warnings, not failures)
 
 **After the agent returns**, parse the structured summary:
 
@@ -223,7 +223,7 @@ Only after ALL agents have completed should you proceed to Step 5.
 Before creating the new plan, post investigation findings to each original plan as a comment:
 
 ```bash
-gh issue comment <original_number> --body "## Deep Investigation Notes (for implementing agent)
+gh pr comment <original_number> --body "## Deep Investigation Notes (for implementing agent)
 
 ### Corrections to Original Plan
 - [List corrections discovered]
@@ -294,7 +294,7 @@ Use EnterPlanMode to create an updated plan.
 ```markdown
 # Plan: [Updated Title]
 
-> **Replans:** #<original_issue_number>
+> **Replans:** #<original_plan_number>
 
 ## What Changed Since Original Plan
 
@@ -394,11 +394,11 @@ After the user approves the plan in Plan Mode:
    - **Otherwise**: Run `/erk:plan-save` without flags
 3. **If an objective was linked**, verify the link was saved correctly:
    ```bash
-   erk exec get-plan-metadata <new_issue_number> objective_issue
+   erk exec get-plan-metadata <new_plan_number> objective_issue
    ```
    If the objective link is missing, fix it with:
    ```bash
-   erk exec update-plan-header <new_issue_number> objective_issue=<number>
+   erk exec update-plan-header <new_plan_number> objective_issue=<number>
    ```
 4. **If CONSOLIDATION_MODE** (multiple plans consolidated), add the `erk-consolidated` label:
    ```bash
@@ -430,7 +430,7 @@ Display final summary:
 ✓ Closed original plan #<original_number>
 
 Next steps:
-- Review the new plan: gh issue view <new_number>
+- Review the new plan: gh pr view <new_number>
 - Dispatch for implementation: erk pr dispatch <new_number>
 ```
 
@@ -446,7 +446,7 @@ Source plans consolidated:
 - #789: [title]
 
 Next steps:
-- Review the consolidated plan: gh issue view <new_number>
+- Review the consolidated plan: gh pr view <new_number>
 - Dispatch for implementation: erk pr dispatch <new_number>
 ```
 

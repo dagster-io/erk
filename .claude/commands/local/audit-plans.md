@@ -19,7 +19,7 @@ Audits open plans to identify stale or completed plans that may need attention o
 
 ### Phase 1: List Open Plans
 
-Fetch all open erk-plan issues, sorted oldest first:
+Fetch all open plans, sorted oldest first:
 
 ```bash
 gh api repos/dagster-io/erk/issues \
@@ -118,7 +118,7 @@ Group plans by category and present in tables:
 
 Plans verified complete - safe to close.
 
-| Issue | Title         | Evidence              |
+| Plan  | Title         | Evidence              |
 | ----- | ------------- | --------------------- |
 | #1234 | Add feature X | PR #1235 merged Jan 5 |
 
@@ -126,7 +126,7 @@ Plans verified complete - safe to close.
 
 Plans where implementation ended but work was NOT merged.
 
-| Issue | Title         | Attempted     | Missing                       |
+| Plan  | Title         | Attempted     | Missing                       |
 | ----- | ------------- | ------------- | ----------------------------- |
 | #1236 | Add feature Y | remote: Jan 3 | Expected file not in codebase |
 
@@ -134,7 +134,7 @@ Plans where implementation ended but work was NOT merged.
 
 Plans where implementation started but never finished.
 
-| Issue | Title      | Started | Age     |
+| Plan  | Title      | Started | Age     |
 | ----- | ---------- | ------- | ------- |
 | #1236 | Refactor Z | Dec 1   | 21 days |
 
@@ -142,7 +142,7 @@ Plans where implementation started but never finished.
 
 Plans never attempted, possibly obsolete.
 
-| Issue | Title    | Created | Age     |
+| Plan  | Title    | Created | Age     |
 | ----- | -------- | ------- | ------- |
 | #1237 | Old idea | Nov 15  | 45 days |
 
@@ -150,7 +150,7 @@ Plans never attempted, possibly obsolete.
 
 Recent plans or plans with recent activity.
 
-| Issue | Title        | Created/Updated |
+| Plan  | Title        | Created/Updated |
 | ----- | ------------ | --------------- |
 | #1238 | Current work | Dec 8           |
 ```
@@ -159,7 +159,7 @@ Recent plans or plans with recent activity.
 
 After presenting the report:
 
-1. **Do NOT auto-close any issues** - present findings for human decision
+1. **Do NOT auto-close any plans** - present findings for human decision
 2. Ask the user what actions to take using AskUserQuestion:
    - "Close all Likely Done plans"
    - "Review specific plans individually"
@@ -171,9 +171,9 @@ If user selects plans to close:
 
 ```bash
 # Add closing comment
-gh api repos/dagster-io/erk/issues/<NUMBER>/comments -X POST -f body="Closing via plan audit: <reason>"
-# Close the issue
-gh api repos/dagster-io/erk/issues/<NUMBER> -X PATCH -f state=closed
+gh pr comment <NUMBER> --body "Closing via plan audit: <reason>"
+# Close the plan
+gh pr close <NUMBER>
 ```
 
 Report results and any failures.
@@ -213,7 +213,7 @@ last_remote_impl_at: "2024-12-06T..."
 For assessing a single plan's relevance without running a full audit, use:
 
 ```bash
-/local:check-relevance <issue-number>
+/local:check-relevance <plan-number>
 ```
 
 This provides focused, evidence-based assessment inline when reviewing or creating plans.
