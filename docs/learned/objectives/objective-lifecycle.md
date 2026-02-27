@@ -177,14 +177,14 @@ Mutations update YAML frontmatter in the issue body (source of truth) and the ma
 
 ### Mutation Sites
 
-| Site                                    | Type      | Trigger                                              | Updates                            | Frontmatter-Aware?              |
-| --------------------------------------- | --------- | ---------------------------------------------------- | ---------------------------------- | ------------------------------- |
-| `update-objective-node.py`              | Surgical  | `erk exec update-objective-node` or `/erk:plan-save` | YAML frontmatter + table comment   | Yes (this plan)                 |
+| Site                                     | Type      | Trigger                                              | Updates                            | Frontmatter-Aware?              |
+| ---------------------------------------- | --------- | ---------------------------------------------------- | ---------------------------------- | ------------------------------- |
+| `update-objective-node.py`               | Surgical  | `erk exec update-objective-node` or `/erk:plan-save` | YAML frontmatter + table comment   | Yes (this plan)                 |
 | `system:objective-update-with-landed-pr` | Full-body | After landing PR                                     | Roadmap + prose sections           | Yes (this plan)                 |
-| `objective-update-with-closed-plan`     | Full-body | After closing affiliated plan                        | Roadmap (reset to pending) + prose | Yes (this plan)                 |
-| `plan-save.md` Step 3.5                 | Indirect  | Creating plan from objective                         | Calls `update-objective-node`      | Inherits                        |
-| `check_cmd.py` / `validate_objective()` | Read-only | `erk objective check`                                | N/A (reads only)                   | Inherits from `parse_roadmap()` |
-| `objective_fetch_context.py`            | Read-only | Fetch context for updates                            | N/A (reads only)                   | Inherits from `parse_roadmap()` |
+| `objective-update-with-closed-plan`      | Full-body | After closing affiliated plan                        | Roadmap (reset to pending) + prose | Yes (this plan)                 |
+| `plan-save.md` Step 3.5                  | Indirect  | Creating plan from objective                         | Calls `update-objective-node`      | Inherits                        |
+| `check_cmd.py` / `validate_objective()`  | Read-only | `erk objective check`                                | N/A (reads only)                   | Inherits from `parse_roadmap()` |
+| `objective_fetch_context.py`             | Read-only | Fetch context for updates                            | N/A (reads only)                   | Inherits from `parse_roadmap()` |
 
 ### Surgical Update: `update-objective-node`
 
