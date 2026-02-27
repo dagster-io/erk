@@ -66,19 +66,19 @@ See [Phase 0 Detection Pattern](../architecture/phase-zero-detection-pattern.md)
 
 #### What's different in Plan Review Mode
 
-| Aspect                | Code Review Mode       | Plan Review Mode                                |
-| --------------------- | ---------------------- | ----------------------------------------------- |
-| **File modified**     | Source code files      | `PLAN-REVIEW-{issue}.md`                        |
-| **Sync mechanism**    | Git push only          | Git push + `erk exec plan-update-from-feedback` |
-| **Thread resolution** | Generic acknowledgment | Plan-specific messages                          |
-| **Target audience**   | Code reviewers         | Plan reviewers                                  |
+| Aspect                | Code Review Mode       | Plan Review Mode              |
+| --------------------- | ---------------------- | ----------------------------- |
+| **File modified**     | Source code files      | `PLAN-REVIEW-{issue}.md`      |
+| **Sync mechanism**    | Git push only          | Git push + plan sync to issue |
+| **Thread resolution** | Generic acknowledgment | Plan-specific messages        |
+| **Target audience**   | Code reviewers         | Plan reviewers                |
 
 #### Plan Review Workflow
 
 1. **Fetch feedback**: Get unresolved review comments from PR
 2. **Edit plan file**: Make changes to `PLAN-REVIEW-{issue}.md` based on feedback
 3. **Commit changes**: Commit the edited plan file
-4. **Sync to GitHub issue**: Run `erk exec plan-update-from-feedback` to sync changes back to the issue
+4. **Sync to GitHub issue**: Sync changes back to the issue
 5. **Resolve threads**: Mark review threads as resolved with plan-specific messages
 
 Plan changes to the local file require an explicit sync command to propagate to the issue.

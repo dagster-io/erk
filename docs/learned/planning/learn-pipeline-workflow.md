@@ -8,7 +8,7 @@ read_when:
   - choosing between local learn and async learn modes
   - adding a new stage to the learn pipeline
 tripwires:
-  - action: "adding a new pipeline stage to trigger-async-learn"
+  - action: "adding a new pipeline stage to the async learn pipeline"
     warning: "New stages must be direct Python function calls, not subprocess invocations. The orchestrator uses tight coupling for performance. See the Direct-Call Architecture section in async-learn-local-preprocessing.md."
   - action: "changing how sessions are classified as planning vs impl"
     warning: "Classification uses planning_session_id from GitHub metadata. The resulting prefix (planning- vs impl-) propagates into XML filenames and is used by downstream learn agents to weight insights differently."
@@ -41,7 +41,7 @@ This split exists because preprocessing is I/O-heavy (reading large JSONL files,
 
 ## Two Modes: Local vs Async
 
-| Aspect          | Local (`/erk:learn`)       | Async (`erk exec trigger-async-learn`) |
+| Aspect          | Local (`/erk:learn`)       | Async (upload-impl-session pipeline)   |
 | --------------- | -------------------------- | -------------------------------------- |
 | **Stages run**  | All 7 on developer machine | 1-5 local, 6-7 in GitHub Actions       |
 | **Use case**    | Quick iteration, debugging | Background processing after landing    |
@@ -67,7 +67,7 @@ The discovery function also has a **local fallback**: when GitHub has no tracked
 
 ### Stage 2: Session Preprocessing
 
-<!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, lines 409-460 -->
+<!-- Source: src/erk/cli/commands/exec/scripts/preprocess_session.py, preprocess_session -->
 
 Transforms raw JSONL session logs into compressed XML. **Both local and remote sessions** go through the same `_preprocess_session_direct()` pipeline (unified in PR #6974). Remote sessions are first downloaded via `_download_remote_session_for_learn()`, which fetches the gist content and saves it as `{session_id}.jsonl` in a `remote-downloads/` subdirectory, then the downloaded file is preprocessed identically to local sessions.
 
@@ -86,8 +86,6 @@ Typical compression: **~99%** (e.g., 6.2M → 67k chars). Each session is classi
 Output files are token-limited (20k tokens per chunk) to stay under Claude's read limit, producing either `{prefix}-{session-id}.xml` or `{prefix}-{session-id}-part{N}.xml` for large sessions.
 
 ### Stage 3: PR Comment Fetching (Optional)
-
-<!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, trigger_async_learn -->
 
 Fetches PR review threads and discussion comments via gateway calls (not `gh` CLI). This stage is intentionally lenient — if no PR exists for the plan, it skips silently rather than failing. Three reasons:
 
@@ -108,8 +106,6 @@ This is a **critical failure point** — if gist upload fails, the entire async 
 For the delimiter format specification, see [Gist Materials Interchange](../architecture/gist-materials-interchange.md).
 
 ### Stage 5: Workflow Trigger
-
-<!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, trigger_async_learn -->
 
 Triggers `learn.yml` via `workflow_dispatch` with the gist URL and issue number. The workflow uses concurrency groups (`learn-issue-{N}`) with `cancel-in-progress: true`, so re-triggering learn for the same issue cancels any in-progress run.
 
@@ -147,8 +143,7 @@ For local pipeline issues (stages 1-5), each stage has a corresponding `erk exec
 # Test each stage in isolation
 erk exec get-learn-sessions <issue>
 erk exec preprocess-session <session-path> --stdout
-erk exec upload-learn-materials --learn-dir <dir> --issue <N>
-erk exec trigger-async-learn <issue>
+erk exec upload-impl-session --session-id <id>
 ```
 
 For CI issues (stage 6), use `gh run view <run-id>` to inspect workflow logs.

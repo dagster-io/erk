@@ -230,7 +230,8 @@ erk exec create-pr-from-session --session-id <id>
 ### Find Agent Subprocess Logs
 
 ```bash
-PROJECT_DIR=$(erk find-project-dir | jq -r '.project_dir')
+# Compute project dir using Claude Code's path encoding (replace / and . with -)
+PROJECT_DIR="$HOME/.claude/projects/$(pwd | sed 's|/|-|g; s|\.|-|g')"
 ls -lt "$PROJECT_DIR"/agent-*.jsonl | head -10
 ```
 

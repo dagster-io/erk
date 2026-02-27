@@ -1,6 +1,6 @@
 """Unit tests for PR discussion comment kit CLI commands.
 
-Tests get-pr-discussion-comments and add-reaction-to-comment commands.
+Tests get-pr-discussion-comments command.
 Uses FakeGitHub and FakeGitHubIssues for fast, reliable testing.
 """
 
@@ -9,9 +9,6 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from erk.cli.commands.exec.scripts.add_reaction_to_comment import (
-    add_reaction_to_comment,
-)
 from erk.cli.commands.exec.scripts.get_pr_discussion_comments import (
     get_pr_discussion_comments,
 )
@@ -163,134 +160,6 @@ def test_get_pr_discussion_comments_pr_not_found(tmp_path: Path) -> None:
 
 
 # ============================================================================
-# add-reaction-to-comment Success Cases
-# ============================================================================
-
-
-def test_add_reaction_to_comment_success(tmp_path: Path) -> None:
-    """Test successfully adding a reaction to a comment."""
-    fake_github_issues = FakeGitHubIssues()
-    fake_git = FakeGit()
-    runner = CliRunner()
-
-    with runner.isolated_filesystem(temp_dir=tmp_path):
-        cwd = Path.cwd()
-
-        result = runner.invoke(
-            add_reaction_to_comment,
-            ["--comment-id", "12345"],
-            obj=ErkContext.for_test(
-                github=FakeGitHub(issues_gateway=fake_github_issues),
-                git=fake_git,
-                repo_root=cwd,
-                cwd=cwd,
-            ),
-        )
-
-    assert result.exit_code == 0, result.output
-    output = json.loads(result.output)
-    assert output["success"] is True
-    assert output["comment_id"] == 12345
-    assert output["reaction"] == "+1"  # Default reaction
-
-    # Verify reaction was tracked in the fake
-    assert fake_github_issues.added_reactions == [(12345, "+1")]
-
-
-def test_add_reaction_to_comment_custom_reaction(tmp_path: Path) -> None:
-    """Test adding a custom reaction type."""
-    fake_github_issues = FakeGitHubIssues()
-    fake_git = FakeGit()
-    runner = CliRunner()
-
-    with runner.isolated_filesystem(temp_dir=tmp_path):
-        cwd = Path.cwd()
-
-        result = runner.invoke(
-            add_reaction_to_comment,
-            ["--comment-id", "12345", "--reaction", "rocket"],
-            obj=ErkContext.for_test(
-                github=FakeGitHub(issues_gateway=fake_github_issues),
-                git=fake_git,
-                repo_root=cwd,
-                cwd=cwd,
-            ),
-        )
-
-    assert result.exit_code == 0, result.output
-    output = json.loads(result.output)
-    assert output["success"] is True
-    assert output["reaction"] == "rocket"
-
-    # Verify reaction was tracked with custom type
-    assert fake_github_issues.added_reactions == [(12345, "rocket")]
-
-
-def test_add_reaction_to_comment_multiple(tmp_path: Path) -> None:
-    """Test adding reactions to multiple comments tracks all of them."""
-    fake_github_issues = FakeGitHubIssues()
-    fake_git = FakeGit()
-    runner = CliRunner()
-
-    with runner.isolated_filesystem(temp_dir=tmp_path):
-        cwd = Path.cwd()
-        ctx = ErkContext.for_test(
-            github=FakeGitHub(issues_gateway=fake_github_issues),
-            git=fake_git,
-            repo_root=cwd,
-            cwd=cwd,
-        )
-
-        # Add reaction to first comment
-        runner.invoke(
-            add_reaction_to_comment,
-            ["--comment-id", "100"],
-            obj=ctx,
-        )
-
-        # Add reaction to second comment
-        runner.invoke(
-            add_reaction_to_comment,
-            ["--comment-id", "101"],
-            obj=ctx,
-        )
-
-    # Both should be tracked
-    assert (100, "+1") in fake_github_issues.added_reactions
-    assert (101, "+1") in fake_github_issues.added_reactions
-
-
-# ============================================================================
-# add-reaction-to-comment CLI Argument Tests
-# ============================================================================
-
-
-def test_add_reaction_to_comment_missing_comment_id(tmp_path: Path) -> None:
-    """Test error when comment-id is missing."""
-    fake_github_issues = FakeGitHubIssues()
-    fake_git = FakeGit()
-    runner = CliRunner()
-
-    with runner.isolated_filesystem(temp_dir=tmp_path):
-        cwd = Path.cwd()
-
-        result = runner.invoke(
-            add_reaction_to_comment,
-            [],  # Missing --comment-id
-            obj=ErkContext.for_test(
-                github=FakeGitHub(issues_gateway=fake_github_issues),
-                git=fake_git,
-                repo_root=cwd,
-                cwd=cwd,
-            ),
-        )
-
-    # Click should return error for missing required option
-    assert result.exit_code != 0
-    assert "comment-id" in result.output.lower()
-
-
-# ============================================================================
 # JSON Output Structure Tests
 # ============================================================================
 
@@ -335,32 +204,3 @@ def test_get_pr_discussion_comments_json_structure(tmp_path: Path) -> None:
     assert "author" in comment_data
     assert "body" in comment_data
     assert "url" in comment_data
-
-
-def test_add_reaction_to_comment_json_structure_success(tmp_path: Path) -> None:
-    """Test JSON output structure for add-reaction-to-comment success."""
-    fake_github_issues = FakeGitHubIssues()
-    fake_git = FakeGit()
-    runner = CliRunner()
-
-    with runner.isolated_filesystem(temp_dir=tmp_path):
-        cwd = Path.cwd()
-
-        result = runner.invoke(
-            add_reaction_to_comment,
-            ["--comment-id", "12345"],
-            obj=ErkContext.for_test(
-                github=FakeGitHub(issues_gateway=fake_github_issues),
-                git=fake_git,
-                repo_root=cwd,
-                cwd=cwd,
-            ),
-        )
-
-    assert result.exit_code == 0
-    output = json.loads(result.output)
-
-    # Verify success structure
-    assert output["success"] is True
-    assert output["comment_id"] == 12345
-    assert output["reaction"] == "+1"

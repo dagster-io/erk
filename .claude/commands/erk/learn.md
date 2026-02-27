@@ -63,7 +63,7 @@ If the plan is NOT a learn plan, proceed to Step 2.
 
 ### Step 2: Check for Preprocessed Materials
 
-Check if `.erk/impl-context/` exists and contains files (this is the case when running in CI after `trigger-async-learn` committed materials to the learn branch):
+Check if `.erk/impl-context/` exists and contains files (this is the case when running in CI after the upload-impl-session pipeline committed materials to the learn branch):
 
 ```bash
 ls .erk/impl-context/ 2>/dev/null

@@ -20,17 +20,14 @@ Quick reference for all `erk exec` subcommands.
 | --------------------------------- | --------------------------------------------------------------------------- |
 | `add-plan-label`                  | Add a label to a plan via the appropriate backend.                          |
 | `add-plan-labels`                 | Batch add labels to multiple plans from JSON stdin.                         |
-| `add-reaction-to-comment`         | Add a reaction to a PR/issue comment.                                       |
 | `add-remote-execution-note`       | Add remote execution tracking note to PR body.                              |
 | `capture-session-info`            | Capture Claude Code session info for CI workflows.                          |
-| `check-impl`                      | Check .erk/impl-context/ folder structure and validate prerequisites.       |
 | `ci-update-pr-body`               | Update PR body with AI-generated summary and footer.                        |
 | `ci-verify-autofix`               | Run full CI verification after autofix push.                                |
 | `cleanup-impl-context`            | Clean up .erk/impl-context/ staging directory.                              |
 | `close-pr`                        | Close a plan with a comment.                                                |
 | `close-prs`                       | Batch close multiple plan PRs with comments from JSON stdin.                |
 | `create-impl-context-from-plan`   | Create .erk/impl-context/ folder from plan content.                         |
-| `create-plan-from-context`        | Create GitHub draft PR from plan content with erk-plan label.               |
 | `create-pr-from-session`          | Extract plan from Claude session and create GitHub draft PR.                |
 | `dash-data`                       | Serialize plan dashboard data to JSON.                                      |
 | `detect-plan-from-branch`         | Detect plan number from the current git branch.                             |
@@ -39,10 +36,7 @@ Quick reference for all `erk exec` subcommands.
 | `download-remote-session`         | Download a session from a git branch.                                       |
 | `exit-plan-mode-hook`             | Prompt user about plan saving when ExitPlanMode is called.                  |
 | `extract-latest-plan`             | Extract the latest plan from Claude session files.                          |
-| `find-project-dir`                | Find Claude Code project directory for a filesystem path.                   |
-| `generate-node-slugs`             | Generate slugs for objective node descriptions from JSON on stdin.          |
 | `generate-pr-address-summary`     | Generate enhanced PR comment for pr-address workflow.                       |
-| `generate-pr-summary`             | Generate PR summary from PR diff using Claude.                              |
 | `get-embedded-prompt`             | Get embedded prompt content from bundled prompts.                           |
 | `get-issue-body`                  | Fetch an issue's body using REST API (avoids GraphQL rate limits).          |
 | `get-issue-timeline-prs`          | Fetch PRs referencing an issue via REST API timeline.                       |
@@ -64,8 +58,6 @@ Quick reference for all `erk exec` subcommands.
 | `impl-verify`                     | Verify .erk/impl-context/ folder still exists after implementation.         |
 | `land-execute`                    | Execute deferred land operations.                                           |
 | `list-sessions`                   | List Claude Code sessions with metadata for the current project.            |
-| `mark-impl-ended`                 | Update implementation ended event in GitHub issue and local state file.     |
-| `mark-impl-started`               | Update implementation started event in GitHub issue and local state file.   |
 | `marker create`                   | Create a marker file.                                                       |
 | `marker delete`                   | Delete a marker file.                                                       |
 | `marker exists`                   | Check if a marker file exists.                                              |
@@ -80,9 +72,7 @@ Quick reference for all `erk exec` subcommands.
 | `objective-save-to-issue`         | Save plan as objective GitHub issue.                                        |
 | `objective-update-after-land`     | Update objective after landing a PR.                                        |
 | `plan-save`                       | Save plan as a draft PR.                                                    |
-| `plan-title-to-filename`          | Convert plan title to filename.                                             |
 | `plan-update`                     | Update an existing plan's content.                                          |
-| `plan-update-from-feedback`       | Update a plan issue's plan-body comment with new content.                   |
 | `post-or-update-pr-summary`       | Post or update a PR summary comment.                                        |
 | `post-pr-inline-comment`          | Post an inline review comment on a PR.                                      |
 | `post-workflow-started-comment`   | Post a workflow started comment to a GitHub issue.                          |
@@ -105,8 +95,6 @@ Quick reference for all `erk exec` subcommands.
 | `store-tripwire-candidates`       | Store tripwire candidates as a metadata comment on a plan issue.            |
 | `track-learn-evaluation`          | Track learn evaluation completion on a plan issue.                          |
 | `track-learn-result`              | Track learn workflow result on a plan issue.                                |
-| `trigger-async-learn`             | Trigger async learn workflow for a plan.                                    |
-| `tripwires-reminder-hook`         | Output tripwires reminder for UserPromptSubmit hook.                        |
 | `update-issue-body`               | Update an issue's body using REST API (avoids GraphQL rate limits).         |
 | `update-objective-node`           | Update node PR cells in an objective's roadmap table.                       |
 | `update-plan-header`              | Update plan-header metadata fields on a plan.                               |
@@ -116,7 +104,6 @@ Quick reference for all `erk exec` subcommands.
 | `user-prompt-hook`                | UserPromptSubmit hook for session persistence and coding reminders.         |
 | `validate-claude-credentials`     | Validate Claude credentials for CI workflows.                               |
 | `validate-plan-content`           | Validate plan content from file or stdin.                                   |
-| `wrap-plan-in-metadata-block`     | Return plan content for issue body.                                         |
 
 ## Commands
 
@@ -144,19 +131,6 @@ Batch add labels to multiple plans from JSON stdin.
 
 **Usage:** `erk exec add-plan-labels`
 
-### add-reaction-to-comment
-
-Add a reaction to a PR/issue comment.
-
-**Usage:** `erk exec add-reaction-to-comment`
-
-**Options:**
-
-| Flag           | Type    | Required | Default        | Description                                                         |
-| -------------- | ------- | -------- | -------------- | ------------------------------------------------------------------- |
-| `--comment-id` | INTEGER | Yes      | Sentinel.UNSET | Numeric comment ID                                                  |
-| `--reaction`   | TEXT    | No       | '+1'           | Reaction type: +1, -1, laugh, confused, heart, hooray, rocket, eyes |
-
 ### add-remote-execution-note
 
 Add remote execution tracking note to PR body.
@@ -182,18 +156,6 @@ Capture Claude Code session info for CI workflows.
 | Flag     | Type | Required | Default        | Description                                              |
 | -------- | ---- | -------- | -------------- | -------------------------------------------------------- |
 | `--path` | PATH | No       | Sentinel.UNSET | Path to find session for (defaults to current directory) |
-
-### check-impl
-
-Check .erk/impl-context/ folder structure and validate prerequisites.
-
-**Usage:** `erk exec check-impl`
-
-**Options:**
-
-| Flag        | Type | Required | Default | Description              |
-| ----------- | ---- | -------- | ------- | ------------------------ |
-| `--dry-run` | FLAG | No       | -       | Validate and output JSON |
 
 ### ci-update-pr-body
 
@@ -264,12 +226,6 @@ Create .erk/impl-context/ folder from plan content.
 | Name      | Required | Description |
 | --------- | -------- | ----------- |
 | `PLAN_ID` | Yes      | -           |
-
-### create-plan-from-context
-
-Create GitHub draft PR from plan content with erk-plan label.
-
-**Usage:** `erk exec create-plan-from-context`
 
 ### create-pr-from-session
 
@@ -357,25 +313,6 @@ Extract the latest plan from Claude session files.
 | -------------- | ---- | -------- | -------------- | ----------------------------------------------------------------------------- |
 | `--session-id` | TEXT | No       | Sentinel.UNSET | Session ID to search within (optional, searches all sessions if not provided) |
 
-### find-project-dir
-
-Find Claude Code project directory for a filesystem path.
-
-**Usage:** `erk exec find-project-dir`
-
-**Options:**
-
-| Flag     | Type | Required | Default        | Description                                              |
-| -------- | ---- | -------- | -------------- | -------------------------------------------------------- |
-| `--path` | PATH | No       | Sentinel.UNSET | Path to find project for (defaults to current directory) |
-| `--json` | FLAG | No       | -              | Output in JSON format                                    |
-
-### generate-node-slugs
-
-Generate slugs for objective node descriptions from JSON on stdin.
-
-**Usage:** `erk exec generate-node-slugs`
-
 ### generate-pr-address-summary
 
 Generate enhanced PR comment for pr-address workflow.
@@ -391,18 +328,6 @@ Generate enhanced PR comment for pr-address workflow.
 | `--model-name` | TEXT    | No       | 'claude-sonnet-4-5' | Claude model name used          |
 | `--run-url`    | TEXT    | Yes      | Sentinel.UNSET      | URL to the workflow run         |
 | `--job-status` | CHOICE  | Yes      | Sentinel.UNSET      | Job status (success or failure) |
-
-### generate-pr-summary
-
-Generate PR summary from PR diff using Claude.
-
-**Usage:** `erk exec generate-pr-summary`
-
-**Options:**
-
-| Flag          | Type    | Required | Default        | Description            |
-| ------------- | ------- | -------- | -------------- | ---------------------- |
-| `--pr-number` | INTEGER | Yes      | Sentinel.UNSET | PR number to summarize |
 
 ### get-embedded-prompt
 
@@ -700,30 +625,6 @@ List Claude Code sessions with metadata for the current project.
 | `--min-size`   | INTEGER | No       | 0       | Minimum session size in bytes (filters out tiny sessions) |
 | `--session-id` | TEXT    | No       | -       | Current session ID (for marking the current session)      |
 
-### mark-impl-ended
-
-Update implementation ended event in GitHub issue and local state file.
-
-**Usage:** `erk exec mark-impl-ended`
-
-**Options:**
-
-| Flag           | Type | Required | Default | Description                                          |
-| -------------- | ---- | -------- | ------- | ---------------------------------------------------- |
-| `--session-id` | TEXT | No       | -       | Session ID for tracking (passed from hooks/commands) |
-
-### mark-impl-started
-
-Update implementation started event in GitHub issue and local state file.
-
-**Usage:** `erk exec mark-impl-started`
-
-**Options:**
-
-| Flag           | Type | Required | Default | Description                                          |
-| -------------- | ---- | -------- | ------- | ---------------------------------------------------- |
-| `--session-id` | TEXT | No       | -       | Session ID for tracking (passed from hooks/commands) |
-
 ### marker
 
 Manage marker files for inter-process communication.
@@ -938,18 +839,6 @@ Save plan as a draft PR.
 | `--branch-slug`                   | TEXT    | No       | -       | Pre-generated branch slug (skips LLM call when provided)  |
 | `--objective`                     | INTEGER | No       | -       | Objective issue number (overrides session marker)         |
 
-### plan-title-to-filename
-
-Convert plan title to filename.
-
-**Usage:** `erk exec plan-title-to-filename` <title>
-
-**Arguments:**
-
-| Name    | Required | Description |
-| ------- | -------- | ----------- |
-| `TITLE` | Yes      | -           |
-
 ### plan-update
 
 Update an existing plan's content.
@@ -964,25 +853,6 @@ Update an existing plan's content.
 | `--format`      | CHOICE  | No       | 'json'         | Output format: json (default) or display (formatted text) |
 | `--plan-path`   | PATH    | No       | Sentinel.UNSET | Direct path to plan file (overrides session lookup)       |
 | `--session-id`  | TEXT    | No       | Sentinel.UNSET | Session ID to find plan file in scratch storage           |
-
-### plan-update-from-feedback
-
-Update a plan issue's plan-body comment with new content.
-
-**Usage:** `erk exec plan-update-from-feedback` <plan_number>
-
-**Arguments:**
-
-| Name          | Required | Description |
-| ------------- | -------- | ----------- |
-| `PLAN_NUMBER` | Yes      | -           |
-
-**Options:**
-
-| Flag             | Type | Required | Default        | Description                |
-| ---------------- | ---- | -------- | -------------- | -------------------------- |
-| `--plan-path`    | PATH | No       | Sentinel.UNSET | Path to plan markdown file |
-| `--plan-content` | TEXT | No       | Sentinel.UNSET | Plan content as string     |
 
 ### post-or-update-pr-summary
 
@@ -1277,30 +1147,6 @@ Track learn workflow result on a plan issue.
 | `--plan-issue` | INTEGER | No       | Sentinel.UNSET | Learn plan issue number (required if status is completed_with_plan)  |
 | `--plan-pr`    | INTEGER | No       | Sentinel.UNSET | Learn documentation PR number (required if status is pending_review) |
 
-### trigger-async-learn
-
-Trigger async learn workflow for a plan.
-
-**Usage:** `erk exec trigger-async-learn` <plan_id>
-
-**Arguments:**
-
-| Name      | Required | Description |
-| --------- | -------- | ----------- |
-| `PLAN_ID` | Yes      | -           |
-
-**Options:**
-
-| Flag              | Type | Required | Default | Description                                                                     |
-| ----------------- | ---- | -------- | ------- | ------------------------------------------------------------------------------- |
-| `--skip-workflow` | FLAG | No       | -       | Run preprocessing and commit to learn branch, but skip triggering the workflow. |
-
-### tripwires-reminder-hook
-
-Output tripwires reminder for UserPromptSubmit hook.
-
-**Usage:** `erk exec tripwires-reminder-hook`
-
 ### update-issue-body
 
 Update an issue's body using REST API (avoids GraphQL rate limits).
@@ -1417,9 +1263,3 @@ Validate plan content from file or stdin.
 | Flag          | Type | Required | Default        | Description                                           |
 | ------------- | ---- | -------- | -------------- | ----------------------------------------------------- |
 | `--plan-file` | PATH | No       | Sentinel.UNSET | Path to plan file. If not provided, reads from stdin. |
-
-### wrap-plan-in-metadata-block
-
-Return plan content for issue body.
-
-**Usage:** `erk exec wrap-plan-in-metadata-block`

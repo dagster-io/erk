@@ -1,8 +1,8 @@
 """Signal implementation events (started/ended/submitted) to GitHub.
 
 This exec command wraps the start/end/submit signaling operations:
-- "started": Combines post-start-comment and mark-impl-started
-- "ended": Runs mark-impl-ended
+- "started": Posts start comment and marks implementation as started
+- "ended": Marks implementation as ended
 - "submitted": Sets lifecycle_stage to "impl" after PR submission
 
 Provides a single entry point for /erk:plan-implement to signal events
