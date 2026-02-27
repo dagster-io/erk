@@ -111,10 +111,10 @@ class DryRunGitHubIssues(GitHubIssues):
     def get_prs_referencing_issue(
         self,
         repo_root: Path,
-        issue_number: int,
+        plan_number: int,
     ) -> list[PRReference]:
         """Delegate to wrapped implementation (read-only operation)."""
-        return self._wrapped.get_prs_referencing_issue(repo_root, issue_number)
+        return self._wrapped.get_prs_referencing_issue(repo_root, plan_number)
 
     def add_reaction_to_comment(
         self,

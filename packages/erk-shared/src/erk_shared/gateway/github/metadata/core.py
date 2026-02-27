@@ -266,7 +266,7 @@ def create_submission_queued_block(
     *,
     queued_at: str,
     submitted_by: str,
-    issue_number: int,
+    plan_number: int,
     validation_results: dict[str, bool],
     expected_workflow: str,
 ) -> MetadataBlock:
@@ -275,7 +275,7 @@ def create_submission_queued_block(
     Args:
         queued_at: ISO 8601 timestamp when submission was queued
         submitted_by: Username from git config (user.name)
-        issue_number: GitHub issue number
+        plan_number: GitHub plan issue number
         validation_results: Dict with validation checks (issue_is_open, has_erk_plan_label, etc.)
         expected_workflow: Name of the GitHub Actions workflow that will run
 
@@ -287,7 +287,7 @@ def create_submission_queued_block(
         "status": "queued",
         "queued_at": queued_at,
         "submitted_by": submitted_by,
-        "issue_number": issue_number,
+        "plan_number": plan_number,
         "validation_results": validation_results,
         "expected_workflow": expected_workflow,
         "trigger_mechanism": "label-based-webhook",
@@ -305,7 +305,7 @@ def create_workflow_started_block(
     started_at: str,
     workflow_run_id: str,
     workflow_run_url: str,
-    issue_number: int,
+    plan_number: int,
     branch_name: str | None = None,
     worktree_path: str | None = None,
 ) -> MetadataBlock:
@@ -315,7 +315,7 @@ def create_workflow_started_block(
         started_at: ISO 8601 timestamp when workflow started
         workflow_run_id: GitHub Actions run ID
         workflow_run_url: Full URL to the workflow run
-        issue_number: GitHub issue number
+        plan_number: GitHub plan issue number
         branch_name: Optional git branch name
         worktree_path: Optional path to worktree
 
@@ -328,7 +328,7 @@ def create_workflow_started_block(
         "started_at": started_at,
         "workflow_run_id": workflow_run_id,
         "workflow_run_url": workflow_run_url,
-        "issue_number": issue_number,
+        "plan_number": plan_number,
     }
 
     if branch_name is not None:
@@ -396,24 +396,24 @@ def render_plan_body_block(block: MetadataBlock) -> str:
 <!-- /erk:metadata-block:{block.key} -->"""
 
 
-def format_execution_commands(issue_number: int, *, url: str) -> str:
+def format_execution_commands(plan_number: int, *, url: str) -> str:
     """Format execution commands section for plan issues.
 
     Args:
-        issue_number: GitHub issue number
+        plan_number: GitHub plan issue number
         url: GitHub issue URL
 
     Returns:
         Formatted markdown with copy-pasteable commands
     """
-    return format_next_steps_markdown(issue_number, url=url)
+    return format_next_steps_markdown(plan_number, url=url)
 
 
-def format_plan_commands_section(issue_number: int) -> str:
+def format_plan_commands_section(plan_number: int) -> str:
     """Format copy-pasteable commands section for plan issues.
 
     Args:
-        issue_number: GitHub issue number
+        plan_number: GitHub plan issue number
 
     Returns:
         Formatted markdown with copy-pasteable commands for the issue body
@@ -421,11 +421,11 @@ def format_plan_commands_section(issue_number: int) -> str:
     return f"""## Commands
 
 ```bash
-erk br co --for-plan {issue_number}
+erk br co --for-plan {plan_number}
 ```
 
 ```bash
-erk pr dispatch {issue_number}
+erk pr dispatch {plan_number}
 ```"""
 
 
@@ -446,7 +446,7 @@ def format_plan_issue_body_simple(plan_content: str) -> str:
     return render_plan_body_block(plan_block)
 
 
-def format_plan_issue_body(plan_content: str, issue_number: int, *, url: str) -> str:
+def format_plan_issue_body(plan_content: str, plan_number: int, *, url: str) -> str:
     """Format the complete issue body for a plan issue.
 
     Creates an issue body with:
@@ -456,7 +456,7 @@ def format_plan_issue_body(plan_content: str, issue_number: int, *, url: str) ->
 
     Args:
         plan_content: The plan markdown content
-        issue_number: GitHub issue number (for command formatting)
+        plan_number: GitHub plan issue number (for command formatting)
         url: GitHub issue URL
 
     Returns:
@@ -464,7 +464,7 @@ def format_plan_issue_body(plan_content: str, issue_number: int, *, url: str) ->
     """
     plan_block = create_plan_body_block(plan_content)
     plan_markdown = render_plan_body_block(plan_block)
-    commands_section = format_execution_commands(issue_number, url=url)
+    commands_section = format_execution_commands(plan_number, url=url)
 
     return f"""{plan_markdown}
 

@@ -269,21 +269,21 @@ class GitHubIssues(ABC):
     def get_prs_referencing_issue(
         self,
         repo_root: Path,
-        issue_number: int,
+        plan_number: int,
     ) -> list[PRReference]:
-        """Get PRs that reference an issue via REST timeline API.
+        """Get PRs that reference a plan via REST timeline API.
 
         Returns lightweight PR info (number, state, is_draft) for PRs
-        that cross-reference this issue. Does not filter by willCloseTarget.
+        that cross-reference this plan. Does not filter by willCloseTarget.
 
         For erk-plan issues, any referencing PR is considered linked.
 
         Args:
             repo_root: Path to repository root
-            issue_number: Issue number to find referencing PRs for
+            plan_number: Plan number to find referencing PRs for
 
         Returns:
-            List of PRReference objects for PRs that reference the issue
+            List of PRReference objects for PRs that reference the plan
         """
         ...
 

@@ -435,7 +435,7 @@ def test_list_runs_with_pr_linkage(tmp_path: Path) -> None:
 
     github_ops = FakeGitHub(
         workflow_runs=workflow_runs,
-        pr_issue_linkages={142: [pr_info]},
+        pr_plan_linkages={142: [pr_info]},
     )
 
     issues = {

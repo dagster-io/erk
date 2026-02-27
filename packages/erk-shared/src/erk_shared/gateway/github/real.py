@@ -668,11 +668,11 @@ class RealGitHub(GitHub):
     def get_prs_linked_to_issues(
         self,
         location: GitHubRepoLocation,
-        issue_numbers: list[int],
+        plan_numbers: list[int],
     ) -> dict[int, list[PullRequestInfo]]:
         """Get PRs linked to issues via CrossReferencedEvent timeline.
 
-        Uses GraphQL CrossReferencedEvent to find all PRs that reference each issue,
+        Uses GraphQL CrossReferencedEvent to find all PRs that reference each plan,
         regardless of whether they will close the issue when merged. Includes open,
         closed, and draft PRs. Used by erk dash for batch queries with full PR data
         (CI status, mergeability).
@@ -683,12 +683,12 @@ class RealGitHub(GitHub):
         availability and authentication. We cannot reliably check gh installation
         and authentication status a priori without duplicating gh's logic.
         """
-        if not issue_numbers:
+        if not plan_numbers:
             return {}
 
         try:
             # Build and execute GraphQL query to fetch all issues
-            query = self._build_issue_pr_linkage_query(issue_numbers, location.repo_id)
+            query = self._build_issue_pr_linkage_query(plan_numbers, location.repo_id)
             response = self._execute_batch_pr_query(query, location.root)
 
             # Parse response and build inverse mapping
@@ -697,11 +697,11 @@ class RealGitHub(GitHub):
             # gh not installed, not authenticated, or parsing failed
             return {}
 
-    def _build_issue_pr_linkage_query(self, issue_numbers: list[int], repo_id: GitHubRepoId) -> str:
-        """Build GraphQL query to fetch PRs linked to issues via timeline.
+    def _build_issue_pr_linkage_query(self, plan_numbers: list[int], repo_id: GitHubRepoId) -> str:
+        """Build GraphQL query to fetch PRs linked to plans via timeline.
 
         Uses CrossReferencedEvent on issue timelines to find PRs that will close
-        each issue. This is O(issues) instead of O(all PRs in repo).
+        each issue. This is O(plans) instead of O(all PRs in repo).
 
         Uses pre-aggregated count fields for efficiency (~15-30x smaller payload):
         - contexts(last: 1) with totalCount, checkRunCountsByState, statusContextCountsByState
@@ -711,7 +711,7 @@ class RealGitHub(GitHub):
         support variable alias names. The fragment is reused from graphql_queries.py.
 
         Args:
-            issue_numbers: List of issue numbers to query
+            plan_numbers: List of plan numbers to query
             repo_id: GitHub repository identity (owner and repo name)
 
         Returns:
@@ -719,8 +719,8 @@ class RealGitHub(GitHub):
         """
         # Build aliased issue queries using the fragment spread
         issue_queries = []
-        for issue_num in issue_numbers:
-            issue_query = f"""    issue_{issue_num}: issue(number: {issue_num}) {{
+        for plan_num in plan_numbers:
+            issue_query = f"""    issue_{plan_num}: issue(number: {plan_num}) {{
       timelineItems(itemTypes: [CROSS_REFERENCED_EVENT], first: 20) {{
         nodes {{
           ... on CrossReferencedEvent {{
@@ -747,14 +747,14 @@ query {{
         """Parse GraphQL response from issue timeline query.
 
         Processes CrossReferencedEvent timeline items to extract all PRs that
-        reference each issue.
+        reference each plan.
 
         Args:
             response: GraphQL response data
             repo_id: GitHub repository identity (owner and repo name)
 
         Returns:
-            Mapping of issue_number -> list of PRs sorted by created_at descending
+            Mapping of plan_number -> list of PRs sorted by created_at descending
         """
         result: dict[int, list[PullRequestInfo]] = {}
         repo_data = response.get("data", {}).get("repository", {})
@@ -765,8 +765,8 @@ query {{
             if not key.startswith("issue_") or issue_data is None:
                 continue
 
-            # Extract issue number from alias
-            issue_number = int(key.removeprefix("issue_"))
+            # Extract plan number from alias
+            plan_number = int(key.removeprefix("issue_"))
 
             # Collect PRs with timestamps for sorting
             prs_with_timestamps: list[tuple[PullRequestInfo, str]] = []
@@ -850,7 +850,7 @@ query {{
             # Sort by created_at descending and store
             if prs_with_timestamps:
                 prs_with_timestamps.sort(key=lambda x: x[1], reverse=True)
-                result[issue_number] = [pr for pr, _ in prs_with_timestamps]
+                result[plan_number] = [pr for pr, _ in prs_with_timestamps]
 
         return result
 
@@ -2267,38 +2267,36 @@ query {{
         self,
         *,
         location: GitHubRepoLocation,
-        issue_numbers: list[int],
+        plan_numbers: list[int],
     ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
         """Fetch specific issues by number with full PR linkage data.
 
         Uses issueOrPullRequest to handle both issues and merged PRs.
         """
-        if not issue_numbers:
+        if not plan_numbers:
             return ([], {})
 
         repo_id = location.repo_id
-        query = self._build_issues_by_numbers_query(issue_numbers, repo_id)
+        query = self._build_issues_by_numbers_query(plan_numbers, repo_id)
         response = self._execute_batch_pr_query(query, location.root)
         return self._parse_issues_by_numbers_response(response, repo_id)
 
-    def _build_issues_by_numbers_query(
-        self, issue_numbers: list[int], repo_id: GitHubRepoId
-    ) -> str:
+    def _build_issues_by_numbers_query(self, plan_numbers: list[int], repo_id: GitHubRepoId) -> str:
         """Build GraphQL query to fetch specific issues by number.
 
         Uses issueOrPullRequest(number: N) aliases to handle both issues
         and merged PRs. Includes full issue fields and PR linkage timeline.
 
         Args:
-            issue_numbers: List of issue/PR numbers to query
+            plan_numbers: List of plan/PR numbers to query
             repo_id: GitHub repository identity
 
         Returns:
             GraphQL query string
         """
         issue_queries = []
-        for issue_num in issue_numbers:
-            issue_query = f"""    issue_{issue_num}: issueOrPullRequest(number: {issue_num}) {{
+        for plan_num in plan_numbers:
+            issue_query = f"""    issue_{plan_num}: issueOrPullRequest(number: {plan_num}) {{
       ... on Issue {{
         number
         title

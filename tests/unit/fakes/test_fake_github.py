@@ -509,7 +509,7 @@ def test_fake_github_get_issues_with_pr_linkages_returns_pr_linkages() -> None:
     )
     ops = FakeGitHub(
         issues_data=[issue],
-        pr_issue_linkages={42: [pr]},
+        pr_plan_linkages={42: [pr]},
     )
 
     issues, pr_linkages = ops.get_issues_with_pr_linkages(
@@ -591,7 +591,7 @@ def test_fake_github_get_issues_with_pr_linkages_no_linkages_for_filtered_issues
     # Issue 2 has PR linkage but doesn't match label filter
     ops = FakeGitHub(
         issues_data=[issue1, issue2],
-        pr_issue_linkages={2: [pr]},
+        pr_plan_linkages={2: [pr]},
     )
 
     issues, pr_linkages = ops.get_issues_with_pr_linkages(

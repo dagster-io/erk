@@ -71,8 +71,8 @@ def test_create_plan_saved_issue_marker_stores_number(tmp_path: Path) -> None:
 # get_existing_saved_issue tests
 
 
-def test_get_existing_saved_issue_returns_issue_number(tmp_path: Path) -> None:
-    """Verify stored issue number is returned."""
+def test_get_existing_saved_issue_returns_plan_number(tmp_path: Path) -> None:
+    """Verify stored plan number is returned."""
     session_id = "test-session-123"
     create_plan_saved_issue_marker(session_id, tmp_path, 99)
 

@@ -12,7 +12,7 @@ Two-layer architecture:
 import click
 
 from erk_shared.gateway.github.parsing import (
-    parse_issue_number_from_url,
+    parse_plan_number_from_url,
     parse_pr_number_from_url,
 )
 from erk_shared.output.output import user_output
@@ -51,7 +51,7 @@ def parse_issue_identifier(identifier: str) -> int:
         return int(identifier)
 
     # GitHub URL
-    issue_number = parse_issue_number_from_url(identifier)
+    issue_number = parse_plan_number_from_url(identifier)
     if issue_number is not None:
         return issue_number
 
