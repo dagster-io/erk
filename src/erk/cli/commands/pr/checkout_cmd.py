@@ -254,9 +254,11 @@ def _checkout_pr(
 
         # Retrack immediately after force-update if branch was already tracked by Graphite.
         # This prevents divergence if subsequent operations (worktree creation, rebase) fail.
-        if ctx.graphite_branch_ops is not None:
-            if ctx.branch_manager.get_parent_branch(repo.root, branch_name) is not None:
-                ctx.graphite_branch_ops.retrack_branch(repo.root, branch_name)
+        if (
+            ctx.graphite_branch_ops is not None
+            and ctx.branch_manager.get_parent_branch(repo.root, branch_name) is not None
+        ):
+            ctx.graphite_branch_ops.retrack_branch(repo.root, branch_name)
 
     # Create worktree using shared helper
     worktree_path, already_existed = ensure_branch_has_worktree(
@@ -295,8 +297,7 @@ def _checkout_pr(
         and not pr.is_cross_repository
     )
     if should_track_with_graphite:
-        parent = ctx.branch_manager.get_parent_branch(repo.root, branch_name)
-        if parent is None:
+        if ctx.branch_manager.get_parent_branch(repo.root, branch_name) is None:
             ctx.console.info("Tracking branch with Graphite...")
             ctx.branch_manager.track_branch(repo.root, branch_name, pr.base_ref_name)
 
