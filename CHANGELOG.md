@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of eca302f73 -->
+<!-- As of 5f7f5299e -->
 
 ### Major Changes
 
@@ -37,6 +37,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add "blockers" column to TUI Objectives dashboard with clickable plan numbers (1ce603c)
 - Add `-d` and `-u` short aliases for `--down` and `--up` flags in `erk land` (152083a)
 - Add diagnostics for dispatch metadata failures with improved TUI feedback (9d8266b)
+- Add keyboard shortcut (`n`) to open GitHub Actions run URL from TUI main list (fcad46de9)
+- Link PR numbers to objective roadmap nodes automatically at submit time (861644307)
 
 ### Changed
 
@@ -66,6 +68,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Convert TUI dispatch commands from blocking modals to non-blocking toast+worker pattern (fd8a03c)
 - Remove backend label from statusline output (bc4f326)
 - Remove non-slot worktree after landing instead of leaving detached HEAD state (a637089)
+- Eliminate tmux from codespace remote execution — commands now run directly over SSH (2ef5349a2)
+- Simplify learn triggering in `erk land` with direct issue creation instead of async gist-based pipeline (2f667975a)
+- Improve success output for `erk pr submit` and `erk pr replan` with structured formatting (536f52161)
 
 ### Fixed
 
@@ -95,6 +100,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix session discovery for draft-PR plans by using header_fields (ae2d5dc)
 - Fix `erk plan check` for draft-PR plan format and simplify branch force-update logic (d315ce4)
 - Fix rocket emoji appearing on draft PRs in lifecycle display (7104464, 45a550f)
+- Fix Graphite tracking divergence by retracking immediately after SHA changes (085f74837)
+- Fix objective update after land with deleted worktree path (24944260b)
+- Fix `gt track` and `gt retrack` to use repo root instead of worktree path (5882310b3)
+- Fix objective-link preservation in replan flow (b93b4b376)
+- Fix `erk br co --for-plan` output to include activation instructions (638445489)
+- Fix plan-header metadata block lost silently in CI update flow (54c362406)
+- Fix auto-match roadmap nodes by PR reference in objective update (60ab97ffe)
+- Fix modal dismiss keys (Esc/q/Space) not working in TUI screens (e7e8f8470)
 
 ### Removed
 
