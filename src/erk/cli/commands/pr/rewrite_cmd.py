@@ -144,6 +144,11 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
     click.echo(click.style("Phase 4: Amending commit", bold=True))
     commit_message = f"{title}\n\n{body}" if body else title
     ctx.git.commit.amend_commit(cwd, commit_message)
+
+    # Retrack immediately after amend — before push or any failing operation
+    if ctx.graphite_branch_ops is not None:
+        ctx.graphite_branch_ops.retrack_branch(discovery.repo_root, discovery.current_branch)
+
     click.echo(click.style("   Commit amended", fg="green"))
     click.echo("")
 
@@ -186,10 +191,6 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
     is_learn_origin = is_learn_plan(impl_dir) if impl_dir is not None else False
     if is_learn_origin:
         ctx.github.add_label_to_pr(discovery.repo_root, pr_number, ERK_SKIP_LEARN_LABEL)
-
-    # Retrack Graphite branch if needed (fix tracking divergence from amend)
-    if ctx.graphite_branch_ops is not None:
-        ctx.graphite_branch_ops.retrack_branch(discovery.repo_root, discovery.current_branch)
 
     # Clean up scratch diff file
     cleanup_diff_file(diff_file)

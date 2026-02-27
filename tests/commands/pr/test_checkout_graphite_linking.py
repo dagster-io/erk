@@ -230,11 +230,12 @@ def test_pr_checkout_skips_graphite_for_fork_prs() -> None:
 
 
 def test_pr_checkout_retracks_diverged_graphite_branch() -> None:
-    """Test pr checkout retracks when Graphite SHA cache is stale.
+    """Test pr checkout retracks immediately after force-update.
 
-    When a branch is already tracked but the SHA has diverged from
-    Graphite's cache (e.g., after remote dispatch added commits),
-    checkout should retrack to update the cache.
+    When a branch is already tracked by Graphite and the local branch
+    is force-updated to match remote, the retrack happens immediately
+    after the force-update (before worktree creation or rebase) to
+    prevent divergence if later operations fail.
     """
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -279,8 +280,7 @@ def test_pr_checkout_retracks_diverged_graphite_branch() -> None:
 
         assert result.exit_code == 0, result.output
         assert "Created worktree for PR #105" in result.output
-        # Should retrack instead of tracking fresh
-        assert "Retracking diverged branch with Graphite" in result.output
+        # Should NOT track fresh — branch is already tracked
         assert "Tracking branch with Graphite" not in result.output
         # retrack_branch must be called with repo root, not worktree path
         assert len(graphite.retrack_branch_calls) == 1
