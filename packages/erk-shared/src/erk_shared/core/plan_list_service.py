@@ -28,8 +28,8 @@ class PlanListData:
 
     Attributes:
         plans: List of Plan objects with enriched metadata
-        pr_linkages: Mapping of issue_number -> list of PRs that close that issue
-        workflow_runs: Mapping of issue_number -> most relevant WorkflowRun
+        pr_linkages: Mapping of plan_number -> list of PRs that close that plan
+        workflow_runs: Mapping of plan_number -> most relevant WorkflowRun
         api_ms: Milliseconds spent on REST+GraphQL API calls (issues/PRs fetch)
         plan_parsing_ms: Milliseconds spent parsing plan bodies
         workflow_runs_ms: Milliseconds spent fetching workflow runs

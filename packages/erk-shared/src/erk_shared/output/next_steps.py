@@ -7,7 +7,7 @@ from dataclasses import dataclass
 class IssueNextSteps:
     """Canonical commands for issue operations."""
 
-    issue_number: int
+    plan_number: int
     url: str
 
     @property
@@ -16,27 +16,27 @@ class IssueNextSteps:
 
     @property
     def checkout(self) -> str:
-        return f"erk br co --for-plan {self.issue_number}"
+        return f"erk br co --for-plan {self.plan_number}"
 
     @property
     def dispatch(self) -> str:
-        return f"erk pr dispatch {self.issue_number}"
+        return f"erk pr dispatch {self.plan_number}"
 
     @property
     def checkout_and_implement(self) -> str:
         return (
-            f'source "$(erk br co --for-plan {self.issue_number} --script)"'
+            f'source "$(erk br co --for-plan {self.plan_number} --script)"'
             " && erk implement --dangerous"
         )
 
     @property
     def checkout_new_slot(self) -> str:
-        return f"erk br co --new-slot --for-plan {self.issue_number}"
+        return f"erk br co --new-slot --for-plan {self.plan_number}"
 
     @property
     def checkout_new_slot_and_implement(self) -> str:
         return (
-            f'source "$(erk br co --new-slot --for-plan {self.issue_number} --script)"'
+            f'source "$(erk br co --new-slot --for-plan {self.plan_number} --script)"'
             " && erk implement --dangerous"
         )
 
@@ -89,9 +89,9 @@ DISPATCH_SLASH_COMMAND = "/erk:pr-dispatch"
 CHECKOUT_SLASH_COMMAND = "/erk:prepare"
 
 
-def format_next_steps_plain(issue_number: int, *, url: str) -> str:
+def format_next_steps_plain(plan_number: int, *, url: str) -> str:
     """Format for CLI output (plain text)."""
-    s = IssueNextSteps(issue_number, url=url)
+    s = IssueNextSteps(plan_number, url=url)
     return f"""Next steps:
 
 View Issue: {s.view}
@@ -121,9 +121,9 @@ OR exit Claude Code first, then run one of:
   Dispatch to Queue: {s.dispatch}"""
 
 
-def format_next_steps_markdown(issue_number: int, *, url: str) -> str:
+def format_next_steps_markdown(plan_number: int, *, url: str) -> str:
     """Format for issue body (markdown)."""
-    s = IssueNextSteps(issue_number, url=url)
+    s = IssueNextSteps(plan_number, url=url)
     return f"""## Execution Commands
 
 **Dispatch to Erk Queue:**

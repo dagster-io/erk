@@ -25,7 +25,7 @@ class IssueBranchSetup:
         branch_name: Git branch name (e.g., plnd/fix-bug-01-15-1430)
         worktree_name: Sanitized directory name for the worktree
         plan_content: Issue body to use as plan.md content
-        issue_number: GitHub issue number
+        plan_number: Plan number
         issue_url: Full GitHub issue URL
         issue_title: Issue title for reference
         objective_issue: Linked objective issue number, or None if not linked
@@ -35,7 +35,7 @@ class IssueBranchSetup:
     branch_name: str
     worktree_name: str
     plan_content: str
-    issue_number: int
+    plan_number: int
     issue_url: str
     issue_title: str
     objective_issue: int | None
@@ -90,7 +90,7 @@ def prepare_plan_for_worktree(
             f"Plan identifier '{plan.plan_identifier}' is not a valid issue number. "
             "Expected a numeric GitHub issue number."
         )
-    issue_number = int(plan.plan_identifier)
+    plan_number = int(plan.plan_identifier)
 
     # Collect warnings
     warnings: list[str] = []
@@ -123,7 +123,7 @@ def prepare_plan_for_worktree(
         branch_name=branch_name,
         worktree_name=worktree_name,
         plan_content=plan.body,
-        issue_number=issue_number,
+        plan_number=plan_number,
         issue_url=plan.url,
         issue_title=plan.title,
         objective_issue=plan.objective_id,

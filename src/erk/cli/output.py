@@ -78,7 +78,7 @@ def format_implement_summary(results: list[CommandResult], total_duration: float
             pr_url = result.pr_url
             pr_number = result.pr_number
             pr_title = result.pr_title
-            plan_number = result.issue_number
+            plan_number = result.plan_number
             break
 
     if pr_url:
@@ -256,7 +256,7 @@ def stream_command_with_feedback(
         pr_url=pr_url,
         pr_number=pr_number,
         pr_title=pr_title,
-        issue_number=plan_number,
+        plan_number=plan_number,
         duration_seconds=duration,
         error_message=error_message,
         filtered_messages=filtered_messages,

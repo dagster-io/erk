@@ -304,7 +304,7 @@ def _setup_impl_for_plan(
     save_plan_ref(
         impl_path,
         provider="github",
-        plan_id=str(setup.issue_number),
+        plan_id=str(setup.plan_number),
         url=setup.issue_url,
         labels=(),
         objective_id=setup.objective_issue,
@@ -316,18 +316,18 @@ def _setup_impl_for_plan(
             worktree_path=worktree_path,
             target_subpath=None,
             post_cd_commands=None,
-            final_message=f'echo "Prepared plan #{setup.issue_number} at $(pwd)"',
+            final_message=f'echo "Prepared plan #{setup.plan_number} at $(pwd)"',
             comment="erk branch checkout --for-plan activation script",
         )
         result = ctx.script_writer.write_activation_script(
             activation_script,
             command_name="branch-checkout",
-            comment=f"branch checkout --for-plan {setup.issue_number}",
+            comment=f"branch checkout --for-plan {setup.plan_number}",
         )
         result.output_for_shell_integration()
         sys.exit(0)
 
-    user_output(f"Created .erk/impl-context/ folder from plan #{setup.issue_number}")
+    user_output(f"Created .erk/impl-context/ folder from plan #{setup.plan_number}")
 
 
 @alias("co")

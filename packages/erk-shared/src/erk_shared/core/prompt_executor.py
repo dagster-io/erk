@@ -138,7 +138,7 @@ class CommandResult:
         pr_url: Pull request URL if one was created, None otherwise
         pr_number: Pull request number if one was created, None otherwise
         pr_title: Pull request title if one was created, None otherwise
-        issue_number: GitHub issue number if one was linked, None otherwise
+        plan_number: Plan number if one was linked, None otherwise
         duration_seconds: Execution time in seconds
         error_message: Error description if command failed, None otherwise
         filtered_messages: List of text messages and tool summaries for display
@@ -148,7 +148,7 @@ class CommandResult:
     pr_url: str | None
     pr_number: int | None
     pr_title: str | None
-    issue_number: int | None
+    plan_number: int | None
     duration_seconds: float
     error_message: str | None
     filtered_messages: list[str] = field(default_factory=list)
@@ -260,7 +260,7 @@ class PromptExecutor(ABC):
         pr_url: str | None = None
         pr_number: int | None = None
         pr_title: str | None = None
-        issue_number: int | None = None
+        plan_number: int | None = None
         error_message: str | None = None
         success = True
 
@@ -285,7 +285,7 @@ class PromptExecutor(ABC):
                 case PrTitleEvent(title=title):
                     pr_title = title
                 case IssueNumberEvent(number=num):
-                    issue_number = num
+                    plan_number = num
                 case ErrorEvent(message=msg):
                     error_message = msg
                     success = False
@@ -307,7 +307,7 @@ class PromptExecutor(ABC):
             pr_url=pr_url,
             pr_number=pr_number,
             pr_title=pr_title,
-            issue_number=issue_number,
+            plan_number=plan_number,
             duration_seconds=duration,
             error_message=error_message,
             filtered_messages=filtered_messages,
