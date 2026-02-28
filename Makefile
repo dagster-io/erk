@@ -1,13 +1,10 @@
-.PHONY: format format-check lint prettier prettier-check ty upgrade-ty test test-erkbot py-fast-ci fast-ci all-ci md-check docs-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve docs-deploy exec-reference-check erkdesk-install erkdesk-start erkdesk-package erkdesk-make erkdesk-test erkdesk-test-watch slackbot
+.PHONY: format-check lint prettier prettier-check ty upgrade-ty test test-erkbot py-fast-ci fast-ci all-ci md-check docs-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve docs-deploy exec-reference-check erkdesk-install erkdesk-start erkdesk-package erkdesk-make erkdesk-test erkdesk-test-watch slackbot
 
 prettier:
 	prettier --write '**/*.md' --ignore-path .gitignore
 
 prettier-check:
 	prettier --check '**/*.md' --ignore-path .gitignore
-
-format:
-	uv run ruff format
 
 format-check:
 	uv run ruff format --check
@@ -17,6 +14,7 @@ lint:
 
 fix:
 	uv run ruff check --fix --unsafe-fixes
+	uv run ruff format
 	prettier --write '**/*.md' --ignore-path .gitignore
 
 ty:
