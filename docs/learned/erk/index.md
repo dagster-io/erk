@@ -11,7 +11,7 @@
 - **[graphite-branch-setup.md](graphite-branch-setup.md)** — submitting a PR with Graphite, encountering no_parent error, setting up branch tracking for gt
 - **[graphite-divergence-detection.md](graphite-divergence-detection.md)** — debugging remote divergence errors during erk pr submit, understanding the Graphite-first submit flow's pre-checks, resolving 'branch is behind remote' errors, using --force flag with erk pr submit
 - **[graphite-stack-troubleshooting.md](graphite-stack-troubleshooting.md)** — debugging Graphite stack operation failures, recovering from gt sync or gt submit errors, fixing stack ordering or parent tracking issues
-- **[issue-pr-linkage-storage.md](issue-pr-linkage-storage.md)** — understanding how plans link to PRs, debugging why a PR isn't linked to its issue, working with .erk/impl-context/plan-ref.json or .erk/impl-context/issue.json, creating PRs that close issues
+- **[issue-pr-linkage-storage.md](issue-pr-linkage-storage.md)** — understanding how plans link to PRs, debugging why a PR isn't linked to its issue, working with .erk/impl-context/plan-ref.json or .erk/impl-context/ref.json, creating PRs that close issues
 - **[placeholder-branches.md](placeholder-branches.md)** — working with worktree pool slots or slot commands, understanding why placeholder branches bypass BranchManager, debugging slot cleanup during erk land
 - **[pr-address-workflows.md](pr-address-workflows.md)** — addressing PR review comments, choosing between local and remote PR addressing, understanding erk launch pr-address, understanding /erk:pr-address command
 - **[pr-commands.md](pr-commands.md)** — generating or modifying PR body footers, debugging `erk pr check` footer validation failures
