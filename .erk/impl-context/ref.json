@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: Remove invalid `--pr` flag from pr-rewrite workflow"
+}
