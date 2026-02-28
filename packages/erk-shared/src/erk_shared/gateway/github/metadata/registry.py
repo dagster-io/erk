@@ -8,18 +8,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+from functools import cache
+from typing import TYPE_CHECKING
 
-from erk_shared.gateway.github.metadata.schemas import (
-    ImplementationStatusSchema,
-    ObjectiveHeaderSchema,
-    PlanHeaderSchema,
-    PlanRetrySchema,
-    PlanSchema,
-    SubmissionQueuedSchema,
-    WorkflowStartedSchema,
-    WorktreeCreationSchema,
-)
-from erk_shared.gateway.github.metadata.types import MetadataBlockSchema
+if TYPE_CHECKING:
+    from erk_shared.gateway.github.metadata.types import MetadataBlockSchema
 
 
 class BlockCategory(Enum):
@@ -38,31 +31,46 @@ class BlockTypeInfo:
     schema: MetadataBlockSchema | None
 
 
-# The canonical registry of all known block types.
-# Populated at import time. New block types MUST be added here.
-_REGISTRY: dict[str, BlockTypeInfo] = {}
+@cache
+def _build_registry() -> dict[str, BlockTypeInfo]:
+    """Build the block type registry on first access.
 
+    New block types MUST be added here.
+    """
+    from erk_shared.gateway.github.metadata.schemas import (
+        ImplementationStatusSchema,
+        ObjectiveHeaderSchema,
+        PlanHeaderSchema,
+        PlanRetrySchema,
+        PlanSchema,
+        SubmissionQueuedSchema,
+        WorkflowStartedSchema,
+        WorktreeCreationSchema,
+    )
 
-def _register(key: str, category: BlockCategory, schema: MetadataBlockSchema | None) -> None:
-    _REGISTRY[key] = BlockTypeInfo(key=key, category=category, schema=schema)
+    registry: dict[str, BlockTypeInfo] = {}
 
+    def register(key: str, category: BlockCategory, schema: MetadataBlockSchema | None) -> None:
+        registry[key] = BlockTypeInfo(key=key, category=category, schema=schema)
 
-# --- YAML blocks (10) ---
-_register("plan-header", BlockCategory.YAML, PlanHeaderSchema())
-_register("erk-plan", BlockCategory.YAML, PlanSchema())
-_register("erk-implementation-status", BlockCategory.YAML, ImplementationStatusSchema())
-_register("erk-worktree-creation", BlockCategory.YAML, WorktreeCreationSchema())
-_register("submission-queued", BlockCategory.YAML, SubmissionQueuedSchema())
-_register("workflow-started", BlockCategory.YAML, WorkflowStartedSchema())
-_register("plan-retry", BlockCategory.YAML, PlanRetrySchema())
-_register("objective-header", BlockCategory.YAML, ObjectiveHeaderSchema())
-_register("tripwire-candidates", BlockCategory.YAML, None)
-_register("objective-roadmap", BlockCategory.YAML, None)
+    # --- YAML blocks (10) ---
+    register("plan-header", BlockCategory.YAML, PlanHeaderSchema())
+    register("erk-plan", BlockCategory.YAML, PlanSchema())
+    register("erk-implementation-status", BlockCategory.YAML, ImplementationStatusSchema())
+    register("erk-worktree-creation", BlockCategory.YAML, WorktreeCreationSchema())
+    register("submission-queued", BlockCategory.YAML, SubmissionQueuedSchema())
+    register("workflow-started", BlockCategory.YAML, WorkflowStartedSchema())
+    register("plan-retry", BlockCategory.YAML, PlanRetrySchema())
+    register("objective-header", BlockCategory.YAML, ObjectiveHeaderSchema())
+    register("tripwire-candidates", BlockCategory.YAML, None)
+    register("objective-roadmap", BlockCategory.YAML, None)
 
-# --- Content blocks (3) ---
-_register("plan-body", BlockCategory.CONTENT, None)
-_register("objective-body", BlockCategory.CONTENT, None)
-_register("planning-session-prompts", BlockCategory.CONTENT, None)
+    # --- Content blocks (3) ---
+    register("plan-body", BlockCategory.CONTENT, None)
+    register("objective-body", BlockCategory.CONTENT, None)
+    register("planning-session-prompts", BlockCategory.CONTENT, None)
+
+    return registry
 
 
 def get_block_type(key: str) -> BlockTypeInfo | None:
@@ -70,19 +78,19 @@ def get_block_type(key: str) -> BlockTypeInfo | None:
 
     Returns None if the key is not registered.
     """
-    return _REGISTRY.get(key)
+    return _build_registry().get(key)
 
 
 def get_all_block_types() -> dict[str, BlockTypeInfo]:
     """Return a copy of the full registry."""
-    return dict(_REGISTRY)
+    return dict(_build_registry())
 
 
 def get_yaml_block_types() -> list[BlockTypeInfo]:
     """Return all YAML-category block types."""
-    return [info for info in _REGISTRY.values() if info.category == BlockCategory.YAML]
+    return [info for info in _build_registry().values() if info.category == BlockCategory.YAML]
 
 
 def get_content_block_types() -> list[BlockTypeInfo]:
     """Return all content-category block types."""
-    return [info for info in _REGISTRY.values() if info.category == BlockCategory.CONTENT]
+    return [info for info in _build_registry().values() if info.category == BlockCategory.CONTENT]
