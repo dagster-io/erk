@@ -3,7 +3,7 @@ title: Issue-PR Linkage Storage Model
 read_when:
   - "understanding how plans link to PRs"
   - "debugging why a PR isn't linked to its issue"
-  - "working with .erk/impl-context/plan-ref.json or .erk/impl-context/issue.json"
+  - "working with .erk/impl-context/plan-ref.json or .erk/impl-context/ref.json"
   - "creating PRs that close issues"
 last_audited: "2026-02-17 00:00 PT"
 audit_result: clean
@@ -38,7 +38,7 @@ The primary path for creating issue-PR linkages:
 
 Slash commands that create PRs read the issue reference from local storage:
 
-1. Check for `.erk/impl-context/plan-ref.json` or `.erk/impl-context/ref.json` (with legacy fallback to `.erk/impl-context/issue.json`)
+1. Check for `.erk/impl-context/plan-ref.json` or `.erk/impl-context/ref.json`
 2. If found, append `Closes #N` to PR body
 3. Uses `erk exec get-pr-body-footer` to read the reference
 
@@ -46,7 +46,7 @@ Slash commands that create PRs read the issue reference from local storage:
 
 ## Storage Locations
 
-### Local Worktree: `.erk/impl-context/plan-ref.json` (primary) / `.erk/impl-context/issue.json` (legacy)
+### Local Worktree: `.erk/impl-context/plan-ref.json` (primary) / `.erk/impl-context/ref.json` (fallback)
 
 The primary format (`.erk/impl-context/plan-ref.json`):
 
@@ -63,16 +63,7 @@ The primary format (`.erk/impl-context/plan-ref.json`):
 }
 ```
 
-The legacy format (`.erk/impl-context/issue.json`, still supported via `read_plan_ref()` three-level fallback: `plan-ref.json` → `ref.json` → `issue.json`):
-
-```json
-{
-  "issue_number": 123,
-  "issue_url": "https://github.com/owner/repo/issues/123",
-  "created_at": "2025-01-15T10:30:00+00:00",
-  "synced_at": "2025-01-15T10:30:00+00:00"
-}
-```
+`read_plan_ref()` uses a two-level fallback: `plan-ref.json` → `ref.json`.
 
 This file maps the current worktree to its source GitHub issue.
 
@@ -126,7 +117,7 @@ This timing behavior is documented in [GitHub community discussion #24706](https
 ### PR Not Showing in `erk pr list`
 
 1. **No cross-reference exists**: PR body/commits don't mention the issue number
-2. **Wrong issue number**: Check `.erk/impl-context/plan-ref.json` (or legacy `.erk/impl-context/issue.json`) contains correct plan ID
+2. **Wrong issue number**: Check `.erk/impl-context/plan-ref.json` (or `.erk/impl-context/ref.json`) contains correct plan ID
 3. **API propagation delay**: Wait a moment and refresh
 
 ### 🔗 Not Appearing (willCloseTarget is False)
@@ -143,7 +134,7 @@ The PR was created without `Closes #N` in the initial body:
 
 ```bash
 # Check local plan reference
-cat .erk/impl-context/plan-ref.json  # or legacy: cat .erk/impl-context/issue.json
+cat .erk/impl-context/plan-ref.json  # or fallback: cat .erk/impl-context/ref.json
 
 # Check PR body for closing keywords
 gh pr view --json body -q '.body'

@@ -37,7 +37,7 @@ Branch-scoped paths always take priority over discovery scan results.
 
 ## Branch Name Sanitization
 
-`_sanitize_branch_for_dirname()` converts branch names to safe directory names by replacing `/` with `--`:
+Branch names are sanitized to safe directory names by replacing `/` with `--`:
 
 | Branch Name             | Directory Name           |
 | ----------------------- | ------------------------ |
