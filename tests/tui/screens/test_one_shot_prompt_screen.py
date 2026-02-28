@@ -10,6 +10,13 @@ def test_escape_binding_exists() -> None:
     assert "escape" in binding_keys
 
 
+def test_ctrl_enter_binding_exists() -> None:
+    """OneShotPromptScreen should have a ctrl+enter submit binding."""
+    screen = OneShotPromptScreen()
+    binding_keys = [b.key for b in screen.BINDINGS]
+    assert "ctrl+enter" in binding_keys
+
+
 def test_q_is_not_bound() -> None:
     """OneShotPromptScreen should NOT bind 'q' — user needs it for typing."""
     screen = OneShotPromptScreen()

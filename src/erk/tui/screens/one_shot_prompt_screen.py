@@ -6,18 +6,19 @@ from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Vertical
 from textual.screen import ModalScreen
-from textual.widgets import Input, Label
+from textual.widgets import Label, TextArea
 
 
 class OneShotPromptScreen(ModalScreen[str | None]):
-    """Modal with a text input for dispatching a one-shot prompt.
+    """Modal with a multiline text area for dispatching a one-shot prompt.
 
-    Returns the stripped prompt text on Enter, or None on Escape.
+    Returns the stripped prompt text on Ctrl+Enter, or None on Escape.
     Does NOT bind ``q`` — the user needs to type ``q`` in prompts.
     """
 
     BINDINGS = [
         Binding("escape", "dismiss_cancel", "Close"),
+        Binding("ctrl+enter", "submit_prompt", "Submit", show=False),
     ]
 
     DEFAULT_CSS = """
@@ -26,7 +27,7 @@ class OneShotPromptScreen(ModalScreen[str | None]):
     }
 
     #one-shot-dialog {
-        width: 72;
+        width: 90%;
         height: auto;
         max-height: 80%;
         background: $surface;
@@ -42,6 +43,7 @@ class OneShotPromptScreen(ModalScreen[str | None]):
     }
 
     #one-shot-input {
+        height: 32;
         margin: 0 2;
     }
 
@@ -56,16 +58,16 @@ class OneShotPromptScreen(ModalScreen[str | None]):
         """Create the prompt dialog."""
         with Vertical(id="one-shot-dialog"):
             yield Label("One-Shot Prompt", id="one-shot-title")
-            yield Input(id="one-shot-input", placeholder="Describe the task...")
-            yield Label("Enter to dispatch · Esc to cancel", id="one-shot-footer")
+            yield TextArea(id="one-shot-input")
+            yield Label("Ctrl+Enter to dispatch · Esc to cancel", id="one-shot-footer")
 
     def on_mount(self) -> None:
-        """Focus the input on mount."""
-        self.query_one("#one-shot-input", Input).focus()
+        """Focus the text area on mount."""
+        self.query_one("#one-shot-input", TextArea).focus()
 
-    def on_input_submitted(self, event: Input.Submitted) -> None:
-        """Handle Enter — dismiss with stripped text, or None if empty."""
-        text = event.value.strip()
+    def action_submit_prompt(self) -> None:
+        """Handle Ctrl+Enter — dismiss with stripped text, or None if empty."""
+        text = self.query_one("#one-shot-input", TextArea).text.strip()
         self.dismiss(text if text else None)
 
     def action_dismiss_cancel(self) -> None:
