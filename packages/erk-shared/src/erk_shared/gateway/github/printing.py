@@ -66,6 +66,10 @@ class PrintingGitHub(PrintingBase, GitHub):
         """Get run logs (read-only, no printing)."""
         return self._wrapped.get_run_logs(repo_root, run_id)
 
+    def get_ci_summary_logs(self, repo_root: Path, run_id: str) -> str | None:
+        """Get ci-summarize job logs (read-only, no printing)."""
+        return self._wrapped.get_ci_summary_logs(repo_root, run_id)
+
     def get_prs_linked_to_issues(
         self,
         location: GitHubRepoLocation,

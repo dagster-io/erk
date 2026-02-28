@@ -75,6 +75,7 @@ class FakeGitHub(GitHub):
         plan_pr_details: (
             tuple[list[PRDetails], dict[int, list[PullRequestInfo]], int] | None
         ) = None,
+        ci_summary_logs: dict[str, str] | None = None,
         time: Time | None = None,
     ) -> None:
         """Create FakeGitHub with pre-configured state.
@@ -117,6 +118,8 @@ class FakeGitHub(GitHub):
                 False or raise to simulate failure.
         plan_pr_details: Pre-configured data for list_plan_prs_with_details().
             Tuple of (pr_details_list, pr_linkages, unenriched_count). Defaults to empty.
+            ci_summary_logs: Mapping of run_id -> ci-summarize job log text.
+                Used by get_ci_summary_logs(). Defaults to empty dict.
         """
         # Default to test values if not provided
         self._repo_info = repo_info or RepoInfo(owner="test-owner", name="test-repo")
@@ -181,6 +184,7 @@ class FakeGitHub(GitHub):
         # (repo, sha, state, context, description)
         self._created_commit_statuses: list[tuple[str, str, str, str, str]] = []
         self._plan_pr_details = plan_pr_details or ([], {}, 0)
+        self._ci_summary_logs = ci_summary_logs or {}
 
     @property
     def issues(self) -> GitHubIssues:
@@ -411,6 +415,13 @@ class FakeGitHub(GitHub):
             msg = f"Run {run_id} not found"
             raise RuntimeError(msg)
         return self._run_logs[run_id]
+
+    def get_ci_summary_logs(self, repo_root: Path, run_id: str) -> str | None:
+        """Return pre-configured ci-summarize log text for run_id.
+
+        Returns None if no ci-summarize logs are configured for this run_id.
+        """
+        return self._ci_summary_logs.get(run_id)
 
     def get_prs_linked_to_issues(
         self,

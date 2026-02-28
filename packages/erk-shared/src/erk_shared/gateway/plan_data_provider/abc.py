@@ -191,3 +191,20 @@ class PlanDataProvider(ABC):
             List of unresolved PRReviewThread objects sorted by (path, line)
         """
         ...
+
+    @abstractmethod
+    def fetch_ci_summaries(self, pr_number: int) -> dict[str, str]:
+        """Fetch CI failure summaries for a pull request.
+
+        Looks for the ci-summarize job in the latest CI workflow run for
+        this PR, parses ERK-CI-SUMMARY markers from its logs, and returns
+        a mapping of check name to summary text.
+
+        Args:
+            pr_number: The PR number to fetch summaries for
+
+        Returns:
+            Mapping of check name to summary text. Empty dict if no
+            summaries are available (job hasn't run, no failures, etc.)
+        """
+        ...

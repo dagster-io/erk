@@ -443,3 +443,41 @@ jobs:
           erk exec ci-verify-autofix \
             --original-sha "${{ github.sha }}" \
             --repo "${{ github.repository }}"
+
+  # === CI Failure Summarization (Haiku) ===
+  ci-summarize:
+    needs:
+      [format, lint, prettier, docs-check, ty, unit-tests, integration-tests, erkdesk-tests, erkbot-tests]
+    if: |
+      vars.CLAUDE_ENABLED != 'false' &&
+      always() &&
+      (github.event_name == 'pull_request') &&
+      (github.event.pull_request.draft != true) &&
+      !contains(github.event.pull_request.labels.*.name, 'erk-plan-review') &&
+      (needs.format.result == 'failure' ||
+       needs.lint.result == 'failure' ||
+       needs.prettier.result == 'failure' ||
+       needs.docs-check.result == 'failure' ||
+       needs.ty.result == 'failure' ||
+       needs.unit-tests.result == 'failure' ||
+       needs.integration-tests.result == 'failure' ||
+       needs.erkdesk-tests.result == 'failure' ||
+       needs.erkbot-tests.result == 'failure')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-python-uv
+      - name: Install erk
+        run: |
+          if [ -d "./packages/erk-shared" ]; then
+            uv tool install --from . --with-editable ./packages/erk-shared erk
+          else
+            uv tool install --from . --with erk-shared erk
+          fi
+      - uses: ./.github/actions/setup-claude-code
+      - name: Summarize failures
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        run: erk exec ci-generate-summaries --run-id "${{ github.run_id }}"
