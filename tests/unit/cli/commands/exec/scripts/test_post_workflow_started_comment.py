@@ -26,6 +26,8 @@ from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from tests.test_utils.plan_helpers import issue_info_to_pr_details
 
+FAKE_NOW_ISO = "2026-01-15T10:00:00Z"
+
 
 def _create_test_issue(issue_number: int) -> IssueInfo:
     """Create a test issue for FakeGitHubIssues."""
@@ -58,6 +60,7 @@ def test_build_comment_contains_all_fields() -> None:
         run_id="99999",
         run_url="https://github.com/owner/repo/actions/runs/99999",
         repository="owner/repo",
+        now_iso=FAKE_NOW_ISO,
     )
 
     assert "GitHub Action Started" in comment
@@ -76,6 +79,7 @@ def test_build_comment_has_metadata_block() -> None:
         run_id="12345",
         run_url="https://github.com/acme/app/actions/runs/12345",
         repository="acme/app",
+        now_iso=FAKE_NOW_ISO,
     )
 
     assert "<!-- erk:metadata-block:workflow-started -->" in comment
@@ -92,6 +96,7 @@ def test_build_comment_metadata_block_is_parseable() -> None:
         run_id="12345",
         run_url="https://github.com/acme/app/actions/runs/12345",
         repository="acme/app",
+        now_iso=FAKE_NOW_ISO,
     )
 
     blocks = parse_metadata_blocks(comment)
@@ -113,6 +118,7 @@ def test_build_comment_has_pr_link() -> None:
         run_id="888",
         run_url="https://github.com/test/repo/actions/runs/888",
         repository="test/repo",
+        now_iso=FAKE_NOW_ISO,
     )
 
     assert "**PR:** [#42](https://github.com/test/repo/pull/42)" in comment
@@ -127,6 +133,7 @@ def test_build_comment_has_branch_display() -> None:
         run_id="3",
         run_url="https://example.com",
         repository="o/r",
+        now_iso=FAKE_NOW_ISO,
     )
 
     assert "**Branch:** `feature-xyz`" in comment
@@ -141,13 +148,14 @@ def test_build_comment_has_workflow_link() -> None:
         run_id="3",
         run_url="https://github.com/owner/repo/actions/runs/3",
         repository="owner/repo",
+        now_iso=FAKE_NOW_ISO,
     )
 
     assert "[View workflow run](https://github.com/owner/repo/actions/runs/3)" in comment
 
 
 def test_build_comment_has_valid_timestamp() -> None:
-    """Test that comment contains a valid ISO 8601 timestamp."""
+    """Test that comment contains the injected ISO 8601 timestamp."""
     comment = _build_workflow_started_comment(
         plan_number=1,
         branch_name="b",
@@ -155,14 +163,13 @@ def test_build_comment_has_valid_timestamp() -> None:
         run_id="3",
         run_url="https://example.com",
         repository="o/r",
+        now_iso=FAKE_NOW_ISO,
     )
 
-    # Extract timestamp from comment
+    # Extract timestamp from comment - should match injected value exactly
     match = re.search(r"started_at: '(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)'", comment)
     assert match is not None
-    timestamp = match.group(1)
-    # Verify format (ISO 8601 UTC)
-    assert timestamp.endswith("Z")
+    assert match.group(1) == FAKE_NOW_ISO
 
 
 # ============================================================================

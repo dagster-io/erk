@@ -39,11 +39,11 @@ Examples:
 
 import json
 from dataclasses import asdict, dataclass
-from datetime import UTC, datetime
+from datetime import UTC
 
 import click
 
-from erk_shared.context.helpers import require_plan_backend, require_repo_root
+from erk_shared.context.helpers import require_plan_backend, require_repo_root, require_time
 from erk_shared.gateway.github.metadata.core import (
     create_workflow_started_block,
     render_erk_issue_event,
@@ -75,6 +75,7 @@ def _build_workflow_started_comment(
     run_id: str,
     run_url: str,
     repository: str,
+    now_iso: str,
 ) -> str:
     """Build the workflow started comment body.
 
@@ -88,11 +89,12 @@ def _build_workflow_started_comment(
         run_id: GitHub Actions workflow run ID
         run_url: Full URL to the workflow run
         repository: Repository in owner/repo format
+        now_iso: ISO-format UTC timestamp for testability
 
     Returns:
         Formatted markdown comment body
     """
-    started_at = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    started_at = now_iso
 
     metadata_block = create_workflow_started_block(
         started_at=started_at,
@@ -144,8 +146,10 @@ def post_workflow_started_comment(
     """
     backend = require_plan_backend(ctx)
     repo_root = require_repo_root(ctx)
+    time = require_time(ctx)
 
     # Build comment body
+    now_iso = time.now().replace(tzinfo=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     comment_body = _build_workflow_started_comment(
         plan_number=plan_number,
         branch_name=branch_name,
@@ -153,6 +157,7 @@ def post_workflow_started_comment(
         run_id=run_id,
         run_url=run_url,
         repository=repository,
+        now_iso=now_iso,
     )
 
     # Post comment via PlanBackend (handles both issue and planned-PR plans)
