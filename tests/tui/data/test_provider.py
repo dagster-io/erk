@@ -11,7 +11,6 @@ from erk_shared.gateway.browser.fake import FakeBrowserLauncher
 from erk_shared.gateway.clipboard.fake import FakeClipboard
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import find_metadata_block
@@ -20,6 +19,7 @@ from erk_shared.gateway.github.types import (
     GitHubRepoLocation,
     PullRequestInfo,
 )
+from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.http.fake import FakeHttpClient
 from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
 from erk_shared.plan_store.types import Plan, PlanState
