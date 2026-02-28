@@ -4,6 +4,7 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 
+from erk.core.context import GlobalConfig
 from erk.core.repo_discovery import RepoContext
 from erk.tui.data.types import FetchTimings
 from erk_shared.gateway.browser.fake import FakeBrowserLauncher
@@ -18,6 +19,7 @@ from erk_shared.gateway.github.types import (
     GitHubRepoLocation,
     PullRequestInfo,
 )
+from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.http.fake import FakeHttpClient
 from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
 from erk_shared.plan_store.types import Plan, PlanState
@@ -905,6 +907,112 @@ class TestCommentCountsDisplay:
         assert row.resolved_comment_count == 0
         assert row.total_comment_count == 0
         assert row.comments_display == "-"
+
+
+class TestStackedPrDetection:
+    """Tests for stacked PR (🥞) detection in _build_row_data.
+
+    Regression tests for the priority between Graphite's local parent data
+    and GitHub's base_ref_name field when determining if a PR is stacked.
+    """
+
+    def test_graphite_parent_master_overrides_stale_github_base_ref(self, tmp_path: Path) -> None:
+        """Graphite parent=main suppresses stacked indicator despite stale GitHub base_ref.
+
+        Scenario: A child PR originally targeted a parent PR branch. The parent
+        was merged and Graphite re-parented the child to main. But GitHub's
+        base_ref_name still shows the old parent branch name (stale metadata).
+
+        Old code checked GitHub first → saw stale base_ref → showed 🥞.
+        New code checks Graphite first → sees parent=main → no 🥞.
+        """
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir()
+
+        graphite = FakeGraphite()
+        graphite.set_branch_parent("feature-child", "main")
+
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=repo_root, branch="main", is_root=True),
+                ]
+            },
+            git_common_dirs={repo_root: repo_root / ".git"},
+        )
+
+        global_config = GlobalConfig(
+            erk_root=Path("/test/erks"),
+            use_graphite=True,
+            shell_setup_complete=False,
+            github_planning=True,
+        )
+
+        github = FakeGitHub(pr_plan_linkages={})
+
+        ctx = create_test_context(
+            git=git,
+            github=github,
+            graphite=graphite,
+            global_config=global_config,
+            cwd=repo_root,
+            repo=_make_repo_context(repo_root, tmp_path),
+        )
+
+        location = GitHubRepoLocation(
+            root=repo_root,
+            repo_id=GitHubRepoId(owner="test", repo="repo"),
+        )
+        provider = RealPlanDataProvider(
+            ctx=ctx,
+            location=location,
+            clipboard=FakeClipboard(),
+            browser=FakeBrowserLauncher(),
+            http_client=FakeHttpClient(),
+        )
+
+        plan = Plan(
+            plan_identifier="123",
+            title="Test Plan",
+            body="",
+            state=PlanState.OPEN,
+            url="https://github.com/test/repo/issues/123",
+            labels=[],
+            assignees=[],
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+            metadata={},
+            objective_id=None,
+        )
+        pr_linkages = {
+            123: [
+                PullRequestInfo(
+                    number=456,
+                    state="OPEN",
+                    url="https://github.com/test/repo/pulls/456",
+                    is_draft=False,
+                    title="Fix child feature",
+                    checks_passing=True,
+                    owner="test",
+                    repo="repo",
+                    head_branch="feature-child",
+                    base_ref_name="feature-parent",  # Stale GitHub metadata
+                ),
+            ],
+        }
+
+        row = provider._build_row_data(
+            plan=plan,
+            plan_id=123,
+            pr_linkages=pr_linkages,
+            workflow_run=None,
+            worktree_by_plan_id={},
+            use_graphite=True,
+        )
+
+        assert "🥞" not in row.status_display
 
 
 class TestLearnStatusDisplay:
