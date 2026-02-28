@@ -283,6 +283,7 @@ class LoadedConfig:
     pool_checkout_shell: str | None  # Shell to use for checkout commands
     # Overridable global keys (can be set at repo or local level to override global config)
     prompt_learn_on_land: bool | None  # None = not set at this level, use global
+    dispatch_ref: str | None  # None = use default branch for workflow dispatch
 
     @staticmethod
     def test(
@@ -295,6 +296,7 @@ class LoadedConfig:
         pool_checkout_commands: list[str] | None = None,
         pool_checkout_shell: str | None = None,
         prompt_learn_on_land: bool | None = None,
+        dispatch_ref: str | None = None,
     ) -> LoadedConfig:
         """Create a LoadedConfig with sensible test defaults."""
         return LoadedConfig(
@@ -308,4 +310,5 @@ class LoadedConfig:
             ),
             pool_checkout_shell=pool_checkout_shell,
             prompt_learn_on_land=prompt_learn_on_land,
+            dispatch_ref=dispatch_ref,
         )

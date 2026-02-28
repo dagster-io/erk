@@ -301,7 +301,7 @@ def _dispatch_planned_pr_plan(
         repo_root=repo.root,
         workflow=DISPATCH_WORKFLOW_NAME,
         inputs=inputs,
-        ref=None,
+        ref=ctx.local_config.dispatch_ref,
     )
     user_output(click.style("✓", fg="green") + " Workflow triggered.")
 
