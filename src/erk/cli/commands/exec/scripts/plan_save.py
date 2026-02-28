@@ -121,6 +121,7 @@ def _save_as_planned_pr(
     branch_slug: str | None,
     node_ids: tuple[str, ...] | None,
     summary: str | None,
+    session_xml_dir: Path | None,
 ) -> None:
     """Save plan as a planned PR.
 
@@ -139,6 +140,7 @@ def _save_as_planned_pr(
         branch_slug: Pre-generated branch slug (skips LLM call when provided)
         node_ids: Objective roadmap node IDs to associate with this plan
         summary: Optional AI-generated summary for the PR description
+        session_xml_dir: Directory containing session XML files to embed in the PR diff
     """
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
@@ -219,13 +221,22 @@ def _save_as_planned_pr(
     # Commit plan files directly to branch (no checkout needed).
     # Uses git plumbing to avoid race conditions when multiple sessions
     # share the same worktree.
+    files: dict[str, str] = {
+        f"{IMPL_CONTEXT_DIR}/plan.md": plan_content,
+        f"{IMPL_CONTEXT_DIR}/ref.json": json.dumps(ref_data, indent=2),
+    }
+
+    if session_xml_dir is not None and session_xml_dir.is_dir():
+        for xml_file in sorted(session_xml_dir.glob("*.xml")):
+            if xml_file.is_file():
+                files[f"{IMPL_CONTEXT_DIR}/sessions/{xml_file.name}"] = xml_file.read_text(
+                    encoding="utf-8"
+                )
+
     git.commit.commit_files_to_branch(
         repo_root,
         branch=branch_name,
-        files={
-            f"{IMPL_CONTEXT_DIR}/plan.md": plan_content,
-            f"{IMPL_CONTEXT_DIR}/ref.json": json.dumps(ref_data, indent=2),
-        },
+        files=files,
         message=f"Add plan: {title}",
     )
     git.remote.push_to_remote(cwd, "origin", branch_name, set_upstream=True, force=False)
@@ -329,6 +340,7 @@ def _save_plan_via_planned_pr(
     branch_slug: str | None,
     objective: int | None,
     summary: str | None,
+    session_xml_dir: Path | None,
 ) -> None:
     """Handle planned-PR backend: dedup check, plan extraction, validation, and save.
 
@@ -343,6 +355,7 @@ def _save_plan_via_planned_pr(
         branch_slug: Pre-generated branch slug (skips LLM call when provided)
         objective: Objective issue number from CLI flag (overrides session marker)
         summary: Optional AI-generated summary for the PR description
+        session_xml_dir: Directory containing session XML files to embed in the PR diff
     """
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
@@ -434,6 +447,7 @@ def _save_plan_via_planned_pr(
         branch_slug=branch_slug,
         node_ids=node_ids,
         summary=summary,
+        session_xml_dir=session_xml_dir,
     )
 
 
@@ -489,6 +503,12 @@ def _save_plan_via_planned_pr(
     default=None,
     help="AI-generated plan summary for PR description",
 )
+@click.option(
+    "--session-xml-dir",
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+    default=None,
+    help="Directory containing session XML files to embed in the PR diff",
+)
 @click.pass_context
 def plan_save(
     ctx: click.Context,
@@ -502,6 +522,7 @@ def plan_save(
     branch_slug: str | None,
     objective: int | None,
     summary: str | None,
+    session_xml_dir: Path | None,
 ) -> None:
     """Save plan as a draft PR."""
     _save_plan_via_planned_pr(
@@ -515,4 +536,5 @@ def plan_save(
         branch_slug=branch_slug,
         objective=objective,
         summary=summary,
+        session_xml_dir=session_xml_dir,
     )
