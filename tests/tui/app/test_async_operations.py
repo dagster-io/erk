@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from erk.tui.app import ErkDashApp
+from erk.tui.app import ErkDashApp, _extract_learn_plan_number, _OperationResult
 from erk.tui.data.types import PlanFilters
 from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
 
@@ -502,8 +502,6 @@ class TestExtractLearnPlanNumber:
 
     def test_extracts_number_from_output(self) -> None:
         """Should extract learn plan number when present in output."""
-        from erk.tui.app import _OperationResult, _extract_learn_plan_number
-
         result = _OperationResult(
             success=True,
             output_lines=("Some output", "Created learn plan #1234", "Done"),
@@ -513,8 +511,6 @@ class TestExtractLearnPlanNumber:
 
     def test_returns_none_when_not_present(self) -> None:
         """Should return None when no learn plan line in output."""
-        from erk.tui.app import _OperationResult, _extract_learn_plan_number
-
         result = _OperationResult(
             success=True,
             output_lines=("Some output", "Done"),
@@ -524,8 +520,6 @@ class TestExtractLearnPlanNumber:
 
     def test_extracts_from_middle_of_line(self) -> None:
         """Should extract number even when text surrounds the pattern."""
-        from erk.tui.app import _OperationResult, _extract_learn_plan_number
-
         result = _OperationResult(
             success=True,
             output_lines=("Info: Created learn plan #5678 successfully",),
