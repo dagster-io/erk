@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Rename \"Fix Conflicts Remote\" to \"Rebase Remote\" and Always Rebase"
+}
