@@ -305,6 +305,41 @@ def _log_session_discovery(
     return xml_files
 
 
+def _format_size(size_bytes: int) -> str:
+    """Format byte size as human-readable string."""
+    if size_bytes < 1024:
+        return f"{size_bytes} B"
+    return f"{size_bytes // 1024:,} KB"
+
+
+def _log_learn_pr_files(
+    *,
+    plan_content: str,
+    xml_files: dict[str, str],
+) -> None:
+    """Log the files committed to the learn plan PR with paths and sizes."""
+    files: list[tuple[str, int]] = []
+
+    # plan.md
+    plan_bytes = len(plan_content.encode("utf-8"))
+    files.append((f"{IMPL_CONTEXT_DIR}/plan.md", plan_bytes))
+
+    # ref.json (always present, small metadata file)
+    # Approximate size — exact content constructed by create_plan_draft_pr
+    files.append((f"{IMPL_CONTEXT_DIR}/ref.json", 60))
+
+    # Session XML files
+    for path, content in sorted(xml_files.items()):
+        file_bytes = len(content.encode("utf-8"))
+        files.append((path, file_bytes))
+
+    # Log file inventory
+    total_bytes = sum(size for _, size in files)
+    user_output(f"  \U0001f4e6 {len(files)} file(s) committed ({_format_size(total_bytes)}):")
+    for path, size in files:
+        user_output(f"     {path}  ({_format_size(size)})")
+
+
 def _create_learn_pr_impl(
     ctx: ErkContext,
     *,
@@ -376,6 +411,7 @@ def _create_learn_pr_impl(
             user_output(f"  {result.plan_url}")
         else:
             user_output("  (no plan URL available)")
+        _log_learn_pr_files(plan_content=plan_content, xml_files=xml_files)
     elif result.error:
         user_output(
             click.style("Warning: ", fg="yellow") + f"Learn plan creation failed: {result.error}"
