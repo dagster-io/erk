@@ -472,7 +472,7 @@ class ErkDashApp(App):
         """
         if prompt_text is None:
             return
-        op_id = f"dispatch-one-shot-{id(prompt_text)}"
+        op_id = f"dispatch-one-shot-{time.monotonic_ns()}"
         self._start_operation(op_id=op_id, label="Dispatching one-shot prompt...")
         self._one_shot_dispatch_async(op_id, prompt_text)
 
