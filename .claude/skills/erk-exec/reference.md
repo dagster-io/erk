@@ -22,6 +22,8 @@ Quick reference for all `erk exec` subcommands.
 | `add-plan-labels`                 | Batch add labels to multiple plans from JSON stdin.                         |
 | `add-remote-execution-note`       | Add remote execution tracking note to PR body.                              |
 | `capture-session-info`            | Capture Claude Code session info for CI workflows.                          |
+| `ci-fetch-summaries`              | Fetch CI failure summaries for a PR.                                        |
+| `ci-generate-summaries`           | Generate CI failure summaries using Haiku.                                  |
 | `ci-update-pr-body`               | Update PR body with AI-generated summary and footer.                        |
 | `ci-verify-autofix`               | Run full CI verification after autofix push.                                |
 | `cleanup-impl-context`            | Clean up .erk/impl-context/ staging directory.                              |
@@ -156,6 +158,30 @@ Capture Claude Code session info for CI workflows.
 | Flag     | Type | Required | Default        | Description                                              |
 | -------- | ---- | -------- | -------------- | -------------------------------------------------------- |
 | `--path` | PATH | No       | Sentinel.UNSET | Path to find session for (defaults to current directory) |
+
+### ci-fetch-summaries
+
+Fetch CI failure summaries for a PR.
+
+**Usage:** `erk exec ci-fetch-summaries`
+
+**Options:**
+
+| Flag          | Type    | Required | Default        | Description                      |
+| ------------- | ------- | -------- | -------------- | -------------------------------- |
+| `--pr-number` | INTEGER | Yes      | Sentinel.UNSET | PR number to fetch summaries for |
+
+### ci-generate-summaries
+
+Generate CI failure summaries using Haiku.
+
+**Usage:** `erk exec ci-generate-summaries`
+
+**Options:**
+
+| Flag       | Type | Required | Default        | Description           |
+| ---------- | ---- | -------- | -------------- | --------------------- |
+| `--run-id` | TEXT | Yes      | Sentinel.UNSET | GitHub Actions run ID |
 
 ### ci-update-pr-body
 
