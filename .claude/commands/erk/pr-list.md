@@ -3,7 +3,7 @@ description: List open PRs in Claude Code terminal format
 context: fork
 agent: general-purpose
 model: haiku
-allowed-tools: Bash
+allowed-tools: Bash, Task
 ---
 
 # /erk:pr-list
