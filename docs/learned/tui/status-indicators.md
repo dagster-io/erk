@@ -23,33 +23,19 @@ Status indicators show PR state as emoji in the TUI dashboard. They are computed
 
 ### compute_status_indicators() — Standalone Display
 
-Used for the "sts" column in the dashboard. Returns space-joined emoji string or "-" when empty.
+Used for the "sts" column in the dashboard. Takes lifecycle display string and raw PR state fields (is_draft, has_conflicts, review_decision, checks_passing, has_unresolved_comments). Returns space-joined emoji string or "-" when empty.
 
-```python
-compute_status_indicators(
-    lifecycle_display="[cyan]impl[/cyan]",
-    is_draft=False,
-    has_conflicts=False,
-    review_decision="APPROVED",
-    checks_passing=True,
-    has_unresolved_comments=False,
-)
-# Returns: "🚀"
-```
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py, compute_status_indicators -->
+
+See `compute_status_indicators()` in `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py`.
 
 ### format_lifecycle_with_status() — Inline Display
 
-Appends indicators inside Rich markup tags so they inherit the stage color. Used when displaying lifecycle and status together in a single column.
+Appends indicators inside Rich markup tags so they inherit the stage color. Used when displaying lifecycle and status together in a single column. Takes the same parameters as `compute_status_indicators()`.
 
-```python
-format_lifecycle_with_status(
-    lifecycle_display="[yellow]impl[/yellow]",
-    is_draft=True,
-    has_conflicts=True,
-    ...
-)
-# Returns: "[yellow]impl 🚧 💥[/yellow]"
-```
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py, format_lifecycle_with_status -->
+
+See `format_lifecycle_with_status()` in `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py`.
 
 ## Shared Internal Helper
 
@@ -77,8 +63,8 @@ Stages are detected from the content of `lifecycle_display` using substring matc
 
 ## The "sts" Column
 
-- Width: 4 characters
-- Only appears in `draft_pr` view mode
+- Width: 7 characters
+- Appears in PLANS and LEARN views (not OBJECTIVES)
 - Displays output of `compute_status_indicators()`
 
 ## Related Documentation
