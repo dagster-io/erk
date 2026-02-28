@@ -8,17 +8,24 @@ import pytest
 from erk.cli.commands.land_learn import (
     _create_learn_pr_impl,
     _create_learn_pr_with_sessions,
+    _log_session_discovery,
     _should_create_learn_pr,
 )
 from erk.cli.commands.land_pipeline import LandState
 from erk.core.context import context_for_test
 from erk_shared.context.types import GlobalConfig, LoadedConfig
+from erk_shared.gateway.claude_installation.fake import (
+    FakeClaudeInstallation,
+    FakeProject,
+    FakeSessionData,
+)
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.sessions.discovery import SessionsForPlan
 
 
 def _make_pr_details(
@@ -271,7 +278,109 @@ def test_creates_pr_and_shows_success(
     _branch, pr_title, _body, _base, _draft = fake_github.created_prs[0]
     assert "Learn: Add widgets" in pr_title
 
-    # Success output
+    # Success output (includes session discovery warning since no sessions configured)
     captured = capsys.readouterr()
     assert "Created learn plan" in captured.err
     assert "#100" in captured.err
+    assert "No sessions discovered" in captured.err
+
+
+# ---------------------------------------------------------------------------
+# _log_session_discovery
+# ---------------------------------------------------------------------------
+
+
+def _make_sessions(
+    *,
+    planning: str | None = None,
+    impl: list[str] | None = None,
+    learn: list[str] | None = None,
+) -> SessionsForPlan:
+    return SessionsForPlan(
+        planning_session_id=planning,
+        implementation_session_ids=impl or [],
+        learn_session_ids=learn or [],
+        last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
+        last_session_branch=None,
+        last_session_id=None,
+        last_session_source=None,
+    )
+
+
+def test_log_no_sessions(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Logs warning when no sessions discovered."""
+    ctx = context_for_test(cwd=tmp_path)
+    sessions = _make_sessions()
+
+    _log_session_discovery(ctx, sessions=sessions, all_session_ids=[])
+
+    captured = capsys.readouterr()
+    assert "No sessions discovered" in captured.err
+
+
+def test_log_planning_and_impl_sessions(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Logs session counts and truncated IDs for planning + impl sessions."""
+    sessions = _make_sessions(
+        planning="aaaa1111-2222-3333-4444-555566667777",
+        impl=["bbbb1111-2222-3333-4444-555566667777"],
+    )
+    ctx = context_for_test(cwd=tmp_path)
+
+    _log_session_discovery(ctx, sessions=sessions, all_session_ids=sessions.all_session_ids())
+
+    captured = capsys.readouterr()
+    assert "Discovered 2 session(s): 1 planning, 1 impl" in captured.err
+    assert "aaaa1111..." in captured.err
+    assert "bbbb1111..." in captured.err
+    # No learn sessions → "learn" should not appear in the summary line
+    assert "learn" not in captured.err.split("\n")[0]
+
+
+def test_log_includes_learn_count(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Learn session count appears when present."""
+    sessions = _make_sessions(
+        planning="aaaa1111-2222-3333-4444-555566667777",
+        learn=["cccc1111-2222-3333-4444-555566667777"],
+    )
+    ctx = context_for_test(cwd=tmp_path)
+
+    _log_session_discovery(ctx, sessions=sessions, all_session_ids=sessions.all_session_ids())
+
+    captured = capsys.readouterr()
+    assert "1 learn" in captured.err
+
+
+def test_log_local_session_sizes(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Reports local JSONL file sizes when sessions are readable."""
+    session_id = "dddd1111-2222-3333-4444-555566667777"
+    sessions = _make_sessions(impl=[session_id])
+
+    # Create a fake JSONL file so stat() works
+    jsonl_file = tmp_path / f"{session_id}.jsonl"
+    jsonl_file.write_text("x" * 2048, encoding="utf-8")
+
+    fake_session = FakeSessionData(content="", size_bytes=2048, modified_at=0.0)
+    fake_claude = FakeClaudeInstallation.for_test(
+        projects={tmp_path: FakeProject(sessions={session_id: fake_session})},
+    )
+    ctx = context_for_test(claude_installation=fake_claude, cwd=tmp_path)
+
+    _log_session_discovery(ctx, sessions=sessions, all_session_ids=sessions.all_session_ids())
+
+    captured = capsys.readouterr()
+    assert "1/1 session(s) available locally" in captured.err
+    assert "KB JSONL" in captured.err

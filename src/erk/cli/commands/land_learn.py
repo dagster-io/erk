@@ -14,6 +14,7 @@ from erk.core.context import ErkContext
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.create_plan_draft_pr import create_plan_draft_pr
 from erk_shared.plan_store.types import PlanNotFound
+from erk_shared.sessions.discovery import SessionsForPlan, get_readable_sessions
 
 if TYPE_CHECKING:
     from erk.cli.commands.land_pipeline import LandState
@@ -54,6 +55,38 @@ def _create_learn_pr_with_sessions(
         user_output(click.style("Warning: ", fg="yellow") + f"Could not create learn plan: {exc}")
 
 
+def _log_session_discovery(
+    ctx: ErkContext,
+    *,
+    sessions: SessionsForPlan,
+    all_session_ids: list[str],
+) -> None:
+    """Log session discovery summary and local JSONL file sizes."""
+    total = len(all_session_ids)
+    if total == 0:
+        user_output("  \u26a0\ufe0f  No sessions discovered for this plan")
+        return
+
+    n_planning = 1 if sessions.planning_session_id else 0
+    n_impl = len(sessions.implementation_session_ids)
+    n_learn = len(sessions.learn_session_ids)
+    parts = f"{n_planning} planning, {n_impl} impl"
+    if n_learn:
+        parts += f", {n_learn} learn"
+    user_output(f"  \U0001f4cb Discovered {total} session(s): {parts}")
+    for sid in all_session_ids:
+        user_output(f"     - {sid[:8]}...")
+
+    # Show local JSONL file sizes for sessions we can reach
+    readable = get_readable_sessions(sessions, ctx.claude_installation)
+    if readable:
+        total_bytes = sum(p.stat().st_size for _, p in readable)
+        user_output(
+            f"  \U0001f4c2 {len(readable)}/{total} session(s) available locally "
+            f"({total_bytes // 1024:,} KB JSONL)"
+        )
+
+
 def _create_learn_pr_impl(
     ctx: ErkContext,
     *,
@@ -78,6 +111,9 @@ def _create_learn_pr_impl(
     # Discover sessions for the plan
     sessions = ctx.plan_backend.find_sessions_for_plan(state.main_repo_root, plan_id)
     all_session_ids = sessions.all_session_ids()
+
+    # Log session discovery summary
+    _log_session_discovery(ctx, sessions=sessions, all_session_ids=all_session_ids)
 
     # Build learn plan body
     if all_session_ids:
