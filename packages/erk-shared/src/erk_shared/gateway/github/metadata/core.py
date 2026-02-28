@@ -561,7 +561,11 @@ def parse_metadata_blocks(text: str) -> MetadataParseResult:
     Extract all metadata blocks from markdown text (two-phase parsing).
 
     Phase 1: Extract raw blocks using HTML comment markers
-    Phase 2: Parse body content (details/yaml structure)
+    Phase 2: Parse body content (details/yaml structure), skipping content blocks
+
+    Content blocks (plan-body, objective-body, planning-session-prompts) use
+    custom rendering and are not standard YAML.  They are collected separately
+    in ``content_blocks`` instead of being reported as errors.
 
     Errors are collected in the result rather than logged silently.
 
@@ -569,9 +573,12 @@ def parse_metadata_blocks(text: str) -> MetadataParseResult:
         text: Markdown text potentially containing metadata blocks
 
     Returns:
-        MetadataParseResult with parsed blocks and any errors
+        MetadataParseResult with parsed blocks, content blocks, and any errors
     """
+    from erk_shared.gateway.github.metadata.registry import BlockCategory, get_block_type
+
     blocks: list[MetadataBlock] = []
+    content_blocks: list[RawMetadataBlock] = []
     errors: list[MetadataBlockError] = []
 
     # Phase 1: Extract raw blocks
@@ -579,6 +586,11 @@ def parse_metadata_blocks(text: str) -> MetadataParseResult:
 
     # Phase 2: Parse each body
     for raw_block in raw_blocks:
+        block_type = get_block_type(raw_block.key)
+        if block_type is not None and block_type.category == BlockCategory.CONTENT:
+            content_blocks.append(raw_block)
+            continue
+
         try:
             data = parse_metadata_block_body(raw_block.body)
             blocks.append(MetadataBlock(key=raw_block.key, data=data))
@@ -588,6 +600,7 @@ def parse_metadata_blocks(text: str) -> MetadataParseResult:
 
     return MetadataParseResult(
         blocks=tuple(blocks),
+        content_blocks=tuple(content_blocks),
         errors=tuple(errors),
     )
 

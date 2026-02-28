@@ -34,6 +34,7 @@ class MetadataParseResult:
     """Result of parsing metadata blocks, with explicit error reporting."""
 
     blocks: tuple[MetadataBlock, ...]
+    content_blocks: tuple[RawMetadataBlock, ...]
     errors: tuple[MetadataBlockError, ...]
 
     @property
