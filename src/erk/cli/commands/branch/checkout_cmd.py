@@ -1,5 +1,6 @@
 """Checkout command - find and switch to a worktree by branch name."""
 
+import contextlib
 import sys
 from pathlib import Path
 
@@ -12,7 +13,11 @@ from erk.cli.activation import (
     render_activation_script,
 )
 from erk.cli.alias import alias
-from erk.cli.commands.checkout_helpers import display_sync_status, navigate_to_worktree
+from erk.cli.commands.checkout_helpers import (
+    display_sync_status,
+    navigate_to_worktree,
+    script_error_handler,
+)
 from erk.cli.commands.completions import complete_branch_names
 from erk.cli.commands.slot.common import (
     allocate_slot_for_branch,
@@ -378,6 +383,21 @@ def branch_checkout(
 
     If multiple worktrees contain the branch, all options are shown.
     """
+    handler = script_error_handler(ctx) if script else contextlib.nullcontext()
+    with handler:
+        _branch_checkout_impl(ctx, branch, for_plan, no_slot, new_slot, force, script)
+
+
+def _branch_checkout_impl(
+    ctx: ErkContext,
+    branch: str | None,
+    for_plan: str | None,
+    no_slot: bool,
+    new_slot: bool,
+    force: bool,
+    script: bool,
+) -> None:
+    """Implementation body for branch_checkout — separated for error wrapping."""
     # Mutual exclusivity validation
     if for_plan is not None and branch is not None:
         user_output(
