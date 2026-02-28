@@ -64,6 +64,8 @@ Rules triggered by matching actions in code.
 
 **duplicating command definitions for list and detail contexts** → Read [Dual Provider Pattern for Context-Agnostic Commands](dual-handler-pattern.md) first. Commands are defined once in the registry. Use a second Provider subclass with its own \_get_context() to serve the same commands from a new context.
 
+**duplicating display name logic for clipboard text** → Read [Clipboard Text Generation](clipboard-text-generation.md) first. Use get_copy_text() from registry.py as the single source of truth for clipboard text. Display name generators in command definitions are the canonical source. Do not duplicate this logic in app.py or detail screens.
+
 **duplicating execute_palette_command logic between ErkDashApp and PlanDetailScreen** → Read [Dual Provider Pattern for Context-Agnostic Commands](dual-handler-pattern.md) first. This duplication is a known trade-off. Both ErkDashApp.execute_palette_command() and PlanDetailScreen.execute_command() implement the same command_id switch because they dispatch to different APIs (provider methods vs executor methods). See the asymmetries section below.
 
 **extending PlanDataProvider ABC** → Read [TUI Architecture Overview](architecture.md) first. Requires 3-file update: abc.py + real.py + fake.py. Fake must initialize new dict in **init**. Missing init causes AttributeError at test time.

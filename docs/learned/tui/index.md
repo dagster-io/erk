@@ -8,6 +8,7 @@
 - **[architecture.md](architecture.md)** — understanding TUI structure, implementing TUI components, working with TUI data providers
 - **[async-action-refresh-pattern.md](async-action-refresh-pattern.md)** — adding background operations to the TUI, implementing worker thread actions in the dashboard, refreshing TUI data after a background subprocess
 - **[async-state-snapshot.md](async-state-snapshot.md)** — adding async data fetching to the TUI, reading self.\_view_mode during async operations, debugging stale data appearing in the wrong tab
+- **[clipboard-text-generation.md](clipboard-text-generation.md)** — implementing copy-to-clipboard in the TUI, adding a new command that supports clipboard copy, debugging why a copy command returns wrong text
 - **[column-addition-pattern.md](column-addition-pattern.md)** — adding a column to the plan table, adding a field to PlanRowData, modifying plan_table.py column layout
 - **[command-execution.md](command-execution.md)** — executing commands in TUI, choosing between sync and streaming execution, implementing command runners
 - **[command-palette.md](command-palette.md)** — implementing command palette in Textual TUI, hiding system commands from command palette, get_system_commands method, removing Keys Quit Screenshot Theme from palette, adding emoji prefixes to command palette entries, using CommandCategory for command categorization

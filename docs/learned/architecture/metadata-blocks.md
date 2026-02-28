@@ -8,8 +8,8 @@ last_audited: "2026-02-16 08:00 PT"
 audit_result: clean
 tripwires:
   - action: "modifying render_metadata_block() or parse_metadata_block_body()"
-    warning: "Both metadata/core.py AND metadata_blocks.py contain identical implementations. Tests import from metadata_blocks.py. Changes to one must be mirrored in the other, or behavior diverges silently."
-    score: 6
+    warning: "These functions live in metadata/core.py. The former metadata_blocks.py was deleted in PR #8425. All imports should use erk_shared.gateway.github.metadata.core."
+    score: 4
 ---
 
 # Metadata Blocks Reference
@@ -33,7 +33,7 @@ Use functions from `erk_shared.gateway.github.metadata.core`:
 from erk_shared.gateway.github.metadata.core import (
     find_metadata_block,      # Find specific block by key
     extract_metadata_value,   # Get single field from block
-    parse_metadata_blocks,    # Parse all blocks in text
+    parse_metadata_blocks,    # Parse all blocks -> MetadataParseResult
 )
 
 # Find a specific block
@@ -43,7 +43,23 @@ if block:
 
 # Extract single value directly
 session_id = extract_metadata_value(comment, "impl-started", "session_id")
+
+# Parse all blocks (returns MetadataParseResult with .blocks and .errors)
+result = parse_metadata_blocks(issue_body)
+for block in result.blocks:
+    print(block.key, block.data)
+if result.has_errors:
+    for error in result.errors:
+        print(f"Parse error in block '{error.key}': {error.message}")
 ```
+
+### Error Handling Types
+
+`parse_metadata_blocks()` returns a `MetadataParseResult` (from `erk_shared.gateway.github.metadata.types`):
+
+- `.blocks: tuple[MetadataBlock, ...]` — successfully parsed blocks
+- `.errors: tuple[MetadataBlockError, ...]` — parse errors with `.key` and `.message`
+- `.has_errors` — property, `True` if any errors occurred
 
 ## Creating Blocks
 

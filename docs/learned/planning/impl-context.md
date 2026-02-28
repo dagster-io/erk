@@ -63,9 +63,9 @@ The key failure mode was confusing "delete from disk" (shutil.rmtree) with "remo
 
 Both submit paths use the LBYL pattern to clean up stale `.erk/impl-context/` before creating a new one:
 
-<!-- Source: src/erk/cli/commands/submit.py, impl_context_exists -->
+<!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, impl_context_exists -->
 
-See the `impl_context_exists()` / `remove_impl_context()` LBYL guard in `src/erk/cli/commands/submit.py`. Both submit paths use this pattern to prevent errors from a prior failed submission leaving a stale `.erk/impl-context/` directory behind (fixed in PR #7687).
+See the `impl_context_exists()` / `remove_impl_context()` LBYL guard in `src/erk/cli/commands/pr/submit_pipeline.py`. Both submit paths (submit pipeline and dispatch) use this pattern to prevent errors from a prior failed submission leaving a stale `.erk/impl-context/` directory behind. The functions are defined in `erk_shared.impl_context`.
 
 ### Deferred Impl-Context Deletion
 

@@ -36,11 +36,9 @@ Supported schema versions: `"2"` and `"3"`.
 
 ### Metadata Blocks
 
-`packages/erk-shared/src/erk_shared/gateway/github/metadata_blocks.py` (lines 54-58) normalizes legacy field names during validation:
+The metadata parsing layer normalizes legacy field names during validation. Legacy `completed_steps`/`total_steps` are mapped to v3 `completed_nodes`/`total_nodes`.
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata_blocks.py -->
-
-See field normalization in `metadata_blocks.py` — renames legacy `completed_steps`/`total_steps` to v3 `completed_nodes`/`total_nodes`.
+<!-- Note: The former metadata_blocks.py was deleted in PR #8425. Normalization is now handled in metadata/core.py. -->
 
 ### Renderer
 

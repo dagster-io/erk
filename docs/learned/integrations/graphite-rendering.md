@@ -72,5 +72,5 @@ Test by creating a draft PR on a test branch and viewing it on both sites before
 ## Related Implementation
 
 - `draft_pr_lifecycle.py:89-90` — `DETAILS_OPEN` (current) and `_LEGACY_DETAILS_OPEN` (compat parsing)
-- `metadata_blocks.py:226` — PR body assembly
+- `shared.py:assemble_pr_body()` — PR body assembly
 - `draft_pr_lifecycle.py:89-90` — Constants for details wrapping
