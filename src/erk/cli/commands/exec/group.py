@@ -9,16 +9,12 @@ import click
 # Import and register all scripts
 from erk.cli.commands.exec.scripts.add_plan_label import add_plan_label
 from erk.cli.commands.exec.scripts.add_plan_labels import add_plan_labels
-from erk.cli.commands.exec.scripts.add_reaction_to_comment import (
-    add_reaction_to_comment,
-)
 from erk.cli.commands.exec.scripts.add_remote_execution_note import (
     add_remote_execution_note,
 )
 from erk.cli.commands.exec.scripts.capture_session_info import (
     capture_session_info,
 )
-from erk.cli.commands.exec.scripts.check_impl import check_impl
 from erk.cli.commands.exec.scripts.ci_update_pr_body import ci_update_pr_body
 from erk.cli.commands.exec.scripts.ci_verify_autofix import ci_verify_autofix
 from erk.cli.commands.exec.scripts.cleanup_impl_context import cleanup_impl_context
@@ -28,9 +24,6 @@ from erk.cli.commands.exec.scripts.close_pr import (
 from erk.cli.commands.exec.scripts.close_prs import close_prs
 from erk.cli.commands.exec.scripts.create_impl_context_from_plan import (
     create_impl_context_from_plan,
-)
-from erk.cli.commands.exec.scripts.create_plan_from_context import (
-    create_plan_from_context,
 )
 from erk.cli.commands.exec.scripts.create_pr_from_session import (
     create_pr_from_session,
@@ -46,12 +39,9 @@ from erk.cli.commands.exec.scripts.download_remote_session import (
 )
 from erk.cli.commands.exec.scripts.exit_plan_mode_hook import exit_plan_mode_hook
 from erk.cli.commands.exec.scripts.extract_latest_plan import extract_latest_plan
-from erk.cli.commands.exec.scripts.find_project_dir import find_project_dir
-from erk.cli.commands.exec.scripts.generate_node_slugs import generate_node_slugs
 from erk.cli.commands.exec.scripts.generate_pr_address_summary import (
     generate_pr_address_summary,
 )
-from erk.cli.commands.exec.scripts.generate_pr_summary import generate_pr_summary
 from erk.cli.commands.exec.scripts.get_embedded_prompt import get_embedded_prompt
 from erk.cli.commands.exec.scripts.get_issue_body import get_issue_body
 from erk.cli.commands.exec.scripts.get_issue_timeline_prs import (
@@ -81,8 +71,6 @@ from erk.cli.commands.exec.scripts.impl_signal import impl_signal
 from erk.cli.commands.exec.scripts.impl_verify import impl_verify
 from erk.cli.commands.exec.scripts.land_execute import land_execute
 from erk.cli.commands.exec.scripts.list_sessions import list_sessions
-from erk.cli.commands.exec.scripts.mark_impl_ended import mark_impl_ended
-from erk.cli.commands.exec.scripts.mark_impl_started import mark_impl_started
 from erk.cli.commands.exec.scripts.marker import marker
 from erk.cli.commands.exec.scripts.migrate_objective_schema import (
     migrate_objective_schema,
@@ -112,13 +100,7 @@ from erk.cli.commands.exec.scripts.objective_update_after_land import (
     objective_update_after_land,
 )
 from erk.cli.commands.exec.scripts.plan_save import plan_save
-from erk.cli.commands.exec.scripts.plan_title_to_filename import (
-    plan_title_to_filename,
-)
 from erk.cli.commands.exec.scripts.plan_update import plan_update
-from erk.cli.commands.exec.scripts.plan_update_from_feedback import (
-    plan_update_from_feedback,
-)
 from erk.cli.commands.exec.scripts.post_or_update_pr_summary import (
     post_or_update_pr_summary,
 )
@@ -169,10 +151,6 @@ from erk.cli.commands.exec.scripts.track_learn_evaluation import (
 from erk.cli.commands.exec.scripts.track_learn_result import (
     track_learn_result,
 )
-from erk.cli.commands.exec.scripts.trigger_async_learn import trigger_async_learn
-from erk.cli.commands.exec.scripts.tripwires_reminder_hook import (
-    tripwires_reminder_hook,
-)
 from erk.cli.commands.exec.scripts.update_issue_body import update_issue_body
 from erk.cli.commands.exec.scripts.update_objective_node import update_objective_node
 from erk.cli.commands.exec.scripts.update_plan_header import update_plan_header
@@ -188,9 +166,6 @@ from erk.cli.commands.exec.scripts.validate_claude_credentials import (
 from erk.cli.commands.exec.scripts.validate_plan_content import (
     validate_plan_content,
 )
-from erk.cli.commands.exec.scripts.wrap_plan_in_metadata_block import (
-    wrap_plan_in_metadata_block,
-)
 
 
 # Create the exec group (hidden from top-level help)
@@ -202,13 +177,10 @@ def exec_group() -> None:
 # Register all commands
 exec_group.add_command(add_plan_label, name="add-plan-label")
 exec_group.add_command(add_plan_labels, name="add-plan-labels")
-exec_group.add_command(add_reaction_to_comment, name="add-reaction-to-comment")
 exec_group.add_command(add_remote_execution_note, name="add-remote-execution-note")
 exec_group.add_command(capture_session_info, name="capture-session-info")
-exec_group.add_command(check_impl, name="check-impl")
 exec_group.add_command(cleanup_impl_context, name="cleanup-impl-context")
 exec_group.add_command(create_pr_from_session, name="create-pr-from-session")
-exec_group.add_command(create_plan_from_context, name="create-plan-from-context")
 exec_group.add_command(dash_data, name="dash-data")
 exec_group.add_command(create_impl_context_from_plan, name="create-impl-context-from-plan")
 exec_group.add_command(detect_plan_from_branch, name="detect-plan-from-branch")
@@ -217,10 +189,7 @@ exec_group.add_command(discover_reviews, name="discover-reviews")
 exec_group.add_command(download_remote_session, name="download-remote-session")
 exec_group.add_command(exit_plan_mode_hook, name="exit-plan-mode-hook")
 exec_group.add_command(extract_latest_plan, name="extract-latest-plan")
-exec_group.add_command(find_project_dir, name="find-project-dir")
-exec_group.add_command(generate_node_slugs, name="generate-node-slugs")
 exec_group.add_command(generate_pr_address_summary, name="generate-pr-address-summary")
-exec_group.add_command(generate_pr_summary, name="generate-pr-summary")
 exec_group.add_command(get_plan_info, name="get-plan-info")
 exec_group.add_command(get_plan_metadata, name="get-plan-metadata")
 exec_group.add_command(get_plans_for_objective, name="get-plans-for-objective")
@@ -240,11 +209,8 @@ exec_group.add_command(get_pr_review_comments, name="get-pr-review-comments")
 exec_group.add_command(impl_init, name="impl-init")
 exec_group.add_command(impl_signal, name="impl-signal")
 exec_group.add_command(impl_verify, name="impl-verify")
-exec_group.add_command(plan_title_to_filename, name="plan-title-to-filename")
 exec_group.add_command(land_execute, name="land-execute")
 exec_group.add_command(list_sessions, name="list-sessions")
-exec_group.add_command(mark_impl_ended, name="mark-impl-ended")
-exec_group.add_command(mark_impl_started, name="mark-impl-started")
 exec_group.add_command(marker, name="marker")
 exec_group.add_command(migrate_objective_schema, name="migrate-objective-schema")
 exec_group.add_command(normalize_tripwire_candidates, name="normalize-tripwire-candidates")
@@ -256,7 +222,6 @@ exec_group.add_command(objective_link_pr, name="objective-link-pr")
 exec_group.add_command(objective_update_after_land, name="objective-update-after-land")
 exec_group.add_command(objective_post_action_comment, name="objective-post-action-comment")
 exec_group.add_command(plan_save, name="plan-save")
-exec_group.add_command(plan_update_from_feedback, name="plan-update-from-feedback")
 exec_group.add_command(plan_update, name="plan-update")
 exec_group.add_command(post_or_update_pr_summary, name="post-or-update-pr-summary")
 exec_group.add_command(post_pr_inline_comment, name="post-pr-inline-comment")
@@ -280,8 +245,6 @@ exec_group.add_command(setup_impl_from_pr, name="setup-impl-from-pr")
 exec_group.add_command(store_tripwire_candidates, name="store-tripwire-candidates")
 exec_group.add_command(track_learn_evaluation, name="track-learn-evaluation")
 exec_group.add_command(track_learn_result, name="track-learn-result")
-exec_group.add_command(trigger_async_learn, name="trigger-async-learn")
-exec_group.add_command(tripwires_reminder_hook, name="tripwires-reminder-hook")
 exec_group.add_command(update_issue_body, name="update-issue-body")
 exec_group.add_command(update_plan_header, name="update-plan-header")
 exec_group.add_command(update_objective_node, name="update-objective-node")
@@ -295,4 +258,3 @@ exec_group.add_command(close_prs, name="close-prs")
 exec_group.add_command(user_prompt_hook, name="user-prompt-hook")
 exec_group.add_command(validate_claude_credentials, name="validate-claude-credentials")
 exec_group.add_command(validate_plan_content, name="validate-plan-content")
-exec_group.add_command(wrap_plan_in_metadata_block, name="wrap-plan-in-metadata-block")

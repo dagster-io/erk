@@ -14,33 +14,6 @@ CLI commands and recipes for inspecting Claude Code session logs.
 
 ## Available CLI Commands
 
-### erk exec find-project-dir
-
-Find the Claude project directory for a filesystem path.
-
-```bash
-# From current directory
-erk exec find-project-dir
-
-# For specific path
-erk exec find-project-dir --path /path/to/project
-```
-
-**Output:**
-
-```json
-{
-  "success": true,
-  "project_dir": "/Users/foo/.claude/projects/-Users-foo-code-erk",
-  "cwd": "/Users/foo/code/erk",
-  "encoded_path": "-Users-foo-code-erk",
-  "session_logs": ["abc123.jsonl", "agent-17cfd3f4.jsonl"],
-  "latest_session_id": "abc123"
-}
-```
-
-**Source:** `src/erk/cli/commands/exec/scripts/find_project_dir.py`
-
 ### erk exec list-sessions
 
 Discover Claude Code sessions for the current worktree.
@@ -150,12 +123,9 @@ erk exec preprocess-session ~/.claude/projects/.../abc123.jsonl --stdout | head 
 
 ## Finding Session Logs
 
-Use `erk exec find-project-dir` for the project directory and `erk exec list-sessions` for session discovery. These commands replace manual shell recipes. For example:
+Use `erk exec list-sessions` for session discovery. For example:
 
 ```bash
-# Get project directory and latest session
-erk exec find-project-dir
-
 # List sessions with metadata, branch info, and file paths
 erk exec list-sessions --limit 20 --min-size 1000
 ```
@@ -202,11 +172,7 @@ cat "$SESSION_LOG" | jq -c '
 
 ### Session Blew Out Context
 
-1. Find the session log:
-
-   ```bash
-   erk exec find-project-dir
-   ```
+1. Find the session log using `erk exec list-sessions`.
 
 2. Count tool result sizes:
 
@@ -229,12 +195,10 @@ See [context-analysis.md](context-analysis.md) for optimization strategies.
 
 ### Agent Subprocess Failed
 
-1. Find agent logs for session:
+1. Find agent logs for session using `erk exec list-sessions --session-id <SESSION_ID>` to get the project directory, then list agent logs:
 
    ```bash
-   SESSION_ID="abc123-def456"
-   PROJECT_DIR=$(erk exec find-project-dir | jq -r '.project_dir')
-   ls -lt "$PROJECT_DIR"/agent-*.jsonl | head -5
+   ls -lt <project_dir>/agent-*.jsonl | head -5
    ```
 
 2. Check for errors in log:

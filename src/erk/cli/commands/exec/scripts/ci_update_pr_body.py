@@ -4,7 +4,7 @@
 This command generates a PR summary from the diff using Claude, then updates
 the PR body with the summary, optional workflow link, and standardized footer.
 
-This combines generate-pr-summary + footer construction + gh pr edit in one step,
+This combines PR summary generation + footer construction + gh pr edit in one step,
 replacing ~30 lines of bash in GitHub Actions workflows.
 
 Usage:

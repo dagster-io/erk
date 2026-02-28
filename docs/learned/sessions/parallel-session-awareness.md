@@ -102,9 +102,9 @@ When you know the working directory, compute the project directory name directly
 - Replace `.` with `-`
 - Example: `/Users/foo/code/app` → `-Users-foo-code-app`
 
-<!-- Source: src/erk/cli/commands/exec/scripts/find_project_dir.py, encode_path_to_project_folder -->
+<!-- Source: src/erk/cli/commands/exec/scripts/capture_session_info.py, encode_path_to_project_folder -->
 
-**Source**: See `find_project_dir.py` for the `encode_path_to_project_folder()` implementation.
+The path encoding logic is erk's own implementation in `encode_path_to_project_folder()` in `src/erk/cli/commands/exec/scripts/capture_session_info.py`.
 
 **When to use cwd_hint:**
 
@@ -113,8 +113,6 @@ When you know the working directory, compute the project directory name directly
 - ✅ **Agent operations**: Current working directory is always known
 - ❌ **Historical analysis**: Working directory may be unknown for old sessions
 - ❌ **Cross-project searches**: Deliberately searching all projects
-
-**CLI command**: Use `erk exec find-project-dir --path <path>` for O(1) project directory lookup.
 
 **Performance comparison:**
 

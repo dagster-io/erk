@@ -185,25 +185,16 @@ erk exec extract-session-from-issue <issue-number> [OPTIONS]
 
 ---
 
-## Additional erk CLI Commands
+## Finding the Project Directory
 
-### erk find-project-dir
-
-Find Claude project directory for a filesystem path.
+Claude Code uses a deterministic path encoding: replace `/` and `.` with `-`. Compute the project directory directly:
 
 ```bash
-erk find-project-dir [PATH]
+# Compute project dir from cwd
+PROJECT_DIR="$HOME/.claude/projects/$(pwd | sed 's|/|-|g; s|\.|-|g')"
 ```
 
-**Output:**
-
-```json
-{
-  "project_dir": "/Users/foo/.claude/projects/-Users-foo-code-myapp",
-  "latest_session": "abc123-def456",
-  "session_count": 5
-}
-```
+For programmatic access, use `encode_path_to_project_folder()` from `src/erk/cli/commands/exec/scripts/capture_session_info.py`.
 
 ---
 
@@ -291,7 +282,7 @@ cat session.jsonl | jq -rs '
 
 ```bash
 SESSION_ID="abc123-def456"
-PROJECT_DIR=$(erk find-project-dir | jq -r '.project_dir')
+PROJECT_DIR="$HOME/.claude/projects/$(pwd | sed 's|/|-|g; s|\.|-|g')"
 
 for f in "$PROJECT_DIR"/agent-*.jsonl; do
   if head -10 "$f" | jq -e "select(.sessionId == \"$SESSION_ID\")" > /dev/null 2>&1; then
@@ -362,7 +353,8 @@ cat session.jsonl | jq 'select(.type == "summary")'
 1. Find session log:
 
    ```bash
-   erk find-project-dir
+   PROJECT_DIR="$HOME/.claude/projects/$(pwd | sed 's|/|-|g; s|\.|-|g')"
+   ls "$PROJECT_DIR"/*.jsonl
    ```
 
 2. Count total tool result sizes:
@@ -383,7 +375,8 @@ cat session.jsonl | jq 'select(.type == "summary")'
 1. Find agent logs:
 
    ```bash
-   ls -lt $(erk find-project-dir | jq -r '.project_dir')/agent-*.jsonl | head -5
+   PROJECT_DIR="$HOME/.claude/projects/$(pwd | sed 's|/|-|g; s|\.|-|g')"
+   ls -lt "$PROJECT_DIR"/agent-*.jsonl | head -5
    ```
 
 2. Check for errors:
@@ -400,14 +393,14 @@ cat session.jsonl | jq 'select(.type == "summary")'
 ### Compare Session Sizes
 
 ```bash
-PROJECT_DIR=$(erk find-project-dir | jq -r '.project_dir')
+PROJECT_DIR="$HOME/.claude/projects/$(pwd | sed 's|/|-|g; s|\.|-|g')"
 ls -lhS "$PROJECT_DIR"/*.jsonl | grep -v agent- | head -20
 ```
 
 ### Find Sessions by Content
 
 ```bash
-PROJECT_DIR=$(erk find-project-dir | jq -r '.project_dir')
+PROJECT_DIR="$HOME/.claude/projects/$(pwd | sed 's|/|-|g; s|\.|-|g')"
 grep -l "specific text" "$PROJECT_DIR"/*.jsonl | grep -v agent-
 ```
 
