@@ -4,8 +4,7 @@ This module checks new plans against existing open plans using a fast
 LLM call to detect semantic duplicates — plans that aim to accomplish
 the same functional change, even if worded differently.
 
-Mirrors the NodeSlugGenerator pattern: concrete class, PromptExecutor
-injection, model="haiku", frozen result dataclass.
+Concrete class with PromptExecutor injection, model="haiku", frozen result dataclass.
 """
 
 from __future__ import annotations
