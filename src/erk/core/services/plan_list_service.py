@@ -101,7 +101,7 @@ class PlannedPRPlanListService(PlanListService):
 
         # Subprocess path: REST+GraphQL two-step via gh CLI
         t0 = self._time.monotonic()
-        pr_details_list, pr_linkages = self._github.list_plan_prs_with_details(
+        pr_details_list, pr_linkages, unenriched_count = self._github.list_plan_prs_with_details(
             location,
             labels=labels,
             state=state,
@@ -119,6 +119,8 @@ class PlannedPRPlanListService(PlanListService):
         )
         t3 = self._time.monotonic()
 
+        warnings = _build_enrichment_warnings(unenriched_count, len(pr_details_list))
+
         return PlanListData(
             plans=plans,
             pr_linkages=pr_linkages,
@@ -126,6 +128,7 @@ class PlannedPRPlanListService(PlanListService):
             api_ms=(t1 - t0) * 1000,
             plan_parsing_ms=(t2 - t1) * 1000,
             workflow_runs_ms=(t3 - t2) * 1000,
+            warnings=warnings,
         )
 
     def _get_plan_list_data_http(
@@ -192,7 +195,9 @@ class PlannedPRPlanListService(PlanListService):
         enrichment = self._enrich_prs_via_http(http_client, repo_id.owner, repo_id.repo, pr_numbers)
 
         # Step 3: Merge REST + GraphQL data
-        pr_details_list, pr_linkages = merge_rest_graphql_pr_data(pr_items, enrichment, repo_id)
+        pr_details_list, pr_linkages, unenriched_count = merge_rest_graphql_pr_data(
+            pr_items, enrichment, repo_id
+        )
         t1 = self._time.monotonic()
 
         # Step 4: Parse plan content from PR bodies
@@ -205,6 +210,8 @@ class PlannedPRPlanListService(PlanListService):
         )
         t3 = self._time.monotonic()
 
+        warnings = _build_enrichment_warnings(unenriched_count, len(pr_details_list))
+
         return PlanListData(
             plans=plans,
             pr_linkages=pr_linkages,
@@ -212,6 +219,7 @@ class PlannedPRPlanListService(PlanListService):
             api_ms=(t1 - t0) * 1000,
             plan_parsing_ms=(t2 - t1) * 1000,
             workflow_runs_ms=(t3 - t2) * 1000,
+            warnings=warnings,
         )
 
     def _enrich_prs_via_http(
@@ -336,3 +344,21 @@ class PlannedPRPlanListService(PlanListService):
             except RuntimeError as e:
                 logging.warning("Failed to fetch workflow runs: %s", e)
         return workflow_runs
+
+
+def _build_enrichment_warnings(unenriched_count: int, total_count: int) -> tuple[str, ...]:
+    """Build warning messages for degraded GraphQL enrichment data.
+
+    Args:
+        unenriched_count: Number of PRs that lacked GraphQL enrichment
+        total_count: Total number of PRs fetched
+
+    Returns:
+        Tuple of warning strings (empty if no warnings)
+    """
+    if unenriched_count == 0:
+        return ()
+    return (
+        f"GraphQL enrichment failed for {unenriched_count}/{total_count} PRs "
+        "— branch, draft status, and check indicators may be missing",
+    )

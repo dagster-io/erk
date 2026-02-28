@@ -273,21 +273,22 @@ def _make_rest_item(
 def test_merge_empty_items() -> None:
     """Empty input returns empty output."""
     repo_id = GitHubRepoId(owner="o", repo="r")
-    details, linkages = merge_rest_graphql_pr_data([], {}, repo_id)
+    details, linkages, unenriched_count = merge_rest_graphql_pr_data([], {}, repo_id)
     assert details == []
     assert linkages == {}
+    assert unenriched_count == 0
 
 
-def test_merge_without_enrichment_uses_defaults() -> None:
-    """Missing GraphQL enrichment falls back to defaults."""
+def test_merge_without_enrichment_skips_pr_linkage() -> None:
+    """Missing GraphQL enrichment creates PRDetails but skips PullRequestInfo linkage."""
     repo_id = GitHubRepoId(owner="o", repo="r")
     items = [_make_rest_item(number=42)]
 
-    details, linkages = merge_rest_graphql_pr_data(items, {}, repo_id)
+    details, linkages, unenriched_count = merge_rest_graphql_pr_data(items, {}, repo_id)
 
     assert len(details) == 1
     assert details[0].mergeable == "UNKNOWN"
     assert details[0].is_draft is False
-    info = linkages[42][0]
-    assert info.checks_passing is None
-    assert info.has_conflicts is None
+    # Unenriched PRs are excluded from pr_linkages to avoid misleading defaults
+    assert 42 not in linkages
+    assert unenriched_count == 1

@@ -157,7 +157,7 @@ def _make_pr_info(
 def _make_plan_pr_data(
     *,
     pr_details_list: list[PRDetails],
-) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
+) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]], int]:
     """Build plan_pr_details tuple for FakeGitHub from a list of PRDetails.
 
     Creates PullRequestInfo with rich data (checks, review threads) for each PRDetails.
@@ -178,7 +178,7 @@ def _make_plan_pr_data(
                 review_thread_counts=(0, 0),
             )
         ]
-    return (pr_details_list, linkages)
+    return (pr_details_list, linkages, 0)
 
 
 class TestPlannedPRPlanListService:
@@ -233,7 +233,7 @@ class TestPlannedPRPlanListService:
             head_branch="plan-branch",
         )
         fake_github = FakeGitHub(
-            plan_pr_details=([details], {70: [pr_info]}),
+            plan_pr_details=([details], {70: [pr_info]}, 0),
         )
         service = PlannedPRPlanListService(fake_github, time=FakeTime())
         result = service.get_plan_list_data(

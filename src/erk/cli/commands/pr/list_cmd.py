@@ -303,7 +303,12 @@ def _pr_list_impl(
     )
 
     # Fetch data via provider
-    rows, _timings = provider.fetch_plans(filters)
+    rows, timings = provider.fetch_plans(filters)
+
+    # Display warnings about degraded data quality
+    if timings is not None and timings.warnings:
+        for warning in timings.warnings:
+            user_output(click.style("Warning: ", fg="yellow") + warning)
 
     # Apply --stage post-fetch filtering
     if stage is not None:

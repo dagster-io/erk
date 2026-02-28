@@ -72,7 +72,9 @@ class FakeGitHub(GitHub):
         pr_diff_error: str | None = None,
         workflow_runs_error: str | None = None,
         artifact_download_callback: "Callable[[str, str, Path], bool] | None" = None,
-        plan_pr_details: tuple[list[PRDetails], dict[int, list[PullRequestInfo]]] | None = None,
+        plan_pr_details: (
+            tuple[list[PRDetails], dict[int, list[PullRequestInfo]], int] | None
+        ) = None,
         time: Time | None = None,
     ) -> None:
         """Create FakeGitHub with pre-configured state.
@@ -114,7 +116,7 @@ class FakeGitHub(GitHub):
                 files in destination to simulate artifact content. Return True for success,
                 False or raise to simulate failure.
         plan_pr_details: Pre-configured data for list_plan_prs_with_details().
-            Tuple of (pr_details_list, pr_linkages). Defaults to empty.
+            Tuple of (pr_details_list, pr_linkages, unenriched_count). Defaults to empty.
         """
         # Default to test values if not provided
         self._repo_info = repo_info or RepoInfo(owner="test-owner", name="test-repo")
@@ -178,7 +180,7 @@ class FakeGitHub(GitHub):
         self._operation_log: list[tuple[Any, ...]] = []
         # (repo, sha, state, context, description)
         self._created_commit_statuses: list[tuple[str, str, str, str, str]] = []
-        self._plan_pr_details = plan_pr_details or ([], {})
+        self._plan_pr_details = plan_pr_details or ([], {}, 0)
 
     @property
     def issues(self) -> GitHubIssues:
@@ -730,7 +732,7 @@ class FakeGitHub(GitHub):
         limit: int | None,
         author: str | None,
         exclude_labels: list[str] | None = None,
-    ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
+    ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]], int]:
         """Return pre-configured plan PR details and linkages."""
         return self._plan_pr_details
 

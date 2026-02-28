@@ -211,7 +211,7 @@ class DryRunGitHub(GitHub):
         limit: int | None,
         author: str | None,
         exclude_labels: list[str] | None = None,
-    ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
+    ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]], int]:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.list_plan_prs_with_details(
             location,

@@ -33,6 +33,7 @@ class PlanListData:
         api_ms: Milliseconds spent on REST+GraphQL API calls (issues/PRs fetch)
         plan_parsing_ms: Milliseconds spent parsing plan bodies
         workflow_runs_ms: Milliseconds spent fetching workflow runs
+        warnings: User-facing warnings about degraded data quality
     """
 
     plans: list[Plan]
@@ -41,6 +42,7 @@ class PlanListData:
     api_ms: float = 0.0
     plan_parsing_ms: float = 0.0
     workflow_runs_ms: float = 0.0
+    warnings: tuple[str, ...] = ()
 
 
 class PlanListService(ABC):

@@ -204,6 +204,7 @@ class RealPlanDataProvider(PlanDataProvider):
             worktree_mapping_ms=(t_wt_end - t_wt_start) * 1000,
             row_building_ms=(t_rows_end - t_rows_start) * 1000,
             total_ms=(t_rows_end - t_total_start) * 1000,
+            warnings=plan_data.warnings,
         )
 
         logger.info("fetch_plans timings: %s", timings.summary())

@@ -208,7 +208,9 @@ def test_merge_rest_graphql_single_pr() -> None:
     rest_items = [_make_rest_pr_item(number=42, title="Fix bug")]
     enrichment = {42: _make_graphql_pr_node(head_ref_name="fix-branch", mergeable="MERGEABLE")}
 
-    pr_details_list, pr_linkages = merge_rest_graphql_pr_data(rest_items, enrichment, repo_id)
+    pr_details_list, pr_linkages, unenriched_count = merge_rest_graphql_pr_data(
+        rest_items, enrichment, repo_id
+    )
 
     assert len(pr_details_list) == 1
     pr = pr_details_list[0]
@@ -228,27 +230,30 @@ def test_merge_rest_graphql_single_pr() -> None:
     assert pr_info.checks_passing is True
     assert pr_info.head_branch == "fix-branch"
     assert pr_info.review_decision == "APPROVED"
+    assert unenriched_count == 0
 
 
 def test_merge_rest_graphql_without_enrichment() -> None:
-    """When GraphQL enrichment is missing, defaults are used for GraphQL fields."""
+    """When GraphQL enrichment is missing, PRDetails are created but pr_linkages are skipped."""
     repo_id = GitHubRepoId(owner="test-owner", repo="test-repo")
     rest_items = [_make_rest_pr_item(number=99)]
     enrichment: dict[int, dict[str, Any]] = {}
 
-    pr_details_list, pr_linkages = merge_rest_graphql_pr_data(rest_items, enrichment, repo_id)
+    pr_details_list, pr_linkages, unenriched_count = merge_rest_graphql_pr_data(
+        rest_items, enrichment, repo_id
+    )
 
     assert len(pr_details_list) == 1
     pr = pr_details_list[0]
     assert pr.number == 99
-    # GraphQL fields fall back to defaults
+    # GraphQL fields fall back to defaults in PRDetails
     assert pr.is_draft is False
     assert pr.mergeable == "UNKNOWN"
     assert pr.merge_state_status == "UNKNOWN"
 
-    pr_info = pr_linkages[99][0]
-    assert pr_info.checks_passing is None
-    assert pr_info.has_conflicts is None
+    # Unenriched PRs are excluded from pr_linkages
+    assert 99 not in pr_linkages
+    assert unenriched_count == 1
 
 
 def test_merge_rest_graphql_multiple_prs() -> None:
@@ -263,7 +268,9 @@ def test_merge_rest_graphql_multiple_prs() -> None:
         20: _make_graphql_pr_node(mergeable="CONFLICTING"),
     }
 
-    pr_details_list, pr_linkages = merge_rest_graphql_pr_data(rest_items, enrichment, repo_id)
+    pr_details_list, pr_linkages, unenriched_count = merge_rest_graphql_pr_data(
+        rest_items, enrichment, repo_id
+    )
 
     assert len(pr_details_list) == 2
     assert pr_details_list[0].number == 10
@@ -273,6 +280,26 @@ def test_merge_rest_graphql_multiple_prs() -> None:
 
     assert pr_linkages[10][0].checks_passing is False
     assert pr_linkages[20][0].has_conflicts is True
+    assert unenriched_count == 0
+
+
+def test_merge_rest_graphql_partial_enrichment() -> None:
+    """When only some PRs have enrichment, unenriched ones are excluded from linkages."""
+    repo_id = GitHubRepoId(owner="test-owner", repo="test-repo")
+    rest_items = [
+        _make_rest_pr_item(number=10, title="PR 10"),
+        _make_rest_pr_item(number=20, title="PR 20"),
+    ]
+    enrichment = {10: _make_graphql_pr_node(head_ref_name="branch-10")}
+
+    pr_details_list, pr_linkages, unenriched_count = merge_rest_graphql_pr_data(
+        rest_items, enrichment, repo_id
+    )
+
+    assert len(pr_details_list) == 2
+    assert 10 in pr_linkages
+    assert 20 not in pr_linkages
+    assert unenriched_count == 1
 
 
 def test_merge_rest_graphql_labels_parsed() -> None:
@@ -281,7 +308,7 @@ def test_merge_rest_graphql_labels_parsed() -> None:
     rest_items = [_make_rest_pr_item(number=42, labels=["erk-plan", "bug"])]
     enrichment = {42: _make_graphql_pr_node()}
 
-    pr_details_list, _ = merge_rest_graphql_pr_data(rest_items, enrichment, repo_id)
+    pr_details_list, _, _ = merge_rest_graphql_pr_data(rest_items, enrichment, repo_id)
 
     assert pr_details_list[0].labels == ("erk-plan", "bug")
 
@@ -292,7 +319,7 @@ def test_merge_rest_graphql_timestamps_parsed() -> None:
     rest_items = [_make_rest_pr_item(number=42)]
     enrichment = {42: _make_graphql_pr_node()}
 
-    pr_details_list, _ = merge_rest_graphql_pr_data(rest_items, enrichment, repo_id)
+    pr_details_list, _, _ = merge_rest_graphql_pr_data(rest_items, enrichment, repo_id)
 
     pr = pr_details_list[0]
     assert pr.created_at == datetime(2024, 1, 15, 10, 0, 0, tzinfo=UTC)
@@ -305,7 +332,7 @@ def test_merge_rest_graphql_review_thread_counts() -> None:
     rest_items = [_make_rest_pr_item(number=42)]
     enrichment = {42: _make_graphql_pr_node(resolved_threads=3, total_threads=5)}
 
-    _, pr_linkages = merge_rest_graphql_pr_data(rest_items, enrichment, repo_id)
+    _, pr_linkages, _ = merge_rest_graphql_pr_data(rest_items, enrichment, repo_id)
 
     pr_info = pr_linkages[42][0]
     assert pr_info.review_thread_counts == (3, 5)
@@ -315,7 +342,8 @@ def test_merge_rest_graphql_empty_items() -> None:
     """Empty REST items list produces empty output."""
     repo_id = GitHubRepoId(owner="test-owner", repo="test-repo")
 
-    pr_details_list, pr_linkages = merge_rest_graphql_pr_data([], {}, repo_id)
+    pr_details_list, pr_linkages, unenriched_count = merge_rest_graphql_pr_data([], {}, repo_id)
 
     assert pr_details_list == []
     assert pr_linkages == {}
+    assert unenriched_count == 0

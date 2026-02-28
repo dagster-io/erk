@@ -229,7 +229,7 @@ class PrintingGitHub(PrintingBase, GitHub):
         limit: int | None,
         author: str | None,
         exclude_labels: list[str] | None = None,
-    ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
+    ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]], int]:
         """List plan PRs with rich details (read-only, no printing)."""
         return self._wrapped.list_plan_prs_with_details(
             location,
