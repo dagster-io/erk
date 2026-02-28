@@ -10,6 +10,7 @@ from erk.cli.commands.land_learn import (
     _compute_session_stats,
     _create_learn_pr_impl,
     _create_learn_pr_with_sessions,
+    _log_learn_pr_files,
     _log_session_discovery,
     _should_create_learn_pr,
 )
@@ -286,6 +287,9 @@ def test_creates_pr_and_shows_success(
     assert "#100" in captured.err
     assert "No sessions discovered" in captured.err
     assert "https://github.com/" in captured.err
+    # File inventory output
+    assert "file(s) committed" in captured.err
+    assert "plan.md" in captured.err
 
 
 # ---------------------------------------------------------------------------
@@ -619,3 +623,54 @@ def test_log_session_discovery_uses_correct_type_prefix(
     impl_paths = [p for p in paths if "impl" in p]
     assert len(planning_paths) >= 1
     assert len(impl_paths) >= 1
+
+
+# ---------------------------------------------------------------------------
+# _log_learn_pr_files
+# ---------------------------------------------------------------------------
+
+
+def test_log_learn_pr_files_shows_plan_and_ref(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """With empty xml_files, shows plan.md and ref.json (2 files)."""
+    _log_learn_pr_files(plan_content="# Plan\n\nSome content.", xml_files={})
+
+    captured = capsys.readouterr()
+    assert "2 file(s) committed" in captured.err
+    assert "plan.md" in captured.err
+    assert "ref.json" in captured.err
+
+
+def test_log_learn_pr_files_includes_session_xml_files(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """With 2 XML files, shows all 4 files (plan.md + ref.json + 2 XML)."""
+    xml_files = {
+        ".erk/impl-context/sessions/impl-aaaa1111.xml": "<session>short</session>",
+        ".erk/impl-context/sessions/planning-bbbb2222.xml": "<session>data</session>",
+    }
+    _log_learn_pr_files(plan_content="# Plan", xml_files=xml_files)
+
+    captured = capsys.readouterr()
+    assert "4 file(s) committed" in captured.err
+    assert "plan.md" in captured.err
+    assert "ref.json" in captured.err
+    assert "impl-aaaa1111.xml" in captured.err
+    assert "planning-bbbb2222.xml" in captured.err
+
+
+def test_log_learn_pr_files_shows_sizes_in_kb_for_large_files(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Large XML content shows KB size."""
+    large_content = "x" * 2048  # 2 KB
+    xml_files = {
+        ".erk/impl-context/sessions/impl-cccc3333.xml": large_content,
+    }
+    _log_learn_pr_files(plan_content="# Plan", xml_files=xml_files)
+
+    captured = capsys.readouterr()
+    assert "KB" in captured.err
+    # The large file should show "2 KB"
+    assert "2 KB" in captured.err
