@@ -65,6 +65,7 @@ def create_plan_draft_pr(
     created_from_session: str | None,
     created_from_workflow_run_url: str | None,
     learned_from_issue: int | None,
+    summary: str | None,
 ) -> CreatePlanDraftPRResult:
     """Create a plan as a draft PR with plan content committed to branch.
 
@@ -96,6 +97,7 @@ def create_plan_draft_pr(
         created_from_session: Optional session ID
         created_from_workflow_run_url: Optional workflow run URL
         learned_from_issue: Optional parent plan issue number (for learn plans)
+        summary: Optional AI-generated summary for the PR description
 
     Returns:
         CreatePlanDraftPRResult with success status and details.
@@ -179,6 +181,7 @@ def create_plan_draft_pr(
         content=plan_content,
         labels=tuple(labels),
         metadata=metadata,
+        summary=summary,
     )
 
     if not result.plan_id.isdigit():

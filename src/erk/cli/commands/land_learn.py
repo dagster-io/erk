@@ -316,6 +316,7 @@ def _create_learn_pr_impl(
         created_from_session=None,
         created_from_workflow_run_url=None,
         learned_from_issue=int(plan_id),
+        summary=None,
     )
 
     if result.success:

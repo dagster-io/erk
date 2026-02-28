@@ -306,7 +306,7 @@ def test_finalize_pr_planned_pr_backend_extracts_metadata(tmp_path: Path) -> Non
     """Planned PR backend: metadata prefix extracted, no self-close."""
     metadata_body = format_plan_header_body_for_test()
     plan_content = "# My Plan\n\nImplement the thing."
-    pr_body = build_plan_stage_body(metadata_body, plan_content)
+    pr_body = build_plan_stage_body(metadata_body, plan_content, summary=None)
 
     pr = _pr_details(number=42, body=pr_body)
     fake_git = FakeGit(
@@ -520,7 +520,7 @@ def test_updates_lifecycle_stage_for_draft_pr_backend(tmp_path: Path) -> None:
     """finalize_pr updates lifecycle for draft-PR backend where plan IS the PR."""
     metadata_body = format_plan_header_body_for_test(lifecycle_stage="planned")
     plan_content = "# My Plan\n\nImplement the thing."
-    pr_body = build_plan_stage_body(metadata_body, plan_content)
+    pr_body = build_plan_stage_body(metadata_body, plan_content, summary=None)
 
     pr = _pr_details(number=42, body=pr_body)
     fake_git = FakeGit(

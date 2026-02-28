@@ -30,6 +30,7 @@ def test_add_plan_label_success() -> None:
         content="Plan body",
         labels=("erk-plan",),
         metadata={"branch_name": "test-branch-label"},
+        summary=None,
     )
 
     runner = CliRunner()

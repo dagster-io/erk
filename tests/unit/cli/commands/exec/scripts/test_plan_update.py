@@ -400,7 +400,7 @@ def _make_pr_details(
 
     metadata_body = format_plan_header_body_for_test(branch_name=branch_name)
     plan_content = "# Old Plan Content"
-    pr_body = build_plan_stage_body(metadata_body, plan_content)
+    pr_body = build_plan_stage_body(metadata_body, plan_content, summary=None)
 
     return PRDetails(
         number=number,
