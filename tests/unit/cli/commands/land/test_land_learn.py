@@ -327,7 +327,7 @@ def test_log_planning_and_impl_sessions(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Logs session counts and truncated IDs for planning + impl sessions."""
+    """Logs session counts with per-session type badges."""
     sessions = _make_sessions(
         planning="aaaa1111-2222-3333-4444-555566667777",
         impl=["bbbb1111-2222-3333-4444-555566667777"],
@@ -338,7 +338,12 @@ def test_log_planning_and_impl_sessions(
 
     captured = capsys.readouterr()
     assert "Discovered 2 session(s): 1 planning, 1 impl" in captured.err
+    # Per-session type badges
+    assert "\U0001f4dd" in captured.err  # planning badge
+    assert "planning:" in captured.err
     assert "aaaa1111..." in captured.err
+    assert "\U0001f527" in captured.err  # impl badge
+    assert "impl:" in captured.err
     assert "bbbb1111..." in captured.err
     # No learn sessions → "learn" should not appear in the summary line
     assert "learn" not in captured.err.split("\n")[0]
@@ -348,7 +353,7 @@ def test_log_includes_learn_count(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Learn session count appears when present."""
+    """Learn session count and badge appear when present."""
     sessions = _make_sessions(
         planning="aaaa1111-2222-3333-4444-555566667777",
         learn=["cccc1111-2222-3333-4444-555566667777"],
@@ -359,13 +364,15 @@ def test_log_includes_learn_count(
 
     captured = capsys.readouterr()
     assert "1 learn" in captured.err
+    assert "\U0001f4da" in captured.err  # learn badge
+    assert "learn:" in captured.err
 
 
 def test_log_local_session_sizes(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Reports local JSONL file sizes when sessions are readable."""
+    """Reports per-session local JSONL file sizes."""
     session_id = "dddd1111-2222-3333-4444-555566667777"
     sessions = _make_sessions(impl=[session_id])
 
@@ -382,5 +389,46 @@ def test_log_local_session_sizes(
     _log_session_discovery(ctx, sessions=sessions, all_session_ids=sessions.all_session_ids())
 
     captured = capsys.readouterr()
-    assert "1/1 session(s) available locally" in captured.err
-    assert "KB JSONL" in captured.err
+    # Per-session format: shows "local" and "KB" inline with the session
+    assert "local" in captured.err
+    assert "KB" in captured.err
+    assert "dddd1111..." in captured.err
+    # Aggregated line should no longer appear
+    assert "session(s) available locally" not in captured.err
+
+
+def test_log_session_mixed_local_and_not_found(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Shows 'local' for available sessions and 'not found' for missing ones."""
+    local_id = "eeee1111-2222-3333-4444-555566667777"
+    missing_id = "ffff1111-2222-3333-4444-555566667777"
+    sessions = _make_sessions(
+        planning=local_id,
+        impl=[missing_id],
+    )
+
+    # Create a fake JSONL file so stat() works for the local session
+    jsonl_file = tmp_path / f"{local_id}.jsonl"
+    jsonl_file.write_text("x" * 1024, encoding="utf-8")
+
+    fake_session = FakeSessionData(content="", size_bytes=1024, modified_at=0.0)
+    fake_claude = FakeClaudeInstallation.for_test(
+        projects={tmp_path: FakeProject(sessions={local_id: fake_session})},
+    )
+    ctx = context_for_test(claude_installation=fake_claude, cwd=tmp_path)
+
+    _log_session_discovery(ctx, sessions=sessions, all_session_ids=sessions.all_session_ids())
+
+    captured = capsys.readouterr()
+    lines = captured.err.strip().split("\n")
+
+    # Find the line for the local session
+    local_line = next(line for line in lines if "eeee1111" in line)
+    assert "local" in local_line
+    assert "KB" in local_line
+
+    # Find the line for the missing session
+    missing_line = next(line for line in lines if "ffff1111" in line)
+    assert "not found" in missing_line

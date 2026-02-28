@@ -9,6 +9,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import click
+from rich.console import Console
+from rich.table import Table
 
 from erk.core.context import ErkContext
 from erk_shared.output.output import user_output
@@ -17,6 +19,8 @@ from erk_shared.plan_store.types import PlanNotFound
 from erk_shared.sessions.discovery import SessionsForPlan, get_readable_sessions
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from erk.cli.commands.land_pipeline import LandState
 
 
@@ -61,7 +65,7 @@ def _log_session_discovery(
     sessions: SessionsForPlan,
     all_session_ids: list[str],
 ) -> None:
-    """Log session discovery summary and local JSONL file sizes."""
+    """Log session discovery summary with per-session type badges and sizes."""
     total = len(all_session_ids)
     if total == 0:
         user_output("  \u26a0\ufe0f  No sessions discovered for this plan")
@@ -74,17 +78,48 @@ def _log_session_discovery(
     if n_learn:
         parts += f", {n_learn} learn"
     user_output(f"  \U0001f4cb Discovered {total} session(s): {parts}")
-    for sid in all_session_ids:
-        user_output(f"     - {sid[:8]}...")
 
-    # Show local JSONL file sizes for sessions we can reach
-    readable = get_readable_sessions(sessions, ctx.claude_installation)
-    if readable:
-        total_bytes = sum(p.stat().st_size for _, p in readable)
-        user_output(
-            f"  \U0001f4c2 {len(readable)}/{total} session(s) available locally "
-            f"({total_bytes // 1024:,} KB JSONL)"
-        )
+    # Build readable lookup for O(1) per-session checks
+    readable_map: dict[str, Path] = dict(get_readable_sessions(sessions, ctx.claude_installation))
+
+    # Classify each session and emit a typed line
+    planning_ids = {sessions.planning_session_id} if sessions.planning_session_id else set()
+    impl_ids = set(sessions.implementation_session_ids)
+    learn_ids = set(sessions.learn_session_ids)
+
+    table = Table(
+        show_header=False,
+        show_edge=False,
+        box=None,
+        padding=(0, 1),
+        pad_edge=False,
+    )
+    table.add_column("pad", width=5, no_wrap=True)
+    table.add_column("emoji", no_wrap=True)
+    table.add_column("label", no_wrap=True)
+    table.add_column("session", no_wrap=True)
+    table.add_column("detail", no_wrap=True)
+
+    for sid in all_session_ids:
+        if sid in planning_ids:
+            emoji, label = "\U0001f4dd", "planning:"
+        elif sid in impl_ids:
+            emoji, label = "\U0001f527", "impl:"
+        elif sid in learn_ids:
+            emoji, label = "\U0001f4da", "learn:"
+        else:
+            emoji, label = "\u2753", "unknown:"
+
+        if sid in readable_map:
+            size_kb = readable_map[sid].stat().st_size // 1024
+            detail = f"[dim](local, {size_kb:,} KB)[/dim]"
+        else:
+            detail = "[dim](not found)[/dim]"
+
+        table.add_row("", emoji, label, f"{sid[:8]}...", detail)
+
+    console = Console(stderr=True, force_terminal=True)
+    console.print(table)
 
 
 def _create_learn_pr_impl(
