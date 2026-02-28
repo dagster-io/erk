@@ -400,11 +400,12 @@ After the user approves the plan in Plan Mode:
    ```bash
    erk exec update-plan-header <new_plan_number> objective_issue=<number>
    ```
-4. **If CONSOLIDATION_MODE** (multiple plans consolidated), add the `erk-consolidated` label:
+4. **If CONSOLIDATION_MODE** (multiple plans consolidated), add labels:
    ```bash
    erk exec add-plan-label <new_plan_number> --label "erk-consolidated"
+   erk exec add-plan-label <new_plan_number> --label "erk-plan"
    ```
-   This prevents the consolidated plan from being re-consolidated by `/local:replan-learn-plans`.
+   The `erk-consolidated` label prevents re-consolidation by `/local:replan-learn-plans`. The `erk-plan` label makes the plan dispatchable via `erk pr dispatch`.
 5. Close original plan(s) with comment linking to the new one:
 
 **Single plan:**
@@ -449,6 +450,34 @@ Next steps:
 - Review the consolidated plan: gh pr view <new_number>
 - Dispatch for implementation: erk pr dispatch <new_number>
 ```
+
+### Step 8: Validate New Plan
+
+After saving and closing, verify the new plan is in a healthy state:
+
+```bash
+erk exec get-plan-info <new_plan_number>
+```
+
+Check the returned labels:
+
+- Has `erk-plan` label (required for dispatch)
+- If CONSOLIDATION_MODE: has `erk-consolidated` label
+- If IS_LEARN_PLAN: has `erk-learn` label
+
+If any expected label is missing, add it:
+
+```bash
+erk exec add-plan-label <new_plan_number> --label "<missing_label>"
+```
+
+Display validation result:
+
+```
+✓ Plan #<number> validated: OPEN, labels: [list of labels]
+```
+
+If validation finds the plan is not OPEN, report the issue and stop.
 
 ---
 
