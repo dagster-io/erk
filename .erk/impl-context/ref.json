@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Add `erk stack restack` command"
+  "plan_id": "8502",
+  "url": "https://github.com/dagster-io/erk/pull/8502",
+  "created_at": "2026-02-28T22:27:00.603352",
+  "synced_at": "2026-02-28T22:27:00.603352",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
