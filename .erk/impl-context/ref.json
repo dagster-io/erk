@@ -1,0 +1,8 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Add `_trigger_one_shot` handler and `--prompt`/`--file` options to `launch_cmd.py`",
+  "objective_id": 8470,
+  "node_ids": [
+    "1.1"
+  ]
+}
