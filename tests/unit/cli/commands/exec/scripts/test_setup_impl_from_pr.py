@@ -122,6 +122,7 @@ def _make_planned_pr_backend(
         content="# Plan\n\nImplement something.",
         labels=("erk-plan",),
         metadata={"branch_name": plan_branch},
+        summary=None,
     )
     pr_number = int(plan_result.plan_id)
     return backend, pr_number
@@ -149,6 +150,7 @@ def _make_planned_pr_context(
         content="# Plan\n\nImplement something.",
         labels=("erk-plan",),
         metadata={"branch_name": plan_branch},
+        summary=None,
     )
     pr_number = int(plan_result.plan_id)
 

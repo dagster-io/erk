@@ -112,6 +112,7 @@ def test_issue_setup_invokes_setup_impl_from_issue(tmp_path: Path) -> None:
         content="# Fix\n\nRemove dead branch_slug parameter.",
         labels=("erk-plan",),
         metadata={"branch_name": plan_branch},
+        summary=None,
     )
     pr_number = int(plan_result.plan_id)
 

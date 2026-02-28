@@ -102,6 +102,7 @@ def pr_create(
         created_from_session=None,
         created_from_workflow_run_url=None,
         learned_from_issue=None,
+        summary=None,
     )
 
     if not result.success:

@@ -251,6 +251,7 @@ class PlannedPRBackend(PlanBackend):
         content: str,
         labels: tuple[str, ...],
         metadata: Mapping[str, object],
+        summary: str | None,
     ) -> CreatePlanResult:
         """Create a new plan as a draft PR.
 
@@ -268,6 +269,7 @@ class PlannedPRBackend(PlanBackend):
                 - source_repo: str | None
                 - objective_issue: int | None
                 - created_from_session: str | None
+            summary: Optional AI-generated summary to display above the collapsed plan
 
         Returns:
             CreatePlanResult with plan_id (PR number) and url
@@ -341,7 +343,7 @@ class PlannedPRBackend(PlanBackend):
             lifecycle_stage="planned",
         )
 
-        pr_body = build_plan_stage_body(metadata_body, content)
+        pr_body = build_plan_stage_body(metadata_body, content, summary=summary)
 
         base_ref_raw = metadata.get("base_ref_name")
         base = base_ref_raw if isinstance(base_ref_raw, str) else "master"
@@ -499,7 +501,9 @@ class PlannedPRBackend(PlanBackend):
         # Preserve metadata prefix and replace plan content
         plan_header = find_metadata_block(result.body, "plan-header")
         if plan_header is not None:
-            updated_body = build_plan_stage_body(render_metadata_block(plan_header), content)
+            updated_body = build_plan_stage_body(
+                render_metadata_block(plan_header), content, summary=None
+            )
         else:
             # No metadata block found - just set the content
             updated_body = content

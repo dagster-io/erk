@@ -49,6 +49,7 @@ def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() ->
         pr_body = build_plan_stage_body(
             plan_header,
             "# Plan: Test Draft PR Plan\n\n- Step 1: Do something\n- Step 2: Do something else",
+            summary=None,
         )
 
         pr_42 = PRDetails(
@@ -170,6 +171,7 @@ def test_dispatch_planned_pr_plan_cleans_up_stale_impl_context_folder() -> None:
         pr_body = build_plan_stage_body(
             plan_header,
             "# Plan: Test Draft PR Cleanup\n\n- Step 1: Do something\n- Step 2: Do something else",
+            summary=None,
         )
 
         pr_42 = PRDetails(
@@ -279,6 +281,7 @@ def _make_pr_42(*, plan_branch: str) -> PRDetails:
     pr_body = build_plan_stage_body(
         plan_header,
         "# Plan: Auto-detect Test\n\n- Step 1: Do something",
+        summary=None,
     )
     return PRDetails(
         number=42,

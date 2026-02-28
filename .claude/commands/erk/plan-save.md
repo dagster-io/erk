@@ -58,12 +58,25 @@ Generate a branch slug from the title:
 
 Store the result as `BRANCH_SLUG`.
 
+### Step 1.75: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
 ### Step 2: Run Save Command
 
-Run this command with the session ID, branch slug, and optional flags:
+Run this command with the session ID, branch slug, summary, and optional flags:
 
 ```bash
-erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
 ```
 
 Parse the JSON output to extract `plan_number` for verification in Step 3.
