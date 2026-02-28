@@ -1,6 +1,6 @@
 """Tests for render_erk_issue_event function."""
 
-from erk_shared.gateway.github.metadata_blocks import (
+from erk_shared.gateway.github.metadata.core import (
     create_implementation_status_block,
     render_erk_issue_event,
 )
@@ -10,8 +10,6 @@ def test_render_erk_issue_event_with_all_parameters() -> None:
     """Test render_erk_issue_event with title, metadata, and description."""
     block = create_implementation_status_block(
         status="in_progress",
-        completed_nodes=3,
-        total_nodes=5,
         timestamp="2025-11-22T12:00:00Z",
         summary="Phase 1 complete",
     )
@@ -42,8 +40,6 @@ def test_render_erk_issue_event_with_empty_description() -> None:
     """Test render_erk_issue_event with empty description (optional parameter)."""
     block = create_implementation_status_block(
         status="complete",
-        completed_nodes=5,
-        total_nodes=5,
         timestamp="2025-11-22T12:00:00Z",
     )
 
@@ -70,8 +66,6 @@ def test_render_erk_issue_event_markdown_structure() -> None:
     """Test render_erk_issue_event produces valid markdown structure."""
     block = create_implementation_status_block(
         status="in_progress",
-        completed_nodes=2,
-        total_nodes=4,
         timestamp="2025-11-22T12:00:00Z",
     )
 

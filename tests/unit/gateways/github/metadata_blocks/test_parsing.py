@@ -1,10 +1,8 @@
 """Tests for metadata block parsing."""
 
-import logging
-
 import pytest
 
-from erk_shared.gateway.github.metadata_blocks import (
+from erk_shared.gateway.github.metadata.core import (
     extract_metadata_value,
     extract_raw_metadata_blocks,
     find_metadata_block,
@@ -128,9 +126,7 @@ def test_parse_metadata_block_body_non_dict_yaml() -> None:
 # === Integration: Two-Phase Parsing Tests ===
 
 
-def test_parse_metadata_blocks_skips_invalid_bodies(
-    caplog: pytest.LogCaptureFixture,
-) -> None:
+def test_parse_metadata_blocks_skips_invalid_bodies() -> None:
     """Test that parse_metadata_blocks skips blocks with invalid bodies (lenient)."""
     text = """<!-- erk:metadata-block:valid-block -->
 <details>
@@ -145,18 +141,15 @@ field: value
 Invalid body structure without proper details tags
 <!-- /erk:metadata-block -->"""
 
-    with caplog.at_level(logging.DEBUG):
-        blocks = parse_metadata_blocks(text)
+    result = parse_metadata_blocks(text)
     # Should skip invalid block and return only the valid one
-    assert len(blocks) == 1
-    assert blocks[0].key == "valid-block"
-    assert blocks[0].data == {"field": "value"}
+    assert len(result.blocks) == 1
+    assert result.blocks[0].key == "valid-block"
+    assert result.blocks[0].data == {"field": "value"}
 
-    # Should log debug message for invalid block
-    assert any(
-        "Failed to parse metadata block 'invalid-block'" in record.message
-        for record in caplog.records
-    )
+    # Should report error for invalid block
+    assert result.has_errors
+    assert any(error.key == "invalid-block" for error in result.errors)
 
 
 # === Existing Parsing Tests ===
@@ -175,10 +168,10 @@ number: 42
 </details>
 <!-- /erk:metadata-block -->"""
 
-    blocks = parse_metadata_blocks(text)
-    assert len(blocks) == 1
-    assert blocks[0].key == "test-key"
-    assert blocks[0].data == {"field": "value", "number": 42}
+    result = parse_metadata_blocks(text)
+    assert len(result.blocks) == 1
+    assert result.blocks[0].key == "test-key"
+    assert result.blocks[0].data == {"field": "value", "number": 42}
 
 
 def test_parse_multiple_blocks() -> None:
@@ -207,23 +200,24 @@ field: value2
 </details>
 <!-- /erk:metadata-block -->"""
 
-    blocks = parse_metadata_blocks(text)
-    assert len(blocks) == 2
-    assert blocks[0].key == "block-1"
-    assert blocks[0].data == {"field": "value1"}
-    assert blocks[1].key == "block-2"
-    assert blocks[1].data == {"field": "value2"}
+    result = parse_metadata_blocks(text)
+    assert len(result.blocks) == 2
+    assert result.blocks[0].key == "block-1"
+    assert result.blocks[0].data == {"field": "value1"}
+    assert result.blocks[1].key == "block-2"
+    assert result.blocks[1].data == {"field": "value2"}
 
 
-def test_parse_no_blocks_returns_empty_list() -> None:
-    """Test parsing text with no blocks returns empty list."""
+def test_parse_no_blocks_returns_empty_result() -> None:
+    """Test parsing text with no blocks returns empty result."""
     text = "Just some regular markdown text"
-    blocks = parse_metadata_blocks(text)
-    assert blocks == []
+    result = parse_metadata_blocks(text)
+    assert result.blocks == ()
+    assert result.errors == ()
 
 
-def test_parse_lenient_on_invalid_yaml(caplog: pytest.LogCaptureFixture) -> None:
-    """Test parsing returns empty list for malformed YAML (lenient)."""
+def test_parse_lenient_on_invalid_yaml() -> None:
+    """Test parsing reports error for malformed YAML (lenient)."""
     text = """<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
 <!-- erk:metadata-block:test-key -->
 <details>
@@ -234,17 +228,14 @@ invalid: yaml: content:
 </details>
 <!-- /erk:metadata-block -->"""
 
-    with caplog.at_level(logging.DEBUG):
-        blocks = parse_metadata_blocks(text)
-    assert blocks == []
-    # Should log debug message
-    assert any("Failed to parse YAML" in record.message for record in caplog.records)
+    result = parse_metadata_blocks(text)
+    assert result.blocks == ()
+    assert result.has_errors
+    assert any("Failed to parse YAML" in error.message for error in result.errors)
 
 
-def test_parse_lenient_on_non_dict_yaml(
-    caplog: pytest.LogCaptureFixture,
-) -> None:
-    """Test parsing skips blocks where YAML is not a dict."""
+def test_parse_lenient_on_non_dict_yaml() -> None:
+    """Test parsing reports error when YAML is not a dict."""
     text = """<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
 <!-- erk:metadata-block:test-key -->
 <details>
@@ -256,11 +247,10 @@ def test_parse_lenient_on_non_dict_yaml(
 </details>
 <!-- /erk:metadata-block -->"""
 
-    with caplog.at_level(logging.DEBUG):
-        blocks = parse_metadata_blocks(text)
-    assert blocks == []
-    # Should log debug message
-    assert any("YAML content is not a dict" in record.message for record in caplog.records)
+    result = parse_metadata_blocks(text)
+    assert result.blocks == ()
+    assert result.has_errors
+    assert any("YAML content is not a dict" in error.message for error in result.errors)
 
 
 def test_find_metadata_block_existing_key() -> None:

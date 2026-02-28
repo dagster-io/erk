@@ -22,6 +22,7 @@ from erk_shared.gateway.github.metadata.core import (
 )
 from erk_shared.gateway.github.metadata.roadmap import (
     parse_roadmap_frontmatter,
+    render_objective_roadmap_block,
     render_roadmap_block_inner,
 )
 from erk_shared.gateway.github.types import BodyText
@@ -102,12 +103,7 @@ def _build_objective_roadmap_block(plan_content: str) -> str | None:
     # Re-render to normalize format
     inner = render_roadmap_block_inner(steps)
 
-    return (
-        "<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->\n"
-        "<!-- erk:metadata-block:objective-roadmap -->\n"
-        f"{inner}\n"
-        "<!-- /erk:metadata-block:objective-roadmap -->"
-    )
+    return render_objective_roadmap_block(inner)
 
 
 def create_objective_issue(

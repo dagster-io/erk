@@ -8,7 +8,7 @@ import pytest
 
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
-from erk_shared.gateway.github.metadata_blocks import (
+from erk_shared.gateway.github.metadata.core import (
     find_metadata_block,
     parse_metadata_blocks,
 )
@@ -191,8 +191,8 @@ def test_add_worktree_creation_comment_success(tmp_path: Path) -> None:
     assert "/erk:plan-implement" in comment_body
 
     # Round-trip verification: Parse metadata block back out
-    blocks = parse_metadata_blocks(comment_body)
-    assert len(blocks) == 1
+    result = parse_metadata_blocks(comment_body)
+    assert len(result.blocks) == 1
 
     block = find_metadata_block(comment_body, "erk-worktree-creation")
     assert block is not None

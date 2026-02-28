@@ -99,9 +99,9 @@ def test_build_comment_metadata_block_is_parseable() -> None:
         now_iso=FAKE_NOW_ISO,
     )
 
-    blocks = parse_metadata_blocks(comment)
-    assert len(blocks) == 1
-    block = blocks[0]
+    result = parse_metadata_blocks(comment)
+    assert len(result.blocks) == 1
+    block = result.blocks[0]
     assert block.key == "workflow-started"
     assert block.data["plan_number"] == 123
     assert block.data["status"] == "started"

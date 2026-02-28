@@ -37,6 +37,7 @@ from erk_shared.gateway.github.metadata.core import (
     replace_metadata_block_in_body,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
+    render_objective_roadmap_block,
     rerender_comment_roadmap,
     update_node_in_frontmatter,
 )
@@ -888,12 +889,7 @@ def link_pr_to_objective_nodes(ctx: ErkContext, state: SubmitState) -> SubmitSta
             linked_nodes.append(node_id)
 
         if linked_nodes:
-            new_block_with_markers = (
-                "<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->\n"
-                "<!-- erk:metadata-block:objective-roadmap -->\n"
-                f"{block_content}\n"
-                "<!-- /erk:metadata-block:objective-roadmap -->"
-            )
+            new_block_with_markers = render_objective_roadmap_block(block_content)
             try:
                 updated_body = replace_metadata_block_in_body(
                     updated_body, "objective-roadmap", new_block_with_markers

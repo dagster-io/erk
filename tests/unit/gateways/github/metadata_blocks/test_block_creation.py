@@ -2,11 +2,9 @@
 
 import pytest
 
-from erk_shared.gateway.github.metadata_blocks import (
-    ImplementationStatusSchema,
-    MetadataBlock,
-    create_metadata_block,
-)
+from erk_shared.gateway.github.metadata.core import create_metadata_block
+from erk_shared.gateway.github.metadata.schemas import ImplementationStatusSchema
+from erk_shared.gateway.github.metadata.types import MetadataBlock
 
 
 def test_create_block_without_schema() -> None:
@@ -14,6 +12,7 @@ def test_create_block_without_schema() -> None:
     block = create_metadata_block(
         key="test-key",
         data={"field": "value"},
+        schema=None,
     )
     assert block.key == "test-key"
     assert block.data == {"field": "value"}
@@ -24,8 +23,6 @@ def test_create_block_with_valid_schema() -> None:
     schema = ImplementationStatusSchema()
     data = {
         "status": "complete",
-        "completed_nodes": 5,
-        "total_nodes": 5,
         "timestamp": "2025-11-22T12:00:00Z",
     }
     block = create_metadata_block(
@@ -42,8 +39,6 @@ def test_create_block_with_invalid_data_raises() -> None:
     schema = ImplementationStatusSchema()
     data = {
         "status": "invalid-status",
-        "completed_nodes": 3,
-        "total_nodes": 5,
         "timestamp": "2025-11-22T12:00:00Z",
     }
 

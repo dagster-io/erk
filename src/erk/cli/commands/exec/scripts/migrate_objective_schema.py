@@ -30,6 +30,7 @@ from erk_shared.gateway.github.metadata.core import (
 )
 from erk_shared.gateway.github.metadata.roadmap import (
     parse_roadmap_frontmatter,
+    render_objective_roadmap_block,
     render_roadmap_block_inner,
 )
 from erk_shared.gateway.github.types import BodyText
@@ -141,12 +142,7 @@ def migrate_objective_schema(
 
     # Re-render as v4
     new_block_inner = render_roadmap_block_inner(nodes)
-    new_block_with_markers = (
-        f"<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->\n"
-        f"<!-- erk:metadata-block:objective-roadmap -->\n"
-        f"{new_block_inner}\n"
-        f"<!-- /erk:metadata-block:objective-roadmap -->"
-    )
+    new_block_with_markers = render_objective_roadmap_block(new_block_inner)
 
     if dry_run:
         click.echo(

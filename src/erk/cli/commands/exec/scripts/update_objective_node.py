@@ -59,6 +59,7 @@ from erk_shared.gateway.github.metadata.core import (
 from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapNodeStatus,
     parse_roadmap,
+    render_objective_roadmap_block,
     rerender_comment_roadmap,
     update_node_in_frontmatter,
 )
@@ -171,12 +172,7 @@ def _replace_node_refs_in_body(
     if updated_block_content is None:
         return None
 
-    new_block_with_markers = (
-        f"<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->\n"
-        f"<!-- erk:metadata-block:objective-roadmap -->\n"
-        f"{updated_block_content}\n"
-        f"<!-- /erk:metadata-block:objective-roadmap -->"
-    )
+    new_block_with_markers = render_objective_roadmap_block(updated_block_content)
     try:
         body = replace_metadata_block_in_body(
             body,

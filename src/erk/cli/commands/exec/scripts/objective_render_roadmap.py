@@ -45,6 +45,7 @@ import click
 
 from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapNode,
+    render_objective_roadmap_block,
     render_roadmap_block_inner,
 )
 from erk_shared.naming import slugify_node_description
@@ -190,10 +191,7 @@ def _render_roadmap(phases: list[dict[str, Any]]) -> str:
 
     # Metadata block
     metadata_inner = render_roadmap_block_inner(all_steps)
-    sections.append("<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->")
-    sections.append("<!-- erk:metadata-block:objective-roadmap -->")
-    sections.append(metadata_inner)
-    sections.append("<!-- /erk:metadata-block:objective-roadmap -->")
+    sections.append(render_objective_roadmap_block(metadata_inner))
 
     return "\n".join(sections)
 

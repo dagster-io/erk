@@ -31,9 +31,9 @@ def extract_workflow_run_id(comment_bodies: list[str]) -> str | None:
 
     # Parse all metadata blocks from all comments
     for comment_body in comment_bodies:
-        blocks = parse_metadata_blocks(comment_body)
+        result = parse_metadata_blocks(comment_body)
 
-        for block in blocks:
+        for block in result.blocks:
             # Extract workflow-started event
             if block.key == "workflow-started":
                 run_id = block.data.get("workflow_run_id")
@@ -82,9 +82,9 @@ def build_status_history(
 
     # Parse all metadata blocks from all comments
     for comment_body in comment_bodies:
-        blocks = parse_metadata_blocks(comment_body)
+        result = parse_metadata_blocks(comment_body)
 
-        for block in blocks:
+        for block in result.blocks:
             # Extract queued event
             if block.key == "submission-queued":
                 queued_at = block.data.get("queued_at")

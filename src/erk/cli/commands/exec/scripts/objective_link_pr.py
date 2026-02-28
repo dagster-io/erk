@@ -25,6 +25,7 @@ from erk_shared.gateway.github.metadata.core import (
     replace_metadata_block_in_body,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
+    render_objective_roadmap_block,
     rerender_comment_roadmap,
     update_node_in_frontmatter,
 )
@@ -123,12 +124,7 @@ def objective_link_pr(
     any_success = any(r["success"] for r in results)
     updated_body = issue.body
     if any_success and roadmap_block is not None:
-        new_block_with_markers = (
-            "<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->\n"
-            "<!-- erk:metadata-block:objective-roadmap -->\n"
-            f"{block_content}\n"
-            "<!-- /erk:metadata-block:objective-roadmap -->"
-        )
+        new_block_with_markers = render_objective_roadmap_block(block_content)
         try:
             updated_body = replace_metadata_block_in_body(
                 updated_body, "objective-roadmap", new_block_with_markers

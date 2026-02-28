@@ -1,10 +1,10 @@
 """Tests for metadata block rendering."""
 
-from erk_shared.gateway.github.metadata_blocks import (
-    MetadataBlock,
+from erk_shared.gateway.github.metadata.core import (
     parse_metadata_blocks,
     render_metadata_block,
 )
+from erk_shared.gateway.github.metadata.types import MetadataBlock
 
 
 def test_render_basic_block() -> None:
@@ -47,10 +47,10 @@ def test_render_basic_block() -> None:
     assert lines[details_end_idx - 1] == ""
 
     # Verify round-trip parsing works
-    parsed = parse_metadata_blocks(rendered)
-    assert len(parsed) == 1
-    assert parsed[0].key == "test-key"
-    assert parsed[0].data == {"field": "value", "number": 42}
+    result = parse_metadata_blocks(rendered)
+    assert len(result.blocks) == 1
+    assert result.blocks[0].key == "test-key"
+    assert result.blocks[0].data == {"field": "value", "number": 42}
 
 
 def test_render_details_closed_by_default() -> None:
