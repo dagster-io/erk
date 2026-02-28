@@ -1206,6 +1206,116 @@ def test_checkout_for_plan_planned_pr_stacks_on_base_ref() -> None:
         assert parent == "feature-parent"
 
 
+# --- Script mode error resilience tests ---
+
+
+def test_checkout_script_mode_error_writes_error_script() -> None:
+    """Test that --script mode outputs error script on stdout when command fails.
+
+    When --new-slot --script fails because the branch is already checked out,
+    stdout must contain a path to a valid error script (not be empty).
+    This prevents ``source ""`` from producing a confusing shell error.
+    """
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        feature_wt = repo_dir / "worktrees" / "existing-feature"
+
+        git = FakeGit(
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=feature_wt, branch="existing-feature", is_root=False),
+                ]
+            },
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir, feature_wt: env.git_dir},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        graphite_disabled = GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED)
+        test_ctx = env.build_context(
+            git=git,
+            graphite=graphite_disabled,
+            repo=repo,
+            existing_paths={feature_wt},
+        )
+
+        result = runner.invoke(
+            cli,
+            ["br", "co", "--new-slot", "--script", "existing-feature"],
+            obj=test_ctx,
+        )
+
+        assert result.exit_code == 1
+
+        # stdout must contain a script path (not be empty)
+        assert result.output.strip() != "", "stdout was empty — source would break"
+
+        # The FakeScriptWriter should have written an error script
+        last = env.script_writer.last_script
+        assert last is not None
+        assert "return 1" in last.content
+        assert "erk error" in last.content
+
+
+def test_checkout_script_mode_success_unaffected() -> None:
+    """Regression test: --script success path is not broken by error handler."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        feature_wt = repo_dir / "worktrees" / "feature-branch"
+
+        git = FakeGit(
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=feature_wt, branch="feature-branch", is_root=False),
+                ]
+            },
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir, feature_wt: env.git_dir},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        graphite_disabled = GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED)
+        test_ctx = env.build_context(
+            git=git,
+            graphite=graphite_disabled,
+            repo=repo,
+            existing_paths={feature_wt},
+        )
+
+        result = runner.invoke(
+            cli,
+            ["br", "co", "--script", "feature-branch"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0, f"Expected success, got: {result.output}"
+        # stdout should have script path (non-empty)
+        assert result.output.strip() != ""
+        # The written script should NOT be an error script
+        last = env.script_writer.last_script
+        assert last is not None
+        assert "return 1" not in last.content
+
+
 def test_checkout_for_plan_planned_pr_falls_back_to_trunk_without_base_ref() -> None:
     """When plan metadata has no base_ref_name, falls back to trunk as parent."""
     runner = CliRunner()

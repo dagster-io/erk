@@ -83,6 +83,17 @@ def build_activation_command(config: ActivationConfig, script_path: Path) -> str
     return " ".join(parts)
 
 
+def render_error_script() -> str:
+    """Return a minimal shell script that returns non-zero.
+
+    Used in --script mode when the command fails. Instead of outputting
+    nothing (which causes ``source ""`` to break), we output a path to
+    this script so ``source`` gets a valid file and the non-zero return
+    stops ``&&`` chains cleanly.
+    """
+    return "# erk error\nreturn 1\n"
+
+
 def _render_logging_helper() -> str:
     """Return shell helper functions for transparency logging.
 
