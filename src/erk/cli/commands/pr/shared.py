@@ -205,7 +205,10 @@ def recover_plan_header(
     # Otherwise, construct a minimal plan-header from PR metadata
     created_at_value = plan_result.created_at.isoformat()
     raw_author = plan_result.metadata.get("author")
-    created_by_value = raw_author if isinstance(raw_author, str) and raw_author else "unknown"
+    if isinstance(raw_author, str) and raw_author:
+        created_by_value = raw_author
+    else:
+        created_by_value = "unknown"
 
     return MetadataBlock(
         key="plan-header",
