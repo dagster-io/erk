@@ -385,11 +385,20 @@ def branch_checkout(
     """
     handler = script_error_handler(ctx) if script else contextlib.nullcontext()
     with handler:
-        _branch_checkout_impl(ctx, branch, for_plan, no_slot, new_slot, force, script)
+        _branch_checkout_impl(
+            ctx,
+            branch=branch,
+            for_plan=for_plan,
+            no_slot=no_slot,
+            new_slot=new_slot,
+            force=force,
+            script=script,
+        )
 
 
 def _branch_checkout_impl(
     ctx: ErkContext,
+    *,
     branch: str | None,
     for_plan: str | None,
     no_slot: bool,
