@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Make `--script` mode resilient to errors in `erk br co`"
+}
