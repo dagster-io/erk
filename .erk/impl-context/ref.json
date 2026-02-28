@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Restore Rich Session Discovery Logging in `erk land`"
+  "plan_id": "8443",
+  "url": "https://github.com/dagster-io/erk/pull/8443",
+  "created_at": "2026-02-27T19:59:55.896537",
+  "synced_at": "2026-02-27T19:59:55.896537",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
