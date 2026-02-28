@@ -1,0 +1,1971 @@
+<session>
+  <meta branch="plnd/add-plan-pr-summary-02-28-1040" />
+  <meta model="claude-opus-4-6" />
+  <user>summary is optional throughout this pr. how much places outside of tests are not setting summary</user>
+  <thinking>The user wants to know how many places outside of tests are NOT setting the `summary` field. Let me explore the codebase to understand the context of this PR and find where `summary` is used.
+
+Let me first understand what branch we're on and what changes were made.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="12094" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12094}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the codebase to understand the `summary` field usage in this PR's context.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="12094" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12094}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Bt7eM5XaK6Z2qLg2xUyLKR">
+    <param name="command">git log --oneline -5</param>
+    <param name="description">Check recent commits</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="12094" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12094}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Bt7eM5XaK6Z2qLg2xUyLKR">
+a21981ed8 Auto-fix markdown formatting (docs-sync + Prettier)
+c18534173 Trigger CI workflows
+f3ca0ed74 Add visible AI-generated summary to plan PRs
+ecd816bbb Remove plan staging dirs before implementation
+a3d03ed5e Update plan for plan #8464 (rerun)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01UXj8iYwaj27CowiKWBb6Yh">
+    <param name="command">git diff main...HEAD --name-only</param>
+    <param name="description">List files changed in this PR</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="12094" cache_read_input_tokens="19113" output_tokens="297" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12094, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UXj8iYwaj27CowiKWBb6Yh">
+Exit code 128
+fatal: ambiguous argument 'main...HEAD': unknown revision or path not in the working tree.
+Use '--' to separate paths from revisions, like this:
+'git &lt;command&gt; [&lt;revision&gt;...] -- [&lt;file&gt;...]'
+
+fatal: ambiguous argument 'main...HEAD': unknown revision or path not in the working tree.
+Use '--' to separate paths from revisions, like this:
+'git &lt;command&gt; [&lt;revision&gt;...] -- [&lt;file&gt;...]'
+  </tool_result>
+  <tool_use name="Bash" id="toolu_019fQWNUQRwfJQ1TaFLDf3nA">
+    <param name="command">git diff master...HEAD --name-only</param>
+    <param name="description">List files changed in PR vs master</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="493" cache_read_input_tokens="31207" output_tokens="83" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 493, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019fQWNUQRwfJQ1TaFLDf3nA">
+.claude/commands/erk/plan-save.md
+packages/erk-shared/src/erk_shared/plan_store/backend.py
+packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py
+packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py
+packages/erk-shared/tests/unit/github/test_plan_issues.py
+src/erk/cli/commands/exec/scripts/create_pr_from_session.py
+src/erk/cli/commands/exec/scripts/plan_save.py
+src/erk/cli/commands/land_learn.py
+src/erk/cli/commands/one_shot_dispatch.py
+src/erk/cli/commands/pr/create_cmd.py
+tests/commands/pr/test_check_plan.py
+tests/commands/pr/test_dispatch.py
+tests/commands/pr/test_rewrite.py
+tests/unit/cli/commands/exec/scripts/test_add_plan_label.py
+tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py
+tests/unit/cli/commands/exec/scripts/test_get_plan_info.py
+tests/unit/cli/commands/exec/scripts/test_plan_update.py
+tests/unit/cli/commands/exec/scripts/test_set_pr_description.py
+tests/unit/cli/commands/exec/scripts/test_setup_impl.py
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py
+tests/unit/cli/commands/exec/scripts/test_update_pr_description.py
+tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py
+tests/unit/cli/commands/pr/test_shared.py
+tests/unit/plan_store/test_plan_backend_interface.py
+tests/unit/plan_store/test_planned_pr_backend.py
+tests/unit/plan_store/test_planned_pr_lifecycle.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01HL37s4EfvT9ZBMJnuQyUFD">
+    <param name="pattern">summary</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="627" cache_read_input_tokens="31700" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 627}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HL37s4EfvT9ZBMJnuQyUFD">
+254:        summary: str | None,
+272:            summary: Optional AI-generated summary to display above the collapsed plan
+346:        pr_body = build_plan_stage_body(metadata_body, content, summary=summary)
+505:                render_metadata_block(plan_header), content, summary=None
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01M7xR9t12csn2Ypc8f6xXKA">
+    <param name="pattern">summary</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="627" cache_read_input_tokens="31700" output_tokens="261" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 627, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01M7xR9t12csn2Ypc8f6xXKA">
+68:    summary: str | None,
+100:        summary: Optional AI-generated summary for the PR description
+184:        summary=summary,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01HSNNXTxMWQGqy5w5YRyRr3">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="520" cache_read_input_tokens="32327" output_tokens="106" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 520, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HSNNXTxMWQGqy5w5YRyRr3">
+     1→"""Create plan as a draft PR with plan content committed to branch.
+     2→
+     3→Shared function used by all plan creation paths:
+     4→- erk pr create (CLI)
+     5→- erk exec create-pr-from-session (session extraction)
+     6→- erk exec create-plan-from-context (stdin plan)
+     7→- land_learn.py (learn plan after landing)
+     8→
+     9→Follows the plan_save.py pattern: creates a branch from origin/trunk,
+    10→commits plan.md + ref.json via git plumbing, pushes, then creates a
+    11→draft PR via PlannedPRBackend.
+    12→"""
+    13→
+    14→import json
+    15→from dataclasses import dataclass
+    16→from pathlib import Path
+    17→
+    18→from erk_shared.gateway.branch_manager.abc import BranchManager
+    19→from erk_shared.gateway.git.abc import Git
+    20→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+    21→from erk_shared.gateway.github.abc import GitHub
+    22→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    23→from erk_shared.gateway.time.abc import Time
+    24→from erk_shared.naming import generate_planned_pr_branch_name
+    25→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    26→from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+    27→from erk_shared.plan_utils import extract_title_from_plan, get_title_tag_from_labels
+    28→
+    29→
+    30→@dataclass(frozen=True)
+
+... [178 lines omitted] ...
+
+    36→        plan_number: PR number if created (None on failure)
+    37→        plan_url: PR URL if created (None on failure)
+    38→        branch_name: Branch name if created (None on failure)
+    40→        error: Error message if failed, None if success
+    48→    error: str | None
+   104→        Does NOT raise exceptions. All errors returned in result.
+   129→            error=create_result.message,
+   194→            error=f"Expected numeric plan_id from planned PR creation, got: {result.plan_id!r}",
+   206→        error=None,
+  </tool_result>
+  <assistant>Now let me find all callers of `create_plan_draft_pr` and `create_plan` outside of tests to see which ones pass `summary`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2868" cache_read_input_tokens="32847" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2868}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01V2C3Yx8wFL2BpZm1QDYeQM">
+    <param name="pattern">create_plan_draft_pr\(</param>
+    <param name="output_mode">content</param>
+    <param name="glob">*.py</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2868" cache_read_input_tokens="32847" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2868}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01V2C3Yx8wFL2BpZm1QDYeQM">
+packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py:51:def create_plan_draft_pr(
+packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py:8:Plan creation now uses create_plan_draft_pr() from plan_store.create_plan_draft_pr.
+packages/erk-shared/tests/unit/github/test_plan_issues.py:49:    return create_plan_draft_pr(
+packages/erk-shared/tests/unit/github/test_plan_issues.py:481:        result = create_plan_draft_pr(
+packages/erk-shared/tests/unit/github/test_plan_issues.py:584:        result = create_plan_draft_pr(
+packages/erk-shared/tests/unit/github/test_plan_issues.py:629:            result = create_plan_draft_pr(
+src/erk/cli/commands/exec/scripts/create_pr_from_session.py:67:    result = create_plan_draft_pr(
+src/erk/cli/commands/land_learn.py:167:    result = create_plan_draft_pr(
+src/erk/cli/commands/pr/create_cmd.py:89:    result = create_plan_draft_pr(
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01CWjjsg8P18jPc3DpN5zc9S">
+    <param name="pattern">\.create_plan\(</param>
+    <param name="output_mode">content</param>
+    <param name="glob">*.py</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2868" cache_read_input_tokens="32847" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2868}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CWjjsg8P18jPc3DpN5zc9S">
+src/erk/cli/commands/exec/scripts/plan_save.py:264:    result = backend.create_plan(
+packages/erk-shared/src/erk_shared/context/helpers.py:416:        ...     result = backend.create_plan(repo_root, title, content, labels, metadata)
+packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py:30:   ``plan_save`` / ``PlannedPRBackend.create_plan()`` creates a draft PR.
+packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py:81:    9. Create draft PR via PlannedPRBackend.create_plan()
+packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py:178:    result = backend.create_plan(
+packages/erk-shared/src/erk_shared/plan_store/backend.py:12:    result = backend.create_plan(...)
+tests/unit/plan_store/test_plan_backend_interface.py:50:    result = backend.create_plan(
+tests/unit/plan_store/test_plan_backend_interface.py:92:    result = plan_backend.create_plan(
+tests/unit/plan_store/test_plan_backend_interface.py:268:        plan_backend.create_plan(
+tests/unit/plan_store/test_plan_backend_interface.py:285:        result = plan_backend.create_plan(
+tests/unit/plan_store/test_plan_backend_interface.py:312:    created = plan_backend.create_plan(
+tests/unit/plan_store/test_plan_backend_interface.py:329:    created = plan_backend.create_plan(
+tests/unit/plan_store/test_plan_backend_interface.py:363:    created = plan_backend.create_plan(
+tests/unit/plan_store/test_plan_backend_interface.py:381:    created = plan_backend.create_plan(
+tests/unit/plan_store/test_plan_backend_interface.py:444:    created = plan_backend.create_plan(
+tests/unit/plan_store/test_plan_backend_interface.py:466:    created = plan_backend.create_plan(
+tests/unit/plan_store/test_plan_backend_interface.py:518:    result = backend.create_plan(
+tests/unit/plan_store/test_plan_backend_interface.py:567:    result = plan_backend.create_plan(
+tests/unit/plan_store/test_plan_backend_interface.py:648:    created = backend.create_plan(
+tests/unit/plan_store/test_planned_pr_backend.py:44:        backend.create_plan(
+tests/unit/plan_store/test_planned_pr_backend.py:59:    result = backend.create_plan(
+tests/unit/plan_store/test_planned_pr_backend.py:79:    backend.create_plan(
+tests/unit/plan_store/test_planned_pr_backend.py:96:    backend.create_plan(
+tests/unit/plan_store/test_planned_pr_backend.py:113:    backend.create_plan(
+tests/unit/plan_store/test_planned_pr_backend.py:130:    result = backend.create_plan(
+tests/unit/plan_store/test_planned_pr_backend.py:148:    result = backend.create_plan(
+tests/unit/plan_store/test_planned_pr_backend.py:167:    result = backend.create_plan(
+tests/unit/plan_store/test_planned_pr_backend.py:192:    result = backend.create_plan(
+tests/unit/plan_store/test_planned_pr_backend.py:221:    backend.create_plan(
+tests/unit/plan_store/test_planned_pr_backend.py:252:    result = backend.create_plan(
+
+... [7 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01T2eqc2qdkwdBkK2ppbwVoS">
+    <param name="pattern">build_plan_stage_body\(</param>
+    <param name="output_mode">content</param>
+    <param name="glob">*.py</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2868" cache_read_input_tokens="32847" output_tokens="343" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2868, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01T2eqc2qdkwdBkK2ppbwVoS">
+src/erk/cli/commands/one_shot_dispatch.py:288:        pr_body_initial = build_plan_stage_body(metadata_body, placeholder_content, summary=None)
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:346:        pr_body = build_plan_stage_body(metadata_body, content, summary=summary)
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:504:            updated_body = build_plan_stage_body(
+packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py:97:def build_plan_stage_body(metadata_body: str, plan_content: str, *, summary: str | None) -&gt; str:
+tests/commands/pr/test_rewrite.py:317:        pr_body = build_plan_stage_body(metadata_body, plan_content, summary=None)
+tests/commands/pr/test_check_plan.py:301:    issue_body = build_plan_stage_body(plan_header_block, plan_content, summary=None)
+tests/commands/pr/test_check_plan.py:548:    issue_body = build_plan_stage_body(plan_header_block, plan_content, summary=None)
+tests/commands/pr/test_dispatch.py:49:        pr_body = build_plan_stage_body(
+tests/commands/pr/test_dispatch.py:171:        pr_body = build_plan_stage_body(
+tests/commands/pr/test_dispatch.py:281:    pr_body = build_plan_stage_body(
+tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py:309:    pr_body = build_plan_stage_body(metadata_body, plan_content, summary=None)
+tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py:523:    pr_body = build_plan_stage_body(metadata_body, plan_content, summary=None)
+tests/unit/cli/commands/exec/scripts/test_update_pr_description.py:424:        pr_body = build_plan_stage_body(metadata_body, plan_content, summary=None)
+tests/unit/plan_store/test_planned_pr_lifecycle.py:18:def test_build_plan_stage_body() -&gt; None:
+tests/unit/plan_store/test_planned_pr_lifecycle.py:20:    result = build_plan_stage_body("metadata block", "plan content", summary=None)
+tests/unit/plan_store/test_planned_pr_lifecycle.py:30:    result = build_plan_stage_body("META", "PLAN", summary=None)
+tests/unit/plan_store/test_planned_pr_lifecycle.py:40:    result = build_plan_stage_body("META", "PLAN", summary="This plan does things.")
+tests/unit/plan_store/test_planned_pr_lifecycle.py:50:    result = build_plan_stage_body("META", "PLAN", summary="SUMMARY")
+tests/unit/plan_store/test_planned_pr_lifecycle.py:66:    body = build_plan_stage_body("metadata block", "plan content here", summary=None)
+tests/unit/plan_store/test_planned_pr_lifecycle.py:149:    body = build_plan_stage_body("&lt;!-- metadata --&gt;", plan, summary=None)
+tests/unit/plan_store/test_planned_pr_lifecycle.py:156:    body = build_plan_stage_body("&lt;!-- metadata --&gt;", plan, summary="A concise summary.")
+tests/unit/plan_store/test_planned_pr_backend.py:300:    result = build_plan_stage_body("metadata block", "plan content", summary=None)
+tests/unit/plan_store/test_planned_pr_backend.py:309:    body = build_plan_stage_body("metadata block", "plan content here", summary=None)
+tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py:735:    pr_body = build_plan_stage_body(metadata_body, plan_content, summary=None)
+tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py:885:    pr_body = build_plan_stage_body(metadata_body, plan_content, summary=None)
+tests/unit/cli/commands/exec/scripts/test_set_pr_description.py:196:        pr_body = build_plan_stage_body(metadata_body, plan_content, summary=None)
+tests/unit/cli/commands/pr/test_shared.py:34:    pr_body = build_plan_stage_body(metadata_body, plan_content, summary=None)
+tests/unit/cli/commands/exec/scripts/test_plan_update.py:403:    pr_body = build_plan_stage_body(metadata_body, plan_content, summary=None)
+  </tool_result>
+  <assistant>Now let me check the non-test callers to see which pass `summary=None` vs an actual summary value.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3417" cache_read_input_tokens="35715" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3417}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01W5UepMt62TERs1obvpfR9E">
+    <param name="pattern">summary</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/exec/scripts/create_pr_from_session.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3417" cache_read_input_tokens="35715" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3417}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01W5UepMt62TERs1obvpfR9E">
+80-        created_from_session=session_id,
+81-        created_from_workflow_run_url=None,
+82-        learned_from_issue=None,
+83:        summary=None,
+84-    )
+85-
+86-    if not result.success:
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0175HhCS45a9f9o4tFMadML9">
+    <param name="pattern">summary</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/land_learn.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3417" cache_read_input_tokens="35715" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3417}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0175HhCS45a9f9o4tFMadML9">
+65-    sessions: SessionsForPlan,
+66-    all_session_ids: list[str],
+67-) -&gt; None:
+68:    """Log session discovery summary with per-session type badges and sizes."""
+69-    total = len(all_session_ids)
+70-    if total == 0:
+71-        user_output("  \u26a0\ufe0f  No sessions discovered for this plan")
+--
+147-    sessions = ctx.plan_backend.find_sessions_for_plan(state.main_repo_root, plan_id)
+148-    all_session_ids = sessions.all_session_ids()
+149-
+150:    # Log session discovery summary
+151-    _log_session_discovery(ctx, sessions=sessions, all_session_ids=all_session_ids)
+152-
+153-    # Build learn plan body
+--
+180-        created_from_session=None,
+181-        created_from_workflow_run_url=None,
+182-        learned_from_issue=int(plan_id),
+183:        summary=None,
+184-    )
+185-
+186-    if result.success:
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01GYdB8W2gmhneCGiLvxAJJi">
+    <param name="pattern">summary</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/pr/create_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3417" cache_read_input_tokens="35715" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3417}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GYdB8W2gmhneCGiLvxAJJi">
+102-        created_from_session=None,
+103-        created_from_workflow_run_url=None,
+104-        learned_from_issue=None,
+105:        summary=None,
+106-    )
+107-
+108-    if not result.success:
+  </tool_result>
+  <tool_use name="Grep" id="toolu_018AgVHQzkeMwdtQYoE6g3ry">
+    <param name="pattern">summary</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3417" cache_read_input_tokens="35715" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3417}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018AgVHQzkeMwdtQYoE6g3ry">
+120-    created_from_workflow_run_url: str | None,
+121-    branch_slug: str | None,
+122-    node_ids: tuple[str, ...] | None,
+123:    summary: str | None,
+124-) -&gt; None:
+125-    """Save plan as a planned PR.
+126-
+--
+138-        created_from_workflow_run_url: GitHub Actions workflow run URL
+139-        branch_slug: Pre-generated branch slug (skips LLM call when provided)
+140-        node_ids: Objective roadmap node IDs to associate with this plan
+141:        summary: Optional AI-generated summary for the PR description
+142-    """
+143-    repo_root = require_repo_root(ctx)
+144-    cwd = require_cwd(ctx)
+--
+267-        content=plan_content,
+268-        labels=tuple(labels),
+269-        metadata=metadata,
+270:        summary=summary,
+271-    )
+272-
+273-    if not result.plan_id.isdigit():
+--
+328-    created_from_workflow_run_url: str | None,
+329-    branch_slug: str | None,
+330-    objective: int | None,
+331:    summary: str | None,
+332-) -&gt; None:
+333-    """Handle planned-PR backend: dedup check, plan extraction, validation, and save.
+
+... [41 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_012xn4o6SqQmZYLeucAWMXaV">
+    <param name="pattern">summary</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/one_shot_dispatch.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3417" cache_read_input_tokens="35715" output_tokens="704" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3417, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012xn4o6SqQmZYLeucAWMXaV">
+285-            f"_One-shot: plan content will be populated by one-shot workflow._\n\n"
+286-            f"**Prompt:** {params.prompt}"
+287-        )
+288:        pr_body_initial = build_plan_stage_body(metadata_body, placeholder_content, summary=None)
+289-        pr_number = ctx.github.create_pr(
+290-            repo.root,
+291-            branch_name,
+  </tool_result>
+  <assistant>Also let me check the `update_plan` / `rewrite_plan` paths that also take summary on the `PlannedPRBackend`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2191" cache_read_input_tokens="39132" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2191}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01T3fY68kj9QLuZ1o9aUuwAb">
+    <param name="pattern">summary=None</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2191" cache_read_input_tokens="39132" output_tokens="191" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2191, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01T3fY68kj9QLuZ1o9aUuwAb">
+505:                render_metadata_block(plan_header), content, summary=None
+  </tool_result>
+  <assistant>Here's the summary of **non-test** call sites that pass `summary`:
+
+| File | Call | Value |
+|---|---|---|
+| `src/erk/cli/commands/exec/scripts/create_pr_from_session.py:83` | `create_plan_draft_pr(...)` | `summary=None` |
+| `src/erk/cli/commands/land_learn.py:183` | `create_plan_draft_pr(...)` | `summary=None` |
+| `src/erk/cli/commands/pr/create_cmd.py:105` | `create_plan_draft_pr(...)` | `summary=None` |
+| `src/erk/cli/commands/one_shot_dispatch.py:288` | `build_plan_stage_body(...)` | `summary=None` |
+| `packages/.../planned_pr.py:505` | `build_plan_stage_body(...)` (inside `rewrite_plan`) | `summary=None` |
+| `src/erk/cli/commands/exec/scripts/plan_save.py:270` | `backend.create_plan(...)` | passes through from CLI `--summary` flag |
+
+So **5 non-test call sites** are hardcoded to `summary=None`. Only the `plan_save.py` path actually passes a real summary through (from its `--summary` CLI flag).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="221" cache_read_input_tokens="41323" output_tokens="334" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 221, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>what would it take to be required or to get generated on the users behalf using inference (without nesting cc sessions)</user>
+  <thinking>The user is asking about what it would take to either:
+1. Make `summary` required at all call sites, or
+2. Auto-generate it on the user's behalf using inference (without nesting Claude Code sessions)
+
+Let me think about what inference capabilities exist in the codebase. The user mentioned "without nesting cc sessions" - meaning they don't want to spawn a Claude Code subprocess to generate the summary. So I need to understand what other inference options exist in the codebase.
+
+Let me explore what inference/LLM capabilities exist in erk.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="510" cache_read_input_tokens="41544" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 510}" output_tokens="14" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good question. Let me explore what inference capabilities already exist in the codebase.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="510" cache_read_input_tokens="41544" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 510}" output_tokens="14" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01UUujowDcMmeGt4RP36qhq7">
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 826 chars]...lse?
+
+Focus on non-test source code. Report all findings with file paths and line numbers.</param>
+    <param name="description">Find inference capabilities in erk</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="510" cache_read_input_tokens="41544" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 510}" output_tokens="14" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_019tS44C2MmVJ341ZTJUFZ2y">
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 940 chars]...e_plan with summary=None
+
+Read each file to understand the full context of each call site.</param>
+    <param name="description">Analyze summary=None call sites</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="510" cache_read_input_tokens="41544" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 510}" output_tokens="14" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019tS44C2MmVJ341ZTJUFZ2y">
+Perfect! Now I have all the information I need. Let me create a comprehensive summary for the user.
+
+## Analysis of 5 Call Sites Passing `summary=None`
+
+Based on my thorough examination of the codebase, here's the context for each call site:
+
+---
+
+### **1. `src/erk/cli/commands/exec/scripts/create_pr_from_session.py:83`**
+
+**Function:** `create_pr_from_session()` - CLI command
+
+**Caller Type:** Human via CLI - `erk exec create-pr-from-session [--session-id SESSION_ID]`
+
+**Context:**
+- Extracts the latest plan from Claude session files
+- Creates a draft PR from that extracted plan text
+- **Available information:** Only the plan content from session files; no AI-generated summary is available at this point
+- **Reasoning:** The summary requires analysis of what the implementation plan actually contains, but this command runs extraction-only. A human who extracted a plan from their Claude session may have a natural language summary in mind, but it's not captured in the session data.
+- **Makes sense to generate?** Not really. The session-based plan extraction is a mechanical operation that doesn't involve AI planning. The summary would need to come from the user or a separate generation step.
+
+---
+
+### **2. `src/erk/cli/commands/land_learn.py:183`**
+
+**Function:** `_create_learn_pr_impl()` - Fire-and-forget operation within land pipeline
+
+**Caller Type:** Automated land workflow (fire-and-forget; never blocks landing)
+
+**Context:**
+
+... [75 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01UUujowDcMmeGt4RP36qhq7">
+Excellent! Now I have comprehensive information. Let me create a final summary document with all findings:
+
+## Summary: LLM Capabilities in Erk Codebase
+
+Based on my thorough search of the erk codebase, here are all the LLM inference capabilities without nested Claude Code sessions:
+
+### 1. **Core LLM Abstraction: PromptExecutor**
+
+**Location:** `packages/erk-shared/src/erk_shared/core/prompt_executor.py` (ABC)
+**Implementation:** `src/erk/core/prompt_executor.py` (ClaudePromptExecutor)
+
+The `PromptExecutor` abstract base class (lines 157-443 in prompt_executor.py) provides:
+
+- `execute_prompt(prompt, model, tools, cwd, system_prompt, dangerous) -&gt; PromptResult` — Single-shot LLM calls returning `PromptResult(success, output, error)`
+- Uses Claude CLI via subprocess with `--print --no-session-persistence --output-format text`
+- Supports custom system prompts via `--system-prompt` flag for deterministic behavior
+- Returns structured `PromptResult` with `success: bool`, `output: str`, `error: str | None`
+
+### 2. **Concrete Text Generation Classes**
+
+All follow the same pattern: concrete class (not ABC) with injected `PromptExecutor` dependency.
+
+#### **BranchSlugGenerator**
+**File:** `/src/erk/core/branch_slug_generator.py` (lines 45-152)
+- **Method:** `generate(title: str) -&gt; BranchSlugResult`
+- **System Prompt:** `BRANCH_SLUG_SYSTEM_PROMPT` (lines 17-27)
+- **Model:** "haiku" (line 69)
+- **Output:** 2-4 hyphenated lowercase words, max 30 chars
+- **Usage:** Called from skill layer (plan-save.md Step 1.5) to generate branch slugs before exec script
+- **Key:** Pre-computed in skill, passed to exec via `--branch-slug` flag (inference hoisting pattern)
+
+... [122 lines omitted] ...
+
+- **Graceful Degradation:** Returns error in result on failure, doesn't raise
+3. **Graceful degradation** — Checkers return errors in result instead of raising (fail-open pattern)
+  </tool_result>
+  <thinking>Let me synthesize the findings and present the options to the user clearly.
+
+The key insight is that erk already has an "inference hoisting" pattern where the skill layer (Claude Code commands) generates values via LLM and passes them to exec scripts via CLI flags. The `plan-save.md` skill already does this for summary generation.
+
+For the other 5 call sites:
+
+1. **create_pr_from_session** - Has plan content, could generate summary
+2. **land_learn** - Has plan content, could generate summary but it's a learn plan
+3. **pr_create** - Has plan content, could generate summary
+4. **one_shot_dispatch** - No plan content yet (placeholder), can't generate
+
+
+5. **rewrite_plan** - Mechanical update, caller would need to provide
+
+The two approaches are making summary required across all callers versus auto-generating through inference. For auto-generation without nesting Claude Code sessions, I could use `PromptExecutor` with the CLI flags, call the Anthropic API directly, or stick with the inference hoisting pattern that already works—generating the summary in the skill layer and passing it through flags.
+
+Now I'm thinking through which call sites could realistically generate summaries. **plan_save** already does this via skill layer hoisting, **create_pr_from_session** and **pr_create** are exec scripts or CLI commands that could potentially use `PromptExecutor`, and **land_learn** runs during the land pipeline so it could too. The real constraint is whether these exec scripts can safely invoke `PromptExecutor` without creating deadlocks when called from within a Claude Code session.
+
+The distinction is becoming clearer: `pr_create` and `land_learn` are regular CLI commands that could use `PromptExecutor` when invoked from the terminal, but `create_pr_from_session` is specifically an exec script that runs within a session context, so it would need to follow the inference hoisting pattern instead. I should present these findings to the user and ask which direction makes sense for their use case.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="5180" cache_read_input_tokens="42054" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5180}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Here's what I found across both dimensions:
+
+## Current State
+
+Only **1 of 6** non-test creation paths provides a summary: `plan_save.py` (via the skill layer's inference hoisting pattern — the `.claude/commands/erk/plan-save.md` skill generates `PLAN_SUMMARY` and passes it as `--summary` flag).
+
+## The 5 `summary=None` Sites
+
+| Call Site | Type | Has Plan Content? | Could Generate? |
+|---|---|---|---|
+| `create_pr_from_session` | Exec script | Yes | Yes — but exec scripts can't call PromptExecutor inside CC sessions (deadlock) |
+| `land_learn` | CLI (fire-and-forget in land) | Yes | Yes — runs as regular CLI, could use PromptExecutor |
+| `pr_create` | CLI (human invoked) | Yes | Yes — runs as regular CLI, could use PromptExecutor |
+| `one_shot_dispatch` | Automated CI | No (placeholder) | **No** — plan doesn't exist yet |
+| `rewrite_plan` (internal) | Backend method | Yes | Mechanical update — caller must provide |
+
+## Two Approaches
+
+**Option A: Generate via PromptExecutor** — For `pr_create` and `land_learn` (regular CLI commands), they can call `PromptExecutor` directly with a system prompt like "Summarize this plan in 2-3 sentences." For `create_pr_from_session` (exec script), you'd need inference hoisting from whatever skill invokes it.
+
+**Option B: Generate via inference hoisting in skill layer** — Each `.claude/commands/` skill that invokes these commands generates the summary itself (like plan-save already does) and passes it as `--summary`. This is the existing pattern but requires a skill wrapper for every entry point.
+
+`one_shot_dispatch` can't generate a summary at creation time (no plan yet) — it would need to be added later when the plan is populated.
+`rewrite_plan` is just a passthrough — its callers would need to provide the summary.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="5180" cache_read_input_tokens="42054" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5180}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_016Bxk2bfou5Snff15hDrbmu">
+    <param name="questions">[{'question': 'Which direction do you want to take for summary generation?', 'header': 'Ap...[truncated 715 chars]...lan, forcing every caller to figure it out. No auto-generation.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5180" cache_read_input_tokens="42054" output_tokens="1391" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5180, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016Bxk2bfou5Snff15hDrbmu">
+User has answered your questions: "Which direction do you want to take for summary generation?"="Both (hybrid)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <thinking>The user wants the hybrid approach. Let me now design the implementation plan.
+
+For CLI commands (pr_create, land_learn) that run outside CC sessions → use PromptExecutor directly
+For exec scripts (create_pr_from_session) → use inference hoisting from skill layer
+For one_shot_dispatch → can't generate at creation time, would need to be done later
+For rewrite_plan → callers need to provide
+
+Let me think through the implementation details:
+
+1. **Create a PlanSummaryGenerator** class (similar to BranchSlugGenerator) that takes PromptExecutor and generates a summary from plan content
+
+
+2. **Update `pr_create` and `land_learn`** to use PlanSummaryGenerator for direct summary generation
+3. **For `create_pr_from_session`**, I need to find the skill that invokes it and add summary generation there, then pass it via a `--summary` flag to the exec script
+4. **Skip `one_shot_dispatch`** since there's no plan content available at creation time
+5. **For `rewrite_plan`**, add a summary parameter that callers provide
+
+I should also decide whether to make summary required or optional at the lower levels.
+
+Now I'm reconsidering the approach—the user wants both PromptExecutor for CLI commands outside CC sessions and inference hoisting for exec scripts. Let me trace through the actual patterns by examining the relevant files to understand how BranchSlugGenerator works and how inference hoisting is implemented.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1431" cache_read_input_tokens="47234" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1431}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good choice. Let me read the key pattern files to design the implementation properly.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1431" cache_read_input_tokens="47234" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1431}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FbNyFHftnvbheRFyWBkbRK">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/core/branch_slug_generator.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1431" cache_read_input_tokens="47234" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1431}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FbNyFHftnvbheRFyWBkbRK">
+     1→"""Branch slug generation via LLM inference.
+     2→
+     3→This module provides branch name slug generation using a fast LLM call
+     4→to distill plan titles into meaningful 2-4 word slugs before they
+     5→enter the branch naming pipeline.
+     6→
+     7→Follows the CommitMessageGenerator pattern from src/erk/core/commit_message_generator.py.
+     8→"""
+     9→
+    10→from __future__ import annotations
+    11→
+    12→from dataclasses import dataclass
+    13→
+    14→from erk_shared.core.prompt_executor import PromptExecutor
+    15→from erk_shared.naming import sanitize_worktree_name
+    16→
+    17→BRANCH_SLUG_SYSTEM_PROMPT = """\
+    18→You are a branch name slug generator. Given a title, return ONLY a concise
+    19→2-4 word slug using lowercase letters and hyphens. No explanation.
+    20→
+    21→Rules:
+    22→- Use 2-4 hyphenated words (e.g., "fix-auth-session", "add-plan-validation")
+    23→- Capture the distinctive essence, not generic words
+    24→- Drop filler words: "the", "a", "for", "and", "implementation", "plan"
+    25→- Prefer verbs: add, fix, refactor, update, consolidate, extract, migrate
+    26→- Never exceed 30 characters total
+    27→- Output ONLY the slug, nothing else"""
+    28→
+    29→
+    30→@dataclass(frozen=True)
+
+... [122 lines omitted] ...
+
+    37→        error_message: Error description if generation failed
+    42→    error_message: str | None
+    65→            BranchSlugResult with success status and slug or error
+    80→                error_message=result.error or "LLM execution failed",
+    88→                error_message=f"Invalid LLM output: {result.output!r}",
+    94→            error_message=None,
+   135→    """Generate a slug from title, falling back to raw title on failure.
+   138→    or the raw title on failure (so sanitize_worktree_name handles it downstream).
+   145→        LLM-generated slug on success, raw title on failure
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WsFDzz7j2H2isqiKCad1or">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/docs/learned/architecture/inference-hoisting.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1431" cache_read_input_tokens="47234" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1431}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WsFDzz7j2H2isqiKCad1or">
+     1→---
+     2→title: Inference Hoisting Pattern
+     3→last_audited: "2026-02-23 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - adding LLM calls to an exec script
+     7→  - calling PromptExecutor from a CLI command or exec script
+     8→  - working with BranchSlugGenerator or generate_slug_or_fallback
+     9→  - adding --branch-slug or similar pre-computed value flags to exec commands
+    10→  - understanding why exec scripts must be deterministic
+    11→  - refactoring nested LLM calls out of exec scripts
+    12→tripwires:
+    13→  - action: "calling PromptExecutor, generate_slug_or_fallback, or BranchSlugGenerator from an exec script"
+    14→    warning: "Exec scripts must be deterministic. LLM calls belong in the skill layer (.claude/commands/*.md). Hoist: generate the value in the skill, pass it via --flag to the exec script. Read inference-hoisting.md."
+    15→    pattern: "PromptExecutor|generate_slug_or_fallback|BranchSlugGenerator"
+    16→    score: 9
+    17→  - action: "adding LLM-dependent logic inside a Click @command function in exec/scripts/"
+    18→    warning: "Inference hoisting violation: exec scripts run as subprocesses; they cannot nest LLM calls within a Claude Code session. Move reasoning to the calling skill."
+    19→---
+    20→
+    21→# Inference Hoisting Pattern
+    22→
+    23→## Why This Pattern Exists
+    24→
+    25→Exec scripts are Python subprocesses that run to completion without Claude Code context. They cannot invoke the Claude CLI via `PromptExecutor.execute_prompt()` — attempting to do so inside a Claude Code session creates a nested LLM call that deadlocks or fails.
+    26→
+    27→The skill layer (`.claude/commands/*.md`) is the orchestration boundary. Skills run inside Claude Code with full reasoning capability. They can generate values through LLM inference before invoking exec scripts.
+    28→
+    29→**The original bug**: `plan_save.py` and `setup_impl_from_pr.py` called `generate_slug_or_fallback(executor, title)`, which invoked `PromptExecutor.execute_prompt()` to ask Claude for a branch slug. When these scripts ran inside a Claude Code session (via `/erk:plan-save`), the nested Claude subprocess locked up. The fix moved slug generation into the skill layer, passing the pre-generated slug via `--branch-slug`.
+    30→
+
+... [91 lines omitted] ...
+
+    45→  5. Uses the pre-computed value; errors with remediation instructions if missing
+    68→Each script accepts a `--branch-slug` Click option. When provided, it uses the pre-generated slug directly. When missing, the script exits with a clear error message and remediation instructions directing the caller to generate a slug in the skill layer.
+    84→## Error Handling
+    86→When `--branch-slug` is not provided, exec scripts exit with a clear error message and remediation instructions. They do **not** silently fall back to a sanitized title. This follows the [agent backpressure gates](agent-backpressure-gates.md) philosophy: silent transformation masks mistakes and prevents the agent from learning.
+    88→The error message directs callers to generate a slug in the skill layer (e.g., plan-save.md Step 1.5) and pass it via `--branch-slug`. For direct CLI invocation, pass `--branch-slug` explicitly.
+    96→3. **Add a `--flag` to the exec script** — add it as a Click option; if missing, emit a clear error message with remediation instructions explaining how to generate the value
+  </tool_result>
+  <tool_use name="Read" id="toolu_01EZsMqXHCifs56yG5qmZSXj">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/.claude/commands/erk/plan-save.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1431" cache_read_input_tokens="47234" output_tokens="744" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1431, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EZsMqXHCifs56yG5qmZSXj">
+     1→---
+     2→description: Save the current session's plan to GitHub
+     3→argument-hint: "[--plan-type=learn]"
+     4→---
+     5→
+     6→# /erk:plan-save
+     7→
+     8→Save the current session's plan to GitHub with session context.
+     9→
+    10→## Usage
+    11→
+    12→```bash
+    13→/erk:plan-save                           # Standalone plan
+    14→/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+    15→/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+    16→```
+    17→
+    18→Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+    19→
+    20→## Plan Storage
+    21→
+    22→The plan is saved using the configured backend:
+    23→
+    24→- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+    25→  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+    26→
+    27→## Agent Instructions
+    28→
+    29→### Step 1: Parse Arguments
+    30→
+
+... [212 lines omitted] ...
+
+    84→If the command fails, display the error and stop.
+    99→- If `success: false` or value doesn't match: verification failed
+   105→**On verification failure:**
+   107→Display error and remediation steps:
+   110→ERROR: Objective link verification failed
+   147→**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+   225→On failure, display the error message and suggest:
+  </tool_result>
+  <thinking>Now let me read the remaining call sites to understand the full picture, especially `create_pr_from_session.py` and how it's invoked, and `pr_create`.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="9038" cache_read_input_tokens="48665" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9038}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the remaining critical call sites and understand how they're invoked.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="9038" cache_read_input_tokens="48665" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9038}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Gmnqdw5Z7MsBCdWm739dCT">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/exec/scripts/create_pr_from_session.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9038" cache_read_input_tokens="48665" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9038}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Gmnqdw5Z7MsBCdWm739dCT">
+     1→"""Extract plan from Claude session and create GitHub draft PR.
+     2→
+     3→Usage:
+     4→    erk exec create-pr-from-session [--session-id SESSION_ID]
+     5→
+     6→This command combines plan extraction from Claude session files with GitHub
+     7→draft PR creation. It extracts the latest ExitPlanMode plan, creates a branch,
+     8→commits the plan, and creates a draft PR.
+     9→
+    10→Output:
+    11→    JSON result on stdout:
+    12→        {"success": true, "plan_number": N, "plan_url": "...", "branch_name": "..."}
+    13→    Error messages on stderr with exit code 1 on failure
+    14→
+    15→Exit Codes:
+    16→    0: Success - draft PR created
+    17→    1: Error - no plan found, gh CLI not available, or other error
+    18→"""
+    19→
+    20→import json
+    21→
+    22→import click
+    23→
+    24→from erk_shared.context.helpers import (
+    25→    require_branch_manager,
+    26→    require_claude_installation,
+    27→    require_cwd,
+    28→    require_git,
+    29→    require_github,
+    30→    require_issues,
+
+... [70 lines omitted] ...
+
+    62→        result = {"success": False, "error": "No plan found in Claude session files"}
+    87→        output = {"success": False, "error": result.error}
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NzGBw6nPa8AHH6AosHsug1">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/pr/create_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9038" cache_read_input_tokens="48665" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9038}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NzGBw6nPa8AHH6AosHsug1">
+     1→"""Command to create a plan from markdown content."""
+     2→
+     3→import sys
+     4→from pathlib import Path
+     5→
+     6→import click
+     7→
+     8→from erk.cli.core import discover_repo_context
+     9→from erk.cli.ensure import Ensure
+    10→from erk.core.context import ErkContext
+    11→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    12→from erk_shared.output.next_steps import format_planned_pr_next_steps_plain
+    13→from erk_shared.output.output import user_output
+    14→from erk_shared.plan_store.create_plan_draft_pr import create_plan_draft_pr
+    15→
+    16→
+    17→@click.command("create")
+    18→@click.option(
+    19→    "--file",
+    20→    "-f",
+    21→    type=click.Path(exists=True, path_type=Path),
+    22→    help="Plan file to read",
+    23→)
+    24→@click.option("--title", "-t", type=str, help="Plan title (default: extract from H1)")
+    25→@click.option("--label", "-l", multiple=True, help="Additional labels")
+    26→@click.pass_obj
+    27→def pr_create(
+    28→    ctx: ErkContext,
+    29→    file: Path | None,
+    30→    title: str | None,
+
+... [98 lines omitted] ...
+
+    57→        except OSError as e:
+    58→            user_output(click.style("Error: ", fg="red") + f"Failed to read file: {e}")
+    64→        except OSError as e:
+    65→            user_output(click.style("Error: ", fg="red") + f"Failed to read stdin: {e}")
+   109→        user_output(click.style("Error: ", fg="red") + str(result.error))
+  </tool_result>
+  <tool_use name="Read" id="toolu_017Gkqr2pThBzfceuyZsLMiF">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/land_learn.py</param>
+    <param name="offset">130</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9038" cache_read_input_tokens="48665" output_tokens="361" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9038, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017Gkqr2pThBzfceuyZsLMiF">
+   130→    """Inner implementation for learn plan creation (raises on error)."""
+   131→    plan_id = state.plan_id
+   132→    if plan_id is None:
+   133→        return
+   134→
+   135→    # Check config
+   136→    if not _should_create_learn_pr(ctx):
+   137→        return
+   138→
+   139→    # Fetch plan to check labels — skip learn plans (cycle prevention)
+   140→    plan_result = ctx.plan_store.get_plan(state.main_repo_root, plan_id)
+   141→    if isinstance(plan_result, PlanNotFound):
+   142→        return
+   143→    if "erk-learn" in plan_result.labels:
+   144→        return
+   145→
+   146→    # Discover sessions for the plan
+   147→    sessions = ctx.plan_backend.find_sessions_for_plan(state.main_repo_root, plan_id)
+   148→    all_session_ids = sessions.all_session_ids()
+   149→
+   150→    # Log session discovery summary
+   151→    _log_session_discovery(ctx, sessions=sessions, all_session_ids=all_session_ids)
+   152→
+   153→    # Build learn plan body
+   154→    if all_session_ids:
+   155→        session_lines = [f"- `{sid}`" for sid in all_session_ids]
+   156→    else:
+   157→        session_lines = ["- (none)"]
+   158→    session_section = "\n".join(session_lines)
+   159→    plan_content = (
+
+... [36 lines omitted] ...
+
+   191→    elif result.error:
+   193→            click.style("Warning: ", fg="yellow") + f"Learn plan creation failed: {result.error}"
+  </tool_result>
+  <thinking>Now let me also check how `rewrite_plan` is called and how `one_shot_dispatch` works, and what happens when one-shot populates the plan later. Let me also look at how `pr_create` and `land_learn` currently get their contexts - they're regular CLI commands that have `ErkContext` access, so they could use PromptExecutor.
+
+Let me also check what callers invoke `rewrite_plan`:</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5087" cache_read_input_tokens="57703" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5087}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check how `rewrite_plan` is called and the one-shot plan population path.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5087" cache_read_input_tokens="57703" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5087}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01HLCeEvhonLe5xci3xUGu56">
+    <param name="pattern">rewrite_plan\(</param>
+    <param name="output_mode">content</param>
+    <param name="glob">*.py</param>
+    <param name="-n">True</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5087" cache_read_input_tokens="57703" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5087}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HLCeEvhonLe5xci3xUGu56">
+No matches found
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KACxHGwCCgaxqF8FbGAfBj">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="offset">480</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5087" cache_read_input_tokens="57703" output_tokens="411" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5087, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KACxHGwCCgaxqF8FbGAfBj">
+   480→        plan_id: str,
+   481→        content: str,
+   482→    ) -&gt; None:
+   483→        """Update the plan content in the PR body.
+   484→
+   485→        Replaces everything after the metadata block separator with new content.
+   486→
+   487→        Args:
+   488→            repo_root: Repository root directory
+   489→            plan_id: PR number as string
+   490→            content: New plan content
+   491→
+   492→        Raises:
+   493→            RuntimeError: If PR not found
+   494→        """
+   495→        pr_number = int(plan_id)
+   496→        result = self._github.get_pr(repo_root, pr_number)
+   497→        if isinstance(result, PRNotFound):
+   498→            msg = f"PR #{pr_number} not found"
+   499→            raise RuntimeError(msg)
+   500→
+   501→        # Preserve metadata prefix and replace plan content
+   502→        plan_header = find_metadata_block(result.body, "plan-header")
+   503→        if plan_header is not None:
+   504→            updated_body = build_plan_stage_body(
+   505→                render_metadata_block(plan_header), content, summary=None
+   506→            )
+   507→        else:
+   508→            # No metadata block found - just set the content
+   509→            updated_body = content
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01LjwTe7kHobKgESMPf7GpaJ">
+    <param name="pattern">rewrite_plan\(</param>
+    <param name="output_mode">content</param>
+    <param name="glob">*.py</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1029" cache_read_input_tokens="62790" output_tokens="112" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1029, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LjwTe7kHobKgESMPf7GpaJ">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01CQQFmoufpqtYtHHUL1RCuX">
+    <param name="pattern">rewrite_plan</param>
+    <param name="output_mode">content</param>
+    <param name="glob">*.py</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="127" cache_read_input_tokens="63819" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 127}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CQQFmoufpqtYtHHUL1RCuX">
+tests/commands/pr/test_rewrite.py:311:def test_pr_rewrite_planned_pr_backend_preserves_metadata() -&gt; None:
+  </tool_result>
+  <thinking>Interesting - `rewrite_plan` is actually the method `PlannedPRBackend.rewrite_plan()` at line 478 of planned_pr.py. Let me check its callers.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="158" cache_read_input_tokens="63946" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 158}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01HwLwyJKj5uPPzShv4kctzo">
+    <param name="pattern">\.rewrite_plan\(</param>
+    <param name="output_mode">content</param>
+    <param name="glob">*.py</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="158" cache_read_input_tokens="63946" output_tokens="175" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 158, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HwLwyJKj5uPPzShv4kctzo">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0166ieGxCuKTxGkFn51CtSpC">
+    <param name="pattern">rewrite_plan</param>
+    <param name="output_mode">content</param>
+    <param name="glob">*.py</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="190" cache_read_input_tokens="64104" output_tokens="110" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 190, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0166ieGxCuKTxGkFn51CtSpC">
+tests/commands/pr/test_rewrite.py:311:def test_pr_rewrite_planned_pr_backend_preserves_metadata() -&gt; None:
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0172j46bVFpmaEhk1MvQG6kJ">
+    <param name="pattern">rewrite_plan</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="158" cache_read_input_tokens="64294" output_tokens="74" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 158, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0172j46bVFpmaEhk1MvQG6kJ">
+tests/commands/pr/test_rewrite.py:311:def test_pr_rewrite_planned_pr_backend_preserves_metadata() -&gt; None:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01R46GNyJhRnyNPb2e4Qijfk">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="offset">470</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="218" cache_read_input_tokens="64452" output_tokens="136" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 218, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01R46GNyJhRnyNPb2e4Qijfk">
+   470→
+   471→        new_block = MetadataBlock(key="plan-header", data=current_data)
+   472→        new_block_content = render_metadata_block(new_block)
+   473→
+   474→        updated_body = replace_metadata_block_in_body(result.body, "plan-header", new_block_content)
+   475→        self._github.update_pr_body(repo_root, pr_number, updated_body)
+   476→
+   477→    def update_plan_content(
+   478→        self,
+   479→        repo_root: Path,
+   480→        plan_id: str,
+   481→        content: str,
+   482→    ) -&gt; None:
+   483→        """Update the plan content in the PR body.
+   484→
+  </tool_result>
+  <thinking>Ah, it's `update_plan_content` (not `rewrite_plan`), and it passes `summary=None` at line 505. Let me check who calls that.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="345" cache_read_input_tokens="64670" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 345}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014DqoL9vNsFTN4MFm7dxZc8">
+    <param name="pattern">update_plan_content\(</param>
+    <param name="output_mode">content</param>
+    <param name="glob">*.py</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="345" cache_read_input_tokens="64670" output_tokens="169" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 345, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014DqoL9vNsFTN4MFm7dxZc8">
+src/erk/cli/commands/exec/scripts/plan_update.py:117:        backend.update_plan_content(repo_root, plan_id, plan_content.strip())
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:477:    def update_plan_content(
+packages/erk-shared/src/erk_shared/plan_store/backend.py:335:    def update_plan_content(
+tests/unit/plan_store/test_plan_backend_interface.py:434:        plan_backend.update_plan_content(Path("/repo"), "99999999", "new content")
+tests/unit/plan_store/test_planned_pr_backend.py:261:    backend.update_plan_content(Path("/repo"), result.plan_id, "Updated content")
+  </tool_result>
+  <assistant>Good. Now let me also check the `one_shot_dispatch` path to understand when the plan gets populated later (and whether summary could be added at that point).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="492" cache_read_input_tokens="65015" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 492}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01GAjqBcSts493RCN48CE8Bj">
+    <param name="pattern">summary</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="492" cache_read_input_tokens="65015" output_tokens="209" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 492, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GAjqBcSts493RCN48CE8Bj">
+252-        labels: tuple[str, ...],
+253-        metadata: Mapping[str, object],
+254:        summary: str | None,
+255-    ) -&gt; CreatePlanResult:
+256-        """Create a new plan as a draft PR.
+--
+270-                - objective_issue: int | None
+271-                - created_from_session: str | None
+272:            summary: Optional AI-generated summary to display above the collapsed plan
+273-
+274-        Returns:
+--
+344-        )
+345-
+346:        pr_body = build_plan_stage_body(metadata_body, content, summary=summary)
+347-
+348-        base_ref_raw = metadata.get("base_ref_name")
+--
+503-        if plan_header is not None:
+504-            updated_body = build_plan_stage_body(
+505:                render_metadata_block(plan_header), content, summary=None
+506-            )
+507-        else:
+  </tool_result>
+  <assistant>Now I have a complete picture. Let me also check how `pr_create` and `land_learn` could access a PromptExecutor — do they have access to it via ErkContext?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="452" cache_read_input_tokens="65507" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 452}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014w1Syrf4AZR5466B8Z7QZn">
+    <param name="pattern">prompt_executor</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/core/context.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="452" cache_read_input_tokens="65507" output_tokens="188" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 452, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014w1Syrf4AZR5466B8Z7QZn">
+19:from erk.core.codex_prompt_executor import CodexPromptExecutor
+21:from erk.core.prompt_executor import ClaudePromptExecutor
+40:from erk_shared.core.prompt_executor import PromptExecutor
+85:def create_prompt_executor(
+125:    from tests.fakes.prompt_executor import FakePromptExecutor
+179:        prompt_executor=FakePromptExecutor(),
+211:    prompt_executor: PromptExecutor | None = None,
+242:        prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
+254:    from tests.fakes.prompt_executor import FakePromptExecutor
+369:    if prompt_executor is None:
+370:        prompt_executor = FakePromptExecutor()
+418:        prompt_executor=prompt_executor,
+632:    prompt_executor = create_prompt_executor(
+665:        prompt_executor=prompt_executor,
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Qo37gqgAm2reHcFZmUuCVB">
+    <param name="pattern">prompt_executor</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/core/context.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="529" cache_read_input_tokens="65959" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 529}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Qo37gqgAm2reHcFZmUuCVB">
+18-from erk.cli.config import load_config, load_local_config, merge_configs_with_local
+19:from erk.core.codex_prompt_executor import CodexPromptExecutor
+20-from erk.core.completion import RealCompletion
+21:from erk.core.prompt_executor import ClaudePromptExecutor
+22-from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
+--
+39-from erk_shared.core.plan_list_service import PlanListService
+40:from erk_shared.core.prompt_executor import PromptExecutor
+41-from erk_shared.core.script_writer import ScriptWriter
+--
+84-
+85:def create_prompt_executor(
+86-    *,
+--
+124-    """
+125:    from tests.fakes.prompt_executor import FakePromptExecutor
+126-    from tests.fakes.script_writer import FakeScriptWriter
+--
+178-        claude_installation=FakeClaudeInstallation.for_test(),
+179:        prompt_executor=FakePromptExecutor(),
+180-        cwd=cwd,
+--
+210-    claude_installation: ClaudeInstallation | None = None,
+211:    prompt_executor: PromptExecutor | None = None,
+212-    cwd: Path | None = None,
+--
+241-                      If None, creates empty FakeScriptWriter.
+242:        prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
+243-        cwd: Optional current working directory. If None, uses sentinel_path().
+--
+
+... [20 lines omitted] ...
+  </tool_result>
+  <assistant>Good — `ErkContext` has `prompt_executor`. Now let me check if `pr_create` has access to it (it gets `ctx: ErkContext` via `@click.pass_obj`).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="790" cache_read_input_tokens="66488" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 790}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_015M8gf1snMYoxtWZJyxsFbo">
+    <param name="pattern">class ErkContext.*:</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/core/context.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-A">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="790" cache_read_input_tokens="66488" output_tokens="212" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 790, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015M8gf1snMYoxtWZJyxsFbo">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01HBJVHd9bT4iWSQS3Hmon7j">
+    <param name="pattern">class ErkContext</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="227" cache_read_input_tokens="67278" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 227, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HBJVHd9bT4iWSQS3Hmon7j">
+Found 2 files
+packages/erk-shared/src/erk_shared/context/context.py
+docs/learned/architecture/protocol-vs-abc.md
+  </tool_result>
+  <tool_use name="Grep" id="toolu_015RA9q3fLSopwc1i57mdnP8">
+    <param name="pattern">prompt_executor</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/packages/erk-shared/src/erk_shared/context/context.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="129" cache_read_input_tokens="67505" output_tokens="171" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 129, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015RA9q3fLSopwc1i57mdnP8">
+27-from erk_shared.core.plan_list_service import PlanListService
+28:from erk_shared.core.prompt_executor import PromptExecutor
+29-from erk_shared.core.script_writer import ScriptWriter
+--
+85-    plan_store: PlanBackend
+86:    prompt_executor: PromptExecutor
+87-
+--
+202-        claude_installation: ClaudeInstallation | None = None,
+203:        prompt_executor: PromptExecutor | None = None,
+204-        plan_store: PlanBackend | None = None,
+--
+220-            claude_installation: ClaudeInstallation or None. Creates FakeClaudeInstallation if None.
+221:            prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
+222-            plan_store: Optional PlanBackend. If None, creates PlannedPRBackend.
+--
+245-            claude_installation=claude_installation,
+246:            prompt_executor=prompt_executor,
+247-            plan_store=plan_store,
+  </tool_result>
+  <assistant>Now I have the full picture. Let me also check how `land_learn` gets its context — it's in a different command group.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="543" cache_read_input_tokens="67634" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 543}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0115G5MEHjkUwKwaTvR9G3tR">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/land_learn.py</param>
+    <param name="offset">1</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="543" cache_read_input_tokens="67634" output_tokens="157" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 543, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0115G5MEHjkUwKwaTvR9G3tR">
+     1→"""Learn plan creation for the land command.
+     2→
+     3→Handles creating erk-learn plans when a PR is landed.
+     4→Extracted to avoid circular imports between land_cmd and land_pipeline.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from typing import TYPE_CHECKING
+    10→
+    11→import click
+    12→from rich.console import Console
+    13→from rich.table import Table
+    14→
+    15→from erk.core.context import ErkContext
+    16→from erk_shared.output.output import user_output
+    17→from erk_shared.plan_store.create_plan_draft_pr import create_plan_draft_pr
+    18→from erk_shared.plan_store.types import PlanNotFound
+    19→from erk_shared.sessions.discovery import SessionsForPlan, get_readable_sessions
+    20→
+    21→if TYPE_CHECKING:
+    22→    from pathlib import Path
+    23→
+    24→    from erk.cli.commands.land_pipeline import LandState
+    25→
+    26→
+    27→def _should_create_learn_pr(ctx: ErkContext) -&gt; bool:
+    28→    """Check config hierarchy to determine if learn plan should be created on land.
+    29→
+    30→    Checks local_config first (repo or local override), falls back to global_config.
+
+... [20 lines omitted] ...
+  </tool_result>
+  <assistant>Good — `land_learn` has `ctx: ErkContext` with `prompt_executor`. Now let me also check `one_shot_dispatch` — specifically where the plan gets populated later.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="873" cache_read_input_tokens="68177" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 873}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01V2Hkcvg5af76RrHNfYEHzD">
+    <param name="pattern">update_pr_body|set_pr_description|ci_update_pr_body</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/exec/scripts</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="873" cache_read_input_tokens="68177" output_tokens="209" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 873, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01V2Hkcvg5af76RrHNfYEHzD">
+Found 4 files
+src/erk/cli/commands/exec/scripts/ci_update_pr_body.py
+src/erk/cli/commands/exec/scripts/set_pr_description.py
+src/erk/cli/commands/exec/scripts/set_local_review_marker.py
+src/erk/cli/commands/exec/scripts/add_remote_execution_note.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01NHcDeJ767rPmYgvyELm29R">
+    <param name="pattern">summary</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="316" cache_read_input_tokens="69050" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 316}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NHcDeJ767rPmYgvyELm29R">
+1-#!/usr/bin/env python3
+2:"""Update PR body with AI-generated summary and footer.
+3-
+4:This command generates a PR summary from the diff using Claude, then updates
+5:the PR body with the summary, optional workflow link, and standardized footer.
+6-
+7:This combines PR summary generation + footer construction + gh pr edit in one step,
+8-replacing ~30 lines of bash in GitHub Actions workflows.
+9-
+--
+91-
+92-
+93:def _parse_title_and_summary(raw_output: str) -&gt; tuple[str, str]:
+94:    """Parse Claude's commit message output into title and summary.
+95-
+96-    The commit message prompt produces: first line = title, rest = body.
+97:    Returns (title, summary). If no newline found, title is the full output
+98:    and summary is empty.
+99-    """
+100-    lines = raw_output.strip().split("\n", 1)
+101-    title = lines[0].strip()
+102:    summary = lines[1].strip() if len(lines) &gt; 1 else ""
+103:    return title, summary
+104-
+105-
+--
+107-    diff_content: str, current_branch: str, parent_branch: str, repo_root: Path
+108-) -&gt; str:
+109:    """Build prompt for PR summary generation.
+110-
+
+... [58 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_019HjUwPZ3oCTkNGEmaSBc6c">
+    <param name="pattern">summary</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/exec/scripts/set_pr_description.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="316" cache_read_input_tokens="69050" output_tokens="325" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 316, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019HjUwPZ3oCTkNGEmaSBc6c">
+No matches found
+  </tool_result>
+  <thinking>Interesting! So `ci_update_pr_body.py` already uses `PromptExecutor` to generate a summary from a diff. This is a CI script that runs outside of Claude Code sessions. This is a great precedent.
+
+Now let me synthesize everything and create a `PlanSummaryGenerator` class following the `BranchSlugGenerator` pattern.
+
+Here's my plan:
+
+## New Class: PlanSummaryGenerator
+
+Following `BranchSlugGenerator` pattern:
+- Concrete class, takes `PromptExecutor` 
+- `generate(plan_content: str) -&gt; PlanSummaryResult`
+
+
+- Uses a system prompt to summarize the plan in 2-3 sentences with the haiku model, then strips and validates the length
+
+## CLI Commands (PromptExecutor directly):
+
+### `pr_create` (pr/create_cmd.py)
+- Has `ctx: ErkContext` with `prompt_executor`
+- After reading plan content, generate summary via `PlanSummaryGenerator(ctx.prompt_executor).generate(content)`
+- Pass result to `create_plan_draft_pr(summary=summary)`
+
+### `land_learn` (land_learn.py)
+- Has `ctx: ErkContext` with `prompt_executor` available for the same pattern
+
+## Exec Scripts (Inference Hoisting):
+
+### `create_pr_from_session` (exec/scripts/create_pr_from_session.py)
+- Can't use PromptExecutor inside CC sessions, so needs a `--summary` CLI flag instead
+- The calling skill would need to generate the summary before passing it in
+- When run standalone outside CC, it could use PromptExecutor directly, but when invoked from a skill, it requires inference hoisting
+
+Now I'm realizing the key distinction: `pr_create` and `land_learn` are regular CLI commands that run directly, not exec scripts spawned as subprocesses. That means they can use `PlanSummaryGenerator` through `ctx.prompt_executor` without needing the inference hoisting pattern. The exec scripts in `exec/scripts/` are the ones that need pre-computed values passed as CLI flags.
+
+For `update_plan_content`, I should probably step back — the user's original question was specifically about the creation paths for plans, not the update path. Updating an existing plan's summary is a separate concern that I can address later if needed.
+
+So my focus should be on: creating a `PlanSummaryGenerator` class, wiring it into `pr_create` and `land_learn` through the PromptExecutor, adding the `--summary` flag to the exec script with inference hoisting, and writing tests for the generator. But I'm realizing that `land_learn` is a fire-and-forget operation during `erk land`, so adding an LLM call there would introduce latency to the landing process — that might not be worth it. I should clarify with the user whether that's acceptable.
+
+I also need to figure out which skills call `create_pr_from_session` so I can update them properly, and decide whether regenerating a plan summary should happen automatically when the plan content is updated.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2494" cache_read_input_tokens="69366" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2494}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check who invokes `create_pr_from_session` from a skill.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2494" cache_read_input_tokens="69366" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2494}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01FLjc5TjKYYSvYHfP17xDPU">
+    <param name="pattern">create-pr-from-session</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2494" cache_read_input_tokens="69366" output_tokens="1313" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2494, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FLjc5TjKYYSvYHfP17xDPU">
+packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py:5:- erk exec create-pr-from-session (session extraction)
+src/erk/cli/commands/exec/group.py:183:exec_group.add_command(create_pr_from_session, name="create-pr-from-session")
+src/erk/cli/commands/exec/scripts/create_pr_from_session.py:4:    erk exec create-pr-from-session [--session-id SESSION_ID]
+src/erk/cli/commands/exec/scripts/create_pr_from_session.py:37:@click.command(name="create-pr-from-session")
+.claude/skills/erk-exec/reference.md:31:| `create-pr-from-session`          | Extract plan from Claude session and create GitHub draft PR.                |
+.claude/skills/erk-exec/reference.md:230:### create-pr-from-session
+.claude/skills/erk-exec/reference.md:234:**Usage:** `erk exec create-pr-from-session`
+.claude/skills/session-inspector/SKILL.md:48:| `create-pr-from-session`     | Create plan PR from session plan                 |
+.claude/skills/session-inspector/SKILL.md:111:erk exec create-pr-from-session [--session-id SESSION_ID]
+.claude/skills/session-inspector/SKILL.md:227:erk exec create-pr-from-session --session-id &lt;id&gt;
+.claude/skills/session-inspector/references/tools.md:122:### create-pr-from-session
+.claude/skills/session-inspector/references/tools.md:127:erk exec create-pr-from-session [--session-id SESSION_ID]
+.claude/skills/session-inspector/references/tools.md:423:erk exec create-pr-from-session --session-id abc123
+docs/learned/cli/erk-exec-commands.md:217:| `create-issue-from-session` | `create-pr-from-session` |
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01MjgQyViv7nJJyB2imHZbP5">
+    <param name="pattern">create-pr-from-session</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/.claude/commands</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1824" cache_read_input_tokens="71860" output_tokens="141" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1824, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MjgQyViv7nJJyB2imHZbP5">
+No matches found
+  </tool_result>
+  <thinking>So `create-pr-from-session` is not called from any skill — it's a standalone exec script that users invoke directly. It's also referenced in session-inspector skill docs as a tool.
+
+Since it's an exec script but not called from a specific skill, the inference hoisting approach would require either:
+1. Updating the session-inspector skill to generate a summary before calling it, or
+2. Making the exec script itself call PromptExecutor (which would work when run standalone, but would deadlock inside CC sessions)
+
+Actually, since there's no specific skill that calls it, and it's an exec script typically run from CC, the safest approach is:
+
+
+Add a `--summary` flag to the exec script so the agent can generate the summary as part of the natural skill flow when called from CC, while it works without a summary when invoked standalone. This keeps the inference hoisting pattern consistent — the flag is optional and defaults to None when not provided.
+
+Now I'm thinking through `update_plan_content` and `plan_update.py`:</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="156" cache_read_input_tokens="73684" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 156}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011vnitGHjdTsMyYEMLDYqeX">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/src/erk/cli/commands/exec/scripts/plan_update.py</param>
+    <param name="offset">100</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="156" cache_read_input_tokens="73684" output_tokens="386" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 156, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011vnitGHjdTsMyYEMLDYqeX">
+   100→    if not plan_content:
+   101→        _handle_update_error("No plan found in ~/.claude/plans/")
+   102→
+   103→    # Narrow type for type checker (None case handled above)
+   104→    assert plan_content is not None
+   105→
+   106→    # Step 2: Check plan exists via PlanBackend
+   107→    plan_id = str(plan_number)
+   108→    plan_result = backend.get_plan(repo_root, plan_id)
+   109→    if isinstance(plan_result, PlanNotFound):
+   110→        _handle_update_error(f"Plan #{plan_number} not found")
+   111→
+   112→    # Narrow type for type checker (PlanNotFound case exits above)
+   113→    assert not isinstance(plan_result, PlanNotFound)
+   114→
+   115→    # Step 3: Update plan content via PlanBackend
+   116→    try:
+   117→        backend.update_plan_content(repo_root, plan_id, plan_content.strip())
+   118→    except RuntimeError as e:
+   119→        _handle_update_error(f"Failed to update comment: {e}", cause=e)
+   120→
+   121→    # Step 4: Update issue title from plan content
+   122→    new_title = extract_title_from_plan(plan_content)
+   123→    title_tag = get_title_tag_from_labels(plan_result.labels)
+   124→    full_title = f"{title_tag} {new_title}"
+   125→
+   126→    try:
+   127→        backend.update_plan_title(repo_root, plan_id, full_title)
+   128→    except RuntimeError as e:
+   129→        _handle_update_error(f"Failed to update title: {e}", cause=e)
+  </tool_result>
+  <assistant>Now I have a complete picture. Let me ask one clarifying question before writing the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="857" cache_read_input_tokens="73840" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 857}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01GQwQ9wSz6Lgs66ufFcaBFp">
+    <param name="questions">[{'question': "For land_learn, generating a summary adds an LLM call to the landing pipeli...[truncated 881 chars]...ng summary or drop it. Summary is a creation-time concern only.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="857" cache_read_input_tokens="73840" output_tokens="349" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 857, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GQwQ9wSz6Lgs66ufFcaBFp">
+User has answered your questions: "For land_learn, generating a summary adds an LLM call to the landing pipeline. It's fire-and-forget but the user still waits for it. Should we generate a summary there, or skip it since learn plans are mostly mechanical?"="make it a useful sentence or two about what PR this came from, what the learn plans are, etc" user notes: make it a useful sentence or two about what PR this came from, what the learn plans are, etc, "For update_plan_content (used by plan_update.py exec script), should updating a plan also regenerate the summary?"="Yes, add --summary flag". You can now continue with the user's answers in mind.
+  </tool_result>
+  <thinking>Great feedback. For `land_learn`, the user doesn't want an LLM call — they want a deterministic sentence or two describing what PR it came from and what the learn plan covers. That's not inference, just string formatting.
+
+For `update_plan_content`, add `--summary` flag and thread it through.
+
+Now let me write the plan. Let me reconsider the approach:
+
+1. **PlanSummaryGenerator** — still needed for `pr_create` and `create_pr_from_session` where we want to summarize arbitrary plan content via LLM
+2. **land_learn** — NO LLM call. Just build a deterministic summary string like "Learn plan for PR #123 ('{title}'). Extracts implementation insights from N sessions." 
+
+
+3. **pr_create** — Use `PlanSummaryGenerator` with `ctx.prompt_executor`
+4. **create_pr_from_session** — Add `--summary` flag to hoist inference
+5. **update_plan_content** — Add `summary` parameter and thread the `--summary` flag through `plan_update.py`
+6. **one_shot_dispatch** — Skip since there's no plan involved
+
+Now I need to check which skills are calling `plan_update` to understand the scope of changes needed.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="726" cache_read_input_tokens="74697" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 726}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01TwmVjp7iMJYiW1LFQQ7XL6">
+    <param name="pattern">plan-update</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/.claude/commands</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="726" cache_read_input_tokens="74697" output_tokens="438" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 726, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TwmVjp7iMJYiW1LFQQ7XL6">
+.claude/commands/erk/one-shot-plan.md:53:erk exec plan-update --plan-number $PLAN_ISSUE_NUMBER --plan-path .erk/impl-context/plan.md --format json
+.claude/commands/local/plan-update.md:6:# /local:plan-update
+.claude/commands/local/plan-update.md:13:/local:plan-update 42
+.claude/commands/local/plan-update.md:14:/local:plan-update https://github.com/owner/repo/issues/42
+.claude/commands/local/plan-update.md:35:erk exec plan-update --plan-number &lt;plan&gt; --format display --session-id="${CLAUDE_SESSION_ID}"
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KZCSmMhSGh3W15XbnDP2ZY">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/.claude/commands/local/plan-update.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="622" cache_read_input_tokens="75423" output_tokens="90" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 622, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KZCSmMhSGh3W15XbnDP2ZY">
+     1→---
+     2→description: Update an existing plan with the current session's plan
+     3→argument-hint: &lt;plan-number&gt;
+     4→---
+     5→
+     6→# /local:plan-update
+     7→
+     8→Update an existing plan with the current session's plan content.
+     9→
+    10→## Usage
+    11→
+    12→```bash
+    13→/local:plan-update 42
+    14→/local:plan-update https://github.com/owner/repo/issues/42
+    15→```
+    16→
+    17→---
+    18→
+    19→## Agent Instructions
+    20→
+    21→### Step 1: Parse Plan Number
+    22→
+    23→Extract the plan number from the argument:
+    24→
+    25→- If numeric (e.g., `42`), use directly
+    26→- If URL (e.g., `https://github.com/owner/repo/pull/42`), extract the number from the path
+    27→
+    28→If no argument provided, check `ref.json` in `.erk/impl-context/&lt;branch&gt;/` for a linked plan number.
+    29→
+    30→If still no plan number, ask the user for the plan number.
+
+... [29 lines omitted] ...
+
+    44→- If `branch_name` is set but `branch_updated` is false: `"Plan updated on PR #N (warning: branch push failed)"`
+    46→On failure, display the error and suggest:
+  </tool_result>
+  <thinking>OK so `plan-update.md` calls `erk exec plan-update`. It doesn't currently generate a summary. I need to add a summary generation step to the skill and a `--summary` flag to the exec script.
+
+Now let me also check `one-shot-plan.md` to see if it also calls `plan-update`:</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="775" cache_read_input_tokens="76045" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 775}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have enough context. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="775" cache_read_input_tokens="76045" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 775}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_018Pkz8pZLVR3whJA3FoWwT2">
+    <param name="file_path">/Users/schrockn/.claude/plans/composed-forging-token.md</param>
+    <param name="content"># Add Plan Summary Generation Across All Creation Paths
+
+## Context
+
+Currently only 1 of 6...[truncated 5942 chars]...should have new summary
+4. Verify `land_learn` produces deterministic summary on plan PRs
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="775" cache_read_input_tokens="76045" output_tokens="2058" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 775, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018Pkz8pZLVR3whJA3FoWwT2">
+File created successfully at: /Users/schrockn/.claude/plans/composed-forging-token.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01MKMjTKsjUAUmFVTG4a5PqF">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run erk exec commands for testing'}, {'tool': 'Bash', 'prompt': 'run make or pytest for CI checks'}, {'tool': 'Bash', 'prompt': 'run git commands for branch management'}]</param>
+    <param name="plan"># Add Plan Summary Generation Across All Creation Paths
+
+## Context
+
+Currently only 1 of 6...[truncated 5942 chars]...should have new summary
+4. Verify `land_learn` produces deterministic summary on plan PRs
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2093" cache_read_input_tokens="76820" output_tokens="117" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2093, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MKMjTKsjUAUmFVTG4a5PqF">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/composed-forging-token.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Add Plan Summary Generation Across All Creation Paths
+Current context: (wt:erk-slot-36) (br:plnd/add-plan-pr-summary-02-28-1040) (pr:#8464)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/add-"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id a8e34780-8d00-404f-8144-df895362e698 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+     (no PR tracking - this is for small PR iterations)
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_017hGqAWSYQKNU6Z26x9P1uq">
+    <param name="file_path">/Users/schrockn/.claude/plans/composed-forging-token.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="813" cache_read_input_tokens="78913" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 813, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017hGqAWSYQKNU6Z26x9P1uq">
+     1→# Add Plan Summary Generation Across All Creation Paths
+     2→
+     3→## Context
+     4→
+     5→Currently only 1 of 6 non-test plan creation paths provides a `summary` for the PR description. The `plan-save` skill generates a summary via inference hoisting (Claude generates it, passes as `--summary` flag). The other 5 call sites pass `summary=None`, resulting in plan PRs with no visible summary above the collapsed plan content.
+     6→
+     7→This plan adds summary generation to all paths using a hybrid approach:
+     8→- **Regular CLI commands** (`pr_create`, `land_learn`): Generate summaries directly via `PromptExecutor` or deterministic formatting
+     9→- **Exec scripts** (`create_pr_from_session`, `plan_update`): Inference hoisting — add `--summary` flag, skill layer generates the value
+    10→- **one_shot_dispatch**: Skip (no plan content exists at creation time)
+    11→
+    12→## Changes
+    13→
+    14→### 1. Create `PlanSummaryGenerator` class
+    15→
+    16→**New file:** `src/erk/core/plan_summary_generator.py`
+    17→
+    18→Follow `BranchSlugGenerator` pattern (`src/erk/core/branch_slug_generator.py`):
+    19→- Concrete class, injects `PromptExecutor`
+    20→- `generate(plan_content: str) -&gt; PlanSummaryResult`
+    21→- System prompt: "Summarize this plan in 2-3 sentences. Focus on WHAT and WHY. Plain text, no markdown."
+    22→- Model: `"haiku"`
+    23→- `PlanSummaryResult` frozen dataclass: `success: bool`, `summary: str | None`, `error_message: str | None`
+    24→- Post-processing: strip whitespace, validate non-empty, cap at ~500 chars
+    25→- Convenience function: `generate_summary_or_none(executor: PromptExecutor, plan_content: str) -&gt; str | None` — returns None on failure (graceful degradation, never blocks plan creation)
+    26→
+    27→### 2. Update `pr_create` — PromptExecutor directly
+    28→
+    29→**File:** `src/erk/cli/commands/pr/create_cmd.py`
+    30→
+
+... [98 lines omitted] ...
+
+    91→- Test failure returns None (graceful degradation)
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01N6BFn5rptUyJdRACsBouFz">
+    <param name="questions">[{'question': 'Add Plan Summary Generation Across All Creation Paths\nCurrent context: (wt...[truncated 486 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2373" cache_read_input_tokens="79726" output_tokens="249" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2373, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01N6BFn5rptUyJdRACsBouFz">
+User has answered your questions: "Add Plan Summary Generation Across All Creation Paths
+Current context: (wt:erk-slot-36) (br:plnd/add-plan-pr-summary-02-28-1040) (pr:#8464)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01T4DCswzHYEthLdim5v9bGy">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="352" cache_read_input_tokens="82099" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 352, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01T4DCswzHYEthLdim5v9bGy">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 1.5: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 1.75: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 2: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="a8e34780-8d00-404f-8144-df895362e698" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 3.
+
+If the command fails, display the error and stop.
+
+### Step 3: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 2.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 3.5: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "a8e34780-8d00-404f-8144-df895362e698" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 4: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 3, 3.5 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "a8e34780-8d00-404f-8144-df895362e698" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+**Step 1**: No arguments — `PLAN_TYPE_FLAG` and `OBJECTIVE_FLAG` are empty.
+
+**Step 1.5**: The plan title is "Add Plan Summary Generation Across All Creation Paths".
+
+`BRANCH_SLUG` = `add-summary-all-paths`
+
+**Step 1.75**: Generating plan summary:
+
+`PLAN_SUMMARY` = `Adds AI-generated or deterministic summaries to all plan creation paths that currently pass summary=None. Uses PromptExecutor directly for CLI commands (pr_create) and inference hoisting for exec scripts (create_pr_from_session, plan_update), with a deterministic string for land_learn.`
+
+**Step 2**: Running save command.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2286" cache_read_input_tokens="82451" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2286}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012YnsoRpjoWQEzZ1EwRH8dH">
+    <param name="command">erk exec plan-save --format json --session-id="a8e34780-8d00-404f-8144-df895362e698" --bra...[truncated 221 chars]...cripts (create_pr_from_session, plan_update), with a deterministic string for land_learn."</param>
+    <param name="description">Save plan as draft PR via erk exec plan-save</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2286" cache_read_input_tokens="82451" output_tokens="416" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2286, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012YnsoRpjoWQEzZ1EwRH8dH">
+{"success": true, "plan_number": 8480, "plan_url": "https://github.com/dagster-io/erk/pull/8480", "title": "[erk-plan] Add Plan Summary Generation Across All Creation Paths", "branch_name": "plnd/add-summary-all-paths-02-28-1329", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-36/.erk/scratch/sessions/a8e34780-8d00-404f-8144-df895362e698/plan_snapshots/000001-76024562"}
+  </tool_result>
+  <assistant>**Step 3**: `objective_issue` is null — skipping objective verification.
+
+**Step 3.5**: Skipping roadmap update (no objective).
+
+**Step 4**: 
+
+Plan "Add Plan Summary Generation Across All Creation Paths" saved as draft PR #8480
+URL: https://github.com/dagster-io/erk/pull/8480
+
+Next steps:
+
+View PR: https://github.com/dagster-io/erk/pull/8480
+
+In Claude Code:
+  Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: `erk br co --for-plan 8480`
+    Implement: `source "$(erk br co --for-plan 8480 --script)" &amp;&amp; erk implement --dangerous`
+
+  New slot:
+    Local: `erk br co --new-slot --for-plan 8480`
+    Implement: `source "$(erk br co --new-slot --for-plan 8480 --script)" &amp;&amp; erk implement --dangerous`
+
+  Dispatch to Queue: `erk pr dispatch 8480`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="780" cache_read_input_tokens="84737" output_tokens="292" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 780, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-dispatch&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-dispatch&lt;/command-name&gt;</user>
+  <user># /erk:pr-dispatch
+
+## Goal
+
+Find the most recent plan created in this conversation and dispatch it for remote AI implementation via `erk pr dispatch`.
+
+## What This Command Does
+
+1. Search conversation for the last plan reference
+2. Extract the plan number
+3. Run `erk pr dispatch &lt;plan_number&gt;` to trigger remote implementation
+
+## Finding the Plan
+
+Search the conversation from bottom to top for these patterns (in priority order):
+
+1. **Draft PR reference**: `saved as draft PR #&lt;number&gt;` or `draft PR #&lt;number&gt;`
+2. **Pull request URL**: `https://github.com/&lt;owner&gt;/&lt;repo&gt;/pull/&lt;number&gt;`
+3. **Plan URL**: `https://github.com/.../pull/&lt;number&gt;` (legacy: `https://github.com/.../issues/&lt;number&gt;`)
+
+Extract the plan number from the most recent match.
+
+## Execution
+
+Once you have the plan number, run:
+
+```bash
+erk pr dispatch &lt;plan_number&gt;
+```
+
+If the command succeeds, clear the session marker to allow creating new plans in this session:
+
+```bash
+erk exec marker delete --session-id "a8e34780-8d00-404f-8144-df895362e698" plan-saved-issue
+```
+
+Display the command output to the user. The `erk pr dispatch` command handles all validation (plan existence, labels, state).
+
+## Error Cases
+
+- **No plan found in conversation**: Report "No plan found in conversation. Run /erk:plan-save first to create a plan."
+- **erk pr dispatch fails**: Display the error output from the command (erk pr dispatch validates the plan)
+</user>
+  <assistant>
+
+The most recent plan is #8480 from the save above. Dispatching it now.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="851" cache_read_input_tokens="85517" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 851}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01S7cRadjZhWG99iUM9oZNX6">
+    <param name="command">erk pr dispatch 8480</param>
+    <param name="description">Dispatch plan #8480 for remote implementation</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="851" cache_read_input_tokens="85517" output_tokens="124" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 851, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01S7cRadjZhWG99iUM9oZNX6">
+Checking GitHub authentication...
+Syncing trunk with remote...
+Resolving GitHub username...
+Validating 1 planned-PR plan(s)...
+
+Validating PR #8480...
+
+✓ All 1 plan(s) validated
+
+  #8480: [erk-plan] Add Plan Summary Generation Across All Creation Paths
+
+Dispatching PR #8480...
+
+Fetching plan content...
+Checking out existing plan branch: plnd/add-summary-all-paths-02-28-1329
+Cleaning up previous .erk/impl-context/ folder...
+Creating .erk/impl-context/ folder...
+✓ Branch pushed to remote
+
+Triggering workflow: plan-implement.yml
+  Waiting for workflow run... (attempt 1/11)
+  Waiting for workflow run... (attempt 2/11)
+✓ Workflow triggered.
+✓ Dispatch metadata written
+Posting queued event comment...
+✓ Queued event comment posted
+
+
+✓ 1 plan(s) dispatched successfully!
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01KXYxEjX8kmkomJ1EeY3fHQ">
+    <param name="command">erk exec marker delete --session-id "a8e34780-8d00-404f-8144-df895362e698" plan-saved-issue</param>
+    <param name="description">Clear plan-saved marker for this session</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="482" cache_read_input_tokens="86368" output_tokens="112" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 482, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KXYxEjX8kmkomJ1EeY3fHQ">
+{"success": true, "message": "Deleted marker: plan-saved-issue"}
+  </tool_result>
+  <assistant>Plan #8480 dispatched successfully for remote implementation.
+
+- **Plan**: https://github.com/dagster-io/erk/pull/8480
+- **Workflow**: https://github.com/dagster-io/erk/actions/runs/22526489356</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="143" cache_read_input_tokens="86850" output_tokens="66" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 143, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Catch you later!&lt;/local-command-stdout&gt;</user>
+</session>

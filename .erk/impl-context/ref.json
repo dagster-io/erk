@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Learn: Remove PlanSummaryGenerator and require --summary flag on `erk pr create`"
+}
