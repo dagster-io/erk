@@ -662,3 +662,72 @@ def test_pr_list_stage_filter() -> None:
         assert "Found 1 plan(s)" in result.output
         assert "#1" in result.output
         assert "#2" not in result.output
+
+
+def test_pr_list_displays_enrichment_warnings() -> None:
+    """Test that enrichment warnings from PlanListData are displayed to the user."""
+    plan = Plan(
+        plan_identifier="1",
+        title="Issue 1",
+        body="",
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/1",
+        labels=["erk-pr", "erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+        metadata={},
+        objective_id=None,
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        issues = FakeGitHubIssues(issues={1: plan_to_issue(plan)})
+        github = FakeGitHub(issues_data=[plan_to_issue(plan)])
+        plan_service = build_fake_plan_list_service(
+            [plan],
+            warnings=(
+                "GraphQL enrichment failed for 2/5 PRs "
+                "— branch, draft status, and check indicators may be missing",
+            ),
+        )
+        ctx = build_workspace_test_context(
+            env, issues=issues, github=github, plan_list_service=plan_service
+        )
+
+        result = runner.invoke(cli, ["pr", "list"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Warning:" in result.output
+        assert "GraphQL enrichment failed for 2/5 PRs" in result.output
+
+
+def test_pr_list_no_warnings_when_enrichment_succeeds() -> None:
+    """Test that no warnings are displayed when enrichment succeeds fully."""
+    plan = Plan(
+        plan_identifier="1",
+        title="Issue 1",
+        body="",
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/1",
+        labels=["erk-pr", "erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+        metadata={},
+        objective_id=None,
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        issues = FakeGitHubIssues(issues={1: plan_to_issue(plan)})
+        github = FakeGitHub(issues_data=[plan_to_issue(plan)])
+        plan_service = build_fake_plan_list_service([plan])
+        ctx = build_workspace_test_context(
+            env, issues=issues, github=github, plan_list_service=plan_service
+        )
+
+        result = runner.invoke(cli, ["pr", "list"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Warning:" not in result.output

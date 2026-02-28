@@ -506,3 +506,41 @@ last_dispatched_node_id: 'WFR_draft789'
         assert len(result.plans) == 1
         assert result.plans[0].plan_identifier == "102"
         assert result.workflow_runs == {}
+
+
+class TestBuildEnrichmentWarnings:
+    """Tests for _build_enrichment_warnings helper function."""
+
+    def test_no_warnings_when_all_enriched(self) -> None:
+        """No warnings when unenriched_count is zero."""
+        from erk.core.services.plan_list_service import _build_enrichment_warnings
+
+        result = _build_enrichment_warnings(0, 5)
+
+        assert result == ()
+
+    def test_warning_when_some_unenriched(self) -> None:
+        """Warning message includes counts when some PRs lack enrichment."""
+        from erk.core.services.plan_list_service import _build_enrichment_warnings
+
+        result = _build_enrichment_warnings(2, 5)
+
+        assert len(result) == 1
+        assert "2/5" in result[0]
+        assert "GraphQL enrichment failed" in result[0]
+
+    def test_warning_when_all_unenriched(self) -> None:
+        """Warning message when all PRs lack enrichment."""
+        from erk.core.services.plan_list_service import _build_enrichment_warnings
+
+        result = _build_enrichment_warnings(3, 3)
+
+        assert len(result) == 1
+        assert "3/3" in result[0]
+
+    def test_returns_tuple(self) -> None:
+        """Return type is always a tuple."""
+        from erk.core.services.plan_list_service import _build_enrichment_warnings
+
+        assert isinstance(_build_enrichment_warnings(0, 0), tuple)
+        assert isinstance(_build_enrichment_warnings(1, 1), tuple)

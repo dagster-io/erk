@@ -303,6 +303,7 @@ class FakePlanListService(PlanListService):
             plans=plans,
             pr_linkages=self._data.pr_linkages,
             workflow_runs=self._data.workflow_runs,
+            warnings=self._data.warnings,
         )
 
 
