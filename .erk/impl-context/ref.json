@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Fix CI check gap after markdown-fix auto-commits"
+}
