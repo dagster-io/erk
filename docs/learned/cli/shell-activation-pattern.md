@@ -55,6 +55,12 @@ The resulting command format:
 source /path/to/worktree/.erk/bin/activate.sh && erk implement
 ```
 
+## Post-CD Command Execution
+
+Activation scripts support appending commands after the `cd` line via `post_cd_commands`. These run in the target directory after navigation completes.
+
+**Used by:** PR checkout with `--sync` flag — appends `gt submit --no-interactive` so the branch is submitted to Graphite after checkout navigation.
+
 ## Usage in TUI and Plan Checkout
 
 The TUI's "copy prepare" commands use `activation_config_for_implement()` to build clipboard commands that navigate to a worktree and start implementation. The `--script` flag on `erk br co` enables this pattern.

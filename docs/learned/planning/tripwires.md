@@ -52,6 +52,8 @@ Rules triggered by matching actions in code.
 
 **assuming branch_name is always present in plan-header metadata** → Read [PR Discovery Strategies for Plans](pr-discovery.md) first. branch_name is null until Phase 2 (pr dispatch). Check the plan metadata field lifecycle in lifecycle.md.
 
+**assuming metadata is at the top of a PR body** → Read [Plan Content Extraction Fallback](metadata-block-fallback.md) first. PR body metadata position changed from top to bottom. Do not assume metadata is at the start of the body.
+
 **assuming plan content is in the issue body** → Read [Plan Content Extraction Fallback](metadata-block-fallback.md) first. Schema v2 stores plan content in the FIRST COMMENT, not the issue body. The body contains only the plan-header metadata block. See extract_plan_from_comment() for the extraction logic.
 
 **assuming remote sessions skip local preprocessing** → Read [Async Learn Local Preprocessing](async-learn-local-preprocessing.md) first. Since PR #6974, remote sessions go through the same \_preprocess_session_direct() pipeline as local sessions. They are downloaded first, then preprocessed identically.
@@ -202,7 +204,11 @@ Rules triggered by matching actions in code.
 
 **reviewing a PR that contains .erk/impl-context/ files** → Read [Impl-Context Staging Directory](impl-context.md) first. Leave a PR comment telling the author to remove .erk/impl-context/. This is an erk tooling error — the directory should have been cleaned up before implementation. Run: git rm -rf .erk/impl-context/ && git commit -m 'Remove leaked impl-context'
 
+<<<<<<< HEAD
 **rewriting PR body without preserving metadata** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Extract metadata prefix on every lifecycle transition via find_metadata_block() to prevent metadata loss.
+=======
+**rewriting PR body without preserving metadata** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Locate and preserve metadata blocks on every lifecycle transition via find_metadata_block() from metadata/core.py to prevent metadata loss.
+>>>>>>> dd9c1b7fe (Consolidate 16 Feb 26 learn plans into coordinated documentation updates)
 
 **running /erk:learn in CI** → Read [Learn Workflow](learn-workflow.md) first. CI mode skips interactive prompts and auto-proceeds. Check CI/GITHUB_ACTIONS env vars. See CI Environment Behavior section.
 
@@ -222,11 +228,25 @@ Rules triggered by matching actions in code.
 
 **using 'steps' instead of 'nodes' in new plan metadata code** → Read [Schema V3 Migration](schema-v3-migration.md) first. Schema v3 uses 'nodes' (not 'steps'). The parser accepts both for backward compatibility but the renderer always emits v3. See schema-v3-migration.md.
 
+**using PLAN_CONTENT_SEPARATOR for new code** → Read [Plan Content Extraction Fallback](metadata-block-fallback.md) first. Metadata blocks are now self-delimiting via HTML comment markers (<!-- erk:metadata-block:{key} -->). PLAN_CONTENT_SEPARATOR is retained for backward compatibility only — new code must not use it.
+
+**using Read tool or grep on a persisted-output file path from a Task agent** → Read [Subagent Output Handling](subagent-output-handling.md) first. Persisted output files contain raw agent transcripts, not clean JSON. Use Python JSON parsing on the actual output content, not file reads on the persisted path.
+<<<<<<< HEAD
+
 **using `find_metadata_block` or `extract_plan_content` without validating separator context** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. The content separator `\n\n---\n\n` can accidentally form from 'Remotely executed' notes + footer delimiter. find_metadata_block() validates via `<!-- erk:metadata-block:` marker in the prefix. Never skip this validation.
 
 **using assertive metadata writes in a best-effort context** → Read [Metadata Update Patterns](metadata-update-patterns.md) first. write_dispatch_metadata() raises on error. maybe_update_plan_dispatch_metadata() uses LBYL guards and silent skip with warning. Choose based on whether failure should block the operation.
 
 **using background agents without waiting for completion before dependent operations** → Read [Command-Agent Delegation](agent-delegation.md) first. Use TaskOutput with block=true to wait for all background agents to complete. Without synchronization, dependent agents may read incomplete outputs or missing files.
+
+=======
+
+**using background agents without waiting for completion before dependent operations** → Read [Command-Agent Delegation](agent-delegation.md) first. Use TaskOutput with block=true to wait for all background agents to complete. Without synchronization, dependent agents may read incomplete outputs or missing files.
+
+**using content separator matching without validating metadata block markers** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. The content separator `\n\n---\n\n` can accidentally form from 'Remotely executed' notes + footer delimiter. find_metadata_block() validates via `<!-- erk:metadata-block:` marker. Never skip this validation.
+
+>>>>>>> dd9c1b7fe (Consolidate 16 Feb 26 learn plans into coordinated documentation updates)
+**using extract_metadata_prefix() or extract_plan_header_block() for metadata extraction** → Read [Plan Content Extraction Fallback](metadata-block-fallback.md) first. These functions are deleted. Use find_metadata_block() from packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py for extraction and render_metadata_block() for rendering.
 
 **using gh issue view on a plan ID without checking plan backend type** → Read [Planned PR Backend](planned-pr-backend.md) first. Planned PR plan IDs are PR numbers. Using gh issue view on a planned-PR plan produces a confusing 404. Route to gh pr view based on backend type.
 

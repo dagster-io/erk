@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "testing divergence without setting branch_divergence in FakeGit"
     warning: "FakeGit.is_branch_diverged_from_remote() returns from the branch_divergence dict. Missing entries return default (not diverged). Set explicit divergence state for each test scenario."
+  - action: "testing branch-scoped impl directory code without configuring FakeGit current_branches"
+    warning: "FakeGit current_branches must be configured when testing resolve_impl_dir(). Without this, resolve_impl_dir() gets the wrong branch and resolves to the wrong directory."
 ---
 
 # FakeGit Branch Divergence Testing

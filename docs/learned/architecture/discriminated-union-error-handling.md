@@ -19,6 +19,10 @@ tripwires:
     warning: "Type checkers require isinstance() for narrowing. 'if result.is_error' or 'if not result' does not narrow. Use 'if isinstance(result, ErrorType):' for correct narrowing in both branches."
   - action: "returning a collection (list, tuple, str) directly from a function with NonIdealState return type"
     warning: "Raw built-ins can't inherit EnsurableResult. Wrap in a named frozen dataclass that inherits EnsurableResult and implements __iter__ if needed. See 'The Wrapping Rule' section."
+  - action: "using Protocol property descriptors on a frozen dataclass NonIdealState class"
+    warning: "Protocol property descriptors conflict with frozen dataclass fields. Use NonIdealStateMixin (at packages/erk-shared/src/erk_shared/non_ideal_state.py) when the NonIdealState class uses dataclass fields."
+  - action: "placing @handle_non_ideal_exit before @click.command() or @click.pass_context"
+    warning: "@handle_non_ideal_exit must come AFTER @click.command() / @click.pass_context (outermost position in decorator stack). Inner position causes it to receive wrong arguments."
 ---
 
 # Discriminated Union Error Handling

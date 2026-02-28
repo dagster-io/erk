@@ -27,8 +27,13 @@ tripwires:
     warning: "Verify all 5 implementations import the new types. Missing imports in abc.py, fake.py, dry_run.py, or printing.py break the gateway pattern."
   - action: "designing error handling for a new gateway method"
     warning: "Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section."
+<<<<<<< HEAD
   - action: "deprecating a gateway method without updating all 5 implementation docstrings"
     warning: "When deprecating a gateway method, update docstrings in ALL 5 implementations (abc, real, fake, dry_run, printing). Stale docstrings in non-primary implementations mislead agents."
+=======
+>>>>>>> dd9c1b7fe (Consolidate 16 Feb 26 learn plans into coordinated documentation updates)
+  - action: "adding a new parameter to a gateway ABC method"
+    warning: "All 5 implementations must be updated (ABC, Real, Fake, DryRun, Printing). Fake may accept but not track new parameters when assertion is not needed for tests."
 ---
 
 # Gateway ABC Implementation Checklist

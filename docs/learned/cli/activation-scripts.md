@@ -61,6 +61,15 @@ Scripts include `__erk_log()` helpers respecting:
 - `ERK_QUIET=1` - Suppresses output
 - `ERK_VERBOSE=1` - Shows detailed paths
 
+## Post-CD Commands
+
+Activation scripts support dynamic post-CD commands via the `post_cd_commands` parameter in `render_activation_script()`. These commands are appended after the `cd` line and execute in the target worktree directory.
+
+**Example:** PR checkout with `--sync` flag passes `["gt submit --no-interactive"]` as `post_cd_commands`, causing the branch to be submitted to Graphite after navigation.
+
+**Implementation:** `src/erk/cli/commands/pr/checkout_cmd.py` uses the `post_cd_commands` parameter when `should_track_with_graphite and sync` evaluates to True.
+
 ## Related Topics
 
 - [Template Variables](template-variables.md) - .env template substitution
+- [Shell Activation Pattern](shell-activation-pattern.md) - Source pattern for navigation

@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "adding a new TUI command without updating all 3 places"
     warning: "TUI commands require 3-place coordination: registry definition, display formatter, and action inventory. See tui-command-registration.md."
+  - action: "adding a CLI flag that affects behavior without checking TUI command palette"
+    warning: "TUI command palette generates shell commands via src/erk/tui/commands/registry.py. When adding CLI flags that change behavior, check if TUI-generated commands need the flag too."
 ---
 
 # TUI Command Registration

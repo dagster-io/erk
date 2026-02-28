@@ -11,6 +11,12 @@ tripwires:
     warning: "Schema v2 stores plan content in the FIRST COMMENT, not the issue body. The body contains only the plan-header metadata block. See extract_plan_from_comment() for the extraction logic."
   - action: "checking only one location when extracting plan content"
     warning: "Always check both the first comment (plan-body metadata block) and the issue body before reporting 'no plan content found'. The replan command documents this explicitly in Step 4a."
+  - action: "using extract_metadata_prefix() or extract_plan_header_block() for metadata extraction"
+    warning: "These functions are deleted. Use find_metadata_block() from packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py for extraction and render_metadata_block() for rendering."
+  - action: "using PLAN_CONTENT_SEPARATOR for new code"
+    warning: "Metadata blocks are now self-delimiting via HTML comment markers (<!-- erk:metadata-block:{key} -->). PLAN_CONTENT_SEPARATOR is retained for backward compatibility only — new code must not use it."
+  - action: "assuming metadata is at the top of a PR body"
+    warning: "PR body metadata position changed from top to bottom. Do not assume metadata is at the start of the body."
 ---
 
 # Plan Content Extraction Fallback
@@ -45,11 +51,14 @@ The replan command (`/erk:replan`, Step 4a) adds an additional layer: if no plan
 
 The fallback exists because the plan storage format evolved through three eras:
 
-| Era                       | Storage location    | Markers                                                  | Example             |
-| ------------------------- | ------------------- | -------------------------------------------------------- | ------------------- |
-| **Pre-metadata**          | Issue body directly | None (raw markdown)                                      | Earliest issues     |
-| **v1 metadata**           | First comment       | `<!-- erk:plan-content -->`                              | Transitional format |
-| **v2 metadata** (current) | First comment       | `<!-- erk:metadata-block:plan-body -->` with `<details>` | All new issues      |
+| Era                       | Storage location    | Markers                                                                  | Example             |
+| ------------------------- | ------------------- | ------------------------------------------------------------------------ | ------------------- |
+| **Pre-metadata**          | Issue body directly | None (raw markdown)                                                      | Earliest issues     |
+| **v1 metadata**           | First comment       | `<!-- erk:plan-content -->`                                              | Transitional format |
+| **v2 metadata**           | First comment       | `<!-- erk:metadata-block:plan-body -->` with `<details>`                 | Plan issues         |
+| **v4 metadata** (current) | PR body / issues    | Self-delimiting `<!-- erk:metadata-block:{key} -->` HTML comment markers | All new plans       |
+
+v4 metadata blocks are self-delimiting via HTML comment markers. Extraction uses `find_metadata_block()` and rendering uses `render_metadata_block()` from `packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py`. The `PLAN_CONTENT_SEPARATOR` constant is retained for backward compatibility only — new code should not use it.
 
 Each extraction layer handles one transition, and together they cover the full history.
 

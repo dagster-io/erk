@@ -9,6 +9,10 @@ tripwires:
     warning: "PlanDataTable does not support the id= keyword argument. Use CSS selectors or widget references instead."
   - action: "accessing optional gateway fields without null checks in TUI event handlers"
     warning: "Gateway fields like plan_body or objective_content may be None. Always check before accessing in event handlers."
+  - action: "implementing on_key() in a modal without calling event.prevent_default() and event.stop()"
+    warning: "Modal on_key() must call event.prevent_default() and event.stop() BEFORE any logic. Without this, keystrokes leak to the underlying view and trigger unintended actions."
+  - action: "implementing modal dismiss with an inverted key check condition"
+    warning: "Dismiss-on-unhandled pattern: if event.key not in (bound_keys): self.dismiss(). Using the inverted condition (if key in bound_keys: dismiss) is a common bug that dismisses on valid keys instead of unrecognized ones."
 ---
 
 # Modal Widget Embedding Pattern
@@ -55,7 +59,7 @@ Testing event handlers in Textual modal screens:
 
 ## Source Code
 
-- `src/erk/tui/screens/objective_plans_screen.py` — Modal screen embedding PlanDataTable
+- `src/erk/tui/app.py` — `action_toggle_objective_filter()` at line 567 implements the inline objective filter
 
 ## Related Documentation
 

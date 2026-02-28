@@ -16,11 +16,13 @@
 - **[data-contract.md](data-contract.md)** — building an alternate frontend consuming plan data, adding fields to PlanRowData or PlanDataProvider, understanding the display-vs-raw field duality, serializing plan data to JSON for external consumers
 - **[derived-display-columns.md](derived-display-columns.md)** — adding a TUI column that uses an existing PlanRowData field, deciding whether a new column needs gateway/query changes
 - **[dual-handler-pattern.md](dual-handler-pattern.md)** — implementing a TUI command that works from both list and detail views, understanding how MainListCommandProvider and PlanCommandProvider share commands, adding command palette support to a new screen
+- **[filter-pipeline.md](filter-pipeline.md)** — adding a new filter to the TUI dashboard, understanding how objective/stack/text filters interact, modifying the escape key behavior in the TUI
 - **[frozen-dataclass-field-management.md](frozen-dataclass-field-management.md)** — removing a field from a frozen dataclass, renaming a field in PlanRowData or similar frozen dataclass, getting unexpected constructor errors after field changes
 - **[keyboard-shortcuts.md](keyboard-shortcuts.md)** — adding a new keyboard shortcut to the TUI, checking for shortcut conflicts before binding a new key, understanding what keys are available in the TUI
 - **[lifecycle-display.md](lifecycle-display.md)** — adding a new lifecycle stage to the TUI, changing lifecycle abbreviations or colors, modifying PR status emoji indicators, understanding the stage column in erk dash
 - **[modal-screen-pattern.md](modal-screen-pattern.md)** — adding a new modal screen to the TUI, implementing a ModalScreen subclass, displaying detail views or confirmation dialogs
 - **[modal-widget-embedding.md](modal-widget-embedding.md)** — reusing PlanDataTable in a modal screen, embedding complex widgets in Textual modal screens, handling null safety for optional gateway fields in TUI
+- **[multi-operation-tracking.md](multi-operation-tracking.md)** — adding a new background operation to the TUI, implementing status bar progress for a workflow command, debugging operation lifecycle or stuck operations
 - **[plan-row-data.md](plan-row-data.md)** — writing command availability predicates, understanding what data is available for TUI commands, checking which PlanRowData fields are nullable
 - **[plan-title-rendering-pipeline.md](plan-title-rendering-pipeline.md)** — debugging why plan titles display incorrectly, troubleshooting missing prefixes in TUI, understanding plan data flow in TUI
 - **[stacked-pr-indicator.md](stacked-pr-indicator.md)** — adding or modifying PR indicators in the TUI dashboard, understanding blocking vs. informational indicators, working with stacked PR detection
