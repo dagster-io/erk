@@ -1,0 +1,1091 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>https://github.com/dagster-io/erk/pull/8493
+
+this didn't seem to work 
+
+claude --resume 8da21960-f994-4082-b6ee-b6933ac53d2d
+(erk) ➜  erk-slot-36 git:(plnd/embed-session-xml-in-diffs-02-28-1414) erk land
+After landing, unassign slot 'erk-slot-36' and delete branch 'plnd/embed-session-xml-in-diffs-02-28-1414'? [Y/n]:
+  Getting current branch...
+  Getting parent branch...
+  Validating parent is trunk branch...
+  Checking PR status...
+  Validating PR base branch...
+  Getting child branches...
+  Getting PR metadata...
+  Merging PR #8488...
+  PR #8488 merged successfully
+  Deleting remote branch 'plnd/embed-session-xml-in-diffs-02-28-1414'...
+✓ Merged PR #8488 [plnd/embed-session-xml-in-diffs-02-28-1414]
+  📋 Discovered 1 session(s): 1 planning, 0 impl
+        📝  planning:  8fe63f4e...  7 turns · 153 min  (1,398 KB → 69 KB)
+✓ Created learn plan #8493 for plan #8488
+  https://github.com/dagster-io/erk/pull/8493
+✓ Unassigned slot and deleted branch
+Pulling latest changes from origin/master...
+(erk) ➜  erk-slot-36 git:(__erk-slot-36-br-stub__) erk-activate
+
+the branch itself was supposed to enable the xml files ending up in impl-context</user>
+  <thinking>The user is pointing me to PR #8493 which is a "learn plan" that was auto-created after landing PR #8488. PR #8488 was about "Embed session XML files in learn plan PR diffs". The user is saying that the feature from #8488 (embedding session XML files in the learn plan PR diffs) didn't seem to work when the learn plan #8493 was created.
+
+Let me look at the PR to understand what happened, and then explore the codebase to understand why the XML files weren't embedded.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="11378" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11378}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at the PR and understand what was supposed to happen.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="11378" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11378}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CcsmhTUDy5ZKw4urGf8di9">
+    <param name="command">gh pr view 8493 --json title,body,files 2&gt;/dev/null | head -100</param>
+    <param name="description">View PR #8493 details</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11378" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11378}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CcsmhTUDy5ZKw4urGf8di9">
+{"body":"&lt;details&gt;\n&lt;summary&gt;original-plan&lt;/summary&gt;\n\n# Learn: Embed session XML files in learn plan PR diffs\n\nSource plan: #8488\nMerged PR: #8488\n\n## Sessions\n\n- `8fe63f4e-bea2-4bda-a3b2-eed988d5780e`\n\n&lt;/details&gt;\n\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:plan-header --&gt;\n&lt;details&gt;\n&lt;summary&gt;plan-header&lt;/summary&gt;\n\n```yaml\n\nschema_version: '2'\ncreated_at: '2026-02-28T16:50:10.554837+00:00'\ncreated_by: schrockn\nplan_comment_id: null\nlast_dispatched_run_id: null\nlast_dispatched_node_id: null\nlast_dispatched_at: null\nlast_local_impl_at: null\nlast_local_impl_event: null\nlast_local_impl_session: null\nlast_local_impl_user: null\nlast_remote_impl_at: null\nlast_remote_impl_run_id: null\nlast_remote_impl_session_id: null\nbranch_name: plnd/learn-embed-session-xml-fi-02-28-1650\nlearned_from_issue: 8488\nlifecycle_stage: planned\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:plan-header --&gt;\n---\n\n\nTo checkout this PR in a fresh worktree and environment locally, run:\n\n```\nsource \"$(erk pr checkout 8493 --script)\"\n```\n","files":[{"path":".erk/impl-context/plan.md","additions":8,"deletions":0},{"path":".erk/impl-context/ref.json","additions":4,"deletions":0}],"title":"[erk-learn] Learn: Embed session XML files in learn plan PR diffs"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01MncoXMv6JkW2wG7S2bLiZB">
+    <param name="command">gh pr view 8488 --json title,body,files 2&gt;/dev/null | head -100</param>
+    <param name="description">View PR #8488 details</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11378" cache_read_input_tokens="19113" output_tokens="358" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11378, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MncoXMv6JkW2wG7S2bLiZB">
+{"body":"Learn plan PRs now support embedding preprocessed session XML files in the PR diff. When `--session-xml-dir` is provided to `plan-save`, XML files are read from the directory and committed under `.erk/impl-context/sessions/` alongside the plan and reference data, making the source material reviewable directly in the PR's \"Files Changed\" tab.\n\n## Files Changed\n\n&lt;details&gt;\n&lt;summary&gt;Files Changed&lt;/summary&gt;\n\n### Modified (4 files)\n- `src/erk/cli/commands/exec/scripts/plan_save.py` - Add `--session-xml-dir` CLI option and thread through three functions; build files dict dynamically to include XML files\n- `.claude/commands/erk/learn.md` - Pass session XML directory to plan-save command\n- `.claude/skills/erk-exec/reference.md` - Document new `--session-xml-dir` option\n- `tests/unit/cli/commands/exec/scripts/test_plan_save.py` - Add 3 tests for XML embedding, filtering, and backward compatibility\n\n&lt;/details&gt;\n\n## Key Changes\n\n- Add `--session-xml-dir` CLI option to `plan-save` accepting directory of XML files to embed\n- Thread `session_xml_dir` parameter through three functions: `plan_save` → `_save_plan_via_planned_pr` → `_save_as_planned_pr`\n- Dynamically build files dict to include XML files under `.erk/impl-context/sessions/` subdirectory using `sorted()` for deterministic ordering\n- Filter only `.xml` files using `glob(\"*.xml\")` to exclude other file types in the directory\n- Update learn skill command to pass `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/` directory\n- Add comprehensive test coverage: XML file embedding, non-XML file filtering, and backward compatibility without the option\n\n&lt;details&gt;\n&lt;summary&gt;original-plan&lt;/summary&gt;\n\n# Embed Session XML in Learn Plan PR Diffs\n\n## Context\n\nLearn plan PRs (e.g., #8487) currently commit only `plan.md` and `ref.json` to `.erk/impl-context/`. The preprocessed session XML files that informed the learn plan exist in scratch storage at save time but are not persisted in the PR. Embedding them in the diff makes the source material reviewable alongside the plan in the \"Files Changed\" tab.\n\n## Approach\n\nAdd a `--session-xml-dir` CLI option to `plan-save`. When provided, read all `*.xml` files from the directory and commit them under `.erk/impl-context/sessions/` alongside `plan.md` and `ref.json`. Update the learn skill to pass the directory.\n\nNo gateway changes needed -- `commit_files_to_branch` already accepts `dict[str, str]` with arbitrary paths.\n\n## Files to Modify\n\n### 1. `src/erk/cli/commands/exec/scripts/plan_save.py`\n\n**Add CLI option** (after `--summary` at line 491):\n```python\n@click.option(\n    \"--session-xml-dir\",\n    type=click.Path(exists=True, file_okay=False, path_type=Path),\n    default=None,\n    help=\"Directory containing session XML files to embed in the PR diff\",\n)\n```\n\n**Thread parameter** through all three functions:\n- `plan_save()` signature + body → `_save_plan_via_planned_pr()` call\n- `_save_plan_via_planned_pr()` signature + body → `_save_as_planned_pr()` call\n- `_save_as_planned_pr()` signature\n\n**Build files dict with XML entries** in `_save_as_planned_pr` (replacing the inline dict at line 222-230):\n```python\nfiles: dict[str, str] = {\n    f\"{IMPL_CONTEXT_DIR}/plan.md\": plan_content,\n    f\"{IMPL_CONTEXT_DIR}/ref.json\": json.dumps(ref_data, indent=2),\n}\n\nif session_xml_dir is not None and session_xml_dir.is_dir():\n    for xml_file in sorted(session_xml_dir.glob(\"*.xml\")):\n        if xml_file.is_file():\n            files[f\"{IMPL_CONTEXT_DIR}/sessions/{xml_file.name}\"] = xml_file.read_text(encoding=\"utf-8\")\n\ngit.commit.commit_files_to_branch(\n    repo_root, branch=branch_name, files=files, message=f\"Add plan: {title}\",\n)\n```\n\nKey decisions:\n- `sorted()` for deterministic commit ordering\n- `glob(\"*.xml\")` to exclude `.json` files that also live in the learn directory\n- `sessions/` subdirectory to keep impl-context tidy\n- LBYL: `is_dir()` + `is_file()` checks\n\n### 2. `.claude/commands/erk/learn.md`\n\n**Update Step 7** (around line 693) -- add `--session-xml-dir` to the plan-save command:\n```bash\nCMD=\"erk exec plan-save \\\n    --plan-type learn \\\n    --plan-file .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/learn-plan.md \\\n    --session-id=\\\"${CLAUDE_SESSION_ID}\\\" \\\n    --learned-from-issue &lt;parent-issue-number&gt; \\\n    --session-xml-dir .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn \\\n    --format json\"\n```\n\nThe session XML directory `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/` contains the preprocessed files from Step 4.\n\n### 3. `tests/unit/cli/commands/exec/scripts/test_plan_save.py`\n\nAdd 3 tests following existing patterns (uses `fake_git.branch_commits[0].files` for assertions):\n\n1. **`test_planned_pr_includes_session_xml_files`** -- create XML dir with 2 files, verify both committed under `sessions/`\n2. **`test_planned_pr_session_xml_dir_only_includes_xml`** -- create dir with `.xml`, `.json`, `.txt` files, verify only `.xml` committed\n3. **`test_planned_pr_without_session_xml_dir_backward_compat`** -- verify existing behavior unchanged when option not passed (only 2 files committed)\n\n## Verification\n\n1. Run `pytest tests/unit/cli/commands/exec/scripts/test_plan_save.py` to verify tests pass\n2. Run `ty` and `ruff` for type/lint checks\n3. Manually test with `/erk:learn` on a real plan to confirm XML files appear in PR diff\n\n\n&lt;/details&gt;\n\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:plan-header --&gt;\n&lt;details&gt;\n&lt;summary&gt;plan-header&lt;/summary&gt;\n\n```yaml\n\nschema_version: '2'\ncreated_at: '2026-02-28T14:14:35.460085+00:00'\ncreated_by: schrockn\nplan_comment_id: null\nlast_dispatched_run_id: '22527231389'\nlast_dispatched_node_id: WFR_kwLOPxC3hc8AAAAFPrpFnQ\nlast_dispatched_at: '2026-02-28T19:15:13.716445+00:00'\nlast_local_impl_at: null\nlast_local_impl_event: null\nlast_local_impl_session: null\nlast_local_impl_user: null\nlast_remote_impl_at: '2026-02-28T19:19:35+00:00'\nlast_remote_impl_run_id: '22527231389'\nlast_remote_impl_session_id: 145f14b0-52de-4162-a839-94d003d1d060\nbranch_name: plnd/embed-session-xml-in-diffs-02-28-1414\ncreated_from_session: 8fe63f4e-bea2-4bda-a3b2-eed988d5780e\nlifecycle_stage: impl\nworktree_name: erk\nlast_session_branch: async-learn/8488\nlast_session_id: 145f14b0-52de-4162-a839-94d003d1d060\nlast_session_at: '2026-02-28T19:19:33.286400+00:00'\nlast_session_source: remote\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:plan-header --&gt;\n---\n\n\nTo checkout this PR in a fresh worktree and environment locally, run:\n\n```\nsource \"$(erk pr checkout 8488 --script)\"\n```\n","files":[{"path":".claude/commands/erk/learn.md","additions":1,"deletions":0},{"path":".claude/skills/erk-exec/reference.md","additions":12,"deletions":10},{"path":"src/erk/cli/commands/exec/scripts/plan_save.py","additions":26,"deletions":4},{"path":"tests/unit/cli/commands/exec/scripts/test_plan_save.py","additions":76,"deletions":0}],"title":"Embed session XML files in learn plan PR diffs"}
+  </tool_result>
+  <thinking>So PR #8488 added the `--session-xml-dir` option to `plan-save`, and PR #8493 is the learn plan that was auto-created when #8488 was landed. The user is saying that #8493 doesn't have the session XML files embedded in it, even though #8488 was supposed to enable that feature.
+
+Let me look at:
+1. The learn command to see how it invokes plan-save
+2. The PR #8493's files - it only has 2 files (plan.md and ref.json), not the session XML files
+
+So the feature didn't work. Let me investigate why. I need to look at the learn command and the plan_save code.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3360" cache_read_input_tokens="30491" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3360}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>So PR #8493 only has 2 files (`plan.md` and `ref.json`) — no session XML files were embedded. Let me investigate why.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3360" cache_read_input_tokens="30491" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3360}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01R5JeFKyja3HjSQiCXhUiNT">
+    <param name="description">Investigate learn XML embedding</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 1148 chars]...s the `--session-xml-dir` flag), and instead directly calls plan-save without that option.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3360" cache_read_input_tokens="30491" output_tokens="661" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3360, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01R5JeFKyja3HjSQiCXhUiNT">
+Excellent! Now I have all the evidence I need. Let me create a comprehensive summary document with my findings:
+
+## Investigation Summary: Session XML Files Not Embedded in Learn Plan PRs
+
+I've completed a thorough investigation of why session XML files are not being embedded in learn plan PRs created by `erk land`. Here are my findings:
+
+### Root Cause: `erk land` Uses Different Code Path
+
+**The hypothesis is CORRECT.** When `erk land` creates a learn plan, it uses a **different code path** that does not support the `--session-xml-dir` option:
+
+1. **The learning skill (`/erk:learn`)** — Uses `erk exec plan-save --session-xml-dir` (supports XML embedding via PR #8488)
+2. **The land command (`erk land`)** — Uses `create_plan_draft_pr()` (does NOT support XML embedding)
+
+### Evidence
+
+**File: `/Users/schrockn/code/erk/src/erk/cli/commands/land_learn.py` (lines 261-335)**
+
+The `_create_learn_pr_impl()` function is called when `erk land` detects a learn plan should be created. At line 303-320, it calls:
+
+```python
+result = create_plan_draft_pr(
+    git=ctx.git,
+    github=ctx.github,
+    github_issues=ctx.issues,
+    branch_manager=ctx.branch_manager,
+    time=ctx.time,
+    repo_root=state.main_repo_root,
+    cwd=state.cwd,
+    plan_content=plan_content,
+    title=f"Learn: {plan_result.title}",
+
+... [76 lines omitted] ...
+  </tool_result>
+  <thinking>The investigation confirms the root cause. Let me now understand the full picture:
+
+1. PR #8488 added `--session-xml-dir` to the `plan-save` CLI command
+2. The `/erk:learn` skill command was updated to pass this option
+3. But `erk land` creates learn plans through a completely different code path: `land_learn.py` → `create_plan_draft_pr()`
+4. `create_plan_draft_pr()` has no `session_xml_dir` parameter
+
+So the fix needs to:
+1. Add `session_xml_dir` support to `create_plan_draft_pr()` 
+
+
+2. Have `land_learn.py` discover and pass the session XML directory
+
+Now I need to examine the relevant code more closely to figure out how to implement this properly.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="2319" cache_read_input_tokens="33851" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2319}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good — the root cause is clear. `erk land` creates learn plans through `land_learn.py` → `create_plan_draft_pr()`, which is a completely separate code path from `plan-save` and has no XML embedding support. Let me read the key files to design the fix.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2319" cache_read_input_tokens="33851" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2319}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CNPMsiaxz8V4dAVC4NFoaa">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/land_learn.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2319" cache_read_input_tokens="33851" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2319}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CNPMsiaxz8V4dAVC4NFoaa">
+     1→"""Learn plan creation for the land command.
+     2→
+     3→Handles creating erk-learn plans when a PR is landed.
+     4→Extracted to avoid circular imports between land_cmd and land_pipeline.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from dataclasses import dataclass
+    10→from typing import TYPE_CHECKING
+    11→
+    12→import click
+    13→from rich.console import Console
+    14→from rich.table import Table
+    15→
+    16→from erk.cli.commands.exec.scripts.preprocess_session import (
+    17→    deduplicate_assistant_messages,
+    18→    deduplicate_documentation_blocks,
+    19→    discover_agent_logs,
+    20→    is_empty_session,
+    21→    is_warmup_session,
+    22→    process_log_file,
+    23→    split_entries_to_chunks,
+    24→    truncate_tool_parameters,
+    25→)
+    26→from erk.core.context import ErkContext
+    27→from erk_shared.learn.extraction.session_schema import (
+    28→    iter_jsonl_entries,
+    29→    parse_session_timestamp,
+    30→)
+
+... [305 lines omitted] ...
+
+   182→    except Exception as exc:
+   183→        user_output(click.style("Warning: ", fg="yellow") + f"Could not create learn plan: {exc}")
+   266→    """Inner implementation for learn plan creation (raises on error)."""
+   331→    elif result.error:
+   333→            click.style("Warning: ", fg="yellow") + f"Learn plan creation failed: {result.error}"
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CRMHkc8wP3xhSku1FaiEmU">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2319" cache_read_input_tokens="33851" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2319}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CRMHkc8wP3xhSku1FaiEmU">
+     1→"""Create plan as a draft PR with plan content committed to branch.
+     2→
+     3→Shared function used by all plan creation paths:
+     4→- erk pr create (CLI)
+     5→- erk exec create-pr-from-session (session extraction)
+     6→- erk exec create-plan-from-context (stdin plan)
+     7→- land_learn.py (learn plan after landing)
+     8→
+     9→Follows the plan_save.py pattern: creates a branch from origin/trunk,
+    10→commits plan.md + ref.json via git plumbing, pushes, then creates a
+    11→draft PR via PlannedPRBackend.
+    12→"""
+    13→
+    14→import json
+    15→from dataclasses import dataclass
+    16→from pathlib import Path
+    17→
+    18→from erk_shared.gateway.branch_manager.abc import BranchManager
+    19→from erk_shared.gateway.git.abc import Git
+    20→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+    21→from erk_shared.gateway.github.abc import GitHub
+    22→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    23→from erk_shared.gateway.time.abc import Time
+    24→from erk_shared.naming import generate_planned_pr_branch_name
+    25→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    26→from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+    27→from erk_shared.plan_utils import extract_title_from_plan, get_title_tag_from_labels
+    28→
+    29→
+    30→@dataclass(frozen=True)
+
+... [178 lines omitted] ...
+
+    36→        plan_number: PR number if created (None on failure)
+    37→        plan_url: PR URL if created (None on failure)
+    38→        branch_name: Branch name if created (None on failure)
+    40→        error: Error message if failed, None if success
+    48→    error: str | None
+   104→        Does NOT raise exceptions. All errors returned in result.
+   129→            error=create_result.message,
+   194→            error=f"Expected numeric plan_id from planned PR creation, got: {result.plan_id!r}",
+   206→        error=None,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01XVw1cMcNJ7rv5B5MDPkrkE">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="offset">220</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2319" cache_read_input_tokens="33851" output_tokens="520" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2319, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XVw1cMcNJ7rv5B5MDPkrkE">
+   220→
+   221→    # Commit plan files directly to branch (no checkout needed).
+   222→    # Uses git plumbing to avoid race conditions when multiple sessions
+   223→    # share the same worktree.
+   224→    files: dict[str, str] = {
+   225→        f"{IMPL_CONTEXT_DIR}/plan.md": plan_content,
+   226→        f"{IMPL_CONTEXT_DIR}/ref.json": json.dumps(ref_data, indent=2),
+   227→    }
+   228→
+   229→    if session_xml_dir is not None:
+   230→        for xml_file in sorted(session_xml_dir.glob("*.xml")):
+   231→            if xml_file.is_file():
+   232→                files[f"{IMPL_CONTEXT_DIR}/sessions/{xml_file.name}"] = xml_file.read_text(
+   233→                    encoding="utf-8"
+   234→                )
+   235→
+   236→    git.commit.commit_files_to_branch(
+   237→        repo_root,
+   238→        branch=branch_name,
+   239→        files=files,
+   240→        message=f"Add plan: {title}",
+   241→    )
+   242→    git.remote.push_to_remote(cwd, "origin", branch_name, set_upstream=True, force=False)
+   243→
+   244→    # Build metadata — base_ref_name sets the PR base ref
+   245→    metadata: dict[str, object] = {"branch_name": branch_name, "base_ref_name": base_branch}
+   246→
+   247→    if config.plans_repo is not None:
+   248→        metadata["source_repo"] = get_repo_identifier(ctx)
+   249→
+  </tool_result>
+  <thinking>Now I have a clear picture. Let me also understand where the session XML files would come from during `erk land`. The `_compute_session_stats` function in `land_learn.py` already runs the preprocessing pipeline and computes XML sizes, but it discards the actual XML content. It only keeps the stats.
+
+Looking at lines 101-148, `_compute_session_stats` runs the full preprocessing pipeline:
+1. `process_log_file` 
+2. `deduplicate_documentation_blocks`
+3. `truncate_tool_parameters`
+4. `deduplicate_assistant_messages`
+5. `split_entries_to_chunks`
+
+
+But it only sums up the XML bytes for stats — it doesn't save the XML content anywhere. So I'm considering two approaches: either add an `extra_files` parameter to `create_plan_draft_pr` so `land_learn.py` can pass the generated XML files directly, or add a `session_xml_dir` parameter to point to where the XML files are stored.
+
+Approach A seems cleaner since `land_learn.py` already has the XML content in memory during preprocessing. But looking more carefully at the code, `_compute_session_stats` only sums the byte sizes of the chunks — it doesn't actually capture the XML strings themselves. I'd need to either modify that function to return the XML content alongside the stats, or rerun the preprocessing step in `_create_learn_pr_impl`.
+
+Option 1 is better to avoid the expensive preprocessing pipeline running twice. The cleanest design would be to have `_compute_session_stats` return both the stats and the XML chunks, then collect all that content in `_create_learn_pr_impl` and pass it as `extra_files` to `create_plan_draft_pr`.
+
+But there's a timing issue — `_log_session_discovery` calls `_compute_session_stats` first, and those results aren't being captured for later use when `_create_learn_pr_impl` runs. I need to rethink how to thread this data through the flow.
+
+The simplest fix is to extend `SessionStats` with an `xml_chunks` field, have `_log_session_discovery` collect and return the XML files, add an `extra_files` parameter to `create_plan_draft_pr`, and pass the collected XML through from `_create_learn_pr_impl`.
+
+Now I'm realizing there's a naming issue—`_compute_session_stats` generates XML chunks during preprocessing, but I need to figure out how to name them consistently with what the learn command expects.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="8997" cache_read_input_tokens="36170" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8997}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me look at how the learn command's preprocess step names XML files, to understand the naming convention.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8997" cache_read_input_tokens="36170" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8997}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01LapQuSQCMmeiMxJro4Gvni">
+    <param name="pattern">session.*xml|xml.*file|chunks.*xml</param>
+    <param name="path">/Users/schrockn/code/erk/.claude/commands/erk/learn.md</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8997" cache_read_input_tokens="36170" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8997}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LapQuSQCMmeiMxJro4Gvni">
+206:Note: The preprocessor applies deduplication, truncation, and pruning optimizations automatically. Files are auto-chunked if they exceed the token limit (20000 tokens safely under Claude's 25000 read limit). Output files include session IDs in filenames (e.g., `planning-{session-id}.xml` or `impl-{session-id}-part{N}.xml` for chunked files).
+262:    - session_xml_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/&lt;filename&gt;.xml
+538:ls .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/*.xml
+541:Files are named: `{prefix}-{session_id}.xml` or `{prefix}-{session_id}-part{N}.xml` for chunked files.
+698:    --session-xml-dir .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn \
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0188e4L4gpGF1V9Wu7z5gjX6">
+    <param name="pattern">xml_file|\.xml|write.*chunk</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/preprocess_session.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8997" cache_read_input_tokens="36170" output_tokens="1297" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8997, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0188e4L4gpGF1V9Wu7z5gjX6">
+1010:            # Multiple chunks: {prefix}-{session_id}-part{N}.xml
+1012:                file_path = output_dir / f"{prefix}-{filename_session_id}-part{i}.xml"
+1016:            # Single file: {prefix}-{session_id}.xml
+1017:            file_path = output_dir / f"{prefix}-{filename_session_id}.xml"
+1034:                    suffix=".xml",
+1051:                suffix="-compressed.xml",
+  </tool_result>
+  <thinking>Now I understand the naming convention. XML files are named `{prefix}-{session_id}.xml` or `{prefix}-{session_id}-part{N}.xml` for chunked files. The prefix is something like "planning", "impl", etc.
+
+Let me look at the preprocess_session.py more closely to understand the output naming.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1879" cache_read_input_tokens="45167" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1879}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AgTXkEXvbrXDLZWpCcPnnm">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/preprocess_session.py</param>
+    <param name="offset">1000</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1879" cache_read_input_tokens="45167" output_tokens="210" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1879, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AgTXkEXvbrXDLZWpCcPnnm">
+  1000→        else:
+  1001→            click.echo("\n\n".join(xml_sections))
+  1002→    elif output_dir is not None:
+  1003→        # Write to named files in specified directory (--output-dir/--prefix mode)
+  1004→        # prefix is guaranteed to be non-None due to validation above
+  1005→        assert prefix is not None
+  1006→        output_dir.mkdir(parents=True, exist_ok=True)
+  1007→
+  1008→        output_paths: list[Path] = []
+  1009→        if len(xml_sections) &gt; 1:
+  1010→            # Multiple chunks: {prefix}-{session_id}-part{N}.xml
+  1011→            for i, section in enumerate(xml_sections, start=1):
+  1012→                file_path = output_dir / f"{prefix}-{filename_session_id}-part{i}.xml"
+  1013→                file_path.write_text(section, encoding="utf-8")
+  1014→                output_paths.append(file_path)
+  1015→        else:
+  1016→            # Single file: {prefix}-{session_id}.xml
+  1017→            file_path = output_dir / f"{prefix}-{filename_session_id}.xml"
+  1018→            file_path.write_text("\n\n".join(xml_sections), encoding="utf-8")
+  1019→            output_paths.append(file_path)
+  1020→
+  1021→        # Print all paths to stdout
+  1022→        for path in output_paths:
+  1023→            click.echo(str(path))
+  1024→    else:
+  1025→        # Write to temp file(s) and print path(s) (backward compatible)
+  1026→        if max_tokens is not None and len(xml_sections) &gt; 1:
+  1027→            # Write multiple numbered files
+  1028→            temp_output_paths: list[Path] = []
+  1029→            for i, section in enumerate(xml_sections, start=1):
+
+... [30 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a complete picture. Let me design the plan.
+
+The key insight is that `_compute_session_stats` already runs the full preprocessing pipeline and generates XML chunks, but discards the actual content. We just need to capture those chunks.
+
+Here's my approach:
+
+1. **Modify `_compute_session_stats`** to return XML chunks alongside stats. Instead of just computing byte sizes, also return the actual chunk strings.
+
+2. **Modify `_log_session_discovery`** to collect XML files from all sessions and return them as a `dict[str, str]` mapping file paths to content.
+
+3. **Add `extra_files` parameter to `create_plan_draft_pr`** — merge additional files into the commit files dict.
+
+
+4. **Pass XML files from `_create_learn_pr_impl`** to `create_plan_draft_pr`.
+
+Now I need to figure out the naming convention. The learn command uses patterns like `planning-{session_id}.xml` or `impl-{session_id}.xml`, and `_log_session_discovery` already classifies sessions by type, so I can use that to construct the right file names. For the data structure, I'm deciding between adding an `xml_chunks` field to `SessionStats` or creating a separate `SessionPreprocessResult` type to keep things cleaner.
+
+I think adding `xml_chunks: list[str]` directly to `SessionStats` is the simpler approach. The real question is whether `_log_session_discovery` should handle both logging and returning XML data, or if I should factor out a separate preprocessing function that returns both stats and XML chunks together. Mixing concerns in `_log_session_discovery` feels wrong, so I'm leaning toward extracting the session preprocessing logic into its own function.
+
+Actually, looking at the current structure more carefully—`_compute_session_stats` is already called inside `_log_session_discovery` and that's where the XML chunks get generated. So the cleanest path is to add the chunks field to `SessionStats`, capture them during computation, have `_log_session_discovery` return the full stats object with chunks included, and then `_create_learn_pr_impl` can use that same data to build the extra files dict. For the `xml_size_kb` stat, I'll calculate it from the chunks themselves.
+
+I also need to handle the session type prefixes—they're determined in `_log_session_discovery` based on which ID list each session belongs to (planning, impl, learn, or unknown). And for `create_plan_draft_pr`, I'll add an `extra_files` parameter that gets merged into the files dict during the commit step, following the pattern of no default values that erk uses.
+
+Now I need to check how many places call this function to understand the scope of changes required.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1154" cache_read_input_tokens="47046" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1154}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check all callers of `create_plan_draft_pr` to understand the impact of adding a parameter.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1154" cache_read_input_tokens="47046" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1154}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01D7ncJreNXdXTqG63P79HTu">
+    <param name="pattern">create_plan_draft_pr\(</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1154" cache_read_input_tokens="47046" output_tokens="1061" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1154, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01D7ncJreNXdXTqG63P79HTu">
+src/erk/cli/commands/land_learn.py:303:    result = create_plan_draft_pr(
+src/erk/cli/commands/exec/scripts/create_pr_from_session.py:67:    result = create_plan_draft_pr(
+src/erk/cli/commands/pr/create_cmd.py:89:    result = create_plan_draft_pr(
+packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py:8:Plan creation now uses create_plan_draft_pr() from plan_store.create_plan_draft_pr.
+packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py:51:def create_plan_draft_pr(
+packages/erk-shared/tests/unit/github/test_plan_issues.py:49:    return create_plan_draft_pr(
+packages/erk-shared/tests/unit/github/test_plan_issues.py:481:        result = create_plan_draft_pr(
+packages/erk-shared/tests/unit/github/test_plan_issues.py:584:        result = create_plan_draft_pr(
+packages/erk-shared/tests/unit/github/test_plan_issues.py:629:            result = create_plan_draft_pr(
+docs/learned/planning/metadata-block-fallback.md:37:The `create_plan_draft_pr()` function in `erk_shared/plan_store/create_plan_draft_pr.py` orchestrates this: it creates a draft PR with a metadata-only body, then explicitly adds the first comment with the plan content. The comment is not auto-created by GitHub — erk creates it via `add_comment()` and records the `plan_comment_id` back into the issue body for direct lookup.
+docs/learned/planning/metadata-field-workflow.md:40:Add the parameter to `create_plan_draft_pr()` and pass it through to `format_plan_header_body()`. All parameters are keyword-only. Review the existing call site to see the current parameter threading pattern.
+docs/learned/planning/metadata-field-workflow.md:50:- Pass it through to `create_plan_draft_pr()`
+  </tool_result>
+  <thinking>There are 3 production callers + 3-4 test callers. Since erk doesn't use default parameters, I need to update all callers.
+
+Let me also look at the test file to understand the testing patterns.
+
+Let me think about what the simplest approach would be. Actually, I realize there are two possible designs:
+
+**Design A: `extra_files` parameter on `create_plan_draft_pr`**
+- Generic: any caller can pass additional files to commit
+- Requires updating all callers (4 production + 4 test calls)
+- Clean separation of concerns
+
+**Design B: Handle XML embedding in `land_learn.py` directly**
+
+
+- Don't modify `create_plan_draft_pr` at all
+- After `create_plan_draft_pr` returns, make a second commit to the branch with the XML files
+- More surgical change, fewer files touched
+- But requires an extra git operation
+
+Design B is worse because it requires a second commit and push, which is wasteful. And Design C with default parameters won't work since erk disallows them, meaning all callers need updating anyway. So Design A is the cleanest approach.
+
+Now I need to think through the `SessionStats` changes.
+
+`_compute_session_stats` returns `SessionStats` with `xml_size_kb`, but I also need to capture the XML chunks. I could factor out the preprocessing pipeline into a separate function that both `_compute_session_stats` and `_create_learn_pr_impl` call, but that runs the pipeline twice. The better solution is to add `xml_chunks` as a list to `SessionStats` itself, then compute `xml_size_kb` from the chunk sizes, and have `_compute_session_stats` capture and return both.
+
+Actually, let me reconsider the core issue here. The real problem is that `_create_learn_pr_impl` needs to generate XML files but currently doesn't. The flow goes: `_create_learn_pr_impl` discovers sessions, calls `_log_session_discovery` which calls `_compute_session_stats` for stats, but the XML generation happens elsewhere. I need to trace through where the XML actually gets created and ensure it's available where I need it.
+
+The cleanest approach is probably to have `_log_session_discovery` return the XML chunks alongside the stats, then pass those chunks to `create_plan_draft_pr` via `extra_files`. But I could also preprocess sessions independently in `_create_learn_pr_impl` if that's simpler. Option C: Move preprocessing out of `_compute_session_stats` and call it explicitly
+
+I think Option A is the most pragmatic. Let me sketch it:
+
+I'd add an `xml_chunks` field to `SessionStats` to store the actual XML chunk content, then modify `_compute_session_stats` to capture and return those chunks instead of just computing their byte size.
+
+Then `_log_session_discovery` would iterate through the session stats and reconstruct the XML files from those chunks, generating appropriately named files based on whether there's a single chunk or multiple parts.
+
+This way the expensive preprocessing happens once inside `_compute_session_stats`, and `_log_session_discovery` just handles the file naming and dictionary construction without duplicating work.
+
+Now looking at how the chunks are actually generated - `split_entries_to_chunks` produces XML strings, and those chunks come from both main session and agent logs. The issue is that all entries get combined together, but for proper file organization I'd want separate files for each source rather than mixing them all into one output. I'm going back and forth on this — preprocessing is expensive and we're already doing it once, so duplicating that work doesn't make sense. Instead, I'll modify `_compute_session_stats` to capture the XML chunks directly and return them as part of `SessionStats`, then handle the naming when we write them out in `_create_learn_pr_impl`. I need to add an `xml_chunks` field to store the content, compute the size from those chunks, and update the logging function to use them.
+
+For the file naming, I'll keep it straightforward: `planning-{sid[:8]}.xml`, `impl-{sid[:8]}.xml`, and `learn-{sid[:8]}.xml` for each session type, with `-part{N}` if there are multiple chunks. Then I'll thread the XML files through as an `extra_files` parameter in `create_plan_draft_pr`, update all the callers to pass `None` where needed, and wire everything together in `_create_learn_pr_impl`.
+
+Actually, let me check how the learn command handles session IDs in filenames — I'm looking at the preprocess_session.py code to see what format it's already using.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1603" cache_read_input_tokens="48200" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1603}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01HumFfYwbU3CEmFavYMyc7t">
+    <param name="pattern">filename_session_id</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/preprocess_session.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1603" cache_read_input_tokens="48200" output_tokens="2544" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1603, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HumFfYwbU3CEmFavYMyc7t">
+993:    filename_session_id = log_path.stem  # Extract session ID from filename
+1012:                file_path = output_dir / f"{prefix}-{filename_session_id}-part{i}.xml"
+1017:            file_path = output_dir / f"{prefix}-{filename_session_id}.xml"
+1033:                    prefix=f"session-{filename_session_id}-part{i}-",
+1050:                prefix=f"session-{filename_session_id}-",
+  </tool_result>
+  <thinking>So `filename_session_id` is `log_path.stem` — the filename without extension. For a session file named `abc123.jsonl`, it would be `abc123`. Session IDs are full UUIDs like `8fe63f4e-bea2-4bda-a3b2-eed988d5780e`, so the file stem would be the full UUID.
+
+Now, in `_compute_session_stats`, the session ID is passed as `session_id` parameter. So for naming we'd use the full session ID.
+
+OK, I think I have enough understanding. Let me now also look at the test file for `create_plan_draft_pr` to understand what tests need updating.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2634" cache_read_input_tokens="49803" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2634}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01YXsAFQJjq6pUVPMac32toN">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/tests/unit/github/test_plan_issues.py</param>
+    <param name="offset">40</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2634" cache_read_input_tokens="49803" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2634}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YXsAFQJjq6pUVPMac32toN">
+    40→    if fake_github is None:
+    41→        fake_github = FakeGitHub(issues_gateway=fake_issues)
+    42→    if fake_git is None:
+    43→        fake_git = FakeGit(trunk_branches={tmp_path: "main"})
+    44→    if fake_time is None:
+    45→        fake_time = FakeTime()
+    46→    if labels is None:
+    47→        labels = ["erk-pr", "erk-plan"]
+    48→
+    49→    return create_plan_draft_pr(
+    50→        git=fake_git,
+    51→        github=fake_github,
+    52→        github_issues=fake_issues,
+    53→        branch_manager=FakeBranchManager(),
+    54→        time=fake_time,
+    55→        repo_root=tmp_path,
+    56→        cwd=tmp_path,
+    57→        plan_content=plan_content,
+    58→        title=title,
+    59→        labels=labels,
+    60→        source_repo=source_repo,
+    61→        objective_id=objective_id,
+    62→        created_from_session=created_from_session,
+    63→        created_from_workflow_run_url=None,
+    64→        learned_from_issue=learned_from_issue,
+    65→        summary=None,
+    66→    )
+    67→
+    68→
+    69→class TestCreatePlanDraftPRSuccess:
+  </tool_result>
+  <tool_use name="Read" id="toolu_0126TmW5EtnXSkn569g9zSDR">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/tests/unit/github/test_plan_issues.py</param>
+    <param name="offset">470</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2634" cache_read_input_tokens="49803" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2634}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0126TmW5EtnXSkn569g9zSDR">
+   470→        from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+   471→
+   472→        fake_issues = FakeGitHubIssues(username="testuser")
+   473→        fake_github = FakeGitHub(issues_gateway=fake_issues)
+   474→        branch_manager = FakeBranchManager(
+   475→            _create_branch_error=BranchAlreadyExists(
+   476→                branch_name="plnd/my-feature-01-15-1430",
+   477→                message="Branch 'plnd/my-feature-01-15-1430' already exists",
+   478→            ),
+   479→        )
+   480→
+   481→        result = create_plan_draft_pr(
+   482→            git=FakeGit(trunk_branches={tmp_path: "main"}),
+   483→            github=fake_github,
+   484→            github_issues=fake_issues,
+   485→            branch_manager=branch_manager,
+   486→            time=FakeTime(),
+   487→            repo_root=tmp_path,
+   488→            cwd=tmp_path,
+   489→            plan_content="# My Feature\n\nSteps...",
+   490→            title=None,
+   491→            labels=["erk-pr", "erk-plan"],
+   492→            source_repo=None,
+   493→            objective_id=None,
+   494→            created_from_session=None,
+   495→            created_from_workflow_run_url=None,
+   496→            learned_from_issue=None,
+   497→            summary=None,
+   498→        )
+   499→
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Evt1G59D45AuAp2EqM3hRx">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/tests/unit/github/test_plan_issues.py</param>
+    <param name="offset">575</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2634" cache_read_input_tokens="49803" output_tokens="499" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2634, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Evt1G59D45AuAp2EqM3hRx">
+   575→        assert result.success is True
+   576→        pr = fake_github.get_pr(tmp_path, result.plan_number)
+   577→        assert "learned_from_issue: 99" in pr.body
+   578→
+   579→    def test_all_metadata_fields_together(self, tmp_path: Path) -&gt; None:
+   580→        """All optional metadata fields populate correctly when provided together."""
+   581→        fake_issues = FakeGitHubIssues(username="testuser")
+   582→        fake_github = FakeGitHub(issues_gateway=fake_issues)
+   583→
+   584→        result = create_plan_draft_pr(
+   585→            git=FakeGit(trunk_branches={tmp_path: "main"}),
+   586→            github=fake_github,
+   587→            github_issues=fake_issues,
+   588→            branch_manager=FakeBranchManager(),
+   589→            time=FakeTime(),
+   590→            repo_root=tmp_path,
+   591→            cwd=tmp_path,
+   592→            plan_content="# Full Metadata Plan\n\nSteps...",
+   593→            title=None,
+   594→            labels=["erk-pr", "erk-plan"],
+   595→            source_repo="owner/impl-repo",
+   596→            objective_id=7,
+   597→            created_from_session="sess-xyz",
+   598→            created_from_workflow_run_url="https://github.com/runs/123",
+   599→            learned_from_issue=55,
+   600→            summary=None,
+   601→        )
+   602→
+   603→        assert result.success is True
+   604→        pr = fake_github.get_pr(tmp_path, result.plan_number)
+
+... [30 lines omitted] ...
+
+   613→    """Test error handling when backend returns non-numeric plan_id."""
+   615→    def test_non_numeric_plan_id_returns_error(self, tmp_path: Path) -&gt; None:
+   616→        """Non-numeric plan_id from backend returns error result with branch_name set."""
+  </tool_result>
+  <thinking>Let me also check the other callers to understand how many need updating:</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2438" cache_read_input_tokens="52437" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2438}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the remaining production callers quickly.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2438" cache_read_input_tokens="52437" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2438}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01V8aK3ddxxdh5bn8MFQV8EK">
+    <param name="pattern">create_plan_draft_pr\(</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/create_pr_from_session.py</param>
+    <param name="output_mode">content</param>
+    <param name="-B">2</param>
+    <param name="-A">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2438" cache_read_input_tokens="52437" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2438}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01V8aK3ddxxdh5bn8MFQV8EK">
+65-
+66-    # Create plan as a draft PR
+67:    result = create_plan_draft_pr(
+68-        git=git,
+69-        github=github,
+70-        github_issues=github_issues,
+71-        branch_manager=branch_manager,
+72-        time=time,
+73-        repo_root=repo_root,
+74-        cwd=cwd,
+75-        plan_content=plan_text,
+76-        title=None,
+77-        labels=["erk-pr", "erk-plan"],
+78-        source_repo=None,
+79-        objective_id=None,
+80-        created_from_session=session_id,
+81-        created_from_workflow_run_url=None,
+82-        learned_from_issue=None,
+83-        summary=None,
+84-    )
+85-
+86-    if not result.success:
+87-        output = {"success": False, "error": result.error}
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0148oa6UbNiEP6d86YqNhVKW">
+    <param name="pattern">create_plan_draft_pr\(</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/create_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-B">2</param>
+    <param name="-A">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2438" cache_read_input_tokens="52437" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2438}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0148oa6UbNiEP6d86YqNhVKW">
+87-
+88-    # Create plan as a draft PR
+89:    result = create_plan_draft_pr(
+90-        git=ctx.git,
+91-        github=ctx.github,
+92-        github_issues=ctx.issues,
+93-        branch_manager=ctx.branch_manager,
+94-        time=ctx.time,
+95-        repo_root=repo_root,
+96-        cwd=ctx.cwd,
+97-        plan_content=content,
+98-        title=title,
+99-        labels=labels,
+100-        source_repo=source_repo,
+101-        objective_id=None,
+102-        created_from_session=None,
+103-        created_from_workflow_run_url=None,
+104-        learned_from_issue=None,
+105-        summary=None,
+106-    )
+107-
+108-    if not result.success:
+109-        user_output(click.style("Error: ", fg="red") + str(result.error))
+  </tool_result>
+  <thinking>OK, now I have a complete picture. Let me also check how `_compute_session_stats` collects the chunks. I need to read the part where it processes agent logs and generates chunks.
+
+I already have that code from lines 101-148 of land_learn.py. Let me re-examine:
+
+```python
+# Run preprocessing pipeline to get XML sections
+entries, _total, _skipped = process_log_file(
+    session_path, session_id=session_id, enable_filtering=True
+)
+
+if is_empty_session(entries) or is_warmup_session(entries):
+    return SessionStats(user_turns=..., xml_size_kb=0)
+
+
+```
+
+Now I'm applying a series of deduplication and truncation transformations to the entries, then iterating through the agent logs to process each one through the same pipeline and collect them with their source labels. After that, I'm looping through all the collected entries to calculate the total XML size.
+
+For the file naming, I need to handle two cases: the main session chunks should follow the pattern `{type}-{session_id}.xml` or `{type}-{session_id}-part{N}.xml` when there are multiple chunks, while agent log chunks need to include their source label like `{type}-{session_id}-{source_label}.xml` to keep them distinct from each other.
+
+Looking at how the CLI actually works, `preprocess-session` processes one session at a time but internally discovers and handles agent logs through the same invocation. The output files get written based on whether we're dealing with a single chunk or multiple chunks, and agent logs are processed alongside the main session data. I see the distinction now—in `preprocess_session.py`, all entries get chunked together in a single call, but with `land_learn.py` handling multiple sources, each source produces its own separate chunk list. So I need to think about how to name the output files when combining chunks from different sources for the same session. the naming scheme and implementation approach. I'll add an `xml_chunks` field to `SessionStats` as a tuple to keep the dataclass frozen, then modify `_compute_session_stats` to collect all chunks from each source sequentially rather than just summing their byte sizes.
+
+For the return value, I'm changing `_log_session_discovery` to output a dictionary mapping session IDs to their XML content, which means I need to iterate through all sessions, compute their stats, and extract the chunks from each one.
+
+When there are multiple XML chunks for a session, I'll split them into separate files with part numbers, otherwise I'll save the single chunk as one file. Then I'm adding an `extra_files` parameter to `create_plan_draft_pr` so these XML files can be merged into the final output. Now I need to update all the other callers to pass `extra_files=None` across several files, then add a test to verify the extra files get merged into the committed files. I'm also realizing I should check if there's already a helper for determining session type prefixes, or if I need to build one based on the set membership checks I see in the learn command.
+
+I'll need a helper function for this, and I should import `IMPL_CONTEXT_DIR` in `land_learn.py` since the XML file paths need to be constructed under that directory. Let me check what `create_plan_draft_pr.py` is doing with the file paths...
+
+Looking at how it constructs the files dictionary, I can see it prefixes paths with `IMPL_CONTEXT_DIR`. So `extra_files` should contain full relative paths from the repo root, and the caller is responsible for including the correct prefix. This keeps things flexible and simple.
+
+Now I'm ready to write out the plan.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1008" cache_read_input_tokens="54875" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1008}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good. I now have a complete understanding of the issue and the fix. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1008" cache_read_input_tokens="54875" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1008}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_019X8JMZBVC5Pq1yvcDy6Tzq">
+    <param name="file_path">/Users/schrockn/.claude/plans/vectorized-gliding-curry.md</param>
+    <param name="content"># Fix: Embed session XML files in learn plans created by `erk land`
+
+## Context
+
+PR #8488 ...[truncated 3429 chars]...test with `erk land` on a real plan to confirm XML files appear in the learn plan PR diff
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1008" cache_read_input_tokens="54875" output_tokens="3987" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1008, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019X8JMZBVC5Pq1yvcDy6Tzq">
+File created successfully at: /Users/schrockn/.claude/plans/vectorized-gliding-curry.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01XUASqA5D964G4op5og5HDB">
+    <param name="plan"># Fix: Embed session XML files in learn plans created by `erk land`
+
+## Context
+
+PR #8488 ...[truncated 3429 chars]...test with `erk land` on a real plan to confirm XML files appear in the learn plan PR diff
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4064" cache_read_input_tokens="55883" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4064, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XUASqA5D964G4op5og5HDB">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/vectorized-gliding-curry.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix: Embed session XML files in learn plans created by `erk land`
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 2d92ece3-3f4b-40ad-b86e-232c09385763 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Fix: Embed session XML files in learn plans created by `erk land`
+
+## Context
+
+PR #8488 added `--session-xml-dir` to the `plan-save` CLI command so learn plans created via the `/erk:learn` skill embed preprocessed session XML files in the PR diff. However, `erk land` creates learn plans through a completely different code path (`land_learn.py` → `create_plan_draft_pr()`) that has no XML embedding support. PR #8493 — the learn plan auto-created when #8488 was landed — only contains `plan.md` and `ref.json`, with no session XML files.
+
+## Approach
+
+The preprocessing pipeline already runs during `erk land` (inside `_compute_session_stats` for the log summary display), but the XML chunks are discarded after computing byte sizes. Capture those chunks and thread them through to `create_plan_draft_pr`.
+
+## Changes
+
+### 1. `land_learn.py` — Capture XML chunks from preprocessing
+
+- **`SessionStats`** — Add `xml_chunks: tuple[str, ...]` field
+- **`_compute_session_stats`** — Collect chunks instead of just summing byte sizes
+- **`_log_session_discovery`** — Return `dict[str, str]` of XML file paths → content
+- **`_create_learn_pr_impl`** — Pass XML files as `extra_files` to `create_plan_draft_pr`
+
+### 2. `create_plan_draft_pr.py` — Accept `extra_files: dict[str, str] | None`
+
+Merge extra files into the commit alongside `plan.md` and `ref.json`.
+
+### 3. Update all callers to pass `extra_files=None`
+
+3 production callers + 4 test call sites.
+
+### 4. Tests for new behavior
+
+## Verification
+
+Run existing + new tests, `ty`, `ruff`, and manually test with `erk land`.
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="662" cache_read_input_tokens="59947" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 662}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01A1PiDsXD25bmQp3YHb9JxB">
+    <param name="questions">[{'question': '📋 Fix: Embed session XML files in learn plans created by `erk land`\nCurren...[truncated 449 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="662" cache_read_input_tokens="59947" output_tokens="705" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 662, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01A1PiDsXD25bmQp3YHb9JxB">
+User has answered your questions: "📋 Fix: Embed session XML files in learn plans created by `erk land`
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_013RRHvQgnRnBjFX5dSX22A7">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="792" cache_read_input_tokens="60609" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 792, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013RRHvQgnRnBjFX5dSX22A7">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 1.5: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 1.75: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 2: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="2d92ece3-3f4b-40ad-b86e-232c09385763" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 3.
+
+If the command fails, display the error and stop.
+
+### Step 3: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 2.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 3.5: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "2d92ece3-3f4b-40ad-b86e-232c09385763" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 4: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 3, 3.5 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "2d92ece3-3f4b-40ad-b86e-232c09385763" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Let me execute the plan save command.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2295" cache_read_input_tokens="61401" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2295}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013uqp2Jny2zKYGEV1qpMTGj">
+    <param name="command">head -1 /Users/schrockn/.claude/plans/vectorized-gliding-curry.md</param>
+    <param name="description">Get plan title for branch slug</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2295" cache_read_input_tokens="61401" output_tokens="108" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2295, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013uqp2Jny2zKYGEV1qpMTGj">
+# Fix: Embed session XML files in learn plans created by `erk land`
+  </tool_result>
+  <thinking>I'm in plan mode and can't run the save command. The skill instructions say to run `erk exec plan-save` but I'm in plan mode which prevents non-readonly operations. However, the skill was loaded by the user choosing "Create a plan PR", so I need to save the plan.
+
+Looking at the skill instructions, it says to run `erk exec plan-save --format json --session-id="..." --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}"`.
+
+Let me generate the branch slug and summary first, then run the command. But wait, I'm in plan mode. The skill instructions say "run this command" but plan mode says "you MUST NOT make any edits... or otherwise make any changes to the system."
+ 
+Actually, the ExitPlanMode hook clarifies that plan-save is an exception—it's specifically designed to work within plan mode and creates a PR without modifying local files. I should proceed with generating the branch slug and summary, then execute the command.
+
+The core issue is that `erk land` uses a separate code path for creating learn plans that doesn't include the session XML embedding feature from PR #8488. This plan will thread the XML chunks through the existing create_plan_draft_pr function via a new parameter to add that support.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1337" cache_read_input_tokens="63696" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1337}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Branch slug: `fix-land-learn-xml-embed`
+
+Summary: The erk land command creates learn plans through a separate code path (land_learn.py to create_plan_draft_pr) that lacks the session XML embedding support added in PR #8488. This plan captures the XML chunks already generated during session stats computation and threads them through create_plan_draft_pr via a new extra_files parameter.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1337" cache_read_input_tokens="63696" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1337}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01RZJkmAQfropaPD7UDBAyP7">
+    <param name="command">erk exec plan-save --format json --session-id="2d92ece3-3f4b-40ad-b86e-232c09385763" --bra...[truncated 274 chars]...omputation and threads them through create_plan_draft_pr via a new extra_files parameter."</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1337" cache_read_input_tokens="63696" output_tokens="755" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1337, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RZJkmAQfropaPD7UDBAyP7">
+{"success": true, "plan_number": 8496, "plan_url": "https://github.com/dagster-io/erk/pull/8496", "title": "[erk-plan] Fix: Embed session XML files in learn plans created by `erk land`", "branch_name": "plnd/fix-land-learn-xml-embed-02-28-1657", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/2d92ece3-3f4b-40ad-b86e-232c09385763/plan_snapshots/000001-a417b535"}
+  </tool_result>
+  <assistant>Plan "Fix: Embed session XML files in learn plans created by `erk land`" saved as draft PR #8496
+URL: https://github.com/dagster-io/erk/pull/8496
+
+Next steps:
+
+View PR: https://github.com/dagster-io/erk/pull/8496
+
+In Claude Code:
+  Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: `erk br co --for-plan 8496`
+    Implement: `source "$(erk br co --for-plan 8496 --script)" &amp;&amp; erk implement --dangerous`
+
+  New slot:
+    Local: `erk br co --new-slot --for-plan 8496`
+    Implement: `source "$(erk br co --new-slot --for-plan 8496 --script)" &amp;&amp; erk implement --dangerous`
+
+  Dispatch to Queue: `erk pr dispatch 8496`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1025" cache_read_input_tokens="65033" output_tokens="255" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1025, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;See ya!&lt;/local-command-stdout&gt;</user>
+</session>
