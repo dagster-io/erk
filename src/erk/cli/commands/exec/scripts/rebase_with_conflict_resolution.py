@@ -264,9 +264,7 @@ def _rebase_with_conflict_resolution_impl(
 
     # When behind == 0, the rebase was a no-op — report as already-up-to-date
     # so callers can skip generating a Claude summary.
-    action: Literal["rebased", "already-up-to-date"] = (
-        "already-up-to-date" if behind == 0 else "rebased"
-    )
+    action = "already-up-to-date" if behind == 0 else "rebased"
 
     return RebaseSuccess(
         action=action,
