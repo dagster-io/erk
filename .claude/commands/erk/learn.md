@@ -695,6 +695,7 @@ CMD="erk exec plan-save \
     --plan-file .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/learn-plan.md \
     --session-id=\"${CLAUDE_SESSION_ID}\" \
     --learned-from-issue <parent-issue-number> \
+    --session-xml-dir .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn \
     --format json"
 
 # Add workflow run URL if set (enables backlink to GitHub Actions run)

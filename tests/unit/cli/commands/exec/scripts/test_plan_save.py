@@ -576,3 +576,79 @@ def test_planned_pr_branch_slug_missing_errors(
 
     assert result.exit_code == 1
     assert "--branch-slug is required" in result.output
+
+
+def test_planned_pr_includes_session_xml_files(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Session XML files from --session-xml-dir are committed under sessions/."""
+    fake_git = FakeGit(current_branches={tmp_path: "main"})
+    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+    runner = CliRunner()
+
+    xml_dir = tmp_path / "learn"
+    xml_dir.mkdir()
+    (xml_dir / "planning-abc123.xml").write_text("<session>planning</session>", encoding="utf-8")
+    (xml_dir / "impl-def456.xml").write_text("<session>impl</session>", encoding="utf-8")
+
+    result = runner.invoke(
+        plan_save,
+        ["--format", "json", "--branch-slug", "test-slug", "--session-xml-dir", str(xml_dir)],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    assert len(fake_git.branch_commits) == 1
+    committed_files = fake_git.branch_commits[0].files
+    assert f"{IMPL_CONTEXT_DIR}/sessions/impl-def456.xml" in committed_files
+    assert f"{IMPL_CONTEXT_DIR}/sessions/planning-abc123.xml" in committed_files
+    assert committed_files[f"{IMPL_CONTEXT_DIR}/sessions/planning-abc123.xml"] == (
+        "<session>planning</session>"
+    )
+    assert committed_files[f"{IMPL_CONTEXT_DIR}/sessions/impl-def456.xml"] == (
+        "<session>impl</session>"
+    )
+
+
+def test_planned_pr_session_xml_dir_only_includes_xml(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Only .xml files are committed from the session XML directory."""
+    fake_git = FakeGit(current_branches={tmp_path: "main"})
+    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+    runner = CliRunner()
+
+    xml_dir = tmp_path / "learn"
+    xml_dir.mkdir()
+    (xml_dir / "session.xml").write_text("<session/>", encoding="utf-8")
+    (xml_dir / "comments.json").write_text("{}", encoding="utf-8")
+    (xml_dir / "notes.txt").write_text("notes", encoding="utf-8")
+
+    result = runner.invoke(
+        plan_save,
+        ["--format", "json", "--branch-slug", "test-slug", "--session-xml-dir", str(xml_dir)],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    committed_files = fake_git.branch_commits[0].files
+    session_paths = [k for k in committed_files if "sessions/" in k]
+    assert len(session_paths) == 1
+    assert f"{IMPL_CONTEXT_DIR}/sessions/session.xml" in committed_files
+
+
+def test_planned_pr_without_session_xml_dir_backward_compat(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Without --session-xml-dir, only plan.md and ref.json are committed."""
+    fake_git = FakeGit(current_branches={tmp_path: "main"})
+    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+    runner = CliRunner()
+
+    result = runner.invoke(plan_save, ["--format", "json", "--branch-slug", "test-slug"], obj=ctx)
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    committed_files = fake_git.branch_commits[0].files
+    assert len(committed_files) == 2
+    assert f"{IMPL_CONTEXT_DIR}/plan.md" in committed_files
+    assert f"{IMPL_CONTEXT_DIR}/ref.json" in committed_files
