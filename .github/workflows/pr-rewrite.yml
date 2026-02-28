@@ -104,7 +104,7 @@ jobs:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
           PR_NUMBER: ${{ inputs.pr_number }}
         run: |
-          REWRITE_OUTPUT=$(erk pr rewrite --pr "$PR_NUMBER" 2>&1) || true
+          REWRITE_OUTPUT=$(erk pr rewrite 2>&1) || true
           echo "rewrite_output<<EOF" >> "$GITHUB_OUTPUT"
           echo "$REWRITE_OUTPUT" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
