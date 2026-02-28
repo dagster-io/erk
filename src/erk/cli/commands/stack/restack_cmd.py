@@ -21,6 +21,8 @@ def restack_stack(ctx: ErkContext) -> None:
     prints a suggestion to run ``/erk:fix-conflicts`` instead of
     launching a nested session.
     """
+    # LBYL: check=False is intentional — failure (conflicts) is an expected
+    # outcome that drives branching logic. No gt restack gateway exists.
     result = subprocess.run(
         ["gt", "restack", "--no-interactive"],
         capture_output=True,
@@ -34,16 +36,11 @@ def restack_stack(ctx: ErkContext) -> None:
             click.echo(result.stdout.strip(), err=True)
         return
 
-    # Restack failed — check if there are merge conflicts
-    status_result = subprocess.run(
-        ["git", "status"],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    status_output = status_result.stdout
-
-    has_conflicts = "rebase in progress" in status_output or "Unmerged paths" in status_output
+    # Restack failed — use gateway to check for merge conflicts
+    cwd = ctx.cwd
+    rebase_in_progress = ctx.git.rebase.is_rebase_in_progress(cwd)
+    conflicted_files = ctx.git.status.get_conflicted_files(cwd)
+    has_conflicts = rebase_in_progress or len(conflicted_files) > 0
 
     if not has_conflicts:
         click.echo("gt restack failed:", err=True)
@@ -53,11 +50,18 @@ def restack_stack(ctx: ErkContext) -> None:
             click.echo(result.stdout.strip(), err=True)
         raise SystemExit(1)
 
-    # Conflicts detected
-    if "CLAUDECODE" in os.environ:
+    # Conflicts detected — check if already inside Claude Code
+    in_claude = "CLAUDECODE" in os.environ
+    if in_claude:
         click.echo("Merge conflicts detected during restack.", err=True)
         click.echo("Run /erk:fix-conflicts to resolve them.", err=True)
         raise SystemExit(1)
 
     click.echo("Conflicts detected, launching Claude to fix them...", err=True)
-    os.execvp("claude", ["claude", "/erk:fix-conflicts"])
+    ctx.prompt_executor.execute_interactive(
+        worktree_path=cwd,
+        dangerous=False,
+        command="/erk:fix-conflicts",
+        target_subpath=None,
+        permission_mode="safe",
+    )
