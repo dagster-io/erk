@@ -4,6 +4,7 @@ Each entry is a GitHub comment containing a metadata block.
 Entries are never modified after creation.
 """
 
+from functools import cached_property
 from pathlib import Path
 from typing import Any
 
@@ -32,53 +33,20 @@ def _render_content_block(key: str, title: str, content: str) -> str:
 class EntityLog:
     """Immutable append-only log stored as comments.
 
-    Each entry is a GitHub comment containing a metadata block.
-    Entries are never modified after creation.
+    Pure data snapshot — holds only comment bodies.
+    Use entity_log_append() / entity_log_append_content() for mutations.
     """
 
     def __init__(
         self,
         *,
-        number: int,
-        github_issues: GitHubIssues,
-        repo_root: Path,
         comment_bodies: list[str],
     ) -> None:
-        self._number = number
-        self._github_issues = github_issues
-        self._repo_root = repo_root
         self._comment_bodies = comment_bodies
-
-    def append(
-        self,
-        key: str,
-        data: dict[str, Any],
-        *,
-        title: str,
-        description: str,
-        schema: MetadataBlockSchema,
-    ) -> int:
-        """Append a structured log entry. Returns comment ID."""
-        block = create_metadata_block(key, data, schema=schema)
-        comment_body = render_erk_issue_event(title, block, description)
-        return self._github_issues.add_comment(self._repo_root, self._number, comment_body)
-
-    def append_content(
-        self,
-        key: str,
-        content: str,
-        *,
-        title: str,
-    ) -> int:
-        """Append a raw markdown content entry (e.g., plan-body, objective-body).
-        Returns comment ID."""
-        rendered = _render_content_block(key, title, content)
-        return self._github_issues.add_comment(self._repo_root, self._number, rendered)
 
     def entries(self, key: str) -> list[LogEntry]:
         """Get all log entries with a given key, in chronological order."""
-        all_entries = self.all_entries()
-        return [entry for entry in all_entries if entry.key == key]
+        return [entry for entry in self.all_entries if entry.key == key]
 
     def latest(self, key: str) -> LogEntry | None:
         """Get the most recent entry with a given key."""
@@ -87,6 +55,7 @@ class EntityLog:
             return None
         return matching[-1]
 
+    @cached_property
     def all_entries(self) -> list[LogEntry]:
         """Get all log entries across all keys."""
         entries: list[LogEntry] = []
@@ -103,3 +72,35 @@ class EntityLog:
                     )
                 )
         return entries
+
+
+def entity_log_append(
+    *,
+    github_issues: GitHubIssues,
+    repo_root: Path,
+    number: int,
+    key: str,
+    data: dict[str, Any],
+    title: str,
+    description: str,
+    schema: MetadataBlockSchema,
+) -> int:
+    """Append a structured log entry. Returns comment ID."""
+    block = create_metadata_block(key, data, schema=schema)
+    comment_body = render_erk_issue_event(title, block, description)
+    return github_issues.add_comment(repo_root, number, comment_body)
+
+
+def entity_log_append_content(
+    *,
+    github_issues: GitHubIssues,
+    repo_root: Path,
+    number: int,
+    key: str,
+    content: str,
+    title: str,
+) -> int:
+    """Append a raw markdown content entry (e.g., plan-body, objective-body).
+    Returns comment ID."""
+    rendered = _render_content_block(key, title, content)
+    return github_issues.add_comment(repo_root, number, rendered)

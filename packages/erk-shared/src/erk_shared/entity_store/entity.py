@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from erk_shared.entity_store.log import EntityLog
-from erk_shared.entity_store.state import EntityState
+from erk_shared.entity_store.state import EntityState, fetch_entity_body
 from erk_shared.entity_store.types import EntityKind
 from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
@@ -34,19 +34,19 @@ class GitHubEntity:
         github_issues: GitHubIssues,
         repo_root: Path,
     ) -> "GitHubEntity":
-        """Build a GitHubEntity with its EntityState and EntityLog."""
-        state = EntityState(
+        """Build a GitHubEntity by fetching state body and comment bodies."""
+        body = fetch_entity_body(
             number=number,
             kind=kind,
             github=github,
             github_issues=github_issues,
             repo_root=repo_root,
         )
-        comment_bodies = github_issues.get_issue_comments(repo_root, number)
-        log = EntityLog(
+        state = EntityState(
             number=number,
-            github_issues=github_issues,
-            repo_root=repo_root,
-            comment_bodies=comment_bodies,
+            kind=kind,
+            body=body,
         )
+        comment_bodies = github_issues.get_issue_comments(repo_root, number)
+        log = EntityLog(comment_bodies=comment_bodies)
         return cls(number=number, kind=kind, state=state, log=log)

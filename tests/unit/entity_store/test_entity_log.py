@@ -5,7 +5,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from erk_shared.entity_store.log import EntityLog
+from erk_shared.entity_store.log import (
+    EntityLog,
+    entity_log_append,
+    entity_log_append_content,
+)
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import (
@@ -61,19 +65,16 @@ def _render_event_comment(key: str, data: dict) -> str:
 
 
 class TestEntityLogAppend:
-    """Tests for EntityLog.append()."""
+    """Tests for entity_log_append() standalone function."""
 
     def test_append_creates_comment(self) -> None:
         issues = FakeGitHubIssues(issues={1: _make_issue_info(number=1)})
-        log = EntityLog(
-            number=1,
+        comment_id = entity_log_append(
             github_issues=issues,
             repo_root=REPO_ROOT,
-            comment_bodies=[],
-        )
-        comment_id = log.append(
-            "workflow-started",
-            {"status": "started", "started_at": "2024-01-01T00:00:00Z"},
+            number=1,
+            key="workflow-started",
+            data={"status": "started", "started_at": "2024-01-01T00:00:00Z"},
             title="Workflow Started",
             description="Starting workflow",
             schema=NOOP_SCHEMA,
@@ -85,24 +86,24 @@ class TestEntityLogAppend:
         assert "workflow-started" in body
         assert "started" in body
 
-    def test_append_returns_comment_id(self) -> None:
+    def test_append_returns_unique_comment_ids(self) -> None:
         issues = FakeGitHubIssues(issues={1: _make_issue_info(number=1)})
-        log = EntityLog(
-            number=1,
+        cid1 = entity_log_append(
             github_issues=issues,
             repo_root=REPO_ROOT,
-            comment_bodies=[],
-        )
-        cid1 = log.append(
-            "event-one",
-            {"key": "value1"},
+            number=1,
+            key="event-one",
+            data={"key": "value1"},
             title="Event One",
             description="",
             schema=NOOP_SCHEMA,
         )
-        cid2 = log.append(
-            "event-two",
-            {"key": "value2"},
+        cid2 = entity_log_append(
+            github_issues=issues,
+            repo_root=REPO_ROOT,
+            number=1,
+            key="event-two",
+            data={"key": "value2"},
             title="Event Two",
             description="",
             schema=NOOP_SCHEMA,
@@ -112,19 +113,16 @@ class TestEntityLogAppend:
 
 
 class TestEntityLogAppendContent:
-    """Tests for EntityLog.append_content()."""
+    """Tests for entity_log_append_content() standalone function."""
 
     def test_append_content_plan_body(self) -> None:
         issues = FakeGitHubIssues(issues={1: _make_issue_info(number=1)})
-        log = EntityLog(
-            number=1,
+        comment_id = entity_log_append_content(
             github_issues=issues,
             repo_root=REPO_ROOT,
-            comment_bodies=[],
-        )
-        comment_id = log.append_content(
-            "plan-body",
-            "# My Plan\n\nThis is the plan content.",
+            number=1,
+            key="plan-body",
+            content="# My Plan\n\nThis is the plan content.",
             title="Implementation Plan",
         )
         assert isinstance(comment_id, int)
@@ -135,15 +133,12 @@ class TestEntityLogAppendContent:
 
     def test_append_content_objective_body(self) -> None:
         issues = FakeGitHubIssues(issues={1: _make_issue_info(number=1)})
-        log = EntityLog(
-            number=1,
+        comment_id = entity_log_append_content(
             github_issues=issues,
             repo_root=REPO_ROOT,
-            comment_bodies=[],
-        )
-        comment_id = log.append_content(
-            "objective-body",
-            "## Objective\n\nBuild a thing.",
+            number=1,
+            key="objective-body",
+            content="## Objective\n\nBuild a thing.",
             title="Objective",
         )
         assert isinstance(comment_id, int)
@@ -153,15 +148,12 @@ class TestEntityLogAppendContent:
 
     def test_append_content_generic_key(self) -> None:
         issues = FakeGitHubIssues(issues={1: _make_issue_info(number=1)})
-        log = EntityLog(
-            number=1,
+        comment_id = entity_log_append_content(
             github_issues=issues,
             repo_root=REPO_ROOT,
-            comment_bodies=[],
-        )
-        comment_id = log.append_content(
-            "custom-content",
-            "Some raw markdown content",
+            number=1,
+            key="custom-content",
+            content="Some raw markdown content",
             title="Custom Content",
         )
         assert isinstance(comment_id, int)
@@ -171,7 +163,7 @@ class TestEntityLogAppendContent:
 
 
 class TestEntityLogEntries:
-    """Tests for EntityLog.entries(), latest(), all_entries()."""
+    """Tests for EntityLog.entries(), latest(), all_entries."""
 
     def test_entries_returns_matching_key(self) -> None:
         comment1 = _render_event_comment(
@@ -186,11 +178,7 @@ class TestEntityLogEntries:
             "workflow-started",
             {"started_at": "2024-01-01T02:00:00Z", "workflow_run_id": "222"},
         )
-        issues = FakeGitHubIssues(issues={1: _make_issue_info(number=1)})
         log = EntityLog(
-            number=1,
-            github_issues=issues,
-            repo_root=REPO_ROOT,
             comment_bodies=[comment1, comment2, comment3],
         )
         entries = log.entries("workflow-started")
@@ -199,13 +187,7 @@ class TestEntityLogEntries:
         assert entries[1].data["workflow_run_id"] == "222"
 
     def test_entries_returns_empty_for_unknown_key(self) -> None:
-        issues = FakeGitHubIssues(issues={1: _make_issue_info(number=1)})
-        log = EntityLog(
-            number=1,
-            github_issues=issues,
-            repo_root=REPO_ROOT,
-            comment_bodies=[],
-        )
+        log = EntityLog(comment_bodies=[])
         entries = log.entries("nonexistent-key")
         assert entries == []
 
@@ -218,25 +200,13 @@ class TestEntityLogEntries:
             "workflow-started",
             {"started_at": "2024-01-01T02:00:00Z", "workflow_run_id": "222"},
         )
-        issues = FakeGitHubIssues(issues={1: _make_issue_info(number=1)})
-        log = EntityLog(
-            number=1,
-            github_issues=issues,
-            repo_root=REPO_ROOT,
-            comment_bodies=[comment1, comment2],
-        )
+        log = EntityLog(comment_bodies=[comment1, comment2])
         latest = log.latest("workflow-started")
         assert latest is not None
         assert latest.data["workflow_run_id"] == "222"
 
     def test_latest_returns_none_for_unknown_key(self) -> None:
-        issues = FakeGitHubIssues(issues={1: _make_issue_info(number=1)})
-        log = EntityLog(
-            number=1,
-            github_issues=issues,
-            repo_root=REPO_ROOT,
-            comment_bodies=[],
-        )
+        log = EntityLog(comment_bodies=[])
         assert log.latest("nonexistent") is None
 
     def test_all_entries_returns_all_keys(self) -> None:
@@ -248,27 +218,15 @@ class TestEntityLogEntries:
             "submission-queued",
             {"queued_at": "2024-01-01T01:00:00Z"},
         )
-        issues = FakeGitHubIssues(issues={1: _make_issue_info(number=1)})
-        log = EntityLog(
-            number=1,
-            github_issues=issues,
-            repo_root=REPO_ROOT,
-            comment_bodies=[comment1, comment2],
-        )
-        all_entries = log.all_entries()
+        log = EntityLog(comment_bodies=[comment1, comment2])
+        all_entries = log.all_entries
         assert len(all_entries) == 2
         keys = {e.key for e in all_entries}
         assert keys == {"workflow-started", "submission-queued"}
 
     def test_all_entries_empty_when_no_comments(self) -> None:
-        issues = FakeGitHubIssues(issues={1: _make_issue_info(number=1)})
-        log = EntityLog(
-            number=1,
-            github_issues=issues,
-            repo_root=REPO_ROOT,
-            comment_bodies=[],
-        )
-        assert log.all_entries() == []
+        log = EntityLog(comment_bodies=[])
+        assert log.all_entries == []
 
     def test_entries_preserves_chronological_order(self) -> None:
         """Log entries should be in chronological order (earliest first)."""
@@ -280,13 +238,7 @@ class TestEntityLogEntries:
                     {"step": i, "timestamp": f"2024-01-01T0{i}:00:00Z"},
                 )
             )
-        issues = FakeGitHubIssues(issues={1: _make_issue_info(number=1)})
-        log = EntityLog(
-            number=1,
-            github_issues=issues,
-            repo_root=REPO_ROOT,
-            comment_bodies=comments,
-        )
+        log = EntityLog(comment_bodies=comments)
         entries = log.entries("impl-status")
         assert len(entries) == 5
         for i, entry in enumerate(entries):

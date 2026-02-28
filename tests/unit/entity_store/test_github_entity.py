@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from erk_shared.entity_store.entity import GitHubEntity
-from erk_shared.entity_store.log import EntityLog
+from erk_shared.entity_store.log import EntityLog, entity_log_append
 from erk_shared.entity_store.state import EntityState, entity_state_set_field
 from erk_shared.entity_store.types import EntityKind
 from erk_shared.gateway.github.fake import FakeGitHub
@@ -163,13 +163,25 @@ class TestGitHubEntityIssueWorkflow:
         )
 
         # Update state
-        entity_state_set_field(entity.state, "plan-header", "status", "active", schema=NOOP_SCHEMA)
-        assert entity.state.get_field("plan-header", "status") == "active"
+        new_state = entity_state_set_field(
+            entity.state,
+            "plan-header",
+            "status",
+            "active",
+            schema=NOOP_SCHEMA,
+            github=github,
+            github_issues=issues,
+            repo_root=REPO_ROOT,
+        )
+        assert new_state.get_field("plan-header", "status") == "active"
 
         # Append log entry
-        cid = entity.log.append(
-            "workflow-started",
-            {"started_at": "2024-01-01T00:00:00Z"},
+        cid = entity_log_append(
+            github_issues=issues,
+            repo_root=REPO_ROOT,
+            number=1,
+            key="workflow-started",
+            data={"started_at": "2024-01-01T00:00:00Z"},
             title="Workflow Started",
             description="Starting implementation",
             schema=NOOP_SCHEMA,
@@ -249,20 +261,14 @@ class TestGitHubEntityPRWorkflow:
         assert len(entries) == 1
 
     def test_pr_append_log_adds_comment(self) -> None:
-        pr = _make_pr_details(number=42, body="")
         issues = FakeGitHubIssues(issues={42: _make_issue_info(number=42, body="")})
-        github = FakeGitHub(issues_gateway=issues, pr_details={42: pr})
-        entity = GitHubEntity.create(
-            number=42,
-            kind=EntityKind.PR,
-            github=github,
+
+        cid = entity_log_append(
             github_issues=issues,
             repo_root=REPO_ROOT,
-        )
-
-        cid = entity.log.append(
-            "impl-started",
-            {"started_at": "2024-01-01T00:00:00Z"},
+            number=42,
+            key="impl-started",
+            data={"started_at": "2024-01-01T00:00:00Z"},
             title="Implementation Started",
             description="",
             schema=NOOP_SCHEMA,
