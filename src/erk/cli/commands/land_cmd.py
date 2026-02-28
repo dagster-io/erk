@@ -364,8 +364,12 @@ def _cleanup_slot_without_assignment(
     placeholder = get_placeholder_branch_name(slot_name)
     if placeholder is not None:
         # Force-update placeholder to trunk so the slot starts fresh
-        trunk = cleanup.ctx.git.branch.detect_trunk_branch(cleanup.main_repo_root)
-        cleanup.ctx.git.branch.create_branch(cleanup.main_repo_root, placeholder, trunk, force=True)
+        cleanup.ctx.git.branch.create_branch(
+            cleanup.main_repo_root,
+            placeholder,
+            cleanup.ctx.git.branch.detect_trunk_branch(cleanup.main_repo_root),
+            force=True,
+        )
         cleanup.ctx.branch_manager.checkout_branch(cleanup.worktree_path, placeholder)
 
     # Defensive: ensure branch is released before deletion
