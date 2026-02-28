@@ -1,0 +1,1132 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>when landing from the tui, do erk learn plans get generated? if so, it should indicate that as a toast</user>
+  <thinking>The user is asking about whether `erk learn` plans get generated when landing a PR from the TUI, and if so, they want a toast notification to indicate that. Let me explore the codebase to understand the landing flow in the TUI and whether learn plans are generated.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="10956" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10956}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the TUI landing flow and the learn plan generation to understand the current behavior.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="10956" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10956}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01SpQEYF4PpS3S78xPTtQcwo">
+    <param name="description">Explore TUI landing flow</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 521 chars]...the TUI code, look at action handlers, and trace through to the underlying implementation.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="10956" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10956}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_019GbZdJHH8883tctNNTGHRE">
+    <param name="description">Explore erk learn flow</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 463 chars]...or learn-related code, check the CLI commands, and look at the erk:land skill in .claude/.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="10956" cache_read_input_tokens="19113" output_tokens="610" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 10956, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019GbZdJHH8883tctNNTGHRE">
+Now I have comprehensive information. Let me compile my findings into a clear summary for the user.
+
+## Summary: How `erk learn` Plans Work
+
+Based on my exploration of the codebase and documentation, here's a comprehensive overview:
+
+### 1. **What is `erk learn`?**
+
+`erk learn` is a CLI command that extracts insights and documentation needs from plan implementations. It analyzes sessions associated with completed plans and creates **documentation plans** (not documentation directly). Located at:
+- **CLI Command**: `/Users/schrockn/code/erk/src/erk/cli/commands/learn/learn_cmd.py`
+- **Skill**: `/Users/schrockn/code/erk/.claude/commands/erk/learn.md`
+
+Key insight: Learn is a **two-step workflow** — first create a documentation plan, then implement it through the standard planning pipeline.
+
+### 2. **When are Learn Plans Generated?**
+
+Learn plans are created in **three scenarios**:
+
+**a) Manual Invocation via `/erk:learn` skill:**
+- Agent runs the skill on a completed implementation plan
+- Validates the plan isn't already a learn plan (cycle prevention)
+- Discovers sessions, preprocesses them, analyzes them
+- Creates a learn plan issue with draft documentation suggestions
+- Tracks the learn status on the parent plan
+
+**b) Automatic Inline During `plan-implement` Workflow:**
+- After a plan implementation PR lands, the workflow can automatically trigger learn
+- Creates a learn plan asynchronously without user interaction
+- (This is part of the post-landing automation)
+
+
+... [87 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01SpQEYF4PpS3S78xPTtQcwo">
+Excellent! Now I have enough information to provide a comprehensive answer. Let me compile my findings:
+
+## Summary: TUI PR Landing Flow
+
+Based on my exploration of the codebase and documentation, here's the complete understanding of how the TUI lands PRs:
+
+### 1. **How the TUI Lands PRs**
+
+The landing action is triggered from two locations:
+
+**Command Registration** (`src/erk/tui/commands/registry.py`):
+- Command ID: `land_pr`
+- Display name function: `_display_land_pr()` shows `"erk land {pr_number}"`
+- Availability: Requires PR to exist (`pr_number is not None`), PR state to be `"OPEN"`, and view in PLANS mode
+- Shortcut key: `l` (shown in launch screen)
+
+**Entry Points**:
+1. **Main list view** (`ErkDashApp.execute_palette_command()`) - Line 1352-1361
+2. **Detail modal** (`PlanDetailScreen.execute_command()`) - Line 769-780
+
+### 2. **Full Landing Flow Sequence**
+
+Here's the complete execution chain:
+
+```
+[User presses 'l' or selects "Land PR" from command palette]
+    ↓
+[TUI registers operation: _start_operation(op_id="land-pr-{pr_number}", label="Landing PR #{pr_number}...")]
+    ↓
+[TUI calls _land_pr_async() in background thread @work(thread=True)]
+
+... [69 lines omitted] ...
+
+            └─ Toast: "Failed to update objective..." (5s timeout, on failure)
+[FAILURE PATH]:
+    └─ Extract error message from last non-empty line of output
+    └─ Toast: "Failed to land PR #{pr_number}: {error_msg}" (5s timeout)
+| Merge failure | `"Failed to land PR #{pr_number}: {error}"` | error | 5s | Return code != 0 |
+| Objective update failure | `"Failed to update objective #{objective_issue}: {error}"` | error | 5s | Objective update failed |
+  </tool_result>
+  <thinking>Now I have a clear picture. Let me summarize what I've found:
+
+1. **TUI landing flow**: When landing from the TUI, it calls `erk exec land-execute`. The TUI already shows toast notifications for landing success/failure and objective updates.
+
+2. **Learn plan generation**: The `erk land` CLI command (specifically `land_pipeline.py`) has a step called `create_learn_pr()` that runs after merging. This creates a draft PR for the learn plan.
+
+3. **The gap**: The TUI landing flow calls `erk exec land-execute` which presumably runs the land pipeline including learn plan creation. 
+
+But the TUI doesn't notify the user when a learn plan gets created. I need to trace through the actual landing implementation in `land_execute.py` and `land_pipeline.py` to confirm learn plans are being generated, then find where in the TUI's `_land_pr_async()` method I should add the toast notification.</thinking>
+  <usage input_tokens="1574" cache_creation_input_tokens="2256" cache_read_input_tokens="30069" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2256}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good findings. Let me now read the key files to understand the exact integration point.</assistant>
+  <usage input_tokens="1574" cache_creation_input_tokens="2256" cache_read_input_tokens="30069" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2256}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012f8u6vpwZ7yi3fKoC4WWqS">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/app.py</param>
+    <param name="offset">832</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1574" cache_creation_input_tokens="2256" cache_read_input_tokens="30069" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2256}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012f8u6vpwZ7yi3fKoC4WWqS">
+   832→    def _land_pr_async(
+   833→        self,
+   834→        op_id: str,
+   835→        pr_number: int,
+   836→        branch: str,
+   837→        objective_issue: int | None,
+   838→    ) -&gt; None:
+   839→        """Land PR in background thread with toast."""
+   840→        result = self._run_streaming_operation(
+   841→            op_id=op_id,
+   842→            command=[
+   843→                "erk",
+   844→                "exec",
+   845→                "land-execute",
+   846→                f"--pr-number={pr_number}",
+   847→                f"--branch={branch}",
+   848→                "-f",
+   849→            ],
+   850→        )
+   851→        if not result.success:
+   852→            error_msg = _last_output_line(result)
+   853→            self.call_from_thread(self._finish_operation, op_id=op_id)
+   854→            self.call_from_thread(
+   855→                self.notify,
+   856→                f"Failed to land PR #{pr_number}: {error_msg}",
+   857→                severity="error",
+   858→                timeout=5,
+   859→            )
+   860→            return
+   861→
+
+... [50 lines omitted] ...
+
+   887→                error_msg = _last_output_line(obj_result)
+   890→                    f"Failed to update objective #{objective_issue}: {error_msg}",
+   891→                    severity="error",
+   909→            error_msg = _last_output_line(result)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01TnZLmsuXRaFPQAeGoTWSJQ">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/land_pipeline.py</param>
+  </tool_use>
+  <usage input_tokens="1574" cache_creation_input_tokens="2256" cache_read_input_tokens="30069" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2256}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TnZLmsuXRaFPQAeGoTWSJQ">
+     1→"""Linear pipelines for the land command.
+     2→
+     3→Two pipelines bridge the shell script serialization boundary:
+     4→- Validation pipeline: runs in `erk land` CLI, gathers all state and confirmations
+     5→- Execution pipeline: runs in `erk exec land-execute`, performs mutations
+     6→
+     7→Each step: (ErkContext, LandState) -&gt; LandState | LandError
+     8→"""
+     9→
+    10→import dataclasses
+    11→from collections.abc import Callable
+    12→from dataclasses import dataclass
+    13→from functools import cache
+    14→from pathlib import Path
+    15→
+    16→import click
+    17→
+    18→from erk.cli.commands.land_learn import _create_learn_pr_with_sessions
+    19→from erk.cli.commands.navigation_helpers import check_clean_working_tree
+    20→from erk.cli.commands.objective_helpers import get_objective_for_branch
+    21→from erk.cli.core import discover_repo_context
+    22→from erk.cli.ensure import Ensure
+    23→from erk.cli.ensure_ideal import EnsureIdeal
+    24→from erk.core.context import ErkContext
+    25→from erk_shared.gateway.github.types import MergeError, PRDetails
+    26→from erk_shared.gateway.gt.cli import render_events
+    27→from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
+    28→from erk_shared.gateway.gt.types import LandPrError
+    29→from erk_shared.output.output import user_output
+    30→from erk_shared.stack.validation import validate_parent_is_trunk
+
+... [574 lines omitted] ...
+
+    70→class LandError:
+    71→    """Error result from a pipeline step."""
+    74→    error_type: str
+    83→LandStep = Callable[[ErkContext, LandState], LandState | LandError]
+    91→def resolve_target(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   127→        return LandError(
+   129→            error_type="invalid_target",
+   144→) -&gt; LandState | LandError:
+   186→        validation_error = validate_parent_is_trunk(
+   192→            validation_error is None,
+   193→            validation_error.message if validation_error else "",
+   221→) -&gt; LandState | LandError:
+   226→        return LandError(
+   228→            error_type="up_with_pr",
+   263→) -&gt; LandState | LandError:
+   286→def validate_pr(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   299→        return LandError(
+   301→            error_type="no_pr_details",
+   331→def resolve_plan_id(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   340→def gather_confirmations(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   369→def resolve_objective(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   383→def merge_pr(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   390→        if isinstance(result, LandPrError):
+   391→            return LandError(
+   393→                error_type="graphite_merge_failed",
+   414→        if isinstance(merge_result, MergeError):
+   415→            return LandError(
+   417→                error_type="github_merge_failed",
+   418→                message=f"Failed to merge PR #{state.pr_number}\n\n{merge_result.message}",
+   427→def create_learn_pr(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   436→def cleanup_and_navigate(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   488→def run_validation_pipeline(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   489→    """Run the validation pipeline, returning final state or first error."""
+   492→        if isinstance(result, LandError):
+   498→def run_execution_pipeline(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   499→    """Run the execution pipeline, returning final state or first error."""
+   502→        if isinstance(result, LandError):
+  </tool_result>
+  <tool_use name="Read" id="toolu_015ygF1uSCTHx2x5xow1AY4W">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/land_learn.py</param>
+  </tool_use>
+  <usage input_tokens="1574" cache_creation_input_tokens="2256" cache_read_input_tokens="30069" output_tokens="504" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2256, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015ygF1uSCTHx2x5xow1AY4W">
+     1→"""Learn plan creation for the land command.
+     2→
+     3→Handles creating erk-learn plans when a PR is landed.
+     4→Extracted to avoid circular imports between land_cmd and land_pipeline.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from dataclasses import dataclass
+    10→from typing import TYPE_CHECKING
+    11→
+    12→import click
+    13→from rich.console import Console
+    14→from rich.table import Table
+    15→
+    16→from erk.cli.commands.exec.scripts.preprocess_session import (
+    17→    deduplicate_assistant_messages,
+    18→    deduplicate_documentation_blocks,
+    19→    discover_agent_logs,
+    20→    is_empty_session,
+    21→    is_warmup_session,
+    22→    process_log_file,
+    23→    split_entries_to_chunks,
+    24→    truncate_tool_parameters,
+    25→)
+    26→from erk.core.context import ErkContext
+    27→from erk_shared.learn.extraction.session_schema import (
+    28→    iter_jsonl_entries,
+    29→    parse_session_timestamp,
+    30→)
+
+... [305 lines omitted] ...
+
+   182→    except Exception as exc:
+   183→        user_output(click.style("Warning: ", fg="yellow") + f"Could not create learn plan: {exc}")
+   266→    """Inner implementation for learn plan creation (raises on error)."""
+   331→    elif result.error:
+   333→            click.style("Warning: ", fg="yellow") + f"Learn plan creation failed: {result.error}"
+  </tool_result>
+  <thinking>Now I have a clear picture. Let me trace the flow:
+
+1. **TUI landing flow** (`app.py:832-895`): Calls `erk exec land-execute`, shows toast on success/failure, then optionally runs objective update.
+
+2. **Execution pipeline** (`land_pipeline.py:474-480`): The execution pipeline is `merge_pr → create_learn_pr → cleanup_and_navigate`.
+
+3. **`create_learn_pr`** (`land_pipeline.py:427-433`): Calls `_create_learn_pr_with_sessions()` from `land_learn.py`.
+   
+4. **`_create_learn_pr_with_sessions`** (`land_learn.py:163-183`): Creates a draft PR with `erk-learn` label and outputs a success message with the plan number.
+
+So learn plans ARE created when landing from the TUI since the execution pipeline includes this step, but the TUI doesn't display a separate toast for it—the output streams to the status bar instead.
+
+The user wants a toast notification when a learn plan is created. The tricky part is that this happens inside a subprocess, and while the success message gets printed to stdout, it's not structured data the TUI can easily parse. I'm considering three approaches: parsing the subprocess output for the learn plan message, adding structured JSON output from the exec script, or running learn plan creation as a separate TUI step like the objective update already does.
+
+The cleanest pattern would be to extract learn plan creation from the pipeline and run it separately in the TUI, but that would also change the CLI behavior. The real issue is that `land-execute` runs the full pipeline including `create_learn_pr`, so the TUI never sees the result. Parsing stdout is fragile, and while structured output would be better, the current code only checks the success flag. I need to think about what actually makes sense here without breaking existing behavior. let me re-read the land-execute exec script to see if there's a flag. The TUI is calling `land-execute` as a subprocess, so the learn plan gets created inside that process and I can't directly access the result unless I parse the output. I'm thinking the cleanest approach would be to either parse the subprocess output for learn plan information to show in a toast, or have `land-execute` output structured data like JSON that the TUI can read.
+
+Now I'm stepping back to look at what's actually happening. The `land-execute` output streams to the status bar, so users can already see "✓ Created learn plan #X for plan #Y" in the streaming output. The simplest fix would be to parse that completed operation output for a learn plan creation marker and trigger a toast. Let me check what the streaming operation returns and how it works.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="17260" cache_read_input_tokens="32325" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17260}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the streaming operation result structure and the land-execute script.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="17260" cache_read_input_tokens="32325" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17260}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01YNopBGJ5ntKBL9ZsavAebx">
+    <param name="pattern">_run_streaming_operation</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/tui/app.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="17260" cache_read_input_tokens="32325" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17260}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YNopBGJ5ntKBL9ZsavAebx">
+657:    def _run_streaming_operation(
+733:        result = self._run_streaming_operation(
+765:        result = self._run_streaming_operation(
+800:        result = self._run_streaming_operation(
+840:        result = self._run_streaming_operation(
+871:            obj_result = self._run_streaming_operation(
+900:        result = self._run_streaming_operation(
+920:        result = self._run_streaming_operation(
+940:        result = self._run_streaming_operation(
+959:        result = self._run_streaming_operation(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01P87wtWj11LxSG3Cavi41yS">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/land_execute.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="17260" cache_read_input_tokens="32325" output_tokens="1467" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 17260, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01P87wtWj11LxSG3Cavi41yS">
+     1→"""Execute deferred land operations from activation script.
+     2→
+     3→This exec command performs the actual merge and cleanup operations for landing a PR.
+     4→It is called by the activation script after the user has approved the operation.
+     5→
+     6→Usage:
+     7→    erk exec land-execute --pr-number=123 --branch=foo [options]
+     8→
+     9→All validation happens during the validation phase (erk land). This command
+    10→executes the pre-validated operations.
+    11→
+    12→Exit Codes:
+    13→    0: Success (PR merged, branch deleted)
+    14→    1: Error (merge failed, validation error)
+    15→"""
+    16→
+    17→from pathlib import Path
+    18→
+    19→import click
+    20→
+    21→from erk.cli.commands.land_cmd import _execute_land
+    22→from erk.cli.commands.objective_helpers import run_objective_update_after_land
+    23→from erk_shared.context.helpers import require_context
+    24→
+    25→
+    26→@click.command(name="land-execute")
+    27→@click.option(
+    28→    "--pr-number",
+    29→    type=int,
+    30→    required=True,
+
+... [168 lines omitted] ...
+
+   154→            raise click.ClickException(f"Cannot use --up: branch '{branch}' has no children")
+   157→            raise click.ClickException(
+  </tool_result>
+  <thinking>Now I see the full picture. Let me trace the complete flow:
+
+**TUI landing** (`app.py:832-862`):
+1. Calls `erk exec land-execute --pr-number=N --branch=B -f`
+2. This subprocess runs `_execute_land()` which calls `run_execution_pipeline()` which includes `create_learn_pr`
+3. The TUI then shows a toast "Landed PR #N"
+4. Then optionally runs objective update as a separate step
+
+**Key insight**: The TUI currently calls `land-execute` WITHOUT `--objective-number` or `--plan-number` flags! Look at line 842-849:
+
+
+The command being constructed passes the PR number and branch, but I need to check whether `_execute_land` resolves the plan number internally or if it's missing from the invocation entirely.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4826" cache_read_input_tokens="49585" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4826}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check how `_execute_land` handles the plan number and the streaming operation result structure.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4826" cache_read_input_tokens="49585" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4826}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01HNJCXvxKsjaaZHGZFGbS7B">
+    <param name="pattern">def _execute_land</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4826" cache_read_input_tokens="49585" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4826}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HNJCXvxKsjaaZHGZFGbS7B">
+858:def _execute_land_directly(
+1387:def _execute_land(
+  </tool_result>
+  <tool_use name="Read" id="toolu_016WysvjgSRGQUQ9gMX1fwzT">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/app.py</param>
+    <param name="offset">657</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4826" cache_read_input_tokens="49585" output_tokens="578" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4826, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016WysvjgSRGQUQ9gMX1fwzT">
+   657→    def _run_streaming_operation(
+   658→        self,
+   659→        *,
+   660→        op_id: str,
+   661→        command: list[str],
+   662→    ) -&gt; _OperationResult:
+   663→        """Run a subprocess with live output streaming to the status bar.
+   664→
+   665→        Must be called from a background thread (@work(thread=True)).
+   666→        Uses Popen with merged stdout/stderr for real-time progress.
+   667→
+   668→        Args:
+   669→            op_id: Operation identifier for status bar updates
+   670→            command: Command and arguments to execute
+   671→
+   672→        Returns:
+   673→            Result with success flag, collected output lines, and return code
+   674→        """
+   675→        output_lines: list[str] = []
+   676→        proc = subprocess.Popen(
+   677→            command,
+   678→            stdout=subprocess.PIPE,
+   679→            stderr=subprocess.STDOUT,
+   680→            stdin=subprocess.DEVNULL,
+   681→            bufsize=1,
+   682→            text=True,
+   683→            cwd=str(self._provider.repo_root),
+   684→        )
+   685→        if proc.stdout is not None:
+   686→            for line in proc.stdout:
+
+... [50 lines omitted] ...
+
+   707→        # Error boundary: catch all exceptions from the close operation to display
+   720→        except Exception as e:
+   721→            # Error toast
+   725→                f"Failed to close plan #{plan_id}: {e}",
+   726→                severity="error",
+  </tool_result>
+  <tool_use name="Read" id="toolu_014etM36TJJt9hhMpmsJxVva">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="offset">1387</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1807" cache_read_input_tokens="54411" output_tokens="114" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1807, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014etM36TJJt9hhMpmsJxVva">
+  1387→def _execute_land(
+  1388→    ctx: ErkContext,
+  1389→    *,
+  1390→    pr_number: int | None,
+  1391→    branch: str | None,
+  1392→    worktree_path: Path | None,
+  1393→    is_current_branch: bool,
+  1394→    target_child_branch: str | None,
+  1395→    use_graphite: bool,
+  1396→    pull_flag: bool,
+  1397→    no_delete: bool,
+  1398→    no_cleanup: bool,
+  1399→    script: bool,
+  1400→    plan_number: int | None,
+  1401→) -&gt; None:
+  1402→    """Execute deferred land operations from activation script.
+  1403→
+  1404→    This function is called when `erk land --execute` is invoked by the
+  1405→    activation script. All validation has already been done - this just
+  1406→    performs the destructive operations via the execution pipeline.
+  1407→
+  1408→    Confirmations are skipped in execute mode because the user already approved
+  1409→    by sourcing the activation script. Confirmations happen during validation
+  1410→    phase only.
+  1411→
+  1412→    Args:
+  1413→        ctx: ErkContext
+  1414→        pr_number: PR number to merge
+  1415→        branch: Branch name being landed
+  1416→        worktree_path: Path to worktree being cleaned up (if any)
+
+... [30 lines omitted] ...
+  </tool_result>
+  <thinking>Now I see the issue clearly. The TUI calls `land-execute` with only `--pr-number`, `--branch`, and `-f`. It does NOT pass `--plan-number`. Look at the TUI code:
+
+```python
+command=[
+    "erk", "exec", "land-execute",
+    f"--pr-number={pr_number}",
+    f"--branch={branch}",
+    "-f",
+],
+```
+
+In `land_execute` (the exec script), `plan_number` defaults to `None` when not passed.
+
+In `_execute_land`, `plan_number=None` gets passed to `make_execution_state` as `plan_id=None`.
+
+
+When `create_learn_pr` runs in the pipeline, it checks if `plan_id` is None and immediately returns without creating any learn plans. So the TUI's missing `--plan-number` argument causes the entire learn plan creation to be skipped.
+
+Looking at how the CLI handles this differently, there's a `resolve_plan_id` step in the validation pipeline that the TUI bypasses by calling `land-execute` directly. The TUI also handles objective updates separately from the exec script, so that's not running twice—the exec script's objective update also short-circuits since the TUI doesn't pass `--objective-number`.
+
+To fix this, the TUI needs to resolve the plan number for the branch being landed and either pass it to `land-execute` or handle the learn PR creation as a separate step like it does for objectives. I should check if `PlanRowData` already has a `plan_id` field similar to how it stores `objective_issue`.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="985" cache_read_input_tokens="56218" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 985}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Important finding - let me check what data the TUI has available for the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="985" cache_read_input_tokens="56218" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 985}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011bVqgoC8CZZdJiPsCHLohx">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/data/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="985" cache_read_input_tokens="56218" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 985}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011bVqgoC8CZZdJiPsCHLohx">
+     1→"""Data types for TUI components."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from dataclasses import dataclass
+     6→from datetime import datetime
+     7→
+     8→from erk_shared.gateway.github.types import IssueFilterState
+     9→
+    10→
+    11→@dataclass(frozen=True)
+    12→class PlanRowData:
+    13→    """Row data for displaying a plan in the TUI table.
+    14→
+    15→    Contains pre-formatted display strings and raw data needed for actions.
+    16→    Immutable to ensure table state consistency.
+    17→
+    18→    **Display vs Raw convention:** Many data points have both a raw field (for
+    19→    logic/predicates) and a display field (for table rendering). Raw fields are
+    20→    often nullable (None when absent), while display fields are always strings
+    21→    (dash "-" or empty when absent). Use raw fields in availability predicates
+    22→    (``ctx.row.pr_number is not None``), display fields for rendering.
+    23→
+    24→    Attributes:
+    25→
+    26→        plan_id: GitHub issue number (e.g., 123). Never None.
+    27→        plan_url: Full URL to the GitHub issue. None when unavailable.
+    28→        full_title: Complete untruncated plan title. Empty string possible.
+    29→        plan_body: Raw issue body text (markdown). Empty string possible.
+    30→
+
+... [196 lines omitted] ...
+
+    56→        run_conclusion: Run conclusion ("success", "failure", "cancelled").
+   168→    warnings: tuple[str, ...] = ()
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01VLSnESjxJvsZTbyyv61EJN">
+    <param name="pattern">action_land_pr|_land_pr_async|land_pr</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/tui/app.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="985" cache_read_input_tokens="56218" output_tokens="954" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 985, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VLSnESjxJvsZTbyyv61EJN">
+832:    def _land_pr_async(
+1352:        elif command_id == "land_pr":
+1356:                self._land_pr_async(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01PtrfVDe9jUUiJpELt2zacG">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/app.py</param>
+    <param name="offset">1345</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4407" cache_read_input_tokens="57203" output_tokens="111" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4407, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PtrfVDe9jUUiJpELt2zacG">
+  1345→            if row.plan_url:
+  1346→                op_id = f"dispatch-plan-{row.plan_id}"
+  1347→                self._start_operation(
+  1348→                    op_id=op_id, label=f"Dispatching plan #{row.plan_id} to queue..."
+  1349→                )
+  1350→                self._dispatch_to_queue_async(op_id, row.plan_id)
+  1351→
+  1352→        elif command_id == "land_pr":
+  1353→            if row.pr_number and row.pr_head_branch:
+  1354→                op_id = f"land-pr-{row.pr_number}"
+  1355→                self._start_operation(op_id=op_id, label=f"Landing PR #{row.pr_number}...")
+  1356→                self._land_pr_async(
+  1357→                    op_id,
+  1358→                    row.pr_number,
+  1359→                    row.pr_head_branch,
+  1360→                    row.objective_issue,
+  1361→                )
+  1362→
+  1363→        elif command_id == "copy_replan":
+  1364→            cmd = f"/erk:replan {row.plan_id}"
+  1365→            self._provider.clipboard.copy(cmd)
+  1366→            self.notify(f"Copied: {cmd}")
+  1367→
+  1368→        # === OBJECTIVE COMMANDS ===
+  1369→        elif command_id == "copy_plan":
+  </tool_result>
+  <thinking>Now I have a complete picture. Let me summarize:
+
+**Current state:**
+- The TUI calls `_land_pr_async(op_id, row.pr_number, row.pr_head_branch, row.objective_issue)` 
+- `_land_pr_async` calls `erk exec land-execute --pr-number=N --branch=B -f`
+- It does NOT pass `--plan-number` 
+- Since `plan_id` is None in the execution state, `create_learn_pr` short-circuits
+- **Learn plans are NOT created when landing from the TUI**
+
+
+- I need to pass `--plan-number` to `land-execute` so the learn PR gets created, and the TUI already has `row.plan_id` available on `PlanRowData`
+- After landing succeeds, I should parse the output for the learn plan creation message and show a toast with the plan number
+- Option A is cleanest: pass the plan ID, scan the captured output lines for the "Created learn plan #" pattern, and display the toast
+
+But there's a catch—the `create_learn_pr` step might skip creation if the plan has the `erk-learn` label or if the creation check returns False, so I need to handle cases where no learn plan output appears.
+
+My approach: pass `--plan-number={row.plan_id}` to land-execute, then after a successful landing, search the output lines for the learn plan creation message and only show the toast if it's actually there. I could also check `row.is_learn_plan` to avoid passing the flag for learn plans themselves, though the pipeline handles that anyway.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="616" cache_read_input_tokens="61610" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 616}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have the full picture. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="616" cache_read_input_tokens="61610" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 616}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01S8mXXH5akNWq1L98Goy4My">
+    <param name="file_path">/Users/schrockn/.claude/plans/imperative-growing-hoare.md</param>
+    <param name="content"># TUI: Show toast when learn plan is created on landing
+
+## Context
+
+When landing a PR fro...[truncated 2267 chars]...and` should be unaffected (it already passes plan_number through the validation pipeline)
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="616" cache_read_input_tokens="61610" output_tokens="1530" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 616, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01S8mXXH5akNWq1L98Goy4My">
+File created successfully at: /Users/schrockn/.claude/plans/imperative-growing-hoare.md
+  </tool_result>
+  <assistant>Here's what I found:
+
+**Learn plans are NOT being created when landing from the TUI.** The TUI calls `erk exec land-execute` but doesn't pass `--plan-number`, so the `create_learn_pr` pipeline step short-circuits because `plan_id` is None. The CLI `erk land` works correctly because it runs the validation pipeline first, which resolves the plan ID.
+
+The fix is straightforward:
+1. Pass `--plan-number={plan_id}` to `land-execute` (the data is already on `PlanRowData`)
+2. After landing, parse the subprocess output for the "Created learn plan #N" message and show it as a toast
+3. Skip for learn plans (cycle prevention)
+
+All changes are in a single file: `src/erk/tui/app.py`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4040" cache_read_input_tokens="62226" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4040}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01CNiXVpbJDBUehcHEh1SJuG">
+    <param name="plan"># TUI: Show toast when learn plan is created on landing
+
+## Context
+
+When landing a PR fro...[truncated 2267 chars]...and` should be unaffected (it already passes plan_number through the validation pipeline)
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4040" cache_read_input_tokens="62226" output_tokens="229" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4040, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CNiXVpbJDBUehcHEh1SJuG">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/imperative-growing-hoare.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 TUI: Show toast when learn plan is created on landing
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id d6ae3f7a-7f21-4681-a2e0-56f5010088e2 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_0178QK9QHk3fCwNWSurN6ANm">
+    <param name="file_path">/Users/schrockn/.claude/plans/imperative-growing-hoare.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="850" cache_read_input_tokens="66266" output_tokens="73" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 850, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0178QK9QHk3fCwNWSurN6ANm">
+     1→# TUI: Show toast when learn plan is created on landing
+     2→
+     3→## Context
+     4→
+     5→When landing a PR from the TUI, learn plans are **not** being created at all. The TUI calls `erk exec land-execute --pr-number=N --branch=B -f` but does **not** pass `--plan-number`. Since `plan_id` is None in the execution state, the `create_learn_pr` pipeline step short-circuits immediately.
+     6→
+     7→The CLI `erk land` works correctly because the validation pipeline's `resolve_plan_id` step populates `plan_id` before the execution pipeline runs. But the TUI bypasses validation and calls land-execute directly.
+     8→
+     9→## Plan
+    10→
+    11→### 1. Pass `--plan-number` from TUI to `land-execute`
+    12→
+    13→**File:** `src/erk/tui/app.py` — `_land_pr_async` method (line ~842)
+    14→
+    15→Add `--plan-number={row.plan_id}` to the command list. The plan_id is already available on `PlanRowData` and is passed to `_land_pr_async`. Update the method signature to accept `plan_id: int`.
+    16→
+    17→At the call site (line ~1356), pass `row.plan_id`.
+    18→
+    19→### 2. Show toast when learn plan is created
+    20→
+    21→**File:** `src/erk/tui/app.py` — `_land_pr_async` method (line ~862)
+    22→
+    23→After the successful landing toast, scan `result.output_lines` for the learn plan creation message. The `create_learn_pr` step outputs `"✓ Created learn plan #{N} for plan #{M}"` on success. Parse this to extract the learn plan number and show a toast.
+    24→
+    25→```python
+    26→# After "Landed PR #N" toast
+    27→learn_pr = _extract_learn_plan_number(result)
+    28→if learn_pr is not None:
+    29→    self.call_from_thread(self.notify, f"Created learn plan #{learn_pr}", timeout=3)
+    30→```
+
+... [23 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+## TUI: Show toast when learn plan is created on landing
+
+### Context
+
+When landing a PR from the TUI, learn plans are **not** being created at all. The TUI calls `erk exec land-execute --pr-number=N --branch=B -f` but does **not** pass `--plan-number`. Since `plan_id` is None in the execution state, the `create_learn_pr` pipeline step short-circuits immediately.
+
+The CLI `erk land` works correctly because the validation pipeline's `resolve_plan_id` step populates `plan_id` before the execution pipeline runs. But the TUI bypasses validation and calls land-execute directly.
+
+### Plan
+
+**1. Pass `--plan-number` from TUI to `land-execute`** — Add `--plan-number={plan_id}` to the command. The data is already on `PlanRowData`.
+
+**2. Show toast when learn plan is created** — After landing, scan output lines for "Created learn plan #N" and show a toast.
+
+**3. Skip for learn plans** — Cycle prevention: don't pass plan_id when the row is a learn plan.
+
+### Files to modify
+
+- `src/erk/tui/app.py` only
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1095" cache_read_input_tokens="67116" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1095}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_013epvGH7diYGyTEtZ5yZ7sT">
+    <param name="questions">[{'question': '📋 TUI: Show toast when learn plan is created on landing\nCurrent context: (...[truncated 437 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1095" cache_read_input_tokens="67116" output_tokens="523" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1095, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013epvGH7diYGyTEtZ5yZ7sT">
+User has answered your questions: "📋 TUI: Show toast when learn plan is created on landing
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_016wqeGEqDrZjXmPhL1pWvQg">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="605" cache_read_input_tokens="68211" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 605, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016wqeGEqDrZjXmPhL1pWvQg">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 1.5: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 1.75: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 2: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="d6ae3f7a-7f21-4681-a2e0-56f5010088e2" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 3.
+
+If the command fails, display the error and stop.
+
+### Step 3: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 2.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 3.5: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "d6ae3f7a-7f21-4681-a2e0-56f5010088e2" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 4: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 3, 3.5 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "d6ae3f7a-7f21-4681-a2e0-56f5010088e2" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Let me save the plan to GitHub.
+
+**Branch slug:** `tui-learn-plan-toast`
+
+**Plan summary:** When landing a PR from the TUI, learn plans are not created because the plan number is not passed to the land-execute subprocess. This adds the missing plan-number flag and shows a toast notification when a learn plan is created.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2304" cache_read_input_tokens="68816" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2304}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017dtvtPzrafF1hFe1Wmc8tn">
+    <param name="command">erk exec plan-save --format json --session-id="d6ae3f7a-7f21-4681-a2e0-56f5010088e2" --bra...[truncated 163 chars]...the missing plan-number flag and shows a toast notification when a learn plan is created."</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2304" cache_read_input_tokens="68816" output_tokens="289" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2304, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017dtvtPzrafF1hFe1Wmc8tn">
+{"success": true, "plan_number": 8494, "plan_url": "https://github.com/dagster-io/erk/pull/8494", "title": "[erk-plan] TUI: Show toast when learn plan is created on landing", "branch_name": "plnd/tui-learn-plan-toast-02-28-1651", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/d6ae3f7a-7f21-4681-a2e0-56f5010088e2/plan_snapshots/000001-bfb70f2d"}
+  </tool_result>
+  <assistant>Plan saved as draft PR #8494.
+
+**Plan "[erk-plan] TUI: Show toast when learn plan is created on landing" saved as draft PR #8494**
+
+URL: https://github.com/dagster-io/erk/pull/8494
+
+Next steps:
+
+**View PR:** https://github.com/dagster-io/erk/pull/8494
+
+**In Claude Code:**
+- Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+**OR exit Claude Code first, then run one of:**
+
+New slot (recommended — you're on trunk):
+- Local: `erk br co --new-slot --for-plan 8494`
+- Implement: `source "$(erk br co --new-slot --for-plan 8494 --script)" &amp;&amp; erk implement --dangerous`
+
+Same slot:
+- Local: `erk br co --for-plan 8494`
+- Implement: `source "$(erk br co --for-plan 8494 --script)" &amp;&amp; erk implement --dangerous`
+
+Dispatch to Queue: `erk pr dispatch 8494`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1659" cache_read_input_tokens="71120" output_tokens="266" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1659, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-dispatch&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-dispatch&lt;/command-name&gt;</user>
+  <user># /erk:pr-dispatch
+
+## Goal
+
+Find the most recent plan created in this conversation and dispatch it for remote AI implementation via `erk pr dispatch`.
+
+## What This Command Does
+
+1. Search conversation for the last plan reference
+2. Extract the plan number
+3. Run `erk pr dispatch &lt;plan_number&gt;` to trigger remote implementation
+
+## Finding the Plan
+
+Search the conversation from bottom to top for these patterns (in priority order):
+
+1. **Draft PR reference**: `saved as draft PR #&lt;number&gt;` or `draft PR #&lt;number&gt;`
+2. **Pull request URL**: `https://github.com/&lt;owner&gt;/&lt;repo&gt;/pull/&lt;number&gt;`
+3. **Plan URL**: `https://github.com/.../pull/&lt;number&gt;` (legacy: `https://github.com/.../issues/&lt;number&gt;`)
+
+Extract the plan number from the most recent match.
+
+## Execution
+
+Once you have the plan number, run:
+
+```bash
+erk pr dispatch &lt;plan_number&gt;
+```
+
+If the command succeeds, clear the session marker to allow creating new plans in this session:
+
+```bash
+erk exec marker delete --session-id "d6ae3f7a-7f21-4681-a2e0-56f5010088e2" plan-saved-issue
+```
+
+Display the command output to the user. The `erk pr dispatch` command handles all validation (plan existence, labels, state).
+
+## Error Cases
+
+- **No plan found in conversation**: Report "No plan found in conversation. Run /erk:plan-save first to create a plan."
+- **erk pr dispatch fails**: Display the error output from the command (erk pr dispatch validates the plan)
+</user>
+  <assistant>
+
+The most recent plan in this conversation is **#8494**. Let me dispatch it.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="837" cache_read_input_tokens="72779" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 837}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HkCFnt5ETKQSxXFn5Jpiwa">
+    <param name="command">erk pr dispatch 8494</param>
+    <param name="description">Dispatch plan #8494 for remote implementation</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="837" cache_read_input_tokens="72779" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 837, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HkCFnt5ETKQSxXFn5Jpiwa">
+Checking GitHub authentication...
+Syncing trunk with remote...
+Resolving GitHub username...
+Validating 1 planned-PR plan(s)...
+
+Validating PR #8494...
+
+✓ All 1 plan(s) validated
+
+  #8494: [erk-plan] TUI: Show toast when learn plan is created on landing
+
+Dispatching PR #8494...
+
+Fetching plan content...
+Checking out existing plan branch: plnd/tui-learn-plan-toast-02-28-1651
+Cleaning up previous .erk/impl-context/ folder...
+Creating .erk/impl-context/ folder...
+✓ Branch pushed to remote
+
+Triggering workflow: plan-implement.yml
+  Waiting for workflow run... (attempt 1/11)
+  Waiting for workflow run... (attempt 2/11)
+✓ Workflow triggered.
+✓ Dispatch metadata written
+Posting queued event comment...
+✓ Queued event comment posted
+
+
+✓ 1 plan(s) dispatched successfully!
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_013ogBUyodp7GVut5A2e8E4X">
+    <param name="command">erk exec marker delete --session-id "d6ae3f7a-7f21-4681-a2e0-56f5010088e2" plan-saved-issue</param>
+    <param name="description">Clear plan-saved marker</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="596" cache_read_input_tokens="73616" output_tokens="115" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 596, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013ogBUyodp7GVut5A2e8E4X">
+{"success": true, "message": "Deleted marker: plan-saved-issue"}
+  </tool_result>
+  <assistant>Plan #8494 dispatched for remote implementation.
+
+- **Plan:** https://github.com/dagster-io/erk/pull/8494
+- **Workflow:** https://github.com/dagster-io/erk/actions/runs/22529800950</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="146" cache_read_input_tokens="74212" output_tokens="65" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 146, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
