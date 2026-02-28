@@ -732,7 +732,7 @@ def test_impl_planned_pr_preserves_metadata_and_adds_plan_section(tmp_path: Path
     # Build a PR body with metadata prefix and plan content (planned-PR format)
     metadata_body = format_plan_header_body_for_test()
     plan_content = "# My Plan\n\n## Steps\n\n1. Do thing"
-    pr_body = build_plan_stage_body(metadata_body, plan_content)
+    pr_body = build_plan_stage_body(metadata_body, plan_content, summary=None)
 
     pr_details = PRDetails(
         number=42,
@@ -882,7 +882,7 @@ def test_cli_planned_pr_flag(tmp_path: Path) -> None:
     # Build a PR body with metadata prefix and plan content (planned-PR format)
     metadata_body = format_plan_header_body_for_test()
     plan_content = "# My Plan\n\n## Steps\n\n1. Do thing"
-    pr_body = build_plan_stage_body(metadata_body, plan_content)
+    pr_body = build_plan_stage_body(metadata_body, plan_content, summary=None)
 
     pr_details = PRDetails(
         number=42,

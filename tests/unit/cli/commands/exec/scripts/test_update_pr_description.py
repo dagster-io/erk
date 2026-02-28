@@ -421,7 +421,7 @@ def test_update_pr_description_planned_pr_backend_preserves_metadata() -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         metadata_body = format_plan_header_body_for_test()
         plan_content = "# My Plan\n\nImplement the thing."
-        pr_body = build_plan_stage_body(metadata_body, plan_content)
+        pr_body = build_plan_stage_body(metadata_body, plan_content, summary=None)
 
         git, graphite, github, executor = _make_standard_fakes(
             env,

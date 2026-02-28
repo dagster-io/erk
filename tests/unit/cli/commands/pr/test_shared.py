@@ -31,7 +31,7 @@ def _pr_with_plan_header(
         lifecycle_stage=lifecycle_stage,
     )
     plan_content = "# Plan\n\nDo the thing."
-    pr_body = build_plan_stage_body(metadata_body, plan_content)
+    pr_body = build_plan_stage_body(metadata_body, plan_content, summary=None)
     return PRDetails(
         number=number,
         url=f"https://github.com/owner/repo/pull/{number}",

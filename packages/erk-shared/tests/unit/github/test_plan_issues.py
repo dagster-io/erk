@@ -62,6 +62,7 @@ def _create_plan(
         created_from_session=created_from_session,
         created_from_workflow_run_url=None,
         learned_from_issue=learned_from_issue,
+        summary=None,
     )
 
 
@@ -493,6 +494,7 @@ class TestCreatePlanDraftPRBranchAlreadyExists:
             created_from_session=None,
             created_from_workflow_run_url=None,
             learned_from_issue=None,
+            summary=None,
         )
 
         assert result.success is False
@@ -595,6 +597,7 @@ class TestCreatePlanDraftPRMetadata:
             created_from_session="sess-xyz",
             created_from_workflow_run_url="https://github.com/runs/123",
             learned_from_issue=55,
+            summary=None,
         )
 
         assert result.success is True
@@ -639,6 +642,7 @@ class TestCreatePlanDraftPRNonNumericPlanId:
                 created_from_session=None,
                 created_from_workflow_run_url=None,
                 learned_from_issue=None,
+                summary=None,
             )
 
         assert result.success is False

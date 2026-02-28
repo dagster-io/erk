@@ -80,6 +80,7 @@ def create_pr_from_session(ctx: click.Context, session_id: str | None) -> None:
         created_from_session=session_id,
         created_from_workflow_run_url=None,
         learned_from_issue=None,
+        summary=None,
     )
 
     if not result.success:

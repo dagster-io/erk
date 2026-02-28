@@ -298,7 +298,7 @@ def test_check_valid_draft_pr_plan_passes() -> None:
 2. Step two"""
 
     # Build draft-PR format body: metadata + separator + <details>original-plan</details>
-    issue_body = build_plan_stage_body(plan_header_block, plan_content)
+    issue_body = build_plan_stage_body(plan_header_block, plan_content, summary=None)
 
     issue = IssueInfo(
         number=42,
@@ -545,7 +545,7 @@ def test_validate_plan_format_passes_draft_pr_plan(tmp_path: Path) -> None:
 1. Step one
 2. Step two"""
 
-    issue_body = build_plan_stage_body(plan_header_block, plan_content)
+    issue_body = build_plan_stage_body(plan_header_block, plan_content, summary=None)
 
     issue = IssueInfo(
         number=42,

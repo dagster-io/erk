@@ -47,6 +47,7 @@ def test_create_plan_requires_branch_name() -> None:
             content="# Plan",
             labels=("erk-plan",),
             metadata={},
+            summary=None,
         )
 
 
@@ -61,6 +62,7 @@ def test_create_plan_creates_planned_pr() -> None:
         content="# Plan content",
         labels=("erk-plan",),
         metadata={"branch_name": "test-branch"},
+        summary=None,
     )
 
     # Verify it was created as draft
@@ -80,6 +82,7 @@ def test_create_plan_uses_base_ref_name_as_pr_base() -> None:
         content="# Plan content",
         labels=("erk-plan",),
         metadata={"branch_name": "test-branch", "base_ref_name": "main"},
+        summary=None,
     )
 
     assert fake_github.created_prs[0][3] == "main"
@@ -96,6 +99,7 @@ def test_create_plan_falls_back_to_master_when_base_ref_name_missing() -> None:
         content="# Plan content",
         labels=("erk-plan",),
         metadata={"branch_name": "test-branch"},
+        summary=None,
     )
 
     assert fake_github.created_prs[0][3] == "master"
@@ -112,6 +116,7 @@ def test_create_plan_falls_back_to_master_when_base_ref_name_not_string() -> Non
         content="# Plan content",
         labels=("erk-plan",),
         metadata={"branch_name": "test-branch", "base_ref_name": 42},
+        summary=None,
     )
 
     assert fake_github.created_prs[0][3] == "master"
@@ -128,6 +133,7 @@ def test_create_plan_adds_erk_plan_label() -> None:
         content="# Plan",
         labels=("erk-plan",),
         metadata={"branch_name": "test-branch"},
+        summary=None,
     )
 
     # Check label was added
@@ -145,6 +151,7 @@ def test_create_plan_adds_extra_labels() -> None:
         content="# Plan",
         labels=("erk-pr", "erk-learn"),
         metadata={"branch_name": "test-branch"},
+        summary=None,
     )
 
     pr_number = int(result.plan_id)
@@ -163,6 +170,7 @@ def test_create_plan_embeds_plan_content_in_pr_body() -> None:
         content="# Detailed Plan\n\nStep 1: Do things.",
         labels=("erk-plan",),
         metadata={"branch_name": "test-branch"},
+        summary=None,
     )
 
     pr = fake_github.get_pr(Path("/repo"), int(result.plan_id))
@@ -187,6 +195,7 @@ def test_resolve_plan_id_for_branch_finds_created_pr() -> None:
         content="Content",
         labels=("erk-plan",),
         metadata={"branch_name": "my-plan-branch"},
+        summary=None,
     )
 
     plan_id = backend.resolve_plan_id_for_branch(Path("/repo"), "my-plan-branch")
@@ -215,6 +224,7 @@ def test_get_plan_for_branch_roundtrip() -> None:
         content="Content for branch",
         labels=("erk-plan",),
         metadata={"branch_name": "my-branch"},
+        summary=None,
     )
 
     plan = backend.get_plan_for_branch(Path("/repo"), "my-branch")
@@ -245,6 +255,7 @@ def test_update_plan_content_roundtrip() -> None:
         content="Original content",
         labels=("erk-plan",),
         metadata={"branch_name": "test-branch"},
+        summary=None,
     )
 
     backend.update_plan_content(Path("/repo"), result.plan_id, "Updated content")
@@ -271,6 +282,7 @@ def test_list_plans_includes_only_planned_prs_with_erk_plan_label() -> None:
         content="Plan content",
         labels=("erk-plan",),
         metadata={"branch_name": "plan-branch"},
+        summary=None,
     )
 
     plans = backend.list_plans(Path("/repo"), PlanQuery(state=PlanState.OPEN))
@@ -285,7 +297,7 @@ def test_list_plans_includes_only_planned_prs_with_erk_plan_label() -> None:
 
 def test_build_plan_stage_body_combines_metadata_and_content() -> None:
     """build_plan_stage_body creates a body with metadata and details-wrapped plan, no separator."""
-    result = build_plan_stage_body("metadata block", "plan content")
+    result = build_plan_stage_body("metadata block", "plan content", summary=None)
     assert "metadata block" in result
     assert "plan content" in result
     assert "\n\n---\n\n" not in result
@@ -294,7 +306,7 @@ def test_build_plan_stage_body_combines_metadata_and_content() -> None:
 
 def test_extract_plan_content_extracts_from_details() -> None:
     """extract_plan_content extracts content from details-wrapped body."""
-    body = build_plan_stage_body("metadata block", "plan content here")
+    body = build_plan_stage_body("metadata block", "plan content here", summary=None)
     assert extract_plan_content(body) == "plan content here"
 
 
@@ -325,6 +337,7 @@ def test_create_plan_includes_checkout_footer() -> None:
         content="# Plan content",
         labels=("erk-plan",),
         metadata={"branch_name": "test-branch"},
+        summary=None,
     )
 
     pr = fake_github.get_pr(Path("/repo"), int(result.plan_id))

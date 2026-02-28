@@ -120,6 +120,7 @@ def _save_as_planned_pr(
     created_from_workflow_run_url: str | None,
     branch_slug: str | None,
     node_ids: tuple[str, ...] | None,
+    summary: str | None,
 ) -> None:
     """Save plan as a planned PR.
 
@@ -137,6 +138,7 @@ def _save_as_planned_pr(
         created_from_workflow_run_url: GitHub Actions workflow run URL
         branch_slug: Pre-generated branch slug (skips LLM call when provided)
         node_ids: Objective roadmap node IDs to associate with this plan
+        summary: Optional AI-generated summary for the PR description
     """
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
@@ -265,6 +267,7 @@ def _save_as_planned_pr(
         content=plan_content,
         labels=tuple(labels),
         metadata=metadata,
+        summary=summary,
     )
 
     if not result.plan_id.isdigit():
@@ -325,6 +328,7 @@ def _save_plan_via_planned_pr(
     created_from_workflow_run_url: str | None,
     branch_slug: str | None,
     objective: int | None,
+    summary: str | None,
 ) -> None:
     """Handle planned-PR backend: dedup check, plan extraction, validation, and save.
 
@@ -338,6 +342,7 @@ def _save_plan_via_planned_pr(
         created_from_workflow_run_url: GitHub Actions workflow run URL
         branch_slug: Pre-generated branch slug (skips LLM call when provided)
         objective: Objective issue number from CLI flag (overrides session marker)
+        summary: Optional AI-generated summary for the PR description
     """
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
@@ -428,6 +433,7 @@ def _save_plan_via_planned_pr(
         created_from_workflow_run_url=created_from_workflow_run_url,
         branch_slug=branch_slug,
         node_ids=node_ids,
+        summary=summary,
     )
 
 
@@ -478,6 +484,11 @@ def _save_plan_via_planned_pr(
     default=None,
     help="Objective issue number (overrides session marker)",
 )
+@click.option(
+    "--summary",
+    default=None,
+    help="AI-generated plan summary for PR description",
+)
 @click.pass_context
 def plan_save(
     ctx: click.Context,
@@ -490,6 +501,7 @@ def plan_save(
     created_from_workflow_run_url: str | None,
     branch_slug: str | None,
     objective: int | None,
+    summary: str | None,
 ) -> None:
     """Save plan as a draft PR."""
     _save_plan_via_planned_pr(
@@ -502,4 +514,5 @@ def plan_save(
         created_from_workflow_run_url=created_from_workflow_run_url,
         branch_slug=branch_slug,
         objective=objective,
+        summary=summary,
     )

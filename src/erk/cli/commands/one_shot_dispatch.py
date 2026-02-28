@@ -285,7 +285,7 @@ def dispatch_one_shot(
             f"_One-shot: plan content will be populated by one-shot workflow._\n\n"
             f"**Prompt:** {params.prompt}"
         )
-        pr_body_initial = build_plan_stage_body(metadata_body, placeholder_content)
+        pr_body_initial = build_plan_stage_body(metadata_body, placeholder_content, summary=None)
         pr_number = ctx.github.create_pr(
             repo.root,
             branch_name,

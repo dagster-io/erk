@@ -291,6 +291,7 @@ class PlanBackend(ABC):
         content: str,
         labels: tuple[str, ...],
         metadata: Mapping[str, object],
+        summary: str | None,
     ) -> CreatePlanResult:
         """Create a new plan.
 
@@ -300,6 +301,7 @@ class PlanBackend(ABC):
             content: Plan body/description
             labels: Labels to apply (immutable tuple)
             metadata: Provider-specific metadata
+            summary: Optional AI-generated summary to display above the collapsed plan
 
         Returns:
             CreatePlanResult with plan_id and url

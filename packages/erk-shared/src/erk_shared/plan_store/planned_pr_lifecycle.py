@@ -28,12 +28,14 @@ Stages
 
 1. Plan Creation
    ``plan_save`` / ``PlannedPRBackend.create_plan()`` creates a draft PR.
-   The body contains the plan content collapsed in a <details> tag,
-   followed by the plan-header metadata block and a checkout footer.
-   The metadata block is self-delimiting via HTML comment markers,
-   so no separator is needed.
+   The body contains an optional AI-generated summary followed by the plan
+   content collapsed in a <details> tag, then the plan-header metadata block
+   and a checkout footer. The metadata block is self-delimiting via HTML
+   comment markers, so no separator is needed.
 
    Body format::
+
+       [optional AI-generated summary]
 
        <details>
        <summary>original-plan</summary>
@@ -92,7 +94,7 @@ _LEGACY_DETAILS_OPEN = "<details>\n<summary><code>original-plan</code></summary>
 DETAILS_CLOSE = "\n\n</details>"
 
 
-def build_plan_stage_body(metadata_body: str, plan_content: str) -> str:
+def build_plan_stage_body(metadata_body: str, plan_content: str, *, summary: str | None) -> str:
     """Build Stage 1 body: details-wrapped plan + metadata at bottom.
 
     The footer is NOT included here because it needs the PR number,
@@ -101,11 +103,15 @@ def build_plan_stage_body(metadata_body: str, plan_content: str) -> str:
     Args:
         metadata_body: Rendered plan-header metadata block
         plan_content: Plan markdown content
+        summary: Optional AI-generated summary to display above the collapsed plan
 
     Returns:
         Combined PR body ready for ``create_pr`` (without footer)
     """
-    return DETAILS_OPEN + plan_content + DETAILS_CLOSE + "\n\n" + metadata_body
+    plan_section = DETAILS_OPEN + plan_content + DETAILS_CLOSE
+    if summary is not None:
+        plan_section = summary + "\n\n" + plan_section
+    return plan_section + "\n\n" + metadata_body
 
 
 def build_original_plan_section(plan_content: str) -> str:
