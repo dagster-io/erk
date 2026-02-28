@@ -1362,3 +1362,116 @@ def test_checkout_for_plan_planned_pr_falls_back_to_trunk_without_base_ref() -> 
         _repo_root, tracked_branch, parent = graphite.track_branch_calls[0]
         assert tracked_branch == "plan-601"
         assert parent == "main"
+
+
+def test_checkout_for_plan_rebases_onto_stale_parent() -> None:
+    """--for-plan with stacked parent rebases onto parent before gt track.
+
+    When a plan has base_ref_name pointing to a non-trunk parent branch,
+    the checkout should rebase onto origin/{parent} before calling gt track.
+    This ensures gt track succeeds even if the parent advanced since plan-save.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        plan = Plan(
+            plan_identifier="602",
+            title="Stacked plan rebase",
+            body="# Plan\nRebase test",
+            state=PlanState.OPEN,
+            url="https://github.com/owner/repo/issues/602",
+            labels=["erk-pr", "erk-plan"],
+            assignees=[],
+            created_at=TEST_PLAN_TIMESTAMP,
+            updated_at=TEST_PLAN_TIMESTAMP,
+            metadata={"base_ref_name": "feature-parent"},
+            objective_id=None,
+        )
+        plan_store, _ = create_plan_store_with_plans({"602": plan})
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-parent", "plan-602"]},
+            current_branches={env.cwd: "main"},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
+
+        graphite = FakeGraphite()
+        ctx = build_workspace_test_context(
+            env, git=git, plan_store=plan_store, graphite=graphite, use_graphite=True
+        )
+
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(
+                branch_group, ["checkout", "--for-plan", "602", "--script"], obj=ctx
+            )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+
+        # Verify rebase_onto was called with the parent branch
+        assert len(git.rebase_onto_calls) == 1
+        _cwd, target_ref = git.rebase_onto_calls[0]
+        assert target_ref == "origin/feature-parent"
+
+        # Verify track_branch was called with the parent (after rebase)
+        assert len(graphite.track_branch_calls) == 1
+        _repo_root, tracked_branch, parent = graphite.track_branch_calls[0]
+        assert tracked_branch == "plan-602"
+        assert parent == "feature-parent"
+
+
+def test_checkout_for_plan_skips_rebase_for_trunk_parent() -> None:
+    """--for-plan with trunk parent does not rebase, only tracks.
+
+    When a plan has no base_ref_name (defaults to trunk), there's no need
+    to rebase since the branch is already based on trunk.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        plan = Plan(
+            plan_identifier="603",
+            title="Trunk parent plan",
+            body="# Plan\nNo rebase needed",
+            state=PlanState.OPEN,
+            url="https://github.com/owner/repo/issues/603",
+            labels=["erk-pr", "erk-plan"],
+            assignees=[],
+            created_at=TEST_PLAN_TIMESTAMP,
+            updated_at=TEST_PLAN_TIMESTAMP,
+            metadata={},
+            objective_id=None,
+        )
+        plan_store, _ = create_plan_store_with_plans({"603": plan})
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "plan-603"]},
+            current_branches={env.cwd: "main"},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
+
+        graphite = FakeGraphite()
+        ctx = build_workspace_test_context(
+            env, git=git, plan_store=plan_store, graphite=graphite, use_graphite=True
+        )
+
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(
+                branch_group, ["checkout", "--for-plan", "603", "--script"], obj=ctx
+            )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+
+        # No rebase should happen for trunk parent
+        assert len(git.rebase_onto_calls) == 0
+
+        # Track should still be called with trunk
+        assert len(graphite.track_branch_calls) == 1
+        _repo_root, tracked_branch, parent = graphite.track_branch_calls[0]
+        assert tracked_branch == "plan-603"
+        assert parent == "main"
