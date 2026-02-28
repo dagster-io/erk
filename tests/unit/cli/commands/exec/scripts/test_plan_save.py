@@ -645,9 +645,7 @@ def test_planned_pr_without_session_xml_dir_backward_compat(
     ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
     runner = CliRunner()
 
-    result = runner.invoke(
-        plan_save, ["--format", "json", "--branch-slug", "test-slug"], obj=ctx
-    )
+    result = runner.invoke(plan_save, ["--format", "json", "--branch-slug", "test-slug"], obj=ctx)
 
     assert result.exit_code == 0, f"Failed: {result.output}"
     committed_files = fake_git.branch_commits[0].files

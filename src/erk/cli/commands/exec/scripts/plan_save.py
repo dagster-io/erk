@@ -226,7 +226,7 @@ def _save_as_planned_pr(
         f"{IMPL_CONTEXT_DIR}/ref.json": json.dumps(ref_data, indent=2),
     }
 
-    if session_xml_dir is not None and session_xml_dir.is_dir():
+    if session_xml_dir is not None:
         for xml_file in sorted(session_xml_dir.glob("*.xml")):
             if xml_file.is_file():
                 files[f"{IMPL_CONTEXT_DIR}/sessions/{xml_file.name}"] = xml_file.read_text(
