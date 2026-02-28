@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 import subprocess
 import time
 from collections.abc import Iterator
@@ -58,6 +59,18 @@ class _OperationResult:
 def _last_output_line(result: _OperationResult) -> str:
     """Return the last non-empty output line, or 'Unknown error'."""
     return next((ln for ln in reversed(result.output_lines) if ln), "Unknown error")
+
+
+_LEARN_PLAN_RE = re.compile(r"Created learn plan #(\d+)")
+
+
+def _extract_learn_plan_number(result: _OperationResult) -> int | None:
+    """Extract learn plan number from land-execute output, if present."""
+    for line in result.output_lines:
+        match = _LEARN_PLAN_RE.search(line)
+        if match:
+            return int(match.group(1))
+    return None
 
 
 def _build_github_url(plan_url: str, resource_type: str, number: int) -> str:
@@ -868,22 +881,27 @@ class ErkDashApp(App):
     @work(thread=True)
     def _land_pr_async(
         self,
+        *,
         op_id: str,
         pr_number: int,
         branch: str,
         objective_issue: int | None,
+        plan_id: int | None,
     ) -> None:
         """Land PR in background thread with toast."""
+        command = [
+            "erk",
+            "exec",
+            "land-execute",
+            f"--pr-number={pr_number}",
+            f"--branch={branch}",
+            "-f",
+        ]
+        if plan_id is not None:
+            command.append(f"--plan-number={plan_id}")
         result = self._run_streaming_operation(
             op_id=op_id,
-            command=[
-                "erk",
-                "exec",
-                "land-execute",
-                f"--pr-number={pr_number}",
-                f"--branch={branch}",
-                "-f",
-            ],
+            command=command,
         )
         if not result.success:
             error_msg = _last_output_line(result)
@@ -897,6 +915,9 @@ class ErkDashApp(App):
             return
 
         self.call_from_thread(self.notify, f"Landed PR #{pr_number}", timeout=3)
+        learn_pr = _extract_learn_plan_number(result)
+        if learn_pr is not None:
+            self.call_from_thread(self.notify, f"Created learn plan #{learn_pr}", timeout=3)
         self.call_from_thread(self.action_refresh)
 
         if objective_issue is not None:
@@ -1390,11 +1411,13 @@ class ErkDashApp(App):
             if row.pr_number and row.pr_head_branch:
                 op_id = f"land-pr-{row.pr_number}"
                 self._start_operation(op_id=op_id, label=f"Landing PR #{row.pr_number}...")
+                plan_id = row.plan_id if not row.is_learn_plan else None
                 self._land_pr_async(
-                    op_id,
-                    row.pr_number,
-                    row.pr_head_branch,
-                    row.objective_issue,
+                    op_id=op_id,
+                    pr_number=row.pr_number,
+                    branch=row.pr_head_branch,
+                    objective_issue=row.objective_issue,
+                    plan_id=plan_id,
                 )
 
         elif command_id == "copy_replan":
