@@ -82,7 +82,7 @@ class TestGitHubEntityProperties:
     def test_number_property(self) -> None:
         issues = FakeGitHubIssues(issues={1: _make_issue_info(number=1, body="")})
         github = FakeGitHub(issues_gateway=issues)
-        entity = GitHubEntity(
+        entity = GitHubEntity.create(
             number=1,
             kind=EntityKind.ISSUE,
             github=github,
@@ -94,7 +94,7 @@ class TestGitHubEntityProperties:
     def test_kind_property(self) -> None:
         issues = FakeGitHubIssues(issues={1: _make_issue_info(number=1, body="")})
         github = FakeGitHub(issues_gateway=issues)
-        entity = GitHubEntity(
+        entity = GitHubEntity.create(
             number=1,
             kind=EntityKind.ISSUE,
             github=github,
@@ -106,7 +106,7 @@ class TestGitHubEntityProperties:
     def test_state_returns_entity_state(self) -> None:
         issues = FakeGitHubIssues(issues={1: _make_issue_info(number=1, body="")})
         github = FakeGitHub(issues_gateway=issues)
-        entity = GitHubEntity(
+        entity = GitHubEntity.create(
             number=1,
             kind=EntityKind.ISSUE,
             github=github,
@@ -118,7 +118,7 @@ class TestGitHubEntityProperties:
     def test_log_returns_entity_log(self) -> None:
         issues = FakeGitHubIssues(issues={1: _make_issue_info(number=1, body="")})
         github = FakeGitHub(issues_gateway=issues)
-        entity = GitHubEntity(
+        entity = GitHubEntity.create(
             number=1,
             kind=EntityKind.ISSUE,
             github=github,
@@ -137,7 +137,7 @@ class TestGitHubEntityIssueWorkflow:
             issues={1: _make_issue_info(number=1, body=block_text)},
         )
         github = FakeGitHub(issues_gateway=issues)
-        entity = GitHubEntity(
+        entity = GitHubEntity.create(
             number=1,
             kind=EntityKind.ISSUE,
             github=github,
@@ -171,7 +171,7 @@ class TestGitHubEntityIssueWorkflow:
             comments={1: [log_comment]},
         )
         github = FakeGitHub(issues_gateway=issues)
-        entity = GitHubEntity(
+        entity = GitHubEntity.create(
             number=1,
             kind=EntityKind.ISSUE,
             github=github,
@@ -197,7 +197,7 @@ class TestGitHubEntityPRWorkflow:
         pr = _make_pr_details(number=42, body=block_text)
         issues = FakeGitHubIssues(issues={42: _make_issue_info(number=42, body="issue body")})
         github = FakeGitHub(issues_gateway=issues, pr_details={42: pr})
-        entity = GitHubEntity(
+        entity = GitHubEntity.create(
             number=42,
             kind=EntityKind.PR,
             github=github,
@@ -220,7 +220,7 @@ class TestGitHubEntityPRWorkflow:
             comments={42: [log_comment]},
         )
         github = FakeGitHub(issues_gateway=issues, pr_details={42: pr})
-        entity = GitHubEntity(
+        entity = GitHubEntity.create(
             number=42,
             kind=EntityKind.PR,
             github=github,
@@ -235,7 +235,7 @@ class TestGitHubEntityPRWorkflow:
         pr = _make_pr_details(number=42, body="")
         issues = FakeGitHubIssues(issues={42: _make_issue_info(number=42, body="")})
         github = FakeGitHub(issues_gateway=issues, pr_details={42: pr})
-        entity = GitHubEntity(
+        entity = GitHubEntity.create(
             number=42,
             kind=EntityKind.PR,
             github=github,

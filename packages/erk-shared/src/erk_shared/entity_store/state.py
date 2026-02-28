@@ -4,6 +4,7 @@ Each operation does a full read-modify-write cycle to GitHub.
 Use update() to batch multiple field changes in one round-trip.
 """
 
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +22,7 @@ from erk_shared.gateway.github.metadata.types import MetadataBlockSchema
 from erk_shared.gateway.github.types import BodyText, PRNotFound
 
 
+@dataclass(frozen=True)
 class EntityState:
     """Mutable KV metadata stored in the entity body.
 
@@ -28,44 +30,35 @@ class EntityState:
     Use update() to batch multiple field changes in one round-trip.
     """
 
-    def __init__(
-        self,
-        *,
-        number: int,
-        kind: EntityKind,
-        github: GitHub,
-        github_issues: GitHubIssues,
-        repo_root: Path,
-    ) -> None:
-        self._number = number
-        self._kind = kind
-        self._github = github
-        self._github_issues = github_issues
-        self._repo_root = repo_root
+    number: int
+    kind: EntityKind
+    github: GitHub
+    github_issues: GitHubIssues
+    repo_root: Path
 
     def _fetch_body(self) -> str:
         """Fetch the current body text from GitHub."""
-        if self._kind is EntityKind.ISSUE:
-            result = self._github_issues.get_issue(self._repo_root, self._number)
+        if self.kind is EntityKind.ISSUE:
+            result = self.github_issues.get_issue(self.repo_root, self.number)
             if isinstance(result, IssueNotFound):
-                msg = f"Issue #{self._number} not found"
+                msg = f"Issue #{self.number} not found"
                 raise RuntimeError(msg)
             return result.body
         else:
-            result = self._github.get_pr(self._repo_root, self._number)
+            result = self.github.get_pr(self.repo_root, self.number)
             if isinstance(result, PRNotFound):
-                msg = f"PR #{self._number} not found"
+                msg = f"PR #{self.number} not found"
                 raise RuntimeError(msg)
             return result.body
 
     def _push_body(self, body: str) -> None:
         """Write the updated body text to GitHub."""
-        if self._kind is EntityKind.ISSUE:
-            self._github_issues.update_issue_body(
-                self._repo_root, self._number, BodyText(content=body)
+        if self.kind is EntityKind.ISSUE:
+            self.github_issues.update_issue_body(
+                self.repo_root, self.number, BodyText(content=body)
             )
         else:
-            self._github.update_pr_body(self._repo_root, self._number, body)
+            self.github.update_pr_body(self.repo_root, self.number, body)
 
     def get(self, key: str) -> dict[str, Any] | None:
         """Get a metadata block by key. Returns None if not found."""

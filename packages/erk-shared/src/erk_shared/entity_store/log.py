@@ -12,6 +12,7 @@ from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.metadata.core import (
     create_metadata_block,
     parse_metadata_blocks,
+    render_content_block,
     render_erk_issue_event,
 )
 from erk_shared.gateway.github.metadata.types import MetadataBlockSchema
@@ -58,29 +59,7 @@ class EntityLog:
     ) -> int:
         """Append a raw markdown content entry (e.g., plan-body, objective-body).
         Returns comment ID."""
-        from erk_shared.gateway.github.metadata.core import (
-            render_objective_body_block,
-            render_plan_body_block,
-        )
-        from erk_shared.gateway.github.metadata.types import MetadataBlock
-
-        if key == "plan-body":
-            block = MetadataBlock(key="plan-body", data={"content": content})
-            rendered = render_plan_body_block(block)
-        elif key == "objective-body":
-            rendered = render_objective_body_block(content)
-        else:
-            # Generic content block: wrap in metadata block markers
-            rendered = (
-                f"<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->\n"
-                f"<!-- erk:metadata-block:{key} -->\n"
-                f"<details open>\n"
-                f"<summary><strong>{title}</strong></summary>\n\n"
-                f"{content}\n\n"
-                f"</details>\n"
-                f"<!-- /erk:metadata-block:{key} -->"
-            )
-
+        rendered = render_content_block(key, title, content)
         return self._github_issues.add_comment(self._repo_root, self._number, rendered)
 
     def entries(self, key: str) -> list[LogEntry]:

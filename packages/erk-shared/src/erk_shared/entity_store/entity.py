@@ -1,5 +1,6 @@
 """A GitHub issue or PR with structured metadata and event log."""
 
+from dataclasses import dataclass
 from pathlib import Path
 
 from erk_shared.entity_store.log import EntityLog
@@ -9,6 +10,7 @@ from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 
 
+@dataclass(frozen=True)
 class GitHubEntity:
     """A GitHub issue or PR with structured metadata and event log.
 
@@ -17,42 +19,37 @@ class GitHubEntity:
     - log: immutable append-only entries stored as comments
     """
 
-    def __init__(
-        self,
+    number: int
+    kind: EntityKind
+    state: EntityState
+    log: EntityLog
+
+    @classmethod
+    def create(
+        cls,
         *,
         number: int,
         kind: EntityKind,
         github: GitHub,
         github_issues: GitHubIssues,
         repo_root: Path,
-    ) -> None:
-        self._number = number
-        self._kind = kind
-        self._state = EntityState(
+    ) -> "GitHubEntity":
+        """Build a GitHubEntity with its EntityState and EntityLog."""
+        state = EntityState(
             number=number,
             kind=kind,
             github=github,
             github_issues=github_issues,
             repo_root=repo_root,
         )
-        self._log = EntityLog(
+        log = EntityLog(
             number=number,
             github_issues=github_issues,
             repo_root=repo_root,
         )
-
-    @property
-    def number(self) -> int:
-        return self._number
-
-    @property
-    def kind(self) -> EntityKind:
-        return self._kind
-
-    @property
-    def state(self) -> EntityState:
-        return self._state
-
-    @property
-    def log(self) -> EntityLog:
-        return self._log
+        return cls(
+            number=number,
+            kind=kind,
+            state=state,
+            log=log,
+        )

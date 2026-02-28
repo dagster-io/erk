@@ -368,34 +368,43 @@ def create_plan_body_block(plan_content: str) -> MetadataBlock:
     return MetadataBlock(key="plan-body", data=data)
 
 
-def render_plan_body_block(block: MetadataBlock) -> str:
-    """Render a plan-body metadata block with the plan as collapsible markdown.
+def render_content_block(key: str, title: str, content: str) -> str:
+    """Render content wrapped in a metadata content block.
+
+    Produces the canonical content-block format used for plan bodies,
+    objective bodies, and generic content entries.
 
     Returns markdown like:
     <!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
-    <!-- erk:metadata-block:plan-body -->
-    <details>
-    <summary><strong>📋 Implementation Plan</strong></summary>
+    <!-- erk:metadata-block:{key} -->
+    <details open>
+    <summary><strong>{title}</strong></summary>
 
-    {plan_content}
+    {content}
 
     </details>
-    <!-- /erk:metadata-block:plan-body -->
+    <!-- /erk:metadata-block:{key} -->
+    """
+    return f"""<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:{key} -->
+<details open>
+<summary><strong>{title}</strong></summary>
+
+{content}
+
+</details>
+<!-- /erk:metadata-block:{key} -->"""
+
+
+def render_plan_body_block(block: MetadataBlock) -> str:
+    """Render a plan-body metadata block with the plan as collapsible markdown.
+
+    Delegates to render_content_block with the canonical plan title.
     """
     if "content" not in block.data:
         raise ValueError("plan-body block must have 'content' field")
 
-    plan_content = block.data["content"]
-
-    return f"""<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
-<!-- erk:metadata-block:{block.key} -->
-<details open>
-<summary><strong>📋 Implementation Plan</strong></summary>
-
-{plan_content}
-
-</details>
-<!-- /erk:metadata-block:{block.key} -->"""
+    return render_content_block(block.key, "\U0001f4cb Implementation Plan", block.data["content"])
 
 
 def format_execution_commands(plan_number: int, *, url: str) -> str:
@@ -713,26 +722,9 @@ def create_objective_header_block(
 def render_objective_body_block(content: str) -> str:
     """Render objective content wrapped in objective-body metadata block.
 
-    Returns markdown like:
-    <!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
-    <!-- erk:metadata-block:objective-body -->
-    <details open>
-    <summary><strong>Objective</strong></summary>
-
-    {content}
-
-    </details>
-    <!-- /erk:metadata-block:objective-body -->
+    Delegates to render_content_block with the canonical objective title.
     """
-    return f"""<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
-<!-- erk:metadata-block:objective-body -->
-<details open>
-<summary><strong>Objective</strong></summary>
-
-{content}
-
-</details>
-<!-- /erk:metadata-block:objective-body -->"""
+    return render_content_block("objective-body", "Objective", content)
 
 
 def format_objective_content_comment(content: str) -> str:
