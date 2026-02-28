@@ -64,6 +64,7 @@ Write a concise 2-3 sentence summary of the plan. This summary will be visible
 at the top of the PR description (above the collapsed full plan).
 
 Guidelines:
+
 - Focus on WHAT the plan does and WHY
 - Do not repeat the title
 - Plain text, no markdown headers or formatting
