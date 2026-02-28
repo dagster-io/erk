@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Create `/local:pr-triage` Command"
+  "plan_id": "8454",
+  "url": "https://github.com/dagster-io/erk/pull/8454",
+  "created_at": "2026-02-28T11:09:42.958070",
+  "synced_at": "2026-02-28T11:09:42.958070",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
