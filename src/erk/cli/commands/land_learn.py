@@ -325,6 +325,8 @@ def _create_learn_pr_impl(
         )
         if result.plan_url:
             user_output(f"  {result.plan_url}")
+        else:
+            user_output("  (no plan URL available)")
     elif result.error:
         user_output(
             click.style("Warning: ", fg="yellow") + f"Learn plan creation failed: {result.error}"
