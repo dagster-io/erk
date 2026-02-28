@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Add session preprocessing stats to `erk land` discovery output"
+  "plan_id": "8463",
+  "url": "https://github.com/dagster-io/erk/pull/8463",
+  "created_at": "2026-02-28T10:21:56.415808",
+  "synced_at": "2026-02-28T10:21:56.415808",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
