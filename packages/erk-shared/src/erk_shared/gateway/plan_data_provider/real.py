@@ -712,17 +712,17 @@ class RealPlanDataProvider(PlanDataProvider):
                 pr_review_decision = selected_pr.review_decision
                 pr_checks_passing = selected_pr.checks_passing
                 pr_checks_counts = selected_pr.checks_counts
-                if selected_pr.base_ref_name is not None:
-                    pr_is_stacked = selected_pr.base_ref_name not in ("master", "main")
-
-                # Supplement with Graphite's local stack tracking — plan PRs
-                # always target master on GitHub even when Graphite-stacked
-                if pr_is_stacked is not True and pr_head_branch is not None:
+                # Check Graphite local parent first (authoritative when available)
+                if pr_head_branch is not None:
                     parent = self._ctx.branch_manager.get_parent_branch(
                         self._location.root, pr_head_branch
                     )
-                    if parent is not None and parent not in ("master", "main"):
-                        pr_is_stacked = True
+                    if parent is not None:
+                        pr_is_stacked = parent not in ("master", "main")
+
+                # Fall back to GitHub base_ref_name when branch not tracked by Graphite
+                if pr_is_stacked is None and selected_pr.base_ref_name is not None:
+                    pr_is_stacked = selected_pr.base_ref_name not in ("master", "main")
 
                 # Get review thread counts from batched PR data
                 if selected_pr.review_thread_counts is not None:
