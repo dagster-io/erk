@@ -323,6 +323,8 @@ def _create_learn_pr_impl(
             click.style("✓", fg="green")
             + f" Created learn plan #{result.plan_number} for plan #{plan_id}"
         )
+        if result.plan_url:
+            user_output(f"  {result.plan_url}")
     elif result.error:
         user_output(
             click.style("Warning: ", fg="yellow") + f"Learn plan creation failed: {result.error}"

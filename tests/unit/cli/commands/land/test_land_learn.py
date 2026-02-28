@@ -285,6 +285,7 @@ def test_creates_pr_and_shows_success(
     assert "Created learn plan" in captured.err
     assert "#100" in captured.err
     assert "No sessions discovered" in captured.err
+    assert "https://github.com/" in captured.err
 
 
 # ---------------------------------------------------------------------------
