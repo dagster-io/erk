@@ -1,8 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Add `_trigger_one_shot` handler and `--prompt`/`--file` options to `launch_cmd.py`",
+  "plan_id": "8472",
+  "url": "https://github.com/dagster-io/erk/pull/8472",
+  "created_at": "2026-02-28T12:29:44.160242",
+  "synced_at": "2026-02-28T12:29:44.160242",
+  "labels": [],
   "objective_id": 8470,
-  "node_ids": [
-    "1.1"
-  ]
+  "node_ids": null
 }
