@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Delete erkdesk"
+  "plan_id": "8495",
+  "url": "https://github.com/dagster-io/erk/pull/8495",
+  "created_at": "2026-02-28T16:54:49.085167",
+  "synced_at": "2026-02-28T16:54:49.085167",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
