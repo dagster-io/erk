@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Remove Dead Code and Test-Only Symbols"
+}
