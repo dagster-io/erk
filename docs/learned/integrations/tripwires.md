@@ -46,6 +46,8 @@ Rules triggered by matching actions in code.
 
 **putting Closes keyword in PR title or commit message** → Read [Issue-PR Closing Integration](issue-pr-closing-integration.md) first. GitHub only processes closing keywords in the PR body. Title and commit message references are ignored.
 
+**requiring agent config fields in erkbot Settings** → Read [ErkBot Agent Configuration](erkbot-agent-config.md) first. Agent config fields (anthropic_api_key, erk_repo_path) must be optional. The bot starts in slack-only mode without them.
+
 **resolving issue number from a single source without checking for mismatches** → Read [Issue-PR Closing Integration](issue-pr-closing-integration.md) first. Both .erk/impl-context/plan-ref.json and branch name may contain issue numbers. If both exist, they must agree — otherwise the pipeline could silently close the wrong issue.
 
 **reusing ClaudePromptExecutor parsing logic for Codex** → Read [Codex CLI JSONL Output Format](codex/codex-jsonl-format.md) first. The two formats share almost nothing structurally. A CodexPromptExecutor needs its own parser — don't parameterize the existing Claude parser.

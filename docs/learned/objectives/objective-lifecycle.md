@@ -166,7 +166,7 @@ There is no table-parsing fallback. Non-v2 content returns an empty phases list 
 
 ### Status Resolution
 
-Status comes directly from the YAML `status` field in frontmatter — no inference from plan/PR columns.
+Status comes directly from the YAML `status` field in frontmatter — no inference from the PR column during parsing.
 
 - Phase names extracted from markdown headers via `enrich_phase_names()` (not stored in YAML)
 - Phase membership derived from step ID prefix (e.g., "1.2" → phase 1)

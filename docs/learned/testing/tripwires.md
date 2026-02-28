@@ -34,6 +34,8 @@ Rules triggered by matching actions in code.
 
 **asserting on fake-specific properties in tests using `build_workspace_test_context` with `use_graphite=True`** → Read [Erk Test Reference](testing.md) first. Production wrappers (e.g., `GraphiteBranchManager`) do not expose fake tracking properties like `submitted_branches`. Assert on observable behavior (CLI output, return values) instead of accessing fake internals through the wrapper.
 
+**asserting user_output() content against capsys stdout** → Read [Erk Test Reference](testing.md) first. user_output() routes to stderr. When testing code that calls user_output(), assert against capsys.readouterr().err, not .out.
+
 **calling get_bundled_claude_dir() inside a testable function** → Read [Bundled Path Parameter Injection for Testability](parameter-injection-pattern.md) first. Accept bundled_claude_dir as a parameter instead. Production callers pass get_bundled_claude_dir(), tests pass tmp_path / 'bundled'. Read this doc.
 
 **calling handler functions directly with AsyncMock say/client** → Read [Bolt Async Dispatch Testing Pattern](bolt-async-dispatch-testing.md) first. Dispatch through AsyncApp via AsyncBoltRequest for integration tests.
@@ -84,6 +86,8 @@ Rules triggered by matching actions in code.
 
 **passing group-level options when invoking a subcommand in tests** → Read [Command Group Testing](command-group-testing.md) first. Click does NOT propagate group-level options to subcommands by default. Options placed before the subcommand name in the args list are silently ignored.
 
+**passing mix_stderr parameter to CliRunner** → Read [CLI Testing Patterns](cli-testing.md) first. Click 8.3.1 CliRunner no longer accepts mix_stderr parameter. Use CliRunner() or CliRunner(env={}) instead.
+
 **passing string values to comments_with_urls parameter of FakeGitHubIssues** → Read [FakeGitHubIssues Dual-Comment Parameters](fake-github-testing.md) first. comments_with_urls requires IssueComment objects, not strings. Strings cause silent empty-list returns. Match the parameter to the ABC getter method your code calls.
 
 **renaming a user-facing string in CLI output and updating related test assertions** → Read [CLI Testing Patterns](cli-testing.md) first. Test assertion lag: after renaming display strings (e.g., 'issue' → 'plan'), grep all test files for the old literal before committing. Tests using old string literals against stale snapshots will silently pass — the failure only surfaces in CI on a clean checkout.
@@ -100,7 +104,7 @@ Rules triggered by matching actions in code.
 
 **testing admin commands that read GitHub settings** → Read [Admin Command Testing Patterns](admin-command-testing.md) first. Use FakeGitHubAdmin with workflow_permissions dict to configure read state. Do not mock subprocess calls.
 
-**testing code that reads ERK_PLAN_BACKEND or other environment variables via CliRunner** → Read [CLI Testing Patterns](cli-testing.md) first. CliRunner env var isolation: ambient env vars from the developer shell leak into CliRunner by default and cause intermittent test failures. Use CliRunner(env={'ERK_PLAN_BACKEND': '...'}) to override, or CliRunner(mix_stderr=False, env={}) to isolate completely. Never rely on ambient env being clean.
+**testing code that reads ERK_PLAN_BACKEND or other environment variables via CliRunner** → Read [CLI Testing Patterns](cli-testing.md) first. CliRunner env var isolation: ambient env vars from the developer shell leak into CliRunner by default and cause intermittent test failures. Use CliRunner(env={'ERK_PLAN_BACKEND': '...'}) to override, or CliRunner(env={}) to isolate completely. Never rely on ambient env being clean. Note: mix_stderr parameter is broken in Click 8.3.1 — do not use it.
 
 **testing code that reads from Path.home() or ~/.claude/ or ~/.erk/** [pattern: `Path\.home\(\)`] → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Tests that run in parallel must use monkeypatch to isolate from real filesystem state. Functions like extract_slugs_from_session() cause flakiness when they read from the user's home directory.
 
@@ -121,6 +125,10 @@ Rules triggered by matching actions in code.
 **using asyncio.sleep() to wait for Bolt handler completion** → Read [Bolt Async Dispatch Testing Pattern](bolt-async-dispatch-testing.md) first. Use dispatch_and_settle() from conftest — it awaits all background tasks deterministically.
 
 **using context_for_test without matching parameter names to the current API** → Read [FakeGitHub API Reference](fake-github-api-reference.md) first. context_for_test() parameter names evolve. Check the current function signature before adding new parameters.
+
+**using context_for_test() with wrong parameter name for issues** → Read [context_for_test() Dual Implementations](context-builder-signatures.md) first. erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError.
+
+**using context_for_test() with wrong parameter name for issues** → Read [Erk Test Reference](testing.md) first. erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError.
 
 **using hardcoded port numbers for mock server** → Read [Bolt Async Dispatch Testing Pattern](bolt-async-dispatch-testing.md) first. Use port=0 for auto-assigned port to avoid CI conflicts.
 

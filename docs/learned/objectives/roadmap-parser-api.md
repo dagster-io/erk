@@ -70,9 +70,9 @@ Replaces an entire metadata block's content in the body. Finds the block by key 
 
 Extracts phase names from markdown headers (e.g., `### Phase 1: Planning`) and replaces placeholder names in parsed `RoadmapPhase` objects. Called by `parse_roadmap()` after frontmatter parsing because frontmatter stores flat steps without phase names. Uses regex pattern `^###\s+Phase\s+(\d+)([A-Z]?):\s*(.+?)` to match headers.
 
-### RoadmapNode pr field
+### RoadmapNode fields
 
-`RoadmapNode` has a `pr` field (`str | None`) that holds a PR reference (e.g., `"#123"`) for both in-progress and landed PRs. The `plan` field was removed — only `pr` exists on the dataclass. Additional fields: `depends_on` (`tuple[str, ...] | None`) for explicit dependencies and `slug` (`str | None`) for kebab-case node slugs.
+`RoadmapNode` has six fields: `id`, `description`, `status`, `pr` (`str | None`), `depends_on` (`tuple[str, ...] | None`), and `slug` (`str | None`). The `plan` field was removed (PR #8128) — plan references are no longer tracked in the roadmap. The `pr` field holds a PR reference (e.g., `"#123"`) for both in-progress and landed PRs. The parser reads fields from v2/v3/v4 YAML frontmatter.
 
 ## Dual-Parser Pattern
 

@@ -48,6 +48,8 @@ Rules triggered by matching actions in code.
 
 **adding user-interactive steps (confirmations, prompts) without CI detection** → Read [CI-Aware Commands](ci-aware-commands.md) first. Commands with user interaction must check `in_github_actions()` and skip prompts in CI. Interactive prompts hang indefinitely in GitHub Actions workflows.
 
+**calling an external tool that overwrites state without capturing it first** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. Save state BEFORE calling external tools that may overwrite it. Reference: capture_existing_pr_body() in submit_pipeline.py captures the PR body before gt submit overwrites it.
+
 **calling gh or git directly from a slash command** → Read [Slash Command to Exec Migration](slash-command-exec-migration.md) first. Use an erk exec script instead. Direct CLI calls bypass gateways, making the logic untestable and unreusable.
 
 **calling is_learned_docs_available() in CLI code** → Read [erk docs check Command](erk-docs-check.md) first. Function signature requires repo_ops and cwd kwargs: is_learned_docs_available(repo_ops=..., cwd=...). Omitting either kwarg will cause a TypeError.
@@ -104,9 +106,17 @@ Rules triggered by matching actions in code.
 
 **putting checkout-specific helpers in navigation_helpers.py** → Read [Checkout Helpers Module](checkout-helpers.md) first. `src/erk/cli/commands/navigation_helpers.py` imports from `wt.create_cmd`, which creates a cycle if navigation_helpers tries to import from `wt` subpackage. Keep checkout-specific helpers in separate `checkout_helpers.py` module instead.
 
+**removing a CLI parameter without checking all consumers** → Read [Parameter Addition Checklist](parameter-addition-checklist.md) first. When removing a CLI parameter, verify: (1) @click.option decorator, (2) function signature, (3) all call sites, (4) helper functions, (5) ctx.invoke calls. Then run erk-dev gen-exec-reference-docs.
+
+**removing a CLI parameter without checking all consumers** → Read [CLI Parameter Removal Checklist](parameter-removal-checklist.md) first. When removing a CLI parameter, verify: (1) @click.option decorator, (2) function signature, (3) all call sites, (4) helper functions, (5) ctx.invoke calls. Then run erk-dev gen-exec-reference-docs.
+
 **removing a command without checking docs/learned/ for references** → Read [Command Deletion Patterns](command-deletion-patterns.md) first. Run the post-refactoring documentation audit (post-refactor-documentation-audit.md) after any command deletion.
 
 **removing a workflow command or CLI entry** → Read [Incomplete Command Removal Pattern](incomplete-command-removal.md) first. Read incomplete-command-removal.md first. Search all string references before removing. String-based dispatch maps like WORKFLOW_COMMAND_MAP aren't caught by type checkers.
+
+**renaming CLI commands without checking workflow files** → Read [Command Rename Checklist](command-rename-checklist.md) first. After renaming CLI commands, grep .github/workflows/\*.yml for stale references.
+
+**renaming a CLI command without checking downstream packages** → Read [Command Rename Checklist](command-rename-checklist.md) first. CLI command renames in src/erk/cli/ silently break downstream packages (erkbot, desktop-dash). Grep: rg --type py 'CliRunner.*invoke.*cli' packages/
 
 **renaming an exec command without updating all 9 reference locations** → Read [Command Rename Checklist](command-rename-checklist.md) first. Follow the 9-place checklist in command-rename-checklist.md to avoid stale references.
 
@@ -133,6 +143,8 @@ Rules triggered by matching actions in code.
 **using blocking operations (user confirmation, editor launch) in CI-executed code paths** → Read [CI-Aware Commands](ci-aware-commands.md) first. Check `in_github_actions()` before any blocking operation. CI has no terminal for user input.
 
 **using click.confirm() after user_output()** → Read [CLI Output Styling Guide](output-styling.md) first. Use ctx.console.confirm() for testability, or user_confirm() if no context available. Direct click.confirm() after user_output() causes buffering hangs because stderr isn't flushed.
+
+**using ctx.invoke() with kwargs that don't match target function parameter names** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. Click ctx.invoke() forwards kwargs directly — any name mismatch causes runtime TypeError. Verify all parameter names exactly match the target function signature.
 
 **using dict .get() to access fields from exec script JSON output without a TypedDict schema** → Read [Exec Script Schema Patterns](exec-script-schema-patterns.md) first. Silent filtering failures occur when field names are mistyped. Define TypedDict in erk_shared and use cast() in consumers.
 

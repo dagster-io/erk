@@ -12,6 +12,10 @@ tripwires:
     warning: "SubmitState is frozen. Use dataclasses.replace(state, field=value) to create new state."
   - action: "adding discovery logic outside prepare_state()"
     warning: "All discovery (branch name, issue number, parent branch, etc.) must happen in prepare_state() to prevent duplication. Later steps assume these fields are populated."
+  - action: "using ctx.invoke() with kwargs that don't match target function parameter names"
+    warning: "Click ctx.invoke() forwards kwargs directly — any name mismatch causes runtime TypeError. Verify all parameter names exactly match the target function signature."
+  - action: "calling an external tool that overwrites state without capturing it first"
+    warning: "Save state BEFORE calling external tools that may overwrite it. Reference: capture_existing_pr_body() in submit_pipeline.py captures the PR body before gt submit overwrites it."
 last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 ---
@@ -60,6 +64,8 @@ Step 3 (`push_and_create_pr`) dispatches to `_graphite_first_flow()` or `_core_s
 ## Why 10 Steps: Granularity Trade-offs
 
 The pipeline has 10 steps: prepare, commit WIP, capture existing PR body, push+PR, extract diff, fetch plan, generate description, Graphite enhancement, finalize, link PR to objective nodes.
+
+**Step 3: `capture_existing_pr_body()`** was added to prevent a timing bug: `gt submit` overwrites the PR body during push+PR creation (step 4). For planned-PR plans, the existing PR body contains the plan-header metadata block that must be preserved. Capturing it before the destructive operation ensures the metadata survives the rewrite cycle.
 
 **Why not fewer steps?** Merging "extract diff + generate description" would make testing harder (can't test diff extraction without running AI generation). Each step represents a **failure boundary** — a distinct phase where errors need different handling.
 

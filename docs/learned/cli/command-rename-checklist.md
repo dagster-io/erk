@@ -7,6 +7,10 @@ read_when:
 tripwires:
   - action: "renaming an exec command without updating all 9 reference locations"
     warning: "Follow the 9-place checklist in command-rename-checklist.md to avoid stale references."
+  - action: "renaming a CLI command without checking downstream packages"
+    warning: "CLI command renames in src/erk/cli/ silently break downstream packages (erkbot, desktop-dash). Grep: rg --type py 'CliRunner.*invoke.*cli' packages/"
+  - action: "renaming CLI commands without checking workflow files"
+    warning: "After renaming CLI commands, grep .github/workflows/*.yml for stale references."
 last_audited: "2026-02-17 00:00 PT"
 audit_result: clean
 ---

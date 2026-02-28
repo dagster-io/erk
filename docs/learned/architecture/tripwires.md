@@ -22,6 +22,8 @@ Rules triggered by matching actions in code.
 
 **adding HTML, badges, or GitHub-specific markup to commit messages** → Read [PR Body Formatting Pattern](pr-body-formatting.md) first. Use the two-target pattern: plain text pr_body for commits, enhanced pr_body_for_github for the PR. Never put GitHub-specific HTML into git commit messages.
 
+**adding LBYL guards that only check a subset of required fields** → Read [Erk Architecture Patterns](erk-architecture.md) first. Functions with 'skip silently' contracts must validate ALL preconditions with LBYL guards. Checking one field (e.g., schema_version) is insufficient — use set operations to verify all required fields.
+
 **adding LLM-dependent logic inside a Click @command function in exec/scripts/** → Read [Inference Hoisting Pattern](inference-hoisting.md) first. Inference hoisting violation: exec scripts run as subprocesses; they cannot nest LLM calls within a Claude Code session. Move reasoning to the calling skill.
 
 **adding a Claude subprocess call with --print mode** → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Always include --no-session-persistence flag and use env=build_claude_subprocess_env() parameter. Both are required to prevent session persistence and CLAUDECODE context leakage. See the 'Claude Subprocess Environment' section.
@@ -79,6 +81,8 @@ Rules triggered by matching actions in code.
 **auto-enabling a flag without informing the user** → Read [Derived Flags Pattern](derived-flags.md) first. When deriving a flag from auto-detection, always print a dim-styled informational message explaining why the behavior was activated. Users should never be surprised by automatic actions.
 
 **bypassing PlanListService for direct GitHub API plan queries** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. PlanListService handles the CLI-vs-HTTP path selection. Direct API calls bypass caching and error handling.
+
+**calling .read_text() or .write_text() without encoding parameter** → Read [Erk Architecture Patterns](erk-architecture.md) first. Always pass encoding='utf-8' to .read_text() and .write_text(). Python's default encoding varies by platform.
 
 **calling GraphiteBranchManager.create_branch() without explicit checkout** → Read [Erk Architecture Patterns](erk-architecture.md) first. GraphiteBranchManager.create_branch() restores the original branch after tracking. Always call branch_manager.checkout_branch() afterward if you need to be on the new branch.
 
@@ -161,6 +165,8 @@ Rules triggered by matching actions in code.
 **creating fake subgateway without shared state** → Read [Flatten Subgateway Pattern](flatten-subgateway-pattern.md) first. Fake subgateways must share state containers with parent via constructor parameters and call link_mutation_tracking(). Without this, mutations through subgateway won't be visible to parent queries.
 
 **deleting a gateway after consolidating into another** → Read [Gateway Removal Pattern](gateway-removal-pattern.md) first. Follow complete removal checklist: verify no references, delete all 5 layers, clean up compositions, update docs, run full test suite.
+
+**deprecating a gateway method without updating all 5 implementation docstrings** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. When deprecating a gateway method, update docstrings in ALL 5 implementations (abc, real, fake, dry_run, printing). Stale docstrings in non-primary implementations mislead agents.
 
 **designing a new hook or reminder system** → Read [Context Injection Architecture](context-injection-tiers.md) first. Consider the three-tier context architecture and consolidation patterns. Read docs/learned/architecture/context-injection-tiers.md first.
 
@@ -337,6 +343,8 @@ Rules triggered by matching actions in code.
 **using this pattern** → Read [SSH Command Execution Patterns](ssh-command-execution.md) first. Missing -t flag prevents TTY allocation and breaks interactive programs
 
 **using try/except KeyError for JSON field access** → Read [JSON Parsing Patterns](json-parsing-patterns.md) first. Use LBYL pattern: check field presence with `any(f not in data for f in _REQUIRED_FIELDS)` before accessing. Never use try/except for control flow.
+
+**using two-dot syntax (branch..HEAD) in git diff** → Read [Git Operation Patterns](git-operation-patterns.md) first. git diff comparisons MUST use three-dot (branch...HEAD) to diff from merge-base. Two-dot is correct for git rev-list but WRONG for git diff.
 
 **using unquoted heredoc delimiters (<<EOF) when the body contains $, \, or backticks** [pattern: `<<\s*EOF\b`] → Read [Heredoc Quoting and Escaping in Agent-Generated Bash](bash-python-integration.md) first. bash silently expands them
 

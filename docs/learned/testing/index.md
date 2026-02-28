@@ -10,6 +10,7 @@
 - **[cli-test-error-assertions.md](cli-test-error-assertions.md)** — writing CLI tests with error assertions, testing error messages in Click commands, asserting on CLI output
 - **[cli-testing.md](cli-testing.md)** — writing tests for erk CLI commands, using ErkContext.for_test(), testing Click commands with context
 - **[command-group-testing.md](command-group-testing.md)** — testing Click command groups with invoke_without_command=True, writing tests for commands that serve as both group and default action
+- **[context-builder-signatures.md](context-builder-signatures.md)** — using context_for_test() in tests, choosing between erk-shared and src/erk test context, debugging TypeError from context_for_test()
 - **[devrun-agent.md](devrun-agent.md)** — using the devrun agent, running CI checks via Task tool, writing prompts for devrun, understanding the parent-agent fix cycle
 - **[dual-backend-testing.md](dual-backend-testing.md)** — writing tests that involve plan storage, testing plan-related features, creating test helpers for plan store operations
 - **[env-overrides-pattern.md](env-overrides-pattern.md)** — writing tests that need custom environment variables, testing erk init commands that depend on HOME, using erk_isolated_fs_env fixture with env_overrides

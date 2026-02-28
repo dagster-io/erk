@@ -44,6 +44,8 @@ Rules triggered by matching actions in code.
 
 **documenting type definitions without verifying they exist** → Read [Documentation Audit Methodology](audit-methodology.md) first. Type references in docs must match actual codebase types — phantom types are the most common audit finding. Verify with grep before committing.
 
+**enumerating implementation-detail set members in documentation** → Read [Stale Code Blocks Are Silent Bugs](stale-code-blocks-are-silent-bugs.md) first. Don't enumerate implementation-detail set members (like indicator emojis) in documentation. Reference the source constant instead. Distinguish 'API constants where enumeration IS the spec' from 'implementation details where enumeration DRIFTS'.
+
 **expecting agents to self-diagnose knowledge gaps** → Read [Passive Context vs. On-Demand Retrieval](passive-context-vs-retrieval.md) first. Use passive context or structural triggers instead. Agents cannot distinguish stale training data from correct knowledge.
 
 **justifying erkdesk code inclusion** → Read [Language Scope Auditing](language-scope-auditing.md) first. Rationalizing erkdesk source as "third-party API pattern" because it uses React/Electron
