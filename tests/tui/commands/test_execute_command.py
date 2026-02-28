@@ -104,8 +104,11 @@ class TestExecuteCommandCopyCommands:
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("copy_pr_checkout")
-        assert executor.copied_texts == ["erk pr co 456"]
-        assert "Copied: erk pr co 456" in executor.notifications
+        expected_cmd = (
+            'source "$(erk pr checkout 456 --script --sync)" && gt submit --no-interactive'
+        )
+        assert executor.copied_texts == [expected_cmd]
+        assert f"Copied: {expected_cmd}" in executor.notifications
 
     def test_copy_prepare_copies_command(self) -> None:
         """copy_prepare copies the prepare command."""
