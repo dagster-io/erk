@@ -23,7 +23,6 @@ Examples:
 
 from __future__ import annotations
 
-import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -114,18 +113,18 @@ def _generate_all_summaries(
     )
 
     if result.returncode != 0:
-        print(f"Error fetching failing jobs: {result.stderr}", file=sys.stderr)
+        click.echo(f"Error fetching failing jobs: {result.stderr}", err=True)
         raise SystemExit(1)
 
     jobs = _parse_failing_jobs(result.stdout)
     if not jobs:
-        print("No failing jobs found", file=sys.stderr)
+        click.echo("No failing jobs found", err=True)
         return
 
     prompts_dir = get_bundled_github_dir()
 
     for job in jobs:
-        print(f"Summarizing: {job.name} (job {job.job_id})", file=sys.stderr)
+        click.echo(f"Summarizing: {job.name} (job {job.job_id})", err=True)
 
         # Fetch job logs
         log_result = run_subprocess_with_context(
