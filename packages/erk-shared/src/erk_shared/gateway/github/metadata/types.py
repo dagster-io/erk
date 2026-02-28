@@ -1,7 +1,7 @@
 """Core data structures for GitHub metadata blocks."""
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 
@@ -35,7 +35,7 @@ class MetadataParseResult:
 
     blocks: tuple[MetadataBlock, ...]
     errors: tuple[MetadataBlockError, ...]
-    content_blocks: tuple[RawMetadataBlock, ...] = ()
+    content_blocks: tuple[RawMetadataBlock, ...] = field(default_factory=tuple)
 
     @property
     def has_errors(self) -> bool:

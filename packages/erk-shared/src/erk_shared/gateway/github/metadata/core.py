@@ -6,6 +6,7 @@ from typing import Any
 
 import yaml
 
+from erk_shared.gateway.github.metadata.registry import BlockCategory, get_block_type
 from erk_shared.gateway.github.metadata.schemas import (
     ImplementationStatusSchema,
     ObjectiveHeaderSchema,
@@ -572,8 +573,6 @@ def parse_metadata_blocks(text: str) -> MetadataParseResult:
     Returns:
         MetadataParseResult with parsed blocks, content blocks, and any errors
     """
-    from erk_shared.gateway.github.metadata.registry import BlockCategory, get_block_type
-
     blocks: list[MetadataBlock] = []
     errors: list[MetadataBlockError] = []
     content_blocks: list[RawMetadataBlock] = []
