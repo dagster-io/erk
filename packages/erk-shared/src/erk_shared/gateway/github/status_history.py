@@ -1,115 +1,84 @@
 """Status history building utilities for GitHub issue metadata.
 
-Pure functions for constructing status history from metadata blocks.
+Functions for constructing status history from entity log entries.
+
+These functions accept LogEntry objects (from EntityLog.all_entries() or
+EntityLog.entries()) and transform them into status history records.
 """
 
-from erk_shared.gateway.github.metadata.core import parse_metadata_blocks
+from erk_shared.entity_store.types import LogEntry
 
 
-def extract_workflow_run_id(comment_bodies: list[str]) -> str | None:
-    """Extract workflow run ID from workflow-started metadata blocks.
+def extract_workflow_run_id(entries: list[LogEntry]) -> str | None:
+    """Extract workflow run ID from workflow-started log entries.
 
-    Searches through comment bodies for workflow-started metadata blocks and
+    Searches through log entries for workflow-started events and
     extracts the most recent workflow_run_id.
 
     Args:
-        comment_bodies: List of comment body strings from GitHub issue
+        entries: List of LogEntry objects (from EntityLog.all_entries())
 
     Returns:
         Workflow run ID string if found, None otherwise
-
-    Example:
-        >>> comment_bodies = [
-        ...     "<!-- erk:metadata-block:workflow-started -->...",
-        ... ]
-        >>> run_id = extract_workflow_run_id(comment_bodies)
-        >>> run_id
-        '123456789'
     """
     workflow_run_id: str | None = None
     latest_timestamp: str | None = None
 
-    # Parse all metadata blocks from all comments
-    for comment_body in comment_bodies:
-        result = parse_metadata_blocks(comment_body)
+    for entry in entries:
+        if entry.key == "workflow-started":
+            run_id = entry.data.get("workflow_run_id")
+            started_at = entry.data.get("started_at")
 
-        for block in result.blocks:
-            # Extract workflow-started event
-            if block.key == "workflow-started":
-                run_id = block.data.get("workflow_run_id")
-                started_at = block.data.get("started_at")
-
-                # Keep track of most recent workflow run
-                if run_id and started_at:
-                    if latest_timestamp is None or started_at > latest_timestamp:
-                        workflow_run_id = run_id
-                        latest_timestamp = started_at
+            if run_id and started_at:
+                if latest_timestamp is None or started_at > latest_timestamp:
+                    workflow_run_id = run_id
+                    latest_timestamp = started_at
 
     return workflow_run_id
 
 
 def build_status_history(
-    comment_bodies: list[str],
+    entries: list[LogEntry],
     completion_timestamp: str,
 ) -> list[dict[str, str]]:
-    """Build status history from comment metadata blocks.
+    """Build status history from entity log entries.
 
-    Extracts status events from metadata blocks in GitHub issue comments
-    and constructs a chronological history of status transitions.
+    Extracts status events from log entries and constructs a chronological
+    history of status transitions.
 
     Args:
-        comment_bodies: List of comment body strings from GitHub issue
+        entries: List of LogEntry objects (from EntityLog.all_entries())
         completion_timestamp: ISO 8601 timestamp for completion event
 
     Returns:
         List of status events with status, timestamp, and reason fields.
-        Events are in chronological order (queued → started → completed).
-
-    Example:
-        >>> comment_bodies = [
-        ...     "<!-- erk:metadata-block:submission-queued -->...",
-        ...     "<!-- erk:metadata-block:workflow-started -->...",
-        ... ]
-        >>> history = build_status_history(comment_bodies, "2024-01-15T12:00:00Z")
-        >>> len(history)
-        3
-        >>> history[0]["status"]
-        'queued'
-        >>> history[-1]["status"]
-        'completed'
+        Events are in order of appearance, then completed appended.
     """
     status_history: list[dict[str, str]] = []
 
-    # Parse all metadata blocks from all comments
-    for comment_body in comment_bodies:
-        result = parse_metadata_blocks(comment_body)
+    for entry in entries:
+        if entry.key == "submission-queued":
+            queued_at = entry.data.get("queued_at")
+            if queued_at:
+                status_history.append(
+                    {
+                        "status": "queued",
+                        "timestamp": queued_at,
+                        "reason": "erk pr dispatch executed",
+                    }
+                )
 
-        for block in result.blocks:
-            # Extract queued event
-            if block.key == "submission-queued":
-                queued_at = block.data.get("queued_at")
-                if queued_at:
-                    status_history.append(
-                        {
-                            "status": "queued",
-                            "timestamp": queued_at,
-                            "reason": "erk pr dispatch executed",
-                        }
-                    )
+        if entry.key == "workflow-started":
+            started_at = entry.data.get("started_at")
+            if started_at:
+                status_history.append(
+                    {
+                        "status": "started",
+                        "timestamp": started_at,
+                        "reason": "GitHub Actions workflow triggered",
+                    }
+                )
 
-            # Extract started event
-            if block.key == "workflow-started":
-                started_at = block.data.get("started_at")
-                if started_at:
-                    status_history.append(
-                        {
-                            "status": "started",
-                            "timestamp": started_at,
-                            "reason": "GitHub Actions workflow triggered",
-                        }
-                    )
-
-    # Add current completion event
     status_history.append(
         {
             "status": "completed",
