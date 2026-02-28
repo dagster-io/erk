@@ -32,11 +32,8 @@ Rules triggered by matching actions in code.
 
 **adding a new filter without updating the escape chain** → Read [TUI Filter Pipeline Pattern](filter-pipeline.md) first. New filter implementations must add an entry to `action_exit_app()` progressive escape chain. Missing entries leave filters stuck with no way for the user to clear them.
 
-<<<<<<< HEAD
 **adding a new key binding without checking existing bindings** → Read [TUI Keyboard Shortcuts Inventory](keyboard-shortcuts.md) first. Check this document and ErkDashApp.BINDINGS in app.py for conflicts. Some keys are hidden but still active.
 
-=======
->>>>>>> dd9c1b7fe (Consolidate 16 Feb 26 learn plans into coordinated documentation updates)
 **adding a new lifecycle stage without updating abbreviation map** → Read [Lifecycle and PR Status Display](lifecycle-display.md) first. The stage column is 8 chars wide. New stages longer than 8 chars need abbreviations in compute_lifecycle_display(). Also update format_lifecycle_with_status() stage detection.
 
 **adding a subprocess call to the TUI without stderr inspection** → Read [TUI Subprocess Feedback Patterns](subprocess-feedback.md) first. TUI subprocess calls should inspect stderr for known success/failure markers. See subprocess-feedback.md for the pattern.
@@ -119,11 +116,8 @@ Rules triggered by matching actions in code.
 
 **using a mutable set for \_stack_filter_branches** → Read [TUI Filter Pipeline Pattern](filter-pipeline.md) first. Stack filter branches use frozenset[str] for immutability and efficient membership testing. Do not use set or list.
 
-<<<<<<< HEAD
 **using inverted key check in on_key() modal dismiss logic** → Read [TUI Modal Screen Pattern](modal-screen-pattern.md) first. if event.key not in (...) is WRONG for dismiss logic — it swallows dismiss keys. Use if event.key in (...) to check for positive dismiss. Regression caused by stacked PR merge order.
 
-=======
->>>>>>> dd9c1b7fe (Consolidate 16 Feb 26 learn plans into coordinated documentation updates)
 **using positional arguments when constructing PlanRowData** → Read [Frozen Dataclass Field Management](frozen-dataclass-field-management.md) first. Always use keyword arguments for frozen dataclass construction. Positional arguments break silently when fields are reordered. Use make_plan_row() helper in tests.
 
 **using subprocess.Popen in TUI code without stdin=subprocess.DEVNULL** → Read [Command Execution Strategies](command-execution.md) first. Child processes inherit stdin from parent; in TUI context this creates deadlocks when child prompts for user input. Always set `stdin=subprocess.DEVNULL` for TUI subprocess calls.
