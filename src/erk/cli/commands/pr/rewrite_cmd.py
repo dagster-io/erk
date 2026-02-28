@@ -168,6 +168,7 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
         pr_number=pr_number,
         header="",
         existing_pr_body=pr_info.body,
+        recovered_plan_header=None,
     )
 
     ctx.github.update_pr_title_and_body(

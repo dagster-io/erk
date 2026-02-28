@@ -146,6 +146,7 @@ def _execute_update_description(ctx: ErkContext, *, debug: bool, session_id: str
         pr_number=pr_number,
         header="",
         existing_pr_body=existing_body,
+        recovered_plan_header=None,
     )
 
     ctx.github.update_pr_title_and_body(

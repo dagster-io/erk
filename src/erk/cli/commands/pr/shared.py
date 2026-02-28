@@ -260,7 +260,7 @@ def assemble_pr_body(
     pr_number: int,
     header: str,
     existing_pr_body: str,
-    recovered_plan_header: MetadataBlock | None = None,
+    recovered_plan_header: MetadataBlock | None,
 ) -> str:
     """Assemble final PR body with plan details and footer.
 
