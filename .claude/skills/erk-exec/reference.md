@@ -264,6 +264,7 @@ Extract plan from Claude session and create GitHub draft PR.
 | Flag           | Type | Required | Default        | Description                                                                   |
 | -------------- | ---- | -------- | -------------- | ----------------------------------------------------------------------------- |
 | `--session-id` | TEXT | No       | Sentinel.UNSET | Session ID to search within (optional, searches all sessions if not provided) |
+| `--summary`    | TEXT | No       | Sentinel.UNSET | AI-generated summary to display above the collapsed plan in the PR body       |
 
 ### dash-data
 
@@ -875,12 +876,13 @@ Update an existing plan's content.
 
 **Options:**
 
-| Flag            | Type    | Required | Default        | Description                                               |
-| --------------- | ------- | -------- | -------------- | --------------------------------------------------------- |
-| `--plan-number` | INTEGER | Yes      | Sentinel.UNSET | Plan number to update                                     |
-| `--format`      | CHOICE  | No       | 'json'         | Output format: json (default) or display (formatted text) |
-| `--plan-path`   | PATH    | No       | Sentinel.UNSET | Direct path to plan file (overrides session lookup)       |
-| `--session-id`  | TEXT    | No       | Sentinel.UNSET | Session ID to find plan file in scratch storage           |
+| Flag            | Type    | Required | Default        | Description                                                             |
+| --------------- | ------- | -------- | -------------- | ----------------------------------------------------------------------- |
+| `--plan-number` | INTEGER | Yes      | Sentinel.UNSET | Plan number to update                                                   |
+| `--format`      | CHOICE  | No       | 'json'         | Output format: json (default) or display (formatted text)               |
+| `--plan-path`   | PATH    | No       | Sentinel.UNSET | Direct path to plan file (overrides session lookup)                     |
+| `--session-id`  | TEXT    | No       | Sentinel.UNSET | Session ID to find plan file in scratch storage                         |
+| `--summary`     | TEXT    | No       | Sentinel.UNSET | AI-generated summary to display above the collapsed plan in the PR body |
 
 ### post-or-update-pr-summary
 

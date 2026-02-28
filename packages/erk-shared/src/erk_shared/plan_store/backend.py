@@ -291,7 +291,7 @@ class PlanBackend(ABC):
         content: str,
         labels: tuple[str, ...],
         metadata: Mapping[str, object],
-        summary: str | None,
+        summary: str,
     ) -> CreatePlanResult:
         """Create a new plan.
 
@@ -301,7 +301,7 @@ class PlanBackend(ABC):
             content: Plan body/description
             labels: Labels to apply (immutable tuple)
             metadata: Provider-specific metadata
-            summary: Optional AI-generated summary to display above the collapsed plan
+            summary: AI-generated summary (empty string if none)
 
         Returns:
             CreatePlanResult with plan_id and url
@@ -337,6 +337,8 @@ class PlanBackend(ABC):
         repo_root: Path,
         plan_id: str,
         content: str,
+        *,
+        summary: str,
     ) -> None:
         """Update the plan content body.
 
@@ -344,6 +346,7 @@ class PlanBackend(ABC):
             repo_root: Repository root directory
             plan_id: Provider-specific identifier
             content: New plan content
+            summary: AI-generated summary (empty string if none)
 
         Raises:
             RuntimeError: If plan not found or update fails

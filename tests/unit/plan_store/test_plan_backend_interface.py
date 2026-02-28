@@ -53,7 +53,7 @@ def _make_planned_pr_backend_with_plan() -> tuple[PlanBackend, str]:
         content="Plan content",
         labels=("erk-plan",),
         metadata={"branch_name": "existing-plan-branch"},
-        summary=None,
+        summary="",
     )
     return backend, result.plan_id
 
@@ -95,7 +95,7 @@ def test_create_and_get_plan_roundtrip(plan_backend: PlanBackend) -> None:
         content="# Plan Content\n\nThis is the plan body.",
         labels=("erk-plan",),
         metadata=_create_metadata(plan_backend),
-        summary=None,
+        summary="",
     )
 
     # Verify CreatePlanResult structure
@@ -271,7 +271,7 @@ def test_list_plans_with_limit(plan_backend: PlanBackend) -> None:
             content=f"Content {i}",
             labels=("erk-plan",),
             metadata=_create_metadata(plan_backend),
-            summary=None,
+            summary="",
         )
 
     results = plan_backend.list_plans(Path("/repo"), PlanQuery(limit=2))
@@ -288,7 +288,7 @@ def test_create_multiple_plans_have_unique_ids(plan_backend: PlanBackend) -> Non
             content=f"Content {i}",
             labels=(),
             metadata=_create_metadata(plan_backend),
-            summary=None,
+            summary="",
         )
         results.append(result)
 
@@ -315,7 +315,7 @@ def test_get_metadata_field_returns_none_for_missing_field(plan_backend: PlanBac
         content="# Test plan",
         labels=("erk-plan",),
         metadata=_create_metadata(plan_backend),
-        summary=None,
+        summary="",
     )
 
     result = plan_backend.get_metadata_field(Path("/repo"), created.plan_id, "worktree_name")
@@ -332,7 +332,7 @@ def test_get_metadata_field_roundtrips_with_update_metadata(
         content="# Roundtrip plan",
         labels=("erk-plan",),
         metadata=_create_metadata(plan_backend),
-        summary=None,
+        summary="",
     )
 
     plan_backend.update_metadata(
@@ -366,7 +366,7 @@ def test_get_all_metadata_fields_returns_empty_dict_for_no_metadata(
         content="# Test plan",
         labels=("erk-plan",),
         metadata=_create_metadata(plan_backend),
-        summary=None,
+        summary="",
     )
 
     result = plan_backend.get_all_metadata_fields(Path("/repo"), created.plan_id)
@@ -384,7 +384,7 @@ def test_get_all_metadata_fields_roundtrips_with_update_metadata(
         content="# Roundtrip plan",
         labels=("erk-plan",),
         metadata=_create_metadata(plan_backend),
-        summary=None,
+        summary="",
     )
 
     plan_backend.update_metadata(
@@ -431,7 +431,7 @@ def test_update_plan_title_not_found_raises(plan_backend: PlanBackend) -> None:
 def test_update_plan_content_not_found_raises(plan_backend: PlanBackend) -> None:
     """Backend raises RuntimeError for nonexistent plan."""
     with pytest.raises(RuntimeError):
-        plan_backend.update_plan_content(Path("/repo"), "99999999", "new content")
+        plan_backend.update_plan_content(Path("/repo"), "99999999", "new content", summary="")
 
 
 # =============================================================================
@@ -447,7 +447,7 @@ def test_post_event_metadata_only(plan_backend: PlanBackend) -> None:
         content="# Event plan",
         labels=("erk-plan",),
         metadata=_create_metadata(plan_backend),
-        summary=None,
+        summary="",
     )
 
     plan_backend.post_event(
@@ -469,7 +469,7 @@ def test_post_event_metadata_and_comment(plan_backend: PlanBackend) -> None:
         content="# Event plan",
         labels=("erk-plan",),
         metadata=_create_metadata(plan_backend),
-        summary=None,
+        summary="",
     )
 
     plan_backend.post_event(
@@ -521,7 +521,7 @@ def test_get_comments_returns_preconfigured_comments_planned_pr() -> None:
         content="# Plan",
         labels=("erk-plan",),
         metadata={"branch_name": "test-branch-comments"},
-        summary=None,
+        summary="",
     )
 
     # Pre-configure comments on the underlying fake issues gateway
@@ -570,7 +570,7 @@ def test_find_sessions_for_plan_reads_header_fields(
         content="# Plan\n\nTest plan content.",
         labels=("erk-plan",),
         metadata=_create_metadata(plan_backend),
-        summary=None,
+        summary="",
     )
     plan_id = result.plan_id
 
@@ -651,7 +651,7 @@ def test_update_metadata_accepts_previously_blocked_fields() -> None:
         content="# Plan",
         labels=("erk-plan",),
         metadata={"branch_name": "whitelist-test-branch"},
-        summary=None,
+        summary="",
     )
 
     backend.update_metadata(

@@ -29,10 +29,14 @@ If no argument provided, check `ref.json` in `.erk/impl-context/<branch>/` for a
 
 If still no plan number, ask the user for the plan number.
 
+### Step 1.5: Generate Plan Summary
+
+Generate a 2-3 sentence summary of the plan content. Focus on WHAT the plan does and WHY. Plain text, no markdown formatting. Store the result in `PLAN_SUMMARY`.
+
 ### Step 2: Run Update Command
 
 ```bash
-erk exec plan-update --plan-number <plan> --format display --session-id="${CLAUDE_SESSION_ID}"
+erk exec plan-update --plan-number <plan> --format display --session-id="${CLAUDE_SESSION_ID}" --summary="${PLAN_SUMMARY}"
 ```
 
 ### Step 3: Display Results

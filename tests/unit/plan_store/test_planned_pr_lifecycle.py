@@ -17,7 +17,7 @@ from erk_shared.plan_store.planned_pr_lifecycle import (
 
 def test_build_plan_stage_body() -> None:
     """Stage 1 body contains metadata + details-wrapped plan, no separator."""
-    result = build_plan_stage_body("metadata block", "plan content", summary=None)
+    result = build_plan_stage_body("metadata block", "plan content", summary="")
     assert "metadata block" in result
     assert PLAN_CONTENT_SEPARATOR not in result
     assert DETAILS_OPEN in result
@@ -27,7 +27,7 @@ def test_build_plan_stage_body() -> None:
 
 def test_build_plan_stage_body_structure() -> None:
     """Stage 1 body has correct ordering: details, content, close, metadata."""
-    result = build_plan_stage_body("META", "PLAN", summary=None)
+    result = build_plan_stage_body("META", "PLAN", summary="")
     meta_idx = result.index("META")
     open_idx = result.index(DETAILS_OPEN)
     plan_idx = result.index("PLAN")
@@ -63,7 +63,7 @@ def test_build_plan_stage_body_summary_structure() -> None:
 
 def test_extract_plan_content_from_plan_stage() -> None:
     """Extracts plan content from Stage 1 body (details-wrapped)."""
-    body = build_plan_stage_body("metadata block", "plan content here", summary=None)
+    body = build_plan_stage_body("metadata block", "plan content here", summary="")
     assert extract_plan_content(body) == "plan content here"
 
 
@@ -146,7 +146,7 @@ def test_build_original_plan_section() -> None:
 def test_build_and_extract_roundtrip() -> None:
     """build_plan_stage_body + extract_plan_content roundtrips cleanly."""
     plan = "# My Plan\n\nStep 1: Do things.\nStep 2: More things."
-    body = build_plan_stage_body("<!-- metadata -->", plan, summary=None)
+    body = build_plan_stage_body("<!-- metadata -->", plan, summary="")
     assert extract_plan_content(body) == plan
 
 

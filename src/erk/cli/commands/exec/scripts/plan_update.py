@@ -64,6 +64,10 @@ from erk_shared.plan_utils import extract_title_from_plan, get_title_tag_from_la
     "--session-id",
     help="Session ID to find plan file in scratch storage",
 )
+@click.option(
+    "--summary",
+    help="AI-generated summary to display above the collapsed plan in the PR body",
+)
 @click.pass_context
 def plan_update(
     ctx: click.Context,
@@ -72,6 +76,7 @@ def plan_update(
     output_format: str,
     plan_path: Path | None,
     session_id: str | None,
+    summary: str | None,
 ) -> None:
     """Update an existing plan's content."""
 
@@ -114,7 +119,7 @@ def plan_update(
 
     # Step 3: Update plan content via PlanBackend
     try:
-        backend.update_plan_content(repo_root, plan_id, plan_content.strip())
+        backend.update_plan_content(repo_root, plan_id, plan_content.strip(), summary=summary or "")
     except RuntimeError as e:
         _handle_update_error(f"Failed to update comment: {e}", cause=e)
 
