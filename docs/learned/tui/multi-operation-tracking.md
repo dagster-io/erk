@@ -43,13 +43,15 @@ All in `src/erk/tui/widgets/status_bar.py`:
 
 Pattern: `f"{action}-{resource_type}-{resource_id}"`
 
-Examples from `src/erk/tui/app.py`:
+Examples:
 
-- `f"close-plan-{row.plan_id}"`
-- `f"land-pr-{row.pr_number}"`
-- `f"dispatch-plan-{row.plan_id}"`
-- `f"fix-conflicts-pr-{row.pr_number}"`
-- `f"address-pr-{row.pr_number}"`
+- `"close-plan-123"` — closing plan #123
+- `"land-pr-456"` — landing PR #456
+- `"dispatch-plan-123"` — dispatching plan #123
+- `"fix-conflicts-pr-456"` — fixing conflicts for PR #456
+- `"address-pr-456"` — addressing PR #456
+
+The op ID uniquely identifies a concurrent operation. Multiple operations can run simultaneously; the status bar displays the most recently updated one.
 
 ## Streaming Subprocess Integration
 

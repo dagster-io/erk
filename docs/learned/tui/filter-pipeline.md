@@ -28,14 +28,13 @@ The TUI dashboard applies filters in a defined pipeline sequence: objective filt
 
 ## State Variables
 
-Defined in `src/erk/tui/app.py`:
+State variables are defined in `src/erk/tui/app.py` for each filter:
 
-| Variable                  | Type                     | Initial | Purpose                               |
-| ------------------------- | ------------------------ | ------- | ------------------------------------- |
-| `_objective_filter_issue` | `int \| None`            | `None`  | Objective issue number being filtered |
-| `_objective_filter_label` | `str \| None`            | `None`  | Display label for status bar          |
-| `_stack_filter_branches`  | `frozenset[str] \| None` | `None`  | Branch names in active stack          |
-| `_stack_filter_label`     | `str \| None`            | `None`  | Head branch name for display          |
+- **Objective filter**: Stores the selected issue number (or `None` when inactive) and a display label for the status bar
+- **Stack filter**: Stores branch names in the active stack (as a frozenset for immutability) and the head branch name for display
+- **Text filter**: Stores the search query and active mode
+
+Each filter has a state variable and optional label variable for status bar display.
 
 ## Toggle Pattern
 

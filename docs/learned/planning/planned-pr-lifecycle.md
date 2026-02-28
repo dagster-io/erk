@@ -66,7 +66,7 @@ Body format:
 [plan content]
 
 </details>
-\n\n---\n\n
+\n\n
 [metadata block]
 \n---\n
 [checkout footer]

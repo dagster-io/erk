@@ -59,7 +59,7 @@ Testing event handlers in Textual modal screens:
 
 ## Source Code
 
-- `src/erk/tui/app.py` — `action_toggle_objective_filter()` at line 567 implements the inline objective filter
+- `src/erk/tui/app.py` — `action_toggle_objective_filter()` implements the inline objective filter
 
 ## Related Documentation
 
