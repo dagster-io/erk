@@ -48,6 +48,8 @@ Rules triggered by matching actions in code.
 
 **adding a new method to HttpClient ABC without implementing in all providers** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. HttpClient follows the gateway pattern. New methods must be added to abc.py, real.py, and fake.py at minimum.
 
+**adding a new parameter to a gateway ABC method** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. All 5 implementations must be updated (ABC, Real, Fake, DryRun, Printing). Fake may accept but not track new parameters when assertion is not needed for tests.
+
 **adding a new setup path to a command with existing cleanup** → Read [Convergence Points Architecture](convergence-points.md) first. Ensure the new path calls the same convergence function. Multiple setup paths must converge at a single cleanup point to prevent resource leaks.
 
 **adding a parameter to an erk exec script without updating the calling slash command** → Read [Parameter Threading Pattern](parameter-threading-pattern.md) first. 3-layer parameter threading: When adding a parameter, update all three layers: skill SKILL.md argument-hint, slash command .md, and erk exec script. Verify all invocations thread the parameter through.
@@ -168,8 +170,6 @@ Rules triggered by matching actions in code.
 
 **deleting a gateway after consolidating into another** → Read [Gateway Removal Pattern](gateway-removal-pattern.md) first. Follow complete removal checklist: verify no references, delete all 5 layers, clean up compositions, update docs, run full test suite.
 
-**deprecating a gateway method without updating all 5 implementation docstrings** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. When deprecating a gateway method, update docstrings in ALL 5 implementations (abc, real, fake, dry_run, printing). Stale docstrings in non-primary implementations mislead agents.
-
 **designing a new hook or reminder system** → Read [Context Injection Architecture](context-injection-tiers.md) first. Consider the three-tier context architecture and consolidation patterns. Read docs/learned/architecture/context-injection-tiers.md first.
 
 **designing error handling for a new gateway method** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section.
@@ -240,6 +240,8 @@ Rules triggered by matching actions in code.
 
 **piping JSON through bash heredoc to gh api or other commands** → Read [Heredoc Quoting and Escaping in Agent-Generated Bash](bash-python-integration.md) first. JSON with special characters ($, backticks, backslashes) gets silently corrupted by bash expansion in unquoted heredocs. Use <<'EOF' (quoted) or write to a temp file and pipe from that.
 
+**placing @handle_non_ideal_exit before @click.command() or @click.pass_context** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. @handle_non_ideal_exit must come AFTER @click.command() / @click.pass_context (outermost position in decorator stack). Inner position causes it to receive wrong arguments.
+
 **proposing branch-based session storage as a new idea** → Read [Session Storage Architecture](session-storage-revert-rationale.md) first. Session storage IS branch-based (async-learn/{plan_id} branches). An earlier attempt at a different branch-based approach was tried and reverted in PR #7757→#7765. The current branch-based approach (upload_session.py) is the stable implementation.
 
 **querying plans by base label erk-planned-pr instead of type-specific labels** → Read [GitHub GraphQL Label Semantics](github-graphql-label-semantics.md) first. Query by type-specific labels (erk-plan, erk-learn) not base label. AND semantics means querying erk-planned-pr + erk-plan returns only items with both, which may silently exclude items.
@@ -293,6 +295,8 @@ Rules triggered by matching actions in code.
 **using Path.cwd() directly in an exec script without CWD injection** → Read [Command Composition Pattern](command-composition.md) first. Use `cwd: Path | None = None` parameter defaulting to `Path.cwd()` for testability. This allows tests to override the working directory.
 
 **using PlanContextProvider** → Read [Plan Context Integration](plan-context-integration.md) first. Read this doc first. PlanContextProvider returns None on any failure (graceful degradation). Always handle the None case.
+
+**using Protocol property descriptors on a frozen dataclass NonIdealState class** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Protocol property descriptors conflict with frozen dataclass fields. Use NonIdealStateMixin (at packages/erk-shared/src/erk_shared/non_ideal_state.py) when the NonIdealState class uses dataclass fields.
 
 **using `--output-format stream-json` with `--print` in Claude CLI** [pattern: `--output-format\s+stream-json`] → Read [Claude CLI Integration from Python](claude-cli-integration.md) first. Must also include `--verbose`. Without it, the command fails with 'stream-json requires --verbose'.
 

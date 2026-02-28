@@ -16,6 +16,8 @@ Rules triggered by matching actions in code.
 
 **accessing optional gateway fields without null checks in TUI event handlers** → Read [Modal Widget Embedding Pattern](modal-widget-embedding.md) first. Gateway fields like plan_body or objective_content may be None. Always check before accessing in event handlers.
 
+**adding a CLI flag that affects behavior without checking TUI command palette** → Read [TUI Command Registration](tui-command-registration.md) first. TUI command palette generates shell commands via src/erk/tui/commands/registry.py. When adding CLI flags that change behavior, check if TUI-generated commands need the flag too.
+
 **adding a DataTable column with add_column(key=...)** → Read [TUI Architecture Overview](architecture.md) first. Column key is a data binding contract — must match data field name. Silent failure when mismatched.
 
 **adding a column to PlanDataTable without updating make_plan_row** → Read [Column Addition Pattern](column-addition-pattern.md) first. Column additions require 5 coordinated changes. See column-addition-pattern.md for the complete checklist.
@@ -27,6 +29,8 @@ Rules triggered by matching actions in code.
 **adding a new TUI command without updating all 3 places** → Read [TUI Command Registration](tui-command-registration.md) first. TUI commands require 3-place coordination: registry definition, display formatter, and action inventory. See tui-command-registration.md.
 
 **adding a new ViewMode without updating VIEW_CONFIGS** → Read [TUI View Switching](view-switching.md) first. Every ViewMode must have a corresponding ViewConfig in VIEW_CONFIGS. Missing configs cause KeyError at runtime.
+
+**adding a new filter without updating the escape chain** → Read [TUI Filter Pipeline Pattern](filter-pipeline.md) first. New filter implementations must add an entry to `action_exit_app()` progressive escape chain. Missing entries leave filters stuck with no way for the user to clear them.
 
 **adding a new key binding without checking existing bindings** → Read [TUI Keyboard Shortcuts Inventory](keyboard-shortcuts.md) first. Check this document and ErkDashApp.BINDINGS in app.py for conflicts. Some keys are hidden but still active.
 
@@ -50,13 +54,21 @@ Rules triggered by matching actions in code.
 
 **caching fetched data under self.\_view_mode after an async operation** → Read [TUI Async State Snapshot Pattern](async-state-snapshot.md) first. Cache under fetched_mode (snapshot at start), not self.\_view_mode (may have changed during fetch).
 
+**calling self.notify() or self.\_finish_operation() directly from a background thread** → Read [TUI Multi-Operation Tracking](multi-operation-tracking.md) first. Use self.call_from_thread() for all UI updates from @work(thread=True) methods. Direct calls cause thread-safety violations.
+
+**calling start_operation() without a matching finish_operation() in the error path** → Read [TUI Multi-Operation Tracking](multi-operation-tracking.md) first. Always call finish_operation() in both success and error paths. Use try/finally or explicit error handling. Missing finish calls leave ghost operations in the status bar.
+
 **calling widget methods directly from @work(thread=True) background threads** → Read [TUI Architecture Overview](architecture.md) first. Direct widget calls from background threads cause silent UI corruption. Must use self.app.call_from_thread(callback, ...).
 
 **calling widget methods from @work(thread=True) without call_from_thread()** → Read [TUI Modal Screen Pattern](modal-screen-pattern.md) first. Background thread widget mutations cause silent UI corruption. Use self.app.call_from_thread(callback, ...).
 
+**changing filter application order in \_apply_filter_and_sort()** → Read [TUI Filter Pipeline Pattern](filter-pipeline.md) first. Filter order is intentional: objective → stack → text → sort. Objective is broadest (cross-stack), stack is mid-level, text is narrowest. Changing order produces unexpected results.
+
 **completing a background worker thread without calling action_refresh** → Read [Async Action Refresh Pattern](async-action-refresh-pattern.md) first. Always call_from_thread(self.action_refresh) after successful background work to update the TUI display.
 
 **constructing PlanFilters without copying all fields from existing filters** → Read [TUI Data Contract](data-contract.md) first. All fields must be explicitly copied in \_load_data() PlanFilters construction. Missing fields (like creator) cause silent filtering failures.
+
+**constructing op IDs without the {action}-{resource}-{id} pattern** → Read [TUI Multi-Operation Tracking](multi-operation-tracking.md) first. Op IDs must follow the convention: f'{action}-{resource_type}-{resource_id}' (e.g., 'land-pr-456', 'close-plan-123'). Non-unique IDs cause operations to overwrite each other.
 
 **creating a ModalScreen without CSS for dismiss behavior** → Read [TUI Modal Screen Pattern](modal-screen-pattern.md) first. ModalScreen requires explicit CSS for the overlay. Without it, clicking outside the modal does nothing.
 
@@ -75,6 +87,10 @@ Rules triggered by matching actions in code.
 **formatting display strings during table render** → Read [TUI Data Contract](data-contract.md) first. Display strings are pre-formatted at fetch time. Add new \*\_display fields to PlanRowData and format in RealPlanDataProvider.\_build_row_data(), not in the widget layer.
 
 **generating TUI commands that depend on optional PlanRowData fields** → Read [Adding Commands to TUI](adding-commands.md) first. Implement three-layer validation: registry predicate, handler guard, app-level helper. Never rely on registry predicate alone.
+
+**implementing modal dismiss with an inverted key check condition** → Read [Modal Widget Embedding Pattern](modal-widget-embedding.md) first. Dismiss-on-unhandled pattern: if event.key not in (bound_keys): self.dismiss(). Using the inverted condition (if key in bound_keys: dismiss) is a common bug that dismisses on valid keys instead of unrecognized ones.
+
+**implementing on_key() in a modal without calling event.prevent_default() and event.stop()** → Read [Modal Widget Embedding Pattern](modal-widget-embedding.md) first. Modal on_key() must call event.prevent_default() and event.stop() BEFORE any logic. Without this, keystrokes leak to the underlying view and trigger unintended actions.
 
 **modifying how plan titles are displayed in TUI** → Read [TUI Plan Title Rendering Pipeline](plan-title-rendering-pipeline.md) first. Ensure `[erk-learn]` prefix is added BEFORE any filtering/sorting stages.
 
@@ -98,6 +114,8 @@ Rules triggered by matching actions in code.
 
 **using \_render() as a method name in Textual widgets** → Read [TUI View Switching](view-switching.md) first. Textual's LSP reserves \_render(). Use \_refresh_display() instead (see ViewBar).
 
+**using a mutable set for \_stack_filter_branches** → Read [TUI Filter Pipeline Pattern](filter-pipeline.md) first. Stack filter branches use frozenset[str] for immutability and efficient membership testing. Do not use set or list.
+
 **using inverted key check in on_key() modal dismiss logic** → Read [TUI Modal Screen Pattern](modal-screen-pattern.md) first. if event.key not in (...) is WRONG for dismiss logic — it swallows dismiss keys. Use if event.key in (...) to check for positive dismiss. Regression caused by stacked PR merge order.
 
 **using positional arguments when constructing PlanRowData** → Read [Frozen Dataclass Field Management](frozen-dataclass-field-management.md) first. Always use keyword arguments for frozen dataclass construction. Positional arguments break silently when fields are reordered. Use make_plan_row() helper in tests.
@@ -105,5 +123,7 @@ Rules triggered by matching actions in code.
 **using subprocess.Popen in TUI code without stdin=subprocess.DEVNULL** → Read [Command Execution Strategies](command-execution.md) first. Child processes inherit stdin from parent; in TUI context this creates deadlocks when child prompts for user input. Always set `stdin=subprocess.DEVNULL` for TUI subprocess calls.
 
 **using subprocess.Popen without bufsize=1 for streaming** → Read [TUI Streaming Output Patterns](streaming-output.md) first. Use bufsize=1 with text=True for line-buffered streaming Popen output. Without it, output may be block-buffered.
+
+**using subprocess.run() instead of \_run_streaming_operation() for TUI commands** → Read [TUI Multi-Operation Tracking](multi-operation-tracking.md) first. TUI background operations must use \_run_streaming_operation() for live progress. subprocess.run() blocks without streaming and produces no status bar updates.
 
 **using title-stripping functions** → Read [TUI Plan Title Rendering Pipeline](plan-title-rendering-pipeline.md) first. Distinguish `_strip_plan_prefixes` (PR creation) vs `_strip_plan_markers` (plan creation) vs `strip_plan_from_filename` (filename handling).

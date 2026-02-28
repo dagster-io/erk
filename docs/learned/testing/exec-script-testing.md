@@ -19,6 +19,10 @@ tripwires:
     pattern: "Path\\.home\\(\\)"
   - action: "importing or monkeypatching a module with 'exec' in its path"
     warning: "`exec` is a Python keyword that blocks direct import and string-path monkeypatch. Use `importlib.import_module()` + object-form `setattr` instead."
+  - action: "using branch names with '/' in test data for resolve_impl_dir() tests"
+    warning: "Branch name sanitization (_sanitize_branch_for_dirname() at packages/erk-shared/src/erk_shared/impl_folder.py) replaces '/' with '--'. Test data must account for this: branch 'plnd/my-feature' becomes directory 'plnd--my-feature'."
+  - action: "adding new parameters to gateway methods without truth-table test coverage"
+    warning: "When adding boolean parameters to gateway methods, the truth-table testing pattern covers all boolean combinations. Bot reviewers enforce this coverage."
 ---
 
 # Exec Script Testing Patterns

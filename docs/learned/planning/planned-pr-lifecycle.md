@@ -39,14 +39,14 @@ Planned PRs serve as the backing store for plans when the plan backend is `githu
 Body format:
 
 ```
-[metadata block]
-\n\n---\n\n
 <details>
 <summary>original-plan</summary>
 
 [plan content]
 
 </details>
+\n\n
+[metadata block]
 \n---\n
 [checkout footer]
 ```
@@ -58,8 +58,6 @@ After code changes, `erk pr submit` / `erk pr rewrite` rewrites the body. The me
 Body format:
 
 ```
-[metadata block]
-\n\n---\n\n
 [AI-generated summary]
 
 <details>
@@ -68,6 +66,8 @@ Body format:
 [plan content]
 
 </details>
+\n\n
+[metadata block]
 \n---\n
 [checkout footer]
 ```
@@ -82,7 +82,7 @@ All in `packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py`:
 
 | Function                                             | Purpose                                                                                                     |
 | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `build_plan_stage_body(metadata_body, plan_content)` | Build Stage 1 body: metadata + separator + details-wrapped plan. Footer NOT included (needs PR number).     |
+| `build_plan_stage_body(metadata_body, plan_content)` | Build Stage 1 body: details-wrapped plan + separator + metadata. Footer NOT included (needs PR number).     |
 | `build_original_plan_section(plan_content)`          | Wrap plan content in `<details><summary>original-plan</summary>` section. Used by both Stage 1 and Stage 2. |
 | `extract_plan_content(pr_body)`                      | Extract plan content from PR body at any lifecycle stage. Handles both details-wrapped and old flat format. |
 | `find_metadata_block(pr_body, "plan-header")`        | Extract metadata block for preservation during stage transitions.                                           |

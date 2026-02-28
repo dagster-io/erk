@@ -24,6 +24,8 @@ Rules triggered by matching actions in code.
 
 **adding monkeypatch or @patch to a test** [pattern: `@patch|monkeypatch\.`] → Read [Monkeypatch Elimination Checklist](monkeypatch-elimination-checklist.md) first. Use gateway fakes instead. If no gateway exists for the operation, create one first. See gateway-abc-implementation.md.
 
+**adding new parameters to gateway methods without truth-table test coverage** → Read [Exec Script Testing Patterns](exec-script-testing.md) first. When adding boolean parameters to gateway methods, the truth-table testing pattern covers all boolean combinations. Bot reviewers enforce this coverage.
+
 **allowing `import X as Y` because it's a common convention (e.g., `import pandas as pd`)** → Read [Import Alias vs Re-Export Detection](alias-verification-pattern.md) first. Erk prohibits ALL gratuitous import aliases. The only exception is resolving genuine name collisions between two modules.
 
 **asking devrun agent to fix errors or make tests pass** → Read [Devrun Agent - Read-Only Design](devrun-agent.md) first. Devrun is READ-ONLY. It runs commands and reports results. The parent agent must handle all fixes.
@@ -106,6 +108,8 @@ Rules triggered by matching actions in code.
 
 **testing admin commands that read GitHub settings** → Read [Admin Command Testing Patterns](admin-command-testing.md) first. Use FakeGitHubAdmin with workflow_permissions dict to configure read state. Do not mock subprocess calls.
 
+**testing branch-scoped impl directory code without configuring FakeGit current_branches** → Read [FakeGit Branch Divergence Testing](fake-git-divergence.md) first. FakeGit current_branches must be configured when testing resolve_impl_dir(). Without this, resolve_impl_dir() gets the wrong branch and resolves to the wrong directory.
+
 **testing code that reads ERK_PLAN_BACKEND or other environment variables via CliRunner** → Read [CLI Testing Patterns](cli-testing.md) first. CliRunner env var isolation: ambient env vars from the developer shell leak into CliRunner by default and cause intermittent test failures. Use CliRunner(env={'ERK_PLAN_BACKEND': '...'}) to override, or CliRunner(env={}) to isolate completely. Never rely on ambient env being clean. Note: mix_stderr parameter is broken in Click 8.3.1 — do not use it.
 
 **testing code that reads from Path.home() or ~/.claude/ or ~/.erk/** [pattern: `Path\.home\(\)`] → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Tests that run in parallel must use monkeypatch to isolate from real filesystem state. Functions like extract_slugs_from_session() cause flakiness when they read from the user's home directory.
@@ -125,6 +129,8 @@ Rules triggered by matching actions in code.
 **using Path.home() directly in production code** [pattern: `Path\.home\(\)`] → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Use gateway abstractions instead. For ~/.claude/ paths use ClaudeInstallation, for ~/.erk/ paths use ErkInstallation. Direct Path.home() access bypasses testability (fakes) and creates parallel test flakiness.
 
 **using asyncio.sleep() to wait for Bolt handler completion** → Read [Bolt Async Dispatch Testing Pattern](bolt-async-dispatch-testing.md) first. Use dispatch_and_settle() from conftest — it awaits all background tasks deterministically.
+
+**using branch names with '/' in test data for resolve_impl_dir() tests** → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Branch name sanitization (\_sanitize_branch_for_dirname() at packages/erk-shared/src/erk_shared/impl_folder.py) replaces '/' with '--'. Test data must account for this: branch 'plnd/my-feature' becomes directory 'plnd--my-feature'.
 
 **using context_for_test without matching parameter names to the current API** → Read [FakeGitHub API Reference](fake-github-api-reference.md) first. context_for_test() parameter names evolve. Check the current function signature before adding new parameters.
 
