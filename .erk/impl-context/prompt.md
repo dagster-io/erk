@@ -1,0 +1,1 @@
+direnv: export +VIRTUAL_ENV +VIRTUAL_ENV_PROMPT ~PATH
