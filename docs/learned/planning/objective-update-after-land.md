@@ -41,9 +41,9 @@ The script always exits 0. The merge has already succeeded at this point — obj
 
 The land pipeline captures plan and objective metadata **before** executing the merge pipeline, which deletes the feature branch. After branch deletion, the branch-to-plan/objective relationship can no longer be resolved.
 
-<!-- Source: src/erk/cli/commands/land_cmd.py, _execute_landing -->
+<!-- Source: src/erk/cli/commands/land_cmd.py -->
 
-In `land_cmd.py`, `resolve_plan_id_for_branch()` and `get_objective_for_branch()` are called before the execution pipeline runs. The captured `plan_id` and `objective_number` are then passed to the post-merge objective update step.
+The land command captures `plan_id` and `objective_number` before the merge pipeline runs. These are discovered via branch-based lookup and then passed to the post-merge objective update step, ensuring the metadata is available even after the branch is deleted.
 
 ## Direct Lookup with Fallback
 
