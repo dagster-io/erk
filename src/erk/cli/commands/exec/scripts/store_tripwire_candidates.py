@@ -1,10 +1,10 @@
-"""Store tripwire candidates as a metadata comment on a plan issue.
+"""Store tripwire candidates as a metadata comment on a plan.
 
 Usage:
     erk exec store-tripwire-candidates --plan-number <N> --candidates-file <path>
 
 Reads a JSON file produced by the tripwire extraction agent and adds
-a metadata comment to the plan issue with key `tripwire-candidates`.
+a metadata comment to the plan with key `tripwire-candidates`.
 
 Exit Codes:
     0: Success
@@ -54,7 +54,7 @@ def store_tripwire_candidates(
     plan_number: int,
     candidates_file: str,
 ) -> None:
-    """Store tripwire candidates as a metadata comment on a plan issue."""
+    """Store tripwire candidates as a metadata comment on a plan."""
     repo_root = require_repo_root(ctx)
     issues = require_issues(ctx)
 

@@ -508,7 +508,7 @@ def test_submitted_no_session_id_ok(tmp_path: Path) -> None:
 
 
 def test_submitted_issue_not_found(tmp_path: Path) -> None:
-    """Submitted event returns error when plan issue doesn't exist."""
+    """Submitted event returns error when plan doesn't exist."""
     fake_issues = FakeGitHubIssues(issues={})
     fake_github = FakeGitHub(issues_gateway=fake_issues)
     _setup_plan_ref(tmp_path, plan_id="999")

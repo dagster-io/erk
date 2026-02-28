@@ -1,6 +1,6 @@
 """Unit tests for track-learn-result exec script.
 
-Tests learn result tracking on plan issues.
+Tests learn result tracking on plans.
 Uses fakes for fast, reliable testing without subprocess calls.
 """
 
@@ -69,7 +69,7 @@ def test_track_learn_result_completed_no_plan(tmp_path: Path) -> None:
 
 
 def test_track_learn_result_completed_with_plan(tmp_path: Path) -> None:
-    """Test tracking completed_with_plan status with plan issue."""
+    """Test tracking completed_with_plan status with plan."""
     plan_body = format_plan_header_body_for_test(learn_status="pending")
     issue = create_test_issue(42, "Test Plan #42", plan_body)
     fake_issues = FakeGitHubIssues(issues={42: issue})
@@ -99,7 +99,7 @@ def test_track_learn_result_completed_with_plan(tmp_path: Path) -> None:
     assert output["learn_status"] == "completed_with_plan"
     assert output["learn_plan_issue"] == 456
 
-    # Verify plan-header was updated with both status and plan issue
+    # Verify plan-header was updated with both status and plan
     updated_pr = fake_github.get_pr(cwd, 42)
     assert not isinstance(updated_pr, PRNotFound)
     block = find_metadata_block(updated_pr.body, "plan-header")
