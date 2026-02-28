@@ -78,11 +78,11 @@ See `DevrunReminderCapability` for the canonical minimal implementation—two pr
 
 ## Example: Skill Capability
 
-<!-- Source: src/erk/capabilities/skills/dignified_python.py, DignifiedPythonCapability -->
+<!-- Source: src/erk/capabilities/skills/bundled.py, BundledSkillCapability -->
 
 Skill capabilities install files from bundled artifacts. The base class delegates to the artifact sync system.
 
-See `DignifiedPythonCapability`—same two-property pattern as reminders.
+See `BundledSkillCapability` in `src/erk/capabilities/skills/bundled.py` for the pattern. Each bundled skill is registered as an instance with a specific skill name.
 
 ## Example: Direct Capability Subclass
 

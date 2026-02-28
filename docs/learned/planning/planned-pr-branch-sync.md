@@ -37,7 +37,7 @@ fetch_branch → checkout/create_tracking → pull_rebase
 
 ### Step 1: Fetch Branch
 
-<!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:114 -->
+<!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py, setup_impl_from_pr -->
 
 Calls `git.remote.fetch_branch()` to fetch the named branch from origin, making remote state available locally.
 
@@ -53,7 +53,7 @@ Three possible states:
 
 ### Step 3: Pull Rebase
 
-<!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:132 -->
+<!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py, setup_impl_from_pr -->
 
 Calls `git.remote.pull_rebase()` to fast-forward the local branch to remote HEAD. Only needed when already on branch or after checking out an existing local branch. Skip when creating a fresh tracking branch (already at remote HEAD).
 
@@ -77,10 +77,10 @@ This is why `plan-implement` always calls `setup-impl-from-pr` even when `.erk/i
 
 ## Pattern Consistency: Setup and Submit
 
-Both `setup_impl_from_pr.py` and `submit.py` use an identical three-step sync pattern when working with draft-PR plan branches:
+Both `setup_impl_from_pr.py` and `submit_pipeline.py` use an identical three-step sync pattern when working with draft-PR plan branches:
 
-<!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:81-97 -->
-<!-- Source: src/erk/cli/commands/submit.py:431-445 -->
+<!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py, setup_impl_from_pr -->
+<!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, push_and_create_pr -->
 
 Both paths call the same three-step sequence: `fetch_branch()` → `create_tracking_branch()` / `checkout_branch()` → `pull_rebase()`. See the source files for exact call signatures.
 
@@ -90,7 +90,7 @@ PR #7697 added the missing `pull_rebase()` call to the submit path. Without it, 
 
 For comparison, issue-based plans (legacy) generate fresh branch names:
 
-<!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:155-157 -->
+<!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py, setup_impl_from_pr -->
 
 Calls `generate_issue_branch_name()` with the issue number, plan title, timestamp, and optional objective ID. Branch names follow the pattern `P{issue}-{slugified-title}-{timestamp}`. This is the legacy format; current plans use `plnd/` prefix.
 

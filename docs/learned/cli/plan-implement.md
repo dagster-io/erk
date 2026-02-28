@@ -194,7 +194,7 @@ main
         └── feature-b (new plan implementation)
 ```
 
-<!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py, _is_trunk_branch() -->
+<!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py, setup_impl_from_pr -->
 
 This is determined by trunk detection: branches named "main" or "master" are trunk, everything else is a feature branch. Stacking happens automatically — no configuration needed.
 

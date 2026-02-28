@@ -241,6 +241,5 @@ Signs the plan preserves investigation findings:
 ## Related Documentation
 
 - [Context Preservation in Replan](../planning/context-preservation-in-replan.md) — why this checklist exists and the sparse plan problem
-- [Context Preservation Patterns](../planning/context-preservation-patterns.md) — anti-pattern vs. correct pattern examples
 - [Context Preservation Prompting](../planning/context-preservation-prompting.md) — prompt structures for eliciting context
 - [Replan Command](../../../.claude/commands/erk/replan.md) — canonical workflow with Steps 6a-6b

@@ -8,8 +8,8 @@ read_when:
 tripwires:
   - action: "registering a new TUI command without a view-mode predicate"
     warning: "Every command must use _is_plan_view() or _is_objectives_view() to prevent it from appearing in the wrong view. Commands without view predicates appear in all views."
-  - action: "adding streaming commands without using _push_streaming_detail helper"
-    warning: "Streaming ACTION commands need _push_streaming_detail() to handle the push-then-stream sequence correctly. Direct streaming without it skips the detail screen push."
+  - action: "adding streaming commands without using the streaming operation pattern"
+    warning: "Streaming ACTION commands need the streaming operation wrapper with status bar tracking. See streaming-output.md for the current pattern."
 ---
 
 # View-Aware Command Filtering
@@ -86,14 +86,11 @@ The two command providers resolve `CommandContext` differently:
 
 - **`PlanCommandProvider._get_context()`**: Returns `CommandContext` (never None). Hardcodes `view_mode=ViewMode.PLANS` because the detail modal always shows a plan. This means objective commands never appear in the detail modal's command palette — by design, since the modal is scoped to a single plan.
 
-## The `_push_streaming_detail` Pattern
+## Streaming ACTION Commands
 
-ACTION commands that run long-running subprocess operations (land, fix-conflicts, address) need to push a detail screen first, then stream output into it. The `_push_streaming_detail()` helper on `ErkDashApp` handles this two-step sequence:
+ACTION commands that run long-running subprocess operations (land, fix-conflicts, address) use status-bar-based streaming. The pattern is: register in the status bar, stream subprocess output with line buffering, then clean up the status bar entry. Results are shown via toast notifications.
 
-1. Push a `PlanDetailScreen` for the selected row
-2. Start the streaming command in the detail screen
-
-Without this helper, a streaming command started from the main list would have no visible output destination. The helper ensures the detail screen exists before streaming begins.
+For the full streaming pattern reference, see [TUI Streaming Output](streaming-output.md).
 
 ## Backend as Third Dimension
 

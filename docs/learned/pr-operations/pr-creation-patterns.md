@@ -33,25 +33,18 @@ Different workflows need different behavior when a PR already exists:
 
 | Strategy       | When PR exists                 | When no PR          | Used by                     |
 | -------------- | ------------------------------ | ------------------- | --------------------------- |
-| **Reject**     | Raise error, refuse to proceed | Create new PR       | Plan review PR creation     |
 | **Update**     | Edit title/body of existing PR | Create new PR       | Submit pipeline (core flow) |
 | **Query-only** | Use existing PR's details      | Return error result | PR sync, PR check, landing  |
 
-### Why "Reject" for plan review PRs
-
-<!-- Source: src/erk/cli/commands/exec/scripts/plan_create_review_pr.py, _create_review_pr_impl -->
-
-Plan review PRs are structurally unique — one per plan issue, with specific title prefixes and labels. Creating a second would indicate a workflow bug (the branch was reused or the previous review wasn't cleaned up). Rejecting with `pr_already_exists` surfaces the real problem instead of silently creating a duplicate.
-
 ### Why "Update" for the submit pipeline
 
-<!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, _core_submit_flow -->
+<!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, push_and_create_pr -->
 
 The submit pipeline's purpose is to get the branch's PR into a good state — whether that means creating one or enriching an existing one. When a PR exists, it preserves the PR number, adds missing footer metadata, and continues through the remaining pipeline phases (diff extraction, AI description, finalization). This is the most common path because agents often re-run `erk pr submit` on the same branch.
 
 ## Stacked PR Constraint
 
-<!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, _core_submit_flow -->
+<!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, push_and_create_pr -->
 
 When creating a PR in the core (non-Graphite) flow, the pipeline checks whether the parent branch has a PR. If the branch is part of a Graphite stack but the parent has no PR, creation is blocked with guidance to use `gt submit -s` instead. This prevents creating a child PR with an invalid base branch, which GitHub would target against trunk instead of the parent.
 

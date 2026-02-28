@@ -44,15 +44,11 @@ If not, a new branch and PR will be created (old draft PR will be closed) [Y/n]
 
 ## Implementation
 
-From `src/erk/cli/commands/submit.py`:
+The pattern applies when a command must ask a single binary question with consequences. Key elements:
 
-See `_prompt_existing_branch_action()` in
-[`src/erk/cli/commands/submit.py`](../../../src/erk/cli/commands/submit.py)
-for the full implementation. Key elements:
-
-- `--force` mode: deletes old branches, returns `None` (create new)
+- `--force` mode: takes the default action without prompting
 - Normal mode: displays context, asks single binary prompt with consequences
-- Returns branch name (reuse) or `None` (create new)
+- Returns a value encoding the decision — caller doesn't need to interpret prompt details
 
 ## Testing
 

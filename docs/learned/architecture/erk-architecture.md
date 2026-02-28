@@ -968,16 +968,9 @@ When operations have optional behavior based on availability of resources, use g
 
 ### Pattern: Branch Lookup Fallback
 
-<!-- Source: src/erk/cli/commands/submit.py -->
+When resolving a base branch for a PR, the submit pipeline gracefully handles missing parent plans by falling back to the trunk branch. If a parent branch is available, it is used as the base; otherwise, the trunk branch serves as the fallback.
 
-The `get_learn_plan_parent_branch()` function (see `src/erk/cli/commands/submit.py`) gracefully handles missing parent plans by returning `None` when no parent is found.
-
-Callers check the return value and fall back to trunk:
-
-```python
-parent_branch = get_learn_plan_parent_branch(ctx, repo_root, issue.body)
-base_branch = parent_branch if parent_branch else trunk_branch
-```
+<!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, push_and_create_pr -->
 
 ### When to Use Graceful Degradation
 

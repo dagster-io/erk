@@ -25,12 +25,7 @@ Per-worktree metadata is stored in `~/.erk/repos/{repo}/worktrees.toml`. This fi
 
 ## API
 
-**File**: `src/erk/core/worktree_metadata.py`
-
-```python
-# Remove worktree metadata (called when worktree deleted)
-remove_worktree_metadata(repo_dir, worktree_name)
-```
+**Utilities**: `src/erk/core/worktree_utils.py` — contains worktree lookup and navigation helpers (`find_current_worktree`, `compute_relative_path_in_worktree`, etc.).
 
 ## Subdirectory Navigation Patterns
 
@@ -38,32 +33,13 @@ Navigation commands can preserve the user's relative position within a worktree.
 
 ### Relative Path Pattern (checkout, up, down)
 
-Navigation commands preserve the user's relative position by:
+<!-- Source: src/erk/core/worktree_utils.py, find_worktree_containing_path and compute_relative_path_in_worktree -->
 
-1. **Computing relative path from current worktree root to cwd**
+Navigation commands preserve the user's relative position through three steps:
 
-   ```python
-   # Get current position relative to worktree root
-   current_worktree_root = find_worktree_for_path(ctx.cwd)
-   relative_position = ctx.cwd.relative_to(current_worktree_root)
-   ```
-
-2. **Applying that path to target worktree**
-
-   ```python
-   # Navigate to same relative position in target
-   target_path = target_worktree_root / relative_position
-   ```
-
-3. **Falling back to worktree root if path doesn't exist**
-
-   ```python
-   # Fall back if the relative path doesn't exist in target
-   if target_path.exists():
-       final_destination = target_path
-   else:
-       final_destination = target_worktree_root
-   ```
+1. **Compute relative path** from current worktree root to cwd using `find_worktree_containing_path()` and `Path.relative_to()`
+2. **Apply that path** to the target worktree root
+3. **Fall back to worktree root** if the relative path doesn't exist in the target
 
 This pattern allows users to stay in `src/components/` when switching worktrees, rather than always landing at the worktree root.
 

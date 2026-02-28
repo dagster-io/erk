@@ -70,7 +70,6 @@ For prompt patterns and adaptation guidelines, see [Context Preservation Prompti
 
 ## Related Documentation
 
-- [Context Preservation Patterns](context-preservation-patterns.md) — anti-pattern vs. correct pattern examples with side-by-side comparisons
 - [Context Preservation Prompting](context-preservation-prompting.md) — prompt structures for eliciting context in new workflows
 - [Investigation Findings Checklist](../checklists/investigation-findings.md) — pre-Plan-Mode verification checklist
 - [Replan Command](../../../.claude/commands/erk/replan.md) — canonical workflow with Steps 6a-6b

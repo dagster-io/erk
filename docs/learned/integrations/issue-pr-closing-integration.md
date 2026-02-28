@@ -66,10 +66,10 @@ Plans can live in a separate repository (configured via `plans_repo` in erk conf
 | Same-repo plans  | `Closes #123`           | GitHub resolves `#N` within the same repo         |
 | Cross-repo plans | `Closes owner/repo#123` | GitHub needs the full repo path to find the issue |
 
-<!-- Source: src/erk/cli/commands/exec/scripts/get_pr_body_footer.py, get_pr_body_footer -->
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py, build_pr_body_footer -->
+<!-- Source: src/erk/cli/commands/exec/scripts/get_pr_body_footer.py, get_pr_body_footer -->
 
-This distinction is handled in two places: `build_pr_body_footer()` in the footer generator (used by the submit pipeline) and `get_pr_body_footer()` in the exec script (used by Claude Code skills that construct PR bodies outside the pipeline). Both read `plans_repo` from erk config. See `build_pr_body_footer()` in `packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py` and `get_pr_body_footer()` in `src/erk/cli/commands/exec/scripts/get_pr_body_footer.py`.
+This distinction is handled in `build_pr_body_footer()` in the footer generator library (used by both the submit pipeline and the `get-pr-body-footer` exec script). The function reads `plans_repo` from erk config. See `build_pr_body_footer()` in `packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py`.
 
 ## Debugging Auto-Close Failures
 

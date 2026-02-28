@@ -38,7 +38,7 @@ For each source file, the bot searches for test files using three strategies:
 ### 1. Exact Match
 
 ```
-src/erk/cli/commands/submit.py → tests/**/test_submit.py
+src/erk/cli/commands/pr/submit_cmd.py → tests/**/test_submit_cmd.py
 ```
 
 The test filename is `test_<source_filename>.py`.

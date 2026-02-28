@@ -52,7 +52,7 @@ Asking agents to "gather findings" is too vague — they gather what seems impor
 3. **Corrections** — what the original plan got wrong
 4. **Codebase evidence** — actual function names, class signatures, config values
 
-These four categories were chosen because each addresses a different failure mode in downstream implementation. See [Context Preservation Patterns](context-preservation-patterns.md) for the five dimensions that map to these categories.
+These four categories were chosen because each addresses a different failure mode in downstream implementation.
 
 ### 3. Anti-Pattern Examples Anchor Expectations
 
@@ -93,6 +93,5 @@ The key insight is that interview output alone is insufficient — it captures r
 ## Related Documentation
 
 - [Context Preservation in Replan](context-preservation-in-replan.md) — The sparse plan problem and why the two-phase checkpoint exists
-- [Context Preservation Patterns](context-preservation-patterns.md) — Five dimensions of plan specificity with anti-pattern examples
 - [Investigation Findings Checklist](../checklists/investigation-findings.md) — Pre-Plan-Mode verification checklist
 - [Tool Restriction Safety](../commands/tool-restriction-safety.md) — How `allowed-tools` enables safe read-only commands in plan mode

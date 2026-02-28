@@ -12,7 +12,6 @@
 - **[erkbot/agent-event-system.md](erkbot/agent-event-system.md)** — working with erkbot agent streaming or events, modifying erkbot event types or stream processing, adding new agent event types to erkbot
 - **[erkbot/erkbot-architecture.md](erkbot/erkbot-architecture.md)** — working with erkbot Slack integration, modifying erkbot command handling or progress updates, understanding erkbot's design patterns
 - **[github-review-decision.md](github-review-decision.md)** — implementing review decision indicators in the TUI, understanding how PR review status flows from GraphQL to the TUI display, debugging missing or incorrect review decision indicators
-- **[graphite-rendering.md](graphite-rendering.md)** — writing PR body content that will render on Graphite, using <details>/<summary> in PR descriptions, debugging PR body formatting differences between GitHub and Graphite
 - **[issue-pr-closing-integration.md](issue-pr-closing-integration.md)** — linking PRs to issues for auto-close, debugging why issues didn't close when PR merged, working on issue number discovery in the submit pipeline, understanding cross-repo plan issue references
 - **[linear-erk-mapping.md](linear-erk-mapping.md)** — Evaluating Linear as issue tracker for erk, Building Linear gateway, Understanding trade-offs between GitHub Issues and Linear
 - **[linear-primitives.md](linear-primitives.md)** — Considering Linear as an alternative to GitHub Issues, Building a Linear gateway for erk, Understanding how other tools (Cursor, Devin) integrate with Linear

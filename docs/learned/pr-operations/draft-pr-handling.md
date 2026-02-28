@@ -33,16 +33,16 @@ The CI workflow listens for the `ready_for_review` event type (alongside `opened
 
 Draft PRs in erk follow a lifecycle that spans multiple systems:
 
-| Phase          | System                                 | What happens                               |
-| -------------- | -------------------------------------- | ------------------------------------------ |
-| **Create**     | `erk submit` / `plan-create-review-pr` | PR created with `draft=True` via gateway   |
-| **Implement**  | GitHub Actions workflow                | Agent works on the draft PR branch         |
-| **Transition** | `handle-no-changes` / manual           | `mark_pr_ready()` called via REST API      |
-| **CI runs**    | `ci.yml`, `code-reviews.yml`           | `ready_for_review` event triggers all jobs |
+| Phase          | System                       | What happens                               |
+| -------------- | ---------------------------- | ------------------------------------------ |
+| **Create**     | `erk pr submit`              | PR created with `draft=True` via gateway   |
+| **Implement**  | GitHub Actions workflow      | Agent works on the draft PR branch         |
+| **Transition** | `handle-no-changes` / manual | `mark_pr_ready()` called via REST API      |
+| **CI runs**    | `ci.yml`, `code-reviews.yml` | `ready_for_review` event triggers all jobs |
 
-<!-- Source: src/erk/cli/commands/submit.py, _create_branch_and_pr -->
+<!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, push_and_create_pr -->
 
-The submit command creates draft PRs for plan implementation. The `handle-no-changes` exec script marks PRs ready when implementation produces no code changes (duplicate plan, work already merged), converting the draft into an informational PR that users can review and close.
+The submit pipeline creates draft PRs for plan implementation. The `handle-no-changes` exec script marks PRs ready when implementation produces no code changes (duplicate plan, work already merged), converting the draft into an informational PR that users can review and close.
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/abc.py, GitHubGateway.mark_pr_ready -->
 
@@ -52,17 +52,15 @@ The submit command creates draft PRs for plan implementation. The `handle-no-cha
 
 When a plan is re-submitted, old draft PRs become orphans. Erk automatically cleans these up:
 
-<!-- Source: src/erk/cli/commands/submit.py, _close_orphaned_draft_prs -->
+<!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, push_and_create_pr -->
 
-After creating a new draft PR for a plan issue, `_close_orphaned_draft_prs()` finds all other open draft PRs linked to the same issue number and closes them. The criteria are specific: only PRs that are both **draft** and **OPEN** (and not the just-created PR) get closed. Non-draft PRs are left alone — this prevents accidentally closing a PR that was manually marked ready and is under active review.
-
-This cleanup runs in both the direct-submit and dispatch-submit code paths.
+The submit pipeline finds all other open draft PRs linked to the same issue number and closes them. The criteria are specific: only PRs that are both **draft** and **OPEN** (and not the just-created PR) get closed. Non-draft PRs are left alone — this prevents accidentally closing a PR that was manually marked ready and is under active review.
 
 ## Auto-Publishing in `finalize_pr()`
 
-After code submission, `finalize_pr()` in `src/erk/cli/commands/pr/submit_pipeline.py:687-691` automatically publishes draft PRs.
+After code submission, `finalize_pr()` in `src/erk/cli/commands/pr/submit_pipeline.py` automatically publishes draft PRs.
 
-<!-- Source: src/erk/cli/commands/pr/submit_pipeline.py:687-691, finalize_pr -->
+<!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, finalize_pr -->
 
 This runs as part of the `erk pr submit` pipeline. The function:
 

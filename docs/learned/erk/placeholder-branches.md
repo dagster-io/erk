@@ -50,11 +50,11 @@ See `execute_unassign()` in `src/erk/cli/commands/slot/unassign_cmd.py` for the 
 
 Placeholder branches are not isolated to slot commands. Several other systems need to recognize and handle them:
 
-- **Submit** detects placeholder branches to determine the base branch for new PRs. When running `erk submit` from a slot on a placeholder branch, the submit logic falls back to trunk as the base branch (since placeholder branches are local-only and have no remote tracking). See `submit_cmd()` in `src/erk/cli/commands/submit.py`.
+- **Submit** detects placeholder branches to determine the base branch for new PRs. When running `erk pr submit` from a slot on a placeholder branch, the submit logic falls back to trunk as the base branch (since placeholder branches are local-only and have no remote tracking). See `pr_submit()` in `src/erk/cli/commands/pr/submit_cmd.py`.
 - **Worktree list** filters out placeholder branches by default so users only see slots with meaningful work assigned. The `--all` flag overrides this to show empty slots. See `_list_worktrees()` in `src/erk/cli/commands/wt/list_cmd.py`.
 - **Land cleanup** uses `get_placeholder_branch_name()` to checkout a placeholder before deleting the landed feature branch. This happens even for slots with no pool assignment (the `SLOT_UNASSIGNED` cleanup path), handling cases where someone checked out a branch in a slot without using erk's assignment system. See `_cleanup_slot_without_assignment()` in `src/erk/cli/commands/land_cmd.py`.
 
-<!-- Source: src/erk/cli/commands/submit.py, submit_cmd -->
+<!-- Source: src/erk/cli/commands/pr/submit_cmd.py, pr_submit -->
 <!-- Source: src/erk/cli/commands/wt/list_cmd.py, _list_worktrees -->
 <!-- Source: src/erk/cli/commands/land_cmd.py, _cleanup_slot_without_assignment -->
 <!-- Source: src/erk/cli/commands/slot/common.py, is_placeholder_branch -->
