@@ -6,6 +6,7 @@ from erk.cli.alias import register_with_aliases
 from erk.cli.commands.stack.consolidate_cmd import consolidate_stack
 from erk.cli.commands.stack.list_cmd import list_stack
 from erk.cli.commands.stack.move_cmd import move_stack
+from erk.cli.commands.stack.restack_cmd import restack_stack
 from erk.cli.commands.stack.split_old.command import split_cmd as split_stack
 from erk.cli.graphite_command import GraphiteGroup
 
@@ -20,4 +21,5 @@ def stack_group() -> None:
 stack_group.add_command(consolidate_stack, name="consolidate")
 register_with_aliases(stack_group, list_stack, name="list")
 stack_group.add_command(move_stack, name="move")
+stack_group.add_command(restack_stack, name="restack")
 stack_group.add_command(split_stack, name="split")
