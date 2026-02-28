@@ -459,3 +459,192 @@ class TestCreateObjectiveIssueSlugValidation:
         # Verify no slug in body
         _, body, _ = fake_gh.created_issues[0]
         assert "slug:" not in body
+
+
+class TestCreatePlanDraftPRBranchAlreadyExists:
+    """Test error handling when branch already exists."""
+
+    def test_returns_error_when_branch_exists(self, tmp_path: Path) -> None:
+        """BranchAlreadyExists returns error result with no PR created."""
+        from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+
+        fake_issues = FakeGitHubIssues(username="testuser")
+        fake_github = FakeGitHub(issues_gateway=fake_issues)
+        branch_manager = FakeBranchManager(
+            _create_branch_error=BranchAlreadyExists(
+                branch_name="plnd/my-feature-01-15-1430",
+                message="Branch 'plnd/my-feature-01-15-1430' already exists",
+            ),
+        )
+
+        result = create_plan_draft_pr(
+            git=FakeGit(trunk_branches={tmp_path: "main"}),
+            github=fake_github,
+            github_issues=fake_issues,
+            branch_manager=branch_manager,
+            time=FakeTime(),
+            repo_root=tmp_path,
+            cwd=tmp_path,
+            plan_content="# My Feature\n\nSteps...",
+            title=None,
+            labels=["erk-pr", "erk-plan"],
+            source_repo=None,
+            objective_id=None,
+            created_from_session=None,
+            created_from_workflow_run_url=None,
+            learned_from_issue=None,
+        )
+
+        assert result.success is False
+        assert result.plan_number is None
+        assert result.plan_url is None
+        assert result.branch_name is None
+        assert result.title == "My Feature"
+        assert result.error is not None
+        assert "already exists" in result.error
+
+        # No PR should have been created
+        assert len(fake_github.created_prs) == 0
+
+
+class TestCreatePlanDraftPRMetadata:
+    """Test that metadata fields are correctly populated in the PR body."""
+
+    def test_source_repo_in_pr_body(self, tmp_path: Path) -> None:
+        """source_repo is included in the plan-header metadata block."""
+        fake_issues = FakeGitHubIssues(username="testuser")
+        fake_github = FakeGitHub(issues_gateway=fake_issues)
+
+        result = _create_plan(
+            tmp_path=tmp_path,
+            source_repo="owner/other-repo",
+            fake_github=fake_github,
+            fake_issues=fake_issues,
+        )
+
+        assert result.success is True
+        pr = fake_github.get_pr(tmp_path, result.plan_number)
+        assert "source_repo: owner/other-repo" in pr.body
+
+    def test_objective_id_in_pr_body(self, tmp_path: Path) -> None:
+        """objective_id is included in the plan-header metadata block."""
+        fake_issues = FakeGitHubIssues(username="testuser")
+        fake_github = FakeGitHub(issues_gateway=fake_issues)
+
+        result = _create_plan(
+            tmp_path=tmp_path,
+            objective_id=42,
+            fake_github=fake_github,
+            fake_issues=fake_issues,
+        )
+
+        assert result.success is True
+        pr = fake_github.get_pr(tmp_path, result.plan_number)
+        assert "objective_issue: 42" in pr.body
+
+    def test_created_from_session_in_pr_body(self, tmp_path: Path) -> None:
+        """created_from_session is included in the plan-header metadata block."""
+        fake_issues = FakeGitHubIssues(username="testuser")
+        fake_github = FakeGitHub(issues_gateway=fake_issues)
+
+        result = _create_plan(
+            tmp_path=tmp_path,
+            created_from_session="abc-123-session",
+            fake_github=fake_github,
+            fake_issues=fake_issues,
+        )
+
+        assert result.success is True
+        pr = fake_github.get_pr(tmp_path, result.plan_number)
+        assert "created_from_session: abc-123-session" in pr.body
+
+    def test_learned_from_issue_in_pr_body(self, tmp_path: Path) -> None:
+        """learned_from_issue is included in the plan-header metadata block."""
+        fake_issues = FakeGitHubIssues(username="testuser")
+        fake_github = FakeGitHub(issues_gateway=fake_issues)
+
+        result = _create_plan(
+            tmp_path=tmp_path,
+            learned_from_issue=99,
+            fake_github=fake_github,
+            fake_issues=fake_issues,
+        )
+
+        assert result.success is True
+        pr = fake_github.get_pr(tmp_path, result.plan_number)
+        assert "learned_from_issue: 99" in pr.body
+
+    def test_all_metadata_fields_together(self, tmp_path: Path) -> None:
+        """All optional metadata fields populate correctly when provided together."""
+        fake_issues = FakeGitHubIssues(username="testuser")
+        fake_github = FakeGitHub(issues_gateway=fake_issues)
+
+        result = create_plan_draft_pr(
+            git=FakeGit(trunk_branches={tmp_path: "main"}),
+            github=fake_github,
+            github_issues=fake_issues,
+            branch_manager=FakeBranchManager(),
+            time=FakeTime(),
+            repo_root=tmp_path,
+            cwd=tmp_path,
+            plan_content="# Full Metadata Plan\n\nSteps...",
+            title=None,
+            labels=["erk-pr", "erk-plan"],
+            source_repo="owner/impl-repo",
+            objective_id=7,
+            created_from_session="sess-xyz",
+            created_from_workflow_run_url="https://github.com/runs/123",
+            learned_from_issue=55,
+        )
+
+        assert result.success is True
+        pr = fake_github.get_pr(tmp_path, result.plan_number)
+        assert "source_repo: owner/impl-repo" in pr.body
+        assert "objective_issue: 7" in pr.body
+        assert "created_from_session: sess-xyz" in pr.body
+        assert "created_from_workflow_run_url: https://github.com/runs/123" in pr.body
+        assert "learned_from_issue: 55" in pr.body
+
+
+class TestCreatePlanDraftPRNonNumericPlanId:
+    """Test error handling when backend returns non-numeric plan_id."""
+
+    def test_non_numeric_plan_id_returns_error(self, tmp_path: Path) -> None:
+        """Non-numeric plan_id from backend returns error result with branch_name set."""
+        from unittest.mock import patch
+
+        from erk_shared.plan_store.planned_pr import PlannedPRBackend
+        from erk_shared.plan_store.types import CreatePlanResult
+
+        fake_issues = FakeGitHubIssues(username="testuser")
+        fake_github = FakeGitHub(issues_gateway=fake_issues)
+
+        def patched_create_plan(self_inner: object, **kwargs: object) -> CreatePlanResult:
+            return CreatePlanResult(plan_id="not-a-number", url="")
+
+        with patch.object(PlannedPRBackend, "create_plan", patched_create_plan):
+            result = create_plan_draft_pr(
+                git=FakeGit(trunk_branches={tmp_path: "main"}),
+                github=fake_github,
+                github_issues=fake_issues,
+                branch_manager=FakeBranchManager(),
+                time=FakeTime(),
+                repo_root=tmp_path,
+                cwd=tmp_path,
+                plan_content="# Test Plan\n\nSteps...",
+                title=None,
+                labels=["erk-pr", "erk-plan"],
+                source_repo=None,
+                objective_id=None,
+                created_from_session=None,
+                created_from_workflow_run_url=None,
+                learned_from_issue=None,
+            )
+
+        assert result.success is False
+        assert result.plan_number is None
+        assert result.plan_url is None
+        assert result.branch_name is not None  # Branch was created before the error
+        assert result.title == "Test Plan"
+        assert result.error is not None
+        assert "not-a-number" in result.error

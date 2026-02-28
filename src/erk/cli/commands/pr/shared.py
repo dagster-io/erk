@@ -19,7 +19,13 @@ from erk.core.commit_message_generator import (
 from erk.core.context import ErkContext
 from erk.core.plan_context_provider import PlanContext
 from erk_shared.gateway.github.metadata.core import find_metadata_block, render_metadata_block
-from erk_shared.gateway.github.metadata.schemas import LIFECYCLE_STAGE
+from erk_shared.gateway.github.metadata.schemas import (
+    CREATED_AT,
+    CREATED_BY,
+    LIFECYCLE_STAGE,
+    SCHEMA_VERSION,
+)
+from erk_shared.gateway.github.metadata.types import MetadataBlock
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.pr.diff_extraction import execute_diff_extraction
@@ -169,6 +175,52 @@ def maybe_advance_lifecycle_to_impl(
 
 
 # ---------------------------------------------------------------------------
+# Plan-Header Recovery
+# ---------------------------------------------------------------------------
+
+
+def recover_plan_header(
+    ctx: ErkContext,
+    *,
+    repo_root: Path,
+    plan_id: str,
+) -> MetadataBlock | None:
+    """Attempt to recover a plan-header metadata block from the plan backend.
+
+    When the plan-header block is destroyed (e.g., by a rogue ``gh pr edit``),
+    this function reconstructs it from the plan's stored metadata so that
+    ``assemble_pr_body`` can re-embed it in the PR body.
+
+    Returns None if the plan cannot be found, allowing callers to proceed
+    without a plan-header (current behavior).
+    """
+    plan_result = ctx.plan_backend.get_plan(repo_root, plan_id)
+    if isinstance(plan_result, PlanNotFound):
+        return None
+
+    # If the plan still has header_fields, use them directly
+    if plan_result.header_fields:
+        return MetadataBlock(key="plan-header", data=dict(plan_result.header_fields))
+
+    # Otherwise, construct a minimal plan-header from PR metadata
+    created_at_value = plan_result.created_at.isoformat()
+    raw_author = plan_result.metadata.get("author")
+    if isinstance(raw_author, str) and raw_author:
+        created_by_value = raw_author
+    else:
+        created_by_value = "unknown"
+
+    return MetadataBlock(
+        key="plan-header",
+        data={
+            SCHEMA_VERSION: "2",
+            CREATED_AT: created_at_value,
+            CREATED_BY: created_by_value,
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
 # Cleanup
 # ---------------------------------------------------------------------------
 
@@ -211,6 +263,7 @@ def assemble_pr_body(
     pr_number: int,
     header: str,
     existing_pr_body: str,
+    recovered_plan_header: MetadataBlock | None,
 ) -> str:
     """Assemble final PR body with plan details and footer.
 
@@ -223,11 +276,15 @@ def assemble_pr_body(
             Used to extract plan-header metadata block. When the extracted block
             is non-empty, uses original-plan details format instead of
             issue-based plan details format.
+        recovered_plan_header: Fallback plan-header block recovered from the plan
+            backend, used when the plan-header is missing from existing_pr_body.
 
     Returns:
         Complete PR body ready for GitHub API
     """
     plan_header = find_metadata_block(existing_pr_body, "plan-header")
+    if plan_header is None and recovered_plan_header is not None:
+        plan_header = recovered_plan_header
 
     pr_body_content = body
     if plan_context is not None:

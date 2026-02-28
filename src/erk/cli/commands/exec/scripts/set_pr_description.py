@@ -83,6 +83,7 @@ def set_pr_description(
         pr_number=pr_number,
         header="",
         existing_pr_body=existing_body,
+        recovered_plan_header=None,
     )
 
     erk_ctx.github.update_pr_title_and_body(

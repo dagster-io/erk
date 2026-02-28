@@ -20,6 +20,7 @@ from erk.cli.commands.pr.shared import (
     assemble_pr_body,
     echo_plan_context_status,
     maybe_advance_lifecycle_to_impl,
+    recover_plan_header,
     run_commit_message_generation,
 )
 from erk.cli.constants import PLANNED_PR_TITLE_PREFIX
@@ -32,6 +33,7 @@ from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
     extract_metadata_value,
     extract_raw_metadata_blocks,
+    find_metadata_block,
     replace_metadata_block_in_body,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
@@ -729,6 +731,16 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
     impl_dir = resolve_impl_dir(state.cwd, branch_name=state.branch_name)
     is_learn_origin = is_learn_plan(impl_dir) if impl_dir is not None else False
 
+    # Recover plan-header if missing from existing PR body
+    recovered_header = None
+    header_missing = find_metadata_block(existing_pr_body, "plan-header") is None
+    if header_missing and state.plan_context is not None:
+        recovered_header = recover_plan_header(
+            ctx, repo_root=state.repo_root, plan_id=state.plan_context.plan_id
+        )
+        if recovered_header is not None and not state.quiet:
+            click.echo(click.style("   Recovered missing plan-header metadata", fg="yellow"))
+
     # Assemble PR body with plan details and footer
     final_body = assemble_pr_body(
         body=pr_body,
@@ -736,6 +748,7 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
         pr_number=state.pr_number,
         header="",
         existing_pr_body=existing_pr_body,
+        recovered_plan_header=recovered_header,
     )
 
     # Update PR metadata
