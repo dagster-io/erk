@@ -299,19 +299,29 @@ def _make_session_jsonl(*, session_id: str, user_turns: int, duration_seconds: i
     ts = base_ts
     ts_step = duration_seconds / max(user_turns * 2 - 1, 1)
     for i in range(user_turns):
-        lines.append(json.dumps({
-            "type": "user",
-            "sessionId": session_id,
-            "timestamp": ts,
-            "message": {"content": [{"type": "text", "text": f"User message {i + 1}"}]},
-        }))
+        lines.append(
+            json.dumps(
+                {
+                    "type": "user",
+                    "sessionId": session_id,
+                    "timestamp": ts,
+                    "message": {"content": [{"type": "text", "text": f"User message {i + 1}"}]},
+                }
+            )
+        )
         ts += ts_step
-        lines.append(json.dumps({
-            "type": "assistant",
-            "sessionId": session_id,
-            "timestamp": ts,
-            "message": {"content": [{"type": "text", "text": f"Assistant response {i + 1}"}]},
-        }))
+        lines.append(
+            json.dumps(
+                {
+                    "type": "assistant",
+                    "sessionId": session_id,
+                    "timestamp": ts,
+                    "message": {
+                        "content": [{"type": "text", "text": f"Assistant response {i + 1}"}]
+                    },
+                }
+            )
+        )
         ts += ts_step
     return "\n".join(lines) + "\n"
 
@@ -408,7 +418,9 @@ def test_log_local_session_sizes(
     jsonl_file.write_text(jsonl_content, encoding="utf-8")
 
     fake_session = FakeSessionData(
-        content=jsonl_content, size_bytes=len(jsonl_content), modified_at=0.0,
+        content=jsonl_content,
+        size_bytes=len(jsonl_content),
+        modified_at=0.0,
     )
     fake_claude = FakeClaudeInstallation.for_test(
         projects={tmp_path: FakeProject(sessions={session_id: fake_session})},
@@ -442,7 +454,9 @@ def test_log_session_mixed_local_and_not_found(
     jsonl_file.write_text(jsonl_content, encoding="utf-8")
 
     fake_session = FakeSessionData(
-        content=jsonl_content, size_bytes=len(jsonl_content), modified_at=0.0,
+        content=jsonl_content,
+        size_bytes=len(jsonl_content),
+        modified_at=0.0,
     )
     fake_claude = FakeClaudeInstallation.for_test(
         projects={tmp_path: FakeProject(sessions={local_id: fake_session})},
