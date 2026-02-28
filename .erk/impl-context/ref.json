@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Create `/erk:pr-list` Slash Command"
+  "plan_id": "8451",
+  "url": "https://github.com/dagster-io/erk/pull/8451",
+  "created_at": "2026-02-28T10:08:45.573995",
+  "synced_at": "2026-02-28T10:08:45.573995",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
