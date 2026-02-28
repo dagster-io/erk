@@ -12,10 +12,21 @@ from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.metadata.core import (
     create_metadata_block,
     parse_metadata_blocks,
-    render_content_block,
     render_erk_issue_event,
 )
 from erk_shared.gateway.github.metadata.types import MetadataBlockSchema
+
+
+def _render_content_block(key: str, title: str, content: str) -> str:
+    return f"""<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:{key} -->
+<details open>
+<summary><strong>{title}</strong></summary>
+
+{content}
+
+</details>
+<!-- /erk:metadata-block:{key} -->"""
 
 
 class EntityLog:
@@ -59,7 +70,7 @@ class EntityLog:
     ) -> int:
         """Append a raw markdown content entry (e.g., plan-body, objective-body).
         Returns comment ID."""
-        rendered = render_content_block(key, title, content)
+        rendered = _render_content_block(key, title, content)
         return self._github_issues.add_comment(self._repo_root, self._number, rendered)
 
     def entries(self, key: str) -> list[LogEntry]:
