@@ -62,7 +62,7 @@ class PlanDetailScreen(ModalScreen):
         Binding("4", "copy_prepare_activate", "Activate"),
         Binding("2", "copy_implement_local", "Implement Local"),
         Binding("3", "copy_dispatch", "Dispatch"),
-        Binding("5", "fix_conflicts_remote", "Fix Conflicts"),
+        Binding("5", "rebase_remote", "Rebase"),
     ]
 
     DEFAULT_CSS = """
@@ -379,16 +379,21 @@ class PlanDetailScreen(ModalScreen):
         cmd = f"erk pr dispatch {self._row.plan_id}"
         self._copy_and_notify(cmd)
 
-    def action_fix_conflicts_remote(self) -> None:
-        """Launch remote conflict resolution workflow."""
+    def action_rebase_remote(self) -> None:
+        """Launch remote rebase workflow."""
         from erk.tui.app import ErkDashApp
 
         if self._row.pr_number is None or self._repo_root is None:
             return
         self.dismiss()
         if isinstance(self.app, ErkDashApp):
-            self.app.notify(f"Dispatching fix-conflicts for PR #{self._row.pr_number}...")
-            self.app._fix_conflicts_remote_async(self._row.pr_number)
+            op_id = f"rebase-pr-{self._row.pr_number}"
+            self.app.notify(f"Dispatching rebase for PR #{self._row.pr_number}...")
+            self.app._start_operation(
+                op_id=op_id,
+                label=f"Dispatching rebase for PR #{self._row.pr_number}...",
+            )
+            self.app._rebase_remote_async(op_id, self._row.pr_number)
 
     def action_copy_output_logs(self) -> None:
         """Copy command output logs to clipboard."""
@@ -701,7 +706,7 @@ class PlanDetailScreen(ModalScreen):
                 executor.copy_to_clipboard(text)
                 executor.notify(f"Copied: {text}", severity=None)
 
-        elif command_id == "copy_fix_conflicts_remote":
+        elif command_id == "copy_rebase_remote":
             text = get_copy_text(command_id, row, self._view_mode)
             if text is not None:
                 executor.copy_to_clipboard(text)
@@ -719,12 +724,17 @@ class PlanDetailScreen(ModalScreen):
                 executor.copy_to_clipboard(cmd)
                 executor.notify(f"Copied: {cmd}", severity=None)
 
-        elif command_id == "fix_conflicts_remote":
+        elif command_id == "rebase_remote":
             if row.pr_number is not None:
                 self.dismiss()
                 if isinstance(self.app, ErkDashApp):
-                    self.app.notify(f"Dispatching fix-conflicts for PR #{row.pr_number}...")
-                    self.app._fix_conflicts_remote_async(row.pr_number)
+                    op_id = f"rebase-pr-{row.pr_number}"
+                    self.app.notify(f"Dispatching rebase for PR #{row.pr_number}...")
+                    self.app._start_operation(
+                        op_id=op_id,
+                        label=f"Dispatching rebase for PR #{row.pr_number}...",
+                    )
+                    self.app._rebase_remote_async(op_id, row.pr_number)
 
         elif command_id == "address_remote":
             if row.pr_number is not None and self._repo_root is not None:

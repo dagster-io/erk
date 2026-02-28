@@ -21,7 +21,7 @@ LAUNCH_KEYS: dict[str, str] = {
     "close_plan": "c",
     "dispatch_to_queue": "d",
     "land_pr": "l",
-    "fix_conflicts_remote": "f",
+    "rebase_remote": "f",
     "address_remote": "a",
     # Objective actions
     "close_objective": "c",

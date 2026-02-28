@@ -87,14 +87,14 @@ class TestAddressRemoteAsync:
             assert provider.fetch_count == count_before
 
 
-class TestFixConflictsRemoteAsync:
-    """Tests for _fix_conflicts_remote_async subprocess behavior."""
+class TestRebaseRemoteAsync:
+    """Tests for _rebase_remote_async subprocess behavior."""
 
     @pytest.mark.asyncio
-    async def test_fix_conflicts_remote_passes_correct_args(
+    async def test_rebase_remote_passes_correct_args(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        """_fix_conflicts_remote_async should pass correct args to subprocess."""
+        """_rebase_remote_async should pass correct args to subprocess."""
         import subprocess
 
         provider = FakePlanDataProvider(
@@ -117,7 +117,7 @@ class TestFixConflictsRemoteAsync:
             await pilot.pause()
             await pilot.pause()
 
-            app._fix_conflicts_remote_async("test-op", 456)
+            app._rebase_remote_async("test-op", 456)
             await pilot.pause(0.3)
 
             assert captured_args == [
@@ -129,10 +129,10 @@ class TestFixConflictsRemoteAsync:
             ]
 
     @pytest.mark.asyncio
-    async def test_fix_conflicts_remote_triggers_refresh_on_success(
+    async def test_rebase_remote_triggers_refresh_on_success(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        """_fix_conflicts_remote_async should trigger refresh after success."""
+        """_rebase_remote_async should trigger refresh after success."""
         import subprocess
 
         provider = FakePlanDataProvider(
@@ -153,16 +153,16 @@ class TestFixConflictsRemoteAsync:
 
             count_before = provider.fetch_count
 
-            app._fix_conflicts_remote_async("test-op", 456)
+            app._rebase_remote_async("test-op", 456)
             await pilot.pause(0.3)
 
             assert provider.fetch_count > count_before
 
     @pytest.mark.asyncio
-    async def test_fix_conflicts_remote_no_refresh_on_failure(
+    async def test_rebase_remote_no_refresh_on_failure(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        """_fix_conflicts_remote_async should NOT refresh on failure."""
+        """_rebase_remote_async should NOT refresh on failure."""
         import subprocess
 
         provider = FakePlanDataProvider(
@@ -183,7 +183,7 @@ class TestFixConflictsRemoteAsync:
 
             count_before = provider.fetch_count
 
-            app._fix_conflicts_remote_async("test-op", 456)
+            app._rebase_remote_async("test-op", 456)
             await pilot.pause(0.3)
 
             assert provider.fetch_count == count_before

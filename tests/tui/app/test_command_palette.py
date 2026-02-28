@@ -140,8 +140,8 @@ class TestCommandPaletteFromMainCopyVariants:
             assert clipboard.last_copied == "erk pr close 123"
 
     @pytest.mark.asyncio
-    async def test_execute_palette_command_copy_fix_conflicts_remote(self) -> None:
-        """Execute palette command copies fix conflicts remote command."""
+    async def test_execute_palette_command_copy_rebase_remote(self) -> None:
+        """Execute palette command copies rebase remote command."""
         clipboard = FakeClipboard()
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456)],
@@ -154,7 +154,7 @@ class TestCommandPaletteFromMainCopyVariants:
             await pilot.pause()
             await pilot.pause()
 
-            app.execute_palette_command("copy_fix_conflicts_remote")
+            app.execute_palette_command("copy_rebase_remote")
 
             assert clipboard.last_copied == "erk launch pr-fix-conflicts --pr 456"
 
@@ -229,15 +229,15 @@ class TestExecutePaletteCommandLandPR:
             assert len(app.screen_stack) == initial_stack_len
 
 
-class TestExecutePaletteCommandFixConflictsRemote:
-    """Tests for execute_palette_command('fix_conflicts_remote').
+class TestExecutePaletteCommandRebaseRemote:
+    """Tests for execute_palette_command('rebase_remote').
 
-    fix_conflicts_remote uses toast + background worker pattern.
+    rebase_remote uses toast + background worker pattern.
     """
 
     @pytest.mark.asyncio
-    async def test_execute_palette_command_fix_conflicts_remote_with_no_pr(self) -> None:
-        """Execute palette command fix_conflicts_remote does nothing if no PR."""
+    async def test_execute_palette_command_rebase_remote_with_no_pr(self) -> None:
+        """Execute palette command rebase_remote does nothing if no PR."""
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")]  # No pr_number
         )
@@ -250,18 +250,18 @@ class TestExecutePaletteCommandFixConflictsRemote:
 
             initial_stack_len = len(app.screen_stack)
 
-            # Execute fix_conflicts_remote command with no PR
-            app.execute_palette_command("fix_conflicts_remote")
+            # Execute rebase_remote command with no PR
+            app.execute_palette_command("rebase_remote")
             await pilot.pause()
 
             # Should not have pushed a new screen
             assert len(app.screen_stack) == initial_stack_len
 
     @pytest.mark.asyncio
-    async def test_execute_palette_command_fix_conflicts_remote_uses_toast_pattern(
+    async def test_execute_palette_command_rebase_remote_uses_toast_pattern(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        """Execute palette command fix_conflicts_remote uses toast, not modal."""
+        """Execute palette command rebase_remote uses toast, not modal."""
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456)],
             repo_root=tmp_path,
@@ -269,14 +269,14 @@ class TestExecutePaletteCommandFixConflictsRemote:
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
-        # Capture calls to _fix_conflicts_remote_async
+        # Capture calls to _rebase_remote_async
         captured_pr: int | None = None
 
         def mock_async(self_app: ErkDashApp, op_id: str, pr_number: int) -> None:
             nonlocal captured_pr
             captured_pr = pr_number
 
-        monkeypatch.setattr(ErkDashApp, "_fix_conflicts_remote_async", mock_async)
+        monkeypatch.setattr(ErkDashApp, "_rebase_remote_async", mock_async)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -284,13 +284,13 @@ class TestExecutePaletteCommandFixConflictsRemote:
 
             initial_stack_len = len(app.screen_stack)
 
-            app.execute_palette_command("fix_conflicts_remote")
+            app.execute_palette_command("rebase_remote")
             await pilot.pause(0.3)
 
             # Should NOT have pushed a new screen
             assert len(app.screen_stack) == initial_stack_len
 
-            # Should have called _fix_conflicts_remote_async with the PR number
+            # Should have called _rebase_remote_async with the PR number
             assert captured_pr == 456
 
 
