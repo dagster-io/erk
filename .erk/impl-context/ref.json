@@ -1,5 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Harden Metadata Block System \u2014 Phase 2",
-  "objective_id": 8423
+  "plan_id": "8445",
+  "url": "https://github.com/dagster-io/erk/pull/8445",
+  "created_at": "2026-02-28T04:08:25.600452",
+  "synced_at": "2026-02-28T04:08:25.600452",
+  "labels": [],
+  "objective_id": 8423,
+  "node_ids": null
 }
