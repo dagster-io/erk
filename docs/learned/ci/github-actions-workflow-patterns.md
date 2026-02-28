@@ -193,8 +193,8 @@ Browse `.github/workflows/ci.yml` for 20+ examples of step ID naming that follow
 Erk's CI uses a **fan-out → fan-in** pattern:
 
 1. **Gate job** (`check-submission`) runs first, exposes `skip` output
-2. **Parallel jobs** (`format`, `lint`, `prettier`, `docs-check`, `ty`, `unit-tests`, `integration-tests`, `erkdesk-tests`) all depend on gate job and check `needs.check-submission.outputs.skip`
-3. **Autofix job** depends on most parallel jobs (all except `erkdesk-tests`), checks their `result` values
+2. **Parallel jobs** (`format`, `lint`, `prettier`, `docs-check`, `ty`, `unit-tests`, `integration-tests`) all depend on gate job and check `needs.check-submission.outputs.skip`
+3. **Autofix job** depends on parallel style/lint jobs, checks their `result` values
 
 This architecture requires:
 

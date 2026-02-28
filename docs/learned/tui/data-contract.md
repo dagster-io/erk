@@ -235,6 +235,5 @@ If the field is a display field, also add the raw counterpart (or vice versa) fo
 ## Related Documentation
 
 - [TUI Action Command Inventory](action-inventory.md) — Commands that consume PlanRowData fields
-- [Erk Desktop Dashboard](../desktop-dash/) — Alternate frontend consuming this data contract
 
 See also TUI category documentation for overall architecture and layer boundaries.

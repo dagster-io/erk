@@ -16,7 +16,6 @@
 - **[env-overrides-pattern.md](env-overrides-pattern.md)** — writing tests that need custom environment variables, testing erk init commands that depend on HOME, using erk_isolated_fs_env fixture with env_overrides
 - **[environment-variable-isolation.md](environment-variable-isolation.md)** — debugging systematic test failures across many test files, working with ERK_PLAN_BACKEND in tests, understanding why tests behave differently based on environment, writing tests that involve plan backend selection
 - **[erk-package-info-pattern.md](erk-package-info-pattern.md)** — working with ErkPackageInfo or bundled paths, understanding is_in_erk_repo detection, writing tests that need ErkPackageInfo
-- **[erkdesk-component-testing.md](erkdesk-component-testing.md)** — writing tests for erkdesk React components, deciding whether to test at component level or App level, adding keyboard navigation tests for erkdesk, creating test data factories for PlanRow
 - **[exec-script-batch-testing.md](exec-script-batch-testing.md)** — writing tests for batch exec commands, organizing test cases for JSON stdin/stdout commands, adding failure injection to a fake gateway for batch operations
 - **[exec-script-testing.md](exec-script-testing.md)** — testing exec CLI commands, writing integration tests for scripts, debugging 'Context not initialized' errors in tests, debugging flaky tests in parallel execution
 - **[fake-api-migration-pattern.md](fake-api-migration-pattern.md)** — writing tests that use FakePromptExecutor, choosing between the two FakePromptExecutor implementations, encountering old-style output=/should_fail= patterns in test code
@@ -42,6 +41,3 @@
 - **[test-file-organization.md](test-file-organization.md)** — splitting a large test file into a test subdirectory, deciding whether a test file is too large, organizing tests for a complex module
 - **[testing.md](testing.md)** — writing tests for erk, using erk fakes, running erk test commands
 - **[tui-subprocess-testing.md](tui-subprocess-testing.md)** — testing TUI features that use subprocess.Popen, writing tests for background worker methods, creating fake subprocess objects for TUI tests
-- **[vitest-fake-timers-with-promises.md](vitest-fake-timers-with-promises.md)** — testing React components that use setInterval or setTimeout with async operations, debugging Vitest tests that hang when advancing fake timers, choosing between synchronous and async timer advancement in Vitest
-- **[vitest-jsdom-stubs.md](vitest-jsdom-stubs.md)** — writing React component tests with Vitest + jsdom, encountering "X is not a function" errors in jsdom test runs, adding a new browser API stub to the test setup
-- **[window-mock-patterns.md](window-mock-patterns.md)** — testing erkdesk components that use window.erkdesk IPC bridge, encountering mock contamination between tests, tests passing individually but failing in CI, writing beforeEach blocks that configure Vitest mocks

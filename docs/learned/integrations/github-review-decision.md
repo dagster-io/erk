@@ -67,5 +67,4 @@ Review decision indicators only appear on plans in the `review` lifecycle stage.
 
 ## Related Documentation
 
-- [Visual Status Indicators](../desktop-dash/visual-status-indicators.md) — Broader status display context
 - [Planned PR Lifecycle](../planning/planned-pr-lifecycle.md) — Lifecycle stage definitions

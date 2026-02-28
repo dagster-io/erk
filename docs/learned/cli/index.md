@@ -26,7 +26,6 @@
 - **[ensure-ideal-pattern.md](ensure-ideal-pattern.md)** — handling discriminated union returns in CLI commands, narrowing types from T | NonIdealState or T | ErrorType, working with PR lookups, branch detection, or API calls that return union types, seeing EnsureIdeal in code and wondering when to use it vs Ensure
 - **[erk-docs-check.md](erk-docs-check.md)** — validating documentation frontmatter and structure, debugging CI failures in documentation checks, understanding how erk docs check works
 - **[erk-exec-commands.md](erk-exec-commands.md)** — running erk exec subcommands, looking up erk exec syntax
-- **[erkdesk-makefile-targets.md](erkdesk-makefile-targets.md)** — running erkdesk tests locally or in CI, adding new test commands to the Makefile, understanding erkdesk CI integration
 - **[error-detection-patterns.md](error-detection-patterns.md)** — classifying errors from subprocess stderr output, detecting specific failure modes from external tool output, adding new SubmitError error_type based on error text
 - **[error-handling-antipatterns.md](error-handling-antipatterns.md)** — handling expected CLI failures, deciding between RuntimeError and UserFacingCliError, converting exception-based error handling to UserFacingCliError, writing actionable error messages for pipeline failures
 - **[exec-command-patterns.md](exec-command-patterns.md)** — writing exec scripts with PR/issue output, building diagnostic messages, standardizing exec command output

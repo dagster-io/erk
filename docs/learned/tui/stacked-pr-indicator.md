@@ -54,6 +54,5 @@ PullRequestInfo.base_ref_name (from GitHub API)
 
 ## Related Documentation
 
-- [Visual Status Indicators](../desktop-dash/visual-status-indicators.md) — Color palette and indicator rendering
 - [Plan Lifecycle](../planning/lifecycle.md) — Lifecycle stages and display computation
 - [GitHub Interface Patterns](../architecture/github-interface-patterns.md) — PullRequestInfo field addition protocol

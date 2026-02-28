@@ -1,4 +1,4 @@
-.PHONY: format-check lint prettier prettier-check ty upgrade-ty test test-erkbot py-fast-ci fast-ci all-ci md-check docs-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve docs-deploy exec-reference-check erkdesk-install erkdesk-start erkdesk-package erkdesk-make erkdesk-test erkdesk-test-watch slackbot
+.PHONY: format-check lint prettier prettier-check ty upgrade-ty test test-erkbot py-fast-ci fast-ci all-ci md-check docs-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve docs-deploy exec-reference-check slackbot
 
 prettier:
 	prettier --write '**/*.md' --ignore-path .gitignore
@@ -164,26 +164,6 @@ docs-serve:
 
 docs-deploy:
 	uv run mkdocs gh-deploy --force
-
-# === Erkdesk ===
-
-erkdesk-install:
-	cd erkdesk && pnpm install
-
-erkdesk-start:
-	cd erkdesk && pnpm start
-
-erkdesk-package:
-	cd erkdesk && pnpm run package
-
-erkdesk-make:
-	cd erkdesk && pnpm run make
-
-erkdesk-test:
-	cd erkdesk && pnpm test
-
-erkdesk-test-watch:
-	cd erkdesk && pnpm run test:watch
 
 # === Slackbot ===
 
