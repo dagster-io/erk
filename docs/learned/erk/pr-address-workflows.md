@@ -81,7 +81,7 @@ See [Phase 0 Detection Pattern](../architecture/phase-zero-detection-pattern.md)
 4. **Sync to GitHub issue**: Sync changes back to the issue
 5. **Resolve threads**: Mark review threads as resolved with plan-specific messages
 
-Plan changes to the local file require an explicit sync command to propagate to the issue.
+Plan changes to the local file require `erk exec plan-update` to propagate to the issue.
 
 #### Why separate sync is needed
 
@@ -90,7 +90,7 @@ Plan review PRs maintain plan content in two locations:
 - **PR branch**: `PLAN-REVIEW-{issue}.md` file (for version control)
 - **GitHub issue**: Plan-body comment (for structured review)
 
-The git push updates the PR, but doesn't update the issue. The explicit sync command ensures reviewers see changes in both locations.
+The git push updates the PR, but doesn't update the issue. Running `erk exec plan-update` ensures reviewers see changes in both locations.
 
 #### When Plan Review Mode is used
 

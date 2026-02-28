@@ -41,13 +41,13 @@ This split exists because preprocessing is I/O-heavy (reading large JSONL files,
 
 ## Two Modes: Local vs Async
 
-| Aspect          | Local (`/erk:learn`)       | Async (upload-impl-session pipeline)   |
-| --------------- | -------------------------- | -------------------------------------- |
-| **Stages run**  | All 7 on developer machine | 1-5 local, 6-7 in GitHub Actions       |
-| **Use case**    | Quick iteration, debugging | Background processing after landing    |
-| **Blocking**    | Yes — holds terminal       | No — returns immediately after trigger |
-| **Git context** | Full (branch, worktree)    | None in CI (relies on gist metadata)   |
-| **API quota**   | Developer's                | GitHub-managed                         |
+| Aspect          | Local (`/erk:learn`)       | Async (upload-impl-session pipeline)                |
+| --------------- | -------------------------- | --------------------------------------------------- |
+| **Stages run**  | All 7 on developer machine | Upload only local; all stages run in GitHub Actions |
+| **Use case**    | Quick iteration, debugging | Background processing after landing                 |
+| **Blocking**    | Yes — holds terminal       | No — returns immediately after upload               |
+| **Git context** | Full (branch, worktree)    | None in CI (relies on learn branch materials)       |
+| **API quota**   | Developer's                | GitHub-managed                                      |
 
 The async path was designed for the `erk land` flow, where learn runs automatically after a PR merges without blocking the developer.
 
@@ -107,7 +107,7 @@ For the delimiter format specification, see [Gist Materials Interchange](../arch
 
 ### Stage 5: Workflow Trigger
 
-Triggers `learn.yml` via `workflow_dispatch` with the gist URL and issue number. The workflow uses concurrency groups (`learn-issue-{N}`) with `cancel-in-progress: true`, so re-triggering learn for the same issue cancels any in-progress run.
+Triggers `learn.yml` via `workflow_dispatch` with the `learn_branch` (containing materials in `.erk/impl-context/`) and plan ID. The workflow uses concurrency groups (`learn-plan-{plan_id}`) with `cancel-in-progress: true`, so re-triggering learn for the same plan cancels any in-progress run.
 
 ### Stage 6: Agent Execution
 
@@ -137,14 +137,17 @@ The key design choice: stages 1-3 are lenient (degrade gracefully), while stage 
 
 ## Debugging
 
-For local pipeline issues (stages 1-5), each stage has a corresponding `erk exec` command that can be run independently:
+For local pipeline issues, stages 1-2 have corresponding `erk exec` commands that can be run independently:
 
 ```bash
-# Test each stage in isolation
+# Stage 1: Test session discovery
 erk exec get-learn-sessions <issue>
+
+# Stage 2: Test preprocessing
 erk exec preprocess-session <session-path> --stdout
-erk exec upload-impl-session --session-id <id>
 ```
+
+Note: `upload-impl-session` uploads a session JSONL file to a git branch — it is not a debugging tool for stages 3-5.
 
 For CI issues (stage 6), use `gh run view <run-id>` to inspect workflow logs.
 
