@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix misleading data when GraphQL enrichment fails in `erk pr list`"
+}
