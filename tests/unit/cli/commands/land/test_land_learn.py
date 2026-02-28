@@ -1,11 +1,13 @@
 """Tests for land_learn module: learn plan creation logic."""
 
+import json
 from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 
 from erk.cli.commands.land_learn import (
+    _compute_session_stats,
     _create_learn_pr_impl,
     _create_learn_pr_with_sessions,
     _log_session_discovery,
@@ -290,6 +292,30 @@ def test_creates_pr_and_shows_success(
 # ---------------------------------------------------------------------------
 
 
+def _make_session_jsonl(*, session_id: str, user_turns: int, duration_seconds: int) -> str:
+    """Build realistic JSONL content for a session with user turns and timestamps."""
+    base_ts = 1700000000.0
+    lines: list[str] = []
+    ts = base_ts
+    ts_step = duration_seconds / max(user_turns * 2 - 1, 1)
+    for i in range(user_turns):
+        lines.append(json.dumps({
+            "type": "user",
+            "sessionId": session_id,
+            "timestamp": ts,
+            "message": {"content": [{"type": "text", "text": f"User message {i + 1}"}]},
+        }))
+        ts += ts_step
+        lines.append(json.dumps({
+            "type": "assistant",
+            "sessionId": session_id,
+            "timestamp": ts,
+            "message": {"content": [{"type": "text", "text": f"Assistant response {i + 1}"}]},
+        }))
+        ts += ts_step
+    return "\n".join(lines) + "\n"
+
+
 def _make_sessions(
     *,
     planning: str | None = None,
@@ -372,15 +398,18 @@ def test_log_local_session_sizes(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Reports per-session local JSONL file sizes."""
+    """Reports per-session preprocessing stats: turns, duration, and sizes."""
     session_id = "dddd1111-2222-3333-4444-555566667777"
     sessions = _make_sessions(impl=[session_id])
 
-    # Create a fake JSONL file so stat() works
+    # Write realistic JSONL so compute_session_stats can parse it
+    jsonl_content = _make_session_jsonl(session_id=session_id, user_turns=5, duration_seconds=600)
     jsonl_file = tmp_path / f"{session_id}.jsonl"
-    jsonl_file.write_text("x" * 2048, encoding="utf-8")
+    jsonl_file.write_text(jsonl_content, encoding="utf-8")
 
-    fake_session = FakeSessionData(content="", size_bytes=2048, modified_at=0.0)
+    fake_session = FakeSessionData(
+        content=jsonl_content, size_bytes=len(jsonl_content), modified_at=0.0,
+    )
     fake_claude = FakeClaudeInstallation.for_test(
         projects={tmp_path: FakeProject(sessions={session_id: fake_session})},
     )
@@ -389,19 +418,17 @@ def test_log_local_session_sizes(
     _log_session_discovery(ctx, sessions=sessions, all_session_ids=sessions.all_session_ids())
 
     captured = capsys.readouterr()
-    # Per-session format: shows "local" and "KB" inline with the session
-    assert "local" in captured.err
+    assert "turns" in captured.err
+    assert "\u2192" in captured.err  # arrow between raw and XML sizes
     assert "KB" in captured.err
     assert "dddd1111..." in captured.err
-    # Aggregated line should no longer appear
-    assert "session(s) available locally" not in captured.err
 
 
 def test_log_session_mixed_local_and_not_found(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Shows 'local' for available sessions and 'not found' for missing ones."""
+    """Shows stats for available sessions and 'not found' for missing ones."""
     local_id = "eeee1111-2222-3333-4444-555566667777"
     missing_id = "ffff1111-2222-3333-4444-555566667777"
     sessions = _make_sessions(
@@ -409,11 +436,14 @@ def test_log_session_mixed_local_and_not_found(
         impl=[missing_id],
     )
 
-    # Create a fake JSONL file so stat() works for the local session
+    # Write realistic JSONL so compute_session_stats can parse it
+    jsonl_content = _make_session_jsonl(session_id=local_id, user_turns=3, duration_seconds=300)
     jsonl_file = tmp_path / f"{local_id}.jsonl"
-    jsonl_file.write_text("x" * 1024, encoding="utf-8")
+    jsonl_file.write_text(jsonl_content, encoding="utf-8")
 
-    fake_session = FakeSessionData(content="", size_bytes=1024, modified_at=0.0)
+    fake_session = FakeSessionData(
+        content=jsonl_content, size_bytes=len(jsonl_content), modified_at=0.0,
+    )
     fake_claude = FakeClaudeInstallation.for_test(
         projects={tmp_path: FakeProject(sessions={local_id: fake_session})},
     )
@@ -424,11 +454,40 @@ def test_log_session_mixed_local_and_not_found(
     captured = capsys.readouterr()
     lines = captured.err.strip().split("\n")
 
-    # Find the line for the local session
+    # Find the line for the local session — shows turns and KB
     local_line = next(line for line in lines if "eeee1111" in line)
-    assert "local" in local_line
+    assert "turns" in local_line
     assert "KB" in local_line
 
     # Find the line for the missing session
     missing_line = next(line for line in lines if "ffff1111" in line)
     assert "not found" in missing_line
+
+
+# ---------------------------------------------------------------------------
+# _compute_session_stats
+# ---------------------------------------------------------------------------
+
+
+def test_compute_session_stats_returns_turns_and_duration(tmp_path: Path) -> None:
+    """Computes user turns, duration, and sizes from JSONL."""
+    session_id = "aaaa2222-3333-4444-5555-666677778888"
+    jsonl_content = _make_session_jsonl(session_id=session_id, user_turns=4, duration_seconds=480)
+    jsonl_file = tmp_path / f"{session_id}.jsonl"
+    jsonl_file.write_text(jsonl_content, encoding="utf-8")
+
+    stats = _compute_session_stats(jsonl_file, session_id=session_id)
+
+    assert stats is not None
+    assert stats.user_turns == 4
+    assert stats.duration_minutes == 8
+    assert stats.raw_size_kb >= 0
+    assert stats.xml_size_kb >= 0
+
+
+def test_compute_session_stats_returns_none_for_missing_file(tmp_path: Path) -> None:
+    """Returns None when session file does not exist."""
+    missing = tmp_path / "nonexistent.jsonl"
+    stats = _compute_session_stats(missing, session_id="no-such-session")
+
+    assert stats is None

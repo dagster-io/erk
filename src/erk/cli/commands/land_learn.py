@@ -6,13 +6,28 @@ Extracted to avoid circular imports between land_cmd and land_pipeline.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import click
 from rich.console import Console
 from rich.table import Table
 
+from erk.cli.commands.exec.scripts.preprocess_session import (
+    deduplicate_assistant_messages,
+    deduplicate_documentation_blocks,
+    discover_agent_logs,
+    is_empty_session,
+    is_warmup_session,
+    process_log_file,
+    split_entries_to_chunks,
+    truncate_tool_parameters,
+)
 from erk.core.context import ErkContext
+from erk_shared.learn.extraction.session_schema import (
+    iter_jsonl_entries,
+    parse_session_timestamp,
+)
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.create_plan_draft_pr import create_plan_draft_pr
 from erk_shared.plan_store.types import PlanNotFound
@@ -22,6 +37,115 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from erk.cli.commands.land_pipeline import LandState
+
+
+@dataclass(frozen=True)
+class SessionStats:
+    """Preprocessing stats for a single session."""
+
+    user_turns: int
+    duration_minutes: int | None
+    raw_size_kb: int
+    xml_size_kb: int
+
+
+def _has_user_text(message_content: str | list) -> bool:
+    """Check if message content contains non-empty user text."""
+    if isinstance(message_content, list):
+        return any(
+            isinstance(block, dict)
+            and block.get("type") == "text"
+            and block.get("text", "").strip()
+            for block in message_content
+        )
+    if isinstance(message_content, str):
+        return bool(message_content.strip())
+    return False
+
+
+def _compute_session_stats(session_path: Path, *, session_id: str) -> SessionStats | None:
+    """Compute preprocessing stats for a session.
+
+    Reads the JSONL, counts user turns, computes duration from timestamps,
+    runs the preprocessing compression pipeline, and returns size stats.
+
+    Returns None if preprocessing fails (e.g. corrupt JSONL).
+    """
+    if not session_path.exists():
+        return None
+
+    # Count user turns and compute duration from raw JSONL
+    content = session_path.read_text(encoding="utf-8")
+    timestamps: list[float] = []
+    user_turns = 0
+    for entry in iter_jsonl_entries(content):
+        ts = parse_session_timestamp(entry.get("timestamp"))
+        if ts is not None:
+            timestamps.append(ts)
+        if entry.get("type") == "user":
+            message_content = entry.get("message", {}).get("content", "")
+            if _has_user_text(message_content):
+                user_turns += 1
+
+    duration_minutes: int | None = None
+    if len(timestamps) >= 2:
+        duration_seconds = max(timestamps) - min(timestamps)
+        duration_minutes = round(duration_seconds / 60)
+
+    # Compute raw size: main JSONL + agent logs
+    raw_bytes = session_path.stat().st_size
+    agent_logs = discover_agent_logs(session_path, session_id)
+    for agent_log in agent_logs:
+        raw_bytes += agent_log.stat().st_size
+
+    # Run preprocessing pipeline to get XML sections
+    entries, _total, _skipped = process_log_file(
+        session_path, session_id=session_id, enable_filtering=True
+    )
+
+    if is_empty_session(entries) or is_warmup_session(entries):
+        # Still report stats but XML will be minimal
+        return SessionStats(
+            user_turns=user_turns,
+            duration_minutes=duration_minutes,
+            raw_size_kb=raw_bytes // 1024,
+            xml_size_kb=0,
+        )
+
+    entries = deduplicate_documentation_blocks(entries)
+    entries = truncate_tool_parameters(entries)
+    entries = deduplicate_assistant_messages(entries)
+
+    # Process agent logs through same pipeline
+    all_entries_with_labels: list[tuple[list[dict], str | None]] = [(entries, None)]
+    for agent_log in agent_logs:
+        agent_entries, _at, _as = process_log_file(
+            agent_log, session_id=session_id, enable_filtering=True
+        )
+        if is_empty_session(agent_entries) or is_warmup_session(agent_entries):
+            continue
+        agent_entries = deduplicate_documentation_blocks(agent_entries)
+        agent_entries = truncate_tool_parameters(agent_entries)
+        agent_entries = deduplicate_assistant_messages(agent_entries)
+        source_label = f"agent-{agent_log.stem.replace('agent-', '')}"
+        all_entries_with_labels.append((agent_entries, source_label))
+
+    xml_bytes = 0
+    for session_entries, source_label in all_entries_with_labels:
+        chunks = split_entries_to_chunks(
+            session_entries,
+            max_tokens=200_000,
+            source_label=source_label,
+            enable_pruning=True,
+        )
+        xml_bytes += sum(len(chunk.encode("utf-8")) for chunk in chunks)
+
+    return SessionStats(
+        user_turns=user_turns,
+        duration_minutes=duration_minutes,
+        raw_size_kb=raw_bytes // 1024,
+        xml_size_kb=xml_bytes // 1024,
+    )
 
 
 def _should_create_learn_pr(ctx: ErkContext) -> bool:
@@ -111,8 +235,20 @@ def _log_session_discovery(
             emoji, label = "\u2753", "unknown:"
 
         if sid in readable_map:
-            size_kb = readable_map[sid].stat().st_size // 1024
-            detail = f"[dim](local, {size_kb:,} KB)[/dim]"
+            stats = _compute_session_stats(readable_map[sid], session_id=sid)
+            if stats is not None:
+                duration_part = (
+                    f" \u00b7 {stats.duration_minutes} min"
+                    if stats.duration_minutes is not None
+                    else ""
+                )
+                detail = (
+                    f"[dim]{stats.user_turns} turns{duration_part}"
+                    f"  ({stats.raw_size_kb:,} KB \u2192 {stats.xml_size_kb:,} KB)[/dim]"
+                )
+            else:
+                size_kb = readable_map[sid].stat().st_size // 1024
+                detail = f"[dim](local, {size_kb:,} KB)[/dim]"
         else:
             detail = "[dim](not found)[/dim]"
 
