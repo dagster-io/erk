@@ -19,7 +19,7 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 | [checklists](checklists/tripwires.md)       | 1         | `checklists/` code                       |
 | [ci](ci/tripwires.md)                       | 49        | `.github/workflows/`, `.github/actions/` |
 | [claude-code](claude-code/tripwires.md)     | 3         | Claude Code configuration, settings      |
-| [cli](cli/tripwires.md)                     | 78        | `src/erk/cli/`                           |
+| [cli](cli/tripwires.md)                     | 81        | `src/erk/cli/`                           |
 | [commands](commands/tripwires.md)           | 7         | `.claude/commands/`, slash commands      |
 | [config](config/tripwires.md)               | 2         | `config/` code                           |
 | [configuration](configuration/tripwires.md) | 1         | `configuration/` code                    |
@@ -39,6 +39,6 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 | [sessions](sessions/tripwires.md)           | 10        | `~/.claude/projects/`, session analysis  |
 | [testing](testing/tripwires.md)             | 72        | `tests/`                                 |
 | [textual](textual/tripwires.md)             | 1         | Textual framework code                   |
-| [tui](tui/tripwires.md)                     | 47        | `src/erk/tui/`                           |
+| [tui](tui/tripwires.md)                     | 48        | `src/erk/tui/`                           |
 | [uncategorized](uncategorized/tripwires.md) | 15        | `uncategorized/` code                    |
 | [workflows](workflows/tripwires.md)         | 6         | `workflows/` code                        |
