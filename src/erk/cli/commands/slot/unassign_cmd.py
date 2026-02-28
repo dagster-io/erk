@@ -80,6 +80,10 @@ def execute_unassign(
         if isinstance(create_result, BranchAlreadyExists):
             user_output(f"Error: {create_result.message}")
             raise SystemExit(1) from None
+    else:
+        # Force-update existing placeholder to trunk so the slot worktree
+        # starts fresh after unassignment (e.g., after erk land)
+        ctx.git.branch.create_branch(repo.root, placeholder_branch, trunk_branch, force=True)
 
     # Checkout placeholder branch in the worktree
     ctx.branch_manager.checkout_branch(assignment.worktree_path, placeholder_branch)
