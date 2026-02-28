@@ -35,7 +35,7 @@ def _trigger_workflow(
         repo_root=repo.root,
         workflow=workflow_file,
         inputs=inputs,
-        ref=None,
+        ref=ctx.local_config.dispatch_ref,
     )
     user_output(click.style("\u2713", fg="green") + " Workflow triggered")
 
@@ -247,7 +247,7 @@ def _trigger_learn(
         repo_root=repo.root,
         workflow=_get_workflow_file("learn"),
         inputs=inputs,
-        ref=None,
+        ref=ctx.local_config.dispatch_ref,
     )
     user_output(click.style("\u2713", fg="green") + " Workflow triggered")
 

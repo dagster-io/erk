@@ -335,7 +335,7 @@ def dispatch_one_shot(
             repo_root=repo.root,
             workflow=ONE_SHOT_WORKFLOW,
             inputs=inputs,
-            ref=None,
+            ref=ctx.local_config.dispatch_ref,
         )
         user_output(click.style(f"  \u2192 Run ID: {run_id}", dim=True))
 
