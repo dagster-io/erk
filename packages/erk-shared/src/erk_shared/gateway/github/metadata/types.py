@@ -21,6 +21,26 @@ class RawMetadataBlock:
     body: str  # Raw content between HTML comment markers
 
 
+@dataclass(frozen=True)
+class MetadataBlockError:
+    """A metadata block that failed to parse."""
+
+    key: str
+    message: str
+
+
+@dataclass(frozen=True)
+class MetadataParseResult:
+    """Result of parsing metadata blocks, with explicit error reporting."""
+
+    blocks: tuple[MetadataBlock, ...]
+    errors: tuple[MetadataBlockError, ...]
+
+    @property
+    def has_errors(self) -> bool:
+        return bool(self.errors)
+
+
 class MetadataBlockSchema(ABC):
     """Base class for metadata block schemas."""
 

@@ -16,7 +16,9 @@ from erk_shared.gateway.github.metadata.schemas import (
 )
 from erk_shared.gateway.github.metadata.types import (
     MetadataBlock,
+    MetadataBlockError,
     MetadataBlockSchema,
+    MetadataParseResult,
     RawMetadataBlock,
 )
 from erk_shared.output.next_steps import format_next_steps_markdown
@@ -554,22 +556,23 @@ def parse_metadata_block_body(body: str) -> dict[str, Any]:
     return data
 
 
-def parse_metadata_blocks(text: str) -> list[MetadataBlock]:
+def parse_metadata_blocks(text: str) -> MetadataParseResult:
     """
     Extract all metadata blocks from markdown text (two-phase parsing).
 
     Phase 1: Extract raw blocks using HTML comment markers
     Phase 2: Parse body content (details/yaml structure)
 
-    Maintains lenient behavior: logs warnings and skips blocks with parsing errors.
+    Errors are collected in the result rather than logged silently.
 
     Args:
         text: Markdown text potentially containing metadata blocks
 
     Returns:
-        List of parsed MetadataBlock instances
+        MetadataParseResult with parsed blocks and any errors
     """
     blocks: list[MetadataBlock] = []
+    errors: list[MetadataBlockError] = []
 
     # Phase 1: Extract raw blocks
     raw_blocks = extract_raw_metadata_blocks(text)
@@ -580,11 +583,13 @@ def parse_metadata_blocks(text: str) -> list[MetadataBlock]:
             data = parse_metadata_block_body(raw_block.body)
             blocks.append(MetadataBlock(key=raw_block.key, data=data))
         except ValueError as e:
-            # Lenient: skip bad blocks but warn so parse failures are visible
-            logger.warning(f"Failed to parse metadata block '{raw_block.key}': {e}")
+            errors.append(MetadataBlockError(key=raw_block.key, message=str(e)))
             continue
 
-    return blocks
+    return MetadataParseResult(
+        blocks=tuple(blocks),
+        errors=tuple(errors),
+    )
 
 
 def find_metadata_block(text: str, key: str) -> MetadataBlock | None:
@@ -598,8 +603,8 @@ def find_metadata_block(text: str, key: str) -> MetadataBlock | None:
     Returns:
         MetadataBlock if found, None otherwise
     """
-    blocks = parse_metadata_blocks(text)
-    for block in blocks:
+    result = parse_metadata_blocks(text)
+    for block in result.blocks:
         if block.key == key:
             return block
     return None

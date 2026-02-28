@@ -184,6 +184,16 @@ def parse_roadmap_frontmatter(block_content: str) -> list[RoadmapNode] | None:
     return steps
 
 
+def render_objective_roadmap_block(inner: str) -> str:
+    """Wrap roadmap inner content with objective-roadmap metadata block markers."""
+    return (
+        "<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->\n"
+        "<!-- erk:metadata-block:objective-roadmap -->\n"
+        f"{inner}\n"
+        "<!-- /erk:metadata-block:objective-roadmap -->"
+    )
+
+
 def render_roadmap_block_inner(nodes: list[RoadmapNode]) -> str:
     """Render roadmap nodes as <details> wrapped YAML code block.
 

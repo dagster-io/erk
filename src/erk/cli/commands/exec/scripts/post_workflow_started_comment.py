@@ -77,7 +77,7 @@ def _build_workflow_started_comment(
     repository: str,
     now_iso: str,
 ) -> str:
-    """Build the workflow started comment body.
+    """Build the workflow started comment body using the canonical metadata API.
 
     Uses the standard metadata block API so the comment can be parsed
     by ``parse_metadata_blocks`` during ``erk land``.
@@ -96,7 +96,7 @@ def _build_workflow_started_comment(
     """
     started_at = now_iso
 
-    metadata_block = create_workflow_started_block(
+    block = create_workflow_started_block(
         started_at=started_at,
         workflow_run_id=run_id,
         workflow_run_url=run_url,
@@ -115,8 +115,8 @@ def _build_workflow_started_comment(
     )
 
     return render_erk_issue_event(
-        title="\u2699\ufe0f GitHub Action Started",
-        metadata=metadata_block,
+        title="⚙️ GitHub Action Started",
+        metadata=block,
         description=description,
     )
 

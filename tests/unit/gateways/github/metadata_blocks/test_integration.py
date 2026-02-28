@@ -2,7 +2,7 @@
 
 import pytest
 
-from erk_shared.gateway.github.metadata_blocks import (
+from erk_shared.gateway.github.metadata.core import (
     create_implementation_status_block,
     create_metadata_block,
     extract_metadata_value,
@@ -18,15 +18,16 @@ def test_round_trip_create_render_parse() -> None:
     block = create_metadata_block(
         key="test-key",
         data={"field": "value", "number": 42},
+        schema=None,
     )
 
     # Render
     rendered = render_metadata_block(block)
 
     # Parse
-    parsed_blocks = parse_metadata_blocks(rendered)
-    assert len(parsed_blocks) == 1
-    parsed_block = parsed_blocks[0]
+    result = parse_metadata_blocks(rendered)
+    assert len(result.blocks) == 1
+    parsed_block = result.blocks[0]
 
     # Extract
     assert parsed_block.key == "test-key"
@@ -40,26 +41,22 @@ def test_convenience_function_create_implementation_status_block() -> None:
     """Test create_implementation_status_block convenience function."""
     block = create_implementation_status_block(
         status="in_progress",
-        completed_nodes=3,
-        total_nodes=5,
         timestamp="2025-11-22T12:00:00Z",
         summary="Making progress",
+        branch_name="feature-branch",
     )
 
     assert block.key == "erk-implementation-status"
     assert block.data["status"] == "in_progress"
-    assert block.data["completed_nodes"] == 3
-    assert block.data["total_nodes"] == 5
     assert block.data["summary"] == "Making progress"
     assert block.data["timestamp"] == "2025-11-22T12:00:00Z"
+    assert block.data["branch_name"] == "feature-branch"
 
 
 def test_convenience_function_create_implementation_status_block_without_summary() -> None:
     """Test create_implementation_status_block without optional summary."""
     block = create_implementation_status_block(
         status="complete",
-        completed_nodes=5,
-        total_nodes=5,
         timestamp="2025-11-22T12:00:00Z",
     )
 
@@ -73,10 +70,7 @@ def test_convenience_function_validates_data() -> None:
     with pytest.raises(ValueError, match="Invalid status"):
         create_implementation_status_block(
             status="bad-status",
-            completed_nodes=3,
-            total_nodes=5,
             timestamp="2025-11-22T12:00:00Z",
-            summary="Test",
         )
 
 

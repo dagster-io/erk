@@ -2,11 +2,11 @@
 
 import pytest
 
-from erk_shared.gateway.github.metadata_blocks import (
-    PlanIssueSchema,
+from erk_shared.gateway.github.metadata.core import (
     create_plan_issue_block,
     render_erk_issue_event,
 )
+from erk_shared.gateway.github.metadata.schemas import PlanIssueSchema
 
 # === PlanIssueSchema Tests ===
 

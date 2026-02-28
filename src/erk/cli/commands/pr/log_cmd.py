@@ -181,9 +181,9 @@ def _extract_events_from_comments(comment_bodies: list[str]) -> list[Event]:
     events: list[Event] = []
 
     for comment_body in comment_bodies:
-        blocks = parse_metadata_blocks(comment_body)
+        result = parse_metadata_blocks(comment_body)
 
-        for block in blocks:
+        for block in result.blocks:
             event = _block_to_event(block.key, block.data)
             if event is not None:
                 events.append(event)
