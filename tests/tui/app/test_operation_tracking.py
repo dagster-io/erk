@@ -191,11 +191,11 @@ class TestOperationTracking:
             app._start_operation(op_id=op_id, label="Landing PR #456...")
 
             app._land_pr_async(
-                op_id,
-                456,
-                "test-branch",
-                None,
-                None,
+                op_id=op_id,
+                pr_number=456,
+                branch="test-branch",
+                objective_issue=None,
+                plan_id=None,
             )
             await pilot.pause(0.3)
 
@@ -229,11 +229,11 @@ class TestOperationTracking:
             app._start_operation(op_id=op_id, label="Landing PR #456...")
 
             app._land_pr_async(
-                op_id,
-                456,
-                "test-branch",
-                None,
-                None,
+                op_id=op_id,
+                pr_number=456,
+                branch="test-branch",
+                objective_issue=None,
+                plan_id=None,
             )
             await pilot.pause(0.3)
 

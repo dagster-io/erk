@@ -220,11 +220,11 @@ class TestLandPrAsync:
             await pilot.pause()
 
             app._land_pr_async(
-                "test-op",
-                456,
-                "test-branch",
-                None,
-                None,
+                op_id="test-op",
+                pr_number=456,
+                branch="test-branch",
+                objective_issue=None,
+                plan_id=None,
             )
             await pilot.pause(0.3)
 
@@ -264,11 +264,11 @@ class TestLandPrAsync:
             count_before = provider.fetch_count
 
             app._land_pr_async(
-                "test-op",
-                456,
-                "test-branch",
-                None,
-                None,
+                op_id="test-op",
+                pr_number=456,
+                branch="test-branch",
+                objective_issue=None,
+                plan_id=None,
             )
             await pilot.pause(0.3)
 
@@ -300,11 +300,11 @@ class TestLandPrAsync:
             count_before = provider.fetch_count
 
             app._land_pr_async(
-                "test-op",
-                456,
-                "test-branch",
-                None,
-                None,
+                op_id="test-op",
+                pr_number=456,
+                branch="test-branch",
+                objective_issue=None,
+                plan_id=None,
             )
             await pilot.pause(0.3)
 
@@ -346,11 +346,11 @@ class TestLandPrAsync:
             await pilot.pause()
 
             app._land_pr_async(
-                "test-op",
-                456,
-                "test-branch",
-                789,
-                None,
+                op_id="test-op",
+                pr_number=456,
+                branch="test-branch",
+                objective_issue=789,
+                plan_id=None,
             )
             await pilot.pause(0.3)
 
@@ -392,11 +392,11 @@ class TestLandPrAsync:
             await pilot.pause()
 
             app._land_pr_async(
-                "test-op",
-                456,
-                "test-branch",
-                None,
-                None,
+                op_id="test-op",
+                pr_number=456,
+                branch="test-branch",
+                objective_issue=None,
+                plan_id=None,
             )
             await pilot.pause(0.3)
 
@@ -431,11 +431,11 @@ class TestLandPrAsync:
             await pilot.pause()
 
             app._land_pr_async(
-                "test-op",
-                456,
-                "test-branch",
-                None,
-                42,
+                op_id="test-op",
+                pr_number=456,
+                branch="test-branch",
+                objective_issue=None,
+                plan_id=42,
             )
             await pilot.pause(0.3)
 
@@ -486,11 +486,11 @@ class TestLandPrAsync:
             await pilot.pause()
 
             app._land_pr_async(
-                "test-op",
-                456,
-                "test-branch",
-                None,
-                None,
+                op_id="test-op",
+                pr_number=456,
+                branch="test-branch",
+                objective_issue=None,
+                plan_id=None,
             )
             await pilot.pause(0.3)
 

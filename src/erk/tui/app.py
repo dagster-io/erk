@@ -882,6 +882,7 @@ class ErkDashApp(App):
     @work(thread=True)
     def _land_pr_async(
         self,
+        *,
         op_id: str,
         pr_number: int,
         branch: str,
@@ -1413,11 +1414,11 @@ class ErkDashApp(App):
                 self._start_operation(op_id=op_id, label=f"Landing PR #{row.pr_number}...")
                 plan_id = row.plan_id if not row.is_learn_plan else None
                 self._land_pr_async(
-                    op_id,
-                    row.pr_number,
-                    row.pr_head_branch,
-                    row.objective_issue,
-                    plan_id,
+                    op_id=op_id,
+                    pr_number=row.pr_number,
+                    branch=row.pr_head_branch,
+                    objective_issue=row.objective_issue,
+                    plan_id=plan_id,
                 )
 
         elif command_id == "copy_replan":
