@@ -1,0 +1,1321 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>why dod this have the pancakge/stack emoji if it has no parent</user>
+  <thinking>The user is asking about why a PR in the `erk dash` TUI shows a "package/stack" emoji (🍳 looks like it might be a pancake emoji) even though it has no parent. Let me look at the screenshot more carefully.
+
+The `sts` column shows what appears to be 🍳 👀 - the first emoji looks like a pancake/stack indicator. The user is asking why this PR (#8456) shows a stack emoji when it has no parent PR.
+
+Let me explore the code that determines when to show the stack emoji in the TUI dashboard.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="11735" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11735}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me investigate how the stack emoji is determined in the dashboard.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="11735" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11735}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01B4H6varAz5D8QwbDCyyiuE">
+    <param name="description">Explore stack emoji logic in dash</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 503 chars]...n)
+
+Search in src/erk/tui/ and related files. Also check any PR list/table rendering code.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11735" cache_read_input_tokens="19113" output_tokens="444" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11735, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01B4H6varAz5D8QwbDCyyiuE">
+Perfect! Now I have all the information I need. Let me create a comprehensive summary document.
+
+## Summary
+
+I found the code that determines when to show the stack emoji (🥞) in the `erk dash` TUI. Here's the detailed breakdown:
+
+### **1. Where the Stack Emoji is Displayed**
+
+The stack emoji (🥞) appears in the **`sts` (status) column** in the TUI dashboard, but only in `planned_pr` backend mode. It's also shown inline in the lifecycle display when applicable.
+
+**Files involved:**
+- `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py` — Status indicator logic
+- `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py` — Stack detection logic
+
+### **2. How Stack Status is Determined**
+
+The code uses a **dual-source detection strategy** (lines 682-692 in `real.py`):
+
+**Primary Detection:** Check `base_ref_name` field from GitHub API
+```python
+if selected_pr.base_ref_name is not None:
+    pr_is_stacked = selected_pr.base_ref_name not in ("master", "main")
+```
+
+**Fallback Detection:** If primary doesn't confirm stacking AND the PR head branch is known, consult Graphite's local stack tracking
+```python
+if pr_is_stacked is not True and pr_head_branch is not None:
+    parent = self._ctx.branch_manager.get_parent_branch(
+        self._location.root, pr_head_branch
+    )
+
+... [64 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me look at the specific stack detection logic more closely.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1715" cache_read_input_tokens="30848" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1715}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016srr1HRmJMSYXHqBGMfSN9">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="offset">675</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1715" cache_read_input_tokens="30848" output_tokens="138" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1715, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016srr1HRmJMSYXHqBGMfSN9">
+   675→
+   676→                # Extract status fields for lifecycle enrichment
+   677→                pr_is_draft = selected_pr.is_draft
+   678→                pr_has_conflicts = selected_pr.has_conflicts
+   679→                pr_review_decision = selected_pr.review_decision
+   680→                pr_checks_passing = selected_pr.checks_passing
+   681→                pr_checks_counts = selected_pr.checks_counts
+   682→                if selected_pr.base_ref_name is not None:
+   683→                    pr_is_stacked = selected_pr.base_ref_name not in ("master", "main")
+   684→
+   685→                # Supplement with Graphite's local stack tracking — plan PRs
+   686→                # always target master on GitHub even when Graphite-stacked
+   687→                if pr_is_stacked is not True and pr_head_branch is not None:
+   688→                    parent = self._ctx.branch_manager.get_parent_branch(
+   689→                        self._location.root, pr_head_branch
+   690→                    )
+   691→                    if parent is not None and parent not in ("master", "main"):
+   692→                        pr_is_stacked = True
+   693→
+   694→                # Get review thread counts from batched PR data
+   695→                if selected_pr.review_thread_counts is not None:
+   696→                    resolved_comment_count, total_comment_count = selected_pr.review_thread_counts
+   697→                    comments_display = f"{resolved_comment_count}/{total_comment_count}"
+   698→                    pr_has_unresolved_comments = total_comment_count &gt; resolved_comment_count
+   699→                else:
+  </tool_result>
+  <assistant>The key is the fallback detection on lines 687-692. The comment on line 685-686 explains it: **"plan PRs always target master on GitHub even when Graphite-stacked"**. So `base_ref_name` will be "master" (making the primary check return `False`), but the fallback checks Graphite's local tracking via `get_parent_branch()`.
+
+Let me check what `get_parent_branch` returns for this case.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="576" cache_read_input_tokens="32563" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 576}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01AG1hsrZidnKvroeikwgAo1">
+    <param name="pattern">def get_parent_branch</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="576" cache_read_input_tokens="32563" output_tokens="216" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 576, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AG1hsrZidnKvroeikwgAo1">
+Found 6 files
+packages/erk-shared/src/erk_shared/gateway/graphite/abc.py
+packages/erk-shared/src/erk_shared/gateway/graphite/printing.py
+packages/erk-shared/src/erk_shared/gateway/branch_manager/git.py
+packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py
+packages/erk-shared/src/erk_shared/gateway/branch_manager/abc.py
+packages/erk-shared/src/erk_shared/gateway/branch_manager/fake.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CZcxASfv6tr1ynQTeXzqdv">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="473" cache_read_input_tokens="33139" output_tokens="89" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 473, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CZcxASfv6tr1ynQTeXzqdv">
+     1→"""Graphite-based BranchManager implementation."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from dataclasses import dataclass
+     6→from pathlib import Path
+     7→
+     8→from erk_shared.gateway.branch_manager.abc import BranchManager
+     9→from erk_shared.gateway.branch_manager.types import PrInfo, SubmitBranchError, SubmitBranchResult
+    10→from erk_shared.gateway.git.abc import Git
+    11→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
+    12→from erk_shared.gateway.github.abc import GitHub
+    13→from erk_shared.gateway.github.types import PRNotFound
+    14→from erk_shared.gateway.graphite.abc import Graphite
+    15→from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
+    16→
+    17→
+    18→@dataclass(frozen=True)
+    19→class GraphiteBranchManager(BranchManager):
+    20→    """BranchManager implementation using Graphite.
+    21→
+    22→    Uses Graphite's local cache for fast PR lookups and `gt create`
+    23→    for branch creation with parent tracking. Falls back to GitHub API
+    24→    when PR info is not in Graphite cache.
+    25→    """
+    26→
+    27→    git: Git
+    28→    graphite: Graphite
+    29→    graphite_branch_ops: GraphiteBranchOps
+    30→    github: GitHub
+
+... [266 lines omitted] ...
+
+   172→    def submit_branch(self, repo_root: Path, branch: str) -&gt; SubmitBranchResult | SubmitBranchError:
+   182→            SubmitBranchResult on success, SubmitBranchError on failure.
+   189→        except RuntimeError as e:
+   190→            return SubmitBranchError(message=str(e))
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01CYEUTBxa4YLanLW5fASWEC">
+    <param name="pattern">def get_parent_branch</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4228" cache_read_input_tokens="33612" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4228, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CYEUTBxa4YLanLW5fASWEC">
+packages/erk-shared/src/erk_shared/gateway/graphite/printing.py:47:    def get_parent_branch(self, git_ops: Git, repo_root: Path, branch: str) -&gt; str | None:
+packages/erk-shared/src/erk_shared/gateway/graphite/abc.py:163:    def get_parent_branch(self, git_ops: Git, repo_root: Path, branch: str) -&gt; str | None:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SB2a19qp9xdsVzdukrLk2w">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/printing.py</param>
+    <param name="offset">40</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="247" cache_read_input_tokens="37840" output_tokens="121" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 247, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SB2a19qp9xdsVzdukrLk2w">
+    40→        """Get all branches (read-only, no printing)."""
+    41→        return self._wrapped.get_all_branches(git_ops, repo_root)
+    42→
+    43→    def get_branch_stack(self, git_ops: Git, repo_root: Path, branch: str) -&gt; list[str] | None:
+    44→        """Get branch stack (read-only, no printing)."""
+    45→        return self._wrapped.get_branch_stack(git_ops, repo_root, branch)
+    46→
+    47→    def get_parent_branch(self, git_ops: Git, repo_root: Path, branch: str) -&gt; str | None:
+    48→        """Get parent branch (read-only, no printing)."""
+    49→        return self._wrapped.get_parent_branch(git_ops, repo_root, branch)
+    50→
+    51→    def is_branch_tracked(self, repo_root: Path, branch: str) -&gt; bool:
+    52→        """Check if branch is tracked (read-only, no printing)."""
+    53→        return self._wrapped.is_branch_tracked(repo_root, branch)
+    54→
+    55→    def check_auth_status(self) -&gt; tuple[bool, str | None, str | None]:
+    56→        """Check auth status (read-only, no printing)."""
+    57→        return self._wrapped.check_auth_status()
+    58→
+    59→    # Operations that need printing
+    60→
+    61→    def squash_branch(self, repo_root: Path, *, quiet: bool) -&gt; None:
+    62→        """Squash branch with printed output."""
+    63→        self._emit(self._format_command("gt squash"))
+    64→        self._wrapped.squash_branch(repo_root, quiet=quiet)
+    65→
+    66→    def submit_stack(
+    67→        self,
+    68→        repo_root: Path,
+    69→        *,
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Q5aMM8o5XEU4U5woYU5Ko7">
+    <param name="pattern">def get_parent_branch</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite</param>
+    <param name="output_mode">content</param>
+    <param name="-A">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="621" cache_read_input_tokens="38087" output_tokens="141" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 621, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Q5aMM8o5XEU4U5woYU5Ko7">
+packages/erk-shared/src/erk_shared/gateway/graphite/printing.py:47:    def get_parent_branch(self, git_ops: Git, repo_root: Path, branch: str) -&gt; str | None:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/printing.py-48-        """Get parent branch (read-only, no printing)."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/printing.py-49-        return self._wrapped.get_parent_branch(git_ops, repo_root, branch)
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/printing.py-50-
+packages/erk-shared/src/erk_shared/gateway/graphite/printing.py-51-    def is_branch_tracked(self, repo_root: Path, branch: str) -&gt; bool:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/printing.py-52-        """Check if branch is tracked (read-only, no printing)."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/printing.py-53-        return self._wrapped.is_branch_tracked(repo_root, branch)
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/printing.py-54-
+packages/erk-shared/src/erk_shared/gateway/graphite/printing.py-55-    def check_auth_status(self) -&gt; tuple[bool, str | None, str | None]:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/printing.py-56-        """Check auth status (read-only, no printing)."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/printing.py-57-        return self._wrapped.check_auth_status()
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/printing.py-58-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/printing.py-59-    # Operations that need printing
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/printing.py-60-
+packages/erk-shared/src/erk_shared/gateway/graphite/printing.py-61-    def squash_branch(self, repo_root: Path, *, quiet: bool) -&gt; None:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/printing.py-62-        """Squash branch with printed output."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/printing.py-63-        self._emit(self._format_command("gt squash"))
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/printing.py-64-        self._wrapped.squash_branch(repo_root, quiet=quiet)
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/printing.py-65-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/printing.py-66-    def submit_stack(
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/printing.py-67-        self,
+--
+packages/erk-shared/src/erk_shared/gateway/graphite/abc.py:163:    def get_parent_branch(self, git_ops: Git, repo_root: Path, branch: str) -&gt; str | None:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/abc.py-164-        """Get parent branch name for a given branch.
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/abc.py-165-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/abc.py-166-        This is a convenience helper that calls get_all_branches() and extracts
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/abc.py-167-        the parent relationship. All implementations inherit this method.
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/abc.py-168-
+packages/erk-shared/src/erk_shared/gateway/graphite/abc.py-169-        Args:
+packages/erk-shared/src/erk_shared/gateway/graphite/abc.py-170-            git_ops: Git instance for accessing git common directory
+
+... [13 lines omitted] ...
+  </tool_result>
+  <assistant>Now I understand the full picture. Let me look at the stack detection logic one more time to see what specifically happens for the `plnd/block-type-registry-02-28-0854` branch.
+
+The issue is clear from the code at `real.py:682-692`:
+
+1. **Primary check** (line 682-683): `base_ref_name` — if the GitHub PR targets something other than master/main, it's stacked. For plan PRs, they always target master, so this returns `False`.
+
+2. **Fallback check** (lines 687-692): Asks Graphite `get_parent_branch()` — returns the parent from Graphite's local `.graphite_cache_persist`. If the parent is anything other than master/main, `pr_is_stacked = True`.
+
+The bug: **Graphite's local cache can report a non-master parent even when there's no actual stack.** This happens when a branch was previously part of a stack (or was tracked with a non-master parent), and the parent info persists in Graphite's cache even after the parent branch was deleted or the stack was dissolved.
+
+For PR #8456 (`plnd/block-type-registry-02-28-0854`), Graphite's local cache likely still has a stale parent entry that isn't master/main, causing the 🥞 emoji to appear.
+
+Let me verify by checking if there's a way to see what Graphite thinks the parent is.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2181" cache_read_input_tokens="38708" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2181}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01RC3Ccsu5pVFvSRjFY19K6a">
+    <param name="command">cat .git/.graphite_cache_persist 2&gt;/dev/null | python3 -c "import sys, json; data = json.l...[truncated 89 chars]... print(json.dumps(branch, indent=2))" 2&gt;/dev/null || echo "Could not parse graphite cache"</param>
+    <param name="description">Check Graphite cache for the branch's parent</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2181" cache_read_input_tokens="38708" output_tokens="530" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2181, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RC3Ccsu5pVFvSRjFY19K6a">
+Could not parse graphite cache
+  </tool_result>
+  <tool_use name="Bash" id="toolu_019AuZEsnqKFma9zqLJrCsxM">
+    <param name="command">ls .git/.graphite* 2&gt;/dev/null; echo "---"; cat .git/.graphite_cache_persist 2&gt;/dev/null | head -5</param>
+    <param name="description">List graphite cache files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="631" cache_read_input_tokens="40889" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 631}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019AuZEsnqKFma9zqLJrCsxM">
+.git/.graphite_cache_persist
+.git/.graphite_pr_info
+.git/.graphite_repo_config
+---
+{
+  "sha": "3c88fd24f30acf2e58ba1dcbe53d1ec8d846dd51",
+  "branches": [
+    [
+      "plnd/erk-erk-slot-36-git-plnd-a-02-28-1049",
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01NJQdnLhs9SJewWKYYEodC4">
+    <param name="command">python3 -c "
+import json
+with open('.git/.graphite_cache_persist') as f:
+    data = json.l...[truncated 389 chars]...     print(f'Branch: {name}')
+            print(f'Info: {json.dumps(branch, indent=2)}')
+"</param>
+    <param name="description">Find block-type-registry branch in Graphite cache</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="225" cache_read_input_tokens="41520" output_tokens="274" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 225, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NJQdnLhs9SJewWKYYEodC4">
+Branch: plnd/block-type-registry-02-28-0854
+Info: {
+  "children": [],
+  "branchRevision": "a2dc444cee2e40a3273eb9a395adb7101955d63f",
+  "lastSubmittedVersion": {
+    "headSha": "4e3ec6bfe85bd360e83527b6952be4fb98ad2437",
+    "baseSha": "e4f429f264b795beb6500cb392259a4d026d0aef",
+    "baseName": "plnd/entity-store-kv-log-02-28-1104"
+  },
+  "validationResult": "VALID",
+  "parentBranchName": "master",
+  "parentBranchRevision": "2ed31d0820afb5c7875f86e9464336b366257df1"
+}
+  </tool_result>
+  <assistant>Interesting — Graphite's cache says `parentBranchName: "master"`, so the fallback check should return `"master"` and NOT trigger the stacked indicator.
+
+But look at `lastSubmittedVersion.baseName`: `"plnd/entity-store-kv-log-02-28-1104"`. This was previously stacked on another branch. The parent was changed to master (likely after the parent was landed), but the `lastSubmittedVersion` still records the old base.
+
+Now let me re-read the `get_parent_branch` implementation more carefully — it uses `get_all_branches()` and reads `.parent`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="509" cache_read_input_tokens="41745" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 509}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RGYGRQX4RuGbpU5DDAFhKR">
+    <param name="pattern">def get_all_branches</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="509" cache_read_input_tokens="41745" output_tokens="276" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 509, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RGYGRQX4RuGbpU5DDAFhKR">
+Found 6 files
+packages/erk-shared/src/erk_shared/gateway/graphite/abc.py
+packages/erk-shared/src/erk_shared/gateway/graphite/disabled.py
+packages/erk-shared/src/erk_shared/gateway/graphite/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/graphite/fake.py
+packages/erk-shared/src/erk_shared/gateway/graphite/printing.py
+packages/erk-shared/src/erk_shared/gateway/graphite/real.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Va6RjcHG8TzVCA43JrhRri">
+    <param name="pattern">def get_all_branches</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="433" cache_read_input_tokens="42254" output_tokens="145" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 433, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Va6RjcHG8TzVCA43JrhRri">
+63:    def get_all_branches(self, git_ops: Git, repo_root: Path) -&gt; dict[str, BranchMetadata]:
+64-        """Get all gt-tracked branches with metadata.
+65-
+66-        Reads .git/.graphite_cache_persist and enriches with commit SHAs from git.
+67-        Returns empty dict if cache doesn't exist or git operations fail.
+68-
+69-        Results are cached based on file mtime - the cache is automatically
+70-        invalidated when the underlying file changes, whether from erk operations
+71-        or external gt commands.
+72-        """
+73-        git_dir = git_ops.repo.get_git_common_dir(repo_root)
+74-        if git_dir is None:
+75-            return {}
+76-
+77-        cache_file = git_dir / ".graphite_cache_persist"
+78-        if not cache_file.exists():
+79-            return {}
+80-
+81-        # Check if cache is still valid via mtime
+82-        current_mtime = cache_file.stat().st_mtime
+83-        if (
+84-            self._branches_cache is not None
+85-            and self._branches_cache_mtime is not None
+86-            and self._branches_cache_mtime == current_mtime
+87-        ):
+88-            return self._branches_cache
+89-
+90-        # Cache miss or stale - recompute
+91-        data = read_graphite_json_file(cache_file, "Graphite cache")
+92-
+
+... [11 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_011sHSKBaNojWCS2LGPNzEXZ">
+    <param name="pattern">def parse_graphite_cache</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite</param>
+    <param name="output_mode">content</param>
+    <param name="-A">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="809" cache_read_input_tokens="42687" output_tokens="142" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 809, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011sHSKBaNojWCS2LGPNzEXZ">
+packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py:80:def parse_graphite_cache(
+packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py-81-    json_str: str, git_branch_heads: dict[str, str]
+packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py-82-) -&gt; dict[str, BranchMetadata]:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py-83-    """Parse Graphite's .graphite_cache_persist JSON into BranchMetadata objects.
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py-84-
+packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py-85-    Args:
+packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py-86-        json_str: JSON string from .graphite_cache_persist file
+packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py-87-        git_branch_heads: Mapping of branch name to commit SHA from git
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py-88-
+packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py-89-    Returns:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py-90-        Mapping of branch name to BranchMetadata
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py-91-    """
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py-92-    cache_data = json.loads(json_str)
+packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py-93-    branches_data: list[tuple[str, dict[str, object]]] = cache_data.get("branches", [])
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py-94-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py-95-    result = {}
+packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py-96-    for branch_name, info in branches_data:
+packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py-97-        if not isinstance(info, dict):
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py-98-            continue
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py-99-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py-100-        # Get actual commit SHA from git
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py-101-        commit_sha = git_branch_heads.get(branch_name, "")
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py-102-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py-103-        # Get Graphite's tracked revision from cache (may differ after rebase/restack)
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py-104-        tracked_revision = info.get("branchRevision")
+packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py-105-        if not isinstance(tracked_revision, str):
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py-106-            tracked_revision = None
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py-107-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py-108-        parent = info.get("parentBranchName")
+packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py-109-        if not isinstance(parent, str | None):
+
+... [11 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_018EqP33oiezA1v3xzKe5FQY">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py</param>
+    <param name="offset">120</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1975" cache_read_input_tokens="43496" output_tokens="121" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1975, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018EqP33oiezA1v3xzKe5FQY">
+   120→        result[branch_name] = BranchMetadata(
+   121→            name=branch_name,
+   122→            parent=parent,
+   123→            children=children,
+   124→            is_trunk=is_trunk,
+   125→            commit_sha=commit_sha,
+   126→            tracked_revision=tracked_revision,
+   127→        )
+   128→
+   129→    return result
+   130→
+   131→
+   132→def _graphite_url_to_github_url(graphite_url: str) -&gt; str:
+   133→    """Convert Graphite URL to GitHub URL.
+   134→
+  </tool_result>
+  <assistant>OK so `parse_graphite_cache` reads `parentBranchName` from the cache. For this branch, that's `"master"`. So `get_parent_branch()` returns `"master"`.
+
+Back in the stack detection logic at `real.py:691`:
+```python
+if parent is not None and parent not in ("master", "main"):
+    pr_is_stacked = True
+```
+
+Since parent is `"master"`, this should NOT set `pr_is_stacked = True`. So neither check should trigger the 🥞 emoji.
+
+Wait — let me re-examine the screenshot. The emojis in the `sts` column look like 🍳👀 not 🥞👀. Let me search for what emojis are actually used.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="289" cache_read_input_tokens="45471" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 289}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01G8UBPNv9Hh2tR4uKeb8xyH">
+    <param name="pattern">🥞|🍳|pancake|stack.*emoji</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="289" cache_read_input_tokens="45471" output_tokens="338" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 289, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01G8UBPNv9Hh2tR4uKeb8xyH">
+119-    """Add draft/published prefix and status suffix to a lifecycle stage display.
+120-
+121-    Adds emoji indicators to the stage text when relevant:
+122:    - 🥞 prefix for stacked PRs (base branch != master/main)
+123-    - 🚧/👀 suffix for draft/published state (on planned, impl, review)
+124-    - 💥 suffix for merge conflicts (on impl and review stages)
+125-    - ✔ suffix for approved PRs (on review stage only)
+--
+209-
+210-    # Stacked PR indicator — first, before all other indicators
+211-    if is_stacked is True:
+212:        indicators.append("🥞")
+213-
+214-    # Draft/published indicator for active stages
+215-    if is_active_stage and is_draft is not None:
+--
+228-
+229-    # Ready-to-land indicator for impl stage:
+230-    # shown only when checks pass, no unresolved comments, and no blocking indicators
+231:    # (🥞, 👀, and ✔ are informational and should not block 🚀)
+232:    _non_blocking = {"🥞", "👀", "✔"}
+233-    has_blocking_indicators = any(i not in _non_blocking for i in indicators)
+234-    if is_impl and not has_blocking_indicators:
+235-        if checks_passing is True and has_unresolved_comments is not True:
+  </tool_result>
+  <assistant>OK so the emoji is 🥞 (pancake stack). Let me look at the screenshot again more carefully. The `sts` column shows what looks like two emojis. Let me check what 🍳 vs 🥞 look like and re-examine.
+
+Actually, looking at the screenshot again, the first emoji does look like it could be 🥞 (pancake) and the second is 👀 (eyes). So the 🥞 IS appearing for this PR.
+
+Let me check if there's something else going on — maybe the `base_ref_name` check IS triggering. Let me check the actual PR on GitHub.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="822" cache_read_input_tokens="45760" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 822}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01AHBSrYnnnnVgjd3SmY7jc4">
+    <param name="command">gh pr view 8456 --json baseRefName,headRefName --jq '{base: .baseRefName, head: .headRefName}'</param>
+    <param name="description">Check PR #8456 base and head branch</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="822" cache_read_input_tokens="45760" output_tokens="260" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 822, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AHBSrYnnnnVgjd3SmY7jc4">
+{"base":"plnd/entity-store-kv-log-02-28-1104","head":"plnd/block-type-registry-02-28-0854"}
+  </tool_result>
+  <assistant>There's the answer. **PR #8456's `baseRefName` on GitHub is `plnd/entity-store-kv-log-02-28-1104`**, not `master`. So the primary check at line 682-683 fires:
+
+```python
+pr_is_stacked = selected_pr.base_ref_name not in ("master", "main")
+# "plnd/entity-store-kv-log-02-28-1104" is not in ("master", "main") → True
+```
+
+The PR is still targeting a non-master branch on GitHub, even though Graphite locally re-parented it to master. The parent branch (`plnd/entity-store-kv-log-02-28-1104`) was likely already landed/merged, but the GitHub PR base ref was never updated.
+
+Let me confirm that parent branch is gone.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="409" cache_read_input_tokens="46582" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 409}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01FPnPsTeUo6S1FQLXkb5w76">
+    <param name="command">gh pr list --search "head:plnd/entity-store-kv-log-02-28-1104" --json number,state,title -...[truncated 45 chars]...--"; git branch -r | grep entity-store-kv-log 2&gt;/dev/null || echo "No remote branch found"</param>
+    <param name="description">Check if the parent branch/PR still exists</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="409" cache_read_input_tokens="46582" output_tokens="367" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 409, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FPnPsTeUo6S1FQLXkb5w76">
+---
+No remote branch found
+  </tool_result>
+  <assistant>So the parent branch `plnd/entity-store-kv-log-02-28-1104` no longer exists remotely. The PR was likely merged/closed. But PR #8456 still has that deleted branch as its base on GitHub, which is why the 🥞 emoji shows — the `base_ref_name` check sees a non-master base.
+
+This is a **Graphite sync issue**: when the parent PR landed, Graphite locally re-parented this branch to master, but the GitHub PR's base ref was never updated (normally `gt submit` would do this). Running `gt submit` or `gt sync` should fix it by updating the GitHub PR's base to `master`.
+
+This isn't really a bug in your code — the 🥞 emoji is correctly reflecting what GitHub reports. The PR genuinely has a non-master base on GitHub. The fix is operational: re-submit via Graphite to update the PR's base ref.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="385" cache_read_input_tokens="46991" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 385}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01Ait2y4beSqCxWDzjsYF6d4">
+    <param name="questions">[{'question': 'The 🥞 emoji is showing because PR #8456 still targets `plnd/entity-store-kv...[truncated 649 chars]...ally now, and also add code to handle this edge case gracefully'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="385" cache_read_input_tokens="46991" output_tokens="506" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 385, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ait2y4beSqCxWDzjsYF6d4">
+User has answered your questions: "The 🥞 emoji is showing because PR #8456 still targets `plnd/entity-store-kv-log-02-28-1104` on GitHub (a deleted branch), even though Graphite locally re-parented it to master. This is a Graphite sync issue, not a code bug. Do you want me to plan a code fix to handle this case (e.g., suppress 🥞 when the base branch no longer exists), or is this just something to fix operationally with `gt submit`?"="is this a different state? requires restack? let's chat this through" user notes: is this a different state? requires restack? let's chat this through. You can now continue with the user's answers in mind.
+  </tool_result>
+  <assistant>Good question. Let me dig into this a bit more to understand the state properly.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="704" cache_read_input_tokens="47376" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 704}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VmGXuDC49ak8WufHoWoo3t">
+    <param name="command">gh pr view 8456 --json baseRefName,headRefName,state,isDraft,mergeable,mergeStateStatus --jq '.'</param>
+    <param name="description">Get full PR #8456 details</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="704" cache_read_input_tokens="47376" output_tokens="127" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 704, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VmGXuDC49ak8WufHoWoo3t">
+{"baseRefName":"plnd/entity-store-kv-log-02-28-1104","headRefName":"plnd/block-type-registry-02-28-0854","isDraft":false,"mergeStateStatus":"CLEAN","mergeable":"MERGEABLE","state":"OPEN"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_019Vazihzzbe6j4G85AySoov">
+    <param name="command">gh pr list --search "head:plnd/entity-store-kv-log-02-28-1104" --state all --json number,state,title --jq '.[] | "#\(.number) [\(.state)] \(.title)"' 2&gt;/dev/null</param>
+    <param name="description">Check parent PR state (all states)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1402" cache_read_input_tokens="48080" output_tokens="138" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1402, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019Vazihzzbe6j4G85AySoov">
+#8452 [MERGED] Entity Store: Generic KV State + Append-Only Log for GitHub Issues/PRs
+  </tool_result>
+  <assistant>OK, here's the full picture:
+
+**State of affairs:**
+- PR #8452 (`plnd/entity-store-kv-log-02-28-1104`) — the parent — was **MERGED**
+- PR #8456 (`plnd/block-type-registry-02-28-0854`) — still has its `baseRefName` pointing to the merged parent's branch
+- Graphite locally re-parented the branch to `master` (cache shows `parentBranchName: "master"`)
+- But the GitHub PR base ref was never updated to `master`
+
+This is a **stale stack state**. What happened:
+1. You had a 2-PR stack: #8452 → #8456
+2. #8452 got merged to master
+3. Graphite locally updated the parent to `master`
+4. But nobody ran `gt submit` (or similar) to update the GitHub PR's base ref from `plnd/entity-store-kv-log-02-28-1104` → `master`
+
+**What needs to happen:** The PR needs to be **restacked** — its GitHub base ref needs to change from the now-merged parent branch to `master`. In Graphite terms, this is typically handled by `gt restack` (to rebase onto the new parent) followed by `gt submit` (to push and update the PR's base ref on GitHub).
+
+The 🥞 emoji is actually **correctly signaling** that the PR is in a stacked state that needs attention — it's targeting a non-master branch that no longer exists. It's not a false positive; it's telling you "this PR has a stacking relationship that needs to be resolved."
+
+**To fix operationally:**
+1. Checkout the branch: `gt checkout plnd/block-type-registry-02-28-0854`
+2. Restack: `gt restack --no-interactive` (rebases onto master since Graphite knows the parent is now master)
+3. Submit: `gt submit --no-interactive` (pushes and updates the GitHub PR base to master)
+
+After that, the GitHub PR's `baseRefName` would be `master`, and the 🥞 would disappear.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="176" cache_read_input_tokens="49482" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 176}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01ShVU1YURHf91tL2LJHBRDR">
+    <param name="questions">[{'question': "So the state is: PR #8452 (parent) was merged, but #8456 still targets the ...[truncated 842 chars]...tically restack and submit child PRs so this state never occurs'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="176" cache_read_input_tokens="49482" output_tokens="846" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 176, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ShVU1YURHf91tL2LJHBRDR">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+  <user>what i'm saying is that we might want to distinguish between stale and non-stale if we can</user>
+  <assistant>
+
+Good idea. So you're thinking: the 🥞 emoji is useful when the PR is genuinely part of an active stack, but misleading when the parent was already merged and the base ref is just stale. We could show a different indicator (or suppress it) for the "orphaned" case.
+
+Let me check what data we already have available to distinguish these cases.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1224" cache_read_input_tokens="49658" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1224}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012K1VkZdYrvA9Xdn3BGHdkJ">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="offset">670</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1224" cache_read_input_tokens="49658" output_tokens="207" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1224, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012K1VkZdYrvA9Xdn3BGHdkJ">
+   670→                emoji = get_pr_status_emoji(selected_pr)
+   671→                if selected_pr.will_close_target:
+   672→                    emoji += "🔗"
+   673→                pr_display = f"#{selected_pr.number} {emoji}"
+   674→                checks_display = format_checks_cell(selected_pr)
+   675→
+   676→                # Extract status fields for lifecycle enrichment
+   677→                pr_is_draft = selected_pr.is_draft
+   678→                pr_has_conflicts = selected_pr.has_conflicts
+   679→                pr_review_decision = selected_pr.review_decision
+   680→                pr_checks_passing = selected_pr.checks_passing
+   681→                pr_checks_counts = selected_pr.checks_counts
+   682→                if selected_pr.base_ref_name is not None:
+   683→                    pr_is_stacked = selected_pr.base_ref_name not in ("master", "main")
+   684→
+   685→                # Supplement with Graphite's local stack tracking — plan PRs
+   686→                # always target master on GitHub even when Graphite-stacked
+   687→                if pr_is_stacked is not True and pr_head_branch is not None:
+   688→                    parent = self._ctx.branch_manager.get_parent_branch(
+   689→                        self._location.root, pr_head_branch
+   690→                    )
+   691→                    if parent is not None and parent not in ("master", "main"):
+   692→                        pr_is_stacked = True
+   693→
+   694→                # Get review thread counts from batched PR data
+   695→                if selected_pr.review_thread_counts is not None:
+   696→                    resolved_comment_count, total_comment_count = selected_pr.review_thread_counts
+   697→                    comments_display = f"{resolved_comment_count}/{total_comment_count}"
+   698→                    pr_has_unresolved_comments = total_comment_count &gt; resolved_comment_count
+   699→                else:
+
+... [10 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me check what data the `selected_pr` object carries — specifically whether we already have batched PR data that could tell us if the base branch's PR was merged.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="961" cache_read_input_tokens="50882" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 961}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_019pVbn3Ed1HbmypB9eRsv32">
+    <param name="pattern">base_ref_name</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway</param>
+    <param name="output_mode">content</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="961" cache_read_input_tokens="50882" output_tokens="175" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 961, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019pVbn3Ed1HbmypB9eRsv32">
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/gt/operations/land_pr.py-132-        )
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/gt/operations/land_pr.py-133-        return
+packages/erk-shared/src/erk_shared/gateway/gt/operations/land_pr.py:134:    pr_base = pr_details.base_ref_name
+packages/erk-shared/src/erk_shared/gateway/gt/operations/land_pr.py-135-    if pr_base != trunk:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/gt/operations/land_pr.py-136-        yield CompletionEvent(
+--
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py-680-                pr_checks_passing = selected_pr.checks_passing
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py-681-                pr_checks_counts = selected_pr.checks_counts
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py:682:                if selected_pr.base_ref_name is not None:
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py:683:                    pr_is_stacked = selected_pr.base_ref_name not in ("master", "main")
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py-684-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py-685-                # Supplement with Graphite's local stack tracking — plan PRs
+--
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py-153-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py-154-    # Structure
+packages/erk-shared/src/erk_shared/gateway/github/types.py:155:    base_ref_name: str
+packages/erk-shared/src/erk_shared/gateway/github/types.py-156-    head_ref_name: str
+packages/erk-shared/src/erk_shared/gateway/github/types.py-157-    is_cross_repository: bool
+--
+packages/erk-shared/src/erk_shared/gateway/github/types.py-231-    review_decision: str | None = None
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py-232-    # Base branch name (the target branch) - optional, populated by some API calls
+packages/erk-shared/src/erk_shared/gateway/github/types.py:233:    base_ref_name: str | None = None
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py-234-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py-235-
+--
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py-1223-            head_branch=head_ref_name,
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py-1224-            review_decision=review_decision,
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1225:            base_ref_name=source.get("baseRefName"),
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py-1226-        )
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py-1227-        return (pr_info, created_at_pr)
+
+... [60 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me look at the lifecycle function signature to understand the `is_stacked` parameter:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3787" cache_read_input_tokens="51843" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3787}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WJFSdR96iA4yeKyz95hv2w">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py</param>
+    <param name="offset">180</param>
+    <param name="limit">70</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3787" cache_read_input_tokens="51843" output_tokens="145" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3787, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WJFSdR96iA4yeKyz95hv2w">
+   180→    has_unresolved_comments: bool | None,
+   181→    is_stacked: bool | None = None,
+   182→) -&gt; list[str]:
+   183→    """Build list of emoji indicators for a lifecycle stage.
+   184→
+   185→    Shared logic used by both compute_status_indicators() and
+   186→    format_lifecycle_with_status().
+   187→
+   188→    Args:
+   189→        lifecycle_display: Pre-formatted lifecycle string (may contain Rich markup)
+   190→        is_draft: True for draft PR, False for published PR, None if unknown
+   191→        has_conflicts: True if PR has merge conflicts, False/None otherwise
+   192→        review_decision: "APPROVED", "CHANGES_REQUESTED", "REVIEW_REQUIRED", or None
+   193→        checks_passing: True if all CI checks pass, False/None otherwise
+   194→        has_unresolved_comments: True if there are unresolved review threads,
+   195→            False/None otherwise
+   196→        is_stacked: True if PR base branch is not master/main, None if unknown
+   197→
+   198→    Returns:
+   199→        List of emoji indicator strings
+   200→    """
+   201→    # Detect stage from the display string content
+   202→    is_planned = "planned" in lifecycle_display
+   203→    is_impl = "impl" in lifecycle_display  # matches "impl", "implementing", "implemented"
+   204→    is_review = "review" in lifecycle_display and "REVIEW" not in lifecycle_display
+   205→    is_active_stage = is_planned or is_impl or is_review
+   206→
+   207→    # Build indicator suffix — all emojis go on the right for consistency
+   208→    indicators: list[str] = []
+   209→
+
+... [30 lines omitted] ...
+  </tool_result>
+  <assistant>OK so the current type is `is_stacked: bool | None`. To distinguish stale vs active stacking, we'd need to change this to something richer. Let me think about what data is available:
+
+At line 682-683, when `base_ref_name` is not master/main, we know the PR targets another branch. We could cross-reference that branch against the Graphite local parent. If Graphite says parent is `master` but GitHub says base is some other branch, that's the "stale/orphaned" case.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1021" cache_read_input_tokens="55630" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1021}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01XV7B5eFn6jcdFAJHyCN9XZ">
+    <param name="questions">[{'question': "For distinguishing stale vs active stacking, I see two signals we can cross...[truncated 746 chars]...ntext (e.g. tooltip, different color, or a secondary indicator)'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1021" cache_read_input_tokens="55630" output_tokens="477" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1021, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XV7B5eFn6jcdFAJHyCN9XZ">
+User has answered your questions: "For distinguishing stale vs active stacking, I see two signals we can cross-reference:
+
+1. **GitHub `base_ref_name`** says `plnd/entity-store-kv-log-02-28-1104` (non-master)
+2. **Graphite local parent** says `master`
+
+When these disagree (GitHub says stacked, Graphite says master), that's the stale case — the parent was landed but the PR base was never updated.
+
+What indicator would you want for the stale case? Some options:"="what is your recommendation" user notes: what is your recommendation. You can now continue with the user's answers in mind.
+  </tool_result>
+  <assistant>I'd recommend **suppressing it entirely**. Here's my reasoning:
+
+The 🥞 emoji's purpose is to signal "this PR depends on another PR that needs to land first." When the parent is already merged, that information is no longer actionable in the same way — the dependency is resolved. What remains is just a GitHub metadata cleanup task (rebase + submit to update the base ref).
+
+Showing a different emoji for the stale case adds cognitive load — the user now has to learn two stack indicators. And the stale state is transient; it only exists until the next `gt submit`. It's not something you'd want to track or act on differently in the dashboard.
+
+The one caveat: you *do* want to eventually restack/submit to clean up the GitHub base ref. But that's more of a "needs attention" item than a stacking concern. If we suppress the 🥞, we could optionally add detection elsewhere (like `erk land` pre-checks or a lint/audit), but the dashboard indicator itself should just reflect the true stacking state — which is "not stacked" once the parent has landed.
+
+So: **if Graphite says parent is master/main, trust Graphite over GitHub's stale `base_ref_name`**. Concretely, we'd change the logic to check Graphite first, and only fall through to the GitHub `base_ref_name` check if Graphite doesn't have an opinion (branch not tracked).
+
+Let me write up the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="751" cache_read_input_tokens="56651" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 751}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DPrbG2yFfz5LpH6mQ53eDR">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="offset">650</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="751" cache_read_input_tokens="56651" output_tokens="459" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 751, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DPrbG2yFfz5LpH6mQ53eDR">
+   650→        pr_is_draft: bool | None = None
+   651→        pr_has_conflicts: bool | None = None
+   652→        pr_review_decision: str | None = None
+   653→        pr_checks_passing: bool | None = None
+   654→        pr_checks_counts: tuple[int, int] | None = None
+   655→        pr_has_unresolved_comments: bool | None = None
+   656→        pr_is_stacked: bool | None = None
+   657→
+   658→        if plan_id in pr_linkages:
+   659→            issue_prs = pr_linkages[plan_id]
+   660→            selected_pr = select_display_pr(issue_prs, exclude_pr_numbers=None)
+   661→            if selected_pr is not None:
+   662→                pr_number = selected_pr.number
+   663→                pr_title = selected_pr.title
+   664→                pr_state = selected_pr.state
+   665→                pr_head_branch = selected_pr.head_branch
+   666→                graphite_url = self._ctx.graphite.get_graphite_url(
+   667→                    GitHubRepoId(selected_pr.owner, selected_pr.repo), selected_pr.number
+   668→                )
+   669→                pr_url = graphite_url if use_graphite and graphite_url else selected_pr.url
+   670→                emoji = get_pr_status_emoji(selected_pr)
+   671→                if selected_pr.will_close_target:
+   672→                    emoji += "🔗"
+   673→                pr_display = f"#{selected_pr.number} {emoji}"
+   674→                checks_display = format_checks_cell(selected_pr)
+   675→
+   676→                # Extract status fields for lifecycle enrichment
+   677→                pr_is_draft = selected_pr.is_draft
+   678→                pr_has_conflicts = selected_pr.has_conflicts
+   679→                pr_review_decision = selected_pr.review_decision
+
+... [20 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me check the test file to understand what tests exist for this:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1445" cache_read_input_tokens="57402" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1445}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01GrV9NgmLDSQga5qhsLxuzm">
+    <param name="pattern">is_stacked|stacked.*pancake|pancake|🥞</param>
+    <param name="path">/Users/schrockn/code/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1445" cache_read_input_tokens="57402" output_tokens="137" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1445, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GrV9NgmLDSQga5qhsLxuzm">
+Found 1 file
+tests/unit/plan_store/test_lifecycle_display.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01QmX5M3kfMTMfLmD1zB1guQ">
+    <param name="pattern">is_stacked|stacked|pancake|🥞</param>
+    <param name="path">/Users/schrockn/code/erk/tests/unit/plan_store/test_lifecycle_display.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="170" cache_read_input_tokens="58847" output_tokens="146" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 170, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QmX5M3kfMTMfLmD1zB1guQ">
+19-    review_decision: str | None,
+20-    checks_passing: bool | None = None,
+21-    has_unresolved_comments: bool | None = None,
+22:    is_stacked: bool | None = None,
+23-) -&gt; str:
+24-    """Test helper: wraps format_lifecycle_with_status with None defaults for check params."""
+25-    return format_lifecycle_with_status(
+--
+29-        review_decision=review_decision,
+30-        checks_passing=checks_passing,
+31-        has_unresolved_comments=has_unresolved_comments,
+32:        is_stacked=is_stacked,
+33-    )
+34-
+35-
+--
+588-    review_decision: str | None = None,
+589-    checks_passing: bool | None = None,
+590-    has_unresolved_comments: bool | None = None,
+591:    is_stacked: bool | None = None,
+592-) -&gt; str:
+593-    """Test helper: wraps compute_status_indicators with None defaults."""
+594-    return compute_status_indicators(
+--
+598-        review_decision=review_decision,
+599-        checks_passing=checks_passing,
+600-        has_unresolved_comments=has_unresolved_comments,
+601:        is_stacked=is_stacked,
+602-    )
+603-
+
+... [61 lines omitted] ...
+  </tool_result>
+  <assistant>Good, the tests are all at the lifecycle display layer (which just takes `is_stacked: bool | None`). The fix is in the data provider layer where `pr_is_stacked` is computed. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1338" cache_read_input_tokens="59017" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1338}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01Tm2FGm8DDgBZVpxRgAaApu">
+    <param name="file_path">/Users/schrockn/.claude/plans/hashed-wandering-mist.md</param>
+    <param name="content"># Fix: Suppress stale stack (🥞) indicator when parent PR is already merged
+
+## Context
+
+Wh...[truncated 2394 chars]... Verify in `erk dash` that PR #8456 no longer shows 🥞 (since Graphite parent is `master`)
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1338" cache_read_input_tokens="59017" output_tokens="927" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1338, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Tm2FGm8DDgBZVpxRgAaApu">
+File created successfully at: /Users/schrockn/.claude/plans/hashed-wandering-mist.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01AT9jSYY3sPQF7gzY9BjdoV">
+    <param name="plan"># Fix: Suppress stale stack (🥞) indicator when parent PR is already merged
+
+## Context
+
+Wh...[truncated 2394 chars]... Verify in `erk dash` that PR #8456 no longer shows 🥞 (since Graphite parent is `master`)
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="966" cache_read_input_tokens="60355" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 966, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AT9jSYY3sPQF7gzY9BjdoV">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/hashed-wandering-mist.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix: Suppress stale stack (🥞) indicator when parent PR is already merged
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id dc405c88-472e-4b5f-b3b7-4b1eae2043c0 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_018wZrXsDSmSZ2ef57vRnQTX">
+    <param name="file_path">/Users/schrockn/.claude/plans/hashed-wandering-mist.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="668" cache_read_input_tokens="61321" output_tokens="74" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 668, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018wZrXsDSmSZ2ef57vRnQTX">
+     1→# Fix: Suppress stale stack (🥞) indicator when parent PR is already merged
+     2→
+     3→## Context
+     4→
+     5→When a stacked PR's parent is merged, Graphite locally re-parents the branch to `master`, but the GitHub PR's `baseRefName` still points to the old (now-deleted) parent branch. The current stack detection logic checks GitHub's `base_ref_name` first and shows 🥞 whenever it's not master/main — even when the stack relationship is stale and the parent has already landed.
+     6→
+     7→**Root cause:** The detection order prioritizes GitHub's `base_ref_name` (line 682-683) over Graphite's local parent tracking (lines 687-692). Graphite is the authoritative source for current stacking state, but it's only consulted as a fallback when GitHub says "not stacked."
+     8→
+     9→**Fix:** Reverse the priority — check Graphite first (authoritative), then fall back to GitHub's `base_ref_name` only when Graphite doesn't track the branch.
+    10→
+    11→## Change
+    12→
+    13→**File:** `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py` (lines 682-692)
+    14→
+    15→**Current logic:**
+    16→```python
+    17→# 1. Check GitHub base_ref_name (primary)
+    18→if selected_pr.base_ref_name is not None:
+    19→    pr_is_stacked = selected_pr.base_ref_name not in ("master", "main")
+    20→
+    21→# 2. Supplement with Graphite (fallback — only if GitHub said "not stacked")
+    22→if pr_is_stacked is not True and pr_head_branch is not None:
+    23→    parent = self._ctx.branch_manager.get_parent_branch(...)
+    24→    if parent is not None and parent not in ("master", "main"):
+    25→        pr_is_stacked = True
+    26→```
+    27→
+    28→**New logic:**
+    29→```python
+    30→# 1. Check Graphite local parent (authoritative when available)
+
+... [23 lines omitted] ...
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01H3MVfwiWLjfuVhgMWFogpb">
+    <param name="questions">[{'question': '📋 Fix: Suppress stale stack (🥞) indicator when parent PR is already merged\...[truncated 456 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1042" cache_read_input_tokens="61989" output_tokens="241" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1042, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01H3MVfwiWLjfuVhgMWFogpb">
+User has answered your questions: "📋 Fix: Suppress stale stack (🥞) indicator when parent PR is already merged
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_019oFbqqoZPoxFgE1c28Uw2z">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="428" cache_read_input_tokens="63031" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 428, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019oFbqqoZPoxFgE1c28Uw2z">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 1.5: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 2: Run Save Command
+
+Run this command with the session ID, branch slug, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="dc405c88-472e-4b5f-b3b7-4b1eae2043c0" --branch-slug="${BRANCH_SLUG}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 3.
+
+If the command fails, display the error and stop.
+
+### Step 3: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 2.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 3.5: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "dc405c88-472e-4b5f-b3b7-4b1eae2043c0" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 4: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 3, 3.5 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "dc405c88-472e-4b5f-b3b7-4b1eae2043c0" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <thinking>The user chose to create a plan PR. I need to follow the skill instructions to save the plan.
+
+Let me parse the arguments first - no special flags were passed.
+
+Then I need to generate a branch slug from the plan title: "Fix: Suppress stale stack (🥞) indicator when parent PR is already merged"
+
+Branch slug: "fix-stale-stack-indicator" (good - 3 words, descriptive, under 30 chars)
+
+Then run the save command.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="2190" cache_read_input_tokens="63459" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2190}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>The plan title is "Fix: Suppress stale stack (🥞) indicator when parent PR is already merged". Branch slug: `fix-stale-stack-indicator`.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2190" cache_read_input_tokens="63459" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2190}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017sa3MT2qw8QcTdTGBoirBX">
+    <param name="command">erk exec plan-save --format json --session-id="dc405c88-472e-4b5f-b3b7-4b1eae2043c0" --branch-slug="fix-stale-stack-indicator"</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2190" cache_read_input_tokens="63459" output_tokens="309" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2190, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017sa3MT2qw8QcTdTGBoirBX">
+{"success": true, "plan_number": 8468, "plan_url": "https://github.com/dagster-io/erk/pull/8468", "title": "[erk-plan] Fix: Suppress stale stack (\ud83e\udd5e) indicator when parent PR is already merged", "branch_name": "plnd/fix-stale-stack-indicator-02-28-1116", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/dc405c88-472e-4b5f-b3b7-4b1eae2043c0/plan_snapshots/000001-710d69dc"}
+  </tool_result>
+  <assistant>Plan "Fix: Suppress stale stack (🥞) indicator when parent PR is already merged" saved as draft PR **#8468**
+URL: https://github.com/dagster-io/erk/pull/8468
+
+**Next steps:**
+
+View PR: https://github.com/dagster-io/erk/pull/8468
+
+In Claude Code:
+  Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: `erk br co --new-slot --for-plan 8468`
+    Implement: `source "$(erk br co --new-slot --for-plan 8468 --script)" &amp;&amp; erk implement --dangerous`
+
+  Same slot:
+    Local: `erk br co --for-plan 8468`
+    Implement: `source "$(erk br co --for-plan 8468 --script)" &amp;&amp; erk implement --dangerous`
+
+  Dispatch to Queue: `erk pr dispatch 8468`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="611" cache_read_input_tokens="65649" output_tokens="259" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 611, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-dispatch&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-dispatch&lt;/command-name&gt;</user>
+  <user># /erk:pr-dispatch
+
+## Goal
+
+Find the most recent plan created in this conversation and dispatch it for remote AI implementation via `erk pr dispatch`.
+
+## What This Command Does
+
+1. Search conversation for the last plan reference
+2. Extract the plan number
+3. Run `erk pr dispatch &lt;plan_number&gt;` to trigger remote implementation
+
+## Finding the Plan
+
+Search the conversation from bottom to top for these patterns (in priority order):
+
+1. **Draft PR reference**: `saved as draft PR #&lt;number&gt;` or `draft PR #&lt;number&gt;`
+2. **Pull request URL**: `https://github.com/&lt;owner&gt;/&lt;repo&gt;/pull/&lt;number&gt;`
+3. **Plan URL**: `https://github.com/.../pull/&lt;number&gt;` (legacy: `https://github.com/.../issues/&lt;number&gt;`)
+
+Extract the plan number from the most recent match.
+
+## Execution
+
+Once you have the plan number, run:
+
+```bash
+erk pr dispatch &lt;plan_number&gt;
+```
+
+If the command succeeds, clear the session marker to allow creating new plans in this session:
+
+```bash
+erk exec marker delete --session-id "dc405c88-472e-4b5f-b3b7-4b1eae2043c0" plan-saved-issue
+```
+
+Display the command output to the user. The `erk pr dispatch` command handles all validation (plan existence, labels, state).
+
+## Error Cases
+
+- **No plan found in conversation**: Report "No plan found in conversation. Run /erk:plan-save first to create a plan."
+- **erk pr dispatch fails**: Display the error output from the command (erk pr dispatch validates the plan)
+</user>
+  <assistant>
+
+The most recent plan is **#8468**. Dispatching it for remote implementation.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="830" cache_read_input_tokens="66260" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 830}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01EZ15mavx48Ce5CRfAvBJz6">
+    <param name="command">erk pr dispatch 8468</param>
+    <param name="description">Dispatch plan #8468 for remote implementation</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="830" cache_read_input_tokens="66260" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 830, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EZ15mavx48Ce5CRfAvBJz6">
+Checking GitHub authentication...
+Syncing trunk with remote...
+Syncing master with origin/master...
+✓ master synced with origin/master
+Resolving GitHub username...
+Validating 1 planned-PR plan(s)...
+
+Validating PR #8468...
+
+✓ All 1 plan(s) validated
+
+  #8468: [erk-plan] Fix: Suppress stale stack (🥞) indicator when parent PR is already merged
+
+Dispatching PR #8468...
+
+Fetching plan content...
+Checking out existing plan branch: plnd/fix-stale-stack-indicator-02-28-1116
+Cleaning up previous .erk/impl-context/ folder...
+Creating .erk/impl-context/ folder...
+✓ Branch pushed to remote
+
+Triggering workflow: plan-implement.yml
+  Waiting for workflow run... (attempt 1/11)
+  Waiting for workflow run... (attempt 2/11)
+✓ Workflow triggered.
+✓ Dispatch metadata written
+Posting queued event comment...
+✓ Queued event comment posted
+
+
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>Dispatched successfully. Now clearing the session marker.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4099" cache_read_input_tokens="67090" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4099}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VVC4Rap5oqebwZqpjEwR7j">
+    <param name="command">erk exec marker delete --session-id "dc405c88-472e-4b5f-b3b7-4b1eae2043c0" plan-saved-issue</param>
+    <param name="description">Clear plan-saved marker</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4099" cache_read_input_tokens="67090" output_tokens="127" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4099, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VVC4Rap5oqebwZqpjEwR7j">
+{"success": true, "message": "Deleted marker: plan-saved-issue"}
+  </tool_result>
+  <assistant>Plan **#8468** dispatched for remote implementation.
+
+- **Plan**: https://github.com/dagster-io/erk/pull/8468
+- **Workflow**: https://github.com/dagster-io/erk/actions/runs/22524304028</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="158" cache_read_input_tokens="71189" output_tokens="66" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 158, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;See ya!&lt;/local-command-stdout&gt;</user>
+</session>
