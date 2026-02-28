@@ -39,8 +39,12 @@ from erk_shared.plan_store.create_plan_draft_pr import create_plan_draft_pr
     "--session-id",
     help="Session ID to search within (optional, searches all sessions if not provided)",
 )
+@click.option(
+    "--summary",
+    help="AI-generated summary to display above the collapsed plan in the PR body",
+)
 @click.pass_context
-def create_pr_from_session(ctx: click.Context, session_id: str | None) -> None:
+def create_pr_from_session(ctx: click.Context, session_id: str | None, summary: str | None) -> None:
     """Extract plan from Claude session and create GitHub draft PR.
 
     Combines plan extraction with draft PR creation in a single operation.
@@ -80,7 +84,7 @@ def create_pr_from_session(ctx: click.Context, session_id: str | None) -> None:
         created_from_session=session_id,
         created_from_workflow_run_url=None,
         learned_from_issue=None,
-        summary=None,
+        summary=summary or "",
         extra_files=None,
     )
 

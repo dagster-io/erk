@@ -139,7 +139,7 @@ def _save_as_planned_pr(
         created_from_workflow_run_url: GitHub Actions workflow run URL
         branch_slug: Pre-generated branch slug (skips LLM call when provided)
         node_ids: Objective roadmap node IDs to associate with this plan
-        summary: Optional AI-generated summary for the PR description
+        summary: AI-generated summary for the PR description (None coerced to empty string)
         session_xml_dir: Directory containing session XML files to embed in the PR diff
     """
     repo_root = require_repo_root(ctx)
@@ -278,7 +278,7 @@ def _save_as_planned_pr(
         content=plan_content,
         labels=tuple(labels),
         metadata=metadata,
-        summary=summary,
+        summary=summary or "",
     )
 
     if not result.plan_id.isdigit():

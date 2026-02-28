@@ -251,7 +251,7 @@ class PlannedPRBackend(PlanBackend):
         content: str,
         labels: tuple[str, ...],
         metadata: Mapping[str, object],
-        summary: str | None,
+        summary: str,
     ) -> CreatePlanResult:
         """Create a new plan as a draft PR.
 
@@ -269,7 +269,7 @@ class PlannedPRBackend(PlanBackend):
                 - source_repo: str | None
                 - objective_issue: int | None
                 - created_from_session: str | None
-            summary: Optional AI-generated summary to display above the collapsed plan
+            summary: AI-generated summary (empty string if none)
 
         Returns:
             CreatePlanResult with plan_id (PR number) and url
@@ -479,6 +479,8 @@ class PlannedPRBackend(PlanBackend):
         repo_root: Path,
         plan_id: str,
         content: str,
+        *,
+        summary: str,
     ) -> None:
         """Update the plan content in the PR body.
 
@@ -488,6 +490,7 @@ class PlannedPRBackend(PlanBackend):
             repo_root: Repository root directory
             plan_id: PR number as string
             content: New plan content
+            summary: AI-generated summary (empty string if none)
 
         Raises:
             RuntimeError: If PR not found
@@ -502,7 +505,7 @@ class PlannedPRBackend(PlanBackend):
         plan_header = find_metadata_block(result.body, "plan-header")
         if plan_header is not None:
             updated_body = build_plan_stage_body(
-                render_metadata_block(plan_header), content, summary=None
+                render_metadata_block(plan_header), content, summary=summary
             )
         else:
             # No metadata block found - just set the content

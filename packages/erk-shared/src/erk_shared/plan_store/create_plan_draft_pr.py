@@ -65,7 +65,7 @@ def create_plan_draft_pr(
     created_from_session: str | None,
     created_from_workflow_run_url: str | None,
     learned_from_issue: int | None,
-    summary: str | None,
+    summary: str,
     extra_files: dict[str, str] | None,
 ) -> CreatePlanDraftPRResult:
     """Create a plan as a draft PR with plan content committed to branch.
@@ -98,7 +98,7 @@ def create_plan_draft_pr(
         created_from_session: Optional session ID
         created_from_workflow_run_url: Optional workflow run URL
         learned_from_issue: Optional parent plan issue number (for learn plans)
-        summary: Optional AI-generated summary for the PR description
+        summary: AI-generated summary (empty string if none)
         extra_files: Optional additional files to commit alongside plan.md and ref.json
 
     Returns:

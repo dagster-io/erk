@@ -381,6 +381,12 @@ def _create_learn_pr_impl(
         f"## Sessions\n\n{session_section}"
     )
 
+    # Build deterministic summary (no LLM call needed for learn plans)
+    summary = (
+        f'Learn plan for "{plan_result.title}" (PR #{state.merged_pr_number}). '
+        f"Captures implementation insights from {len(all_session_ids)} session(s)."
+    )
+
     # Create the learn plan as a draft PR
     result = create_plan_draft_pr(
         git=ctx.git,
@@ -398,7 +404,7 @@ def _create_learn_pr_impl(
         created_from_session=None,
         created_from_workflow_run_url=None,
         learned_from_issue=int(plan_id),
-        summary=None,
+        summary=summary,
         extra_files=xml_files or None,
     )
 

@@ -43,6 +43,10 @@ The plan MUST be self-contained for a separate Claude session to implement. Incl
 
 Follow the planning conventions in `docs/learned/planning/` if available.
 
+## Step 5.5: Generate Plan Summary
+
+Generate a 2-3 sentence summary of the plan you wrote in Step 5. Focus on WHAT the plan does and WHY. Plain text, no markdown formatting. Store the result in `PLAN_SUMMARY`.
+
 ## Step 6: Save Plan to GitHub
 
 Check the `$PLAN_ISSUE_NUMBER` environment variable:
@@ -50,7 +54,7 @@ Check the `$PLAN_ISSUE_NUMBER` environment variable:
 **If `$PLAN_ISSUE_NUMBER` is set (non-empty):** A skeleton plan was pre-created at dispatch time. Update it with the real plan content:
 
 ```bash
-erk exec plan-update --plan-number $PLAN_ISSUE_NUMBER --plan-path .erk/impl-context/plan.md --format json
+erk exec plan-update --plan-number $PLAN_ISSUE_NUMBER --plan-path .erk/impl-context/plan.md --format json --summary="${PLAN_SUMMARY}"
 ```
 
 Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, use `$PLAN_ISSUE_NUMBER` as the `plan_number`. To get the `title`, extract the first `# ` heading from `.erk/impl-context/plan.md`.

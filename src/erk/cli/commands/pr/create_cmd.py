@@ -23,12 +23,14 @@ from erk_shared.plan_store.create_plan_draft_pr import create_plan_draft_pr
 )
 @click.option("--title", "-t", type=str, help="Plan title (default: extract from H1)")
 @click.option("--label", "-l", multiple=True, help="Additional labels")
+@click.option("--summary", help="AI-generated summary to display above the collapsed plan")
 @click.pass_obj
 def pr_create(
     ctx: ErkContext,
     file: Path | None,
     title: str | None,
     label: tuple[str, ...],
+    summary: str | None,
 ) -> None:
     """Create a plan as a draft PR from markdown content.
 
@@ -102,7 +104,7 @@ def pr_create(
         created_from_session=None,
         created_from_workflow_run_url=None,
         learned_from_issue=None,
-        summary=None,
+        summary=summary or "",
         extra_files=None,
     )
 

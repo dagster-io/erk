@@ -94,7 +94,7 @@ _LEGACY_DETAILS_OPEN = "<details>\n<summary><code>original-plan</code></summary>
 DETAILS_CLOSE = "\n\n</details>"
 
 
-def build_plan_stage_body(metadata_body: str, plan_content: str, *, summary: str | None) -> str:
+def build_plan_stage_body(metadata_body: str, plan_content: str, *, summary: str) -> str:
     """Build Stage 1 body: details-wrapped plan + metadata at bottom.
 
     The footer is NOT included here because it needs the PR number,
@@ -103,13 +103,13 @@ def build_plan_stage_body(metadata_body: str, plan_content: str, *, summary: str
     Args:
         metadata_body: Rendered plan-header metadata block
         plan_content: Plan markdown content
-        summary: Optional AI-generated summary to display above the collapsed plan
+        summary: AI-generated summary (empty string if none)
 
     Returns:
         Combined PR body ready for ``create_pr`` (without footer)
     """
     plan_section = DETAILS_OPEN + plan_content + DETAILS_CLOSE
-    if summary is not None:
+    if summary:
         plan_section = summary + "\n\n" + plan_section
     return plan_section + "\n\n" + metadata_body
 
