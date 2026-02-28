@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Remove Dead Code and Test-Only Symbols"
+  "plan_id": "8450",
+  "url": "https://github.com/dagster-io/erk/pull/8450",
+  "created_at": "2026-02-28T10:02:50.839369",
+  "synced_at": "2026-02-28T10:02:50.839369",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
