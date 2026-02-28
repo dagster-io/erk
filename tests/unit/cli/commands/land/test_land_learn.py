@@ -297,6 +297,7 @@ def _make_session_jsonl(*, session_id: str, user_turns: int, duration_seconds: i
     base_ts = 1700000000.0
     lines: list[str] = []
     ts = base_ts
+    ts_step = duration_seconds / max(user_turns * 2 - 1, 1)
     for i in range(user_turns):
         lines.append(json.dumps({
             "type": "user",
@@ -304,14 +305,14 @@ def _make_session_jsonl(*, session_id: str, user_turns: int, duration_seconds: i
             "timestamp": ts,
             "message": {"content": [{"type": "text", "text": f"User message {i + 1}"}]},
         }))
-        ts += duration_seconds / max(user_turns * 2 - 1, 1)
+        ts += ts_step
         lines.append(json.dumps({
             "type": "assistant",
             "sessionId": session_id,
             "timestamp": ts,
             "message": {"content": [{"type": "text", "text": f"Assistant response {i + 1}"}]},
         }))
-        ts += duration_seconds / max(user_turns * 2 - 1, 1)
+        ts += ts_step
     return "\n".join(lines) + "\n"
 
 

@@ -13,7 +13,21 @@ import click
 from rich.console import Console
 from rich.table import Table
 
+from erk.cli.commands.exec.scripts.preprocess_session import (
+    deduplicate_assistant_messages,
+    deduplicate_documentation_blocks,
+    discover_agent_logs,
+    is_empty_session,
+    is_warmup_session,
+    process_log_file,
+    split_entries_to_chunks,
+    truncate_tool_parameters,
+)
 from erk.core.context import ErkContext
+from erk_shared.learn.extraction.session_schema import (
+    iter_jsonl_entries,
+    parse_session_timestamp,
+)
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.create_plan_draft_pr import create_plan_draft_pr
 from erk_shared.plan_store.types import PlanNotFound
@@ -35,6 +49,20 @@ class SessionStats:
     xml_size_kb: int
 
 
+def _has_user_text(message_content: str | list) -> bool:
+    """Check if message content contains non-empty user text."""
+    if isinstance(message_content, list):
+        return any(
+            isinstance(block, dict)
+            and block.get("type") == "text"
+            and block.get("text", "").strip()
+            for block in message_content
+        )
+    if isinstance(message_content, str):
+        return bool(message_content.strip())
+    return False
+
+
 def _compute_session_stats(session_path: Path, *, session_id: str) -> SessionStats | None:
     """Compute preprocessing stats for a session.
 
@@ -43,21 +71,6 @@ def _compute_session_stats(session_path: Path, *, session_id: str) -> SessionSta
 
     Returns None if preprocessing fails (e.g. corrupt JSONL).
     """
-    from erk.cli.commands.exec.scripts.preprocess_session import (
-        deduplicate_assistant_messages,
-        deduplicate_documentation_blocks,
-        discover_agent_logs,
-        is_empty_session,
-        is_warmup_session,
-        process_log_file,
-        split_entries_to_chunks,
-        truncate_tool_parameters,
-    )
-    from erk_shared.learn.extraction.session_schema import (
-        iter_jsonl_entries,
-        parse_session_timestamp,
-    )
-
     if not session_path.exists():
         return None
 
@@ -71,19 +84,7 @@ def _compute_session_stats(session_path: Path, *, session_id: str) -> SessionSta
             timestamps.append(ts)
         if entry.get("type") == "user":
             message_content = entry.get("message", {}).get("content", "")
-            has_text = False
-            if isinstance(message_content, list):
-                for block in message_content:
-                    if (
-                        isinstance(block, dict)
-                        and block.get("type") == "text"
-                        and block.get("text", "").strip()
-                    ):
-                        has_text = True
-                        break
-            elif isinstance(message_content, str) and message_content.strip():
-                has_text = True
-            if has_text:
+            if _has_user_text(message_content):
                 user_turns += 1
 
     duration_minutes: int | None = None
