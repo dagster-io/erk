@@ -30,13 +30,13 @@ Store the result for analysis.
 
 Assign each PR to exactly one tier (highest applicable wins):
 
-| Tier | Category                           | Heuristics                                                                                 |
-| ---- | ---------------------------------- | ------------------------------------------------------------------------------------------ |
-| 1    | Bug Fixes                          | Title contains "fix" AND corrects behavior (not lint/typo/docs fixes)                      |
-| 2    | Small Safe Changes                 | <=30 total lines changed (additions+deletions) OR purely docs/config/observability changes |
-| 3    | Dead Code Removal / Simplification | deletions > 2x additions AND title contains remove/simplify/delete/clean                   |
-| 4    | New Features / Large Changes       | additions >> deletions, new capabilities, large refactors                                  |
-| 5    | Stale / Empty / Close Candidates   | 0 changes, OR draft >30 days since updatedAt, OR superseded                                |
+| Tier | Code         | Category                           | Heuristics                                                                                 |
+| ---- | ------------ | ---------------------------------- | ------------------------------------------------------------------------------------------ |
+| 1    | `bug-fix`    | Bug Fixes                          | Title contains "fix" AND corrects behavior (not lint/typo/docs fixes)                      |
+| 2    | `safe-tweak` | Small Safe Changes                 | <=30 total lines changed (additions+deletions) OR purely docs/config/observability changes |
+| 3    | `cleanup`    | Dead Code Removal / Simplification | deletions > 2x additions AND title contains remove/simplify/delete/clean                   |
+| 4    | `new-feat`   | New Features / Large Changes       | additions >> deletions, new capabilities, large refactors                                  |
+| 5    | `stale`      | Stale / Empty / Close Candidates   | 0 changes, OR draft >30 days since updatedAt, OR superseded                                |
 
 **Label awareness:** Account for erk-specific labels (`erk-plan`, `erk-pr`, `erk-learn`, `erk-planned-pr`). Plan PRs (`erk-plan`) are tracking issues, not code PRs - classify them in Tier 5 as close candidates if they have 0 code changes.
 
@@ -44,51 +44,28 @@ Assign each PR to exactly one tier (highest applicable wins):
 
 For each PR, derive:
 
-- **CI status** from `statusCheckRollup`: PASSING / FAILING / PENDING / UNKNOWN
-  - PASSING: all checks have conclusion "SUCCESS" or "NEUTRAL"
-  - FAILING: any check has conclusion "FAILURE" or "CANCELLED"
-  - PENDING: any check has state "PENDING" or "QUEUED" and none are failing
-  - UNKNOWN: no checks or empty statusCheckRollup
+- **CI status** from `statusCheckRollup`: PASS / FAIL / PEND / UNK
+  - PASS: all checks have conclusion "SUCCESS" or "NEUTRAL"
+  - FAIL: any check has conclusion "FAILURE" or "CANCELLED"
+  - PEND: any check has state "PENDING" or "QUEUED" and none are failing
+  - UNK: no checks or empty statusCheckRollup
 - **Size**: `+additions/-deletions (N files)`
-- **Staleness**: days since `updatedAt`
+- **Last Updated**: display as `Nd ago` (e.g. `0d ago`, `3d ago`) for scannability
 
-### Phase 4: Within-Tier Ordering
+### Phase 4: Present Analysis
 
-Within each tier, order PRs by:
-
-1. CI passing before failing
-2. Smaller (fewer total lines) before larger
-3. Non-draft before draft
-4. More recently updated before staler
-
-### Phase 5: Present Analysis
-
-Output the analysis in this format:
+Output the analysis as a single flat table ordered by Last Updated descending (most recently updated first), with Tier as a column:
 
 ```
 ## PR Triage Analysis
 
 **Date:** YYYY-MM-DD | **Open PRs:** N | **Passing CI:** N | **Failing CI:** N
 
-### Tier 1: Bug Fixes
-| PR | Title | CI | Size | Draft | Last Updated |
-|...
+| PR | Title | Tier | CI | Size | Draft | Last Updated |
+|----|-------|------|----|------|-------|--------------|
+(all PRs, ordered by Last Updated descending)
 
-### Tier 2: Small Safe Changes
-| PR | Title | CI | Size | Draft | Last Updated |
-|...
-
-### Tier 3: Dead Code Removal / Simplification
-| PR | Title | CI | Size | Draft | Last Updated |
-|...
-
-### Tier 4: New Features / Large Changes
-| PR | Title | CI | Size | Draft | Last Updated |
-|...
-
-### Tier 5: Stale / Empty / Close Candidates
-| PR | Title | CI | Size | Draft | Last Updated | Reason |
-|...
+**Legend:** bug-fix | safe-tweak | cleanup | new-feat | stale
 
 ### Recommended Landing Order
 1. **#NNN** - Title -- rationale
@@ -99,7 +76,7 @@ Output the analysis in this format:
 - **#NNN** - Title -- reason
 ```
 
-### Phase 6: User Interaction
+### Phase 5: User Interaction
 
 After presenting the analysis, ask the user what they want to act on:
 
