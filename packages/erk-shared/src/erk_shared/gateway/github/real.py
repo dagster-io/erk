@@ -1495,7 +1495,7 @@ query {{
         limit: int | None,
         author: str | None,
         exclude_labels: list[str] | None = None,
-    ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
+    ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]], int]:
         """List plan PRs with rich details via REST+GraphQL two-step approach.
 
         Step 1: REST issues endpoint for server-side author/label filtering.
@@ -1531,7 +1531,7 @@ query {{
         try:
             stdout = execute_gh_command_with_retry(cmd, location.root, self._time)
         except RuntimeError:
-            return ([], {})
+            return ([], {}, 0)
         t_rest_end = self._time.monotonic()
 
         issues_data = json.loads(stdout)
@@ -1551,7 +1551,7 @@ query {{
         if not pr_items:
             rest_ms = _elapsed_ms(t_rest_start, t_rest_end)
             _logger.info("list_plan_prs_with_details: REST=%.0fms (0 PRs after filter)", rest_ms)
-            return ([], {})
+            return ([], {}, 0)
 
         # Step 2: Batched GraphQL enrichment for rich PR fields
         pr_numbers = [item["number"] for item in pr_items]

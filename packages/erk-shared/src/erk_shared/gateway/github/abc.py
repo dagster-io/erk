@@ -421,7 +421,7 @@ class GitHub(ABC):
         limit: int | None,
         author: str | None,
         exclude_labels: list[str] | None = None,
-    ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
+    ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]], int]:
         """List plan PRs with rich details.
 
         Uses a two-step approach: REST issues endpoint for server-side
@@ -438,7 +438,8 @@ class GitHub(ABC):
                 applied before expensive GraphQL enrichment). None means no exclusion.
 
         Returns:
-            Tuple of (pr_details_list, pr_linkages_by_pr_number)
+            Tuple of (pr_details_list, pr_linkages_by_pr_number, unenriched_count).
+            unenriched_count indicates how many PRs lacked GraphQL enrichment data.
         """
         ...
 

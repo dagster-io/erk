@@ -88,7 +88,7 @@ def merge_rest_graphql_pr_data(
     rest_items: list[dict[str, Any]],
     enrichment: dict[int, dict[str, Any]],
     repo_id: GitHubRepoId,
-) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
+) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]], int]:
     """Merge REST issue data with GraphQL PR enrichment into PRDetails and PullRequestInfo.
 
     Args:
@@ -97,10 +97,14 @@ def merge_rest_graphql_pr_data(
         repo_id: GitHub repository identity
 
     Returns:
-        Tuple of (pr_details_list, pr_linkages_by_pr_number)
+        Tuple of (pr_details_list, pr_linkages_by_pr_number, unenriched_count).
+        PRs without GraphQL enrichment data are included in pr_details_list
+        (needed for plan conversion) but excluded from pr_linkages to avoid
+        misleading fallback defaults for branch, draft status, and checks.
     """
     pr_details_list: list[PRDetails] = []
     pr_linkages: dict[int, list[PullRequestInfo]] = {}
+    unenriched_count = 0
 
     for item in rest_items:
         pr_number = item["number"]
@@ -132,6 +136,13 @@ def merge_rest_graphql_pr_data(
         )
         pr_details_list.append(pr_details)
 
+        # Only create PullRequestInfo when enrichment data is available.
+        # Without GraphQL data, fields like base_ref_name, is_draft, and checks
+        # would have misleading fallback defaults.
+        if not gql:
+            unenriched_count += 1
+            continue
+
         # Build PullRequestInfo with rich GraphQL data
         checks_passing, checks_counts = parse_status_rollup(gql.get("statusCheckRollup"))
         has_conflicts = parse_mergeable_status(gql.get("mergeable"))
@@ -156,7 +167,7 @@ def merge_rest_graphql_pr_data(
         )
         pr_linkages[pr_number] = [pr_info]
 
-    return (pr_details_list, pr_linkages)
+    return (pr_details_list, pr_linkages, unenriched_count)
 
 
 def parse_workflow_runs_nodes_response(

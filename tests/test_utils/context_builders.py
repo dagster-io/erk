@@ -134,6 +134,7 @@ def build_fake_plan_list_service(
     *,
     pr_linkages: dict[int, list[PullRequestInfo]] | None = None,
     workflow_runs: dict[int, WorkflowRun | None] | None = None,
+    warnings: tuple[str, ...] = (),
 ) -> FakePlanListService:
     """Build a FakePlanListService with pre-configured plan data."""
     return FakePlanListService(
@@ -141,5 +142,6 @@ def build_fake_plan_list_service(
             plans=plans,
             pr_linkages=pr_linkages or {},
             workflow_runs=workflow_runs or {},
+            warnings=warnings,
         )
     )

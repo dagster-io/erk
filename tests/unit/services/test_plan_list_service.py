@@ -157,7 +157,7 @@ def _make_pr_info(
 def _make_plan_pr_data(
     *,
     pr_details_list: list[PRDetails],
-) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]]]:
+) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]], int]:
     """Build plan_pr_details tuple for FakeGitHub from a list of PRDetails.
 
     Creates PullRequestInfo with rich data (checks, review threads) for each PRDetails.
@@ -178,7 +178,7 @@ def _make_plan_pr_data(
                 review_thread_counts=(0, 0),
             )
         ]
-    return (pr_details_list, linkages)
+    return (pr_details_list, linkages, 0)
 
 
 class TestPlannedPRPlanListService:
@@ -233,7 +233,7 @@ class TestPlannedPRPlanListService:
             head_branch="plan-branch",
         )
         fake_github = FakeGitHub(
-            plan_pr_details=([details], {70: [pr_info]}),
+            plan_pr_details=([details], {70: [pr_info]}, 0),
         )
         service = PlannedPRPlanListService(fake_github, time=FakeTime())
         result = service.get_plan_list_data(
@@ -506,3 +506,41 @@ last_dispatched_node_id: 'WFR_draft789'
         assert len(result.plans) == 1
         assert result.plans[0].plan_identifier == "102"
         assert result.workflow_runs == {}
+
+
+class TestBuildEnrichmentWarnings:
+    """Tests for _build_enrichment_warnings helper function."""
+
+    def test_no_warnings_when_all_enriched(self) -> None:
+        """No warnings when unenriched_count is zero."""
+        from erk.core.services.plan_list_service import _build_enrichment_warnings
+
+        result = _build_enrichment_warnings(0, 5)
+
+        assert result == ()
+
+    def test_warning_when_some_unenriched(self) -> None:
+        """Warning message includes counts when some PRs lack enrichment."""
+        from erk.core.services.plan_list_service import _build_enrichment_warnings
+
+        result = _build_enrichment_warnings(2, 5)
+
+        assert len(result) == 1
+        assert "2/5" in result[0]
+        assert "GraphQL enrichment failed" in result[0]
+
+    def test_warning_when_all_unenriched(self) -> None:
+        """Warning message when all PRs lack enrichment."""
+        from erk.core.services.plan_list_service import _build_enrichment_warnings
+
+        result = _build_enrichment_warnings(3, 3)
+
+        assert len(result) == 1
+        assert "3/3" in result[0]
+
+    def test_returns_tuple(self) -> None:
+        """Return type is always a tuple."""
+        from erk.core.services.plan_list_service import _build_enrichment_warnings
+
+        assert isinstance(_build_enrichment_warnings(0, 0), tuple)
+        assert isinstance(_build_enrichment_warnings(1, 1), tuple)

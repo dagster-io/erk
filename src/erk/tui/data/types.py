@@ -165,6 +165,7 @@ class FetchTimings:
     worktree_mapping_ms: float
     row_building_ms: float
     total_ms: float
+    warnings: tuple[str, ...] = ()
 
     def summary(self) -> str:
         """One-line summary for status bar: 'rest:1.2 gql:2.3 wf:0.8 = 4.6s'."""
