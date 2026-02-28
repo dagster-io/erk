@@ -691,6 +691,102 @@ class TestOneShotPlanAsync:
             assert provider.fetch_count > count_before
 
 
+class TestOneShotDispatchAsync:
+    """Tests for _one_shot_dispatch_async subprocess behavior."""
+
+    @pytest.mark.asyncio
+    async def test_one_shot_dispatch_runs_correct_command(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_one_shot_dispatch_async should run correct subprocess command."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        captured_args: list[str] = []
+
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            if args:
+                captured_args.extend(args[0])  # type: ignore[arg-type]
+            return _FakePopen(return_code=0)
+
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            app._one_shot_dispatch_async("test-op", "my prompt")
+            await pilot.pause(0.3)
+
+            assert captured_args == ["erk", "one-shot", "my prompt"]
+
+    @pytest.mark.asyncio
+    async def test_one_shot_dispatch_triggers_refresh_on_success(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_one_shot_dispatch_async should trigger refresh after success."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            return _FakePopen(return_code=0)
+
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            count_before = provider.fetch_count
+
+            app._one_shot_dispatch_async("test-op", "my prompt")
+            await pilot.pause(0.3)
+
+            assert provider.fetch_count > count_before
+
+    @pytest.mark.asyncio
+    async def test_one_shot_dispatch_no_refresh_on_failure(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_one_shot_dispatch_async should NOT refresh on failure."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            return _FakePopen(lines=("dispatch failed",), return_code=1)
+
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            count_before = provider.fetch_count
+
+            app._one_shot_dispatch_async("test-op", "my prompt")
+            await pilot.pause(0.3)
+
+            assert provider.fetch_count == count_before
+
+
 class TestRewriteRemoteAsync:
     """Tests for _rewrite_remote_async subprocess behavior."""
 
