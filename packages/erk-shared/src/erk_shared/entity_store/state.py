@@ -88,9 +88,7 @@ def push_entity_body(
 ) -> None:
     """Write the updated body text to GitHub."""
     if kind is EntityKind.ISSUE:
-        github_issues.update_issue_body(
-            repo_root, number, BodyText(content=body)
-        )
+        github_issues.update_issue_body(repo_root, number, BodyText(content=body))
     else:
         github.update_pr_body(repo_root, number, body)
 
