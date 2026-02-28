@@ -34,7 +34,7 @@ compute_status_indicators(
     checks_passing=True,
     has_unresolved_comments=False,
 )
-# Returns: "🚀"
+# Returns: "👀 🚀"
 ```
 
 ### format_lifecycle_with_status() — Inline Display
