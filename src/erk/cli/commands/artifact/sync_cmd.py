@@ -4,9 +4,10 @@ from pathlib import Path
 
 import click
 
+from erk.artifacts.state import load_installed_capabilities
 from erk.artifacts.sync import (
+    ArtifactSyncConfig,
     add_missing_gitignore_entries,
-    create_artifact_sync_config,
     find_missing_gitignore_entries,
     sync_artifacts,
 )
@@ -14,7 +15,8 @@ from erk.artifacts.sync import (
 
 @click.command("sync")
 @click.option("-f", "--force", is_flag=True, help="Force sync even if up to date")
-def sync_cmd(force: bool) -> None:
+@click.pass_context
+def sync_cmd(ctx: click.Context, force: bool) -> None:
     """Sync artifacts from erk package to .claude/ directory.
 
     Copies bundled artifacts (commands, skills, agents, docs) from the
@@ -35,7 +37,13 @@ def sync_cmd(force: bool) -> None:
       erk artifact sync --force
     """
     project_dir = Path.cwd()
-    config = create_artifact_sync_config(project_dir, backend="claude")
+    package = ctx.obj.package_info
+    config = ArtifactSyncConfig(
+        package=package,
+        installed_capabilities=load_installed_capabilities(project_dir),
+        sync_capabilities=True,
+        backend="claude",
+    )
 
     result = sync_artifacts(project_dir, force, config=config)
 

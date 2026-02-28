@@ -2,7 +2,6 @@
 
 import json
 from pathlib import Path
-from unittest.mock import patch
 
 from click.testing import CliRunner
 
@@ -504,10 +503,7 @@ class TestSyncCommand:
         """Updates state when in erk repo (development mode)."""
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            # Create pyproject.toml with erk name
-            Path("pyproject.toml").write_text('[project]\nname = "erk"\n', encoding="utf-8")
-
-            result = runner.invoke(sync_cmd)
+            result = runner.invoke(sync_cmd, obj=_ctx_with_package(in_erk_repo=True))
 
         assert result.exit_code == 0
         assert "Development mode" in result.output
@@ -516,11 +512,7 @@ class TestSyncCommand:
         """Fails when bundled .claude/ not found."""
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            with patch(
-                "erk.artifacts.sync.ErkPackageInfo.from_project_dir",
-                return_value=_fake_package(),
-            ):
-                result = runner.invoke(sync_cmd)
+            result = runner.invoke(sync_cmd, obj=_ctx_with_package())
 
         assert result.exit_code == 1
         assert "not found" in result.output
@@ -537,15 +529,15 @@ class TestSyncCommand:
             gitignore_path = Path.cwd() / ".gitignore"
             gitignore_path.write_text("*.pyc\n", encoding="utf-8")
 
-            with patch(
-                "erk.artifacts.sync.ErkPackageInfo.from_project_dir",
-                return_value=_fake_package(
+            result = runner.invoke(
+                sync_cmd,
+                input="y\n",
+                obj=_ctx_with_package(
                     in_erk_repo=True,
                     bundled_claude_dir=bundled_dir,
                     bundled_github_dir=nonexistent,
                 ),
-            ):
-                result = runner.invoke(sync_cmd, input="y\n")
+            )
 
             assert result.exit_code == 0
             assert "Missing .gitignore entries" in result.output
@@ -566,15 +558,15 @@ class TestSyncCommand:
             gitignore_path = Path.cwd() / ".gitignore"
             gitignore_path.write_text("*.pyc\n", encoding="utf-8")
 
-            with patch(
-                "erk.artifacts.sync.ErkPackageInfo.from_project_dir",
-                return_value=_fake_package(
+            result = runner.invoke(
+                sync_cmd,
+                input="n\n",
+                obj=_ctx_with_package(
                     in_erk_repo=True,
                     bundled_claude_dir=bundled_dir,
                     bundled_github_dir=nonexistent,
                 ),
-            ):
-                result = runner.invoke(sync_cmd, input="n\n")
+            )
 
             assert result.exit_code == 0
             assert "Missing .gitignore entries" in result.output
@@ -596,15 +588,14 @@ class TestSyncCommand:
                 encoding="utf-8",
             )
 
-            with patch(
-                "erk.artifacts.sync.ErkPackageInfo.from_project_dir",
-                return_value=_fake_package(
+            result = runner.invoke(
+                sync_cmd,
+                obj=_ctx_with_package(
                     in_erk_repo=True,
                     bundled_claude_dir=bundled_dir,
                     bundled_github_dir=nonexistent,
                 ),
-            ):
-                result = runner.invoke(sync_cmd)
+            )
 
             assert result.exit_code == 0
             assert "Missing .gitignore entries" not in result.output
