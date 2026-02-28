@@ -75,7 +75,7 @@ from erk_shared.gateway.graphite.disabled import (
 from erk_shared.gateway.graphite.dry_run import DryRunGraphite
 from erk_shared.gateway.graphite.real import RealGraphite
 from erk_shared.gateway.http.abc import HttpClient
-from erk_shared.gateway.http.auth import fetch_github_token
+from erk_shared.gateway.http.auth import fetch_github_token_or_none
 from erk_shared.gateway.http.real import RealHttpClient
 from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.abc import Time
@@ -587,8 +587,9 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     # 6b. Create HTTP client for GitHub API (needs token from gh auth)
     http_client: HttpClient | None = None
     if not isinstance(repo, NoRepoSentinel):
-        token = fetch_github_token()
-        http_client = RealHttpClient(token=token, base_url="https://api.github.com")
+        token = fetch_github_token_or_none()
+        if token is not None:
+            http_client = RealHttpClient(token=token, base_url="https://api.github.com")
 
     # 7. Load local config (or defaults if no repo)
     # Loaded early so plans_repo can be used for GitHubIssues
