@@ -73,3 +73,5 @@ Rules triggered by matching actions in code.
 **writing a decision doc without concrete examples** → Read [Two-Option Decision Documentation](two-option-template.md) first. Include at least one situation→decision→reasoning example. Abstract criteria are hard to apply without concrete illustrations.
 
 **writing a tripwire as a plain string instead of {action, warning} dict** → Read [Frontmatter and Tripwire Format](frontmatter-tripwire-format.md) first. The validator requires structured dicts with action and warning keys. Plain strings fail validation with 'must be an object'.
+
+**writing documentation during an active migration without marking transitional state** → Read [Documenting Evolving Systems](documenting-evolving-systems.md) first. Documentation written during migration captures transitional state. Mark with status (pre-migration, transitional, post-migration) and audit after migration completes.

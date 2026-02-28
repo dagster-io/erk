@@ -31,7 +31,7 @@ Path B (setup) ──┘
 
 ## Canonical Example: Plan Implementation Setup
 
-`src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py` has two setup paths:
+`src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py` has two setup paths:
 
 - `_setup_planned_pr_plan()` — fetches plan from draft PR via `github.get_pr()`
 - `_setup_issue_plan()` — fetches plan from issue via `plan_backend.get_plan()`

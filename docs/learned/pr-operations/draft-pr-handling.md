@@ -110,9 +110,9 @@ When using Graphite for stacked PRs, draft status does **not** cascade:
 
 **Cause**: Accidental `\n\n---\n\n` formed from "Remotely executed" notes ending with a blank line followed by the footer delimiter.
 
-**Symptoms**: `extract_plan_header_block()` or `extract_plan_content()` returns incorrect content, causing plan body corruption during stage transitions.
+**Symptoms**: `find_metadata_block()` or `extract_plan_content()` returns incorrect content, causing plan body corruption during stage transitions.
 
-**Resolution**: `extract_plan_header_block()` validates the `<!-- erk:metadata-block:` marker in the prefix. See [Draft PR Lifecycle — False Match Prevention](../planning/draft-pr-lifecycle.md#false-match-prevention).
+**Resolution**: `find_metadata_block()` validates the `<!-- erk:metadata-block:` marker in the prefix. See [Draft PR Lifecycle — False Match Prevention](../planning/draft-pr-lifecycle.md#false-match-prevention).
 
 ## Related Documentation
 

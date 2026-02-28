@@ -28,6 +28,8 @@ Rules triggered by matching actions in code.
 
 **adding a new ViewMode without updating VIEW_CONFIGS** → Read [TUI View Switching](view-switching.md) first. Every ViewMode must have a corresponding ViewConfig in VIEW_CONFIGS. Missing configs cause KeyError at runtime.
 
+**adding a new key binding without checking existing bindings** → Read [TUI Keyboard Shortcuts Inventory](keyboard-shortcuts.md) first. Check this document and ErkDashApp.BINDINGS in app.py for conflicts. Some keys are hidden but still active.
+
 **adding a new lifecycle stage without updating abbreviation map** → Read [Lifecycle and PR Status Display](lifecycle-display.md) first. The stage column is 8 chars wide. New stages longer than 8 chars need abbreviations in compute_lifecycle_display(). Also update format_lifecycle_with_status() stage detection.
 
 **adding a subprocess call to the TUI without stderr inspection** → Read [TUI Subprocess Feedback Patterns](subprocess-feedback.md) first. TUI subprocess calls should inspect stderr for known success/failure markers. See subprocess-feedback.md for the pattern.
@@ -93,6 +95,8 @@ Rules triggered by matching actions in code.
 **showing toast from a modal screen** → Read [Dual Provider Pattern for Context-Agnostic Commands](dual-handler-pattern.md) first. Call self.dismiss() before app-level toasts. Modal blocks the correct z-layer, so toasts must render at app level after modal dismissal.
 
 **using \_render() as a method name in Textual widgets** → Read [TUI View Switching](view-switching.md) first. Textual's LSP reserves \_render(). Use \_refresh_display() instead (see ViewBar).
+
+**using inverted key check in on_key() modal dismiss logic** → Read [TUI Modal Screen Pattern](modal-screen-pattern.md) first. if event.key not in (...) is WRONG for dismiss logic — it swallows dismiss keys. Use if event.key in (...) to check for positive dismiss. Regression caused by stacked PR merge order.
 
 **using positional arguments when constructing PlanRowData** → Read [Frozen Dataclass Field Management](frozen-dataclass-field-management.md) first. Always use keyword arguments for frozen dataclass construction. Positional arguments break silently when fields are reordered. Use make_plan_row() helper in tests.
 

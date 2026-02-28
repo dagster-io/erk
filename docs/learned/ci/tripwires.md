@@ -50,6 +50,8 @@ Rules triggered by matching actions in code.
 
 **calling create_commit_status() immediately after git push** → Read [GitHub Commit Indexing Timing](github-commit-indexing-timing.md) first. GitHub's commit indexing has a race condition. Commits may not be immediately available for status updates after push. Use execute_gh_command_with_retry() wrapper, not direct subprocess calls.
 
+**committing .erk/impl-context/ without git add -f** → Read [CI Gitignored Directory Commit Patterns](gitignored-directory-commit-patterns.md) first. The directory is gitignored. Use git add -f .erk/impl-context to force-add it. Without -f, git silently skips the directory.
+
 **composing conditions across multiple GitHub Actions workflow steps** → Read [GitHub Actions Workflow Patterns](github-actions-workflow-patterns.md) first. Verify each `steps.step_id.outputs.key` reference exists and matches actual step IDs.
 
 **creating .claude/ markdown commands without formatting** → Read [Prettier Formatting for Claude Commands](claude-commands-prettier.md) first. Run 'make prettier' via devrun after editing markdown. CI runs prettier-check as a separate job and will fail on unformatted files.

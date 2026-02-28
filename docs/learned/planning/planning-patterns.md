@@ -6,6 +6,10 @@ read_when:
   - "preparing to enter plan mode"
   - "optimizing plan creation workflow"
   - "delegating tasks during planning"
+tripwires:
+  - action: "entering plan mode while merge conflicts exist"
+    warning: "Check for merge conflicts before entering plan mode. Unresolved conflicts cause plan-save to fail, wasting the planning effort."
+    score: 6
 ---
 
 # Planning Patterns

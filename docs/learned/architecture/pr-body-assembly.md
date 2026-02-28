@@ -8,7 +8,7 @@ tripwires:
   - action: "implementing a new `erk pr` command"
     warning: "Compare feature parity with `submit_pipeline.py`. Check: learn plan labels, footer construction, and plan details section. Use shared utilities from `shared.py` (`assemble_pr_body`)."
   - action: "calling assemble_pr_body without metadata_prefix for planned-PR plans"
-    warning: "Planned PR plans require metadata_prefix from extract_metadata_prefix(). Without it, plan-header metadata is lost on every PR rewrite."
+    warning: "Planned PR plans require metadata_prefix from find_metadata_block(). Without it, plan-header metadata is lost on every PR rewrite."
 ---
 
 # PR Body Assembly

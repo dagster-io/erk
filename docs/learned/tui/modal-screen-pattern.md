@@ -9,6 +9,9 @@ tripwires:
     warning: "ModalScreen requires explicit CSS for the overlay. Without it, clicking outside the modal does nothing."
   - action: "calling widget methods from @work(thread=True) without call_from_thread()"
     warning: "Background thread widget mutations cause silent UI corruption. Use self.app.call_from_thread(callback, ...)."
+  - action: "using inverted key check in on_key() modal dismiss logic"
+    warning: "if event.key not in (...) is WRONG for dismiss logic — it swallows dismiss keys. Use if event.key in (...) to check for positive dismiss. Regression caused by stacked PR merge order."
+    score: 7
 ---
 
 # TUI Modal Screen Pattern
@@ -81,6 +84,33 @@ Wrap the entire worker body in try/except. This is an approved EAFP exception fo
 ### 7. Loading Placeholder
 
 Show a loading indicator while data is being fetched. Use unique DOM element IDs per lifecycle phase (loading vs content) to avoid `query_one()` returning the wrong element.
+
+### 8. When to Override on_key()
+
+For modals that need to consume all keypresses (preventing the parent app from handling them), override `on_key()` with `event.prevent_default()` + `event.stop()`:
+
+```python
+def on_key(self, event: Key) -> None:
+    """Consume all keys; dismiss on specific keys."""
+    event.prevent_default()
+    event.stop()
+    if event.key in ("escape", "q", "space"):
+        self.dismiss()
+```
+
+**Pattern:** Call `event.prevent_default()` and `event.stop()` first (unconditionally), then check which key was pressed.
+
+**Inverted logic tripwire:** Using `if event.key not in (...)` to dismiss causes silent bugs — keys that should dismiss the modal get swallowed instead. Always use `if event.key in (...)` for the positive dismiss check.
+
+**Screens using this pattern:**
+
+| Screen           | Dismiss Keys     | Notes                                       |
+| ---------------- | ---------------- | ------------------------------------------- |
+| `HelpScreen`     | escape, q, ?     | Closes help overlay                         |
+| `PlanBodyScreen` | escape, q, space | Closes plan body view                       |
+| `LaunchScreen`   | Any unmapped key | Dispatches mapped keys, dismisses on others |
+
+`LaunchScreen` uses a dynamic key map (`self._key_to_command_id`) and dismisses with `None` for unmapped keys, making it a command dispatch pattern rather than a simple dismiss.
 
 ## Reference Implementations
 
