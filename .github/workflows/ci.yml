@@ -62,6 +62,8 @@ jobs:
         with:
           # Checkout PR branch (not detached HEAD) so we can push fixes
           ref: ${{ github.head_ref || github.ref }}
+          # Use PAT so git push triggers a new CI run on the auto-committed HEAD
+          token: ${{ secrets.ERK_QUEUE_GH_PAT }}
       - uses: ./.github/actions/setup-python-uv
       - uses: ./.github/actions/setup-prettier
       - name: Sync documentation
@@ -193,7 +195,15 @@ jobs:
   # === Autofix (runs after ALL checks) ===
   autofix:
     needs:
-      [format, lint, markdown-fix, docs-check, ty, unit-tests, integration-tests]
+      [
+        format,
+        lint,
+        markdown-fix,
+        docs-check,
+        ty,
+        unit-tests,
+        integration-tests,
+      ]
     if: |
       false &&
       vars.CLAUDE_ENABLED != 'false' &&
@@ -447,7 +457,17 @@ jobs:
   # === CI Failure Summarization (Haiku) ===
   ci-summarize:
     needs:
-      [format, lint, prettier, docs-check, ty, unit-tests, integration-tests, erkdesk-tests, erkbot-tests]
+      [
+        format,
+        lint,
+        markdown-fix,
+        docs-check,
+        ty,
+        unit-tests,
+        integration-tests,
+        erkdesk-tests,
+        erkbot-tests,
+      ]
     if: |
       vars.CLAUDE_ENABLED != 'false' &&
       always() &&
@@ -456,7 +476,7 @@ jobs:
       !contains(github.event.pull_request.labels.*.name, 'erk-plan-review') &&
       (needs.format.result == 'failure' ||
        needs.lint.result == 'failure' ||
-       needs.prettier.result == 'failure' ||
+       needs.markdown-fix.result == 'failure' ||
        needs.docs-check.result == 'failure' ||
        needs.ty.result == 'failure' ||
        needs.unit-tests.result == 'failure' ||
