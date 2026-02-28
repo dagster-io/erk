@@ -97,7 +97,7 @@ class EntityState:
         if existing is not None:
             new_body = replace_metadata_block_in_body(body, key, rendered)
         else:
-            new_body = body.rstrip() + "\n\n" + rendered if body.strip() else rendered
+            new_body = (body.rstrip() + "\n\n" + rendered) if body.strip() else rendered
 
         self._push_body(new_body)
 
