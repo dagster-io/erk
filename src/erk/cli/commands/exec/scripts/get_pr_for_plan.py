@@ -1,4 +1,4 @@
-"""Get PR details for a plan issue.
+"""Get PR details for a plan.
 
 Usage:
     erk exec get-pr-for-plan <plan-number>

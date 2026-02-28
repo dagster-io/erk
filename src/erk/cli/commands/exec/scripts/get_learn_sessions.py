@@ -1,4 +1,4 @@
-"""Get session information for a plan issue.
+"""Get session information for a plan.
 
 This exec script returns JSON with session data for use by the /erk:learn skill.
 It replaces the `erk learn --json --no-track` workflow, separating data retrieval
@@ -64,7 +64,7 @@ def _extract_plan_number(identifier: str) -> int | None:
         identifier: Issue number or GitHub issue URL
 
     Returns:
-        Issue number or None if invalid
+        Plan number or None if invalid
     """
     # Try direct number (LBYL: check before converting)
     if identifier.isdigit():
@@ -206,9 +206,9 @@ def _discover_sessions(
 @click.argument("issue", type=str, required=False)
 @click.pass_context
 def get_learn_sessions(ctx: click.Context, issue: str | None) -> None:
-    """Get session information for a plan issue.
+    """Get session information for a plan.
 
-    ISSUE can be a plan issue number (e.g., "123") or a full GitHub URL.
+    ISSUE can be a plan number (e.g., "123") or a full GitHub URL.
     If not provided, infers from .erk/impl-context/plan-ref.json on the current branch.
 
     Returns JSON with session IDs and paths for use by /erk:learn skill.

@@ -1,7 +1,7 @@
 """Register a one-shot plan: dispatch metadata and queued comment.
 
 Composes independent operations that ``erk pr dispatch`` performs but
-one-shot cannot do at submit time (the plan issue doesn't exist yet).
+one-shot cannot do at submit time (the plan doesn't exist yet).
 Each operation is best-effort; failures are logged but don't block others.
 """
 

@@ -1,6 +1,6 @@
 """Fetch all context needed for objective-update-with-landed-pr in one call.
 
-Bundles objective issue, plan issue, PR details, and parsed roadmap context
+Bundles objective, plan, PR details, and parsed roadmap context
 into a single JSON blob, eliminating multiple sequential LLM turns for data
 fetching and step matching.
 

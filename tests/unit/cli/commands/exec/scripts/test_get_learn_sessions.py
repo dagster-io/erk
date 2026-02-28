@@ -1,6 +1,6 @@
 """Unit tests for get-learn-sessions exec script.
 
-Tests session discovery for plan issues.
+Tests session discovery for plans.
 Uses fakes for fast, reliable testing without subprocess calls.
 """
 

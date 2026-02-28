@@ -1,6 +1,6 @@
 """Unit tests for track-learn-evaluation exec script.
 
-Tests learn evaluation tracking on plan issues.
+Tests learn evaluation tracking on plans.
 Uses fakes for fast, reliable testing without subprocess calls.
 """
 

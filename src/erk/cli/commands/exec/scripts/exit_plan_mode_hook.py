@@ -419,7 +419,7 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
         )
 
     # Incremental-plan marker present (session started via /local:incremental-plan-mode)
-    # Skip the "save as GitHub issue?" prompt and proceed directly to implementation
+    # Skip the "save as plan?" prompt and proceed directly to implementation
     if hook_input.incremental_plan_marker_exists:
         return HookOutput(
             ExitAction.ALLOW,
@@ -502,7 +502,7 @@ def _get_incremental_plan_marker_path(session_id: str, repo_root: Path) -> Path:
     """Get incremental-plan marker path in .erk/scratch/sessions/<session_id>/.
 
     The incremental-plan marker indicates this session was started via
-    /local:incremental-plan, so we should skip the "save as GitHub issue?"
+    /local:incremental-plan, so we should skip the "save as plan?"
     prompt and proceed directly to implementation.
 
     Args:

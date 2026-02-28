@@ -322,7 +322,7 @@ def test_cli_adds_label_to_pr(tmp_path: Path) -> None:
 
 
 def test_cli_adds_comment_to_issue(tmp_path: Path) -> None:
-    """Test that CLI command adds comment to plan issue."""
+    """Test that CLI command adds comment to plan."""
     github, fake_gh_issues, backend = _create_github_with_plan_pr(456)
 
     ctx = ErkContext.for_test(github=github, plan_store=backend, repo_root=tmp_path, cwd=tmp_path)

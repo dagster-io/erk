@@ -1,4 +1,4 @@
-"""Fetch erk-plan issues linked to an objective.
+"""Fetch erk-plans linked to an objective.
 
 Usage:
     erk exec get-plans-for-objective <OBJECTIVE_NUMBER>
@@ -28,7 +28,7 @@ from erk_shared.gateway.github.metadata.core import find_metadata_block
 @click.argument("objective_number", type=int)
 @click.pass_context
 def get_plans_for_objective(ctx: click.Context, objective_number: int) -> None:
-    """Fetch erk-plan issues linked to an objective.
+    """Fetch erk-plans linked to an objective.
 
     Lists all issues with the erk-plan label, then filters to those
     whose plan-header metadata contains objective_id matching the
@@ -48,7 +48,7 @@ def get_plans_for_objective(ctx: click.Context, objective_number: int) -> None:
             json.dumps(
                 {
                     "success": False,
-                    "error": f"Failed to list erk-plan issues: {e}",
+                    "error": f"Failed to list erk-plans: {e}",
                 }
             )
         )

@@ -1,4 +1,4 @@
-"""Track learn workflow result on a plan issue.
+"""Track learn workflow result on a plan.
 
 This exec script updates the plan-header metadata block to record the result
 of a learn workflow. It sets the learn_status field and optionally records
@@ -75,7 +75,7 @@ VALID_RESULT_STATUSES: set[LearnStatusValue] = {
 @click.option(
     "--plan-issue",
     type=int,
-    help="Learn plan issue number (required if status is completed_with_plan)",
+    help="Learn plan number (required if status is completed_with_plan)",
 )
 @click.option(
     "--plan-pr",
@@ -91,7 +91,7 @@ def track_learn_result(
     plan_issue: int | None,
     plan_pr: int | None,
 ) -> None:
-    """Track learn workflow result on a plan issue.
+    """Track learn workflow result on a plan.
 
     Updates the plan-header metadata block with the learn workflow result.
     If status is 'completed_with_plan', also records the learn_plan_issue.
