@@ -224,6 +224,7 @@ class TestLandPrAsync:
                 456,
                 "test-branch",
                 None,
+                None,
             )
             await pilot.pause(0.3)
 
@@ -267,6 +268,7 @@ class TestLandPrAsync:
                 456,
                 "test-branch",
                 None,
+                None,
             )
             await pilot.pause(0.3)
 
@@ -301,6 +303,7 @@ class TestLandPrAsync:
                 "test-op",
                 456,
                 "test-branch",
+                None,
                 None,
             )
             await pilot.pause(0.3)
@@ -347,6 +350,7 @@ class TestLandPrAsync:
                 456,
                 "test-branch",
                 789,
+                None,
             )
             await pilot.pause(0.3)
 
@@ -392,11 +396,143 @@ class TestLandPrAsync:
                 456,
                 "test-branch",
                 None,
+                None,
             )
             await pilot.pause(0.3)
 
             # Only the land command, no objective update
             assert len(captured_calls) == 1
+
+
+    @pytest.mark.asyncio
+    async def test_land_pr_includes_plan_number_flag(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_land_pr_async should include --plan-number when plan_id is set."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        captured_calls: list[list[str]] = []
+
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            if args:
+                captured_calls.append(list(args[0]))  # type: ignore[arg-type]
+            return _FakePopen(return_code=0)
+
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            app._land_pr_async(
+                "test-op",
+                456,
+                "test-branch",
+                None,
+                42,
+            )
+            await pilot.pause(0.3)
+
+            assert len(captured_calls) == 1
+            assert captured_calls[0] == [
+                "erk",
+                "exec",
+                "land-execute",
+                "--pr-number=456",
+                "--branch=test-branch",
+                "-f",
+                "--plan-number=42",
+            ]
+
+    @pytest.mark.asyncio
+    async def test_land_pr_shows_learn_plan_toast(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_land_pr_async should show toast when learn plan is created."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            return _FakePopen(
+                lines=("Landing PR...", "Created learn plan #999", "Done"),
+                return_code=0,
+            )
+
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
+
+        notifications: list[str] = []
+        original_notify = app.notify
+
+        def tracking_notify(message: str, **kwargs: object) -> None:
+            notifications.append(str(message))
+            original_notify(message, **kwargs)  # type: ignore[arg-type]
+
+        app.notify = tracking_notify  # type: ignore[assignment]
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            app._land_pr_async(
+                "test-op",
+                456,
+                "test-branch",
+                None,
+                None,
+            )
+            await pilot.pause(0.3)
+
+            assert any("learn plan #999" in n.lower() for n in notifications)
+
+
+class TestExtractLearnPlanNumber:
+    """Tests for _extract_learn_plan_number helper."""
+
+    def test_extracts_number_from_output(self) -> None:
+        """Should extract learn plan number when present in output."""
+        from erk.tui.app import _OperationResult, _extract_learn_plan_number
+
+        result = _OperationResult(
+            success=True,
+            output_lines=("Some output", "Created learn plan #1234", "Done"),
+            return_code=0,
+        )
+        assert _extract_learn_plan_number(result) == 1234
+
+    def test_returns_none_when_not_present(self) -> None:
+        """Should return None when no learn plan line in output."""
+        from erk.tui.app import _OperationResult, _extract_learn_plan_number
+
+        result = _OperationResult(
+            success=True,
+            output_lines=("Some output", "Done"),
+            return_code=0,
+        )
+        assert _extract_learn_plan_number(result) is None
+
+    def test_extracts_from_middle_of_line(self) -> None:
+        """Should extract number even when text surrounds the pattern."""
+        from erk.tui.app import _OperationResult, _extract_learn_plan_number
+
+        result = _OperationResult(
+            success=True,
+            output_lines=("Info: Created learn plan #5678 successfully",),
+            return_code=0,
+        )
+        assert _extract_learn_plan_number(result) == 5678
 
 
 class TestDispatchToQueueAsync:

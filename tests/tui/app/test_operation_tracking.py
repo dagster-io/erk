@@ -195,6 +195,7 @@ class TestOperationTracking:
                 456,
                 "test-branch",
                 None,
+                None,
             )
             await pilot.pause(0.3)
 
@@ -231,6 +232,7 @@ class TestOperationTracking:
                 op_id,
                 456,
                 "test-branch",
+                None,
                 None,
             )
             await pilot.pause(0.3)
