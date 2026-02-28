@@ -35,6 +35,7 @@ class MetadataParseResult:
 
     blocks: tuple[MetadataBlock, ...]
     errors: tuple[MetadataBlockError, ...]
+    content_blocks: tuple[RawMetadataBlock, ...] = ()
 
     @property
     def has_errors(self) -> bool:
