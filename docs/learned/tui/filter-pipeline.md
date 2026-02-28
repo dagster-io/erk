@@ -70,7 +70,7 @@ Called in `action_toggle_stack_filter()` to populate `_stack_filter_branches`.
 
 ## View Switching Clears Filters
 
-When switching views (line 472-476), all objective and stack filters are cleared to prevent confusion across different data contexts.
+When switching views in `src/erk/tui/app.py`, all objective and stack filters are cleared to prevent confusion across different data contexts.
 
 ## Related Documentation
 
