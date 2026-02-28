@@ -17,9 +17,9 @@ The TUI executes subprocess commands in background workers and provides feedback
 
 <!-- Source: src/erk/tui/app.py -->
 
-A private helper `_last_output_line()` extracts human-readable error messages from an `_OperationResult`:
+A helper function extracts human-readable error messages from the operation result object:
 
-1. Iterate backwards through `result.output_lines` (merged stdout/stderr)
+1. Iterate backwards through the output lines (merged stdout/stderr)
 2. Return the first non-empty line found
 3. Fall back to `"Unknown error"` if all lines are empty
 
@@ -33,9 +33,9 @@ This pattern is necessary because subprocess exit code 0 alone doesn't distingui
 
 All TUI subprocess methods follow this structure:
 
-1. Run `subprocess.Popen` with `stderr=subprocess.STDOUT` (merged streams), `stdin=subprocess.DEVNULL`, streaming output line-by-line into an `_OperationResult`
+1. Run `subprocess.Popen` with `stderr=subprocess.STDOUT` (merged streams), `stdin=subprocess.DEVNULL`, streaming output line-by-line into an operation result object
 2. On success (`return_code == 0`): check output lines for expected success markers, notify with `severity="information"` (3s timeout)
-3. On failure (`return_code != 0`): extract message via `_last_output_line(result)`, notify with `severity="error"` (5s timeout)
+3. On failure (`return_code != 0`): extract the last non-empty output line as the error message, notify with `severity="error"` (5s timeout)
 4. Trigger `self.action_refresh()` to update the display after state changes
 
 This pattern is used across multiple async subprocess methods in the TUI app, including the address-remote, fix-conflicts-remote, and land-PR handlers.
@@ -46,5 +46,5 @@ CLI-side diagnostic output via `user_output` warnings was implemented in PR #807
 
 ## Related Documentation
 
-- [TUI Subprocess Testing](../testing/tui-subprocess-testing.md) — Testing patterns with `_FakePopen`
+- [TUI Subprocess Testing](../testing/tui-subprocess-testing.md) — Testing patterns for TUI subprocess calls
 - [Error Detection Patterns](../cli/error-detection-patterns.md) — Keyword detection for parsing subprocess stderr
