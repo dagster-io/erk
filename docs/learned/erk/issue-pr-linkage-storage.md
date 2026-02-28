@@ -40,7 +40,7 @@ Slash commands that create PRs read the issue reference from local storage:
 
 1. Check for `.erk/impl-context/plan-ref.json` or `.erk/impl-context/ref.json`
 2. If found, append `Closes #N` to PR body
-3. Uses `erk exec get-pr-body-footer` to read the reference
+3. Uses `erk exec get-pr-body-footer` to read the reference and build the footer
 
 **Key implementation**: `src/erk/cli/commands/exec/scripts/get_pr_body_footer.py`
 
@@ -149,7 +149,7 @@ gh pr view --json body -q '.body'
 | ----------------------- | ------------------------------------------------------------ |
 | Issue reference reading | `packages/erk-shared/src/erk_shared/impl_folder.py`          |
 | PR creation with Closes | `src/erk/cli/commands/pr/`                                   |
-| Get PR body footer      | `src/erk/cli/commands/exec/scripts/get_pr_body_footer.py`    |
+| PR body footer command  | `src/erk/cli/commands/exec/scripts/get_pr_body_footer.py`    |
 | Timeline event parsing  | `packages/erk-shared/src/erk_shared/gateway/github/real.py`  |
 | PullRequestInfo type    | `packages/erk-shared/src/erk_shared/gateway/github/types.py` |
 

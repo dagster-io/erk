@@ -39,13 +39,13 @@ During `plan_save.py`, after creating the plan branch, the script:
 
 This commit gives the draft PR a non-empty diff (GitHub rejects PRs with no file changes) and enables inline plan review via the "Files Changed" tab.
 
-See: `src/erk/cli/commands/exec/scripts/plan_save.py:163-182`
+See `_commit_impl_context_files()` in `src/erk/cli/commands/exec/scripts/plan_save.py`.
 
 ### Cleanup
 
 The directory is cleaned up before implementation begins via a two-phase deferred cleanup pattern. All five setup paths converge at **Step 2d** in `plan-implement.md`, which is the single cleanup point:
 
-1. **`setup_impl_from_pr.py`** (Phase 1, read-only) — Reads `plan.md` and `ref.json`, copies content into `.erk/impl-context/`, but deliberately does NOT delete the directory. See comment at `src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:202`: "Do not delete here — Step 2d in plan-implement.md handles git rm + commit + push"
+1. **`setup_impl_from_pr.py`** (Phase 1, read-only) — Reads `plan.md` and `ref.json`, copies content into `.erk/impl-context/`, but deliberately does NOT delete the directory. Deletion is handled by plan-implement.md Step 2d via git rm + commit + push.
 
 2. **`plan-implement.md` Step 2d** (Phase 2, git cleanup — convergence point) — All five setup paths (ISSUE_ARG, FILE_ARG, existing `.erk/impl-context/` with issue tracking, existing `.erk/impl-context/` without issue tracking, fallback plan-save) reach this step. Performs the actual deletion with `git rm -rf .erk/impl-context/ && git commit && git push`. This deferred approach ensures removal is committed, not just deleted from the local filesystem. The step is **idempotent** — safe to run even when the directory doesn't exist.
 
@@ -65,7 +65,7 @@ Both submit paths use the LBYL pattern to clean up stale `.erk/impl-context/` be
 
 <!-- Source: packages/erk-shared/src/erk_shared/impl_context.py, impl_context_exists -->
 
-See the `impl_context_exists()` / `remove_impl_context()` LBYL guard in `packages/erk-shared/src/erk_shared/impl_context.py`. Both submit paths use this pattern to prevent errors from a prior failed submission leaving a stale `.erk/impl-context/` directory behind (fixed in PR #7687).
+See the `impl_context_exists()` / `remove_impl_context()` LBYL guard in `packages/erk-shared/src/erk_shared/impl_context.py`. Both submit paths (submit pipeline and dispatch) use this pattern to prevent errors from a prior failed submission leaving a stale `.erk/impl-context/` directory behind (fixed in PR #7687).
 
 ### Deferred Impl-Context Deletion
 

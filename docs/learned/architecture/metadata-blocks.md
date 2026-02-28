@@ -8,8 +8,8 @@ last_audited: "2026-02-16 08:00 PT"
 audit_result: clean
 tripwires:
   - action: "modifying render_metadata_block() or parse_metadata_block_body()"
-    warning: "These functions live in metadata/core.py. The former metadata_blocks.py was deleted in PR #8425. All imports should use erk_shared.gateway.github.metadata.core."
-    score: 4
+    warning: "The canonical implementation lives in packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py (the former metadata_blocks.py was deleted in PR #8425). Ensure all callers import from this module."
+    score: 6
 ---
 
 # Metadata Blocks Reference

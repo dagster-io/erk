@@ -25,12 +25,9 @@ For planned-PR plans, the plan content lives in a draft PR body — not a separa
 
 ## Detection Pattern
 
-```python
-# From setup_impl_from_pr.py
-pr_result = github.get_pr(repo_root, plan_number)
-if isinstance(pr_result, PRNotFound):
-    # Handle missing plan
-```
+<!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py, setup_impl_from_pr function -->
+
+For planned-PR plans, call `github.get_pr(repo_root, plan_number)` and check for `PRNotFound` to handle missing plans. See the source file for the full implementation.
 
 ## Provider Name Check
 

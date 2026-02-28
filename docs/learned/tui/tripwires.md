@@ -48,7 +48,7 @@ Rules triggered by matching actions in code.
 
 **adding stage column outside planned_pr backend check** → Read [Dashboard Column Inventory](dashboard-columns.md) first. stage column is planned_pr-only. It appears before obj in the column order. Check \_setup_columns() for the backend conditional block.
 
-**adding streaming commands without using \_push_streaming_detail helper** → Read [View-Aware Command Filtering](view-aware-commands.md) first. Streaming ACTION commands need \_push_streaming_detail() to handle the push-then-stream sequence correctly. Direct streaming without it skips the detail screen push.
+**adding streaming commands without using the streaming operation pattern** → Read [View-Aware Command Filtering](view-aware-commands.md) first. Streaming ACTION commands need the streaming operation wrapper with status bar tracking. See streaming-output.md for the current pattern.
 
 **adding the same label to multiple ViewConfig entries without exclude_labels** → Read [TUI View Switching](view-switching.md) first. Without exclude_labels, items matching the shared label appear in multiple views. Use exclude_labels for defense-in-depth deduplication (Plans view excludes erk-learn).
 

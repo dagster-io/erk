@@ -449,24 +449,24 @@ When landing a PR, the caller explicitly specifies which nodes were completed vi
 }
 ```
 
-## Auto-Selection: --next Flag on objective implement
+## Auto-Selection: --next Flag on objective plan
 
-**Path:** `src/erk/cli/commands/objective/implement_cmd.py`
+**Path:** `src/erk/cli/commands/objective/plan_cmd.py`
 
 The `--next` flag auto-selects the next unblocked pending node using dependency graph traversal:
 
 ```bash
-erk objective implement 42 --next          # explicit objective
-erk objective implement --next             # infers objective from current branch
-erk objective implement --next --one-shot  # auto-select + dispatch remotely
+erk objective plan 42 --next          # explicit objective
+erk objective plan --next             # infers objective from current branch
+erk objective plan --next --one-shot  # auto-select + dispatch remotely
 ```
 
-**Resolution via `_resolve_next()`**:
+**Resolution logic**:
 
 1. If issue_ref provided, use it directly
 2. Otherwise, infer objective from current branch via `get_objective_for_branch()`
 3. Build `DependencyGraph` via `graph_from_phases()`
-4. Call `graph.next_node()` for first unblocked pending node
+4. Traverse the dependency graph to find the first unblocked pending node
 
 Returns a `ResolvedNext` frozen dataclass with `issue_number`, `node`, and `phase_name`.
 

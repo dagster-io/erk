@@ -12,8 +12,6 @@ read_when:
 
 Rules triggered by matching actions in code.
 
-**adding <code> inside <summary> elements in PR bodies** → Read [Graphite PR Rendering Quirks](graphite-rendering.md) first. Graphite does not render <code> inside <summary> elements — it displays the raw HTML. Use plain text instead. GitHub renders it correctly, so test on graphite.dev specifically.
-
 **adding a Slack API call without error handling in agent_handler.py** → Read [ErkBot Architecture](erkbot/erkbot-architecture.md) first. ErkBot uses best-effort operations for Slack API calls. Wrap in try/except and log, don't raise. Agent execution should never fail due to a Slack API hiccup.
 
 **adding a force-include entry in pyproject.toml without updating codex_portable.py** → Read [Bundled Artifact Portability](bundled-artifacts.md) first. The portability registry and pyproject.toml force-include must stay in sync. A skill mapped to erk/data/codex/ must appear in codex_portable_skills().
@@ -31,8 +29,6 @@ Rules triggered by matching actions in code.
 **assuming Codex custom prompts are the current approach** → Read [Codex Skills System](codex/codex-skills-system.md) first. Custom prompts (~/.codex/prompts/\*.md) are the older mechanism, deprecated in favor of skills. Target .codex/skills/ instead.
 
 **assuming all erk skills are portable to Codex** → Read [Codex Skills System](codex/codex-skills-system.md) first. Only skills in codex_portable_skills() are portable. Skills that depend on Claude-specific features (hooks, session logs, commands) are in claude_only_skills().
-
-**closing a <details> block without a blank line after </details>** → Read [Graphite PR Rendering Quirks](graphite-rendering.md) first. Graphite requires a blank line after </details> for proper spacing. Without it, the following content runs up against the collapsed section.
 
 **creating a .codex/ directory in the erk repo** → Read [Bundled Artifact Portability](bundled-artifacts.md) first. There is no .codex/ directory in the erk repo. All skills live in .claude/skills/ regardless of portability. The build and sync systems handle remapping.
 

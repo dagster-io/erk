@@ -12,8 +12,8 @@ tripwires:
     warning: "New stages must be direct Python function calls, not subprocess invocations. The orchestrator uses tight coupling for performance. See the Direct-Call Architecture section in async-learn-local-preprocessing.md."
   - action: "changing how sessions are classified as planning vs impl"
     warning: "Classification uses planning_session_id from GitHub metadata. The resulting prefix (planning- vs impl-) propagates into XML filenames and is used by downstream learn agents to weight insights differently."
-  - action: "modifying the gist upload content format"
-    warning: "The download side (download-learn-materials) parses delimiters to split content back into files. Changes to the upload format must be mirrored in the download parser. See gist-materials-interchange.md."
+  - action: "modifying how learn materials are committed to a branch"
+    warning: "The CI workflow checks out the learn branch and reads materials from .erk/impl-context/. File names and directory structure must match what learn.yml expects."
 ---
 
 # Learn Pipeline Workflow
@@ -32,7 +32,7 @@ Local machine                              GitHub Actions
 │ 1. Discover sessions               │    │ 6. Agent execution   │
 │ 2. Preprocess → XML                │    │ 7. PR review/merge   │
 │ 3. Fetch PR comments (optional)    │    └──────────────────────┘
-│ 4. Upload all materials to gist    │              ▲
+│ 4. Commit materials to learn branch│              ▲
 │ 5. Trigger learn.yml workflow ─────┼──────────────┘
 └────────────────────────────────────┘
 ```
@@ -95,17 +95,17 @@ Fetches PR review threads and discussion comments via gateway calls (not `gh` CL
 
 Both review threads (inline code comments) and discussion comments (top-level conversation) are serialized as JSON files in the learn directory.
 
-### Stage 4: Gist Upload
+### Stage 4: Commit Materials to Learn Branch
 
-<!-- Source: src/erk/cli/commands/exec/scripts/upload_learn_materials.py, combine_learn_material_files -->
+<!-- Source: src/erk/cli/commands/exec/scripts/upload_session.py, upload_session -->
 
-Bundles all learn materials into a single gist using a delimiter-based format. The gateway only supports single-file gists, so multiple files (session XMLs, PR comment JSONs) are concatenated with `=`-delimited headers. The download side parses these delimiters to reconstruct individual files.
+Commits all learn materials (session XMLs, PR comment JSONs) to a dedicated git branch `async-learn/{plan_id}`. The branch is created from `origin/master`, files are written to `.erk/impl-context/` using git plumbing (`commit_files_to_branch`), and the branch is force-pushed. Force-push enables idempotent re-learn scenarios.
 
-This is a **critical failure point** — if gist upload fails, the entire async pipeline stops. The local learn path bypasses this by reading files directly.
-
-For the delimiter format specification, see [Gist Materials Interchange](../architecture/gist-materials-interchange.md).
+This replaced the earlier gist-based transport (removed in commit 12f964cb5) which required delimiter-based file packing and custom upload/download scripts. The git-based approach stores individual files at standard paths, making them visible in GitHub's UI and readable by CI without custom parsing.
 
 ### Stage 5: Workflow Trigger
+
+<!-- Source: src/erk/cli/commands/exec/scripts/upload_session.py, upload_session -->
 
 Triggers `learn.yml` via `workflow_dispatch` with the `learn_branch` (containing materials in `.erk/impl-context/`) and plan ID. The workflow uses concurrency groups (`learn-plan-{plan_id}`) with `cancel-in-progress: true`, so re-triggering learn for the same plan cancels any in-progress run.
 
@@ -113,7 +113,7 @@ Triggers `learn.yml` via `workflow_dispatch` with the `learn_branch` (containing
 
 <!-- Source: .github/workflows/learn.yml -->
 
-The GitHub Actions workflow checks out the repo, sets up erk, and runs `/erk:learn` with the gist URL. The agent downloads materials from the gist, then orchestrates the multi-agent analysis pipeline described in [Learn Workflow](learn-workflow.md#agent-tier-architecture).
+The GitHub Actions workflow checks out the learn branch (which contains materials under `.erk/impl-context/`), sets up erk, and runs `/erk:learn`. The agent reads materials directly from the filesystem, then orchestrates the multi-agent analysis pipeline described in [Learn Workflow](learn-workflow.md#agent-tier-architecture).
 
 The workflow runs with `claude-haiku-4-5` as the base model, though individual agents within `/erk:learn` may override to higher models for quality-critical synthesis steps.
 
@@ -129,11 +129,11 @@ Human reviews the learn plan issue, optionally edits it, and submits for impleme
 | 2 (Preprocessing)    | Empty/warmup session | Silently filtered out                                                    |
 | 2 (Preprocessing)    | Malformed JSONL      | Logged, file skipped                                                     |
 | 3 (PR Comments)      | No PR exists         | Skipped entirely (lenient)                                               |
-| 4 (Gist Upload)      | API failure          | **Pipeline fails** — gist is required for async path                     |
+| 4 (Branch Commit)    | Push failure         | **Pipeline fails** — learn branch is required for async path             |
 | 5 (Workflow Trigger) | Workflow not found   | Fails with error about missing `learn.yml`                               |
 | 6 (Agent Execution)  | Agent crashes        | CI job fails, no retry                                                   |
 
-The key design choice: stages 1-3 are lenient (degrade gracefully), while stage 4 is strict (fails the pipeline). This is because sessions alone contain sufficient material for insight extraction, but without the gist there's no way to deliver materials to CI.
+The key design choice: stages 1-3 are lenient (degrade gracefully), while stage 4 is strict (fails the pipeline). This is because sessions alone contain sufficient material for insight extraction, but without the learn branch there's no way to deliver materials to CI.
 
 ## Debugging
 
@@ -155,6 +155,5 @@ For CI issues (stage 6), use `gh run view <run-id>` to inspect workflow logs.
 
 - [Async Learn Local Preprocessing](async-learn-local-preprocessing.md) — Direct-call architecture, session classification, preprocessing internals
 - [Learn Workflow](learn-workflow.md) — Agent tier architecture, status tracking, /erk:learn skill
-- [Gist Materials Interchange](../architecture/gist-materials-interchange.md) — Delimiter-based file packing format
 - [Session Preprocessing](../sessions/preprocessing.md) — What preprocessing does to session XML
 - [Learn Plan Land Flow](../cli/learn-plan-land-flow.md) — Integration with PR landing

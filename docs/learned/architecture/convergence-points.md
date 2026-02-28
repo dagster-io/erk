@@ -33,8 +33,8 @@ Path B (setup) ──┘
 
 `src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py` has two setup paths:
 
-- `_setup_planned_pr_plan()` — fetches plan from draft PR via `github.get_pr()`
-- `_setup_issue_plan()` — fetches plan from issue via `plan_backend.get_plan()`
+- A planned-PR setup path — fetches plan from draft PR via `github.get_pr()`
+- `setup_impl_from_pr()` — orchestrates setup from any plan source
 
 Both paths create identical `.erk/impl-context/` folder contents. Neither path deletes `.erk/impl-context/` — that cleanup is deferred to the convergence point in `/erk:plan-implement` Step 2d:
 
