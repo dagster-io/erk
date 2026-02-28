@@ -335,6 +335,55 @@ def _setup_impl_for_plan(
     user_output(f"Created .erk/impl-context/ folder from plan #{setup.plan_number}")
 
 
+def _rebase_and_track_for_plan(
+    ctx: ErkContext,
+    *,
+    repo_root: Path,
+    worktree_path: Path,
+    branch: str,
+    parent_branch: str,
+    trunk: str,
+) -> None:
+    """Rebase onto parent branch (if stacked) and track with Graphite.
+
+    For stacked plans where parent_branch != trunk, the parent may have advanced
+    since the plan was saved. Rebasing ensures git history includes the parent's
+    tip, which gt track requires for proper stacking.
+
+    Mirrors the pattern from pr/checkout_cmd.py for stacked PRs.
+
+    Args:
+        ctx: Erk context
+        repo_root: Repository root path
+        worktree_path: Path to the worktree (used as cwd for rebase)
+        branch: The plan branch name
+        parent_branch: The parent branch to rebase onto and track with
+        trunk: The trunk branch name
+    """
+    # For stacked plans (parent is not trunk), rebase onto parent first
+    if parent_branch != trunk:
+        # Ensure parent branch is up to date locally
+        local_branches = ctx.git.branch.list_local_branches(repo_root)
+        if parent_branch not in local_branches:
+            user_output(f"Fetching base branch '{parent_branch}'...")
+            ctx.git.remote.fetch_branch(repo_root, "origin", parent_branch)
+            ctx.branch_manager.create_tracking_branch(
+                repo_root, parent_branch, f"origin/{parent_branch}"
+            )
+
+        user_output("Rebasing onto base branch...")
+        rebase_result = ctx.git.rebase.rebase_onto(worktree_path, f"origin/{parent_branch}")
+
+        if not rebase_result.success:
+            ctx.git.rebase.rebase_abort(worktree_path)
+            user_output(
+                f"Warning: Rebase had conflicts. Worktree created but needs manual rebase.\n"
+                f"Run: cd {worktree_path} && git rebase origin/{parent_branch}"
+            )
+
+    ctx.branch_manager.track_branch(repo_root, branch, parent_branch)
+
+
 @alias("co")
 @click.command("checkout", cls=CommandWithHiddenOptions)
 @click.argument("branch", metavar="BRANCH", required=False, shell_complete=complete_branch_names)
@@ -476,7 +525,8 @@ def _branch_checkout_impl(
         # to determine the correct Graphite parent, instead of guessing from current branch
         base_ref = plan.metadata.get("base_ref_name") if plan is not None else None
         parent_branch = base_ref if isinstance(base_ref, str) else trunk
-        ctx.branch_manager.track_branch(repo.root, branch, parent_branch)
+        # Defer track_branch until after worktree is created — for stacked plans
+        # (parent != trunk), we need to rebase first so gt track succeeds
 
     # Get all worktrees
     worktrees = ctx.git.worktree.list_worktrees(repo.root)
@@ -573,6 +623,14 @@ def _branch_checkout_impl(
                     )
 
                     if setup is not None:
+                        _rebase_and_track_for_plan(
+                            ctx,
+                            repo_root=repo.root,
+                            worktree_path=target_wt.path,
+                            branch=branch,
+                            parent_branch=parent_branch,
+                            trunk=trunk,
+                        )
                         _setup_impl_for_plan(
                             ctx,
                             setup=setup,
@@ -627,6 +685,14 @@ def _branch_checkout_impl(
 
         # Set up impl folder if --for-plan was used
         if setup is not None:
+            _rebase_and_track_for_plan(
+                ctx,
+                repo_root=repo.root,
+                worktree_path=target_worktree.path,
+                branch=branch,
+                parent_branch=parent_branch,
+                trunk=trunk,
+            )
             _setup_impl_for_plan(
                 ctx,
                 setup=setup,
@@ -662,6 +728,14 @@ def _branch_checkout_impl(
 
             # Set up impl folder if --for-plan was used
             if setup is not None:
+                _rebase_and_track_for_plan(
+                    ctx,
+                    repo_root=repo.root,
+                    worktree_path=target_worktree.path,
+                    branch=branch,
+                    parent_branch=parent_branch,
+                    trunk=trunk,
+                )
                 _setup_impl_for_plan(
                     ctx,
                     setup=setup,
