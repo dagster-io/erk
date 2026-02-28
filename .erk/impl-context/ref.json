@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Add pyproject.toml force-include sync test for bundled skills"
+  "plan_id": "8467",
+  "url": "https://github.com/dagster-io/erk/pull/8467",
+  "created_at": "2026-02-28T10:53:23.235134",
+  "synced_at": "2026-02-28T10:53:23.235134",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
