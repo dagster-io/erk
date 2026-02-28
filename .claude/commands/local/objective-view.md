@@ -1,5 +1,7 @@
 ---
 description: View progress and associations for an objective issue
+context: fork
+agent: general-purpose
 ---
 
 # /local:objective-view
