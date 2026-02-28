@@ -15,7 +15,7 @@ from tests.fakes.shell import FakeShell
 
 def test_global_config_test_factory_method(tmp_path: Path) -> None:
     """Test GlobalConfig.test() factory method creates config with defaults."""
-    config = GlobalConfig.test(tmp_path / "erks")
+    config = GlobalConfig.test(tmp_path / "erks", cmux_integration=False)
 
     assert config.erk_root == tmp_path / "erks"
     assert config.use_graphite is True
@@ -31,7 +31,7 @@ def test_global_config_test_factory_with_overrides(tmp_path: Path) -> None:
         use_graphite=False,
         shell_setup_complete=False,
         show_hidden_commands=True,
-    )
+    cmux_integration=False)
 
     assert config.erk_root == tmp_path / "erks"
     assert config.use_graphite is False

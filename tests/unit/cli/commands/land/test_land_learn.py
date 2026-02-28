@@ -99,7 +99,11 @@ def test_returns_local_config_when_set(tmp_path: Path) -> None:
     """Local config prompt_learn_on_land=True overrides global."""
     ctx = context_for_test(
         local_config=LoadedConfig.test(prompt_learn_on_land=True),
-        global_config=GlobalConfig.test(tmp_path, prompt_learn_on_land=False),
+        global_config=GlobalConfig.test(
+            tmp_path,
+            prompt_learn_on_land=False,
+            cmux_integration=False,
+        ),
         cwd=tmp_path,
     )
     assert _should_create_learn_pr(ctx) is True
@@ -109,7 +113,11 @@ def test_falls_back_to_global_config_when_local_unset(tmp_path: Path) -> None:
     """When local_config.prompt_learn_on_land is None, falls back to global."""
     ctx = context_for_test(
         local_config=LoadedConfig.test(prompt_learn_on_land=None),
-        global_config=GlobalConfig.test(tmp_path, prompt_learn_on_land=False),
+        global_config=GlobalConfig.test(
+            tmp_path,
+            prompt_learn_on_land=False,
+            cmux_integration=False,
+        ),
         cwd=tmp_path,
     )
     assert _should_create_learn_pr(ctx) is False

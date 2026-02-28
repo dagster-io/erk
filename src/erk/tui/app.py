@@ -151,6 +151,7 @@ class ErkDashApp(App):
         filters: PlanFilters,
         refresh_interval: float = 15.0,
         initial_sort: SortState | None = None,
+        cmux_integration: bool,
     ) -> None:
         """Initialize the dashboard app.
 
@@ -159,11 +160,13 @@ class ErkDashApp(App):
             filters: Filter options for the plan list
             refresh_interval: Seconds between auto-refresh (0 to disable)
             initial_sort: Initial sort state (defaults to by plan number)
+            cmux_integration: Whether cmux workspace integration is enabled
         """
         super().__init__()
         self._provider = provider
         self._plan_filters = filters
         self._refresh_interval = refresh_interval
+        self._cmux_integration = cmux_integration
         self._table: PlanDataTable | None = None
         self._status_bar: StatusBar | None = None
         self._filter_input: Input | None = None
@@ -461,6 +464,7 @@ class ErkDashApp(App):
         ctx = CommandContext(
             row=row,
             view_mode=self._view_mode,
+            cmux_integration=self._cmux_integration,
         )
         self.push_screen(LaunchScreen(ctx=ctx), self._on_launch_result)
 
@@ -1057,6 +1061,7 @@ class ErkDashApp(App):
                 executor=executor,
                 repo_root=self._provider.repo_root,
                 view_mode=self._view_mode,
+                cmux_integration=self._cmux_integration,
             )
         )
 
@@ -1314,49 +1319,89 @@ class ErkDashApp(App):
             self._copy_checkout_command(row)
 
         elif command_id == "copy_pr_checkout":
-            text = get_copy_text(command_id, row, self._view_mode)
+            text = get_copy_text(
+                command_id,
+                row,
+                self._view_mode,
+                cmux_integration=self._cmux_integration,
+            )
             if text is not None:
                 self._provider.clipboard.copy(text)
                 self.notify(f"Copied: {text}")
 
         elif command_id == "copy_implement_local":
-            text = get_copy_text(command_id, row, self._view_mode)
+            text = get_copy_text(
+                command_id,
+                row,
+                self._view_mode,
+                cmux_integration=self._cmux_integration,
+            )
             if text is not None:
                 self._provider.clipboard.copy(text)
                 self.notify(f"Copied: {text}")
 
         elif command_id == "copy_dispatch":
-            text = get_copy_text(command_id, row, self._view_mode)
+            text = get_copy_text(
+                command_id,
+                row,
+                self._view_mode,
+                cmux_integration=self._cmux_integration,
+            )
             if text is not None:
                 self._provider.clipboard.copy(text)
                 self.notify(f"Copied: {text}")
 
         elif command_id == "copy_replan":
-            text = get_copy_text(command_id, row, self._view_mode)
+            text = get_copy_text(
+                command_id,
+                row,
+                self._view_mode,
+                cmux_integration=self._cmux_integration,
+            )
             if text is not None:
                 self._provider.clipboard.copy(text)
                 self.notify(f"Copied: {text}")
 
         elif command_id == "copy_land":
-            text = get_copy_text(command_id, row, self._view_mode)
+            text = get_copy_text(
+                command_id,
+                row,
+                self._view_mode,
+                cmux_integration=self._cmux_integration,
+            )
             if text is not None:
                 self._provider.clipboard.copy(text)
                 self.notify(f"Copied: {text}")
 
         elif command_id == "copy_close_plan":
-            text = get_copy_text(command_id, row, self._view_mode)
+            text = get_copy_text(
+                command_id,
+                row,
+                self._view_mode,
+                cmux_integration=self._cmux_integration,
+            )
             if text is not None:
                 self._provider.clipboard.copy(text)
                 self.notify(f"Copied: {text}")
 
         elif command_id == "copy_rebase_remote":
-            text = get_copy_text(command_id, row, self._view_mode)
+            text = get_copy_text(
+                command_id,
+                row,
+                self._view_mode,
+                cmux_integration=self._cmux_integration,
+            )
             if text is not None:
                 self._provider.clipboard.copy(text)
                 self.notify(f"Copied: {text}")
 
         elif command_id == "copy_address_remote":
-            text = get_copy_text(command_id, row, self._view_mode)
+            text = get_copy_text(
+                command_id,
+                row,
+                self._view_mode,
+                cmux_integration=self._cmux_integration,
+            )
             if text is not None:
                 self._provider.clipboard.copy(text)
                 self.notify(f"Copied: {text}")

@@ -231,6 +231,7 @@ class PlanDetailScreen(ModalScreen):
         repo_root: Path | None = None,
         auto_open_palette: bool = False,
         view_mode: ViewMode,
+        cmux_integration: bool,
     ) -> None:
         """Initialize with plan row data.
 
@@ -242,6 +243,7 @@ class PlanDetailScreen(ModalScreen):
             repo_root: Path to repository root for running commands
             auto_open_palette: If True, open command palette on mount
             view_mode: The current view mode (for generating correct copy text)
+            cmux_integration: Whether cmux workspace integration is enabled
         """
         super().__init__()
         self._row = row
@@ -250,6 +252,7 @@ class PlanDetailScreen(ModalScreen):
         self._executor = executor
         self._repo_root = repo_root
         self._view_mode = view_mode
+        self._cmux_integration = cmux_integration
         self._output_panel: CommandOutputPanel | None = None
         self._command_running = False
         self._auto_open_palette = auto_open_palette
@@ -348,7 +351,12 @@ class PlanDetailScreen(ModalScreen):
 
     def action_copy_pr_checkout(self) -> None:
         """Copy PR checkout command to clipboard."""
-        text = get_copy_text("copy_pr_checkout", self._row, self._view_mode)
+        text = get_copy_text(
+            "copy_pr_checkout",
+            self._row,
+            self._view_mode,
+            cmux_integration=self._cmux_integration,
+        )
         if text is not None:
             self._copy_and_notify(text)
 
@@ -658,7 +666,12 @@ class PlanDetailScreen(ModalScreen):
             executor.notify(f"Copied: {cmd}", severity=None)
 
         elif command_id == "copy_pr_checkout":
-            text = get_copy_text(command_id, row, self._view_mode)
+            text = get_copy_text(
+                command_id,
+                row,
+                self._view_mode,
+                cmux_integration=self._cmux_integration,
+            )
             if text is not None:
                 executor.copy_to_clipboard(text)
                 executor.notify(f"Copied: {text}", severity=None)
@@ -677,43 +690,78 @@ class PlanDetailScreen(ModalScreen):
             executor.notify(f"Copied: {cmd}", severity=None)
 
         elif command_id == "copy_implement_local":
-            text = get_copy_text(command_id, row, self._view_mode)
+            text = get_copy_text(
+                command_id,
+                row,
+                self._view_mode,
+                cmux_integration=self._cmux_integration,
+            )
             if text is not None:
                 executor.copy_to_clipboard(text)
                 executor.notify(f"Copied: {text}", severity=None)
 
         elif command_id == "copy_dispatch":
-            text = get_copy_text(command_id, row, self._view_mode)
+            text = get_copy_text(
+                command_id,
+                row,
+                self._view_mode,
+                cmux_integration=self._cmux_integration,
+            )
             if text is not None:
                 executor.copy_to_clipboard(text)
                 executor.notify(f"Copied: {text}", severity=None)
 
         elif command_id == "copy_replan":
-            text = get_copy_text(command_id, row, self._view_mode)
+            text = get_copy_text(
+                command_id,
+                row,
+                self._view_mode,
+                cmux_integration=self._cmux_integration,
+            )
             if text is not None:
                 executor.copy_to_clipboard(text)
                 executor.notify(f"Copied: {text}", severity=None)
 
         elif command_id == "copy_land":
-            text = get_copy_text(command_id, row, self._view_mode)
+            text = get_copy_text(
+                command_id,
+                row,
+                self._view_mode,
+                cmux_integration=self._cmux_integration,
+            )
             if text is not None:
                 executor.copy_to_clipboard(text)
                 executor.notify(f"Copied: {text}", severity=None)
 
         elif command_id == "copy_close_plan":
-            text = get_copy_text(command_id, row, self._view_mode)
+            text = get_copy_text(
+                command_id,
+                row,
+                self._view_mode,
+                cmux_integration=self._cmux_integration,
+            )
             if text is not None:
                 executor.copy_to_clipboard(text)
                 executor.notify(f"Copied: {text}", severity=None)
 
         elif command_id == "copy_rebase_remote":
-            text = get_copy_text(command_id, row, self._view_mode)
+            text = get_copy_text(
+                command_id,
+                row,
+                self._view_mode,
+                cmux_integration=self._cmux_integration,
+            )
             if text is not None:
                 executor.copy_to_clipboard(text)
                 executor.notify(f"Copied: {text}", severity=None)
 
         elif command_id == "copy_address_remote":
-            text = get_copy_text(command_id, row, self._view_mode)
+            text = get_copy_text(
+                command_id,
+                row,
+                self._view_mode,
+                cmux_integration=self._cmux_integration,
+            )
             if text is not None:
                 executor.copy_to_clipboard(text)
                 executor.notify(f"Copied: {text}", severity=None)
@@ -902,7 +950,12 @@ class PlanDetailScreen(ModalScreen):
 
             # PR checkout command (if PR exists)
             if self._row.pr_number is not None:
-                pr_checkout_cmd = get_copy_text("copy_pr_checkout", self._row, self._view_mode)
+                pr_checkout_cmd = get_copy_text(
+                    "copy_pr_checkout",
+                    self._row,
+                    self._view_mode,
+                    cmux_integration=self._cmux_integration,
+                )
                 if pr_checkout_cmd:
                     with Container(classes="command-row"):
                         yield CopyableLabel(pr_checkout_cmd, pr_checkout_cmd)

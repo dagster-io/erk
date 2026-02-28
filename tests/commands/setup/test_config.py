@@ -120,8 +120,8 @@ def test_config_list_not_in_git_repo() -> None:
 
         # Build context manually without env.build_context() to avoid auto-adding git_common_dirs
         global_config = GlobalConfig.test(
-            Path("/fake/erks"), use_graphite=False, shell_setup_complete=False
-        )
+            Path("/fake/erks"), use_graphite=False, shell_setup_complete=False, 
+        cmux_integration=False)
 
         test_ctx = context_for_test(
             git=git_ops,

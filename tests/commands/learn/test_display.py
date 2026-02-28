@@ -163,7 +163,7 @@ def test_dangerous_flag_passed_to_execute_interactive(tmp_path: Path) -> None:
         pool_json_path=repo_dir / "pool.json",
     )
 
-    global_config = GlobalConfig.test(erk_root=repo_dir)
+    global_config = GlobalConfig.test(erk_root=repo_dir, cmux_integration=False)
 
     ctx = context_for_test(
         cwd=tmp_path,
@@ -250,7 +250,7 @@ def test_learn_without_dangerous_flag(tmp_path: Path) -> None:
         pool_json_path=repo_dir / "pool.json",
     )
 
-    global_config = GlobalConfig.test(erk_root=repo_dir)
+    global_config = GlobalConfig.test(erk_root=repo_dir, cmux_integration=False)
 
     ctx = context_for_test(
         cwd=tmp_path,
@@ -348,7 +348,7 @@ def test_learn_passes_learn_branch_when_available(tmp_path: Path) -> None:
         pool_json_path=repo_dir / "pool.json",
     )
 
-    global_config = GlobalConfig.test(erk_root=repo_dir)
+    global_config = GlobalConfig.test(erk_root=repo_dir, cmux_integration=False)
 
     ctx = context_for_test(
         cwd=tmp_path,
@@ -433,7 +433,7 @@ def test_learn_branch_skips_session_discovery_and_display(tmp_path: Path) -> Non
         pool_json_path=repo_dir / "pool.json",
     )
 
-    global_config = GlobalConfig.test(erk_root=repo_dir)
+    global_config = GlobalConfig.test(erk_root=repo_dir, cmux_integration=False)
 
     ctx = context_for_test(
         cwd=tmp_path,
@@ -528,7 +528,7 @@ def test_learn_without_learn_branch_does_not_include_param(tmp_path: Path) -> No
         pool_json_path=repo_dir / "pool.json",
     )
 
-    global_config = GlobalConfig.test(erk_root=repo_dir)
+    global_config = GlobalConfig.test(erk_root=repo_dir, cmux_integration=False)
 
     ctx = context_for_test(
         cwd=tmp_path,
@@ -613,7 +613,7 @@ def test_learn_branch_auto_launches_without_interactive_flag(tmp_path: Path) -> 
         pool_json_path=repo_dir / "pool.json",
     )
 
-    global_config = GlobalConfig.test(erk_root=repo_dir)
+    global_config = GlobalConfig.test(erk_root=repo_dir, cmux_integration=False)
 
     ctx = context_for_test(
         cwd=tmp_path,
@@ -696,7 +696,7 @@ def test_dangerous_flag_auto_launches_without_interactive_flag(tmp_path: Path) -
         pool_json_path=repo_dir / "pool.json",
     )
 
-    global_config = GlobalConfig.test(erk_root=repo_dir)
+    global_config = GlobalConfig.test(erk_root=repo_dir, cmux_integration=False)
 
     ctx = context_for_test(
         cwd=tmp_path,
@@ -780,7 +780,7 @@ def test_session_path_without_flags_prompts_user(tmp_path: Path) -> None:
         pool_json_path=repo_dir / "pool.json",
     )
 
-    global_config = GlobalConfig.test(erk_root=repo_dir)
+    global_config = GlobalConfig.test(erk_root=repo_dir, cmux_integration=False)
 
     ctx = context_for_test(
         cwd=tmp_path,

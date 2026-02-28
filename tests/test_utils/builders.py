@@ -411,7 +411,7 @@ class WorktreeScenario:
             self.erk_root,
             use_graphite=self._use_graphite,
             shell_setup_complete=False,
-        )
+        cmux_integration=False)
 
         self.shell = FakeShell()
 

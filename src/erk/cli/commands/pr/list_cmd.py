@@ -423,12 +423,18 @@ def _run_interactive_mode(
     # Convert sort string to SortState
     initial_sort = SortState(key=SortKey.BRANCH_ACTIVITY if sort == "activity" else SortKey.PLAN_ID)
 
+    # Determine cmux integration setting
+    cmux_integration = (
+        ctx.global_config.cmux_integration if ctx.global_config is not None else False
+    )
+
     # Run the TUI app
     app = ErkDashApp(
         provider=provider,
         filters=filters,
         refresh_interval=interval,
         initial_sort=initial_sort,
+        cmux_integration=cmux_integration,
     )
     app.run()
 

@@ -30,6 +30,7 @@ class CommandContext:
 
     row: PlanRowData
     view_mode: ViewMode
+    cmux_integration: bool
 
 
 @dataclass(frozen=True)

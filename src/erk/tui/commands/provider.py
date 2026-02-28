@@ -94,6 +94,7 @@ class MainListCommandProvider(Provider):
         return CommandContext(
             row=row,
             view_mode=self._app._view_mode,
+            cmux_integration=self._app._cmux_integration,
         )
 
     async def discover(self) -> Hits:
@@ -202,6 +203,7 @@ class PlanCommandProvider(Provider):
         return CommandContext(
             row=self._detail_screen._row,
             view_mode=ViewMode.PLANS,
+            cmux_integration=self._detail_screen._cmux_integration,
         )
 
     async def discover(self) -> Hits:

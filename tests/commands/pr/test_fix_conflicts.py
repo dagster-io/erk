@@ -83,7 +83,7 @@ def test_pr_fix_conflicts_skip_dangerous_with_config() -> None:
         global_config = GlobalConfig.test(
             env.erk_root,
             fix_conflicts_require_dangerous_flag=False,  # Disable --dangerous requirement
-        )
+        cmux_integration=False)
 
         ctx = build_workspace_test_context(
             env,

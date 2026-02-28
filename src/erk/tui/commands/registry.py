@@ -91,7 +91,16 @@ def _display_copy_pr_checkout(ctx: CommandContext) -> str:
     """Display name for copy_pr_checkout command."""
     if ctx.row.pr_number:
         pr = ctx.row.pr_number
-        return f'source "$(erk pr checkout {pr} --script --sync)" && gt submit --no-interactive'
+        checkout_cmd = (
+            f'source "$(erk pr checkout {pr} --script --sync)" && gt submit --no-interactive'
+        )
+        if ctx.cmux_integration and ctx.row.pr_head_branch:
+            branch = ctx.row.pr_head_branch
+            return (
+                f"WS=$(cmux new-workspace --command '{checkout_cmd}' | awk '{{print $2}}') && "
+                f'cmux rename-workspace --workspace "$WS" "{branch}"'
+            )
+        return checkout_cmd
     return "checkout"
 
 
@@ -467,7 +476,9 @@ def get_display_name(cmd: CommandDefinition, ctx: CommandContext) -> str:
     return cmd.name
 
 
-def get_copy_text(command_id: str, row: PlanRowData, view_mode: ViewMode) -> str | None:
+def get_copy_text(
+    command_id: str, row: PlanRowData, view_mode: ViewMode, *, cmux_integration: bool
+) -> str | None:
     """Get the text to copy to clipboard for a command.
 
     This function maps (command_id, row, view_mode) to the clipboard text by
@@ -478,12 +489,13 @@ def get_copy_text(command_id: str, row: PlanRowData, view_mode: ViewMode) -> str
         command_id: The command ID (e.g., "copy_pr_checkout")
         row: The plan row data
         view_mode: The current view mode
+        cmux_integration: Whether cmux workspace integration is enabled
 
     Returns:
         The text to copy, or None if the command is not found, not available,
         or has no display name
     """
-    ctx = CommandContext(row=row, view_mode=view_mode)
+    ctx = CommandContext(row=row, view_mode=view_mode, cmux_integration=cmux_integration)
     for cmd in get_all_commands():
         if cmd.id == command_id:
             if cmd.is_available(ctx) and cmd.get_display_name is not None:

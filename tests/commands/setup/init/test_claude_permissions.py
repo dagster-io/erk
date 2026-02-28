@@ -36,7 +36,12 @@ def test_init_offers_claude_permission_when_missing() -> None:
         )
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+        global_config = GlobalConfig.test(
+            erk_root,
+            use_graphite=False,
+            shell_setup_complete=True,
+            cmux_integration=False,
+        )
 
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -73,7 +78,12 @@ def test_init_skips_claude_permission_when_already_configured() -> None:
         )
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+        global_config = GlobalConfig.test(
+            erk_root,
+            use_graphite=False,
+            shell_setup_complete=True,
+            cmux_integration=False,
+        )
 
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -99,7 +109,12 @@ def test_init_skips_claude_permission_when_no_settings() -> None:
         # No .claude/settings.json file in repo
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+        global_config = GlobalConfig.test(
+            erk_root,
+            use_graphite=False,
+            shell_setup_complete=True,
+            cmux_integration=False,
+        )
 
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -129,7 +144,12 @@ def test_init_handles_declined_claude_permission() -> None:
         claude_settings_path.write_text(json.dumps(original_settings), encoding="utf-8")
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+        global_config = GlobalConfig.test(
+            erk_root,
+            use_graphite=False,
+            shell_setup_complete=True,
+            cmux_integration=False,
+        )
 
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -162,7 +182,12 @@ def test_init_handles_declined_write_confirmation() -> None:
         claude_settings_path.write_text(json.dumps(original_settings), encoding="utf-8")
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+        global_config = GlobalConfig.test(
+            erk_root,
+            use_graphite=False,
+            shell_setup_complete=True,
+            cmux_integration=False,
+        )
 
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -198,7 +223,12 @@ def test_init_accepts_default_on_empty_input_for_write_confirmation() -> None:
         )
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+        global_config = GlobalConfig.test(
+            erk_root,
+            use_graphite=False,
+            shell_setup_complete=True,
+            cmux_integration=False,
+        )
 
         erk_installation = FakeErkInstallation(config=global_config)
 

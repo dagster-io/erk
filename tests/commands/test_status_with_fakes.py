@@ -95,7 +95,7 @@ def test_status_cmd_in_subdirectory_of_worktree(tmp_path: Path) -> None:
         tmp_path / "erks",
         use_graphite=False,
         shell_setup_complete=False,
-    )
+    cmux_integration=False)
     ctx = create_test_context(git=git_ops, global_config=global_config, cwd=subdir)
 
     runner = CliRunner()
@@ -179,8 +179,8 @@ def test_status_cmd_not_in_git_repo(tmp_path: Path) -> None:
     )
 
     global_config = GlobalConfig.test(
-        tmp_path / "erks", use_graphite=False, shell_setup_complete=False
-    )
+        tmp_path / "erks", use_graphite=False, shell_setup_complete=False, 
+    cmux_integration=False)
 
     ctx = create_test_context(git=git_ops, global_config=global_config)
 

@@ -20,7 +20,12 @@ def test_context_initialization_and_attributes() -> None:
     github_ops = FakeGitHub()
     graphite_ops = FakeGraphite()
     shell_ops = FakeShell()
-    global_config = GlobalConfig.test(Path("/tmp"), use_graphite=False, shell_setup_complete=False)
+    global_config = GlobalConfig.test(
+        Path("/tmp"),
+        use_graphite=False,
+        shell_setup_complete=False,
+        cmux_integration=False,
+    )
 
     ctx = context_for_test(
         git=git_ops,
@@ -42,7 +47,12 @@ def test_context_initialization_and_attributes() -> None:
 
 def test_context_is_frozen() -> None:
     """ErkContext is a frozen dataclass."""
-    global_config = GlobalConfig.test(Path("/tmp"), use_graphite=False, shell_setup_complete=False)
+    global_config = GlobalConfig.test(
+        Path("/tmp"),
+        use_graphite=False,
+        shell_setup_complete=False,
+        cmux_integration=False,
+    )
     ctx = context_for_test(
         git=FakeGit(),
         global_config=global_config,

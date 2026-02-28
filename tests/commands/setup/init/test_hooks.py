@@ -45,7 +45,12 @@ def test_init_auto_installs_hooks_when_missing() -> None:
         claude_settings_path.write_text("{}", encoding="utf-8")
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+        global_config = GlobalConfig.test(
+            erk_root,
+            use_graphite=False,
+            shell_setup_complete=True,
+            cmux_integration=False,
+        )
 
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -111,7 +116,12 @@ def test_init_skips_hooks_when_already_installed() -> None:
         claude_settings_path.write_text(json.dumps(existing_settings), encoding="utf-8")
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+        global_config = GlobalConfig.test(
+            erk_root,
+            use_graphite=False,
+            shell_setup_complete=True,
+            cmux_integration=False,
+        )
 
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -136,7 +146,12 @@ def test_init_hooks_flag_removed() -> None:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+        global_config = GlobalConfig.test(
+            erk_root,
+            use_graphite=False,
+            shell_setup_complete=True,
+            cmux_integration=False,
+        )
 
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -161,7 +176,12 @@ def test_init_syncs_artifacts_successfully() -> None:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+        global_config = GlobalConfig.test(
+            erk_root,
+            use_graphite=False,
+            shell_setup_complete=True,
+            cmux_integration=False,
+        )
         erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
@@ -197,7 +217,12 @@ def test_init_shows_warning_on_artifact_sync_failure() -> None:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+        global_config = GlobalConfig.test(
+            erk_root,
+            use_graphite=False,
+            shell_setup_complete=True,
+            cmux_integration=False,
+        )
         erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
