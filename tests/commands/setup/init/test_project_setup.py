@@ -19,6 +19,7 @@ This file uses minimal mocking for external boundaries:
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
+from erk.core.release_notes import get_current_version
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
 from erk_shared.gateway.git.fake import FakeGit
@@ -311,8 +312,6 @@ def test_init_upgrade_adds_gitignore_entries() -> None:
 
 def test_init_upgrade_updates_version_file() -> None:
     """Test that init --upgrade updates the required-erk-uv-tool-version file."""
-    from erk.core.release_notes import get_current_version
-
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides={"HOME": "{root_worktree}"}) as env:
         erk_root = env.cwd / "erks"

@@ -1,9 +1,14 @@
 """Tests for erk doctor command - production command integration tests."""
 
+import json
+import time
+
 import pytest
 from click.testing import CliRunner
 
+from erk.cli.commands import doctor as doctor_module
 from erk.cli.commands.doctor import doctor_cmd
+from erk.core.health_checks import CheckResult
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github_admin.abc import AuthStatus
 from tests.fakes.github_admin import FakeGitHubAdmin
@@ -382,8 +387,6 @@ def test_doctor_shows_remediation_for_warnings(monkeypatch: pytest.MonkeyPatch) 
     the doctor command displays the remediation message. This was a bug where
     remediations were only shown for failed checks (passed=False), not warnings.
     """
-    from erk.core.health_checks import CheckResult
-
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
@@ -418,8 +421,6 @@ def test_doctor_shows_remediation_for_warnings(monkeypatch: pytest.MonkeyPatch) 
                 ),
             ]
 
-        from erk.cli.commands import doctor as doctor_module
-
         monkeypatch.setattr(
             doctor_module,
             "run_all_checks",
@@ -453,8 +454,6 @@ def test_doctor_remediation_points_to_artifact_sync() -> None:
         # Create .claude/settings.json with outdated hooks (triggers hook check)
         settings_path = env.cwd / ".claude" / "settings.json"
         settings_path.parent.mkdir(parents=True)
-        import json
-
         settings_path.write_text(
             json.dumps(
                 {
@@ -500,8 +499,6 @@ def test_doctor_hook_outdated_message() -> None:
         # Create settings with outdated hooks
         settings_path = env.cwd / ".claude" / "settings.json"
         settings_path.parent.mkdir(parents=True)
-        import json
-
         settings_path.write_text(
             json.dumps(
                 {
@@ -536,9 +533,6 @@ def test_doctor_hook_outdated_message() -> None:
 
 def test_doctor_excludes_hook_health_by_default() -> None:
     """Test that hook health check is excluded by default."""
-    import json
-    import time
-
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(

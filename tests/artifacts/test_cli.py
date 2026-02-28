@@ -1,5 +1,6 @@
 """Tests for artifact CLI commands."""
 
+import json
 from pathlib import Path
 from unittest.mock import patch
 
@@ -12,6 +13,7 @@ from erk.cli.commands.artifact.check import check_cmd
 from erk.cli.commands.artifact.list_cmd import list_cmd
 from erk.cli.commands.artifact.show import show_cmd
 from erk.cli.commands.artifact.sync_cmd import sync_cmd
+from erk.core.claude_settings import add_erk_hooks
 from erk.core.context import ErkContext, context_for_test
 
 
@@ -453,10 +455,6 @@ class TestCheckCommand:
 
     def test_check_no_orphans(self, tmp_path: Path) -> None:
         """Shows no orphaned artifacts when none found."""
-        import json
-
-        from erk.core.claude_settings import add_erk_hooks
-
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path):
             # Set up version as up-to-date

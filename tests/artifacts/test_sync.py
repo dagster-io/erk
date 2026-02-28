@@ -1,5 +1,6 @@
 """Tests for artifact sync."""
 
+import json
 from pathlib import Path
 from unittest.mock import patch
 
@@ -20,6 +21,11 @@ from erk.artifacts.sync import (
     _sync_workflows,
     sync_artifacts,
     sync_dignified_review,
+)
+from erk.core.claude_settings import (
+    ERK_EXIT_PLAN_HOOK_COMMAND,
+    ERK_USER_PROMPT_HOOK_COMMAND,
+    add_erk_hooks,
 )
 
 # Test-only constants matching the capabilities registry
@@ -488,10 +494,6 @@ def test_sync_artifacts_syncs_installed_capabilities(tmp_path: Path) -> None:
     After syncing file-based artifacts, sync_artifacts iterates through
     installed capabilities and calls install() to ensure they're up-to-date.
     """
-    import json
-
-    from erk.core.claude_settings import add_erk_hooks
-
     bundled_dir = tmp_path / "bundled"
     bundled_dir.mkdir()
 
@@ -743,8 +745,6 @@ def test_sync_hooks_returns_empty_when_no_erk_hooks_installed(tmp_path: Path) ->
     hooks even when they weren't already installed. The fix adds an early return
     when HooksCapability.has_any_erk_hooks() returns False.
     """
-    import json
-
     # Create settings.json without any erk hooks (only non-erk hooks)
     settings_path = tmp_path / ".claude" / "settings.json"
     settings_path.parent.mkdir(parents=True)
@@ -808,10 +808,6 @@ def test_sync_hooks_upgrades_old_format(tmp_path: Path) -> None:
     prevented old hooks from being updated during upgrades.
     Old hooks have ERK_HOOK_ID markers but lack the 'command -v erk' prefix.
     """
-    import json
-
-    from erk.core.claude_settings import ERK_EXIT_PLAN_HOOK_COMMAND, ERK_USER_PROMPT_HOOK_COMMAND
-
     # Create settings.json with OLD hook commands (have ERK_HOOK_ID markers
     # but missing the 'command -v erk' prefix that current hooks have)
     settings_path = tmp_path / ".claude" / "settings.json"
