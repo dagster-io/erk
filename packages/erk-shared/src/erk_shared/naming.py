@@ -79,11 +79,6 @@ def format_branch_timestamp_suffix(dt: datetime) -> str:
 
 _OBJECTIVE_SLUG_PATTERN = re.compile(r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$")
 
-# Node slug constraints
-_NODE_SLUG_MIN_LENGTH = 2
-_NODE_SLUG_MAX_LENGTH = 30
-
-
 # Plan title constraints
 _PLAN_TITLE_MIN_LENGTH = 5
 _PLAN_TITLE_MAX_LENGTH = 100
@@ -393,76 +388,6 @@ def validate_objective_slug(slug: str) -> ValidObjectiveSlug | InvalidObjectiveS
     return ValidObjectiveSlug(slug=slug)
 
 
-@dataclass(frozen=True)
-class ValidNodeSlug:
-    """Validation success for a node slug.
-
-    Attributes:
-        slug: The validated slug value.
-    """
-
-    slug: str
-
-
-@dataclass(frozen=True)
-class InvalidNodeSlug:
-    """Validation failure for a node slug.
-
-    Attributes:
-        raw_slug: The original slug value that failed validation.
-        reason: A short description of why validation failed.
-    """
-
-    raw_slug: str
-    reason: str
-
-    @property
-    def message(self) -> str:
-        """Full error message with pattern, rules, actual value, and examples.
-
-        Designed so an agent receiving this message can self-correct.
-        """
-        return (
-            f"Invalid node slug: {self.reason}\n"
-            f"  Actual value: {self.raw_slug!r}\n"
-            f"  Pattern: ^[a-z][a-z0-9]*(-[a-z0-9]+)*$\n"
-            f"  Rules:\n"
-            f"    - {_NODE_SLUG_MIN_LENGTH}-{_NODE_SLUG_MAX_LENGTH} characters\n"
-            f"    - Lowercase letters and digits only\n"
-            f"    - Must start with a letter\n"
-            f"    - Hyphens allowed between words (no consecutive hyphens)\n"
-            f"  Valid examples: add-user-model, wire-cli, fix-auth\n"
-            f"  Invalid examples: Add-User, 123-start, a, my--slug"
-        )
-
-
-def validate_node_slug(slug: str) -> ValidNodeSlug | InvalidNodeSlug:
-    """Validate a node slug against the required format.
-
-    Node slugs follow the same pattern as objective slugs but with
-    different length constraints (2-30 characters).
-
-    Args:
-        slug: The slug string to validate.
-
-    Returns:
-        ValidNodeSlug if valid, InvalidNodeSlug if invalid.
-    """
-    if len(slug) < _NODE_SLUG_MIN_LENGTH:
-        return InvalidNodeSlug(
-            raw_slug=slug,
-            reason=f"Too short (minimum {_NODE_SLUG_MIN_LENGTH} characters)",
-        )
-    if len(slug) > _NODE_SLUG_MAX_LENGTH:
-        return InvalidNodeSlug(
-            raw_slug=slug,
-            reason=f"Too long (maximum {_NODE_SLUG_MAX_LENGTH} characters)",
-        )
-    if _OBJECTIVE_SLUG_PATTERN.match(slug) is None:
-        return InvalidNodeSlug(raw_slug=slug, reason="Does not match required pattern")
-    return ValidNodeSlug(slug=slug)
-
-
 def slugify_node_description(description: str) -> str:
     """Generate a hash-based slug from a node description.
 
@@ -760,34 +685,6 @@ def strip_plan_from_filename(filename: str) -> str:
     return cleaned
 
 
-def extract_trailing_number(name: str) -> tuple[str, int | None]:
-    r"""Extract trailing number from a name.
-
-    Detects trailing numbers in names using regex pattern `^(.+?)-(\d+)$`.
-    Returns tuple of (base_name, number) or (name, None).
-
-    Args:
-        name: Name to parse
-
-    Returns:
-        Tuple of (base_name, number) if trailing number found, else (name, None)
-
-    Examples:
-        >>> extract_trailing_number("my-feature")
-        ("my-feature", None)
-        >>> extract_trailing_number("my-feature-2")
-        ("my-feature", 2)
-        >>> extract_trailing_number("fix-42")
-        ("fix", 42)
-    """
-    match = re.match(r"^(.+?)-(\d+)$", name)
-    if match:
-        base_name = match.group(1)
-        number = int(match.group(2))
-        return (base_name, number)
-    return (name, None)
-
-
 def extract_objective_number(branch_name: str) -> int | None:
     """Extract objective number from branch name.
 
@@ -959,49 +856,3 @@ def generate_planned_pr_branch_name(
     base_branch_name = (prefix + sanitized_title)[:31].rstrip("-")
     timestamp_suffix = format_branch_timestamp_suffix(timestamp)
     return base_branch_name + timestamp_suffix
-
-
-def derive_branch_name_from_title(title: str) -> str:
-    """Derive branch name from issue/plan title.
-
-    This function matches the logic used by the erk-impl workflow
-    to ensure CLI and workflow produce identical branch names.
-
-    Transforms:
-    - Lowercase
-    - Replace non-alphanumeric (except hyphen) with hyphen
-    - Collapse consecutive hyphens
-    - Strip leading/trailing hyphens
-    - Truncate to 30 chars
-    - Strip trailing hyphen after truncation
-
-    Args:
-        title: Issue or plan title
-
-    Returns:
-        Branch name (max 30 chars, kebab-case)
-
-    Examples:
-        >>> derive_branch_name_from_title("My Feature")
-        "my-feature"
-        >>> derive_branch_name_from_title("Fix Bug #123!")
-        "fix-bug-123"
-        >>> derive_branch_name_from_title("A" * 40)
-        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"  # 30 chars (one less than sanitize_branch_component)
-    """
-    # Convert to lowercase
-    branch_name = title.lower()
-    # Replace non-alphanumeric (except hyphen) with hyphen
-    branch_name = re.sub(r"[^a-z0-9-]", "-", branch_name)
-    # Collapse consecutive hyphens
-    branch_name = re.sub(r"-+", "-", branch_name)
-    # Strip leading/trailing hyphens
-    branch_name = branch_name.strip("-")
-
-    # Truncate to 30 chars (matches workflow logic)
-    branch_name = branch_name[:30]
-
-    # Strip trailing hyphen after truncation
-    branch_name = branch_name.rstrip("-")
-
-    return branch_name

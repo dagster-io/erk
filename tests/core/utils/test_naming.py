@@ -5,25 +5,20 @@ import pytest
 
 from erk_shared.naming import (
     WORKTREE_DATE_SUFFIX_FORMAT,
-    InvalidNodeSlug,
     InvalidObjectiveSlug,
     InvalidPlanTitle,
     InvalidWorktreeName,
-    ValidNodeSlug,
     ValidObjectiveSlug,
     ValidPlanTitle,
     ValidWorktreeName,
     default_branch_for_worktree,
-    derive_branch_name_from_title,
     ensure_unique_worktree_name,
     extract_objective_number,
-    extract_trailing_number,
     generate_planned_pr_branch_name,
     sanitize_branch_component,
     sanitize_worktree_name,
     slugify_node_description,
     strip_plan_from_filename,
-    validate_node_slug,
     validate_objective_slug,
     validate_plan_title,
     validate_worktree_name,
@@ -176,27 +171,6 @@ def test_strip_plan_from_filename(value: str, expected: str) -> None:
     assert strip_plan_from_filename(value) == expected
 
 
-@pytest.mark.parametrize(
-    ("name", "expected_base", "expected_number"),
-    [
-        ("my-feature", "my-feature", None),
-        ("my-feature-2", "my-feature", 2),
-        ("fix-42", "fix", 42),
-        ("feature-3-test", "feature-3-test", None),  # Number in middle, not trailing
-        ("test-123", "test", 123),
-        ("no-number", "no-number", None),
-        ("v2-feature-10", "v2-feature", 10),
-    ],
-)
-def test_extract_trailing_number(
-    name: str, expected_base: str, expected_number: int | None
-) -> None:
-    """Test extracting trailing numbers from worktree names."""
-    base, number = extract_trailing_number(name)
-    assert base == expected_base
-    assert number == expected_number
-
-
 def test_ensure_unique_worktree_name_first_time(tmp_path: Path) -> None:
     """Test first-time worktree creation gets only datetime suffix."""
     from erk_shared.gateway.git.real import RealGit
@@ -322,54 +296,6 @@ def test_very_long_title_truncates_to_45_chars_total() -> None:
     # Verify the base name is correctly truncated (30 chars after rstrip of trailing hyphen)
     assert base_name == "refactor-erk-implement-command"
     assert len(base_name) == 30  # 31 chars truncated, then trailing hyphen stripped
-
-
-@pytest.mark.parametrize(
-    ("title", "expected"),
-    [
-        ("My Feature", "my-feature"),
-        ("Fix Bug #123!", "fix-bug-123"),
-        ("Simple", "simple"),
-        ("With_Underscores", "with-underscores"),
-        ("UPPERCASE", "uppercase"),
-        ("spaces  multiple   here", "spaces-multiple-here"),
-        ("leading---hyphens", "leading-hyphens"),
-        ("trailing---", "trailing"),
-        ("---both---", "both"),
-        # Test 30-char truncation (different from sanitize_branch_component's 31)
-        ("a" * 40, "a" * 30),
-        ("abcdefghijklmnopqrstuvwxyz-1234567890", "abcdefghijklmnopqrstuvwxyz-123"),
-        # Trailing hyphen after truncation is removed
-        ("this-is-thirty-chars-exact-yes", "this-is-thirty-chars-exact-yes"),  # Exactly 30
-        ("this-is-thirty-one-chars-exact", "this-is-thirty-one-chars-exact"),  # 31 chars -> 30
-        # Test non-alphanumeric characters
-        ("feat: add something", "feat-add-something"),
-        ("feat/add/something", "feat-add-something"),
-        ("feat(scope): message", "feat-scope-message"),
-    ],
-)
-def test_derive_branch_name_from_title(title: str, expected: str) -> None:
-    """Test derive_branch_name_from_title matches workflow logic."""
-    assert derive_branch_name_from_title(title) == expected
-
-
-def test_derive_branch_name_truncates_to_30_chars() -> None:
-    """Branch names from titles should truncate to 30 characters maximum.
-
-    This matches the workflow logic in plan-implement.yml which uses:
-    BRANCH_NAME="${BRANCH_NAME:0:30}"
-    """
-    # Exactly 30 characters
-    assert len(derive_branch_name_from_title("a" * 30)) == 30
-
-    # 31 characters truncates to 30
-    assert len(derive_branch_name_from_title("a" * 31)) == 30
-
-    # Long descriptive name gets truncated
-    long_name = "fix-dependency-injection-in-simplesubmitpy-to-eliminate-test-mocking"
-    result = derive_branch_name_from_title(long_name)
-    assert len(result) == 30
-    assert not result.endswith("-")  # No trailing hyphens after truncation
 
 
 @pytest.mark.parametrize(
@@ -735,61 +661,6 @@ def test_validate_worktree_name_roundtrip_with_sanitize() -> None:
     valid_names = ["my-feature", "fix-bug", "add-v2-support", "work", "a" * 31]
     for name in valid_names:
         assert sanitize_worktree_name(name) == name, f"Valid name {name!r} changed by sanitize"
-
-
-# ---------------------------------------------------------------------------
-# validate_node_slug tests
-# ---------------------------------------------------------------------------
-
-
-@pytest.mark.parametrize(
-    "slug",
-    [
-        "ab",
-        "add-user-model",
-        "wire-cli",
-        "fix-auth",
-        "a" * 30,
-        "x1",
-        "refactor-gateway-layer",
-    ],
-)
-def test_validate_node_slug_valid(slug: str) -> None:
-    """Valid node slugs return ValidNodeSlug."""
-    result = validate_node_slug(slug)
-    assert isinstance(result, ValidNodeSlug)
-    assert result.slug == slug
-
-
-@pytest.mark.parametrize(
-    ("slug", "reason_fragment"),
-    [
-        ("a", "Too short"),
-        ("", "Too short"),
-        ("a" * 31, "Too long"),
-        ("AB-test", "pattern"),
-        ("1-start", "pattern"),
-        ("my--slug", "pattern"),
-        ("-leading", "pattern"),
-        ("trailing-", "pattern"),
-        ("has space", "pattern"),
-    ],
-)
-def test_validate_node_slug_invalid(slug: str, reason_fragment: str) -> None:
-    """Invalid node slugs return InvalidNodeSlug with matching reason."""
-    result = validate_node_slug(slug)
-    assert isinstance(result, InvalidNodeSlug)
-    assert reason_fragment.lower() in result.reason.lower()
-
-
-def test_validate_node_slug_message_includes_rules() -> None:
-    """InvalidNodeSlug.message includes rules and examples."""
-    result = validate_node_slug("X")
-    assert isinstance(result, InvalidNodeSlug)
-    msg = result.message
-    assert "2-30 characters" in msg
-    assert "Valid examples" in msg
-    assert "Invalid examples" in msg
 
 
 # ---------------------------------------------------------------------------
