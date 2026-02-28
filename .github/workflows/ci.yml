@@ -31,7 +31,7 @@ jobs:
 
   # === Style Checks (parallel) ===
   format:
-    needs: check-submission
+    needs: [check-submission, fix-formatting]
     if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -42,7 +42,7 @@ jobs:
         run: make format-check
 
   lint:
-    needs: check-submission
+    needs: [check-submission, fix-formatting]
     if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -103,7 +103,7 @@ jobs:
           echo "::notice::Auto-fixed formatting and pushed"
 
   docs-check:
-    needs: check-submission
+    needs: [check-submission, fix-formatting]
     if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -118,7 +118,7 @@ jobs:
 
   # === Type/Test Checks (parallel) ===
   ty:
-    needs: check-submission
+    needs: [check-submission, fix-formatting]
     if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -129,7 +129,7 @@ jobs:
         run: make ty
 
   unit-tests:
-    needs: check-submission
+    needs: [check-submission, fix-formatting]
     if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -149,7 +149,7 @@ jobs:
         run: make test
 
   integration-tests:
-    needs: check-submission
+    needs: [check-submission, fix-formatting]
     if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -162,7 +162,7 @@ jobs:
         run: make test-integration
 
   erkbot-tests:
-    needs: check-submission
+    needs: [check-submission, fix-formatting]
     if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 15
