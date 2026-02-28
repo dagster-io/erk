@@ -16,6 +16,7 @@ from erk.cli.commands.exec.scripts.capture_session_info import (
     capture_session_info,
 )
 from erk.cli.commands.exec.scripts.ci_fetch_summaries import ci_fetch_summaries
+from erk.cli.commands.exec.scripts.ci_generate_summaries import ci_generate_summaries
 from erk.cli.commands.exec.scripts.ci_update_pr_body import ci_update_pr_body
 from erk.cli.commands.exec.scripts.ci_verify_autofix import ci_verify_autofix
 from erk.cli.commands.exec.scripts.cleanup_impl_context import cleanup_impl_context
@@ -253,6 +254,7 @@ exec_group.add_command(update_pr_description, name="update-pr-description")
 exec_group.add_command(upload_impl_session, name="upload-impl-session")
 exec_group.add_command(upload_session, name="upload-session")
 exec_group.add_command(ci_fetch_summaries, name="ci-fetch-summaries")
+exec_group.add_command(ci_generate_summaries, name="ci-generate-summaries")
 exec_group.add_command(ci_update_pr_body)
 exec_group.add_command(ci_verify_autofix, name="ci-verify-autofix")
 exec_group.add_command(close_pr, name="close-pr")
