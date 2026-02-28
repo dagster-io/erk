@@ -296,20 +296,20 @@ class TestExecuteCommandLandPR:
         assert executor.refresh_count == 0
 
 
-class TestExecuteCommandFixConflictsRemote:
-    """Tests for fix_conflicts_remote command.
+class TestExecuteCommandRebaseRemote:
+    """Tests for rebase_remote command.
 
-    Note: fix_conflicts_remote uses dismiss-and-delegate to the app's background worker.
+    Note: rebase_remote uses dismiss-and-delegate to the app's background worker.
     These tests verify the guard conditions. The async worker behavior is tested
     in test_app.py.
     """
 
-    def test_fix_conflicts_remote_does_nothing_without_pr_number(self) -> None:
-        """fix_conflicts_remote does nothing if no PR is associated with the plan."""
+    def test_rebase_remote_does_nothing_without_pr_number(self) -> None:
+        """rebase_remote does nothing if no PR is associated with the plan."""
         row = make_plan_row(123, "Test")  # No pr_number
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
-        screen.execute_command("fix_conflicts_remote")
+        screen.execute_command("rebase_remote")
         assert executor.refresh_count == 0
 
 
@@ -326,24 +326,24 @@ class TestExecuteCommandCopyClosePlan:
         assert "Copied: erk pr close 123" in executor.notifications
 
 
-class TestExecuteCommandCopyFixConflictsRemote:
-    """Tests for copy_fix_conflicts_remote command."""
+class TestExecuteCommandCopyRebaseRemote:
+    """Tests for copy_rebase_remote command."""
 
-    def test_copy_fix_conflicts_remote_copies_command(self) -> None:
-        """copy_fix_conflicts_remote copies the launch command when PR exists."""
+    def test_copy_rebase_remote_copies_command(self) -> None:
+        """copy_rebase_remote copies the launch command when PR exists."""
         row = make_plan_row(123, "Test", pr_number=456)
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
-        screen.execute_command("copy_fix_conflicts_remote")
+        screen.execute_command("copy_rebase_remote")
         assert executor.copied_texts == ["erk launch pr-fix-conflicts --pr 456"]
         assert "Copied: erk launch pr-fix-conflicts --pr 456" in executor.notifications
 
-    def test_copy_fix_conflicts_remote_does_nothing_without_pr(self) -> None:
-        """copy_fix_conflicts_remote does nothing when no PR number."""
+    def test_copy_rebase_remote_does_nothing_without_pr(self) -> None:
+        """copy_rebase_remote does nothing when no PR number."""
         row = make_plan_row(123, "Test")  # No pr_number
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
-        screen.execute_command("copy_fix_conflicts_remote")
+        screen.execute_command("copy_rebase_remote")
         assert executor.copied_texts == []
 
 
@@ -381,7 +381,7 @@ class TestExecuteCommandNoExecutor:
         screen.execute_command("close_plan")
         screen.execute_command("dispatch_to_queue")
         screen.execute_command("land_pr")
-        screen.execute_command("fix_conflicts_remote")
+        screen.execute_command("rebase_remote")
         screen.execute_command("copy_close_plan")
-        screen.execute_command("copy_fix_conflicts_remote")
+        screen.execute_command("copy_rebase_remote")
         screen.execute_command("copy_address_remote")

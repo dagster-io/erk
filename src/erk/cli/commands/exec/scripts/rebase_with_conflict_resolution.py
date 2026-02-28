@@ -218,14 +218,8 @@ def _rebase_with_conflict_resolution_impl(
     # Check if behind the target branch
     behind = git.analysis.count_commits_behind(cwd, f"origin/{target_branch}")
 
-    if behind == 0:
-        return RebaseSuccess(
-            action="already-up-to-date",
-            commits_behind=0,
-            conflicts_resolved=(),
-        )
-
     # Start rebase (may fail with conflicts, which is expected)
+    # When behind == 0, git rebase is a no-op, then force push pushes unchanged content.
     rebase_result = git.rebase.rebase_onto(cwd, f"origin/{target_branch}")
 
     # Track all files that had conflicts across all resolution attempts
@@ -268,8 +262,14 @@ def _rebase_with_conflict_resolution_impl(
             message=f"Failed to force push: {push_result.message}",
         )
 
+    # When behind == 0, the rebase was a no-op — report as already-up-to-date
+    # so callers can skip generating a Claude summary.
+    action: Literal["rebased", "already-up-to-date"] = (
+        "already-up-to-date" if behind == 0 else "rebased"
+    )
+
     return RebaseSuccess(
-        action="rebased",
+        action=action,
         commits_behind=behind,
         conflicts_resolved=tuple(sorted(all_conflicted_files)),
     )

@@ -760,8 +760,8 @@ class ErkDashApp(App):
             )
 
     @work(thread=True)
-    def _fix_conflicts_remote_async(self, op_id: str, pr_number: int) -> None:
-        """Dispatch fix-conflicts workflow in background thread with toast."""
+    def _rebase_remote_async(self, op_id: str, pr_number: int) -> None:
+        """Dispatch rebase workflow in background thread with toast."""
         result = self._run_streaming_operation(
             op_id=op_id,
             command=["erk", "launch", "pr-fix-conflicts", "--pr", str(pr_number)],
@@ -774,14 +774,13 @@ class ErkDashApp(App):
             if metadata_updated:
                 self.call_from_thread(
                     self.notify,
-                    f"Dispatched: erk launch pr-fix-conflicts --pr {pr_number}",
+                    f"Dispatched rebase for PR #{pr_number}",
                     timeout=3,
                 )
             else:
                 self.call_from_thread(
                     self.notify,
-                    f"Dispatched: erk launch pr-fix-conflicts --pr {pr_number}"
-                    " (metadata not updated)",
+                    f"Dispatched rebase for PR #{pr_number} (metadata not updated)",
                     timeout=5,
                 )
             self.call_from_thread(self.action_refresh)
@@ -789,7 +788,7 @@ class ErkDashApp(App):
             error_msg = _last_output_line(result)
             self.call_from_thread(
                 self.notify,
-                f"Failed to dispatch fix-conflicts for PR #{pr_number}: {error_msg}",
+                f"Failed to dispatch rebase for PR #{pr_number}: {error_msg}",
                 severity="error",
                 timeout=5,
             )
@@ -1291,7 +1290,7 @@ class ErkDashApp(App):
                 self._provider.clipboard.copy(text)
                 self.notify(f"Copied: {text}")
 
-        elif command_id == "copy_fix_conflicts_remote":
+        elif command_id == "copy_rebase_remote":
             text = get_copy_text(command_id, row, self._view_mode)
             if text is not None:
                 self._provider.clipboard.copy(text)
@@ -1309,14 +1308,14 @@ class ErkDashApp(App):
                 self._provider.clipboard.copy(cmd)
                 self.notify(f"Copied: {cmd}")
 
-        elif command_id == "fix_conflicts_remote":
+        elif command_id == "rebase_remote":
             if row.pr_number:
-                op_id = f"fix-conflicts-pr-{row.pr_number}"
+                op_id = f"rebase-pr-{row.pr_number}"
                 self._start_operation(
                     op_id=op_id,
-                    label=f"Dispatching fix-conflicts for PR #{row.pr_number}...",
+                    label=f"Dispatching rebase for PR #{row.pr_number}...",
                 )
-                self._fix_conflicts_remote_async(op_id, row.pr_number)
+                self._rebase_remote_async(op_id, row.pr_number)
 
         elif command_id == "address_remote":
             if row.pr_number:

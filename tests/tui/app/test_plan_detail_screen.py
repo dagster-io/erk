@@ -282,18 +282,18 @@ class TestPlanDetailScreenCopyActions:
             )
 
 
-class TestPlanDetailScreenFixConflictsKeybinding:
-    """Tests for action_fix_conflicts_remote() triggered via keybinding '5'.
+class TestPlanDetailScreenRebaseKeybinding:
+    """Tests for action_rebase_remote() triggered via keybinding '5'.
 
     The keybinding action dismisses the detail screen and delegates to
     the app's toast + async worker pattern.
     """
 
     @pytest.mark.asyncio
-    async def test_fix_conflicts_keybinding_uses_toast_pattern(
+    async def test_rebase_keybinding_uses_toast_pattern(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        """Pressing '5' in detail screen triggers toast + async fix-conflicts."""
+        """Pressing '5' in detail screen triggers toast + async rebase."""
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456)],
             repo_root=tmp_path,
@@ -303,11 +303,11 @@ class TestPlanDetailScreenFixConflictsKeybinding:
 
         captured_pr: int | None = None
 
-        def mock_async(self_app: ErkDashApp, pr_number: int) -> None:
+        def mock_async(self_app: ErkDashApp, op_id: str, pr_number: int) -> None:
             nonlocal captured_pr
             captured_pr = pr_number
 
-        monkeypatch.setattr(ErkDashApp, "_fix_conflicts_remote_async", mock_async)
+        monkeypatch.setattr(ErkDashApp, "_rebase_remote_async", mock_async)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -320,18 +320,18 @@ class TestPlanDetailScreenFixConflictsKeybinding:
 
             initial_stack_len = len(app.screen_stack)
 
-            # Press '5' to trigger fix_conflicts_remote keybinding
+            # Press '5' to trigger rebase_remote keybinding
             await pilot.press("5")
             await pilot.pause()
 
             # Detail screen should have been dismissed (stack shrunk)
             assert len(app.screen_stack) < initial_stack_len
 
-            # Should have called _fix_conflicts_remote_async with the PR number
+            # Should have called _rebase_remote_async with the PR number
             assert captured_pr == 456
 
     @pytest.mark.asyncio
-    async def test_fix_conflicts_keybinding_does_nothing_without_pr(self) -> None:
+    async def test_rebase_keybinding_does_nothing_without_pr(self) -> None:
         """Pressing '5' in detail screen does nothing if no PR number."""
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],  # No pr_number

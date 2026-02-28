@@ -23,7 +23,7 @@ def test_launch_keys_no_duplicate_keys_within_plan_view() -> None:
         "close_plan",
         "dispatch_to_queue",
         "land_pr",
-        "fix_conflicts_remote",
+        "rebase_remote",
         "address_remote",
     ]
     keys = [LAUNCH_KEYS[cid] for cid in plan_action_ids if cid in LAUNCH_KEYS]
@@ -55,7 +55,7 @@ def test_launch_screen_builds_key_mapping_for_plan_view() -> None:
     assert "c" in screen._key_to_command_id  # close_plan
     assert "d" in screen._key_to_command_id  # dispatch_to_queue
     assert "l" in screen._key_to_command_id  # land_pr
-    assert "f" in screen._key_to_command_id  # fix_conflicts_remote
+    assert "f" in screen._key_to_command_id  # rebase_remote
     assert "a" in screen._key_to_command_id  # address_remote
 
     # Should NOT have objective keys
@@ -84,7 +84,7 @@ def test_launch_screen_builds_key_mapping_for_objectives_view() -> None:
 
 def test_launch_screen_excludes_unavailable_commands() -> None:
     """LaunchScreen should not show commands whose predicates return False."""
-    # Row with no PR: fix_conflicts_remote and address_remote should be excluded
+    # Row with no PR: rebase_remote and address_remote should be excluded
     row = make_plan_row(
         123,
         "Test Plan",
@@ -97,7 +97,7 @@ def test_launch_screen_excludes_unavailable_commands() -> None:
     assert "c" in screen._key_to_command_id
     assert "d" in screen._key_to_command_id
 
-    # fix_conflicts_remote and address_remote need pr_number, should be absent
+    # rebase_remote and address_remote need pr_number, should be absent
     assert "f" not in screen._key_to_command_id
     assert "a" not in screen._key_to_command_id
 
@@ -118,5 +118,5 @@ def test_launch_screen_maps_command_ids_correctly() -> None:
 
     assert screen._key_to_command_id["c"] == "close_plan"
     assert screen._key_to_command_id["d"] == "dispatch_to_queue"
-    assert screen._key_to_command_id["f"] == "fix_conflicts_remote"
+    assert screen._key_to_command_id["f"] == "rebase_remote"
     assert screen._key_to_command_id["a"] == "address_remote"

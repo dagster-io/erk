@@ -195,22 +195,22 @@ def test_land_pr_available_without_run_url() -> None:
     assert "land_pr" in cmd_ids
 
 
-def test_fix_conflicts_remote_available_when_pr_exists() -> None:
-    """fix_conflicts_remote should be available when PR number exists."""
+def test_rebase_remote_available_when_pr_exists() -> None:
+    """rebase_remote should be available when PR number exists."""
     row = make_plan_row(123, "Test", pr_number=456)
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
-    assert "fix_conflicts_remote" in cmd_ids
+    assert "rebase_remote" in cmd_ids
 
 
-def test_fix_conflicts_remote_not_available_when_no_pr() -> None:
-    """fix_conflicts_remote should not be available when no PR number."""
+def test_rebase_remote_not_available_when_no_pr() -> None:
+    """rebase_remote should not be available when no PR number."""
     row = make_plan_row(123, "Test")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
-    assert "fix_conflicts_remote" not in cmd_ids
+    assert "rebase_remote" not in cmd_ids
 
 
 def test_copy_replan_available_when_issue_url_exists() -> None:
@@ -249,11 +249,11 @@ def test_display_name_land_pr_shows_cli_command() -> None:
     assert get_display_name(cmd, ctx) == "erk land 456"
 
 
-def test_display_name_fix_conflicts_remote_shows_cli_command() -> None:
-    """fix_conflicts_remote should show the launch command with PR number."""
+def test_display_name_rebase_remote_shows_cli_command() -> None:
+    """rebase_remote should show the launch command with PR number."""
     row = make_plan_row(5831, "Test Plan", pr_number=456)
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
-    cmd = next(c for c in get_all_commands() if c.id == "fix_conflicts_remote")
+    cmd = next(c for c in get_all_commands() if c.id == "rebase_remote")
     assert get_display_name(cmd, ctx) == "erk launch pr-fix-conflicts --pr 456"
 
 
@@ -369,22 +369,22 @@ def test_copy_close_plan_always_available() -> None:
     assert "copy_close_plan" in cmd_ids
 
 
-def test_copy_fix_conflicts_remote_available_when_pr_exists() -> None:
-    """copy_fix_conflicts_remote should be available when PR number exists."""
+def test_copy_rebase_remote_available_when_pr_exists() -> None:
+    """copy_rebase_remote should be available when PR number exists."""
     row = make_plan_row(123, "Test", pr_number=456)
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
-    assert "copy_fix_conflicts_remote" in cmd_ids
+    assert "copy_rebase_remote" in cmd_ids
 
 
-def test_copy_fix_conflicts_remote_not_available_when_no_pr() -> None:
-    """copy_fix_conflicts_remote should not be available when no PR number."""
+def test_copy_rebase_remote_not_available_when_no_pr() -> None:
+    """copy_rebase_remote should not be available when no PR number."""
     row = make_plan_row(123, "Test")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
-    assert "copy_fix_conflicts_remote" not in cmd_ids
+    assert "copy_rebase_remote" not in cmd_ids
 
 
 def test_copy_address_remote_available_when_pr_exists() -> None:
@@ -465,11 +465,11 @@ def test_display_name_copy_close_plan_shows_cli_command() -> None:
     assert get_display_name(cmd, ctx) == "erk pr close 5831"
 
 
-def test_display_name_copy_fix_conflicts_remote_shows_cli_command() -> None:
-    """copy_fix_conflicts_remote should show the launch command with PR number."""
+def test_display_name_copy_rebase_remote_shows_cli_command() -> None:
+    """copy_rebase_remote should show the launch command with PR number."""
     row = make_plan_row(5831, "Test Plan", pr_number=456)
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
-    cmd = next(c for c in get_all_commands() if c.id == "copy_fix_conflicts_remote")
+    cmd = next(c for c in get_all_commands() if c.id == "copy_rebase_remote")
     assert get_display_name(cmd, ctx) == "erk launch pr-fix-conflicts --pr 456"
 
 
@@ -557,7 +557,7 @@ def test_plan_commands_hidden_in_objectives_view() -> None:
         "close_plan",
         "dispatch_to_queue",
         "land_pr",
-        "fix_conflicts_remote",
+        "rebase_remote",
         "address_remote",
         "rewrite_remote",
         "open_issue",
@@ -569,7 +569,7 @@ def test_plan_commands_hidden_in_objectives_view() -> None:
         "copy_replan",
         "copy_land",
         "copy_close_plan",
-        "copy_fix_conflicts_remote",
+        "copy_rebase_remote",
         "copy_address_remote",
         "copy_rewrite_remote",
     ]
@@ -760,7 +760,7 @@ def test_commands_available_in_plans_view() -> None:
     expected_available = [
         "close_plan",
         "dispatch_to_queue",
-        "fix_conflicts_remote",
+        "rebase_remote",
         "address_remote",
         "rewrite_remote",
         "land_pr",
@@ -773,7 +773,7 @@ def test_commands_available_in_plans_view() -> None:
         "copy_replan",
         "copy_land",
         "copy_close_plan",
-        "copy_fix_conflicts_remote",
+        "copy_rebase_remote",
         "copy_address_remote",
         "copy_rewrite_remote",
         "copy_implement_local",
