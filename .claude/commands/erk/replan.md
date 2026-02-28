@@ -402,7 +402,7 @@ After the user approves the plan in Plan Mode:
    ```
 4. **If CONSOLIDATION_MODE** (multiple plans consolidated), add the `erk-consolidated` label:
    ```bash
-   erk exec add-plan-label <new_plan_number> --label "erk-consolidated"
+   echo "[{\"plan_number\": <new_plan_number>, \"label\": \"erk-consolidated\"}]" | erk exec add-plan-labels
    ```
    This prevents the consolidated plan from being re-consolidated by `/local:replan-learn-plans`.
 5. Close original plan(s) with comment linking to the new one:
@@ -410,15 +410,13 @@ After the user approves the plan in Plan Mode:
 **Single plan:**
 
 ```bash
-erk exec close-pr <original_number> --comment "Superseded by #<new_number> - see updated plan that accounts for codebase changes."
+echo "[{\"plan_number\": <original_number>, \"comment\": \"Superseded by #<new_number> - see updated plan that accounts for codebase changes.\"}]" | erk exec close-prs
 ```
 
 **Consolidated plans:**
 
 ```bash
-erk exec close-pr 123 --comment "Consolidated into #<new_number> with #456, #789"
-erk exec close-pr 456 --comment "Consolidated into #<new_number> with #123, #789"
-erk exec close-pr 789 --comment "Consolidated into #<new_number> with #123, #456"
+echo '[{"plan_number": 123, "comment": "Consolidated into #<new_number> with #456, #789"}, {"plan_number": 456, "comment": "Consolidated into #<new_number> with #123, #789"}, {"plan_number": 789, "comment": "Consolidated into #<new_number> with #123, #456"}]' | erk exec close-prs
 ```
 
 Display final summary:
