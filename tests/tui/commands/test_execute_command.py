@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 
 from erk.tui.data.types import PlanRowData
 from erk.tui.screens.plan_detail_screen import PlanDetailScreen
+from erk.tui.views.types import ViewMode
 from erk_shared.gateway.command_executor.fake import FakeCommandExecutor
 from erk_shared.gateway.plan_data_provider.fake import make_plan_row
 
@@ -20,7 +21,7 @@ class TestExecuteCommandBrowserCommands:
             plan_url="https://github.com/test/repo/issues/123",
         )
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row=row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("open_browser")
         assert executor.opened_urls == ["https://github.com/test/repo/pull/456"]
 
@@ -28,7 +29,7 @@ class TestExecuteCommandBrowserCommands:
         """open_browser opens issue URL when no PR is available."""
         row = make_plan_row(123, "Test", plan_url="https://github.com/test/repo/issues/123")
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row=row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("open_browser")
         assert executor.opened_urls == ["https://github.com/test/repo/issues/123"]
 
@@ -36,7 +37,7 @@ class TestExecuteCommandBrowserCommands:
         """open_issue opens the issue URL."""
         row = make_plan_row(123, "Test", plan_url="https://github.com/test/repo/issues/123")
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row=row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("open_issue")
         assert executor.opened_urls == ["https://github.com/test/repo/issues/123"]
         assert "Opened plan #123" in executor.notifications
@@ -50,7 +51,7 @@ class TestExecuteCommandBrowserCommands:
             pr_url="https://github.com/test/repo/pull/456",
         )
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row=row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("open_pr")
         assert executor.opened_urls == ["https://github.com/test/repo/pull/456"]
         assert "Opened PR #456" in executor.notifications
@@ -63,7 +64,7 @@ class TestExecuteCommandBrowserCommands:
             run_url="https://github.com/test/repo/actions/runs/789",
         )
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row=row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("open_run")
         assert executor.opened_urls == ["https://github.com/test/repo/actions/runs/789"]
 
@@ -81,7 +82,7 @@ class TestExecuteCommandCopyCommands:
             exists_locally=True,
         )
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row=row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("copy_checkout")
         assert executor.copied_texts == ["erk br co feature-123"]
         assert "Copied: erk br co feature-123" in executor.notifications
@@ -90,7 +91,7 @@ class TestExecuteCommandCopyCommands:
         """copy_checkout shows notification when worktree_branch is None."""
         row = make_plan_row(123, "Test")  # worktree_branch defaults to None
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row=row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("copy_checkout")
         # Should not copy anything
         assert executor.copied_texts == []
@@ -102,7 +103,7 @@ class TestExecuteCommandCopyCommands:
         """copy_pr_checkout copies the PR checkout command."""
         row = make_plan_row(123, "Test", pr_number=456)
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row=row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("copy_pr_checkout")
         expected_cmd = (
             'source "$(erk pr checkout 456 --script --sync)" && gt submit --no-interactive'
@@ -114,7 +115,7 @@ class TestExecuteCommandCopyCommands:
         """copy_prepare copies the prepare command."""
         row = make_plan_row(123, "Test")
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row=row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("copy_prepare")
         assert executor.copied_texts == ["erk br co --for-plan 123"]
         assert "Copied: erk br co --for-plan 123" in executor.notifications
@@ -123,7 +124,7 @@ class TestExecuteCommandCopyCommands:
         """copy_dispatch copies the dispatch command."""
         row = make_plan_row(123, "Test")
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row=row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("copy_dispatch")
         assert executor.copied_texts == ["erk pr dispatch 123"]
         assert "Copied: erk pr dispatch 123" in executor.notifications
@@ -199,7 +200,7 @@ class TestExecuteCommandClosePlan:
             status_display="-",
         )
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row=row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("close_plan")
         assert executor.refresh_count == 0
 
@@ -273,7 +274,7 @@ class TestExecuteCommandDispatchToQueue:
             status_display="-",
         )
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row=row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("dispatch_to_queue")
         assert executor.refresh_count == 0
 
@@ -290,7 +291,7 @@ class TestExecuteCommandLandPR:
         """land_pr does nothing if no PR is associated with the plan."""
         row = make_plan_row(123, "Test")  # No pr_number
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row=row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("land_pr")
         assert executor.refresh_count == 0
 
@@ -307,7 +308,7 @@ class TestExecuteCommandFixConflictsRemote:
         """fix_conflicts_remote does nothing if no PR is associated with the plan."""
         row = make_plan_row(123, "Test")  # No pr_number
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row=row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("fix_conflicts_remote")
         assert executor.refresh_count == 0
 
@@ -319,7 +320,7 @@ class TestExecuteCommandCopyClosePlan:
         """copy_close_plan copies the close plan command."""
         row = make_plan_row(123, "Test")
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row=row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("copy_close_plan")
         assert executor.copied_texts == ["erk pr close 123"]
         assert "Copied: erk pr close 123" in executor.notifications
@@ -332,7 +333,7 @@ class TestExecuteCommandCopyFixConflictsRemote:
         """copy_fix_conflicts_remote copies the launch command when PR exists."""
         row = make_plan_row(123, "Test", pr_number=456)
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row=row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("copy_fix_conflicts_remote")
         assert executor.copied_texts == ["erk launch pr-fix-conflicts --pr 456"]
         assert "Copied: erk launch pr-fix-conflicts --pr 456" in executor.notifications
@@ -341,7 +342,7 @@ class TestExecuteCommandCopyFixConflictsRemote:
         """copy_fix_conflicts_remote does nothing when no PR number."""
         row = make_plan_row(123, "Test")  # No pr_number
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row=row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("copy_fix_conflicts_remote")
         assert executor.copied_texts == []
 
@@ -353,7 +354,7 @@ class TestExecuteCommandCopyAddressRemote:
         """copy_address_remote copies the launch command when PR exists."""
         row = make_plan_row(123, "Test", pr_number=456)
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row=row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("copy_address_remote")
         assert executor.copied_texts == ["erk launch pr-address --pr 456"]
         assert "Copied: erk launch pr-address --pr 456" in executor.notifications
@@ -362,7 +363,7 @@ class TestExecuteCommandCopyAddressRemote:
         """copy_address_remote does nothing when no PR number."""
         row = make_plan_row(123, "Test")  # No pr_number
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row=row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("copy_address_remote")
         assert executor.copied_texts == []
 
@@ -373,7 +374,7 @@ class TestExecuteCommandNoExecutor:
     def test_does_nothing_without_executor(self) -> None:
         """Commands do nothing when no executor is provided."""
         row = make_plan_row(123, "Test")
-        screen = PlanDetailScreen(row=row)  # No executor
+        screen = PlanDetailScreen(row=row, view_mode=ViewMode.PLANS)  # No executor
         # Should not raise
         screen.execute_command("open_browser")
         screen.execute_command("copy_prepare")

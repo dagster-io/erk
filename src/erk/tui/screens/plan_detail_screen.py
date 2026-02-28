@@ -230,7 +230,7 @@ class PlanDetailScreen(ModalScreen):
         executor: CommandExecutor | None = None,
         repo_root: Path | None = None,
         auto_open_palette: bool = False,
-        view_mode: ViewMode = ViewMode.PLANS,
+        view_mode: ViewMode,
     ) -> None:
         """Initialize with plan row data.
 
