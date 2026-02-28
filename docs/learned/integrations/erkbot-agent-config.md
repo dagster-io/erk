@@ -28,7 +28,7 @@ Note: Pydantic `Field()` with defaults is an exception to erk's "no default para
 
 <!-- Source: packages/erkbot/src/erkbot/cli.py, _run -->
 
-`packages/erkbot/src/erkbot/cli.py:17-52` implements LBYL validation:
+`packages/erkbot/src/erkbot/cli.py` (`_run` function) implements LBYL validation:
 
 1. Check `anthropic_api_key is not None` AND `erk_repo_path is not None`
 2. Validate `repo_path.is_dir()` (LBYL guard)

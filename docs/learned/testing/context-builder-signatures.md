@@ -17,7 +17,7 @@ Two separate `context_for_test()` functions exist in the codebase. They have dif
 
 <!-- Source: packages/erk-shared/src/erk_shared/context/testing.py, context_for_test -->
 
-**Location:** `packages/erk-shared/src/erk_shared/context/testing.py:41`
+**Location:** `packages/erk-shared/src/erk_shared/context/testing.py`
 
 **Key parameter:** `github_issues=` (not `issues=`)
 
@@ -27,7 +27,7 @@ Always defaults to PlannedPRBackend. Used for isolated unit tests that only need
 
 <!-- Source: src/erk/core/context.py, context_for_test -->
 
-**Location:** `src/erk/core/context.py:190`
+**Location:** `src/erk/core/context.py`
 
 **Key parameter:** `issues=` (not `github_issues=`)
 
