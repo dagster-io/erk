@@ -107,7 +107,8 @@ def _parse_github_pr_url(url: str) -> tuple[str, str] | None:
     return None
 
 
-PASSING_CHECK_RUN_STATES = frozenset({"SUCCESS", "SKIPPED", "NEUTRAL"})
+PASSING_CHECK_RUN_STATES = frozenset({"SUCCESS", "NEUTRAL"})
+SKIPPED_CHECK_RUN_STATES = frozenset({"SKIPPED"})
 PASSING_STATUS_CONTEXT_STATES = frozenset({"SUCCESS"})
 
 
@@ -196,19 +197,23 @@ def parse_aggregated_check_counts(
 ) -> tuple[int, int]:
     """Parse aggregated check counts from GitHub GraphQL response.
 
-    Returns (passing, total) tuple.
+    Returns (passing, total) tuple. Skipped checks are excluded from both
+    passing and total counts since they didn't actually run.
 
     Passing criteria:
-        - CheckRun: SUCCESS, SKIPPED, NEUTRAL
+        - CheckRun: SUCCESS, NEUTRAL (SKIPPED excluded from both counts)
         - StatusContext: SUCCESS
     """
     passing = 0
+    skipped = 0
 
     for item in check_run_counts:
         state = item.get("state", "")
         count = item.get("count", 0)
         if state in PASSING_CHECK_RUN_STATES:
             passing += count
+        elif state in SKIPPED_CHECK_RUN_STATES:
+            skipped += count
 
     for item in status_context_counts:
         state = item.get("state", "")
@@ -216,7 +221,7 @@ def parse_aggregated_check_counts(
         if state in PASSING_STATUS_CONTEXT_STATES:
             passing += count
 
-    return (passing, total_count)
+    return (passing, total_count - skipped)
 
 
 def parse_plan_number_from_url(url: str) -> int | None:
