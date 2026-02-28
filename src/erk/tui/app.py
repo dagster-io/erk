@@ -27,6 +27,7 @@ from erk.tui.filtering.types import FilterMode, FilterState
 from erk.tui.screens.check_runs_screen import CheckRunsScreen
 from erk.tui.screens.help_screen import HelpScreen
 from erk.tui.screens.launch_screen import LaunchScreen
+from erk.tui.screens.one_shot_prompt_screen import OneShotPromptScreen
 from erk.tui.screens.plan_body_screen import PlanBodyScreen
 from erk.tui.screens.plan_detail_screen import PlanDetailScreen
 from erk.tui.screens.unresolved_comments_screen import UnresolvedCommentsScreen
@@ -111,6 +112,7 @@ class ErkDashApp(App):
         Binding("2", "switch_view_learn", "Learn", show=False),
         Binding("3", "switch_view_objectives", "Objectives", show=False),
         Binding("t", "toggle_stack_filter", "Stack", show=False),
+        Binding("x", "one_shot_prompt", "One-Shot"),
         Binding("right", "next_view", "Next View", show=False, priority=True),
         Binding("left", "previous_view", "Previous View", show=False, priority=True),
     ]
@@ -457,6 +459,42 @@ class ErkDashApp(App):
         """
         if command_id is not None:
             self.execute_palette_command(command_id)
+
+    def action_one_shot_prompt(self) -> None:
+        """Open the one-shot prompt modal (global — no row selection required)."""
+        self.push_screen(OneShotPromptScreen(), self._on_one_shot_prompt_result)
+
+    def _on_one_shot_prompt_result(self, prompt_text: str | None) -> None:
+        """Handle result from the one-shot prompt screen.
+
+        Args:
+            prompt_text: The user's prompt, or None if cancelled/empty
+        """
+        if prompt_text is None:
+            return
+        op_id = f"dispatch-one-shot-{id(prompt_text)}"
+        self._start_operation(op_id=op_id, label="Dispatching one-shot prompt...")
+        self._one_shot_dispatch_async(op_id, prompt_text)
+
+    @work(thread=True)
+    def _one_shot_dispatch_async(self, op_id: str, prompt_text: str) -> None:
+        """Dispatch one-shot prompt in background thread with toast."""
+        result = self._run_streaming_operation(
+            op_id=op_id,
+            command=["erk", "one-shot", prompt_text],
+        )
+        self.call_from_thread(self._finish_operation, op_id=op_id)
+        if result.success:
+            self.call_from_thread(self.notify, "One-shot dispatched", timeout=3)
+            self.call_from_thread(self.action_refresh)
+        else:
+            error_msg = _last_output_line(result)
+            self.call_from_thread(
+                self.notify,
+                f"One-shot dispatch failed: {error_msg}",
+                severity="error",
+                timeout=5,
+            )
 
     def _switch_view(self, mode: ViewMode) -> None:
         """Switch to a different view mode.
