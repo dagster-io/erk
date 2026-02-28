@@ -5,7 +5,12 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.entity_store.state import EntityState
+from erk_shared.entity_store.state import (
+    EntityState,
+    entity_state_set,
+    entity_state_set_field,
+    entity_state_update,
+)
 from erk_shared.entity_store.types import EntityKind
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
@@ -171,7 +176,7 @@ class TestEntityStateIssue:
             github_issues=issues,
             repo_root=REPO_ROOT,
         )
-        state.set("plan-header", {"status": "active"}, schema=None)
+        entity_state_set(state, "plan-header", {"status": "active"}, schema=None)
 
         # Verify the body was updated
         assert len(issues.updated_bodies) == 1
@@ -190,7 +195,7 @@ class TestEntityStateIssue:
             github_issues=issues,
             repo_root=REPO_ROOT,
         )
-        state.set("plan-header", {"status": "active", "version": 2}, schema=None)
+        entity_state_set(state, "plan-header", {"status": "active", "version": 2}, schema=None)
 
         assert len(issues.updated_bodies) == 1
         _, new_body = issues.updated_bodies[0]
@@ -207,7 +212,7 @@ class TestEntityStateIssue:
             github_issues=issues,
             repo_root=REPO_ROOT,
         )
-        state.set("plan-header", {"status": "active", "version": 3}, schema=None)
+        entity_state_set(state, "plan-header", {"status": "active", "version": 3}, schema=None)
 
         # After set, the fake's issue body was updated, so get should work
         result = state.get("plan-header")
@@ -226,7 +231,7 @@ class TestEntityStateIssue:
             github_issues=issues,
             repo_root=REPO_ROOT,
         )
-        state.set_field("plan-header", "status", "active")
+        entity_state_set_field(state, "plan-header", "status", "active")
 
         result = state.get("plan-header")
         assert result is not None
@@ -246,7 +251,7 @@ class TestEntityStateIssue:
             github_issues=issues,
             repo_root=REPO_ROOT,
         )
-        state.update("plan-header", {"status": "active", "version": 2})
+        entity_state_update(state, "plan-header", {"status": "active", "version": 2})
 
         result = state.get("plan-header")
         assert result is not None
@@ -265,7 +270,7 @@ class TestEntityStateIssue:
             repo_root=REPO_ROOT,
         )
         with pytest.raises(ValueError, match="not found"):
-            state.update("plan-header", {"status": "active"})
+            entity_state_update(state, "plan-header", {"status": "active"})
 
     def test_multiple_blocks_in_same_body(self) -> None:
         block1 = _render_block("plan-header", {"status": "draft"})
@@ -314,7 +319,7 @@ class TestEntityStatePR:
             github_issues=issues,
             repo_root=REPO_ROOT,
         )
-        state.set("plan-header", {"status": "active"}, schema=None)
+        entity_state_set(state, "plan-header", {"status": "active"}, schema=None)
 
         # Verify the PR body was updated via FakeGitHub
         assert len(github._updated_pr_bodies) == 1

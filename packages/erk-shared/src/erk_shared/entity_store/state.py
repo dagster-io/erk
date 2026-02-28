@@ -1,7 +1,7 @@
 """Mutable KV metadata stored in the entity body.
 
 Each operation does a full read-modify-write cycle to GitHub.
-Use update() to batch multiple field changes in one round-trip.
+Use entity_state_update() to batch multiple field changes in one round-trip.
 """
 
 from dataclasses import dataclass
@@ -24,10 +24,10 @@ from erk_shared.gateway.github.types import BodyText, PRNotFound
 
 @dataclass(frozen=True)
 class EntityState:
-    """Mutable KV metadata stored in the entity body.
+    """KV metadata stored in the entity body.
 
-    Each operation does a full read-modify-write cycle to GitHub.
-    Use update() to batch multiple field changes in one round-trip.
+    Read operations are methods on the dataclass.
+    Write operations are standalone functions below.
     """
 
     number: int
@@ -80,43 +80,56 @@ class EntityState:
         body = self._fetch_body()
         return find_metadata_block(body, key) is not None
 
-    def set(
-        self,
-        key: str,
-        data: dict[str, Any],
-        *,
-        schema: MetadataBlockSchema | None,
-    ) -> None:
-        """Set an entire metadata block. Creates or replaces."""
-        block = create_metadata_block(key, data, schema=schema)
-        rendered = render_metadata_block(block)
-        body = self._fetch_body()
 
-        # Try to replace existing block, otherwise append
-        existing = find_metadata_block(body, key)
-        if existing is not None:
-            new_body = replace_metadata_block_in_body(body, key, rendered)
-        else:
-            new_body = (body.rstrip() + "\n\n" + rendered) if body.strip() else rendered
+def entity_state_set(
+    state: EntityState,
+    key: str,
+    data: dict[str, Any],
+    *,
+    schema: MetadataBlockSchema | None,
+) -> EntityState:
+    """Set an entire metadata block. Creates or replaces. Returns the state."""
+    block = create_metadata_block(key, data, schema=schema)
+    rendered = render_metadata_block(block)
+    body = state._fetch_body()
 
-        self._push_body(new_body)
-
-    def set_field(self, key: str, field: str, value: Any) -> None:
-        """Update a single field in a metadata block (read-modify-write)."""
-        self.update(key, {field: value})
-
-    def update(self, key: str, fields: dict[str, Any]) -> None:
-        """Update multiple fields in one round-trip (read-modify-write)."""
-        body = self._fetch_body()
-        existing = find_metadata_block(body, key)
-        if existing is None:
-            msg = f"Metadata block '{key}' not found in body"
-            raise ValueError(msg)
-
-        updated_data = dict(existing.data)
-        updated_data.update(fields)
-
-        block = create_metadata_block(key, updated_data, schema=None)
-        rendered = render_metadata_block(block)
+    existing = find_metadata_block(body, key)
+    if existing is not None:
         new_body = replace_metadata_block_in_body(body, key, rendered)
-        self._push_body(new_body)
+    else:
+        new_body = (body.rstrip() + "\n\n" + rendered) if body.strip() else rendered
+
+    state._push_body(new_body)
+    return state
+
+
+def entity_state_set_field(
+    state: EntityState,
+    key: str,
+    field: str,
+    value: Any,
+) -> EntityState:
+    """Update a single field in a metadata block (read-modify-write). Returns the state."""
+    return entity_state_update(state, key, {field: value})
+
+
+def entity_state_update(
+    state: EntityState,
+    key: str,
+    fields: dict[str, Any],
+) -> EntityState:
+    """Update multiple fields in one round-trip (read-modify-write). Returns the state."""
+    body = state._fetch_body()
+    existing = find_metadata_block(body, key)
+    if existing is None:
+        msg = f"Metadata block '{key}' not found in body"
+        raise ValueError(msg)
+
+    updated_data = dict(existing.data)
+    updated_data.update(fields)
+
+    block = create_metadata_block(key, updated_data, schema=None)
+    rendered = render_metadata_block(block)
+    new_body = replace_metadata_block_in_body(body, key, rendered)
+    state._push_body(new_body)
+    return state

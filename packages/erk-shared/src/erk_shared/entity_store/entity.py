@@ -35,6 +35,12 @@ class GitHubEntity:
         repo_root: Path,
     ) -> "GitHubEntity":
         """Build a GitHubEntity with its EntityState and EntityLog."""
-        state = EntityState(number=number, kind=kind, github=github, github_issues=github_issues, repo_root=repo_root)
+        state = EntityState(
+            number=number,
+            kind=kind,
+            github=github,
+            github_issues=github_issues,
+            repo_root=repo_root,
+        )
         log = EntityLog(number=number, github_issues=github_issues, repo_root=repo_root)
         return cls(number=number, kind=kind, state=state, log=log)

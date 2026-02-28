@@ -5,7 +5,7 @@ from pathlib import Path
 
 from erk_shared.entity_store.entity import GitHubEntity
 from erk_shared.entity_store.log import EntityLog
-from erk_shared.entity_store.state import EntityState
+from erk_shared.entity_store.state import EntityState, entity_state_set_field
 from erk_shared.entity_store.types import EntityKind
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
@@ -146,7 +146,7 @@ class TestGitHubEntityIssueWorkflow:
         )
 
         # Update state
-        entity.state.set_field("plan-header", "status", "active")
+        entity_state_set_field(entity.state, "plan-header", "status", "active")
         assert entity.state.get_field("plan-header", "status") == "active"
 
         # Append log entry
