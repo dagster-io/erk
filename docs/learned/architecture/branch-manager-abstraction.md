@@ -112,6 +112,14 @@ BranchManager doesn't implement branch operations itself — it delegates to sub
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/branch_manager/abc.py, BranchManager ABC -->
 
+## Force Parameter Usage Patterns
+
+The `force` parameter in `delete_branch()` controls whether git uses `-D` (force delete, ignores unmerged commits) or `-d` (safe delete, rejects unmerged branches). Callers must explicitly flow `force=force` through all layers — dropping it silently changes deletion behavior.
+
+**When `force=True` is appropriate**: Automated cleanup after a confirmed landing. The merge has already succeeded, so the branch content is safely in trunk. The land pipeline's cleanup functions use `force=True` for this reason.
+
+**When `force=False` is appropriate**: Interactive branch deletion where the user should be warned about unmerged work.
+
 ## Related Documentation
 
 - [Branch Manager Decision Tree](branch-manager-decision-tree.md) — When to use `ctx.branch_manager` vs `ctx.git.branch`

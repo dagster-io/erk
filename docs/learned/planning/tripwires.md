@@ -188,6 +188,8 @@ Rules triggered by matching actions in code.
 
 **renaming gateway files during a move without checking for non-standard naming** → Read [Gateway Consolidation Checklist](gateway-consolidation-checklist.md) first. Source files that don't follow standard naming (e.g., executor.py instead of abc.py) must be renamed to abc.py/real.py/fake.py during the move. The gateway directory convention requires standard file names.
 
+**resolving plan or objective metadata after the merge pipeline runs** → Read [Objective Update After Land](objective-update-after-land.md) first. Capture plan_id and objective_number BEFORE pipeline execution. The pipeline deletes the branch, making branch-based resolution impossible afterward.
+
 **reusing existing worktrees for remote implementation** → Read [Remote Implementation Idempotency](remote-implementation-idempotency.md) first. Check if worktree already has a branch before creating new one. Reusing worktrees without checking causes PR orphaning.
 
 **reviewing a PR that contains .erk/impl-context/ files** → Read [Impl-Context Staging Directory](impl-context.md) first. Leave a PR comment telling the author to remove .erk/impl-context/. This is an erk tooling error — the directory should have been cleaned up before implementation. Run: git rm -rf .erk/impl-context/ && git commit -m 'Remove leaked impl-context'
@@ -221,6 +223,8 @@ Rules triggered by matching actions in code.
 **using issue number from .erk/impl-context/plan-ref.json in a checkout footer** → Read [PR Submission Patterns](pr-submission-patterns.md) first. Checkout footers require the PR number, not the issue number. The issue is the plan; the PR is the implementation. See the PR Number vs Issue Number section.
 
 **using issue timeline API as the primary PR lookup path** → Read [PR Discovery Strategies for Plans](pr-discovery.md) first. The primary path is branch_name from plan-header → get_pr_for_branch(). Timeline API is a separate strategy for when branch_name is unavailable.
+
+**using only branch-based discovery for plan/objective resolution** → Read [Objective Update After Land](objective-update-after-land.md) first. Use direct lookup with --plan parameter when available. Branch-based discovery fails if the branch is already deleted. Direct lookup with fallback is the resilient pattern.
 
 **using opus/sonnet for mechanical data fetching or formatting tasks** → Read [Token Optimization Patterns](token-optimization-patterns.md) first. Use haiku for mechanical work (fetch, parse, format). Reserve expensive models for synthesis and reasoning.
 

@@ -40,6 +40,8 @@ Rules triggered by matching actions in code.
 
 **adding state to child components** → Read [erkdesk App Architecture](app-architecture.md) first. PlanList, ActionToolbar, and LogPanel are fully controlled (stateless). All state lives in App.tsx. Pass props down, callbacks up.
 
+**allowing rocket emoji on draft PRs** → Read [Visual Status Indicators](visual-status-indicators.md) first. Draft PR status must prevent the rocket emoji. A draft PR can have all positive signals yet be unmergeable. Draft status is a blocking indicator.
+
 **changing right pane size** → Read [SplitPane Renderer-Native Coordination](split-pane-implementation.md) first. every code path that changes the right pane's rendered size must trigger a bounds report to the main process
 
 **choosing subprocess patterns for IPC** → Read [Main Process Startup](main-process-startup.md) first. Use execFile for request/response IPC, spawn for streaming IPC — do not mix the patterns

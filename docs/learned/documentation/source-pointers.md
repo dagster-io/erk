@@ -9,7 +9,16 @@ tripwires:
     warning: "Use a source pointer instead. See source-pointers.md for the two-part format (HTML comment + prose reference)."
   - action: "using line numbers in source pointers"
     warning: "Prefer name-based identifiers (ClassName.method) over line numbers. Names survive refactoring; line numbers go stale silently."
-last_audited: "2026-02-16 00:00 PT"
+  - action: "copying a verbatim code block from erk source into documentation"
+    warning: "Verbatim code blocks silently go stale. Use a source pointer instead. Even partial excerpts create the same problem."
+    score: 7
+  - action: "referencing private (_underscore) methods by name in documentation prose"
+    warning: "Private methods are implementation details that change frequently. Point to the public API or ABC method instead."
+    score: 6
+  - action: "submitting documentation PR without running code review"
+    warning: "Run /local:review or /local:code-review before submitting documentation PRs to catch verbatim code, stale references, and formatting issues."
+    score: 4
+last_audited: "2026-02-25 00:00 PT"
 audit_result: clean
 ---
 
@@ -86,6 +95,17 @@ Stability hierarchy (most stable → least stable):
 The `audit-pr-docs` review automatically runs on every PR touching `docs/learned/`. It audits the full document (not just changed lines), classifies code blocks as VERBATIM or permitted, and posts inline comments with the exact source path and suggested pointer format. When you receive one of these comments, convert the code block to a source pointer using the two-part format above.
 
 This enforcement connects to the broader audit system: `/local:audit-doc` performs deep single-document analysis, `/local:audit-scan` triages which docs need audit, and `audit-pr-docs` prevents new problems at PR time. See [audit-methodology.md](audit-methodology.md) for the full classification framework.
+
+## Anti-Patterns
+
+Two patterns that source pointers exist to prevent:
+
+- **Verbatim code blocks** — Copy-pasting source code into documentation. Even partial excerpts ("just the interesting lines") create the same staleness problem. The code looks authoritative even after the real code changed.
+- **Private method names in prose** — Referencing `_underscore()` methods by name in documentation. Private methods are implementation details that change frequently; pointing to them creates fragile references. Point to the public API or ABC method instead.
+
+### Resolution Pattern
+
+When you catch yourself about to copy code or reference a private method, ask: "What concept am I trying to convey?" Then write a conceptual description using the two-part source pointer format, pointing to the most stable public symbol that embodies the concept.
 
 ## Related Documentation
 

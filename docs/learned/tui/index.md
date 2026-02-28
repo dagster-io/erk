@@ -24,6 +24,7 @@
 - **[stacked-pr-indicator.md](stacked-pr-indicator.md)** — adding or modifying PR indicators in the TUI dashboard, understanding blocking vs. informational indicators, working with stacked PR detection
 - **[status-indicators.md](status-indicators.md)** — working with status indicators in TUI dashboard, adding new emoji indicators to plan display, modifying the sts column
 - **[streaming-output.md](streaming-output.md)** — displaying streaming command output in TUI, executing long-running commands with progress, cross-thread UI updates in Textual
+- **[subprocess-feedback.md](subprocess-feedback.md)** — adding subprocess calls to the TUI, implementing background worker feedback in the TUI, parsing subprocess stderr for status markers
 - **[textual-async.md](textual-async.md)** — overriding Screen actions, working with async/await in Textual, testing async TUI code
 - **[title-truncation-edge-cases.md](title-truncation-edge-cases.md)** — implementing title truncation in TUI, troubleshooting truncated titles showing only prefix, working with title display lengths
 - **[tui-command-registration.md](tui-command-registration.md)** — adding a new TUI command to the registry, understanding the 3-place coordination pattern for TUI commands, working with TUI command categories or display formatters

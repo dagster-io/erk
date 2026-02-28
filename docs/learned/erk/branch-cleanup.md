@@ -229,25 +229,15 @@ for branch in $MERGED; do
 done
 ```
 
-## Automated Cleanup During `erk land`
+## Force Deletion During Automated Land Cleanup
 
-<!-- Source: src/erk/cli/commands/land_cmd.py, delete_branch -->
+The `erk land` command uses `force=True` for branch deletion during its automated cleanup phase. This is appropriate because the merge has already succeeded — the branch content is safely in trunk.
 
-When `erk land` completes a merge, it force-deletes the implementation branch in all cleanup paths. There are multiple `delete_branch(..., force=True)` calls in `land_cmd.py`, covering different worktree configurations:
+<!-- Source: src/erk/cli/commands/land_cmd.py -->
 
-- Simple branch deletion (no worktree)
-- Slot-assigned branch cleanup
-- Root worktree branch cleanup
-- Linked worktree with branch and worktree removal
+Five cleanup functions in `land_cmd.py` handle different worktree/branch configurations — no-worktree, slot-with-assignment, slot-without-assignment, root-worktree, and non-slot linked worktree.
 
-**Why force-delete?** After the merge is verified via GitHub API, the branch's purpose is complete. The local branch may appear "unmerged" from git's perspective because GitHub's squash-merge creates a new commit SHA. `git branch -d` (non-force) would refuse to delete, so `force=True` (equivalent to `git branch -D`) is used.
-
-**Implementation:**
-
-- Git-only branches: `git branch -D` via `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py`
-- Graphite-tracked branches: `gt delete -f` via `packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/real.py`
-
-The `BranchManager.delete_branch()` abstraction routes to the correct implementation based on whether Graphite tracking is active.
+Four of these five paths are protected by a `cleanup_confirmed` flag, which requires the user to confirm cleanup before proceeding. The exception is the no-worktree path, which always deletes the branch if it exists locally. A safety check prevents deleting a branch that's currently checked out in another worktree.
 
 ## See Also
 
