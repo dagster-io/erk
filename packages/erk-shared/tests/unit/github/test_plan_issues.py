@@ -63,6 +63,7 @@ def _create_plan(
         created_from_workflow_run_url=None,
         learned_from_issue=learned_from_issue,
         summary=None,
+        extra_files=None,
     )
 
 
@@ -495,6 +496,7 @@ class TestCreatePlanDraftPRBranchAlreadyExists:
             created_from_workflow_run_url=None,
             learned_from_issue=None,
             summary=None,
+            extra_files=None,
         )
 
         assert result.success is False
@@ -598,6 +600,7 @@ class TestCreatePlanDraftPRMetadata:
             created_from_workflow_run_url="https://github.com/runs/123",
             learned_from_issue=55,
             summary=None,
+            extra_files=None,
         )
 
         assert result.success is True
@@ -643,6 +646,7 @@ class TestCreatePlanDraftPRNonNumericPlanId:
                 created_from_workflow_run_url=None,
                 learned_from_issue=None,
                 summary=None,
+                extra_files=None,
             )
 
         assert result.success is False
@@ -652,3 +656,78 @@ class TestCreatePlanDraftPRNonNumericPlanId:
         assert result.title == "Test Plan"
         assert result.error is not None
         assert "not-a-number" in result.error
+
+
+class TestCreatePlanDraftPRExtraFiles:
+    """Test that extra_files entries are committed alongside plan.md and ref.json."""
+
+    def test_extra_files_merged_into_committed_files(self, tmp_path: Path) -> None:
+        """extra_files entries appear in the branch commit alongside plan.md and ref.json."""
+        fake_issues = FakeGitHubIssues(username="testuser")
+        fake_git = FakeGit(trunk_branches={tmp_path: "main"})
+        fake_github = FakeGitHub(issues_gateway=fake_issues)
+
+        session_xml = "<session><message>hello</message></session>"
+        extra = {".erk/impl-context/sessions/impl-abc123def456.xml": session_xml}
+
+        result = create_plan_draft_pr(
+            git=fake_git,
+            github=fake_github,
+            github_issues=fake_issues,
+            branch_manager=FakeBranchManager(),
+            time=FakeTime(),
+            repo_root=tmp_path,
+            cwd=tmp_path,
+            plan_content="# Extra Files Plan\n\nSteps...",
+            title=None,
+            labels=["erk-pr", "erk-learn"],
+            source_repo=None,
+            objective_id=None,
+            created_from_session=None,
+            created_from_workflow_run_url=None,
+            learned_from_issue=None,
+            summary=None,
+            extra_files=extra,
+        )
+
+        assert result.success is True
+        assert len(fake_git.branch_commits) == 1
+        committed = fake_git.branch_commits[0].files
+        assert ".erk/impl-context/plan.md" in committed
+        assert ".erk/impl-context/ref.json" in committed
+        assert ".erk/impl-context/sessions/impl-abc123def456.xml" in committed
+        assert committed[".erk/impl-context/sessions/impl-abc123def456.xml"] == session_xml
+
+    def test_no_extra_files_when_none(self, tmp_path: Path) -> None:
+        """When extra_files=None, only plan.md and ref.json are committed."""
+        fake_issues = FakeGitHubIssues(username="testuser")
+        fake_git = FakeGit(trunk_branches={tmp_path: "main"})
+        fake_github = FakeGitHub(issues_gateway=fake_issues)
+
+        result = create_plan_draft_pr(
+            git=fake_git,
+            github=fake_github,
+            github_issues=fake_issues,
+            branch_manager=FakeBranchManager(),
+            time=FakeTime(),
+            repo_root=tmp_path,
+            cwd=tmp_path,
+            plan_content="# Plan\n\nSteps...",
+            title=None,
+            labels=["erk-pr", "erk-plan"],
+            source_repo=None,
+            objective_id=None,
+            created_from_session=None,
+            created_from_workflow_run_url=None,
+            learned_from_issue=None,
+            summary=None,
+            extra_files=None,
+        )
+
+        assert result.success is True
+        assert len(fake_git.branch_commits) == 1
+        committed = fake_git.branch_commits[0].files
+        assert set(committed.keys()) == {
+            ".erk/impl-context/plan.md",
+            ".erk/impl-context/ref.json",
+        }

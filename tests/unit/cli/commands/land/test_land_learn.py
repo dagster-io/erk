@@ -506,3 +506,116 @@ def test_compute_session_stats_returns_none_for_missing_file(tmp_path: Path) -> 
     stats = _compute_session_stats(missing, session_id="no-such-session")
 
     assert stats is None
+
+
+def test_compute_session_stats_returns_xml_chunks(tmp_path: Path) -> None:
+    """SessionStats includes xml_chunks from preprocessing pipeline."""
+    session_id = "bbbb2222-3333-4444-5555-666677778888"
+    jsonl_content = _make_session_jsonl(session_id=session_id, user_turns=3, duration_seconds=180)
+    jsonl_file = tmp_path / f"{session_id}.jsonl"
+    jsonl_file.write_text(jsonl_content, encoding="utf-8")
+
+    stats = _compute_session_stats(jsonl_file, session_id=session_id)
+
+    assert stats is not None
+    assert isinstance(stats.xml_chunks, tuple)
+    # Non-empty session should produce at least one XML chunk
+    assert len(stats.xml_chunks) >= 1
+    # xml_size_kb should match the chunks
+    total_bytes = sum(len(chunk.encode("utf-8")) for chunk in stats.xml_chunks)
+    assert stats.xml_size_kb == total_bytes // 1024
+
+
+# ---------------------------------------------------------------------------
+# _log_session_discovery return value
+# ---------------------------------------------------------------------------
+
+
+def test_log_session_discovery_returns_empty_dict_when_no_sessions(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Returns empty dict when no sessions are discovered."""
+    ctx = context_for_test(cwd=tmp_path)
+    sessions = _make_sessions()
+
+    result = _log_session_discovery(ctx, sessions=sessions, all_session_ids=[])
+
+    assert result == {}
+    captured = capsys.readouterr()
+    assert "No sessions discovered" in captured.err
+
+
+def test_log_session_discovery_returns_xml_files_for_readable_session(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Returns XML files dict when sessions have readable content."""
+    session_id = "cccc1111-2222-3333-4444-555566667777"
+    sessions = _make_sessions(impl=[session_id])
+
+    jsonl_content = _make_session_jsonl(session_id=session_id, user_turns=3, duration_seconds=180)
+    jsonl_file = tmp_path / f"{session_id}.jsonl"
+    jsonl_file.write_text(jsonl_content, encoding="utf-8")
+
+    fake_session = FakeSessionData(
+        content=jsonl_content,
+        size_bytes=len(jsonl_content),
+        modified_at=0.0,
+    )
+    fake_claude = FakeClaudeInstallation.for_test(
+        projects={tmp_path: FakeProject(sessions={session_id: fake_session})},
+    )
+    ctx = context_for_test(claude_installation=fake_claude, cwd=tmp_path)
+
+    xml_files = _log_session_discovery(
+        ctx, sessions=sessions, all_session_ids=sessions.all_session_ids()
+    )
+
+    # Should have at least one XML file for the readable session
+    assert len(xml_files) >= 1
+    for path, content in xml_files.items():
+        # Path follows the naming convention
+        assert "impl" in path  # session type prefix
+        assert session_id in path
+        assert path.endswith(".xml")
+        assert path.startswith(".erk/impl-context/sessions/")
+        # Content is non-empty XML
+        assert len(content) > 0
+
+
+def test_log_session_discovery_uses_correct_type_prefix(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """XML file paths use the correct session type prefix."""
+    planning_id = "dddd1111-2222-3333-4444-555566667777"
+    impl_id = "eeee1111-2222-3333-4444-555566667777"
+    sessions = _make_sessions(planning=planning_id, impl=[impl_id])
+
+    def _write_session(sid: str) -> FakeSessionData:
+        content = _make_session_jsonl(session_id=sid, user_turns=2, duration_seconds=120)
+        (tmp_path / f"{sid}.jsonl").write_text(content, encoding="utf-8")
+        return FakeSessionData(content=content, size_bytes=len(content), modified_at=0.0)
+
+    fake_claude = FakeClaudeInstallation.for_test(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    planning_id: _write_session(planning_id),
+                    impl_id: _write_session(impl_id),
+                }
+            )
+        },
+    )
+    ctx = context_for_test(claude_installation=fake_claude, cwd=tmp_path)
+
+    xml_files = _log_session_discovery(
+        ctx, sessions=sessions, all_session_ids=sessions.all_session_ids()
+    )
+
+    paths = list(xml_files.keys())
+    planning_paths = [p for p in paths if "planning" in p]
+    impl_paths = [p for p in paths if "impl" in p]
+    assert len(planning_paths) >= 1
+    assert len(impl_paths) >= 1

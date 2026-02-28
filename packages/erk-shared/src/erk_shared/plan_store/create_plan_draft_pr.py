@@ -66,6 +66,7 @@ def create_plan_draft_pr(
     created_from_workflow_run_url: str | None,
     learned_from_issue: int | None,
     summary: str | None,
+    extra_files: dict[str, str] | None,
 ) -> CreatePlanDraftPRResult:
     """Create a plan as a draft PR with plan content committed to branch.
 
@@ -98,6 +99,7 @@ def create_plan_draft_pr(
         created_from_workflow_run_url: Optional workflow run URL
         learned_from_issue: Optional parent plan issue number (for learn plans)
         summary: Optional AI-generated summary for the PR description
+        extra_files: Optional additional files to commit alongside plan.md and ref.json
 
     Returns:
         CreatePlanDraftPRResult with success status and details.
@@ -138,13 +140,16 @@ def create_plan_draft_pr(
         ref_data["objective_id"] = objective_id
 
     # Step 5: Commit plan files to branch via git plumbing (no checkout)
+    files: dict[str, str] = {
+        f"{IMPL_CONTEXT_DIR}/plan.md": plan_content,
+        f"{IMPL_CONTEXT_DIR}/ref.json": json.dumps(ref_data, indent=2),
+    }
+    if extra_files is not None:
+        files.update(extra_files)
     git.commit.commit_files_to_branch(
         repo_root,
         branch=branch_name,
-        files={
-            f"{IMPL_CONTEXT_DIR}/plan.md": plan_content,
-            f"{IMPL_CONTEXT_DIR}/ref.json": json.dumps(ref_data, indent=2),
-        },
+        files=files,
         message=f"Add plan: {title}",
     )
 

@@ -30,6 +30,7 @@ from erk_shared.learn.extraction.session_schema import (
 )
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.create_plan_draft_pr import create_plan_draft_pr
+from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 from erk_shared.plan_store.types import PlanNotFound
 from erk_shared.sessions.discovery import SessionsForPlan, get_readable_sessions
 
@@ -47,6 +48,7 @@ class SessionStats:
     duration_minutes: int | None
     raw_size_kb: int
     xml_size_kb: int
+    xml_chunks: tuple[str, ...]
 
 
 def _has_user_text(message_content: str | list) -> bool:
@@ -110,6 +112,7 @@ def _compute_session_stats(session_path: Path, *, session_id: str) -> SessionSta
             duration_minutes=duration_minutes,
             raw_size_kb=raw_bytes // 1024,
             xml_size_kb=0,
+            xml_chunks=(),
         )
 
     entries = deduplicate_documentation_blocks(entries)
@@ -130,7 +133,7 @@ def _compute_session_stats(session_path: Path, *, session_id: str) -> SessionSta
         source_label = f"agent-{agent_log.stem.replace('agent-', '')}"
         all_entries_with_labels.append((agent_entries, source_label))
 
-    xml_bytes = 0
+    all_chunks: list[str] = []
     for session_entries, source_label in all_entries_with_labels:
         chunks = split_entries_to_chunks(
             session_entries,
@@ -138,13 +141,16 @@ def _compute_session_stats(session_path: Path, *, session_id: str) -> SessionSta
             source_label=source_label,
             enable_pruning=True,
         )
-        xml_bytes += sum(len(chunk.encode("utf-8")) for chunk in chunks)
+        all_chunks.extend(chunks)
+
+    xml_bytes = sum(len(chunk.encode("utf-8")) for chunk in all_chunks)
 
     return SessionStats(
         user_turns=user_turns,
         duration_minutes=duration_minutes,
         raw_size_kb=raw_bytes // 1024,
         xml_size_kb=xml_bytes // 1024,
+        xml_chunks=tuple(all_chunks),
     )
 
 
@@ -183,17 +189,39 @@ def _create_learn_pr_with_sessions(
         user_output(click.style("Warning: ", fg="yellow") + f"Could not create learn plan: {exc}")
 
 
+def _session_type_prefix(
+    sid: str,
+    *,
+    planning_ids: set[str],
+    impl_ids: set[str],
+    learn_ids: set[str],
+) -> str:
+    """Map a session ID to its type prefix string."""
+    if sid in planning_ids:
+        return "planning"
+    if sid in impl_ids:
+        return "impl"
+    if sid in learn_ids:
+        return "learn"
+    return "unknown"
+
+
 def _log_session_discovery(
     ctx: ErkContext,
     *,
     sessions: SessionsForPlan,
     all_session_ids: list[str],
-) -> None:
-    """Log session discovery summary with per-session type badges and sizes."""
+) -> dict[str, str]:
+    """Log session discovery summary with per-session type badges and sizes.
+
+    Returns a dict mapping file paths to XML content for all readable sessions.
+    Paths follow the convention: {IMPL_CONTEXT_DIR}/sessions/{type}-{session_id}.xml
+    (or -part{N}.xml for multi-chunk sessions).
+    """
     total = len(all_session_ids)
     if total == 0:
         user_output("  \u26a0\ufe0f  No sessions discovered for this plan")
-        return
+        return {}
 
     n_planning = 1 if sessions.planning_session_id else 0
     n_impl = len(sessions.implementation_session_ids)
@@ -224,6 +252,8 @@ def _log_session_discovery(
     table.add_column("session", no_wrap=True)
     table.add_column("detail", no_wrap=True)
 
+    xml_files: dict[str, str] = {}
+
     for sid in all_session_ids:
         if sid in planning_ids:
             emoji, label = "\U0001f4dd", "planning:"
@@ -246,6 +276,21 @@ def _log_session_discovery(
                     f"[dim]{stats.user_turns} turns{duration_part}"
                     f"  ({stats.raw_size_kb:,} KB \u2192 {stats.xml_size_kb:,} KB)[/dim]"
                 )
+                # Collect XML chunks for embedding in the learn plan PR
+                if stats.xml_chunks:
+                    prefix = _session_type_prefix(
+                        sid,
+                        planning_ids=planning_ids,
+                        impl_ids=impl_ids,
+                        learn_ids=learn_ids,
+                    )
+                    if len(stats.xml_chunks) == 1:
+                        path = f"{IMPL_CONTEXT_DIR}/sessions/{prefix}-{sid}.xml"
+                        xml_files[path] = stats.xml_chunks[0]
+                    else:
+                        for n, chunk in enumerate(stats.xml_chunks, start=1):
+                            path = f"{IMPL_CONTEXT_DIR}/sessions/{prefix}-{sid}-part{n}.xml"
+                            xml_files[path] = chunk
             else:
                 size_kb = readable_map[sid].stat().st_size // 1024
                 detail = f"[dim](local, {size_kb:,} KB)[/dim]"
@@ -256,6 +301,8 @@ def _log_session_discovery(
 
     console = Console(stderr=True, force_terminal=True)
     console.print(table)
+
+    return xml_files
 
 
 def _create_learn_pr_impl(
@@ -283,8 +330,8 @@ def _create_learn_pr_impl(
     sessions = ctx.plan_backend.find_sessions_for_plan(state.main_repo_root, plan_id)
     all_session_ids = sessions.all_session_ids()
 
-    # Log session discovery summary
-    _log_session_discovery(ctx, sessions=sessions, all_session_ids=all_session_ids)
+    # Log session discovery summary and collect XML files for embedding
+    xml_files = _log_session_discovery(ctx, sessions=sessions, all_session_ids=all_session_ids)
 
     # Build learn plan body
     if all_session_ids:
@@ -317,6 +364,7 @@ def _create_learn_pr_impl(
         created_from_workflow_run_url=None,
         learned_from_issue=int(plan_id),
         summary=None,
+        extra_files=xml_files or None,
     )
 
     if result.success:
