@@ -27,7 +27,7 @@ Frozen dataclass in `src/erk/tui/widgets/status_bar.py`. Stores the current labe
 
 ### Operations Registry
 
-`_operations: dict[str, _OperationState]` at `status_bar.py:51` maps op IDs to their current state. Supports multiple concurrent operations; the most recently updated one is displayed.
+`_operations: dict[str, _OperationState]` in `src/erk/tui/widgets/status_bar.py` maps op IDs to their current state. Supports multiple concurrent operations; the most recently updated one is displayed.
 
 ## Lifecycle Methods
 

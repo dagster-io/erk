@@ -28,7 +28,7 @@ The TUI dashboard applies filters in a defined pipeline sequence: objective filt
 
 ## State Variables
 
-Defined at `src/erk/tui/app.py:160-163`:
+Defined in `src/erk/tui/app.py`:
 
 | Variable                  | Type                     | Initial | Purpose                               |
 | ------------------------- | ------------------------ | ------- | ------------------------------------- |
@@ -64,9 +64,9 @@ Each step returns early, so pressing Escape repeatedly peels back one filter lay
 
 ## Gateway Query Delegation
 
-`get_branch_stack()` at `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py:157` returns `list[str] | None` — the ordered branch names in a Graphite stack, or `None` if the branch is not in a stack.
+`get_branch_stack(branch)` in the `PlanDataProvider` ABC returns `list[str] | None` — the ordered branch names in a Graphite stack, or `None` if the branch is not in a stack.
 
-Called at line 546 in `action_toggle_stack_filter()` to populate `_stack_filter_branches`.
+Called in `action_toggle_stack_filter()` to populate `_stack_filter_branches`.
 
 ## View Switching Clears Filters
 
