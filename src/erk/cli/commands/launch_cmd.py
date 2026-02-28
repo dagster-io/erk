@@ -6,7 +6,11 @@ Usage examples:
     erk launch pr-fix-conflicts --pr 456 --no-squash
     erk launch plan-implement --issue 789
     erk launch learn --issue 789
+    erk launch one-shot --pr 456 --prompt "fix the auth bug"
+    erk launch one-shot --pr 456 -f prompt.md
 """
+
+from pathlib import Path
 
 import click
 
@@ -281,6 +285,60 @@ def _trigger_plan_implement(
     )
 
 
+def _trigger_one_shot(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    pr_number: int,
+    prompt: str,
+    model: str | None,
+) -> None:
+    """Trigger one-shot workflow against an existing PR."""
+    user_output("Checking PR status...")
+    pr = ctx.github.get_pr(repo.root, pr_number)
+    Ensure.invariant(
+        not isinstance(pr, PRNotFound),
+        f"No pull request found with number #{pr_number}",
+    )
+    assert not isinstance(pr, PRNotFound)
+    branch_name = pr.head_ref_name
+
+    Ensure.invariant(
+        pr.state == "OPEN",
+        f"Cannot run one-shot on {pr.state} PR - only OPEN PRs can be targeted",
+    )
+
+    user_output(f"PR #{pr_number}: {click.style(pr.title, fg='cyan')} ({pr.state})")
+    user_output("")
+
+    # Get submitter identity
+    _, username, _ = ctx.github.check_auth_status()
+    submitted_by = username or "unknown"
+
+    # Build workflow inputs
+    inputs: dict[str, str] = {
+        "prompt": prompt,
+        "branch_name": branch_name,
+        "pr_number": str(pr_number),
+        "submitted_by": submitted_by,
+        "modify_existing": "true",
+    }
+    if model is not None:
+        inputs["model_name"] = model
+
+    # Trigger workflow
+    user_output("Triggering one-shot workflow...")
+    _trigger_workflow(
+        ctx,
+        repo,
+        workflow_name="one-shot",
+        inputs=inputs,
+        branch_name=branch_name,
+        pr_owner=pr.owner,
+        pr_repo=pr.repo,
+    )
+
+
 @click.command("launch")
 @click.argument("workflow_name", type=str)
 @click.option(
@@ -305,6 +363,20 @@ def _trigger_plan_implement(
     type=str,
     help="Claude model to use (for workflows that support it)",
 )
+@click.option(
+    "--prompt",
+    type=str,
+    default=None,
+    help="Prompt text for one-shot workflow",
+)
+@click.option(
+    "-f",
+    "--file",
+    "file_path",
+    type=click.Path(exists=True, dir_okay=False),
+    default=None,
+    help="Read prompt from a file (one-shot only)",
+)
 @click.pass_obj
 def launch(
     ctx: ErkContext,
@@ -314,6 +386,8 @@ def launch(
     plan_number: int | None,
     no_squash: bool,
     model: str | None,
+    prompt: str | None,
+    file_path: str | None,
 ) -> None:
     """Trigger a GitHub Actions workflow.
 
@@ -324,6 +398,7 @@ def launch(
       pr-address          - Address PR review comments remotely
       pr-rewrite          - Rebase PR and regenerate AI PR summary
       learn               - Extract insights from a plan issue
+      one-shot            - Run one-shot workflow against an existing PR
 
     Examples:
 
@@ -342,6 +417,14 @@ def launch(
     \b
       # Trigger learn for a plan issue
       erk launch learn --issue 123
+
+    \b
+      # Run one-shot against a PR with inline prompt
+      erk launch one-shot --pr 456 --prompt "fix the auth bug"
+
+    \b
+      # Run one-shot against a PR with prompt from file
+      erk launch one-shot --pr 456 -f prompt.md
 
     Requirements:
 
@@ -391,6 +474,26 @@ def launch(
         )
         assert plan_number is not None
         _trigger_learn(ctx, repo, issue=plan_number)
+    elif workflow_name == "one-shot":
+        Ensure.invariant(
+            pr_number is not None,
+            "--pr is required for one-shot workflow",
+        )
+        assert pr_number is not None
+        # Resolve prompt from --prompt or --file (mutually exclusive)
+        Ensure.invariant(
+            not (prompt is not None and file_path is not None),
+            "--prompt and --file are mutually exclusive",
+        )
+        resolved_prompt: str | None = prompt
+        if file_path is not None:
+            resolved_prompt = Path(file_path).read_text(encoding="utf-8").strip()
+        Ensure.invariant(
+            resolved_prompt is not None and len(resolved_prompt) > 0,
+            "--prompt or --file is required for one-shot workflow",
+        )
+        assert resolved_prompt is not None
+        _trigger_one_shot(ctx, repo, pr_number=pr_number, prompt=resolved_prompt, model=model)
     elif workflow_name == "plan-implement":
         _trigger_plan_implement(ctx, repo, issue=plan_number or 0, model=model)
     else:
