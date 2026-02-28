@@ -417,6 +417,180 @@ def test_workflow_launch_pr_rewrite_requires_pr_option(tmp_path: Path) -> None:
         assert "--pr is required for pr-rewrite" in result.output
 
 
+def test_workflow_launch_one_shot_triggers_workflow(tmp_path: Path) -> None:
+    """Test one-shot workflow trigger with --prompt."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        pr_info = _make_pr_info(123, "feature-branch", "OPEN", "Add feature")
+        pr_details = _make_pr_details(
+            number=123,
+            head_ref_name="feature-branch",
+            state="OPEN",
+            base_ref_name="main",
+            title="Add feature",
+        )
+        github = FakeGitHub(
+            prs={"feature-branch": pr_info},
+            pr_details={123: pr_details},
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "master"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        result = runner.invoke(
+            cli,
+            ["launch", "one-shot", "--pr", "123", "--prompt", "fix the auth bug"],
+            obj=ctx,
+        )
+
+        assert result.exit_code == 0
+        assert "PR #123" in result.output
+        assert "Workflow triggered" in result.output
+
+        # Verify workflow was triggered with correct inputs
+        assert len(github.triggered_workflows) == 1
+        workflow, inputs = github.triggered_workflows[0]
+        assert workflow == WORKFLOW_COMMAND_MAP["one-shot"]
+        assert inputs["prompt"] == "fix the auth bug"
+        assert inputs["branch_name"] == "feature-branch"
+        assert inputs["pr_number"] == "123"
+        assert inputs["submitted_by"] == "test-user"
+        assert inputs["modify_existing"] == "true"
+
+
+def test_workflow_launch_one_shot_with_file(tmp_path: Path) -> None:
+    """Test one-shot workflow trigger with --file."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        # Write prompt file
+        prompt_file = env.cwd / "prompt.md"
+        prompt_file.write_text("fix the auth bug from file", encoding="utf-8")
+
+        pr_info = _make_pr_info(123, "feature-branch", "OPEN", "Add feature")
+        pr_details = _make_pr_details(
+            number=123,
+            head_ref_name="feature-branch",
+            state="OPEN",
+            base_ref_name="main",
+            title="Add feature",
+        )
+        github = FakeGitHub(
+            prs={"feature-branch": pr_info},
+            pr_details={123: pr_details},
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "master"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        result = runner.invoke(
+            cli,
+            ["launch", "one-shot", "--pr", "123", "-f", str(prompt_file)],
+            obj=ctx,
+        )
+
+        assert result.exit_code == 0
+        assert "Workflow triggered" in result.output
+
+        # Verify prompt was read from file
+        assert len(github.triggered_workflows) == 1
+        _, inputs = github.triggered_workflows[0]
+        assert inputs["prompt"] == "fix the auth bug from file"
+
+
+def test_workflow_launch_one_shot_requires_pr(tmp_path: Path) -> None:
+    """Test one-shot requires --pr option."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "master"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git)
+
+        result = runner.invoke(
+            cli,
+            ["launch", "one-shot", "--prompt", "fix something"],
+            obj=ctx,
+        )
+
+        assert result.exit_code == 1
+        assert "--pr is required for one-shot" in result.output
+
+
+def test_workflow_launch_one_shot_requires_prompt(tmp_path: Path) -> None:
+    """Test one-shot requires --prompt or --file."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "master"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git)
+
+        result = runner.invoke(
+            cli,
+            ["launch", "one-shot", "--pr", "123"],
+            obj=ctx,
+        )
+
+        assert result.exit_code == 1
+        assert "--prompt or --file is required for one-shot" in result.output
+
+
+def test_workflow_launch_one_shot_prompt_and_file_exclusive(tmp_path: Path) -> None:
+    """Test one-shot rejects both --prompt and --file."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        # Write prompt file
+        prompt_file = env.cwd / "prompt.md"
+        prompt_file.write_text("file prompt", encoding="utf-8")
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "master"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git)
+
+        result = runner.invoke(
+            cli,
+            [
+                "launch",
+                "one-shot",
+                "--pr",
+                "123",
+                "--prompt",
+                "inline prompt",
+                "-f",
+                str(prompt_file),
+            ],
+            obj=ctx,
+        )
+
+        assert result.exit_code == 1
+        assert "--prompt and --file are mutually exclusive" in result.output
+
+
 def test_workflow_launch_pr_fix_conflicts_closed_pr_fails(tmp_path: Path) -> None:
     """Test error when PR is closed."""
     runner = CliRunner()
