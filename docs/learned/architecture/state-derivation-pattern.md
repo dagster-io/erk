@@ -126,14 +126,6 @@ Result: Test every combination of raw state fields. No component mocking, no bac
 
 Erk's TUI currently uses pre-rendered display strings (`pr_display`, `checks_display`, `comments_display`) for the plan table. See `PlanRowData` in `src/erk/tui/data/types.py`.
 
-A planned feature (branch `P6564-erk-plan-visual-status-in-02-01-1138`) migrates to state derivation with visual status indicators. The implementation demonstrates this pattern:
-
-- Backend provides raw fields: `pr_state`, `pr_merged`, `run_status`, `run_conclusion`
-- Frontend pure functions: `derivePrStatus()`, `deriveChecksStatus()`, `deriveCommentsStatus()`
-- Result: 278 tests covering all state combinations
-
-See [visual-status-indicators.md](../desktop-dash/visual-status-indicators.md) for the planned implementation details.
-
 ## Migration Strategy
 
 Transitioning from pre-rendered to raw fields without downtime:
@@ -195,8 +187,4 @@ The derivation function explicitly handles the null cases as part of the state s
 
 Erk initially used pre-rendered display strings because they were easier to implement. Testing friction (couldn't test display logic without full backend setup) and inflexibility (every color change required backend deployment) drove the pattern shift.
 
-The planned erkdesk visual status indicators feature is the first systematic application of state derivation in erk.
-
 ## Related Documentation
-
-- [visual-status-indicators.md](../desktop-dash/visual-status-indicators.md) — Planned erkdesk implementation with 278 tests

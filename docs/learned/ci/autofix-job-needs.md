@@ -6,7 +6,7 @@ read_when:
   - "understanding why autofix runs independently of tests"
 tripwires:
   - action: "adding a test job to autofix's needs list"
-    warning: "Test jobs (erkdesk-tests, unit-tests, integration-tests) must NEVER block autofix. Only jobs whose failures can be auto-resolved (format, lint, prettier, docs-check, ty) should be dependencies. Adding test jobs creates a deadlock: tests fail → autofix blocked → format/lint issues never fixed → developer must manually fix both."
+    warning: "Test jobs (unit-tests, integration-tests) must NEVER block autofix. Only jobs whose failures can be auto-resolved (format, lint, prettier, docs-check, ty) should be dependencies. Adding test jobs creates a deadlock: tests fail → autofix blocked → format/lint issues never fixed → developer must manually fix both."
 ---
 
 # Autofix Job Needs
@@ -44,7 +44,6 @@ When autofix depends on test jobs, the pipeline enters a deadlock state:
 | ty (type check)      | ⚠️ Mostly no           | ✅ Yes        | Fast feedback; most type errors need manual fixes but some are auto-fixable via ruff |
 | unit-tests           | ❌ No                  | ❌ **NO**     | Requires code changes, not style fixes                                               |
 | integration-tests    | ❌ No                  | ❌ **NO**     | Requires code changes, not style fixes                                               |
-| erkdesk-tests        | ❌ No                  | ❌ **NO**     | Requires code changes, not style fixes                                               |
 
 ## Anti-Pattern: Test Job Dependency
 
@@ -64,9 +63,7 @@ The actual configuration excludes all test jobs from the needs list.
 
 ## Historical Context
 
-When erkdesk-tests were added (PR #6501), the temptation was to add them to the autofix needs list "for consistency" since other jobs were listed. This would have been incorrect — erkdesk tests verify JavaScript correctness, which autofix cannot repair.
-
-The pattern was correctly maintained: only fixable jobs in the dependency list.
+The pattern has been maintained consistently: only fixable jobs in the dependency list.
 
 ## Related Patterns
 

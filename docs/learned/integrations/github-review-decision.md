@@ -50,7 +50,7 @@ The `review_decision: str | None` field on `PullRequestInfo` in `packages/erk-sh
 
 | `review_decision` value | Indicator added |
 | ----------------------- | --------------- |
-| `"APPROVED"`            | `✔` suffix     |
+| `"APPROVED"`            | `✔` suffix      |
 | `"CHANGES_REQUESTED"`   | `❌` suffix     |
 | `"REVIEW_REQUIRED"`     | No indicator    |
 | `None`                  | No indicator    |
@@ -67,5 +67,4 @@ Review decision indicators only appear on plans in the `review` lifecycle stage.
 
 ## Related Documentation
 
-- [Visual Status Indicators](../desktop-dash/visual-status-indicators.md) — Broader status display context
 - [Planned PR Lifecycle](../planning/planned-pr-lifecycle.md) — Lifecycle stage definitions

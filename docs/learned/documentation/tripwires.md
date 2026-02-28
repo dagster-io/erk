@@ -12,8 +12,6 @@ read_when:
 
 Rules triggered by matching actions in code.
 
-**adding TypeScript/Bash code from erkdesk** → Read [Language Scope Auditing](language-scope-auditing.md) first. Including TypeScript/Bash code blocks from erkdesk/ without checking the One Code Rule
-
 **adding a code block longer than a few lines to a learned doc** → Read [Stale Code Blocks Are Silent Bugs](stale-code-blocks-are-silent-bugs.md) first. Check if this falls under the One Code Rule exceptions (data formats, third-party APIs, anti-patterns, I/O examples). If not, use a source pointer.
 
 **adding prettier-ignore to docs/learned/** → Read [Markdown Authoring and Prettier Interactions](markdown-and-prettier.md) first. prettier-ignore is almost never needed in docs. If Prettier is mangling your content, the structure may need rethinking rather than suppression.
@@ -47,8 +45,6 @@ Rules triggered by matching actions in code.
 **enumerating implementation-detail set members in documentation** → Read [Stale Code Blocks Are Silent Bugs](stale-code-blocks-are-silent-bugs.md) first. Don't enumerate implementation-detail set members (like indicator emojis) in documentation. Reference the source constant instead. Distinguish 'API constants where enumeration IS the spec' from 'implementation details where enumeration DRIFTS'.
 
 **expecting agents to self-diagnose knowledge gaps** → Read [Passive Context vs. On-Demand Retrieval](passive-context-vs-retrieval.md) first. Use passive context or structural triggers instead. Agents cannot distinguish stale training data from correct knowledge.
-
-**justifying erkdesk code inclusion** → Read [Language Scope Auditing](language-scope-auditing.md) first. Rationalizing erkdesk source as "third-party API pattern" because it uses React/Electron
 
 **manually wrapping lines or aligning tables in markdown** → Read [Markdown Authoring and Prettier Interactions](markdown-and-prettier.md) first. Never manually format markdown. Prettier rewrites all formatting on save. Write naturally, then run `make prettier` via devrun.
 

@@ -264,8 +264,6 @@ Rules triggered by matching actions in code.
 
 **running tests immediately after rebase without checking for old symbols** → Read [Rebase Conflict Patterns](rebase-conflict-patterns.md) first. Hidden regressions can exist in non-conflicted files. Grep for old symbols that should have been renamed before running tests.
 
-**running tsc --noEmit from root in multi-config TypeScript project** → Read [TypeScript Multi-Config Project Checking](typescript-multi-config.md) first. tsc --noEmit from root breaks subdirectory configs. Use tsc -p <path> --noEmit for each tsconfig.json separately.
-
 **scanning derived display output (emoji lists, formatted strings) to determine state** → Read [Direct Condition vs Derived Output](direct-condition-vs-derived-output.md) first. Check original boolean conditions directly instead. Scanning derived output couples decision logic to display formatting. See direct-condition-vs-derived-output.md.
 
 **silently transforming agent output (sanitize/normalize) instead of rejecting invalid values** → Read [Agent Back Pressure via Gates](agent-backpressure-gates.md) first. Silent transformation masks mistakes and prevents the agent from learning. Use a validation gate that rejects invalid input with actionable feedback so the agent can self-correct.

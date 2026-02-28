@@ -39,7 +39,6 @@ PR #8130 removed `branch_slug` from `setup_impl`:
 CLI command changes in `src/erk/cli/` can silently break downstream packages:
 
 - `packages/erkbot/` — May invoke CLI commands programmatically
-- `desktop-dash/` — May reference CLI commands
 
 Grep: `rg --type py 'CliRunner.*invoke.*cli' packages/`
 

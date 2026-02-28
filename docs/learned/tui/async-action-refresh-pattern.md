@@ -46,5 +46,3 @@ Textual's `@work(thread=True)` runs the method in a separate thread. Direct attr
 **Using --no-wait in worker threads:** The worker thread exists specifically to wait for the operation to complete. Passing `--no-wait` causes the thread to return immediately without refreshing meaningful state changes.
 
 ## Related Documentation
-
-- [Visual Status Indicators](../desktop-dash/visual-status-indicators.md) — What the refreshed data displays

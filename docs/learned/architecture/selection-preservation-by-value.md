@@ -46,18 +46,6 @@ Stable identifiers survive mutations:
 
 Position-based tracking fails in all three cases. Value-based tracking only fails when the item is removed, which is the one case where "lose your place" is semantically correct.
 
-## Implementation: React
-
-<!-- Source: erkdesk/src/renderer/App.tsx, selection preservation in refresh interval -->
-
-See the `setSelectedIndex` callback in `erkdesk/src/renderer/App.tsx` (lines 48-55). The pattern:
-
-- Save `issue_number` from `prevPlans[prevIndex]`
-- Use `findIndex()` to locate it in `newPlans`
-- Fall back to 0 if not found
-
-**Why `findIndex()` instead of manual loop**: It handles the search and signals "not found" with `-1` in a single operation. The ternary `newIndex >= 0 ? newIndex : 0` becomes the complete fallback strategy.
-
 ## Implementation: Python/Textual
 
 <!-- Source: src/erk/tui/widgets/plan_table.py, PlanDataTable.populate -->
@@ -86,18 +74,12 @@ When the selected item disappears from the refreshed data, you must choose a fal
 
 **Erk's choices:**
 
-- **erkdesk (Electron)**: Reset to 0 — plans list is sorted newest-first, user expects to see latest plans
 - **erk TUI**: Preserve index, clamped — user is navigating a stable list, context matters
 
-Neither is "correct". The right choice depends on what the user is trying to accomplish.
-
 ## Historical Context
-
-This pattern emerged from debugging cursor position resets in erkdesk. Initial implementation used array index, causing the cursor to jump when plans refreshed. The fix wasn't Electron-specific — it applied identically to the Textual-based TUI.
 
 The generalized insight: **Mutable data structures need stable identity, not positional identity.** This applies beyond UI — any time you're tracking "which one" in a collection that can change.
 
 ## Related Topics
 
 - [Textual Quirks](../textual/quirks.md) — `DataTable.clear()` behavior and cursor restoration
-- [Erkdesk Auto-Refresh Patterns](../desktop-dash/erkdesk-auto-refresh-patterns.md) — Full refresh cycle including this pattern

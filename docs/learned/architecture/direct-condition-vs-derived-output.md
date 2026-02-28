@@ -42,5 +42,4 @@ Inspecting a rendered emoji list, formatted string, or display column to infer s
 
 ## Related Documentation
 
-- [Visual Status Indicators](../desktop-dash/visual-status-indicators.md) — Indicator rendering and color palette
 - [Stacked PR Indicator](../tui/stacked-pr-indicator.md) — Informational vs blocking indicator classification

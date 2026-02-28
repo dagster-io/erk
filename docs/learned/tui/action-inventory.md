@@ -83,19 +83,9 @@ The `view_comments` action (`c` key) opens a modal screen displaying unresolved 
 
 The guard pattern checks data availability at each level (row exists, PR exists, comments exist) before attempting the operation, with status bar messages for expected empty states.
 
-## Cross-Frontend Command Reuse
-
-The registry serves as a shared contract between the TUI and desktop dashboard:
-
-- **TUI**: `MainListCommandProvider` and `PlanCommandProvider` iterate `get_available_commands()`, formatting each as a `DiscoveryHit` or `Hit` for Textual's command palette.
-- **Desktop dashboard**: The toolbar reads the same availability logic to enable/disable buttons. See [interaction-model.md](../desktop-dash/interaction-model.md) for how desktop diverges from TUI conventions.
-
-This shared registry means adding a command to the TUI automatically makes it available for the desktop dashboard to adopt — the availability logic doesn't need to be re-implemented.
-
 ## Related Documentation
 
 - [Adding Commands to TUI](adding-commands.md) — Step-by-step process and three-layer null validation
 - [Command Execution Strategies](command-execution.md) — Streaming vs executor patterns, stdin deadlock prevention
 - [TUI Streaming Output](streaming-output.md) — Cross-thread UI updates for long-running commands
 - [TUI Data Contract](data-contract.md) — PlanRowData fields that predicates evaluate
-- [Desktop Dashboard Interaction Model](../desktop-dash/interaction-model.md) — How the same commands map to desktop GUI
