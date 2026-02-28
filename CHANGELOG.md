@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+<!-- As of: 623898bca -->
+
+### Added
+
+- Add "rewrite" command to TUI command palette for remote PR rebase and AI summary regeneration (704bbe6ad)
+- Add `gt submit` to TUI sync checkout command for streamlined branch submission (6240893fa)
+- Add `erk init --upgrade` flag for self-service upgrades after version changes (a59de3ee3)
+
+### Changed
+
+- Improve session discovery logging in `erk land` with per-session type badges and sizes (86d2118cc)
+- Fix sync command clipboard text to include full command in TUI command palette (add2748d2)
+- Delay impl-context cleanup until submit phase to preserve plan tracking during implementation (a14a62273)
+
+### Fixed
+
+- Fix misleading data when GraphQL enrichment fails in `erk pr list` -- unenriched PRs now excluded from linkages with explicit degradation warnings (04dc3d38a)
+- Make `--script` mode resilient to errors in `erk br co` -- failures now produce a valid error script instead of empty stdout (04c46a7bb)
+- Fix workflow-started metadata block rendering to prevent parse failures during `erk land` (ffd28b870)
+- Add resilient plan-header recovery for PR submission when metadata block is destroyed by implementation runs (ad6559fde)
+
 ## [0.9.0] - 2026-02-27 14:23 PT
 
 ### Release Overview
