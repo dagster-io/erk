@@ -1,5 +1,6 @@
 """Tests for artifact sync."""
 
+import json
 from pathlib import Path
 from unittest.mock import patch
 
@@ -20,6 +21,11 @@ from erk.artifacts.sync import (
     _sync_workflows,
     sync_artifacts,
     sync_dignified_review,
+)
+from erk.core.claude_settings import (
+    ERK_EXIT_PLAN_HOOK_COMMAND,
+    ERK_USER_PROMPT_HOOK_COMMAND,
+    add_erk_hooks,
 )
 
 # Test-only constants matching the capabilities registry
@@ -488,10 +494,6 @@ def test_sync_artifacts_syncs_installed_capabilities(tmp_path: Path) -> None:
     After syncing file-based artifacts, sync_artifacts iterates through
     installed capabilities and calls install() to ensure they're up-to-date.
     """
-    import json
-
-    from erk.core.claude_settings import add_erk_hooks
-
     bundled_dir = tmp_path / "bundled"
     bundled_dir.mkdir()
 
@@ -743,8 +745,6 @@ def test_sync_hooks_returns_empty_when_no_erk_hooks_installed(tmp_path: Path) ->
     hooks even when they weren't already installed. The fix adds an early return
     when HooksCapability.has_any_erk_hooks() returns False.
     """
-    import json
-
     # Create settings.json without any erk hooks (only non-erk hooks)
     settings_path = tmp_path / ".claude" / "settings.json"
     settings_path.parent.mkdir(parents=True)
@@ -799,6 +799,66 @@ def test_sync_workflows_filters_by_installed_capabilities(tmp_path: Path) -> Non
     assert not (target_dir / "optional-workflow.yml").exists()
     assert len(synced) == 1
     assert synced[0].key == "workflows/required-workflow.yml"
+
+
+def test_sync_hooks_upgrades_old_format(tmp_path: Path) -> None:
+    """_sync_hooks updates old hook commands to current format.
+
+    Validates the bug fix that removed the exact-match condition which
+    prevented old hooks from being updated during upgrades.
+    Old hooks have ERK_HOOK_ID markers but lack the 'command -v erk' prefix.
+    """
+    # Create settings.json with OLD hook commands (have ERK_HOOK_ID markers
+    # but missing the 'command -v erk' prefix that current hooks have)
+    settings_path = tmp_path / ".claude" / "settings.json"
+    settings_path.parent.mkdir(parents=True)
+    old_settings = {
+        "hooks": {
+            "UserPromptSubmit": [
+                {
+                    "matcher": "*",
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": "ERK_HOOK_ID=user-prompt-hook erk exec user-prompt-hook",
+                            "timeout": 30,
+                        }
+                    ],
+                }
+            ],
+            "PreToolUse": [
+                {
+                    "matcher": "ExitPlanMode",
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": (
+                                "ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook"
+                            ),
+                        }
+                    ],
+                }
+            ],
+        }
+    }
+    settings_path.write_text(json.dumps(old_settings), encoding="utf-8")
+
+    result = _sync_hooks(tmp_path)
+
+    # Should return synced artifacts for both hooks
+    assert len(result) == 2
+    keys = {r.key for r in result}
+    assert "hooks/user-prompt-hook" in keys
+    assert "hooks/exit-plan-mode-hook" in keys
+
+    # Settings should be updated to current commands
+    updated = json.loads(settings_path.read_text(encoding="utf-8"))
+    user_hooks = updated["hooks"]["UserPromptSubmit"][0]["hooks"]
+    assert user_hooks[0]["command"] == ERK_USER_PROMPT_HOOK_COMMAND
+
+    pre_tool_hooks = updated["hooks"]["PreToolUse"]
+    exit_plan_entry = next(e for e in pre_tool_hooks if e.get("matcher") == "ExitPlanMode")
+    assert exit_plan_entry["hooks"][0]["command"] == ERK_EXIT_PLAN_HOOK_COMMAND
 
 
 def test_sync_actions_filters_by_installed_capabilities(tmp_path: Path) -> None:

@@ -110,6 +110,6 @@ def test_doctor_fails_user_prompt_hook_check_wrong_command(
     )
 
     # Assert: UserPromptSubmit hook check should fail
-    # The check message is "UserPromptSubmit hook missing unified hook script"
+    # The check message is "UserPromptSubmit hook command outdated"
     output = result.stdout + result.stderr
-    assert "userpromptsubmit hook missing" in output.lower()
+    assert "userpromptsubmit hook command outdated" in output.lower()

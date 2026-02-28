@@ -107,11 +107,18 @@ def _format_subgroup(name: str, checks: list[CheckResult], verbose: bool, indent
 @click.command("doctor")
 @click.option("-v", "--verbose", is_flag=True, help="Show all individual checks")
 @click.option("--dogfooder", is_flag=True, help="Include early dogfooder migration checks")
+@click.option("--check-hooks", is_flag=True, help="Include hook execution health checks")
 @click.option(
     "--clear-hook-logs", "clear_hook_logs_flag", is_flag=True, help="Clear all hook execution logs"
 )
 @click.pass_obj
-def doctor_cmd(ctx: ErkContext, verbose: bool, dogfooder: bool, clear_hook_logs_flag: bool) -> None:
+def doctor_cmd(
+    ctx: ErkContext,
+    verbose: bool,
+    dogfooder: bool,
+    check_hooks: bool,
+    clear_hook_logs_flag: bool,
+) -> None:
     """Run diagnostic checks on erk setup.
 
     Checks for:
@@ -145,7 +152,7 @@ def doctor_cmd(ctx: ErkContext, verbose: bool, dogfooder: bool, clear_hook_logs_
     click.echo("")
 
     # Run all checks
-    results = run_all_checks(ctx)
+    results = run_all_checks(ctx, check_hooks=check_hooks)
 
     # Group results by category
     prerequisite_names = {"erk", "claude", "graphite", "github", "uv"}

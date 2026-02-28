@@ -11,6 +11,11 @@ from erk.core.context import ErkContext
 @click.group("init", cls=ErkCommandGroup, invoke_without_command=True)
 @click.option("-f", "--force", is_flag=True, help="Overwrite existing repo config if present.")
 @click.option(
+    "--upgrade",
+    is_flag=True,
+    help="Upgrade artifacts and hooks without rewriting config.toml.",
+)
+@click.option(
     "--statusline",
     "statusline_only",
     is_flag=True,
@@ -27,6 +32,7 @@ def init_group(
     ctx: click.Context,
     *,
     force: bool,
+    upgrade: bool,
     statusline_only: bool,
     no_interactive: bool,
 ) -> None:
@@ -34,6 +40,7 @@ def init_group(
 
     When run without a subcommand, performs full initialization.
     Use 'erk init capability' subcommands to manage optional features.
+    Use --upgrade to update artifacts/hooks without rewriting config.toml.
     """
     if ctx.invoked_subcommand is None:
         # Run main init when no subcommand given
@@ -41,6 +48,7 @@ def init_group(
         run_init(
             erk_ctx,
             force=force,
+            upgrade=upgrade,
             statusline_only=statusline_only,
             no_interactive=no_interactive,
         )

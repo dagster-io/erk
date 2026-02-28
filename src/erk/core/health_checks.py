@@ -27,6 +27,7 @@ from erk.core.claude_settings import (
     read_claude_settings,
 )
 from erk.core.context import ErkContext
+from erk.core.init_utils import REQUIRED_GITIGNORE_ENTRIES
 from erk.core.repo_discovery import RepoContext
 from erk.core.version_check import get_required_version, is_version_mismatch
 from erk.core.worktree_pool import load_pool_state
@@ -671,7 +672,6 @@ def check_gitignore_entries(repo_root: Path) -> CheckResult:
     Returns:
         CheckResult indicating whether required entries are present
     """
-    required_entries = [".erk/scratch/", ".erk/config.local.toml", ".erk/bin/"]
     gitignore_path = repo_root / ".gitignore"
 
     # No gitignore file - pass (user may not have one yet)
@@ -686,7 +686,7 @@ def check_gitignore_entries(repo_root: Path) -> CheckResult:
 
     # Check for missing entries
     missing_entries: list[str] = []
-    for entry in required_entries:
+    for entry in REQUIRED_GITIGNORE_ENTRIES:
         if entry not in gitignore_content:
             missing_entries.append(entry)
 
@@ -695,7 +695,7 @@ def check_gitignore_entries(repo_root: Path) -> CheckResult:
             name="gitignore",
             passed=False,
             message=f"Missing gitignore entries: {', '.join(missing_entries)}",
-            remediation="Run 'erk init' to add missing entries",
+            remediation="Run 'erk artifact sync' or 'erk init --upgrade'",
         )
 
     return CheckResult(
@@ -1033,8 +1033,9 @@ def check_user_prompt_hook(repo_root: Path) -> CheckResult:
     return CheckResult(
         name="user-prompt-hook",
         passed=False,
-        message="UserPromptSubmit hook missing unified hook script",
+        message="UserPromptSubmit hook command outdated",
         details=f"Expected command containing: {expected_command}",
+        remediation="Run 'erk artifact sync' to update hook commands",
     )
 
 
@@ -1069,8 +1070,8 @@ def check_exit_plan_hook(repo_root: Path) -> CheckResult:
     return CheckResult(
         name="exit-plan-hook",
         passed=False,
-        message="ExitPlanMode hook not configured",
-        remediation="Run 'erk init' to add the hook to .claude/settings.json",
+        message="ExitPlanMode hook command outdated",
+        remediation="Run 'erk artifact sync' to update hook commands",
     )
 
 
@@ -1479,11 +1480,12 @@ def check_managed_artifacts(
     return _build_managed_artifacts_result(result)
 
 
-def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
+def run_all_checks(ctx: ErkContext, *, check_hooks: bool) -> list[CheckResult]:
     """Run all health checks and return results.
 
     Args:
         ctx: ErkContext for repository checks (includes github_admin)
+        check_hooks: If True, include hook execution health check
 
     Returns:
         List of CheckResult objects
@@ -1521,8 +1523,9 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
         results.append(check_legacy_prompt_hooks(repo_root))
         results.append(check_post_plan_implement_ci_hook(repo_root))
         results.append(check_post_init_hook(repo_root))
-        # Hook health check
-        results.append(check_hook_health(repo_root))
+        # Hook health check (opt-in via --check-hooks)
+        if check_hooks:
+            results.append(check_hook_health(repo_root))
         # GitHub workflow permissions check (requires repo context)
         results.append(check_workflow_permissions(ctx, repo_root, admin))
         # ERK_QUEUE_GH_PAT secret check (required for remote implementation)

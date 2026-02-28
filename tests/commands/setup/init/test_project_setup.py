@@ -19,6 +19,7 @@ This file uses minimal mocking for external boundaries:
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
+from erk.core.release_notes import get_current_version
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
 from erk_shared.gateway.git.fake import FakeGit
@@ -240,6 +241,132 @@ def test_init_force_overwrites_when_already_erkified() -> None:
         # Verify config was overwritten
         content = config_path.read_text(encoding="utf-8")
         assert "# Old config" not in content
+
+
+def test_init_upgrade_preserves_config_toml() -> None:
+    """Test that init --upgrade preserves existing config.toml but syncs artifacts."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides={"HOME": "{root_worktree}"}) as env:
+        erk_root = env.cwd / "erks"
+
+        # Create existing erk config with custom content
+        erk_dir = env.cwd / ".erk"
+        erk_dir.mkdir(parents=True)
+        config_path = erk_dir / "config.toml"
+        config_path.write_text("# Custom user config\n", encoding="utf-8")
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+        erk_installation = FakeErkInstallation(config=global_config)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            erk_installation=erk_installation,
+            global_config=global_config,
+        )
+
+        result = runner.invoke(cli, ["init", "--upgrade", "--no-interactive"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        assert "Upgrading erk artifacts" in result.output
+        assert "Upgrade complete!" in result.output
+        # Config should be preserved (not overwritten)
+        content = config_path.read_text(encoding="utf-8")
+        assert "# Custom user config" in content
+
+
+def test_init_upgrade_adds_gitignore_entries() -> None:
+    """Test that init --upgrade adds missing gitignore entries."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides={"HOME": "{root_worktree}"}) as env:
+        erk_root = env.cwd / "erks"
+
+        # Create existing erk config
+        erk_dir = env.cwd / ".erk"
+        erk_dir.mkdir(parents=True)
+        (erk_dir / "config.toml").write_text("# Config\n", encoding="utf-8")
+
+        # Create .gitignore missing required entries
+        gitignore_path = env.cwd / ".gitignore"
+        gitignore_path.write_text("*.pyc\n", encoding="utf-8")
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+        erk_installation = FakeErkInstallation(config=global_config)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            erk_installation=erk_installation,
+            global_config=global_config,
+        )
+
+        result = runner.invoke(cli, ["init", "--upgrade", "--no-interactive"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        # Gitignore should have required entries added
+        gitignore_content = gitignore_path.read_text(encoding="utf-8")
+        assert ".erk/scratch/" in gitignore_content
+        assert ".erk/config.local.toml" in gitignore_content
+        assert ".erk/bin/" in gitignore_content
+
+
+def test_init_upgrade_updates_version_file() -> None:
+    """Test that init --upgrade updates the required-erk-uv-tool-version file."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides={"HOME": "{root_worktree}"}) as env:
+        erk_root = env.cwd / "erks"
+
+        # Create existing erk config
+        erk_dir = env.cwd / ".erk"
+        erk_dir.mkdir(parents=True)
+        (erk_dir / "config.toml").write_text("# Config\n", encoding="utf-8")
+
+        # Write old version
+        version_file = erk_dir / "required-erk-uv-tool-version"
+        version_file.write_text("0.1.0\n", encoding="utf-8")
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+        erk_installation = FakeErkInstallation(config=global_config)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            erk_installation=erk_installation,
+            global_config=global_config,
+        )
+
+        result = runner.invoke(cli, ["init", "--upgrade", "--no-interactive"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        # Version file should be updated to current version
+        version_content = version_file.read_text(encoding="utf-8").strip()
+        assert version_content == get_current_version()
+
+
+def test_init_upgrade_on_fresh_repo_behaves_like_init() -> None:
+    """Test that init --upgrade on a non-erkified repo performs full init."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides={"HOME": "{root_worktree}"}) as env:
+        erk_root = env.cwd / "erks"
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+        erk_installation = FakeErkInstallation(config=global_config)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            erk_installation=erk_installation,
+            global_config=global_config,
+        )
+
+        result = runner.invoke(cli, ["init", "--upgrade", "--no-interactive"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        # Should perform full init (config.toml should exist)
+        config_path = env.cwd / ".erk" / "config.toml"
+        assert config_path.exists()
+        # Should show "Initialization complete!" (not "Upgrade complete!")
+        assert "Initialization complete!" in result.output
 
 
 def test_init_step1_shows_repo_name() -> None:
