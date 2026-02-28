@@ -7,19 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of: 623898bca -->
+<!-- As of: b372dfbcc -->
 
 ### Added
 
 - Add "rewrite" command to TUI command palette for remote PR rebase and AI summary regeneration (704bbe6ad)
 - Add `gt submit` to TUI sync checkout command for streamlined branch submission (6240893fa)
 - Add `erk init --upgrade` flag for self-service upgrades after version changes (a59de3ee3)
+- Add `dispatch_ref` config to override workflow dispatch branch for testing workflow changes on feature branches (064737c47)
+- Add `launch one-shot` command for triggering one-shot workflows with `--prompt`/`-f` options (e86efb1e4)
+- Display learn plan PR link in `erk land` output (90bfd7870)
+- Add session preprocessing stats to `erk land` discovery output (2ed31d082)
 
 ### Changed
 
 - Improve session discovery logging in `erk land` with per-session type badges and sizes (86d2118cc)
 - Fix sync command clipboard text to include full command in TUI command palette (add2748d2)
 - Delay impl-context cleanup until submit phase to preserve plan tracking during implementation (a14a62273)
+- Rebase slot worktree placeholder branch onto master after `erk land` to keep slots fresh (92f5f2e7f)
 
 ### Fixed
 
@@ -27,6 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Make `--script` mode resilient to errors in `erk br co` -- failures now produce a valid error script instead of empty stdout (04c46a7bb)
 - Fix workflow-started metadata block rendering to prevent parse failures during `erk land` (ffd28b870)
 - Add resilient plan-header recovery for PR submission when metadata block is destroyed by implementation runs (ad6559fde)
+- Fix CI check counts where skipped checks were counted as passing — planned PRs now show "0/0" instead of "13/13" (02cd44a1f)
+- Fix stacked plan branch checkout by rebasing onto parent before `gt track` (6b0978292)
+- Consolidate all plan creation paths to use draft PR workflow, completing migration away from issue-based plans (c638d7272)
 
 ## [0.9.0] - 2026-02-27 14:23 PT
 
