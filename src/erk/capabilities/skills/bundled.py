@@ -28,6 +28,7 @@ def bundled_skills() -> dict[str, str]:
         "gh": "GitHub CLI integration",
         "gt": "Graphite stacked PR management",
         "dignified-code-simplifier": "Code simplification review",
+        "immutable-entities": "Immutable entity design patterns",
         "pr-operations": "Pull request operations",
         "pr-feedback-classifier": "PR feedback classification",
     }

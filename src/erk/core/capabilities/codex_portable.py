@@ -25,6 +25,7 @@ def codex_portable_skills() -> frozenset[str]:
             "gt",
             "learned-docs",
             "dignified-code-simplifier",
+            "immutable-entities",
             "pr-operations",
             "pr-feedback-classifier",
         }
