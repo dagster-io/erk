@@ -173,7 +173,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           erk exec post-workflow-started-comment \
-            --plan-id "$PLAN_ID" \
+            --plan-number "$PLAN_ID" \
             --branch-name "$BRANCH_NAME" \
             --pr-number "$PR_NUMBER" \
             --run-id "${{ github.run_id }}" \

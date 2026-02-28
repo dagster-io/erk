@@ -1023,7 +1023,7 @@ Post a workflow started comment to a GitHub issue.
 
 | Flag            | Type    | Required | Default        | Description                     |
 | --------------- | ------- | -------- | -------------- | ------------------------------- |
-| `--plan-id`     | INTEGER | Yes      | Sentinel.UNSET | Plan identifier                 |
+| `--plan-number` | INTEGER | Yes      | Sentinel.UNSET | Plan identifier                 |
 | `--branch-name` | TEXT    | Yes      | Sentinel.UNSET | Git branch name                 |
 | `--pr-number`   | INTEGER | Yes      | Sentinel.UNSET | Pull request number             |
 | `--run-id`      | TEXT    | Yes      | Sentinel.UNSET | GitHub Actions workflow run ID  |

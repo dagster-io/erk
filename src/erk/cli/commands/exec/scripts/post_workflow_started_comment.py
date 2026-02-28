@@ -9,7 +9,7 @@ This replaces ~40 lines of bash heredoc template assembly in GitHub Actions work
 
 Usage:
     erk exec post-workflow-started-comment \\
-        --plan-id 123 \\
+        --plan-number 123 \\
         --branch-name my-feature-branch \\
         --pr-number 456 \\
         --run-id 12345678 \\
@@ -25,7 +25,7 @@ Exit Codes:
 
 Examples:
     $ erk exec post-workflow-started-comment \\
-        --plan-id 123 \\
+        --plan-number 123 \\
         --branch-name feat-auth \\
         --pr-number 456 \\
         --run-id 99999 \\
@@ -33,7 +33,7 @@ Examples:
         --repository acme/app
     {
       "success": true,
-      "plan_id": 123
+      "plan_number": 123
     }
 """
 
@@ -44,6 +44,10 @@ from datetime import UTC, datetime
 import click
 
 from erk_shared.context.helpers import require_plan_backend, require_repo_root
+from erk_shared.gateway.github.metadata.core import (
+    create_workflow_started_block,
+    render_erk_issue_event,
+)
 
 
 @dataclass(frozen=True)
@@ -51,7 +55,7 @@ class PostSuccess:
     """Success result when comment is posted."""
 
     success: bool
-    plan_id: int
+    plan_number: int
 
 
 @dataclass(frozen=True)
@@ -65,7 +69,7 @@ class PostError:
 
 def _build_workflow_started_comment(
     *,
-    plan_id: int,
+    plan_number: int,
     branch_name: str,
     pr_number: int,
     run_id: str,
@@ -74,8 +78,11 @@ def _build_workflow_started_comment(
 ) -> str:
     """Build the workflow started comment body.
 
+    Uses the standard metadata block API so the comment can be parsed
+    by ``parse_metadata_blocks`` during ``erk land``.
+
     Args:
-        plan_id: Plan identifier
+        plan_number: Plan identifier
         branch_name: Git branch name
         pr_number: Pull request number
         run_id: GitHub Actions workflow run ID
@@ -87,39 +94,33 @@ def _build_workflow_started_comment(
     """
     started_at = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    return f"""⚙️ GitHub Action Started
+    metadata_block = create_workflow_started_block(
+        started_at=started_at,
+        workflow_run_id=run_id,
+        workflow_run_url=run_url,
+        plan_number=plan_number,
+        branch_name=branch_name,
+    )
 
-<details>
-<summary>📋 Metadata</summary>
+    description = (
+        f"Setup completed successfully.\n"
+        f"\n"
+        f"**Branch:** `{branch_name}`\n"
+        f"**PR:** [#{pr_number}](https://github.com/{repository}/pull/{pr_number})\n"
+        f"**Status:** Ready for implementation\n"
+        f"\n"
+        f"[View workflow run]({run_url})"
+    )
 
-<!-- erk:metadata-block:workflow-started -->
-```yaml
-schema: workflow-started
-status: started
-started_at: {started_at}
-workflow_run_id: "{run_id}"
-workflow_run_url: {run_url}
-branch_name: {branch_name}
-plan_id: {plan_id}
-```
-<!-- /erk:metadata-block:workflow-started -->
-
-</details>
-
----
-
-Setup completed successfully.
-
-**Branch:** `{branch_name}`
-**PR:** [#{pr_number}](https://github.com/{repository}/pull/{pr_number})
-**Status:** Ready for implementation
-
-[View workflow run]({run_url})
-"""
+    return render_erk_issue_event(
+        title="\u2699\ufe0f GitHub Action Started",
+        metadata=metadata_block,
+        description=description,
+    )
 
 
 @click.command(name="post-workflow-started-comment")
-@click.option("--plan-id", type=int, required=True, help="Plan identifier")
+@click.option("--plan-number", type=int, required=True, help="Plan identifier")
 @click.option("--branch-name", type=str, required=True, help="Git branch name")
 @click.option("--pr-number", type=int, required=True, help="Pull request number")
 @click.option("--run-id", type=str, required=True, help="GitHub Actions workflow run ID")
@@ -129,7 +130,7 @@ Setup completed successfully.
 def post_workflow_started_comment(
     ctx: click.Context,
     *,
-    plan_id: int,
+    plan_number: int,
     branch_name: str,
     pr_number: int,
     run_id: str,
@@ -146,7 +147,7 @@ def post_workflow_started_comment(
 
     # Build comment body
     comment_body = _build_workflow_started_comment(
-        plan_id=plan_id,
+        plan_number=plan_number,
         branch_name=branch_name,
         pr_number=pr_number,
         run_id=run_id,
@@ -156,8 +157,8 @@ def post_workflow_started_comment(
 
     # Post comment via PlanBackend (handles both issue and planned-PR plans)
     try:
-        backend.add_comment(repo_root, str(plan_id), comment_body)
-        result = PostSuccess(success=True, plan_id=plan_id)
+        backend.add_comment(repo_root, str(plan_number), comment_body)
+        result = PostSuccess(success=True, plan_number=plan_number)
         click.echo(json.dumps(asdict(result), indent=2))
     except RuntimeError as e:
         result = PostError(

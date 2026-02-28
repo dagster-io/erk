@@ -21,6 +21,7 @@ from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.metadata.core import parse_metadata_blocks
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from tests.test_utils.plan_helpers import issue_info_to_pr_details
@@ -51,7 +52,7 @@ def _create_test_issue(issue_number: int) -> IssueInfo:
 def test_build_comment_contains_all_fields() -> None:
     """Test that built comment contains all required fields."""
     comment = _build_workflow_started_comment(
-        plan_id=123,
+        plan_number=123,
         branch_name="my-feature",
         pr_number=456,
         run_id="99999",
@@ -59,17 +60,17 @@ def test_build_comment_contains_all_fields() -> None:
         repository="owner/repo",
     )
 
-    assert "⚙️ GitHub Action Started" in comment
+    assert "GitHub Action Started" in comment
     assert "branch_name: my-feature" in comment
-    assert "plan_id: 123" in comment
-    assert 'workflow_run_id: "99999"' in comment
+    assert "plan_number: 123" in comment
+    assert "workflow_run_id: '99999'" in comment
     assert "https://github.com/owner/repo/actions/runs/99999" in comment
 
 
 def test_build_comment_has_metadata_block() -> None:
     """Test that comment has properly formatted metadata block."""
     comment = _build_workflow_started_comment(
-        plan_id=123,
+        plan_number=123,
         branch_name="feat-auth",
         pr_number=456,
         run_id="12345",
@@ -79,14 +80,34 @@ def test_build_comment_has_metadata_block() -> None:
 
     assert "<!-- erk:metadata-block:workflow-started -->" in comment
     assert "<!-- /erk:metadata-block:workflow-started -->" in comment
-    assert "schema: workflow-started" in comment
     assert "status: started" in comment
+
+
+def test_build_comment_metadata_block_is_parseable() -> None:
+    """Test that the metadata block can be parsed by the standard parser."""
+    comment = _build_workflow_started_comment(
+        plan_number=123,
+        branch_name="feat-auth",
+        pr_number=456,
+        run_id="12345",
+        run_url="https://github.com/acme/app/actions/runs/12345",
+        repository="acme/app",
+    )
+
+    blocks = parse_metadata_blocks(comment)
+    assert len(blocks) == 1
+    block = blocks[0]
+    assert block.key == "workflow-started"
+    assert block.data["plan_number"] == 123
+    assert block.data["status"] == "started"
+    assert block.data["workflow_run_id"] == "12345"
+    assert block.data["branch_name"] == "feat-auth"
 
 
 def test_build_comment_has_pr_link() -> None:
     """Test that comment has proper PR link."""
     comment = _build_workflow_started_comment(
-        plan_id=10,
+        plan_number=10,
         branch_name="fix-bug",
         pr_number=42,
         run_id="888",
@@ -100,7 +121,7 @@ def test_build_comment_has_pr_link() -> None:
 def test_build_comment_has_branch_display() -> None:
     """Test that comment displays branch name."""
     comment = _build_workflow_started_comment(
-        plan_id=1,
+        plan_number=1,
         branch_name="feature-xyz",
         pr_number=2,
         run_id="3",
@@ -114,7 +135,7 @@ def test_build_comment_has_branch_display() -> None:
 def test_build_comment_has_workflow_link() -> None:
     """Test that comment has workflow run link."""
     comment = _build_workflow_started_comment(
-        plan_id=1,
+        plan_number=1,
         branch_name="b",
         pr_number=2,
         run_id="3",
@@ -128,7 +149,7 @@ def test_build_comment_has_workflow_link() -> None:
 def test_build_comment_has_valid_timestamp() -> None:
     """Test that comment contains a valid ISO 8601 timestamp."""
     comment = _build_workflow_started_comment(
-        plan_id=1,
+        plan_number=1,
         branch_name="b",
         pr_number=2,
         run_id="3",
@@ -137,7 +158,7 @@ def test_build_comment_has_valid_timestamp() -> None:
     )
 
     # Extract timestamp from comment
-    match = re.search(r"started_at: (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)", comment)
+    match = re.search(r"started_at: '(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)'", comment)
     assert match is not None
     timestamp = match.group(1)
     # Verify format (ISO 8601 UTC)
@@ -169,7 +190,7 @@ def test_cli_success(tmp_path: Path) -> None:
     result = runner.invoke(
         post_workflow_started_comment_command,
         [
-            "--plan-id",
+            "--plan-number",
             "123",
             "--branch-name",
             "my-branch",
@@ -188,7 +209,7 @@ def test_cli_success(tmp_path: Path) -> None:
     assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_id"] == 123
+    assert output["plan_number"] == 123
 
     # Verify comment was added via mutation tracking
     assert len(fake_github.pr_comments) == 1
@@ -212,7 +233,7 @@ def test_cli_github_api_failure(tmp_path: Path) -> None:
     result = runner.invoke(
         post_workflow_started_comment_command,
         [
-            "--plan-id",
+            "--plan-number",
             "123",
             "--branch-name",
             "branch",
@@ -240,7 +261,7 @@ def test_cli_missing_required_option() -> None:
 
     result = runner.invoke(
         post_workflow_started_comment_command,
-        ["--plan-id", "123"],  # Missing other required options
+        ["--plan-number", "123"],  # Missing other required options
     )
 
     assert result.exit_code != 0
@@ -267,7 +288,7 @@ def test_cli_passes_correct_args_to_github(tmp_path: Path) -> None:
     runner.invoke(
         post_workflow_started_comment_command,
         [
-            "--plan-id",
+            "--plan-number",
             "789",
             "--branch-name",
             "test-branch",
