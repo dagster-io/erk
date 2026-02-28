@@ -108,6 +108,7 @@ def context_for_test(
     from erk_shared.gateway.github_admin.fake import FakeGitHubAdmin
     from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
     from erk_shared.gateway.graphite.fake import FakeGraphite
+    from erk_shared.gateway.http.fake import FakeHttpClient
     from erk_shared.gateway.shell.fake import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
 
@@ -208,6 +209,7 @@ def context_for_test(
         ),
         local_config=resolved_local_config,
         package_info=package_info,
+        http_client=FakeHttpClient(),
         dry_run=False,
         debug=debug,
     )

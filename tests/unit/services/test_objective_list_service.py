@@ -7,6 +7,7 @@ from erk.core.services.objective_list_service import RealObjectiveListService
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, WorkflowRun
+from erk_shared.gateway.http.fake import FakeHttpClient
 from erk_shared.gateway.time.fake import FakeTime
 
 TEST_LOCATION = GitHubRepoLocation(root=Path("/test/repo"), repo_id=GitHubRepoId("owner", "repo"))
@@ -33,7 +34,9 @@ class TestObjectiveListService:
         fake_github = FakeGitHub(issues_data=[issue])
 
         service = RealObjectiveListService(fake_github, time=FakeTime())
-        result = service.get_objective_list_data(location=TEST_LOCATION)
+        result = service.get_objective_list_data(
+            location=TEST_LOCATION, http_client=FakeHttpClient()
+        )
 
         assert len(result.plans) == 1
         assert result.plans[0].plan_identifier == "10"
@@ -69,7 +72,9 @@ class TestObjectiveListService:
         fake_github = FakeGitHub(issues_data=[open_issue, closed_issue])
 
         service = RealObjectiveListService(fake_github, time=FakeTime())
-        result = service.get_objective_list_data(location=TEST_LOCATION, state="open")
+        result = service.get_objective_list_data(
+            location=TEST_LOCATION, state="open", http_client=FakeHttpClient()
+        )
 
         assert len(result.plans) == 1
         assert result.plans[0].title == "Open Objective"
@@ -95,7 +100,9 @@ class TestObjectiveListService:
         fake_github = FakeGitHub(issues_data=issues)
 
         service = RealObjectiveListService(fake_github, time=FakeTime())
-        result = service.get_objective_list_data(location=TEST_LOCATION, limit=2)
+        result = service.get_objective_list_data(
+            location=TEST_LOCATION, limit=2, http_client=FakeHttpClient()
+        )
 
         assert len(result.plans) <= 2
 
@@ -129,7 +136,9 @@ last_dispatched_node_id: 'WFR_obj123'
         fake_github = FakeGitHub(issues_data=[issue])
 
         service = RealObjectiveListService(fake_github, time=FakeTime())
-        result = service.get_objective_list_data(location=TEST_LOCATION, skip_workflow_runs=True)
+        result = service.get_objective_list_data(
+            location=TEST_LOCATION, skip_workflow_runs=True, http_client=FakeHttpClient()
+        )
 
         assert result.workflow_runs == {}
 
@@ -173,7 +182,9 @@ last_dispatched_node_id: 'WFR_obj456'
         )
 
         service = RealObjectiveListService(fake_github, time=FakeTime())
-        result = service.get_objective_list_data(location=TEST_LOCATION)
+        result = service.get_objective_list_data(
+            location=TEST_LOCATION, http_client=FakeHttpClient()
+        )
 
         assert 42 in result.workflow_runs
         assert result.workflow_runs[42] is not None
@@ -209,7 +220,9 @@ last_dispatched_node_id: 'WFR_obj456'
         fake_github = FakeGitHub(issues_data=[issue_alice, issue_bob])
 
         service = RealObjectiveListService(fake_github, time=FakeTime())
-        result = service.get_objective_list_data(location=TEST_LOCATION, creator="alice")
+        result = service.get_objective_list_data(
+            location=TEST_LOCATION, creator="alice", http_client=FakeHttpClient()
+        )
 
         assert len(result.plans) == 1
         assert result.plans[0].title == "Alice Objective"
@@ -219,7 +232,9 @@ last_dispatched_node_id: 'WFR_obj456'
         fake_github = FakeGitHub()
 
         service = RealObjectiveListService(fake_github, time=FakeTime())
-        result = service.get_objective_list_data(location=TEST_LOCATION)
+        result = service.get_objective_list_data(
+            location=TEST_LOCATION, http_client=FakeHttpClient()
+        )
 
         assert result.plans == []
         assert result.pr_linkages == {}

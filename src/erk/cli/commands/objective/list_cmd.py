@@ -10,6 +10,7 @@ from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.display_utils import format_relative_time
 from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+from erk_shared.output.output import user_output
 
 
 @alias("ls")
@@ -26,12 +27,17 @@ def list_objectives(ctx: ErkContext) -> None:
     )
 
     # Fetch objectives via dedicated service
+    http_client = ctx.http_client
+    if http_client is None:
+        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+        raise SystemExit(1)
     plan_data = ctx.objective_list_service.get_objective_list_data(
         location=location,
         state="open",
         limit=None,
         skip_workflow_runs=True,
         creator=None,
+        http_client=http_client,
     )
 
     if not plan_data.plans:

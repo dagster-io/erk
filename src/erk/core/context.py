@@ -74,6 +74,9 @@ from erk_shared.gateway.graphite.disabled import (
 )
 from erk_shared.gateway.graphite.dry_run import DryRunGraphite
 from erk_shared.gateway.graphite.real import RealGraphite
+from erk_shared.gateway.http.abc import HttpClient
+from erk_shared.gateway.http.auth import fetch_github_token_or_none
+from erk_shared.gateway.http.real import RealHttpClient
 from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
@@ -155,6 +158,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
 
     # Import here to avoid issues during module initialization
     from erk_shared.gateway.agent_docs.fake import FakeAgentDocs
+    from erk_shared.gateway.http.fake import FakeHttpClient
 
     return ErkContext(
         git=git,
@@ -182,6 +186,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         local_config=LoadedConfig.test(),
         repo=NoRepoSentinel(),
         repo_info=None,
+        http_client=FakeHttpClient(),
         dry_run=dry_run,
         debug=False,
     )
@@ -270,6 +275,7 @@ def context_for_test(
     from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
     from erk_shared.gateway.graphite.dry_run import DryRunGraphite
     from erk_shared.gateway.graphite.fake import FakeGraphite
+    from erk_shared.gateway.http.fake import FakeHttpClient
     from erk_shared.gateway.shell.fake import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
 
@@ -422,6 +428,7 @@ def context_for_test(
         repo=repo,
         repo_info=repo_info,
         package_info=package_info,
+        http_client=FakeHttpClient(),
         dry_run=dry_run,
         debug=debug,
     )
@@ -577,6 +584,13 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
             # No origin remote configured - repo_info stays None
             pass
 
+    # 6b. Create HTTP client for GitHub API (needs token from gh auth)
+    http_client: HttpClient | None = None
+    if not isinstance(repo, NoRepoSentinel):
+        token = fetch_github_token_or_none()
+        if token is not None:
+            http_client = RealHttpClient(token=token, base_url="https://api.github.com")
+
     # 7. Load local config (or defaults if no repo)
     # Loaded early so plans_repo can be used for GitHubIssues
     if isinstance(repo, NoRepoSentinel):
@@ -669,6 +683,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         repo=repo,
         repo_info=repo_info,
         package_info=package_info,
+        http_client=http_client,
         dry_run=dry_run,
         debug=debug,
     )

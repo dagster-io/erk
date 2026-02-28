@@ -107,12 +107,16 @@ def duplicate_check_plan(
         root=repo_root,
         repo_id=GitHubRepoId(repo.github.owner, repo.github.repo),
     )
+    http_client = ctx.http_client
+    if http_client is None:
+        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+        raise SystemExit(1)
     plan_data = ctx.plan_list_service.get_plan_list_data(
         location=location,
         labels=["erk-pr", "erk-plan"],
         state="open",
         skip_workflow_runs=True,
-        http_client=None,
+        http_client=http_client,
     )
     existing_plans = plan_data.plans
 

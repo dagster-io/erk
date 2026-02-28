@@ -27,8 +27,6 @@ from erk_shared.context.helpers import require_context
 from erk_shared.gateway.browser.real import RealBrowserLauncher
 from erk_shared.gateway.clipboard.real import RealClipboard
 from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, IssueFilterState
-from erk_shared.gateway.http.auth import fetch_github_token
-from erk_shared.gateway.http.real import RealHttpClient
 from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
 
 
@@ -86,12 +84,17 @@ def dash_data(
         repo_id=GitHubRepoId(repo.github.owner, repo.github.repo),
     )
 
+    http_client = erk_ctx.http_client
+    if http_client is None:
+        click.echo(json.dumps({"success": False, "error": "GitHub authentication not available"}))
+        raise SystemExit(1)
+
     provider = RealPlanDataProvider(
         erk_ctx,
         location=location,
         clipboard=RealClipboard(),
         browser=RealBrowserLauncher(),
-        http_client=RealHttpClient(token=fetch_github_token(), base_url="https://api.github.com"),
+        http_client=http_client,
     )
 
     effective_state: IssueFilterState = "closed" if state == "closed" else "open"

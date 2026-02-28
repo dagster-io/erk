@@ -8,6 +8,7 @@ query, without going through any plan list service.
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
 from erk_shared.core.objective_list_service import ObjectiveListService
 from erk_shared.core.plan_list_service import PlanListData
@@ -20,6 +21,9 @@ from erk_shared.gateway.github.types import (
 )
 from erk_shared.gateway.time.abc import Time
 from erk_shared.plan_store.conversion import github_issue_to_plan
+
+if TYPE_CHECKING:
+    from erk_shared.gateway.http.abc import HttpClient
 
 _OBJECTIVE_LABEL = "erk-objective"
 
@@ -45,6 +49,7 @@ class RealObjectiveListService(ObjectiveListService):
         skip_workflow_runs: bool = False,
         creator: str | None = None,
         exclude_labels: list[str] | None = None,
+        http_client: HttpClient,
     ) -> PlanListData:
         t0 = self._time.monotonic()
         issues, pr_linkages = self._github.get_issues_with_pr_linkages(
