@@ -180,6 +180,56 @@ def _trigger_pr_address(
     )
 
 
+def _trigger_pr_rewrite(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    pr_number: int,
+    model: str | None,
+) -> None:
+    """Trigger pr-rewrite workflow."""
+    user_output("Checking PR status...")
+    pr = ctx.github.get_pr(repo.root, pr_number)
+    Ensure.invariant(
+        not isinstance(pr, PRNotFound),
+        f"No pull request found with number #{pr_number}",
+    )
+    assert not isinstance(pr, PRNotFound)
+    branch_name = pr.head_ref_name
+
+    Ensure.invariant(
+        pr.state == "OPEN",
+        f"Cannot rewrite {pr.state} PR - only OPEN PRs can be rewritten",
+    )
+
+    user_output(f"PR #{pr_number}: {click.style(pr.title, fg='cyan')} ({pr.state})")
+    user_output(f"Base branch: {pr.base_ref_name}")
+    user_output("")
+
+    # Build workflow inputs
+    plan_id = ctx.plan_backend.resolve_plan_id_for_branch(repo.root, branch_name)
+    inputs: dict[str, str] = {
+        "branch_name": branch_name,
+        "base_branch": pr.base_ref_name,
+        "pr_number": str(pr_number),
+        "plan_number": plan_id if plan_id is not None else "",
+    }
+    if model is not None:
+        inputs["model_name"] = model
+
+    # Trigger workflow
+    user_output("Triggering pr-rewrite workflow...")
+    _trigger_workflow(
+        ctx,
+        repo,
+        workflow_name="pr-rewrite",
+        inputs=inputs,
+        branch_name=branch_name,
+        pr_owner=pr.owner,
+        pr_repo=pr.repo,
+    )
+
+
 def _trigger_learn(
     ctx: ErkContext,
     repo: RepoContext,
@@ -272,6 +322,7 @@ def launch(
     \b
       pr-fix-conflicts    - Rebase PR with AI-powered conflict resolution
       pr-address          - Address PR review comments remotely
+      pr-rewrite          - Rebase PR and regenerate AI PR summary
       learn               - Extract insights from a plan issue
 
     Examples:
@@ -326,6 +377,13 @@ def launch(
         )
         assert pr_number is not None
         _trigger_pr_address(ctx, repo, pr_number=pr_number, model=model)
+    elif workflow_name == "pr-rewrite":
+        Ensure.invariant(
+            pr_number is not None,
+            "--pr is required for pr-rewrite workflow",
+        )
+        assert pr_number is not None
+        _trigger_pr_rewrite(ctx, repo, pr_number=pr_number, model=model)
     elif workflow_name == "learn":
         Ensure.invariant(
             plan_number is not None,

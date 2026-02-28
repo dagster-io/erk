@@ -400,6 +400,58 @@ def test_copy_address_remote_not_available_when_no_pr() -> None:
     assert "copy_address_remote" not in cmd_ids
 
 
+def test_rewrite_remote_available_when_pr_exists() -> None:
+    """rewrite_remote should be available when PR number exists."""
+    row = make_plan_row(123, "Test", pr_number=456)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "rewrite_remote" in cmd_ids
+
+
+def test_rewrite_remote_not_available_when_no_pr() -> None:
+    """rewrite_remote should not be available when no PR number."""
+    row = make_plan_row(123, "Test")
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "rewrite_remote" not in cmd_ids
+
+
+def test_copy_rewrite_remote_available_when_pr_exists() -> None:
+    """copy_rewrite_remote should be available when PR number exists."""
+    row = make_plan_row(123, "Test", pr_number=456)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "copy_rewrite_remote" in cmd_ids
+
+
+def test_copy_rewrite_remote_not_available_when_no_pr() -> None:
+    """copy_rewrite_remote should not be available when no PR number."""
+    row = make_plan_row(123, "Test")
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "copy_rewrite_remote" not in cmd_ids
+
+
+def test_display_name_rewrite_remote_shows_cli_command() -> None:
+    """rewrite_remote should show the launch command with PR number."""
+    row = make_plan_row(5831, "Test Plan", pr_number=456)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    cmd = next(c for c in get_all_commands() if c.id == "rewrite_remote")
+    assert get_display_name(cmd, ctx) == "erk launch pr-rewrite --pr 456"
+
+
+def test_display_name_copy_rewrite_remote_shows_cli_command() -> None:
+    """copy_rewrite_remote should show the launch command with PR number."""
+    row = make_plan_row(5831, "Test Plan", pr_number=456)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    cmd = next(c for c in get_all_commands() if c.id == "copy_rewrite_remote")
+    assert get_display_name(cmd, ctx) == "erk launch pr-rewrite --pr 456"
+
+
 def test_display_name_copy_close_plan_shows_cli_command() -> None:
     """copy_close_plan should show the erk pr close command."""
     row = make_plan_row(5831, "Test Plan")
@@ -502,6 +554,7 @@ def test_plan_commands_hidden_in_objectives_view() -> None:
         "land_pr",
         "fix_conflicts_remote",
         "address_remote",
+        "rewrite_remote",
         "open_issue",
         "open_pr",
         "open_run",
@@ -513,6 +566,7 @@ def test_plan_commands_hidden_in_objectives_view() -> None:
         "copy_close_plan",
         "copy_fix_conflicts_remote",
         "copy_address_remote",
+        "copy_rewrite_remote",
     ]
     for plan_id in plan_cmd_ids:
         assert plan_id not in cmd_ids, f"Plan command {plan_id} should be hidden in Objectives view"
@@ -703,6 +757,7 @@ def test_commands_available_in_plans_view() -> None:
         "dispatch_to_queue",
         "fix_conflicts_remote",
         "address_remote",
+        "rewrite_remote",
         "land_pr",
         "open_issue",
         "open_pr",
@@ -715,6 +770,7 @@ def test_commands_available_in_plans_view() -> None:
         "copy_close_plan",
         "copy_fix_conflicts_remote",
         "copy_address_remote",
+        "copy_rewrite_remote",
         "copy_implement_local",
     ]
     for cmd_id in expected_available:

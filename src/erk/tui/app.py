@@ -794,6 +794,40 @@ class ErkDashApp(App):
             )
 
     @work(thread=True)
+    def _rewrite_remote_async(self, op_id: str, pr_number: int) -> None:
+        """Dispatch rewrite workflow in background thread with toast."""
+        result = self._run_streaming_operation(
+            op_id=op_id,
+            command=["erk", "launch", "pr-rewrite", "--pr", str(pr_number)],
+        )
+        self.call_from_thread(self._finish_operation, op_id=op_id)
+        if result.success:
+            metadata_updated = any(
+                "Updated dispatch metadata" in line for line in result.output_lines
+            )
+            if metadata_updated:
+                self.call_from_thread(
+                    self.notify,
+                    f"Dispatched rewrite for PR #{pr_number}",
+                    timeout=3,
+                )
+            else:
+                self.call_from_thread(
+                    self.notify,
+                    f"Dispatched rewrite for PR #{pr_number} (metadata not updated)",
+                    timeout=5,
+                )
+            self.call_from_thread(self.action_refresh)
+        else:
+            error_msg = _last_output_line(result)
+            self.call_from_thread(
+                self.notify,
+                f"Failed to dispatch rewrite for PR #{pr_number}: {error_msg}",
+                severity="error",
+                timeout=5,
+            )
+
+    @work(thread=True)
     def _land_pr_async(
         self,
         op_id: str,
@@ -1266,6 +1300,12 @@ class ErkDashApp(App):
                 self._provider.clipboard.copy(cmd)
                 self.notify(f"Copied: {cmd}")
 
+        elif command_id == "copy_rewrite_remote":
+            if row.pr_number is not None:
+                cmd = f"erk launch pr-rewrite --pr {row.pr_number}"
+                self._provider.clipboard.copy(cmd)
+                self.notify(f"Copied: {cmd}")
+
         elif command_id == "fix_conflicts_remote":
             if row.pr_number:
                 op_id = f"fix-conflicts-pr-{row.pr_number}"
@@ -1282,6 +1322,15 @@ class ErkDashApp(App):
                     op_id=op_id, label=f"Dispatching address for PR #{row.pr_number}..."
                 )
                 self._address_remote_async(op_id, row.pr_number)
+
+        elif command_id == "rewrite_remote":
+            if row.pr_number:
+                op_id = f"rewrite-pr-{row.pr_number}"
+                self._start_operation(
+                    op_id=op_id,
+                    label=f"Dispatching rewrite for PR #{row.pr_number}...",
+                )
+                self._rewrite_remote_async(op_id, row.pr_number)
 
         elif command_id == "close_plan":
             if row.plan_url:

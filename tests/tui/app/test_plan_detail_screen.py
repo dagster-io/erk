@@ -353,3 +353,83 @@ class TestPlanDetailScreenFixConflictsKeybinding:
 
             # Detail screen should still be open (not dismissed)
             assert len(app.screen_stack) == initial_stack_len
+
+
+class TestPlanDetailScreenRewriteCommand:
+    """Tests for rewrite_remote and copy_rewrite_remote via execute_command.
+
+    The rewrite action is available through the command palette (execute_command),
+    not a direct keybinding.
+    """
+
+    @pytest.mark.asyncio
+    async def test_rewrite_remote_dismisses_and_dispatches(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """execute_command('rewrite_remote') dismisses screen and dispatches rewrite."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        captured_pr: int | None = None
+
+        def mock_rewrite(self_app: ErkDashApp, op_id: str, pr_number: int) -> None:
+            nonlocal captured_pr
+            captured_pr = pr_number
+
+        monkeypatch.setattr(ErkDashApp, "_rewrite_remote_async", mock_rewrite)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Open detail screen
+            await pilot.press("space")
+            await pilot.pause()
+            await pilot.pause()
+
+            initial_stack_len = len(app.screen_stack)
+            detail_screen = app.screen_stack[-1]
+            assert isinstance(detail_screen, PlanDetailScreen)
+
+            # Trigger rewrite via execute_command
+            detail_screen.execute_command("rewrite_remote")
+            await pilot.pause()
+
+            # Detail screen should have been dismissed
+            assert len(app.screen_stack) < initial_stack_len
+
+            # Should have called _rewrite_remote_async with the PR number
+            assert captured_pr == 456
+
+    @pytest.mark.asyncio
+    async def test_copy_rewrite_remote_copies_command(self) -> None:
+        """execute_command('copy_rewrite_remote') copies the rewrite command."""
+        clipboard = FakeClipboard()
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
+            clipboard=clipboard,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Open detail screen
+            await pilot.press("space")
+            await pilot.pause()
+            await pilot.pause()
+
+            detail_screen = app.screen_stack[-1]
+            assert isinstance(detail_screen, PlanDetailScreen)
+
+            # Trigger copy via execute_command
+            detail_screen.execute_command("copy_rewrite_remote")
+            await pilot.pause()
+
+            assert clipboard.last_copied == "erk launch pr-rewrite --pr 456"

@@ -129,6 +129,16 @@ def _display_copy_address_remote(ctx: CommandContext) -> str:
     return f"erk launch pr-address --pr {ctx.row.pr_number}"
 
 
+def _display_rewrite_remote(ctx: CommandContext) -> str:
+    """Display name for rewrite_remote command."""
+    return f"erk launch pr-rewrite --pr {ctx.row.pr_number}"
+
+
+def _display_copy_rewrite_remote(ctx: CommandContext) -> str:
+    """Display name for copy_rewrite_remote command."""
+    return f"erk launch pr-rewrite --pr {ctx.row.pr_number}"
+
+
 # === Display Name Generators (Objective Commands) ===
 
 
@@ -231,6 +241,15 @@ def get_all_commands() -> list[CommandDefinition]:
             shortcut=None,
             is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_number is not None,
             get_display_name=_display_address_remote,
+        ),
+        CommandDefinition(
+            id="rewrite_remote",
+            name="Rewrite Remote",
+            description="rewrite",
+            category=CommandCategory.ACTION,
+            shortcut=None,
+            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_number is not None,
+            get_display_name=_display_rewrite_remote,
         ),
         # === OBJECTIVE ACTIONS ===
         CommandDefinition(
@@ -379,6 +398,15 @@ def get_all_commands() -> list[CommandDefinition]:
             shortcut=None,
             is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_number is not None,
             get_display_name=_display_copy_address_remote,
+        ),
+        CommandDefinition(
+            id="copy_rewrite_remote",
+            name="erk launch pr-rewrite",
+            description="rewrite",
+            category=CommandCategory.COPY,
+            shortcut=None,
+            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_number is not None,
+            get_display_name=_display_copy_rewrite_remote,
         ),
         # === OBJECTIVE COPIES ===
         CommandDefinition(
