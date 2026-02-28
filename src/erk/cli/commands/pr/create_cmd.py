@@ -8,7 +8,6 @@ import click
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
-from erk.core.plan_summary_generator import generate_summary
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk_shared.output.next_steps import format_planned_pr_next_steps_plain
 from erk_shared.output.output import user_output
@@ -24,12 +23,14 @@ from erk_shared.plan_store.create_plan_draft_pr import create_plan_draft_pr
 )
 @click.option("--title", "-t", type=str, help="Plan title (default: extract from H1)")
 @click.option("--label", "-l", multiple=True, help="Additional labels")
+@click.option("--summary", help="AI-generated summary to display above the collapsed plan in the PR body")
 @click.pass_obj
 def pr_create(
     ctx: ErkContext,
     file: Path | None,
     title: str | None,
     label: tuple[str, ...],
+    summary: str | None,
 ) -> None:
     """Create a plan as a draft PR from markdown content.
 
@@ -86,9 +87,6 @@ def pr_create(
     if plans_repo is not None and repo.github is not None:
         source_repo = f"{repo.github.owner}/{repo.github.repo}"
 
-    # Generate AI summary for the plan PR description
-    summary = generate_summary(ctx.prompt_executor, content)
-
     # Create plan as a draft PR
     result = create_plan_draft_pr(
         git=ctx.git,
@@ -106,7 +104,7 @@ def pr_create(
         created_from_session=None,
         created_from_workflow_run_url=None,
         learned_from_issue=None,
-        summary=summary,
+        summary=summary or "",
         extra_files=None,
     )
 
