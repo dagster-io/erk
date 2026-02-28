@@ -33,11 +33,11 @@ Two functions need the new parameter added (both use keyword-only args):
 - `create_plan_header_block()` -- Add the parameter and conditionally include it in the `data` dict (follow existing pattern: `if field is not None: data[FIELD] = field`). This function returns a `MetadataBlock`, not a string.
 - `format_plan_header_body()` -- Add the same parameter and pass it through to `create_plan_header_block()`.
 
-### 3. plan_issues.py -- Thread Through Issue Creation
+### 3. create_plan_draft_pr.py -- Thread Through Plan Creation
 
-**File:** `packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py`
+**File:** `packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py`
 
-Add the parameter to `create_plan_issue()` and pass it through to `format_plan_header_body()`. All parameters after the positional ones are keyword-only. Review the existing call site to see the current parameter threading pattern.
+Add the parameter to `create_plan_draft_pr()` and pass it through to `format_plan_header_body()`. All parameters are keyword-only. Review the existing call site to see the current parameter threading pattern.
 
 ### 4. plan_save.py -- Add CLI Option (if CLI-exposed)
 
@@ -47,7 +47,7 @@ Only needed if the field should be settable from the CLI. If so:
 
 - Add a `@click.option("--your-new-field", ...)` decorator to the `plan_save` function
 - Add the corresponding parameter to the function signature
-- Pass it through to `create_plan_issue()`
+- Pass it through to `create_plan_draft_pr()`
 
 ### 5. Test Helpers -- Update format_plan_header_body_for_test
 

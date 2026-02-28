@@ -37,6 +37,7 @@
 - **[fast-path-pattern.md](fast-path-pattern.md)** — implementing CLI commands that can skip expensive operations, adding fast path optimization to existing commands, understanding when to invoke Claude vs complete locally
 - **[help-text-formatting.md](help-text-formatting.md)** — Writing CLI command docstrings, Adding Examples sections to Click commands, Formatting bulleted lists in help text
 - **[incomplete-command-removal.md](incomplete-command-removal.md)** — removing a workflow command or CLI entry, deprecating or deleting a command from erk, cleaning up dead references after removing a feature
+- **[land-learn-integration.md](land-learn-integration.md)** — modifying the erk land command's learn workflow, debugging session discovery during land, working with session reporting in the land pipeline
 - **[learn-command-conditional-pipeline.md](learn-command-conditional-pipeline.md)** — modifying the erk learn command flow, adding session discovery logic to learn workflow, understanding how preprocessed materials bypass session discovery
 - **[learn-plan-land-flow.md](learn-plan-land-flow.md)** — landing PRs associated with learn plans, understanding how learn plan metadata updates parent issues
 - **[local-commands.md](local-commands.md)** — designing local commands, understanding local command taxonomy, creating audit or assessment commands
@@ -61,6 +62,7 @@
 - **[subprocess-stdin-patterns.md](subprocess-stdin-patterns.md)** — passing content to CLI tools via stdin, using subprocess with input parameter, CLI flags that only work with stdin
 - **[template-variables.md](template-variables.md)** — configuring .env templates, using substitution variables in config.toml, setting environment variables per worktree, updating environment when switching worktrees
 - **[two-phase-validation-model.md](two-phase-validation-model.md)** — implementing commands with user confirmations, designing commands that perform destructive mutations, adding confirmation prompts to CLI commands, deciding where to place confirmation logic in a command
+- **[upgrade-workflow.md](upgrade-workflow.md)** — modifying erk init --upgrade behavior, adding new entries to REQUIRED_GITIGNORE_ENTRIES, working with the erk doctor --check-hooks flag, understanding how erk upgrades existing repositories
 - **[workflow-commands.md](workflow-commands.md)** — triggering GitHub Actions workflows from CLI, adding a new workflow to erk launch, understanding local vs remote command duality
 - **[wt-command-comparison.md](wt-command-comparison.md)** — choosing between erk wt create, create-from, and checkout, setting up a worktree for an existing branch, understanding worktree slot allocation
 - **[wt-create-from.md](wt-create-from.md)** — setting up a local worktree for an existing branch, working with a PR branch that needs a worktree slot, understanding the difference between erk wt create and erk wt create-from

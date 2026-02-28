@@ -9,6 +9,9 @@ read_when:
 tripwires:
   - action: "implementing a new `erk pr` command"
     warning: "Compare feature parity with `submit_pipeline.py`. Check: issue discovery, closing reference preservation, learn plan labels, footer construction, and plan details section. Use shared utilities from `shared.py` (`assemble_pr_body`, `discover_issue_for_footer`)."
+  - action: "passing --pr flag to erk pr rewrite"
+    warning: "Do NOT pass --pr to erk pr rewrite; the command auto-discovers the PR from the current branch. The --pr flag does not exist."
+    score: 5
 ---
 
 # PR Rewrite Command
@@ -44,10 +47,16 @@ The command executes six phases sequentially:
 
 - `--debug` — Shows diagnostic output from squash and diff extraction phases
 
+## Auto-Discovery Pattern
+
+`erk pr rewrite` auto-discovers the PR from the current branch — it does not accept a `--pr` flag. The command calls `discover_branch_context()` internally to determine which PR to rewrite based on the checked-out branch.
+
+**Do NOT pass `--pr` to `erk pr rewrite`** — the flag does not exist. If you see `--pr` in workflow YAML or scripts, it is a bug (fixed in PR #8439).
+
 ## Usage
 
 ```bash
-# Rewrite current PR with AI-generated message
+# Rewrite current PR with AI-generated message (auto-discovers from branch)
 erk pr rewrite
 
 # Show debug output

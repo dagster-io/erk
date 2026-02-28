@@ -91,7 +91,7 @@ The extension made commands first-class: same frontmatter options as skills (inc
 <!-- Source: .claude/commands/local/audit-doc.md, frontmatter -->
 <!-- Source: .claude/commands/local/audit-scan.md, parallel batch scoring -->
 
-See `/local:audit-doc` and `/local:audit-scan` for commands using `context: fork` with `agent: general-purpose` for isolated analysis.
+See `/local:audit-doc`, `/local:audit-scan`, and `/local:objective-view` for commands using `context: fork` with `agent: general-purpose` for isolated analysis.
 
 ## Fork vs Manual Task: The Real Trade-Off
 

@@ -36,9 +36,10 @@ Batch audit commands scan the repository comprehensively and categorize multiple
 
 Single-item assessment commands analyze one specific item in detail:
 
-| Command            | Input        | Purpose                                       |
-| ------------------ | ------------ | --------------------------------------------- |
-| `/check-relevance` | Issue number | Assess if PR/plan work is already implemented |
+| Command            | Input            | Purpose                                         |
+| ------------------ | ---------------- | ----------------------------------------------- |
+| `/check-relevance` | Issue number     | Assess if PR/plan work is already implemented   |
+| `/objective-view`  | Objective number | View progress and associations for an objective |
 
 **Characteristics:**
 

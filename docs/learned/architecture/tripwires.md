@@ -222,7 +222,7 @@ Rules triggered by matching actions in code.
 
 **modifying PermissionMode enum or permission mode mappings** → Read [PermissionMode Abstraction](permission-modes.md) first. permission_mode_to_claude() (and future permission_mode_to_codex()) must stay in sync. Update both when changing mappings.
 
-**modifying render_metadata_block() or parse_metadata_block_body()** → Read [Metadata Blocks Reference](metadata-blocks.md) first. Both metadata/core.py AND metadata_blocks.py contain identical implementations. Tests import from metadata_blocks.py. Changes to one must be mirrored in the other, or behavior diverges silently.
+**modifying render_metadata_block() or parse_metadata_block_body()** → Read [Metadata Blocks Reference](metadata-blocks.md) first. These functions live in metadata/core.py. The former metadata_blocks.py was deleted in PR #8425. All imports should use erk_shared.gateway.github.metadata.core.
 
 **mutating pipeline state directly instead of using dataclasses.replace()** → Read [State Threading Pattern](state-threading-pattern.md) first. Pipeline state must be frozen. Use dataclasses.replace() to create new state at each step.
 
