@@ -201,8 +201,6 @@ def test_command_with_multiple_dependencies() -> None:
 
 ### Example 1: Testing plan-save
 
-From `tests/unit/cli/commands/exec/scripts/test_plan_save.py`:
-
 ```python
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation

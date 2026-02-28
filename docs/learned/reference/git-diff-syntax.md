@@ -32,7 +32,7 @@ git diff branch...HEAD    # Correct: diff from merge-base
 git diff branch..HEAD     # WRONG: includes both sides of divergence
 ```
 
-The `get_diff_to_branch()` function in `packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py:62-75` uses three-dot syntax to match GitHub's PR diff behavior.
+The `get_diff_to_branch()` function in `packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py` (RealGitAnalysisOps class) uses three-dot syntax to match GitHub's PR diff behavior.
 
 ## Quick Reference
 
