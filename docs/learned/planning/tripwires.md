@@ -12,6 +12,10 @@ read_when:
 
 Rules triggered by matching actions in code.
 
+**adding <code> inside <summary> elements in PR bodies** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Graphite doesn't render <code> inside <summary> — use plain text instead. GitHub renders it but Graphite does not. The correct format is <summary>original-plan</summary> not <summary><code>original-plan</code></summary>.
+
+**adding Closes #N to a planned PR footer** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Planned PR IS the plan. Self-referential close would close the plan itself. Use issue_number=None for github-draft-pr backend.
+
 **adding a new PR-dependent step to trigger-async-learn** → Read [Learn Without PR Context](learn-without-pr-context.md) first. Any new PR-dependent step must handle the None case from \_get_pr_for_plan_direct. The entire PR comment block is gated on pr_result not being None.
 
 **adding a new filtering step to preprocess_session.py** → Read [Session Preprocessing Architecture](session-preprocessing.md) first. There are TWO preprocessing implementations: the exec script (preprocess_session.py) and erk-shared (session_preprocessing.py). The exec script has the full filtering pipeline; erk-shared has only Stage 1 mechanical reduction. New filters go in the exec script. Read this doc first.
@@ -25,6 +29,8 @@ Rules triggered by matching actions in code.
 **adding dry-run support to one-shot commands** → Read [One-Shot Workflow](one-shot-workflow.md) first. One-shot dry-run mode must NOT create skeleton issues
 
 **adding erk-consolidated label to a single-issue replan** → Read [Consolidation Labels](consolidation-labels.md) first. Only multi-plan consolidation gets the erk-consolidated label. Single-issue replans are updates, not consolidations.
+
+**adding footer before PR creation** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. PR footer needs the PR number, which isn't known until after create_pr returns. Add footer AFTER PR creation.
 
 **adding new agents to learn workflow** → Read [Learn Workflow](learn-workflow.md) first. Document input/output format and test file passing. Learn workflow uses stateless agents with file-based composition.
 
@@ -118,6 +124,8 @@ Rules triggered by matching actions in code.
 
 **estimating effort for a plan without checking actual files changed** → Read [Complete File Inventory Protocol](complete-inventory-protocol.md) first. Run a file inventory first. Plans that skip inventory systematically undercount configuration, test, and documentation changes.
 
+**executing push_and_create_pr before capture_existing_pr_body** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. capture_existing_pr_body MUST execute before push_and_create_pr. gt submit overwrites the PR body, losing plan-header metadata.
+
 **extracting plan ID from branch name instead of using plan-ref.json** → Read [Branch Plan Resolution](branch-plan-resolution.md) first. plan-ref.json is sole source of truth. validate_plan_linkage() only reads plan-ref.json. get_branch_issue() and resolve_plan_id_for_branch() always return None.
 
 **fetching N large documents into parent agent context** → Read [Token Optimization Patterns](token-optimization-patterns.md) first. Delegate content fetching to child agents. Parent receives only analysis summaries, not raw content. Achieves O(1) parent context instead of O(n). See token-optimization-patterns.md.
@@ -150,6 +158,8 @@ Rules triggered by matching actions in code.
 
 **manually setting the base branch for a learn plan submission** → Read [Learn Plans vs. Implementation Plans](learn-vs-implementation-plans.md) first. Learn plan base branch is auto-detected from learned_from_issue → parent branch. Only use --base to override if the parent branch is missing from the remote.
 
+**marking a planned-PR plan as 'implementation complete' and referencing itself as the implementing PR** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Self-referential close prevention: when a planned PR IS the plan, it cannot close itself. The plan's implementation-complete event cannot reference the plan PR as the implementing PR. One-shot dispatch guards against this — do not remove the guard.
+
 **modifying learn command to add/remove/reorder agents** → Read [Learn Workflow](learn-workflow.md) first. Verify tier placement before assigning model. Parallel extraction uses haiku, sequential synthesis may need opus for quality-critical output.
 
 **modifying marker deletion behavior in exit-plan-mode hook** → Read [Session-Based Plan Deduplication](session-deduplication.md) first. Reusable markers (plan-saved) must persist; one-time markers (implement-now, objective-context) are consumed. Deleting reusable markers breaks state machines and enables retry loops that create duplicates.
@@ -159,6 +169,8 @@ Rules triggered by matching actions in code.
 **modifying the gist upload content format** → Read [Learn Pipeline Workflow](learn-pipeline-workflow.md) first. The download side (download-learn-materials) parses delimiters to split content back into files. Changes to the upload format must be mirrored in the download parser. See gist-materials-interchange.md.
 
 **moving gateway files without git mv** → Read [Gateway Consolidation Checklist](gateway-consolidation-checklist.md) first. Always use git mv to preserve file history. Plain mv + git add loses blame history, making future archaeology harder.
+
+**parsing plan content without backward compatibility** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. extract_plan_content() handles both details-wrapped and old flat format. Always use it instead of manual parsing.
 
 **passing ${CLAUDE_SESSION_ID} to a sub-agent via the prompt string** → Read [Sub-Agent Context Limitations](sub-agent-context-limitations.md) first. String substitution of ${CLAUDE_SESSION_ID} happens at the root agent level. By the time the sub-agent runs the bash command, the variable is not in its environment. The root agent must resolve the value and pass it as a literal.
 
@@ -192,6 +204,8 @@ Rules triggered by matching actions in code.
 
 **reviewing a PR that contains .erk/impl-context/ files** → Read [Impl-Context Staging Directory](impl-context.md) first. Leave a PR comment telling the author to remove .erk/impl-context/. This is an erk tooling error — the directory should have been cleaned up before implementation. Run: git rm -rf .erk/impl-context/ && git commit -m 'Remove leaked impl-context'
 
+**rewriting PR body without preserving metadata** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Extract metadata prefix on every lifecycle transition via find_metadata_block() to prevent metadata loss.
+
 **running /erk:learn in CI** → Read [Learn Workflow](learn-workflow.md) first. CI mode skips interactive prompts and auto-proceeds. Check CI/GITHUB_ACTIONS env vars. See CI Environment Behavior section.
 
 **running /erk:learn on an issue that already has the erk-learn label** → Read [Learn Plans vs. Implementation Plans](learn-vs-implementation-plans.md) first. Learn plans cannot generate additional learn plans — this creates documentation cycles. The learn command validates this upfront and rejects learn-on-learn.
@@ -213,6 +227,8 @@ Rules triggered by matching actions in code.
 **using PLAN_CONTENT_SEPARATOR for new code** → Read [Plan Content Extraction Fallback](metadata-block-fallback.md) first. Metadata blocks are now self-delimiting via HTML comment markers (<!-- erk:metadata-block:{key} -->). PLAN_CONTENT_SEPARATOR is retained for backward compatibility only — new code must not use it.
 
 **using Read tool or grep on a persisted-output file path from a Task agent** → Read [Subagent Output Handling](subagent-output-handling.md) first. Persisted output files contain raw agent transcripts, not clean JSON. Use Python JSON parsing on the actual output content, not file reads on the persisted path.
+
+**using `find_metadata_block` or `extract_plan_content` without validating separator context** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. The content separator `\n\n---\n\n` can accidentally form from 'Remotely executed' notes + footer delimiter. find_metadata_block() validates via `<!-- erk:metadata-block:` marker in the prefix. Never skip this validation.
 
 **using assertive metadata writes in a best-effort context** → Read [Metadata Update Patterns](metadata-update-patterns.md) first. write_dispatch_metadata() raises on error. maybe_update_plan_dispatch_metadata() uses LBYL guards and silent skip with warning. Choose based on whether failure should block the operation.
 
