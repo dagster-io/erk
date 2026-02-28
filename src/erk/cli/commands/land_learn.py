@@ -9,6 +9,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import click
+from rich.console import Console
+from rich.table import Table
 
 from erk.core.context import ErkContext
 from erk_shared.output.output import user_output
@@ -78,33 +80,46 @@ def _log_session_discovery(
     user_output(f"  \U0001f4cb Discovered {total} session(s): {parts}")
 
     # Build readable lookup for O(1) per-session checks
-    readable_map: dict[str, Path] = dict(
-        get_readable_sessions(sessions, ctx.claude_installation)
-    )
+    readable_map: dict[str, Path] = dict(get_readable_sessions(sessions, ctx.claude_installation))
 
     # Classify each session and emit a typed line
     planning_ids = {sessions.planning_session_id} if sessions.planning_session_id else set()
     impl_ids = set(sessions.implementation_session_ids)
     learn_ids = set(sessions.learn_session_ids)
 
+    table = Table(
+        show_header=False,
+        show_edge=False,
+        box=None,
+        padding=(0, 1),
+        pad_edge=False,
+    )
+    table.add_column("pad", width=5, no_wrap=True)
+    table.add_column("emoji", no_wrap=True)
+    table.add_column("label", no_wrap=True)
+    table.add_column("session", no_wrap=True)
+    table.add_column("detail", no_wrap=True)
+
     for sid in all_session_ids:
         if sid in planning_ids:
-            emoji, label = "\U0001f4dd", "planning"
+            emoji, label = "\U0001f4dd", "planning:"
         elif sid in impl_ids:
-            emoji, label = "\U0001f527", "impl"
+            emoji, label = "\U0001f527", "impl:"
         elif sid in learn_ids:
-            emoji, label = "\U0001f4da", "learn"
+            emoji, label = "\U0001f4da", "learn:"
         else:
-            emoji, label = "\u2753", "unknown"
+            emoji, label = "\u2753", "unknown:"
 
         if sid in readable_map:
             size_kb = readable_map[sid].stat().st_size // 1024
-            detail = click.style(f"(local, {size_kb:,} KB)", dim=True)
+            detail = f"[dim](local, {size_kb:,} KB)[/dim]"
         else:
-            detail = click.style("(not found)", dim=True)
+            detail = "[dim](not found)[/dim]"
 
-        # Pad label to align detail columns
-        user_output(f"     {emoji} {label + ':':10s} {sid[:8]}... {detail}")
+        table.add_row("", emoji, label, f"{sid[:8]}...", detail)
+
+    console = Console(stderr=True, force_terminal=True)
+    console.print(table)
 
 
 def _create_learn_pr_impl(
