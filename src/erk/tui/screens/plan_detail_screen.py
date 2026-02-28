@@ -707,6 +707,12 @@ class PlanDetailScreen(ModalScreen):
                 executor.copy_to_clipboard(cmd)
                 executor.notify(f"Copied: {cmd}", severity=None)
 
+        elif command_id == "copy_rewrite_remote":
+            if row.pr_number is not None:
+                cmd = f"erk launch pr-rewrite --pr {row.pr_number}"
+                executor.copy_to_clipboard(cmd)
+                executor.notify(f"Copied: {cmd}", severity=None)
+
         elif command_id == "fix_conflicts_remote":
             if row.pr_number is not None:
                 self.dismiss()
@@ -721,6 +727,18 @@ class PlanDetailScreen(ModalScreen):
                     cwd=self._repo_root,
                     title=f"Address Remote PR #{row.pr_number}",
                 )
+
+        elif command_id == "rewrite_remote":
+            if row.pr_number is not None:
+                self.dismiss()
+                if isinstance(self.app, ErkDashApp):
+                    self.app.notify(f"Dispatching rewrite for PR #{row.pr_number}...")
+                    op_id = f"rewrite-pr-{row.pr_number}"
+                    self.app._start_operation(
+                        op_id=op_id,
+                        label=f"Dispatching rewrite for PR #{row.pr_number}...",
+                    )
+                    self.app._rewrite_remote_async(op_id, row.pr_number)
 
         elif command_id == "close_plan":
             if row.plan_url:

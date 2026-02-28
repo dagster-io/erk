@@ -22,6 +22,9 @@ REBASE_WORKFLOW_NAME = "pr-fix-conflicts.yml"
 # GitHub Actions workflow for remote PR comment addressing
 PR_ADDRESS_WORKFLOW_NAME = "pr-address.yml"
 
+# GitHub Actions workflow for remote PR rewrite (rebase + AI PR summary)
+PR_REWRITE_WORKFLOW_NAME = "pr-rewrite.yml"
+
 # GitHub Actions workflow for one-shot autonomous execution
 ONE_SHOT_WORKFLOW_NAME = "one-shot.yml"
 
@@ -31,6 +34,7 @@ WORKFLOW_COMMAND_MAP: dict[str, str] = {
     "plan-implement": DISPATCH_WORKFLOW_NAME,  # plan-implement.yml
     "pr-fix-conflicts": REBASE_WORKFLOW_NAME,  # pr-fix-conflicts.yml
     "pr-address": PR_ADDRESS_WORKFLOW_NAME,  # pr-address.yml
+    "pr-rewrite": PR_REWRITE_WORKFLOW_NAME,  # pr-rewrite.yml
     "learn": "learn.yml",
     "one-shot": ONE_SHOT_WORKFLOW_NAME,  # one-shot.yml
 }
