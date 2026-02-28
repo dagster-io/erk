@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Fix: Suppress stale stack (\ud83e\udd5e) indicator when parent PR is already merged"
+  "plan_id": "8468",
+  "url": "https://github.com/dagster-io/erk/pull/8468",
+  "created_at": "2026-02-28T11:17:21.781465",
+  "synced_at": "2026-02-28T11:17:21.781465",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
