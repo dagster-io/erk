@@ -42,10 +42,10 @@ Quick reference for all `erk exec` subcommands.
 | `get-embedded-prompt`             | Get embedded prompt content from bundled prompts.                           |
 | `get-issue-body`                  | Fetch an issue's body using REST API (avoids GraphQL rate limits).          |
 | `get-issue-timeline-prs`          | Fetch PRs referencing an issue via REST API timeline.                       |
-| `get-learn-sessions`              | Get session information for a plan issue.                                   |
+| `get-learn-sessions`              | Get session information for a plan.                                         |
 | `get-plan-info`                   | Retrieve plan info from the appropriate backend.                            |
-| `get-plan-metadata`               | Extract a metadata field from a plan issue's plan-header block.             |
-| `get-plans-for-objective`         | Fetch erk-plan issues linked to an objective.                               |
+| `get-plan-metadata`               | Extract a metadata field from a plan's plan-header block.                   |
+| `get-plans-for-objective`         | Fetch erk-plans linked to an objective.                                     |
 | `get-pr-body-footer`              | Generate PR body footer with checkout command.                              |
 | `get-pr-commits`                  | Fetch PR commits using REST API (avoids GraphQL rate limits).               |
 | `get-pr-context`                  | Output JSON with branch, PR, diff, commits, and plan context.               |
@@ -94,9 +94,9 @@ Quick reference for all `erk exec` subcommands.
 | `set-pr-description`              | Update PR title and body with agent-provided values.                        |
 | `setup-impl`                      | Consolidated implementation setup.                                          |
 | `setup-impl-from-pr`              | Set up .erk/impl-context/ folder from GitHub PR in current worktree.        |
-| `store-tripwire-candidates`       | Store tripwire candidates as a metadata comment on a plan issue.            |
-| `track-learn-evaluation`          | Track learn evaluation completion on a plan issue.                          |
-| `track-learn-result`              | Track learn workflow result on a plan issue.                                |
+| `store-tripwire-candidates`       | Store tripwire candidates as a metadata comment on a plan.                  |
+| `track-learn-evaluation`          | Track learn evaluation completion on a plan.                                |
+| `track-learn-result`              | Track learn workflow result on a plan.                                      |
 | `update-issue-body`               | Update an issue's body using REST API (avoids GraphQL rate limits).         |
 | `update-objective-node`           | Update node PR cells in an objective's roadmap table.                       |
 | `update-plan-header`              | Update plan-header metadata fields on a plan.                               |
@@ -400,7 +400,7 @@ Fetch PRs referencing an issue via REST API timeline.
 
 ### get-learn-sessions
 
-Get session information for a plan issue.
+Get session information for a plan.
 
 **Usage:** `erk exec get-learn-sessions` [issue]
 
@@ -430,7 +430,7 @@ Retrieve plan info from the appropriate backend.
 
 ### get-plan-metadata
 
-Extract a metadata field from a plan issue's plan-header block.
+Extract a metadata field from a plan's plan-header block.
 
 **Usage:** `erk exec get-plan-metadata` <plan_number> <field_name>
 
@@ -443,7 +443,7 @@ Extract a metadata field from a plan issue's plan-header block.
 
 ### get-plans-for-objective
 
-Fetch erk-plan issues linked to an objective.
+Fetch erk-plans linked to an objective.
 
 **Usage:** `erk exec get-plans-for-objective` <objective_number>
 
@@ -627,7 +627,7 @@ Execute deferred land operations.
 | `--is-current-branch` | FLAG    | No       | -              | Whether landing from the branch's own worktree                                           |
 | `--target-child`      | TEXT    | No       | Sentinel.UNSET | Target child branch for --up navigation                                                  |
 | `--objective-number`  | INTEGER | No       | Sentinel.UNSET | Linked objective issue number                                                            |
-| `--plan-number`       | INTEGER | No       | Sentinel.UNSET | Linked plan issue number                                                                 |
+| `--plan-number`       | INTEGER | No       | Sentinel.UNSET | Linked plan number                                                                       |
 | `--use-graphite`      | FLAG    | No       | -              | Use Graphite for merge                                                                   |
 | `--pull`              | FLAG    | No       | -              | Pull latest changes after landing (default: --pull)                                      |
 | `--no-delete`         | FLAG    | No       | -              | Preserve the local branch and its slot assignment after landing                          |
@@ -844,7 +844,7 @@ Update objective after landing a PR.
 | `--objective`   | INTEGER | Yes      | Sentinel.UNSET | Linked objective issue number  |
 | `--pr`          | INTEGER | Yes      | Sentinel.UNSET | PR number that was just landed |
 | `--branch`      | TEXT    | Yes      | Sentinel.UNSET | Branch name that was landed    |
-| `--plan-number` | INTEGER | No       | -              | Linked plan issue number       |
+| `--plan-number` | INTEGER | No       | -              | Linked plan number             |
 
 ### plan-save
 
@@ -860,7 +860,7 @@ Save plan as a draft PR.
 | `--plan-file`                     | PATH    | No       | -       | Path to specific plan file (highest priority)             |
 | `--session-id`                    | TEXT    | No       | -       | Session ID for scoped plan lookup                         |
 | `--plan-type`                     | CHOICE  | No       | -       | Plan type: standard (default) or learn                    |
-| `--learned-from-issue`            | INTEGER | No       | -       | Parent plan issue number (for learn plans)                |
+| `--learned-from-issue`            | INTEGER | No       | -       | Parent plan number (for learn plans)                      |
 | `--created-from-workflow-run-url` | TEXT    | No       | -       | GitHub Actions workflow run URL                           |
 | `--branch-slug`                   | TEXT    | No       | -       | Pre-generated branch slug (skips LLM call when provided)  |
 | `--objective`                     | INTEGER | No       | -       | Objective issue number (overrides session marker)         |
@@ -1103,10 +1103,10 @@ Consolidated implementation setup.
 
 **Options:**
 
-| Flag      | Type    | Required | Default | Description                    |
-| --------- | ------- | -------- | ------- | ------------------------------ |
-| `--issue` | INTEGER | No       | -       | Issue/PR number to set up from |
-| `--file`  | PATH    | No       | -       | Markdown file to set up from   |
+| Flag      | Type    | Required | Default | Description                  |
+| --------- | ------- | -------- | ------- | ---------------------------- |
+| `--issue` | INTEGER | No       | -       | Plan number to set up from   |
+| `--file`  | PATH    | No       | -       | Markdown file to set up from |
 
 ### setup-impl-from-pr
 
@@ -1129,7 +1129,7 @@ Set up .erk/impl-context/ folder from GitHub PR in current worktree.
 
 ### store-tripwire-candidates
 
-Store tripwire candidates as a metadata comment on a plan issue.
+Store tripwire candidates as a metadata comment on a plan.
 
 **Usage:** `erk exec store-tripwire-candidates`
 
@@ -1142,7 +1142,7 @@ Store tripwire candidates as a metadata comment on a plan issue.
 
 ### track-learn-evaluation
 
-Track learn evaluation completion on a plan issue.
+Track learn evaluation completion on a plan.
 
 **Usage:** `erk exec track-learn-evaluation` [issue]
 
@@ -1160,7 +1160,7 @@ Track learn evaluation completion on a plan issue.
 
 ### track-learn-result
 
-Track learn workflow result on a plan issue.
+Track learn workflow result on a plan.
 
 **Usage:** `erk exec track-learn-result`
 
@@ -1170,7 +1170,7 @@ Track learn workflow result on a plan issue.
 | -------------- | ------- | -------- | -------------- | -------------------------------------------------------------------- |
 | `--plan-id`    | TEXT    | Yes      | Sentinel.UNSET | Plan identifier (e.g., issue number)                                 |
 | `--status`     | CHOICE  | Yes      | Sentinel.UNSET | Learn workflow result status                                         |
-| `--plan-issue` | INTEGER | No       | Sentinel.UNSET | Learn plan issue number (required if status is completed_with_plan)  |
+| `--plan-issue` | INTEGER | No       | Sentinel.UNSET | Learn plan number (required if status is completed_with_plan)        |
 | `--plan-pr`    | INTEGER | No       | Sentinel.UNSET | Learn documentation PR number (required if status is pending_review) |
 
 ### update-issue-body

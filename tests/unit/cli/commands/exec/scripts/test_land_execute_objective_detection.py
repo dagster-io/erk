@@ -28,7 +28,7 @@ def _create_plan_issue_with_objective(
     plan_number: int,
     objective_number: int,
 ) -> IssueInfo:
-    """Create a plan issue with objective_issue in plan-header metadata."""
+    """Create a plan with objective_issue in plan-header metadata."""
     body = format_plan_header_body_for_test(
         created_at=datetime.now(UTC).isoformat(),
         created_by="testuser",

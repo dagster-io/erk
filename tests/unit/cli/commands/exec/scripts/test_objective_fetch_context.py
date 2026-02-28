@@ -450,7 +450,7 @@ class TestObjectiveFetchContext:
         assert "feature-branch" in data["error"]
 
     def test_plan_not_found(self, tmp_path: Path) -> None:
-        """Returns error JSON when plan issue not found."""
+        """Returns error JSON when plan not found."""
         objective = _make_issue(number=6423, title="My Objective", body="objective body")
         pr = _make_pr_details(number=6517, title="PR Title", body="pr body")
 

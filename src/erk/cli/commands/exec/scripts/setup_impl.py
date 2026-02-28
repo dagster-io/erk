@@ -148,9 +148,7 @@ def _setup_from_file(
 
 
 @click.command(name="setup-impl")
-@click.option(
-    "--issue", "plan_number", type=int, default=None, help="Issue/PR number to set up from"
-)
+@click.option("--issue", "plan_number", type=int, default=None, help="Plan number to set up from")
 @click.option(
     "--file",
     "file_path",

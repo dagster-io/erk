@@ -57,7 +57,7 @@ from erk_shared.context.helpers import require_context
 @click.option(
     "--plan-number",
     type=int,
-    help="Linked plan issue number",
+    help="Linked plan number",
 )
 @click.option(
     "--use-graphite",

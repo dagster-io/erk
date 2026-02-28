@@ -41,7 +41,7 @@ from erk_shared.context.helpers import require_context
     "plan_number",
     type=int,
     default=None,
-    help="Linked plan issue number",
+    help="Linked plan number",
 )
 @click.pass_context
 def objective_update_after_land(
