@@ -403,7 +403,6 @@ class TestLandPrAsync:
             # Only the land command, no objective update
             assert len(captured_calls) == 1
 
-
     @pytest.mark.asyncio
     async def test_land_pr_includes_plan_number_flag(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
