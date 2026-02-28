@@ -1,7 +1,9 @@
 """Tests for EntityState — mutable KV metadata on entity body."""
 
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -19,10 +21,25 @@ from erk_shared.gateway.github.metadata.core import (
     create_metadata_block,
     render_metadata_block,
 )
+from erk_shared.gateway.github.metadata.types import MetadataBlockSchema
 from erk_shared.gateway.github.types import PRDetails
 
 REPO_ROOT = Path("/fake/repo")
 NOW = datetime(2024, 1, 1, tzinfo=UTC)
+
+
+@dataclass(frozen=True)
+class _NoopSchema(MetadataBlockSchema):
+    """Test schema that accepts any data."""
+
+    def validate(self, data: dict[str, Any]) -> None:
+        pass
+
+    def get_key(self) -> str:
+        return "test"
+
+
+NOOP_SCHEMA = _NoopSchema()
 
 
 def _make_issue_info(
@@ -176,7 +193,7 @@ class TestEntityStateIssue:
             github_issues=issues,
             repo_root=REPO_ROOT,
         )
-        entity_state_set(state, "plan-header", {"status": "active"}, schema=None)
+        entity_state_set(state, "plan-header", {"status": "active"}, schema=NOOP_SCHEMA)
 
         # Verify the body was updated
         assert len(issues.updated_bodies) == 1
@@ -195,7 +212,9 @@ class TestEntityStateIssue:
             github_issues=issues,
             repo_root=REPO_ROOT,
         )
-        entity_state_set(state, "plan-header", {"status": "active", "version": 2}, schema=None)
+        entity_state_set(
+            state, "plan-header", {"status": "active", "version": 2}, schema=NOOP_SCHEMA
+        )
 
         assert len(issues.updated_bodies) == 1
         _, new_body = issues.updated_bodies[0]
@@ -212,7 +231,9 @@ class TestEntityStateIssue:
             github_issues=issues,
             repo_root=REPO_ROOT,
         )
-        entity_state_set(state, "plan-header", {"status": "active", "version": 3}, schema=None)
+        entity_state_set(
+            state, "plan-header", {"status": "active", "version": 3}, schema=NOOP_SCHEMA
+        )
 
         # After set, the fake's issue body was updated, so get should work
         result = state.get("plan-header")
@@ -231,7 +252,7 @@ class TestEntityStateIssue:
             github_issues=issues,
             repo_root=REPO_ROOT,
         )
-        entity_state_set_field(state, "plan-header", "status", "active")
+        entity_state_set_field(state, "plan-header", "status", "active", schema=NOOP_SCHEMA)
 
         result = state.get("plan-header")
         assert result is not None
@@ -251,7 +272,9 @@ class TestEntityStateIssue:
             github_issues=issues,
             repo_root=REPO_ROOT,
         )
-        entity_state_update(state, "plan-header", {"status": "active", "version": 2})
+        entity_state_update(
+            state, "plan-header", {"status": "active", "version": 2}, schema=NOOP_SCHEMA
+        )
 
         result = state.get("plan-header")
         assert result is not None
@@ -270,7 +293,7 @@ class TestEntityStateIssue:
             repo_root=REPO_ROOT,
         )
         with pytest.raises(ValueError, match="not found"):
-            entity_state_update(state, "plan-header", {"status": "active"})
+            entity_state_update(state, "plan-header", {"status": "active"}, schema=NOOP_SCHEMA)
 
     def test_multiple_blocks_in_same_body(self) -> None:
         block1 = _render_block("plan-header", {"status": "draft"})
@@ -319,7 +342,7 @@ class TestEntityStatePR:
             github_issues=issues,
             repo_root=REPO_ROOT,
         )
-        entity_state_set(state, "plan-header", {"status": "active"}, schema=None)
+        entity_state_set(state, "plan-header", {"status": "active"}, schema=NOOP_SCHEMA)
 
         # Verify the PR body was updated via FakeGitHub
         assert len(github._updated_pr_bodies) == 1

@@ -86,7 +86,7 @@ def entity_state_set(
     key: str,
     data: dict[str, Any],
     *,
-    schema: MetadataBlockSchema | None,
+    schema: MetadataBlockSchema,
 ) -> EntityState:
     """Set an entire metadata block. Creates or replaces. Returns the state."""
     block = create_metadata_block(key, data, schema=schema)
@@ -108,15 +108,19 @@ def entity_state_set_field(
     key: str,
     field: str,
     value: Any,
+    *,
+    schema: MetadataBlockSchema,
 ) -> EntityState:
     """Update a single field in a metadata block (read-modify-write). Returns the state."""
-    return entity_state_update(state, key, {field: value})
+    return entity_state_update(state, key, {field: value}, schema=schema)
 
 
 def entity_state_update(
     state: EntityState,
     key: str,
     fields: dict[str, Any],
+    *,
+    schema: MetadataBlockSchema,
 ) -> EntityState:
     """Update multiple fields in one round-trip (read-modify-write). Returns the state."""
     body = state._fetch_body()
@@ -128,7 +132,7 @@ def entity_state_update(
     updated_data = dict(existing.data)
     updated_data.update(fields)
 
-    block = create_metadata_block(key, updated_data, schema=None)
+    block = create_metadata_block(key, updated_data, schema=schema)
     rendered = render_metadata_block(block)
     new_body = replace_metadata_block_in_body(body, key, rendered)
     state._push_body(new_body)

@@ -42,5 +42,11 @@ class GitHubEntity:
             github_issues=github_issues,
             repo_root=repo_root,
         )
-        log = EntityLog(number=number, github_issues=github_issues, repo_root=repo_root)
+        comment_bodies = github_issues.get_issue_comments(repo_root, number)
+        log = EntityLog(
+            number=number,
+            github_issues=github_issues,
+            repo_root=repo_root,
+            comment_bodies=comment_bodies,
+        )
         return cls(number=number, kind=kind, state=state, log=log)

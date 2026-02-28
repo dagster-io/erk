@@ -1,7 +1,9 @@
 """Tests for GitHubEntity — main entry point combining state and log."""
 
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from erk_shared.entity_store.entity import GitHubEntity
 from erk_shared.entity_store.log import EntityLog
@@ -15,10 +17,25 @@ from erk_shared.gateway.github.metadata.core import (
     render_erk_issue_event,
     render_metadata_block,
 )
+from erk_shared.gateway.github.metadata.types import MetadataBlockSchema
 from erk_shared.gateway.github.types import PRDetails
 
 REPO_ROOT = Path("/fake/repo")
 NOW = datetime(2024, 1, 1, tzinfo=UTC)
+
+
+@dataclass(frozen=True)
+class _NoopSchema(MetadataBlockSchema):
+    """Test schema that accepts any data."""
+
+    def validate(self, data: dict[str, Any]) -> None:
+        pass
+
+    def get_key(self) -> str:
+        return "test"
+
+
+NOOP_SCHEMA = _NoopSchema()
 
 
 def _make_issue_info(
@@ -146,7 +163,7 @@ class TestGitHubEntityIssueWorkflow:
         )
 
         # Update state
-        entity_state_set_field(entity.state, "plan-header", "status", "active")
+        entity_state_set_field(entity.state, "plan-header", "status", "active", schema=NOOP_SCHEMA)
         assert entity.state.get_field("plan-header", "status") == "active"
 
         # Append log entry
@@ -155,7 +172,7 @@ class TestGitHubEntityIssueWorkflow:
             {"started_at": "2024-01-01T00:00:00Z"},
             title="Workflow Started",
             description="Starting implementation",
-            schema=None,
+            schema=NOOP_SCHEMA,
         )
         assert isinstance(cid, int)
         assert len(issues.added_comments) == 1
@@ -248,7 +265,7 @@ class TestGitHubEntityPRWorkflow:
             {"started_at": "2024-01-01T00:00:00Z"},
             title="Implementation Started",
             description="",
-            schema=None,
+            schema=NOOP_SCHEMA,
         )
         assert isinstance(cid, int)
         # Comment was added to issue #42 (since PRs are issues)

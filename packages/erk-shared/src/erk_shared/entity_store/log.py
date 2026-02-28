@@ -42,10 +42,12 @@ class EntityLog:
         number: int,
         github_issues: GitHubIssues,
         repo_root: Path,
+        comment_bodies: list[str],
     ) -> None:
         self._number = number
         self._github_issues = github_issues
         self._repo_root = repo_root
+        self._comment_bodies = comment_bodies
 
     def append(
         self,
@@ -54,7 +56,7 @@ class EntityLog:
         *,
         title: str,
         description: str,
-        schema: MetadataBlockSchema | None,
+        schema: MetadataBlockSchema,
     ) -> int:
         """Append a structured log entry. Returns comment ID."""
         block = create_metadata_block(key, data, schema=schema)
@@ -87,11 +89,10 @@ class EntityLog:
 
     def all_entries(self) -> list[LogEntry]:
         """Get all log entries across all keys."""
-        comment_bodies = self._github_issues.get_issue_comments(self._repo_root, self._number)
         entries: list[LogEntry] = []
-        # Use synthetic comment IDs based on position since get_issue_comments
-        # returns strings, not IDs. This maintains chronological order.
-        for index, comment_body in enumerate(comment_bodies):
+        # Use synthetic comment IDs based on position since comment_bodies
+        # are strings, not IDs. This maintains chronological order.
+        for index, comment_body in enumerate(self._comment_bodies):
             result = parse_metadata_blocks(comment_body)
             for block in result.blocks:
                 entries.append(
