@@ -1,6 +1,11 @@
 """Tests for command palette registry."""
 
-from erk.tui.commands.registry import get_all_commands, get_available_commands, get_display_name
+from erk.tui.commands.registry import (
+    get_all_commands,
+    get_available_commands,
+    get_copy_text,
+    get_display_name,
+)
 from erk.tui.commands.types import CommandCategory, CommandContext
 from erk.tui.views.types import ViewMode
 from erk_shared.gateway.plan_data_provider.fake import make_plan_row
@@ -775,3 +780,36 @@ def test_commands_available_in_plans_view() -> None:
     ]
     for cmd_id in expected_available:
         assert cmd_id in cmd_ids, f"Command {cmd_id} should be available in plans view"
+
+
+# === get_copy_text Tests ===
+
+
+def test_get_copy_text_returns_display_name_for_valid_command() -> None:
+    """get_copy_text returns display name for a valid, available command."""
+    row = make_plan_row(123, "Test", pr_number=456)
+    result = get_copy_text("copy_pr_checkout", row, ViewMode.PLANS)
+    expected = 'source "$(erk pr checkout 456 --script --sync)" && gt submit --no-interactive'
+    assert result == expected
+
+
+def test_get_copy_text_returns_none_for_unknown_command() -> None:
+    """get_copy_text returns None when command ID does not exist."""
+    row = make_plan_row(123, "Test")
+    result = get_copy_text("nonexistent_command", row, ViewMode.PLANS)
+    assert result is None
+
+
+def test_get_copy_text_returns_none_for_unavailable_command() -> None:
+    """get_copy_text returns None when command is not available in context."""
+    row = make_plan_row(123, "Test")  # No pr_number, so copy_pr_checkout unavailable
+    result = get_copy_text("copy_pr_checkout", row, ViewMode.PLANS)
+    assert result is None
+
+
+def test_get_copy_text_returns_none_for_wrong_view_mode() -> None:
+    """get_copy_text returns None when command is not available in the view mode."""
+    row = make_plan_row(123, "Test")
+    # close_plan is a plan command, not available in objectives view
+    result = get_copy_text("close_plan", row, ViewMode.OBJECTIVES)
+    assert result is None

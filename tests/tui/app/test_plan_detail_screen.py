@@ -276,7 +276,10 @@ class TestPlanDetailScreenCopyActions:
             await pilot.press("e")
             await pilot.pause()
 
-            assert clipboard.last_copied == "erk pr co 456"
+            assert (
+                clipboard.last_copied
+                == 'source "$(erk pr checkout 456 --script --sync)" && gt submit --no-interactive'
+            )
 
 
 class TestPlanDetailScreenFixConflictsKeybinding:

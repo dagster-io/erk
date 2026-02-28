@@ -19,6 +19,7 @@ from textual.screen import Screen
 from textual.widgets import Header, Input, Label
 
 from erk.tui.commands.provider import MainListCommandProvider
+from erk.tui.commands.registry import get_copy_text
 from erk.tui.commands.types import CommandContext
 from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
 from erk.tui.filtering.logic import filter_plans
@@ -997,6 +998,7 @@ class ErkDashApp(App):
                 browser=self._provider.browser,
                 executor=executor,
                 repo_root=self._provider.repo_root,
+                view_mode=self._view_mode,
             )
         )
 
@@ -1254,51 +1256,52 @@ class ErkDashApp(App):
             self._copy_checkout_command(row)
 
         elif command_id == "copy_pr_checkout":
-            cmd = f'source "$(erk pr checkout {row.pr_number} --script)"'
-            self._provider.clipboard.copy(cmd)
-            self.notify(f"Copied: {cmd}")
+            text = get_copy_text(command_id, row, self._view_mode)
+            if text is not None:
+                self._provider.clipboard.copy(text)
+                self.notify(f"Copied: {text}")
 
         elif command_id == "copy_implement_local":
-            if row.pr_number is not None:
-                cmd = (
-                    f'source "$(erk pr checkout {row.pr_number} --script)"'
-                    " && erk implement --dangerous"
-                )
-                self._provider.clipboard.copy(cmd)
-                self.notify(f"Copied: {cmd}")
+            text = get_copy_text(command_id, row, self._view_mode)
+            if text is not None:
+                self._provider.clipboard.copy(text)
+                self.notify(f"Copied: {text}")
 
         elif command_id == "copy_dispatch":
-            cmd = f"erk pr dispatch {row.plan_id}"
-            self._provider.clipboard.copy(cmd)
-            self.notify(f"Copied: {cmd}")
+            text = get_copy_text(command_id, row, self._view_mode)
+            if text is not None:
+                self._provider.clipboard.copy(text)
+                self.notify(f"Copied: {text}")
 
         elif command_id == "copy_replan":
-            cmd = f"erk pr replan {row.plan_id}"
-            self._provider.clipboard.copy(cmd)
-            self.notify(f"Copied: {cmd}")
+            text = get_copy_text(command_id, row, self._view_mode)
+            if text is not None:
+                self._provider.clipboard.copy(text)
+                self.notify(f"Copied: {text}")
 
         elif command_id == "copy_land":
-            if row.pr_number is not None:
-                cmd = f"erk land {row.pr_number}"
-                self._provider.clipboard.copy(cmd)
-                self.notify(f"Copied: {cmd}")
+            text = get_copy_text(command_id, row, self._view_mode)
+            if text is not None:
+                self._provider.clipboard.copy(text)
+                self.notify(f"Copied: {text}")
 
         elif command_id == "copy_close_plan":
-            cmd = f"erk pr close {row.plan_id}"
-            self._provider.clipboard.copy(cmd)
-            self.notify(f"Copied: {cmd}")
+            text = get_copy_text(command_id, row, self._view_mode)
+            if text is not None:
+                self._provider.clipboard.copy(text)
+                self.notify(f"Copied: {text}")
 
         elif command_id == "copy_fix_conflicts_remote":
-            if row.pr_number is not None:
-                cmd = f"erk launch pr-fix-conflicts --pr {row.pr_number}"
-                self._provider.clipboard.copy(cmd)
-                self.notify(f"Copied: {cmd}")
+            text = get_copy_text(command_id, row, self._view_mode)
+            if text is not None:
+                self._provider.clipboard.copy(text)
+                self.notify(f"Copied: {text}")
 
         elif command_id == "copy_address_remote":
-            if row.pr_number is not None:
-                cmd = f"erk launch pr-address --pr {row.pr_number}"
-                self._provider.clipboard.copy(cmd)
-                self.notify(f"Copied: {cmd}")
+            text = get_copy_text(command_id, row, self._view_mode)
+            if text is not None:
+                self._provider.clipboard.copy(text)
+                self.notify(f"Copied: {text}")
 
         elif command_id == "copy_rewrite_remote":
             if row.pr_number is not None:

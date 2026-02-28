@@ -6,6 +6,7 @@ Plan commands appear only in Plans/Learn views; objective commands appear only i
 """
 
 from erk.tui.commands.types import CommandCategory, CommandContext, CommandDefinition
+from erk.tui.data.types import PlanRowData
 from erk.tui.views.types import ViewMode
 
 CATEGORY_EMOJI: dict[CommandCategory, str] = {
@@ -464,3 +465,28 @@ def get_display_name(cmd: CommandDefinition, ctx: CommandContext) -> str:
     if cmd.get_display_name is not None:
         return cmd.get_display_name(ctx)
     return cmd.name
+
+
+def get_copy_text(command_id: str, row: PlanRowData, view_mode: ViewMode) -> str | None:
+    """Get the text to copy to clipboard for a command.
+
+    This function maps (command_id, row, view_mode) to the clipboard text by
+    finding the command and using its display name generator. This eliminates
+    duplication across app.py and plan_detail_screen.py.
+
+    Args:
+        command_id: The command ID (e.g., "copy_pr_checkout")
+        row: The plan row data
+        view_mode: The current view mode
+
+    Returns:
+        The text to copy, or None if the command is not found, not available,
+        or has no display name
+    """
+    ctx = CommandContext(row=row, view_mode=view_mode)
+    for cmd in get_all_commands():
+        if cmd.id == command_id:
+            if cmd.is_available(ctx) and cmd.get_display_name is not None:
+                return cmd.get_display_name(ctx)
+            break
+    return None

@@ -16,7 +16,9 @@ from textual.timer import Timer
 from textual.widgets import Label
 
 from erk.tui.commands.provider import PlanCommandProvider
+from erk.tui.commands.registry import get_copy_text
 from erk.tui.data.types import PlanRowData
+from erk.tui.views.types import ViewMode
 from erk.tui.widgets.clickable_link import ClickableLink
 from erk.tui.widgets.command_output import CommandOutputPanel
 from erk.tui.widgets.copyable_label import CopyableLabel
@@ -228,6 +230,7 @@ class PlanDetailScreen(ModalScreen):
         executor: CommandExecutor | None = None,
         repo_root: Path | None = None,
         auto_open_palette: bool = False,
+        view_mode: ViewMode,
     ) -> None:
         """Initialize with plan row data.
 
@@ -238,6 +241,7 @@ class PlanDetailScreen(ModalScreen):
             executor: Optional command executor for palette commands
             repo_root: Path to repository root for running commands
             auto_open_palette: If True, open command palette on mount
+            view_mode: The current view mode (for generating correct copy text)
         """
         super().__init__()
         self._row = row
@@ -245,6 +249,7 @@ class PlanDetailScreen(ModalScreen):
         self._browser = browser
         self._executor = executor
         self._repo_root = repo_root
+        self._view_mode = view_mode
         self._output_panel: CommandOutputPanel | None = None
         self._command_running = False
         self._auto_open_palette = auto_open_palette
@@ -343,9 +348,9 @@ class PlanDetailScreen(ModalScreen):
 
     def action_copy_pr_checkout(self) -> None:
         """Copy PR checkout command to clipboard."""
-        if self._row.pr_number is not None:
-            cmd = f"erk pr co {self._row.pr_number}"
-            self._copy_and_notify(cmd)
+        text = get_copy_text("copy_pr_checkout", self._row, self._view_mode)
+        if text is not None:
+            self._copy_and_notify(text)
 
     def action_copy_prepare(self) -> None:
         """Copy basic prepare command to clipboard."""
@@ -648,9 +653,10 @@ class PlanDetailScreen(ModalScreen):
             executor.notify(f"Copied: {cmd}", severity=None)
 
         elif command_id == "copy_pr_checkout":
-            cmd = f"erk pr co {row.pr_number}"
-            executor.copy_to_clipboard(cmd)
-            executor.notify(f"Copied: {cmd}", severity=None)
+            text = get_copy_text(command_id, row, self._view_mode)
+            if text is not None:
+                executor.copy_to_clipboard(text)
+                executor.notify(f"Copied: {text}", severity=None)
 
         elif command_id == "copy_prepare":
             cmd = f"erk br co --for-plan {row.plan_id}"
@@ -666,46 +672,46 @@ class PlanDetailScreen(ModalScreen):
             executor.notify(f"Copied: {cmd}", severity=None)
 
         elif command_id == "copy_implement_local":
-            if row.pr_number is not None:
-                cmd = (
-                    f'source "$(erk pr checkout {row.pr_number} --script)"'
-                    " && erk implement --dangerous"
-                )
-                executor.copy_to_clipboard(cmd)
-                executor.notify(f"Copied: {cmd}", severity=None)
+            text = get_copy_text(command_id, row, self._view_mode)
+            if text is not None:
+                executor.copy_to_clipboard(text)
+                executor.notify(f"Copied: {text}", severity=None)
 
         elif command_id == "copy_dispatch":
-            cmd = f"erk pr dispatch {row.plan_id}"
-            executor.copy_to_clipboard(cmd)
-            executor.notify(f"Copied: {cmd}", severity=None)
+            text = get_copy_text(command_id, row, self._view_mode)
+            if text is not None:
+                executor.copy_to_clipboard(text)
+                executor.notify(f"Copied: {text}", severity=None)
 
         elif command_id == "copy_replan":
-            cmd = f"erk pr replan {row.plan_id}"
-            executor.copy_to_clipboard(cmd)
-            executor.notify(f"Copied: {cmd}", severity=None)
+            text = get_copy_text(command_id, row, self._view_mode)
+            if text is not None:
+                executor.copy_to_clipboard(text)
+                executor.notify(f"Copied: {text}", severity=None)
 
         elif command_id == "copy_land":
-            if row.pr_number is not None:
-                cmd = f"erk land {row.pr_number}"
-                executor.copy_to_clipboard(cmd)
-                executor.notify(f"Copied: {cmd}", severity=None)
+            text = get_copy_text(command_id, row, self._view_mode)
+            if text is not None:
+                executor.copy_to_clipboard(text)
+                executor.notify(f"Copied: {text}", severity=None)
 
         elif command_id == "copy_close_plan":
-            cmd = f"erk pr close {row.plan_id}"
-            executor.copy_to_clipboard(cmd)
-            executor.notify(f"Copied: {cmd}", severity=None)
+            text = get_copy_text(command_id, row, self._view_mode)
+            if text is not None:
+                executor.copy_to_clipboard(text)
+                executor.notify(f"Copied: {text}", severity=None)
 
         elif command_id == "copy_fix_conflicts_remote":
-            if row.pr_number is not None:
-                cmd = f"erk launch pr-fix-conflicts --pr {row.pr_number}"
-                executor.copy_to_clipboard(cmd)
-                executor.notify(f"Copied: {cmd}", severity=None)
+            text = get_copy_text(command_id, row, self._view_mode)
+            if text is not None:
+                executor.copy_to_clipboard(text)
+                executor.notify(f"Copied: {text}", severity=None)
 
         elif command_id == "copy_address_remote":
-            if row.pr_number is not None:
-                cmd = f"erk launch pr-address --pr {row.pr_number}"
-                executor.copy_to_clipboard(cmd)
-                executor.notify(f"Copied: {cmd}", severity=None)
+            text = get_copy_text(command_id, row, self._view_mode)
+            if text is not None:
+                executor.copy_to_clipboard(text)
+                executor.notify(f"Copied: {text}", severity=None)
 
         elif command_id == "copy_rewrite_remote":
             if row.pr_number is not None:
@@ -889,9 +895,10 @@ class PlanDetailScreen(ModalScreen):
 
             # PR checkout command (if PR exists)
             if self._row.pr_number is not None:
-                pr_checkout_cmd = f"erk pr co {self._row.pr_number}"
-                with Container(classes="command-row"):
-                    yield CopyableLabel(pr_checkout_cmd, pr_checkout_cmd)
+                pr_checkout_cmd = get_copy_text("copy_pr_checkout", self._row, self._view_mode)
+                if pr_checkout_cmd:
+                    with Container(classes="command-row"):
+                        yield CopyableLabel(pr_checkout_cmd, pr_checkout_cmd)
 
             # Prepare commands
             prepare_cmd = f"erk br co --for-plan {self._row.plan_id}"
