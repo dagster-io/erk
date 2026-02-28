@@ -57,7 +57,7 @@ def test_parse_git_remote_url_github_with_subdirectory():
 
 
 def test_parse_aggregated_check_counts_all_passing():
-    """Test count parsing when all checks pass."""
+    """Test count parsing when all checks pass, with skipped excluded."""
     check_run_counts = [
         {"state": "SUCCESS", "count": 5},
         {"state": "SKIPPED", "count": 2},
@@ -67,7 +67,8 @@ def test_parse_aggregated_check_counts_all_passing():
     ]
 
     result = parse_aggregated_check_counts(check_run_counts, status_context_counts, 8)
-    assert result == (8, 8)
+    # 5 SUCCESS + 1 status SUCCESS = 6 passing, total 8 - 2 SKIPPED = 6
+    assert result == (6, 6)
 
 
 def test_parse_aggregated_check_counts_mixed():
@@ -98,11 +99,35 @@ def test_parse_aggregated_check_counts_neutral_counts_as_passing():
     assert result == (2, 2)
 
 
-def test_parse_aggregated_check_counts_skipped_counts_as_passing():
-    """Test that SKIPPED state counts as passing."""
+def test_parse_aggregated_check_counts_skipped_excluded_from_counts():
+    """Test that SKIPPED checks are excluded from both passing and total."""
     check_run_counts = [{"state": "SKIPPED", "count": 3}]
     result = parse_aggregated_check_counts(check_run_counts, [], 3)
-    assert result == (3, 3)
+    # All skipped: 0 passing, total 3 - 3 SKIPPED = 0
+    assert result == (0, 0)
+
+
+def test_parse_aggregated_check_counts_mixed_success_and_skipped():
+    """Test mixed SUCCESS + SKIPPED: skipped excluded from both counts."""
+    check_run_counts = [
+        {"state": "SUCCESS", "count": 10},
+        {"state": "SKIPPED", "count": 3},
+    ]
+    result = parse_aggregated_check_counts(check_run_counts, [], 13)
+    # 10 passing, total 13 - 3 SKIPPED = 10
+    assert result == (10, 10)
+
+
+def test_parse_aggregated_check_counts_failure_and_skipped():
+    """Test mixed SUCCESS + FAILURE + SKIPPED: skipped excluded from both counts."""
+    check_run_counts = [
+        {"state": "SUCCESS", "count": 8},
+        {"state": "FAILURE", "count": 2},
+        {"state": "SKIPPED", "count": 3},
+    ]
+    result = parse_aggregated_check_counts(check_run_counts, [], 13)
+    # 8 passing, total 13 - 3 SKIPPED = 10
+    assert result == (8, 10)
 
 
 def test_parse_aggregated_check_counts_status_context_failure_not_passing():
@@ -124,7 +149,7 @@ def test_parse_aggregated_check_counts_check_run_in_progress_not_passing():
         {"state": "IN_PROGRESS", "count": 1},
     ]
     result = parse_aggregated_check_counts(check_run_counts, [], 3)
-    # Only SUCCESS, SKIPPED, NEUTRAL count as passing for CheckRun
+    # Only SUCCESS, NEUTRAL count as passing for CheckRun (SKIPPED excluded)
     assert result == (2, 3)
 
 

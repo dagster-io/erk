@@ -417,7 +417,7 @@ def test_format_checks_cell_failing_without_counts() -> None:
 
 
 def test_format_checks_cell_zero_passing_zero_total() -> None:
-    """Test format_checks_cell edge case: 0/0 counts (shouldn't happen)."""
+    """Test format_checks_cell with 0/0 counts (all-skipped PRs produce this)."""
     pr = PullRequestInfo(
         number=305,
         state="OPEN",
