@@ -864,6 +864,7 @@ Save plan as a draft PR.
 | `--created-from-workflow-run-url` | TEXT    | No       | -       | GitHub Actions workflow run URL                           |
 | `--branch-slug`                   | TEXT    | No       | -       | Pre-generated branch slug (skips LLM call when provided)  |
 | `--objective`                     | INTEGER | No       | -       | Objective issue number (overrides session marker)         |
+| `--summary`                       | TEXT    | No       | -       | AI-generated plan summary for PR description              |
 
 ### plan-update
 
