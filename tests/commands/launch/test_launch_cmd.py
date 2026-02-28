@@ -357,6 +357,66 @@ def test_workflow_launch_with_model_option(tmp_path: Path) -> None:
         assert inputs["model_name"] == "claude-opus-4"
 
 
+def test_workflow_launch_pr_rewrite_triggers_workflow(tmp_path: Path) -> None:
+    """Test pr-rewrite workflow trigger."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        pr_info = _make_pr_info(123, "feature-branch", "OPEN", "Add feature")
+        pr_details = _make_pr_details(
+            number=123,
+            head_ref_name="feature-branch",
+            state="OPEN",
+            base_ref_name="main",
+            title="Add feature",
+        )
+        github = FakeGitHub(
+            prs={"feature-branch": pr_info},
+            pr_details={123: pr_details},
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "master"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        result = runner.invoke(cli, ["launch", "pr-rewrite", "--pr", "123"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "PR #123" in result.output
+        assert "Workflow triggered" in result.output
+
+        # Verify workflow was triggered
+        assert len(github.triggered_workflows) == 1
+        workflow, inputs = github.triggered_workflows[0]
+        assert workflow == WORKFLOW_COMMAND_MAP["pr-rewrite"]
+        assert inputs["branch_name"] == "feature-branch"
+        assert inputs["base_branch"] == "main"
+        assert inputs["pr_number"] == "123"
+
+
+def test_workflow_launch_pr_rewrite_requires_pr_option(tmp_path: Path) -> None:
+    """Test pr-rewrite requires --pr option."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "master"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git)
+
+        result = runner.invoke(cli, ["launch", "pr-rewrite"], obj=ctx)
+
+        assert result.exit_code == 1
+        assert "--pr is required for pr-rewrite" in result.output
+
+
 def test_workflow_launch_pr_fix_conflicts_closed_pr_fails(tmp_path: Path) -> None:
     """Test error when PR is closed."""
     runner = CliRunner()

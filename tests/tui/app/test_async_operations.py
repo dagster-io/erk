@@ -689,3 +689,105 @@ class TestOneShotPlanAsync:
             await pilot.pause(0.3)
 
             assert provider.fetch_count > count_before
+
+
+class TestRewriteRemoteAsync:
+    """Tests for _rewrite_remote_async subprocess behavior."""
+
+    @pytest.mark.asyncio
+    async def test_rewrite_remote_triggers_refresh_on_success(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_rewrite_remote_async should trigger action_refresh after success."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            return _FakePopen(lines=("Updated dispatch metadata",), return_code=0)
+
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            count_before = provider.fetch_count
+
+            app._rewrite_remote_async("test-op", 456)
+            await pilot.pause(0.3)
+
+            assert provider.fetch_count > count_before
+
+    @pytest.mark.asyncio
+    async def test_rewrite_remote_no_refresh_on_failure(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_rewrite_remote_async should NOT refresh on subprocess failure."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            return _FakePopen(lines=("dispatch failed",), return_code=1)
+
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            count_before = provider.fetch_count
+
+            app._rewrite_remote_async("test-op", 456)
+            await pilot.pause(0.3)
+
+            assert provider.fetch_count == count_before
+
+    @pytest.mark.asyncio
+    async def test_rewrite_remote_calls_correct_command(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_rewrite_remote_async should pass correct args to subprocess."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        captured_args: list[str] = []
+
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            if args:
+                captured_args.extend(args[0])  # type: ignore[arg-type]
+            return _FakePopen(return_code=0)
+
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            app._rewrite_remote_async("test-op", 456)
+            await pilot.pause(0.3)
+
+            assert captured_args == [
+                "erk",
+                "launch",
+                "pr-rewrite",
+                "--pr",
+                "456",
+            ]
