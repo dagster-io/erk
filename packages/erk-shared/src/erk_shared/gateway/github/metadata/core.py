@@ -374,7 +374,7 @@ def render_plan_body_block(block: MetadataBlock) -> str:
     Returns markdown like:
     <!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
     <!-- erk:metadata-block:plan-body -->
-    <details>
+    <details open>
     <summary><strong>📋 Implementation Plan</strong></summary>
 
     {plan_content}
@@ -390,7 +390,7 @@ def render_plan_body_block(block: MetadataBlock) -> str:
     return f"""<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
 <!-- erk:metadata-block:{block.key} -->
 <details open>
-<summary><strong>📋 Implementation Plan</strong></summary>
+<summary><strong>\U0001f4cb Implementation Plan</strong></summary>
 
 {plan_content}
 
