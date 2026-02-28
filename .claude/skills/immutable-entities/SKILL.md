@@ -33,14 +33,12 @@ This separation makes objects trivially testable (construct with literals), safe
 
 ## Canonical Examples
 
-All examples from `packages/erk-shared/src/erk_shared/entity_store/`.
-
 ### Frozen Dataclass with Read Methods — `EntityState`
 
 Read operations are methods on the dataclass. Write operations are standalone functions.
 
 ```python
-# state.py
+# metadata.py
 
 @dataclass(frozen=True)
 class EntityState:
@@ -67,7 +65,7 @@ class EntityState:
 Takes old snapshot + gateways in, returns new snapshot out.
 
 ```python
-# state.py
+# mutations.py
 
 def entity_state_set(
     state: EntityState,
@@ -106,7 +104,7 @@ def entity_state_set(
 Not a `@dataclass` because `cached_property` is incompatible with `frozen=True` (slots block attribute setting). Uses private backing fields instead.
 
 ```python
-# log.py
+# event_log.py
 
 class EntityLog:
     """Immutable append-only log stored as comments."""
@@ -143,7 +141,7 @@ class EntityLog:
 `__init__` takes only pure data. `create()` does all I/O and returns a frozen instance.
 
 ```python
-# entity.py
+# domain.py
 
 @dataclass(frozen=True)
 class GitHubEntity:
