@@ -11,19 +11,11 @@ tripwires:
   - action: "adding footer before PR creation"
     warning: "PR footer needs the PR number, which isn't known until after create_pr returns. Add footer AFTER PR creation."
   - action: "rewriting PR body without preserving metadata"
-<<<<<<< HEAD
     warning: "Extract metadata prefix on every lifecycle transition via find_metadata_block() to prevent metadata loss."
   - action: "parsing plan content without backward compatibility"
     warning: "extract_plan_content() handles both details-wrapped and old flat format. Always use it instead of manual parsing."
   - action: "using `find_metadata_block` or `extract_plan_content` without validating separator context"
     warning: "The content separator `\\n\\n---\\n\\n` can accidentally form from 'Remotely executed' notes + footer delimiter. find_metadata_block() validates via `<!-- erk:metadata-block:` marker in the prefix. Never skip this validation."
-=======
-    warning: "Locate and preserve metadata blocks on every lifecycle transition via find_metadata_block() from metadata/core.py to prevent metadata loss."
-  - action: "parsing plan content without backward compatibility"
-    warning: "extract_plan_content() handles both details-wrapped and old flat format. Always use it instead of manual parsing."
-  - action: "using content separator matching without validating metadata block markers"
-    warning: "The content separator `\\n\\n---\\n\\n` can accidentally form from 'Remotely executed' notes + footer delimiter. find_metadata_block() validates via `<!-- erk:metadata-block:` marker. Never skip this validation."
->>>>>>> dd9c1b7fe (Consolidate 16 Feb 26 learn plans into coordinated documentation updates)
   - action: "adding <code> inside <summary> elements in PR bodies"
     warning: "Graphite doesn't render <code> inside <summary> — use plain text instead. GitHub renders it but Graphite does not. The correct format is <summary>original-plan</summary> not <summary><code>original-plan</code></summary>."
     score: 8
@@ -93,10 +85,7 @@ All in `packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py`:
 | `build_plan_stage_body(metadata_body, plan_content)` | Build Stage 1 body: details-wrapped plan + separator + metadata. Footer NOT included (needs PR number).     |
 | `build_original_plan_section(plan_content)`          | Wrap plan content in `<details><summary>original-plan</summary>` section. Used by both Stage 1 and Stage 2. |
 | `extract_plan_content(pr_body)`                      | Extract plan content from PR body at any lifecycle stage. Handles both details-wrapped and old flat format. |
-<<<<<<< HEAD
 | `find_metadata_block(pr_body, "plan-header")`        | Extract metadata block for preservation during stage transitions.                                           |
-=======
->>>>>>> dd9c1b7fe (Consolidate 16 Feb 26 learn plans into coordinated documentation updates)
 
 ## Separator Semantics
 
