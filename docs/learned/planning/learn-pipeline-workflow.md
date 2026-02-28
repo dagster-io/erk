@@ -69,7 +69,7 @@ The discovery function also has a **local fallback**: when GitHub has no tracked
 
 <!-- Source: src/erk/cli/commands/exec/scripts/preprocess_session.py, preprocess_session -->
 
-Transforms raw JSONL session logs into compressed XML. **Both local and remote sessions** go through the same `_preprocess_session_direct()` pipeline (unified in PR #6974). Remote sessions are first downloaded via `_download_remote_session_for_learn()`, which fetches the gist content and saves it as `{session_id}.jsonl` in a `remote-downloads/` subdirectory, then the downloaded file is preprocessed identically to local sessions.
+Transforms raw JSONL session logs into compressed XML. **Both local and remote sessions** go through the same `preprocess_session()` pipeline (in `src/erk/cli/commands/exec/scripts/preprocess_session.py`, unified in PR #6974). Remote sessions are first downloaded via the `download-remote-session` exec command, which fetches session content from a git branch and saves it locally, then the downloaded file is preprocessed identically to local sessions.
 
 The filtering chain applies in order:
 
