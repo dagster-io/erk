@@ -1,6 +1,6 @@
 """Shared dispatch logic for one-shot autonomous execution.
 
-Extracts the branch-create/push/PR/workflow-trigger sequence into reusable
+Extracts the branch-create/push/PR/workflow-dispatch sequence into reusable
 pieces so both `erk one-shot` and `erk objective plan --one-shot` can
 dispatch tasks through the same CI workflow.
 """
@@ -108,7 +108,7 @@ def dispatch_one_shot(
     """Execute the full dispatch sequence for a one-shot workflow.
 
     Creates branch, commits prompt file directly to branch (no checkout),
-    pushes, creates draft PR, and triggers workflow. In dry-run mode,
+    pushes, creates draft PR, and dispatches workflow. In dry-run mode,
     prints what would happen without executing.
 
     Args:
@@ -328,9 +328,9 @@ def dispatch_one_shot(
         # Merge extra workflow inputs
         inputs.update(params.extra_workflow_inputs)
 
-        # Trigger workflow
-        current_step = "Triggering one-shot workflow"
-        user_output("Triggering one-shot workflow...")
+        # Dispatch workflow
+        current_step = "Dispatching one-shot workflow"
+        user_output("Dispatching one-shot workflow...")
         run_id = ctx.github.trigger_workflow(
             repo_root=repo.root,
             workflow=ONE_SHOT_WORKFLOW,
@@ -407,7 +407,7 @@ def dispatch_one_shot(
         user_output(f"PR: {click.style(pr_url, fg='cyan')}")
         user_output(f"Run: {click.style(run_url, fg='cyan')}")
     else:
-        user_output(f"PR #{pr_number} created, workflow run {run_id} triggered")
+        user_output(f"PR #{pr_number} created, workflow run {run_id} dispatched")
 
     return OneShotDispatchResult(
         pr_number=pr_number,

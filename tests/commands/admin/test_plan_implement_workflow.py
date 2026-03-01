@@ -134,7 +134,7 @@ def test_creates_empty_commit_before_pr() -> None:
         assert workflow == "plan-implement.yml"
 
         # Verify output shows success
-        assert "Workflow triggered successfully!" in result.output
+        assert "Workflow dispatched successfully!" in result.output
 
 
 def test_creates_issue_when_not_provided() -> None:
@@ -201,4 +201,4 @@ def test_creates_issue_when_not_provided() -> None:
 
         # Verify output shows success
         assert "Created test plan #1" in result.output
-        assert "Workflow triggered successfully!" in result.output
+        assert "Workflow dispatched successfully!" in result.output

@@ -40,7 +40,7 @@ def test_happy_path_with_existing_issue() -> None:
         assert workflow == "plan-implement.yml"
         assert inputs["plan_id"] == "42"
         # Verify output contains run URL
-        assert "Workflow triggered successfully" in result.output
+        assert "Workflow dispatched successfully" in result.output
         assert "Run URL:" in result.output
 
 

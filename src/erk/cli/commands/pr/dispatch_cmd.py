@@ -252,7 +252,7 @@ def _dispatch_planned_pr_plan(
 
     # Build inputs dict with plan_backend="planned_pr"
     user_output("")
-    user_output(f"Triggering workflow: {click.style(DISPATCH_WORKFLOW_NAME, fg='cyan')}")
+    user_output(f"Dispatching workflow: {click.style(DISPATCH_WORKFLOW_NAME, fg='cyan')}")
 
     inputs = {
         "plan_id": str(plan_number),
@@ -271,7 +271,7 @@ def _dispatch_planned_pr_plan(
         inputs=inputs,
         ref=ctx.local_config.dispatch_ref,
     )
-    user_output(click.style("✓", fg="green") + " Workflow triggered.")
+    user_output(click.style("✓", fg="green") + " Workflow dispatched.")
 
     # Compute workflow URL
     workflow_url = _build_workflow_run_url(validated.url, run_id)
@@ -323,7 +323,7 @@ def _dispatch_planned_pr_plan(
             description=(
                 f"Plan submitted by **{submitted_by}** at {queued_at}.\n\n"
                 f"The `{DISPATCH_WORKFLOW_METADATA_NAME}` workflow has been "
-                f"triggered via direct dispatch.\n\n"
+                f"dispatched via direct dispatch.\n\n"
                 f"**Workflow run:** {workflow_url}"
             ),
         )
@@ -389,7 +389,7 @@ def pr_dispatch(ctx: ErkContext, plan_numbers: tuple[int, ...], base: str | None
     """Dispatch plans for remote AI implementation via GitHub Actions.
 
     Creates branch and draft PR locally (for correct commit attribution),
-    then triggers the plan-implement.yml GitHub Actions workflow.
+    then dispatches the plan-implement.yml GitHub Actions workflow.
 
     Arguments:
         PLAN_NUMBERS: One or more plan numbers to dispatch.

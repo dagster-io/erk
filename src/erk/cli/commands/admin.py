@@ -417,7 +417,7 @@ def upgrade_repo(ctx: ErkContext) -> None:
 
 @admin_group.command("test-plan-implement-gh-workflow")
 @click.option("--plan", "-p", type=int, help="Existing plan number to use")
-@click.option("--watch", "-w", is_flag=True, help="Watch the workflow run after triggering")
+@click.option("--watch", "-w", is_flag=True, help="Watch the workflow run after dispatching")
 @click.pass_obj
 def test_plan_implement_gh_workflow(ctx: ErkContext, plan: int | None, watch: bool) -> None:
     """Test the plan-implement.yml GitHub Actions workflow.
@@ -430,7 +430,7 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, plan: int | None, watch: bo
     3. Creating a test branch from master
     4. Adding an empty commit (required for PR creation)
     5. Creating a draft PR
-    6. Triggering the workflow with --ref set to your branch
+    6. Dispatching the workflow with --ref set to your branch
     7. Outputting the run URL
 
     Use this when modifying .github/workflows/plan-implement.yml to test changes.
@@ -518,7 +518,7 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, plan: int | None, watch: bo
         "Not authenticated with GitHub",
     )
 
-    user_output(f"Triggering plan-implement workflow from '{current_branch}'...")
+    user_output(f"Dispatching plan-implement workflow from '{current_branch}'...")
     ctx.github.trigger_workflow(
         repo_root=repo.root,
         workflow="plan-implement.yml",
@@ -543,7 +543,7 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, plan: int | None, watch: bo
         run_url = f"https://github.com/{repo_slug}/actions/workflows/plan-implement.yml"
 
     user_output("")
-    user_output(click.style("Workflow triggered successfully!", fg="green", bold=True))
+    user_output(click.style("Workflow dispatched successfully!", fg="green", bold=True))
     user_output("")
     user_output(f"Run URL: {run_url}")
     user_output(f"Test branch: {test_branch}")

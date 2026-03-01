@@ -1,4 +1,4 @@
-"""Trigger GitHub Actions workflows via unified interface.
+"""Dispatch GitHub Actions workflows via unified interface.
 
 Usage examples:
     erk launch pr-address --pr 456
@@ -23,7 +23,7 @@ from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.output.output import user_output
 
 
-def _trigger_workflow(
+def _dispatch_workflow(
     ctx: ErkContext,
     repo: RepoContext,
     *,
@@ -33,7 +33,7 @@ def _trigger_workflow(
     pr_owner: str,
     pr_repo: str,
 ) -> None:
-    """Trigger a workflow and report the run URL."""
+    """Dispatch a workflow and report the run URL."""
     workflow_file = _get_workflow_file(workflow_name)
     run_id = ctx.github.trigger_workflow(
         repo_root=repo.root,
@@ -41,7 +41,7 @@ def _trigger_workflow(
         inputs=inputs,
         ref=ctx.local_config.dispatch_ref,
     )
-    user_output(click.style("\u2713", fg="green") + " Workflow triggered")
+    user_output(click.style("\u2713", fg="green") + " Workflow dispatched")
 
     maybe_update_plan_dispatch_metadata(ctx, repo, branch_name, run_id)
 
@@ -70,7 +70,7 @@ def _get_workflow_file(workflow_name: str) -> str:
     return WORKFLOW_COMMAND_MAP[workflow_name]
 
 
-def _trigger_pr_rebase(
+def _dispatch_pr_rebase(
     ctx: ErkContext,
     repo: RepoContext,
     *,
@@ -78,7 +78,7 @@ def _trigger_pr_rebase(
     no_squash: bool,
     model: str | None,
 ) -> None:
-    """Trigger pr-rebase workflow."""
+    """Dispatch pr-rebase workflow."""
     # Get PR details - either from explicit PR number or current branch
     user_output("Checking PR status...")
     if pr_number is not None:
@@ -124,9 +124,9 @@ def _trigger_pr_rebase(
     if model is not None:
         inputs["model_name"] = model
 
-    # Trigger workflow
-    user_output("Triggering pr-rebase workflow...")
-    _trigger_workflow(
+    # Dispatch workflow
+    user_output("Dispatching pr-rebase workflow...")
+    _dispatch_workflow(
         ctx,
         repo,
         workflow_name="pr-rebase",
@@ -137,14 +137,14 @@ def _trigger_pr_rebase(
     )
 
 
-def _trigger_pr_address(
+def _dispatch_pr_address(
     ctx: ErkContext,
     repo: RepoContext,
     *,
     pr_number: int,
     model: str | None,
 ) -> None:
-    """Trigger pr-address workflow."""
+    """Dispatch pr-address workflow."""
     user_output("Checking PR status...")
     pr = ctx.github.get_pr(repo.root, pr_number)
     Ensure.invariant(
@@ -171,9 +171,9 @@ def _trigger_pr_address(
     if model is not None:
         inputs["model_name"] = model
 
-    # Trigger workflow
-    user_output("Triggering pr-address workflow...")
-    _trigger_workflow(
+    # Dispatch workflow
+    user_output("Dispatching pr-address workflow...")
+    _dispatch_workflow(
         ctx,
         repo,
         workflow_name="pr-address",
@@ -184,14 +184,14 @@ def _trigger_pr_address(
     )
 
 
-def _trigger_pr_rewrite(
+def _dispatch_pr_rewrite(
     ctx: ErkContext,
     repo: RepoContext,
     *,
     pr_number: int,
     model: str | None,
 ) -> None:
-    """Trigger pr-rewrite workflow."""
+    """Dispatch pr-rewrite workflow."""
     user_output("Checking PR status...")
     pr = ctx.github.get_pr(repo.root, pr_number)
     Ensure.invariant(
@@ -221,9 +221,9 @@ def _trigger_pr_rewrite(
     if model is not None:
         inputs["model_name"] = model
 
-    # Trigger workflow
-    user_output("Triggering pr-rewrite workflow...")
-    _trigger_workflow(
+    # Dispatch workflow
+    user_output("Dispatching pr-rewrite workflow...")
+    _dispatch_workflow(
         ctx,
         repo,
         workflow_name="pr-rewrite",
@@ -234,14 +234,14 @@ def _trigger_pr_rewrite(
     )
 
 
-def _trigger_learn(
+def _dispatch_learn(
     ctx: ErkContext,
     repo: RepoContext,
     *,
     issue: int,
 ) -> None:
-    """Trigger learn workflow."""
-    user_output(f"Triggering learn workflow for plan #{issue}...")
+    """Dispatch learn workflow."""
+    user_output(f"Dispatching learn workflow for plan #{issue}...")
 
     inputs: dict[str, str] = {
         "plan_number": str(issue),
@@ -253,7 +253,7 @@ def _trigger_learn(
         inputs=inputs,
         ref=ctx.local_config.dispatch_ref,
     )
-    user_output(click.style("\u2713", fg="green") + " Workflow triggered")
+    user_output(click.style("\u2713", fg="green") + " Workflow dispatched")
 
     user_output("")
     # Get repo slug from RepoContext's github field
@@ -265,18 +265,18 @@ def _trigger_learn(
     user_output(f"Run URL: {click.style(run_url, fg='cyan')}")
 
 
-def _trigger_plan_implement(
+def _dispatch_plan_implement(
     ctx: ErkContext,
     repo: RepoContext,
     *,
     issue: int,
     model: str | None,
 ) -> None:
-    """Trigger plan-implement workflow.
+    """Dispatch plan-implement workflow.
 
-    Note: This is a simplified trigger - the full submission flow
+    Note: This is a simplified dispatch - the full submission flow
     (branch creation, PR creation, etc.) is handled by `erk pr dispatch`.
-    This command only triggers the workflow directly.
+    This command only dispatches the workflow directly.
     """
     raise click.UsageError(
         "Use 'erk pr dispatch' instead of 'erk workflow launch plan-implement'.\n"
@@ -285,7 +285,7 @@ def _trigger_plan_implement(
     )
 
 
-def _trigger_one_shot(
+def _dispatch_one_shot(
     ctx: ErkContext,
     repo: RepoContext,
     *,
@@ -293,7 +293,7 @@ def _trigger_one_shot(
     prompt: str,
     model: str | None,
 ) -> None:
-    """Trigger one-shot workflow against an existing PR."""
+    """Dispatch one-shot workflow against an existing PR."""
     user_output("Checking PR status...")
     pr = ctx.github.get_pr(repo.root, pr_number)
     Ensure.invariant(
@@ -326,9 +326,9 @@ def _trigger_one_shot(
     if model is not None:
         inputs["model_name"] = model
 
-    # Trigger workflow
-    user_output("Triggering one-shot workflow...")
-    _trigger_workflow(
+    # Dispatch workflow
+    user_output("Dispatching one-shot workflow...")
+    _dispatch_workflow(
         ctx,
         repo,
         workflow_name="one-shot",
@@ -389,9 +389,9 @@ def launch(
     prompt: str | None,
     file_path: str | None,
 ) -> None:
-    """Trigger a GitHub Actions workflow.
+    """Dispatch a GitHub Actions workflow.
 
-    WORKFLOW_NAME is the workflow to trigger. Available workflows:
+    WORKFLOW_NAME is the workflow to dispatch. Available workflows:
 
     \b
       pr-rebase           - Rebase PR with AI-powered conflict resolution
@@ -415,7 +415,7 @@ def launch(
       erk launch pr-address --pr 456
 
     \b
-      # Trigger learn for a plan issue
+      # Dispatch learn for a plan issue
       erk launch learn --issue 123
 
     \b
@@ -446,7 +446,7 @@ def launch(
 
     # Dispatch to workflow-specific handler
     if workflow_name == "pr-rebase":
-        _trigger_pr_rebase(
+        _dispatch_pr_rebase(
             ctx,
             repo,
             pr_number=pr_number,
@@ -459,21 +459,21 @@ def launch(
             "--pr is required for pr-address workflow",
         )
         assert pr_number is not None
-        _trigger_pr_address(ctx, repo, pr_number=pr_number, model=model)
+        _dispatch_pr_address(ctx, repo, pr_number=pr_number, model=model)
     elif workflow_name == "pr-rewrite":
         Ensure.invariant(
             pr_number is not None,
             "--pr is required for pr-rewrite workflow",
         )
         assert pr_number is not None
-        _trigger_pr_rewrite(ctx, repo, pr_number=pr_number, model=model)
+        _dispatch_pr_rewrite(ctx, repo, pr_number=pr_number, model=model)
     elif workflow_name == "learn":
         Ensure.invariant(
             plan_number is not None,
             "--plan is required for learn workflow",
         )
         assert plan_number is not None
-        _trigger_learn(ctx, repo, issue=plan_number)
+        _dispatch_learn(ctx, repo, issue=plan_number)
     elif workflow_name == "one-shot":
         Ensure.invariant(
             pr_number is not None,
@@ -493,9 +493,9 @@ def launch(
             "--prompt or --file is required for one-shot workflow",
         )
         assert resolved_prompt is not None
-        _trigger_one_shot(ctx, repo, pr_number=pr_number, prompt=resolved_prompt, model=model)
+        _dispatch_one_shot(ctx, repo, pr_number=pr_number, prompt=resolved_prompt, model=model)
     elif workflow_name == "plan-implement":
-        _trigger_plan_implement(ctx, repo, issue=plan_number or 0, model=model)
+        _dispatch_plan_implement(ctx, repo, issue=plan_number or 0, model=model)
     else:
         # Should never reach here due to _get_workflow_file validation
         raise click.UsageError(f"Unknown workflow: {workflow_name}")
