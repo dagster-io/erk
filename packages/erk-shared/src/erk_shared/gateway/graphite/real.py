@@ -166,12 +166,16 @@ class RealGraphite(Graphite):
         Returns:
             Tuple of (is_authenticated, username, repo_info)
         """
-        result = subprocess.run(
-            ["gt", "auth", "--no-interactive"],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
+        try:
+            result = subprocess.run(
+                ["gt", "auth", "--no-interactive"],
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=15,
+            )
+        except subprocess.TimeoutExpired:
+            return (False, None, None)
 
         # If command failed, not authenticated
         if result.returncode != 0:
@@ -275,11 +279,15 @@ class RealGraphite(Graphite):
         Uses `gt branch info` to get authoritative tracking status. Exit code 0
         means the branch is tracked, non-zero means untracked or error.
         """
-        result = subprocess.run(
-            ["gt", "branch", "info", branch, "--quiet", "--no-interactive"],
-            cwd=repo_root,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
+        try:
+            result = subprocess.run(
+                ["gt", "branch", "info", branch, "--quiet", "--no-interactive"],
+                cwd=repo_root,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=15,
+            )
+        except subprocess.TimeoutExpired:
+            return False
         return result.returncode == 0

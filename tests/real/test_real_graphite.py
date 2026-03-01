@@ -55,6 +55,7 @@ def test_real_graphite_is_branch_tracked_constructs_correct_command() -> None:
             capture_output=True,
             text=True,
             check=False,
+            timeout=15,
         )
 
 

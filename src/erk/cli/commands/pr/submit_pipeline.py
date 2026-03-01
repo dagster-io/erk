@@ -133,6 +133,8 @@ def prepare_state(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitEr
     Single location for all discovery. Consolidates duplicate parent-branch
     and plan-id discovery sites.
     """
+    if not state.quiet:
+        click.echo(click.style("   Resolving branch and plan context...", dim=True))
     cwd = state.cwd
     repo_root = ctx.git.repo.get_repository_root(cwd)
 
@@ -220,6 +222,8 @@ def commit_wip(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError
 
 def capture_existing_pr_body(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
     """Capture full PR body before gt submit overwrites it."""
+    if not state.quiet:
+        click.echo(click.style("   Checking for existing PR...", dim=True))
     pr_result = ctx.github.get_pr_for_branch(state.repo_root, state.branch_name)
     if isinstance(pr_result, PRNotFound):
         return state
@@ -961,6 +965,7 @@ def run_push_and_create_pipeline(ctx: ErkContext, state: SubmitState) -> SubmitS
                 message=f"Unexpected error in {step_name}: {e}",
                 details={},
             )
+        sys.stdout.flush()
         if isinstance(result, SubmitError):
             return result
         state = result
@@ -997,6 +1002,7 @@ def run_submit_pipeline(ctx: ErkContext, state: SubmitState) -> SubmitState | Su
                 message=f"Unexpected error in {step_name}: {e}",
                 details={},
             )
+        sys.stdout.flush()
         if isinstance(result, SubmitError):
             return result
         state = result
