@@ -7,10 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of: f5b9b5c50 -->
+<!-- As of: c261c6d98 -->
 
 ### Added
 
+- Support external learned docs repository via `[docs] path` config in `.erk/config.local.toml` (c261c6d98)
+- Add cmux workspace integration to dashboard and CLI, enabled via `cmux_integration = true` config (b74658edc)
+- Add auto-resolution of pre-existing bot threads in code-move PRs via `pr-address` and `pr-preview-address` commands (56dd99df3)
+- Add "p" keybinding to open objective issue page in Objectives view (18ab7408e)
 - Add "rewrite" command to TUI command palette for remote PR rebase and AI summary regeneration (704bbe6ad)
 - Add `gt submit` to TUI sync checkout command for streamlined branch submission (6240893fa)
 - Add `erk init --upgrade` flag for self-service upgrades after version changes (a59de3ee3)
@@ -24,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Rename "fix-conflicts" to "rebase" across CLI, TUI, workflows, and config -- `erk pr rebase` now always rebases (d26ac8d2c)
+- Accumulate sessions across lifecycle stages on git branches for cross-machine learning (036715082)
 - Improve session discovery logging in `erk land` with per-session type badges and sizes (86d2118cc)
 - Fix sync command clipboard text to include full command in TUI command palette (add2748d2)
 - Delay impl-context cleanup until submit phase to preserve plan tracking during implementation (a14a62273)
@@ -34,6 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix `erk pr submit` silent hang with no output in piped environments (628ef45e2)
+- Fix duplicate `gt submit` execution in cmux sync workflow (ca6e79f3a)
 - Fix misleading data when GraphQL enrichment fails in `erk pr list` -- unenriched PRs now excluded from linkages with explicit degradation warnings (04dc3d38a)
 - Make `--script` mode resilient to errors in `erk br co` -- failures now produce a valid error script instead of empty stdout (04c46a7bb)
 - Fix workflow-started metadata block rendering to prevent parse failures during `erk land` (ffd28b870)
