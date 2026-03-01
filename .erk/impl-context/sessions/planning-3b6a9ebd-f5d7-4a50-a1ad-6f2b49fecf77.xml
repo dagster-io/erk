@@ -1,0 +1,679 @@
+<session>
+  <meta branch="plnd/doctor-workflow-smoke-test-02-25-0128" />
+  <meta model="claude-opus-4-6" />
+  <user>move 
+
+direnv: export +VIRTUAL_ENV +VIRTUAL_ENV_PROMPT ~PATH
+➜  erk-slot-37 git:(plnd/doctor-workflow-smoke-test-02-25-0128) ✗ erk run
+Usage: erk run [OPTIONS] COMMAND [ARGS]...
+
+  View GitHub Actions workflow runs for plan implementations.
+
+Options:
+  -h, --help  Show this message and exit.
+
+Commands:
+  list  List GitHub Actions workflow runs for plan implementations.
+  logs  View logs for a workflow run.
+➜  erk-slot-37 git:(plnd/doctor-workflow-smoke-test-02-25-0128) ✗ erk run list
+┏━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━┳━━━━━━┓
+┃ run-id      ┃ status         ┃ submitted   ┃ plan  ┃ title                                              ┃ pr ┃ chks ┃
+┡━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━╇━━━━━━┩
+│ 22550362174 │ ⟳ Running      │ 03-01 14:03 │ #8547 │  Plan: Improve cmux Skill                          │ -  │ -    │
+│ 22550356578 │ ⟳ Running      │ 03-01 14:02 │ #8546 │  Plan: Fix pr-address commit instruct...           │ -  │ -    │
+│ 22549956479 │ ✅ Success     │ 03-01 13:41 │ #8545 │ Restructure review prompt to collect→dedup→post... │ -  │ -    │
+│ 22542588533 │ ✅ Success     │ 03-01 06:36 │ #8529 │ Consolidate documentation from Mar 1 learn sess... │ -  │ -    │
+│ 22532232001 │ ✅ Success     │ 02-28 19:24 │ #8513 │ Consolidate documentation from Feb 28 learn ses... │ -  │ -    │
+│ 22527300026 │ ✅ Success     │ 02-28 14:19 │ #8489 │ Consolidate documentation from Feb 28 learn ses... │ -  │ -    │
+└─────────────┴────────────────┴─────────────┴───────┴────────────────────────────────────────────────────┴────┴──────┘
+
+➜  erk-slot-37 git:(plnd/doctor-workflow-smoke-test-02-25-0128) ✗
+
+the runs comamnds to be integrated into the workflow group. i'm open minded about the form it of it. make some suggestions.</user>
+  <assistant>
+
+Let me understand the current state of both the `run` and `doctor workflow` commands before making suggestions.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="11966" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11966}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01GLrPE5cVV1G26tEaVCfQpw">
+    <param name="description">Explore run and workflow commands</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 540 chars]...ocus on: command names, what they do, their options/arguments, and how they're registered.</param>
+    <param name="model">sonnet</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11966" cache_read_input_tokens="19113" output_tokens="307" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11966, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GLrPE5cVV1G26tEaVCfQpw">
+Now I have a complete picture. Let me compile the findings.
+
+---
+
+## CLI Structure Findings
+
+### Top-Level Registration (`src/erk/cli/cli.py`)
+
+The main CLI (`cli`) is a Click group registered with `ErkCommandGroup`. Both command groups are registered directly via `cli.add_command()`:
+
+```python
+from erk.cli.commands.run import run_group
+from erk.cli.commands.doctor_workflow import workflow_group
+
+cli.add_command(run_group)       # line 207 — registered as "run"
+cli.add_command(workflow_group)  # line 211 — registered as "workflow"
+```
+
+Note: `doctor_cmd` is also registered (`cli.add_command(doctor_cmd)` line 190), and `workflow_group` is a subgroup that's attached to the top-level CLI as `erk workflow`, **not** nested under `erk doctor`. Despite the file being named `doctor_workflow.py`, the group is exposed at `erk workflow`, not `erk doctor workflow`.
+
+---
+
+### `erk run` Command Group
+
+**File:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk/cli/commands/run/__init__.py`
+
+```python
+@click.group("run")
+def run_group() -&gt; None:
+    """View GitHub Actions workflow runs for plan implementations."""
+
+... [148 lines omitted] ...
+
+- `--wait`: polls the workflow run (via `one-shot.yml`, every 15 seconds, timeout 600s) until completion; exits 1 on failure
+  </tool_result>
+  <thinking>Now I have a clear picture. Let me think about the options:
+
+Current state:
+- `erk run` - command group for viewing GitHub Actions workflow runs
+  - `erk run list` - list runs in a table
+  - `erk run logs [RUN_ID]` - view logs for a run
+- `erk workflow` - command group for workflow diagnostics/management
+  - `erk workflow check` - static health checks
+  - `erk workflow smoke-test` - live smoke test
+  - `erk workflow cleanup` - clean up smoke test artifacts
+  - `erk workflow list` - list installed workflow files
+  
+The `run` commands are really about viewing GitHub Actions workflow runs, while `workflow` handles diagnostics and management. Since they're both dealing with workflows, I could consolidate them. The main approach would be moving the run subcommands under workflow—so `erk workflow runs` to list runs and `erk workflow logs [RUN_ID]` to view logs instead of having them in a separate `run` group.
+
+There's a naming conflict though: `erk workflow list` currently shows installed workflow files, but if I flatten everything, I'd want `list` to show runs instead since that's the more frequently used operation. I could rename the file listing to `erk workflow files` or `erk workflow installed` to free up `list` for the runs.
+
+Looking at the most common operations—listing recent runs, viewing logs, checking workflow health, and running smoke tests—I think flattening with strategic renames makes the most sense. So I'd move the run commands under `workflow`, rename `erk workflow list` to `erk workflow files` to avoid the conflict, and keep the health check and smoke test commands as-is. I'm leaning toward Option A or C as the cleanest approaches, so I'll walk the user through both.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2440" cache_read_input_tokens="31079" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2440}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <assistant>Here's the landscape:
+
+**Current state:**
+- `erk run list` / `erk run logs [RUN_ID]` — view GitHub Actions runs and logs
+- `erk workflow check` / `smoke-test` / `cleanup` / `list` — workflow diagnostics
+
+The main tension is `erk workflow list` already exists (lists installed workflow files), so there's a naming conflict with `run list`.
+
+Here are three options:
+
+### Option A: Flat merge, rename `list` → `files`
+
+```
+erk workflow runs                  # list runs (was: erk run list)
+erk workflow logs [RUN_ID]         # view logs (was: erk run logs)
+erk workflow check                 # health checks (unchanged)
+erk workflow smoke-test            # live smoke test (unchanged)
+erk workflow cleanup               # cleanup (unchanged)
+erk workflow files                 # list installed files (was: erk workflow list)
+```
+
+Clean and flat. The existing `list` command is low-usage so renaming to `files` seems fine.
+
+### Option B: Nested `run` subgroup
+
+```
+erk workflow run list              # list runs
+erk workflow run logs [RUN_ID]     # view logs
+erk workflow check                 # unchanged
+erk workflow smoke-test            # unchanged
+erk workflow cleanup               # unchanged
+erk workflow list                  # unchanged
+```
+
+Preserves both `list` commands without conflict. Extra nesting depth.
+
+### Option C: Use `runs` as a noun (no conflict)
+
+```
+erk workflow runs                  # list runs (was: erk run list)
+erk workflow logs [RUN_ID]         # view logs (was: erk run logs)
+erk workflow check                 # unchanged
+erk workflow smoke-test            # unchanged
+erk workflow cleanup               # unchanged
+erk workflow list                  # list installed files (unchanged)
+```
+
+`runs` and `list` coexist without conflict. Slightly asymmetric — `runs` is a noun while `list` is a verb.
+
+My recommendation is **Option A** — it's the flattest, most consistent (all verbs/nouns at one level), and `files` is a more descriptive name than `list` was anyway. What's your preference?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2440" cache_read_input_tokens="31079" output_tokens="1453" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2440, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>  Option B: Nested run subgroup
+
+  erk workflow run list              # list runs
+  erk workflow run logs [RUN_ID]     # view logs
+  erk workflow check                 # unchanged
+  erk workflow smoke-test            # unchanged
+  erk workflow cleanup               # unchanged
+  erk workflow list                  # unchanged
+
+  Preserves both list commands without conflict. Extra nesting depth.
+
+plan option b</user>
+  <thinking>The user wants Option B - nested `run` subgroup under `workflow`. Let me explore the codebase to understand the implementation details before planning.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="1453" cache_read_input_tokens="34952" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1453}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the implementation details to build a solid plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1453" cache_read_input_tokens="34952" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1453}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_019nkwsu6TQo3LdkjcNeVzje">
+    <param name="description">Explore run and workflow impl</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 761 chars]...commands.run` (grep for it)
+10. Check the tripwires for CLI: docs/learned/cli/tripwires.md</param>
+    <param name="model">sonnet</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1453" cache_read_input_tokens="34952" output_tokens="470" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1453, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019nkwsu6TQo3LdkjcNeVzje">
+Now I have a comprehensive picture. Here is a complete report of all findings:
+
+---
+
+## Full Implementation Details: Moving `erk run` Under `erk workflow run`
+
+### 1. Current Command Registration in `cli.py`
+
+File: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk/cli/cli.py`
+
+Two separate groups are registered at the top level:
+
+```python
+# Line 34 - run commands
+from erk.cli.commands.run import run_group
+# Line 18 - workflow commands (from doctor_workflow.py)
+from erk.cli.commands.doctor_workflow import workflow_group
+
+# Lines 207, 211 - both registered at top level
+cli.add_command(run_group)          # → erk run list / erk run logs
+cli.add_command(workflow_group)     # → erk workflow check / smoke-test / cleanup / list
+```
+
+The `run_group` is named `"run"` (`@click.group("run")`) and `workflow_group` is named `"workflow"` (`@click.group("workflow", invoke_without_command=True)`).
+
+---
+
+### 2. The `run` Package: Full Structure
+
+**File: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk/cli/commands/run/__init__.py`**
+
+... [140 lines omitted] ...
+
+### 4. Naming Collision Warning
+  </tool_result>
+  <thinking>Now I have a thorough understanding. Let me write the plan. The approach is straightforward:
+
+1. In `cli.py`: remove the `run_group` registration
+2. In `doctor_workflow.py`: import `run_group` and add it as a subgroup of `workflow_group`
+3. No test changes needed
+4. Check for any references to `erk run` in workflow files or docs
+
+Let me write the plan file.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2791" cache_read_input_tokens="36405" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2791}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The exploration confirms this is a clean, minimal change. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2791" cache_read_input_tokens="36405" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2791}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01CM5QajCkBjKwmHWLDM3Mpc">
+    <param name="file_path">/Users/schrockn/.claude/plans/bubbly-wondering-flame.md</param>
+    <param name="content"># Plan: Move `erk run` under `erk workflow run`
+
+## Context
+
+The `erk run` group (list/log...[truncated 1707 chars]...run` — should no longer exist (error)
+5. Run existing tests: `pytest tests/commands/run/`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2791" cache_read_input_tokens="36405" output_tokens="763" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2791, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CM5QajCkBjKwmHWLDM3Mpc">
+File created successfully at: /Users/schrockn/.claude/plans/bubbly-wondering-flame.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01So5yPN9G9f9UGjLJ6MQQuQ">
+    <param name="plan"># Plan: Move `erk run` under `erk workflow run`
+
+## Context
+
+The `erk run` group (list/log...[truncated 1707 chars]...run` — should no longer exist (error)
+5. Run existing tests: `pytest tests/commands/run/`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="800" cache_read_input_tokens="39196" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 800, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01So5yPN9G9f9UGjLJ6MQQuQ">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/bubbly-wondering-flame.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Move `erk run` under `erk workflow run`
+Current context: (wt:erk-slot-37) (br:plnd/doctor-workflow-smoke-test-02-25-0128) (pr:#8115)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/doct"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 3b6a9ebd-f5d7-4a50-a1ad-6f2b49fecf77 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+     (no PR tracking - this is for small PR iterations)
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+## Plan: Move `erk run` under `erk workflow run`
+
+### Context
+
+The `erk run` group (list/logs for GitHub Actions runs) and `erk workflow` group (workflow diagnostics) are both top-level commands that deal with the same domain — GitHub Actions workflows. Nesting `run` as a subgroup of `workflow` consolidates them:
+
+```
+erk workflow run list              # list runs (was: erk run list)
+erk workflow run logs [RUN_ID]     # view logs (was: erk run logs)
+erk workflow check                 # unchanged
+erk workflow smoke-test            # unchanged
+erk workflow cleanup               # unchanged
+erk workflow list                  # unchanged (lists installed workflow files)
+```
+
+No naming conflicts — `run` becomes a nested subgroup alongside the existing commands.
+
+### Changes
+
+**1. `src/erk/cli/cli.py`** — Remove `run_group` import and `cli.add_command(run_group)`
+
+**2. `src/erk/cli/commands/doctor_workflow.py`** — Import `run_group` and register it: `workflow_group.add_command(run_group)`
+
+**3. No test changes needed** — tests invoke commands directly, not through group hierarchy
+
+**4. Check for stale references** — grep workflows and docs for `erk run`
+
+### Verification
+
+- `erk workflow run list` displays the runs table
+- `erk workflow --help` shows `run` as a subcommand
+- `erk run` no longer exists
+- `pytest tests/commands/run/` passes
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="993" cache_read_input_tokens="39996" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 993}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01QUXbkqgbSQ9yCU1kcmQu8b">
+    <param name="questions">[{'question': '📋 Plan: Move `erk run` under `erk workflow run`\nCurrent context: (wt:erk-s...[truncated 487 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="993" cache_read_input_tokens="39996" output_tokens="643" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 993, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QUXbkqgbSQ9yCU1kcmQu8b">
+User has answered your questions: "📋 Plan: Move `erk run` under `erk workflow run`
+Current context: (wt:erk-slot-37) (br:plnd/doctor-workflow-smoke-test-02-25-0128) (pr:#8115)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01HqrDAtdoM3tBJLTpzzVDRD">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="865" cache_read_input_tokens="40989" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 865, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HqrDAtdoM3tBJLTpzzVDRD">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="3b6a9ebd-f5d7-4a50-a1ad-6f2b49fecf77" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "3b6a9ebd-f5d7-4a50-a1ad-6f2b49fecf77" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "3b6a9ebd-f5d7-4a50-a1ad-6f2b49fecf77" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "3b6a9ebd-f5d7-4a50-a1ad-6f2b49fecf77" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "3b6a9ebd-f5d7-4a50-a1ad-6f2b49fecf77" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <thinking>The user chose "Create a plan PR (Recommended)" and the skill loaded the erk:plan-save instructions. Let me follow the steps:
+
+1. Parse arguments - no special flags
+2. Generate branch slug from the plan title "Move `erk run` under `erk workflow run`"
+3. Generate plan summary
+4. Run the save command
+
+Let me do this step by step.
+
+Step 1: No --plan-type or --objective flags.
+
+Step 2: Branch slug from "Move erk run under erk workflow run" → "move-run-under-workflow"
+
+Step 3: Plan summary: "Consolidates the top-level erk run command group (list and logs for GitHub Actions runs) under erk workflow run, since both deal with GitHub Actions workflows. 
+
+The implementation involves removing run_group from cli.py and registering it as a subgroup of workflow_group in doctor_workflow.py.
+
+Step 4: I need to check if I'm on trunk to determine slot options later. The current branch is `plnd/doctor-workflow-smoke-test-02-25-0128` — not trunk. Let me run the save command.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="2640" cache_read_input_tokens="41854" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2640}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Semu6Kz6qnNbJLKSeUUcr2">
+    <param name="command">erk exec plan-save --format json --session-id="3b6a9ebd-f5d7-4a50-a1ad-6f2b49fecf77" --bra...[truncated 215 chars]..._group from cli.py and register it as a subgroup of workflow_group in doctor_workflow.py."</param>
+    <param name="description">Save plan as draft PR via erk exec</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2640" cache_read_input_tokens="41854" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2640}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Semu6Kz6qnNbJLKSeUUcr2">
+{"success": true, "plan_number": 8549, "plan_url": "https://github.com/dagster-io/erk/pull/8549", "title": "[erk-plan] Plan: Move `erk run` under `erk workflow run`", "branch_name": "plnd/move-run-under-workflow-03-01-1409", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.erk/scratch/sessions/3b6a9ebd-f5d7-4a50-a1ad-6f2b49fecf77/plan_snapshots/000001-c96438c0"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01BYhdXw3q8FD4aA1ku5T3ko">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null | head -5</param>
+    <param name="description">Get session file path for push</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="694" cache_read_input_tokens="44494" output_tokens="91" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 694, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BYhdXw3q8FD4aA1ku5T3ko">
+SESSION_ID=3b6a9ebd-f5d7-4a50-a1ad-6f2b49fecf77
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-37/3b6a9ebd-f5d7-4a50-a1ad-6f2b49fecf77.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Xrw7Ehbjc7K2N2KSHCCcHm">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn--er...[truncated 86 chars]...4a50-a1ad-6f2b49fecf77" --stage planning --source local --plan-id 8549 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="308" cache_read_input_tokens="45188" output_tokens="214" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 308, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Xrw7Ehbjc7K2N2KSHCCcHm">
+{"uploaded": true, "plan_id": 8549, "session_branch": "async-learn/8549", "session_id": "3b6a9ebd-f5d7-4a50-a1ad-6f2b49fecf77", "stage": "planning", "files": ["planning-3b6a9ebd-f5d7-4a50-a1ad-6f2b49fecf77-3b6a9ebd-f5d7-4a50-a1ad-6f2b49fecf77.xml"]}
+  </tool_result>
+  <assistant>Plan **"Move `erk run` under `erk workflow run`"** saved as draft PR **#8549**.
+
+URL: https://github.com/dagster-io/erk/pull/8549
+
+**Next steps:**
+
+In Claude Code:
+- Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+  - Local: `erk br co --for-plan 8549`
+  - Implement: `source "$(erk br co --for-plan 8549 --script)" &amp;&amp; erk implement --dangerous`
+
+  New slot:
+  - Local: `erk br co --new-slot --for-plan 8549`
+  - Implement: `source "$(erk br co --new-slot --for-plan 8549 --script)" &amp;&amp; erk implement --dangerous`
+
+  Dispatch to Queue: `erk pr dispatch 8549`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="366" cache_read_input_tokens="45496" output_tokens="238" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 366, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Goodbye!&lt;/local-command-stdout&gt;</user>
+</session>
