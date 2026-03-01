@@ -20,7 +20,6 @@ from erk.core.health_checks import (
     check_workflow_permissions,
 )
 from erk.core.workflow_smoke_test import SmokeTestError, cleanup_smoke_tests, run_smoke_test
-from erk_shared.gateway.github.parsing import parse_git_remote_url
 from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
 
 
@@ -35,27 +34,8 @@ def _get_repo_location(ctx: ErkContext) -> tuple[str, str] | None:
 
 def _check_claude_enabled_variable(ctx: ErkContext) -> CheckResult:
     """Check if CLAUDE_ENABLED repo variable is set."""
-    if isinstance(ctx.repo, NoRepoSentinel):
-        return CheckResult(
-            name="claude-enabled-variable",
-            passed=True,
-            message="Not in a git repository",
-            info=True,
-        )
-
-    try:
-        remote_url = ctx.git.remote.get_remote_url(ctx.repo.root, "origin")
-    except ValueError:
-        return CheckResult(
-            name="claude-enabled-variable",
-            passed=True,
-            message="No origin remote configured",
-            info=True,
-        )
-
-    try:
-        owner_repo = parse_git_remote_url(remote_url)
-    except ValueError:
+    owner_repo = _get_repo_location(ctx)
+    if owner_repo is None:
         return CheckResult(
             name="claude-enabled-variable",
             passed=True,
@@ -64,7 +44,7 @@ def _check_claude_enabled_variable(ctx: ErkContext) -> CheckResult:
         )
 
     repo_id = GitHubRepoId(owner=owner_repo[0], repo=owner_repo[1])
-    location = GitHubRepoLocation(root=ctx.repo.root, repo_id=repo_id)
+    location = GitHubRepoLocation(root=ctx.repo_root, repo_id=repo_id)
 
     value = ctx.github_admin.get_variable(location, "CLAUDE_ENABLED")
     if value is not None:
@@ -276,6 +256,19 @@ def _handle_smoke_test(ctx: ErkContext, *, wait: bool) -> None:
         _poll_workflow_run(ctx, result.run_id, result.run_url)
 
 
+def _report_workflow_result(conclusion: str | None, run_url: str | None) -> None:
+    """Report the result of a completed workflow run, exiting on failure."""
+    if conclusion == "success":
+        click.echo(click.style("Workflow completed successfully!", fg="green"))
+        return
+    click.echo(
+        click.style(f"Workflow completed with conclusion: {conclusion}", fg="red")
+    )
+    if run_url is not None:
+        click.echo(f"  Check logs: {run_url}")
+    raise SystemExit(1)
+
+
 def _poll_workflow_run(ctx: ErkContext, run_id: str, run_url: str | None) -> None:
     """Poll a workflow run until completion or timeout."""
     if isinstance(ctx.repo, NoRepoSentinel):
@@ -290,21 +283,9 @@ def _poll_workflow_run(ctx: ErkContext, run_id: str, run_url: str | None) -> Non
     while elapsed < timeout_seconds:
         runs = ctx.github.list_workflow_runs(ctx.repo.root, "one-shot.yml", limit=10)
         matching = [r for r in runs if r.run_id == run_id]
-        if matching:
-            run = matching[0]
-            if run.status == "completed":
-                if run.conclusion == "success":
-                    click.echo(click.style("Workflow completed successfully!", fg="green"))
-                else:
-                    click.echo(
-                        click.style(
-                            f"Workflow completed with conclusion: {run.conclusion}", fg="red"
-                        )
-                    )
-                    if run_url is not None:
-                        click.echo(f"  Check logs: {run_url}")
-                    raise SystemExit(1)
-                return
+        if matching and matching[0].status == "completed":
+            _report_workflow_result(matching[0].conclusion, run_url)
+            return
 
         ctx.time.sleep(poll_interval)
         elapsed += poll_interval

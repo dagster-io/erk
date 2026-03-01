@@ -832,12 +832,12 @@ class RealPlanDataProvider(PlanDataProvider):
                         and target.pr is not None
                         and target.status not in _TERMINAL_STATUSES
                     ):
-                        existing_prs = {pr_ref for pr_ref, _ in objective_head_plans}
+                        existing_prs = {pr_ref for pr_ref, _ in objective_deps_plans}
                         if target.pr not in existing_prs:
                             num = target.pr.lstrip("#")
                             repo_id = self._location.repo_id
                             url = f"https://github.com/{repo_id.owner}/{repo_id.repo}/pull/{num}"
-                            objective_head_plans.append((target.pr, url))
+                            objective_deps_plans.append((target.pr, url))
 
         # Format updated_at display
         updated_display = format_relative_time(plan.updated_at.isoformat()) or "-"
