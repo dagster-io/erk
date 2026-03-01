@@ -15,8 +15,8 @@
     {
       "session_id": "80fc8f86-90c5-453c-9081-0a6fc091f8a7",
       "stage": "impl",
-      "source": "local",
-      "uploaded_at": "2026-03-01T18:44:59.607078+00:00",
+      "source": "remote",
+      "uploaded_at": "2026-03-01T18:45:51.047196+00:00",
       "files": [
         "impl-80fc8f86-90c5-453c-9081-0a6fc091f8a7-80fc8f86-90c5-453c-9081-0a6fc091f8a7-part1.xml",
         "impl-80fc8f86-90c5-453c-9081-0a6fc091f8a7-80fc8f86-90c5-453c-9081-0a6fc091f8a7-part2.xml",
