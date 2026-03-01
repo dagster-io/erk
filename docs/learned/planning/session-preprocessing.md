@@ -119,7 +119,7 @@ Sessions originate from two sources (local `~/.claude/projects/` and remote GitH
 - `raw_size_kb`: Total bytes of main JSONL file plus all discovered agent logs, divided by 1024
 - `xml_size_kb`: Total bytes of final compressed XML output after full filtering pipeline, divided by 1024
 
-### \_compute_session_stats()
+### Stats Computation
 
 Reuses the exec script's pipeline via direct imports from `erk.cli.commands.exec.scripts.preprocess_session` (importing `deduplicate_assistant_messages`, `deduplicate_documentation_blocks`, `discover_agent_logs`, `is_empty_session`, `is_warmup_session`, `process_log_file`, `split_entries_to_chunks`, `truncate_tool_parameters`).
 

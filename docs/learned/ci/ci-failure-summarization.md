@@ -49,11 +49,9 @@ The opening and closing markers must use identical check names (enforced by back
 
 `parse_ci_summaries(log_text)` extracts summaries from raw log text into a `dict[str, str]` mapping check name to summary text.
 
-**Regex pattern:** `r"=== ERK-CI-SUMMARY:(.+?) ===\n(.*?)=== /ERK-CI-SUMMARY:\1 ==="`
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/ci_summary_parsing.py, _SUMMARY_PATTERN -->
 
-- Uses `re.DOTALL` so `.` matches newlines in multiline summaries
-- Backreference `\1` ensures opening/closing markers match
-- Non-greedy quantifiers prevent spanning across multiple summaries
+The regex pattern uses `re.DOTALL` so `.` matches newlines in multiline summaries, a backreference to ensure opening/closing markers match, and non-greedy quantifiers to prevent spanning across multiple summaries.
 
 `match_summary_to_check(check_name, summary_keys)` handles GitHub's automatic `ci / ` prefix. GitHub prepends this to check names in `statusCheckRollup`, so `unit-tests (3.12)` becomes `ci / unit-tests (3.12)`. The function strips this prefix when matching.
 
@@ -130,7 +128,7 @@ Rules: one line per bullet, backticks for paths/commands, no fix suggestions, no
 
 The `ci-summarize` job in `ci.yml`:
 
-- **`needs`**: All CI check jobs (format, lint, markdown-fix, docs-check, ty, unit-tests, integration-tests, etc.)
+- **`needs`**: All CI check jobs (see `ci.yml` for current list)
 - **Conditions**: Only on PRs, only when at least one job fails, skips plan review PRs, requires `CLAUDE_ENABLED != 'false'`
 - **Uses `always()`**: Runs even when dependency jobs fail (otherwise GitHub skips it)
 - **Timeout**: 10 minutes

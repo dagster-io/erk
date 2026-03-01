@@ -43,12 +43,12 @@ Config loading reads `dispatch_ref` from TOML data, converting to `str` if prese
 
 `dispatch_ref` is consumed at 4 locations, all passing it to `github.trigger_workflow(ref=ctx.local_config.dispatch_ref)`:
 
-| Command              | Function                      | Context                                             |
-| -------------------- | ----------------------------- | --------------------------------------------------- |
-| `erk pr dispatch`    | `_dispatch_planned_pr_plan()` | Dispatching plans for remote implementation         |
-| `erk one-shot`       | `dispatch_one_shot()`         | Triggering one-shot workflows                       |
-| `erk launch`         | `_trigger_workflow()`         | Triggering pr-fix-conflicts, pr-address, pr-rewrite |
-| `erk launch --learn` | `_trigger_learn()`            | Triggering learn workflows                          |
+| Command              | Context                                             |
+| -------------------- | --------------------------------------------------- |
+| `erk pr dispatch`    | Dispatching plans for remote implementation         |
+| `erk one-shot`       | Triggering one-shot workflows                       |
+| `erk launch`         | Triggering pr-fix-conflicts, pr-address, pr-rewrite |
+| `erk launch --learn` | Triggering learn workflows                          |
 
 ## Gateway Integration
 

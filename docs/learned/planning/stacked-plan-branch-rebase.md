@@ -63,7 +63,7 @@ All three follow the same sequence: `_rebase_and_track_for_plan()` -> `_setup_im
 
 ## Mirror Pattern
 
-This implementation mirrors the stacked PR checkout pattern in `pr/checkout_cmd.py` (lines 268-289), which performs the same rebase-before-track logic for stacked PRs. The key difference: plan checkout always calls `track_branch()` explicitly, while PR checkout handles tracking conditionally.
+This implementation mirrors the stacked PR checkout pattern in `_checkout_pr()` in `pr/checkout_cmd.py`, which performs the same rebase-before-track logic for stacked PRs. The key difference: plan checkout always calls `track_branch()` explicitly, while PR checkout handles tracking conditionally.
 
 ## Related Documentation
 
