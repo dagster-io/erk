@@ -16,30 +16,17 @@ After landing a PR, `erk land` optionally creates a learn plan to capture implem
 
 ## Session Discovery Logging
 
-<!-- Source: src/erk/cli/commands/land_learn.py:58-87, _log_session_discovery -->
+<!-- Source: src/erk/cli/commands/land_learn.py:209-305, _log_session_discovery -->
 
-`_log_session_discovery()` in `src/erk/cli/commands/land_learn.py:58-87` reports session discovery results to the user:
+See `_log_session_discovery()` in `src/erk/cli/commands/land_learn.py`. This function reports session discovery results and returns a file map of preprocessed session XML.
 
-```python
-def _log_session_discovery(
-    ctx: ErkContext,
-    *,
-    sessions: SessionsForPlan,
-    all_session_ids: list[str],
-) -> None:
-```
+### Return Value
+
+Returns `dict[str, str]` mapping file paths to XML content. Each key follows the naming convention `.erk/impl-context/sessions/{type}-{session_id}.xml` (with `-part{N}` suffix for multi-chunk sessions). The dict feeds into `create_plan_draft_pr(extra_files=...)` to embed session XML in the learn plan PR diff.
 
 ### Output Format
 
-The function produces a structured summary:
-
-```
-  📋 Discovered 3 session(s): 1 planning, 2 impl
-     - abc12345...
-     - def67890...
-     - ghi24680...
-  📂 2/3 session(s) available locally (1,234 KB JSONL)
-```
+The function produces a structured summary with per-session type badges, turn counts, duration, and compression stats.
 
 ### Session Type Counting
 
@@ -49,9 +36,28 @@ Sessions are categorized by type from the `SessionsForPlan` object:
 - **Impl**: count of `sessions.implementation_session_ids`
 - **Learn**: count of `sessions.learn_session_ids` (only shown if non-zero)
 
+Type prefixes in file names: `planning`, `impl`, `learn`, `unknown`.
+
 ### Local File Availability
 
-The function checks which sessions have readable JSONL files locally via `get_readable_sessions()`. It reports the count and total size in KB, giving users visibility into how much session data is available for the learn workflow.
+The function checks which sessions have readable JSONL files locally via `get_readable_sessions()`. It reports the count and total size, giving users visibility into how much session data is available for the learn workflow.
+
+## Session XML File Returns
+
+<!-- Source: src/erk/cli/commands/land_learn.py, SessionStats -->
+
+Each readable session is preprocessed inline via the full preprocessing pipeline:
+
+1. Parse JSONL and count user turns
+2. Compute duration from timestamps
+3. Run preprocessing (deduplication, truncation)
+4. Chunk XML output at 200,000 token limit
+
+See `SessionStats` in `src/erk/cli/commands/land_learn.py` for the frozen dataclass capturing preprocessing metrics (user turns, duration, raw/XML sizes, and XML content chunks). Multi-chunk sessions produce files with `-part1`, `-part2` suffixes.
+
+## File Inventory Logging
+
+The file inventory logger reports all files committed to the learn plan PR, showing file paths and sizes with human-readable byte formatting (B or KB with thousands separator).
 
 ## Fire-and-Forget Error Resilience
 
@@ -65,6 +71,16 @@ except Exception as exc:
 ```
 
 This ensures that learn failures never block the primary `erk land` operation. A failed learn plan is a warning, not an error.
+
+## TUI Learn Plan Toast
+
+When `erk land` creates a learn plan, the TUI displays a toast notification. The integration works through output parsing:
+
+1. `_extract_learn_plan_number()` at `src/erk/tui/app.py:64-73` scans operation output lines with regex `r"Created learn plan #(\d+)"`
+2. On match, the TUI shows a toast via `notify()` after successful land
+3. **Cycle prevention**: When the TUI triggers a land, it passes `plan_id=None` for learn plans (`row.plan_id if not row.is_learn_plan else None`). This prevents learn plans from creating learn plans of their own.
+
+<!-- Source: src/erk/tui/app.py:64-73, 882-920 -->
 
 ## Related Documentation
 

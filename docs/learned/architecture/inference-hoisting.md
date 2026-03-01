@@ -9,6 +9,7 @@ read_when:
   - adding --branch-slug or similar pre-computed value flags to exec commands
   - understanding why exec scripts must be deterministic
   - refactoring nested LLM calls out of exec scripts
+  - working with plan summary generation or --summary flags
 tripwires:
   - action: "calling PromptExecutor, generate_branch_slug, or BranchSlugGenerator from an exec script"
     warning: "Exec scripts must be deterministic. LLM calls belong in the skill layer (.claude/commands/*.md). Hoist: generate the value in the skill, pass it via --flag to the exec script. Read inference-hoisting.md."
@@ -113,6 +114,41 @@ If you find an LLM call inside an exec script, follow these steps:
 **Pre-existing correct implementation:**
 
 The `objective-create` skill already followed this pattern before the hoisting PR — it generated values through LLM reasoning in skill steps and passed them as flags to exec scripts, providing the precedent this refactor followed.
+
+## Example: Plan Summary Hoisting
+
+The branch slug was the first inference hoisting case. Plan summary generation followed the same pattern when `PlanSummaryGenerator` was removed.
+
+### Old Approach: Nested LLM Call
+
+`PlanSummaryGenerator` was a class that called `PromptExecutor` to generate a one-line plan summary inside `pr_create`. When called from a skill running inside Claude Code, this created a nested LLM invocation that would deadlock.
+
+### New Approach: `--summary` Flag
+
+The `--summary` Click option was added to exec scripts that need a plan summary:
+
+- `plan_save.py` — `--summary` at line 501-505
+- `plan_update.py` — accepts `--summary` similarly
+- `create-pr-from-session` — summary passed from skill layer
+
+The calling skills generate the summary through LLM reasoning and pass it via the flag:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --summary="${PLAN_SUMMARY}" --branch-slug="${BRANCH_SLUG}"
+```
+
+### Deterministic Exception: `land_learn.py`
+
+Not all summary generation requires LLM inference. `land_learn.py` builds its learn plan summary from a template using structured data (PR title, session counts, plan number). Since no reasoning is needed, it constructs the summary string directly — no `--summary` flag required.
+
+This is the correct boundary: hoist when the value requires LLM reasoning; compute directly when a deterministic template suffices.
+
+### Callers Updated
+
+- `plan-save` skill (`.claude/commands/erk/plan-save.md`) — generates summary in skill, passes via `--summary`
+- `plan-update` command (`.claude/commands/local/plan-update.md`, Step 1.5) — generates summary before exec call
+- `create-pr-from-session` — summary generated in skill layer
+- `pr create` — no longer calls `PlanSummaryGenerator` internally
 
 ## Related Documentation
 
