@@ -74,9 +74,10 @@ def run_smoke_test(ctx: ErkContext) -> SmokeTestResult | SmokeTestError:
 
     try:
         result = dispatch_one_shot(ctx, params=params, dry_run=False)
-    except (SystemExit, Exception) as exc:
-        message = str(exc) if not isinstance(exc, SystemExit) else f"Exit code {exc.code}"
-        return SmokeTestError(step="dispatch", message=message)
+    except SystemExit as exc:
+        return SmokeTestError(step="dispatch", message=f"Exit code {exc.code}")
+    except Exception as exc:
+        return SmokeTestError(step="dispatch", message=str(exc))
 
     if result is None:
         return SmokeTestError(step="dispatch", message="dispatch_one_shot returned None")
