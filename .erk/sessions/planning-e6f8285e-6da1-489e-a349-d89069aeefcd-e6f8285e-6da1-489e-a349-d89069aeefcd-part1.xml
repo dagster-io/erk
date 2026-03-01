@@ -1,0 +1,806 @@
+<session>
+  <meta branch="plnd/doctor-workflow-smoke-test-02-25-0128" />
+  <meta model="claude-opus-4-6" />
+  <user>https://github.com/dagster-io/erk/actions/runs/22547520921/job/65312221179
+
+smoke test failed. what happened?</user>
+  <thinking>The user wants me to look at a failed CI run. Let me fetch the details using the GitHub CLI.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="11041" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11041}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KvvyRUWJ3tsEd3vHsKFXCr">
+    <param name="command">gh run view 22547520921 --job 65312221179 --log-failed 2&gt;&amp;1 | tail -100</param>
+    <param name="description">Fetch failed job logs from GitHub Actions</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11041" cache_read_input_tokens="19113" output_tokens="172" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11041, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KvvyRUWJ3tsEd3vHsKFXCr">
+plan	Update lifecycle stage to planning	﻿2026-03-01T16:27:23.9581359Z ##[group]Run erk exec update-plan-header "$PLAN_ISSUE_NUMBER" lifecycle_stage=planning
+plan	Update lifecycle stage to planning	2026-03-01T16:27:23.9581976Z [36;1merk exec update-plan-header "$PLAN_ISSUE_NUMBER" lifecycle_stage=planning[0m
+plan	Update lifecycle stage to planning	2026-03-01T16:27:23.9631696Z shell: /usr/bin/bash -e {0}
+plan	Update lifecycle stage to planning	2026-03-01T16:27:23.9631947Z env:
+plan	Update lifecycle stage to planning	2026-03-01T16:27:23.9632126Z   UV_PYTHON: 3.13
+plan	Update lifecycle stage to planning	2026-03-01T16:27:23.9632357Z   VIRTUAL_ENV: /home/runner/work/erk/erk/.venv
+plan	Update lifecycle stage to planning	2026-03-01T16:27:23.9632686Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+plan	Update lifecycle stage to planning	2026-03-01T16:27:23.9633897Z   GH_TOKEN: ***
+plan	Update lifecycle stage to planning	2026-03-01T16:27:23.9634339Z   PLAN_ISSUE_NUMBER: 8539
+plan	Update lifecycle stage to planning	2026-03-01T16:27:23.9634572Z ##[endgroup]
+plan	Update lifecycle stage to planning	2026-03-01T16:27:24.9448367Z {"success": false, "error": "no_plan_header", "message": "Plan 8539 has no plan-header metadata block."}
+plan	Update lifecycle stage to planning	2026-03-01T16:27:25.0342061Z ##[error]Process completed with exit code 1.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01EiBncW4BCAmtWFgWLevmc8">
+    <param name="command">gh run view 22547520921 --job 65312221179 --log-failed 2&gt;&amp;1 | head -60</param>
+    <param name="description">Fetch beginning of failed job logs</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="663" cache_read_input_tokens="30154" output_tokens="104" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 663, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EiBncW4BCAmtWFgWLevmc8">
+plan	Update lifecycle stage to planning	﻿2026-03-01T16:27:23.9581359Z ##[group]Run erk exec update-plan-header "$PLAN_ISSUE_NUMBER" lifecycle_stage=planning
+plan	Update lifecycle stage to planning	2026-03-01T16:27:23.9581976Z [36;1merk exec update-plan-header "$PLAN_ISSUE_NUMBER" lifecycle_stage=planning[0m
+plan	Update lifecycle stage to planning	2026-03-01T16:27:23.9631696Z shell: /usr/bin/bash -e {0}
+plan	Update lifecycle stage to planning	2026-03-01T16:27:23.9631947Z env:
+plan	Update lifecycle stage to planning	2026-03-01T16:27:23.9632126Z   UV_PYTHON: 3.13
+plan	Update lifecycle stage to planning	2026-03-01T16:27:23.9632357Z   VIRTUAL_ENV: /home/runner/work/erk/erk/.venv
+plan	Update lifecycle stage to planning	2026-03-01T16:27:23.9632686Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+plan	Update lifecycle stage to planning	2026-03-01T16:27:23.9633897Z   GH_TOKEN: ***
+plan	Update lifecycle stage to planning	2026-03-01T16:27:23.9634339Z   PLAN_ISSUE_NUMBER: 8539
+plan	Update lifecycle stage to planning	2026-03-01T16:27:23.9634572Z ##[endgroup]
+plan	Update lifecycle stage to planning	2026-03-01T16:27:24.9448367Z {"success": false, "error": "no_plan_header", "message": "Plan 8539 has no plan-header metadata block."}
+plan	Update lifecycle stage to planning	2026-03-01T16:27:25.0342061Z ##[error]Process completed with exit code 1.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_019Te5xfLSamUzNmRsC52Nkw">
+    <param name="command">gh run view 22547520921 --json jobs --jq '.jobs[] | select(.databaseId == 65312221179) | {name, conclusion, steps: [.steps[] | {name, conclusion}]}'</param>
+    <param name="description">Get job steps and their status</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="623" cache_read_input_tokens="30817" output_tokens="124" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 623, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019Te5xfLSamUzNmRsC52Nkw">
+{"conclusion":"failure","name":"plan","steps":[{"conclusion":"success","name":"Set up job"},{"conclusion":"success","name":"Validate required secrets"},{"conclusion":"success","name":"Run actions/checkout@v4"},{"conclusion":"success","name":"Run /./.github/actions/erk-remote-setup"},{"conclusion":"success","name":"Checkout implementation branch"},{"conclusion":"success","name":"Write prompt to .erk/impl-context/prompt.md"},{"conclusion":"success","name":"Detect trunk branch"},{"conclusion":"failure","name":"Update lifecycle stage to planning"},{"conclusion":"skipped","name":"Run one-shot planning"},{"conclusion":"skipped","name":"Verify plan outputs exist"},{"conclusion":"skipped","name":"Read plan result"},{"conclusion":"skipped","name":"Validate plan format"},{"conclusion":"skipped","name":"Register one-shot plan with issue and PR"},{"conclusion":"skipped","name":"Update objective roadmap node"},{"conclusion":"skipped","name":"Commit plan to branch (plan-only mode)"},{"conclusion":"skipped","name":"Fail workflow if planning failed"},{"conclusion":"success","name":"Post Run /./.github/actions/erk-remote-setup"},{"conclusion":"success","name":"Post Run actions/checkout@v4"},{"conclusion":"success","name":"Complete job"}]}
+  </tool_result>
+  <assistant>The failure is clear. The **"Update lifecycle stage to planning"** step failed because:
+
+```
+Plan 8539 has no plan-header metadata block.
+```
+
+The workflow tried to run `erk exec update-plan-header 8539 lifecycle_stage=planning`, but issue #8539 doesn't have the required `plan-header` metadata block in its body. The `update-plan-header` command expects the issue to already contain a structured metadata section that it can update, and when it's missing, it exits with `no_plan_header` error.
+
+Let me check what issue 8539 looks like.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="437" cache_read_input_tokens="31440" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 437}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GjYPC4ymUpHiKVqNn65oiM">
+    <param name="command">gh issue view 8539 --json title,body --jq '{title, body_preview: (.body[:500]}' 2&gt;&amp;1</param>
+    <param name="description">Check issue 8539 content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="437" cache_read_input_tokens="31440" output_tokens="246" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 437, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GjYPC4ymUpHiKVqNn65oiM">
+Exit code 1
+failed to parse jq expression (line 1, column 35)
+    {title, body_preview: (.body[:500]}
+                                      ^  unexpected token "}"
+
+failed to parse jq expression (line 1, column 35)
+    {title, body_preview: (.body[:500]}
+                                      ^  unexpected token "}"
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01HyF7t3AAys5Ukkka2u5WP6">
+    <param name="command">gh issue view 8539 --json title,body --jq '{title, body_preview: (.body[:500])}' 2&gt;&amp;1</param>
+    <param name="description">Check issue 8539 content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="350" cache_read_input_tokens="31877" output_tokens="107" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 350, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HyF7t3AAys5Ukkka2u5WP6">
+{"body_preview":"_Smoke test created by `erk doctor workflow --smoke-test`._\n\n**Prompt:** Add a code comment to any file.\n\nThis PR can be safely closed and its branch deleted.","title":"Smoke test: 03-01-1126"}
+  </tool_result>
+  <assistant>That confirms it. Issue #8539 is a smoke test issue created by `erk doctor workflow --smoke-test`. Its body is just a simple description — it has **no plan-header metadata block** (the structured metadata that the planning workflow expects, e.g., `&lt;!-- plan-header ... --&gt;`).
+
+The smoke test created the issue but the CI workflow (`one-shot-plan` or similar) that ran against it assumes every plan issue has a plan-header. The smoke test doesn't inject one, so the `update-plan-header` step fails immediately before planning even begins.
+
+**Root cause:** The `erk doctor workflow --smoke-test` command creates an issue without a plan-header metadata block, but the CI workflow requires one to update the lifecycle stage.
+
+**Fix needed:** Either:
+1. The smoke test should include a plan-header block in the issue body when creating the issue, or
+2. The CI workflow should handle the `no_plan_header` case gracefully (e.g., inject one if missing)
+
+Want me to look at the smoke test code and fix it?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="186" cache_read_input_tokens="32227" output_tokens="243" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 186, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>yes, the smoke test needs to go through production code paths so that it creates an appropriate plan issue</user>
+  <user>[Request interrupted by user]</user>
+  <user>yes, the smoke test needs to go through production code paths so that it creates an appropriate planned pr</user>
+  <thinking>The user wants the smoke test to create a proper planned PR (with plan-header metadata) by going through the same production code paths that normal plan creation uses. Let me explore the codebase to understand:
+
+1. How the smoke test currently creates the issue
+2. How normal plans create issues with plan-headers
+3. What production code paths to use instead
+
+Let me start by looking at the smoke test code and the plan creation code.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="356" cache_read_input_tokens="32654" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 356}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="EnterPlanMode" id="toolu_01DaEmhcctYoeiDn9ti8vMNE">
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="356" cache_read_input_tokens="32654" output_tokens="147" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 356, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DaEmhcctYoeiDn9ti8vMNE">
+Entered plan mode. You should now focus on exploring the codebase and designing an implementation approach.
+
+In plan mode, you should:
+1. Thoroughly explore the codebase to understand existing patterns
+2. Identify similar features and architectural approaches
+3. Consider multiple approaches and their trade-offs
+4. Use AskUserQuestion if you need to clarify the approach
+5. Design a concrete implementation strategy
+6. When ready, use ExitPlanMode to present your plan for approval
+
+Remember: DO NOT write or edit any files yet. This is a read-only exploration and planning phase.
+  </tool_result>
+  <assistant>Let me explore the smoke test code and the production plan creation paths in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1481" cache_read_input_tokens="33010" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1481}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>[Request interrupted by user]</user>
+  <user>and it should have never created an issue. code paths that create issues for plans should be gone already</user>
+  <tool_use name="Agent" id="toolu_018fQnjDDBb7s18N4R76F7Vv">
+    <param name="description">Explore smoke test code</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 339 chars]...st end-to-end
+
+Search for "smoke" and "doctor" in the codebase to find all relevant files.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="199" cache_read_input_tokens="34491" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 199}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01KZs4jXQudRGPEbcj4zpFwC">
+    <param name="description">Explore plan PR creation paths</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 422 chars]...-shot
+
+Focus on the PR creation path, not issue creation. Plans should be PRs, not issues.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="199" cache_read_input_tokens="34491" output_tokens="450" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 199, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018fQnjDDBb7s18N4R76F7Vv">
+Perfect! Now I have enough information. Let me create a comprehensive analysis document:
+
+## Summary of Findings
+
+Based on my exploration of the codebase, here's a comprehensive understanding of the `erk doctor workflow --smoke-test` command:
+
+### 1. **CLI Command Structure** (`/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk/cli/commands/doctor_workflow.py`)
+
+The `erk doctor workflow` command (lines 159-234) is a Click group with several options:
+- `--smoke-test`: Runs a live smoke test (creates artifacts)
+- `--wait`: Polls workflow run until completion (requires `--smoke-test`)
+- `--cleanup`: Cleans up old smoke test branches and PRs
+- `-v/--verbose`: Shows details of static checks
+
+The command first runs static checks (`_run_static_checks`), then optionally dispatches the smoke test via `_handle_smoke_test`.
+
+### 2. **Smoke Test Logic** (`/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk/core/workflow_smoke_test.py`)
+
+The `run_smoke_test()` function (lines 49-139) performs the following steps:
+
+1. **Generate branch name**: `smoke-test/{MM-DD-HHMM}` using timestamp
+2. **Create branch**: From trunk, without checkout
+3. **Commit prompt file**: Writes `.erk/impl-context/prompt.md` with text `"Add a code comment to any file."`
+4. **Push to remote**: Sets upstream
+5. **Create draft PR**: With title and body describing it as a smoke test
+6. **Add label**: Adds `erk-plan` label to the PR
+7. **Trigger workflow**: Dispatches `one-shot.yml` with these inputs:
+   - `prompt`: The smoke test prompt
+   - `branch_name`: The branch name
+   - `pr_number`: The PR number
+
+... [84 lines omitted] ...
+
+- Tests error handling when not in a repo
+  </tool_result>
+  <tool_result tool="toolu_01KZs4jXQudRGPEbcj4zpFwC">
+Perfect! Now I have all the information I need. Let me provide a comprehensive summary.
+
+## Summary: How Erk Creates Planned PRs Through Production Code Paths
+
+Based on my thorough exploration of the codebase, here's how erk creates planned PRs through production code paths:
+
+### 1. **How `erk pr create` Works**
+
+**File:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk/cli/commands/pr/create_cmd.py`
+
+The `pr create` command:
+1. Reads plan content from `--file` or stdin
+2. Extracts or accepts a title from the plan H1
+3. Generates a branch name using `generate_planned_pr_branch_name()` with slug and timestamp (format: `plnd/{slug}-{MM-DD-HHMM}`)
+4. Calls `create_plan_draft_pr()` which:
+   - Detects trunk, fetches `origin/trunk`, creates the branch from it
+   - Commits `plan.md` + `ref.json` via git plumbing (no checkout)
+   - Pushes to remote
+   - Calls `PlannedPRBackend.create_plan()` to create the draft PR
+   - Returns plan number, URL, and branch name
+
+### 2. **Plan Header Metadata Structure**
+
+**Files:**
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py`
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py`
+
+Plan header metadata is embedded in the PR body as an HTML comment block with these key fields:
+
+```
+
+... [199 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a good understanding of both the smoke test and the production code paths. Let me read the key files directly to understand the details before designing the plan.
+
+Key findings so far:
+1. The smoke test in `workflow_smoke_test.py` creates a branch, PR, and dispatches the `one-shot.yml` workflow
+2. But it does NOT create a plan-header metadata block in the PR body
+3. The `one-shot.yml` workflow's "Update lifecycle stage to planning" step calls `erk exec update-plan-header` which expects the metadata block to exist
+4. The production path (`dispatch_one_shot()` in `one_shot_dispatch.py`) creates the PR WITH a metadata block
+
+
+5. The user wants the smoke test to use the production code path instead of manually orchestrating the workflow, so it creates a proper planned PR without any issue creation
+
+I need to examine the exact interface of the production `dispatch_one_shot()` function to see how to integrate it into the smoke test.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="4912" cache_read_input_tokens="34690" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4912}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, I have a clear picture. Let me read the key files directly to understand the exact interfaces.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="4912" cache_read_input_tokens="34690" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4912}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VAKvUTLcLaPUBUwTzzwi4i">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk/core/workflow_smoke_test.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4912" cache_read_input_tokens="34690" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4912}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VAKvUTLcLaPUBUwTzzwi4i">
+     1→"""Workflow smoke test logic for erk doctor workflow.
+     2→
+     3→Creates throwaway branches and PRs to verify the GitHub Actions
+     4→infrastructure works end-to-end. Core logic separated from CLI
+     5→for testability with fakes.
+     6→"""
+     7→
+     8→from dataclasses import dataclass
+     9→from pathlib import Path
+    10→
+    11→from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
+    12→from erk_shared.gateway.git.remote_ops.types import PushError
+    13→from erk_shared.gateway.github.parsing import construct_workflow_run_url
+    14→from erk_shared.naming import format_branch_timestamp_suffix
+    15→
+    16→ONE_SHOT_WORKFLOW = "one-shot.yml"
+    17→SMOKE_TEST_BRANCH_PREFIX = "smoke-test/"
+    18→SMOKE_TEST_PROMPT = "Add a code comment to any file."
+    19→
+    20→
+    21→@dataclass(frozen=True)
+    22→class SmokeTestResult:
+    23→    """Result of a successful smoke test dispatch."""
+    24→
+    25→    branch_name: str
+    26→    pr_number: int
+    27→    run_id: str
+    28→    run_url: str | None
+    29→
+    30→
+
+... [178 lines omitted] ...
+
+    32→class SmokeTestError:
+    33→    """Error during smoke test dispatch."""
+    49→def run_smoke_test(ctx: ErkContext) -&gt; SmokeTestResult | SmokeTestError:
+    56→        SmokeTestResult on success, SmokeTestError on failure
+    59→        return SmokeTestError(step="validation", message="Not in a git repository")
+    85→    if isinstance(push_result, PushError):
+    86→        return SmokeTestError(step="push", message=f"Failed to push branch: {push_result.message}")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SgdUoRuXmfALMpoeY1g37E">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk/cli/commands/one_shot_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4912" cache_read_input_tokens="34690" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4912}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SgdUoRuXmfALMpoeY1g37E">
+     1→"""Shared dispatch logic for one-shot autonomous execution.
+     2→
+     3→Extracts the branch-create/push/PR/workflow-trigger sequence into reusable
+     4→pieces so both `erk one-shot` and `erk objective plan --one-shot` can
+     5→dispatch tasks through the same CI workflow.
+     6→"""
+     7→
+     8→import logging
+     9→import time
+    10→from dataclasses import dataclass
+    11→from datetime import UTC
+    12→
+    13→import click
+    14→
+    15→from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+    16→from erk.cli.ensure import Ensure
+    17→from erk.core.branch_slug_generator import generate_branch_slug
+    18→from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
+    19→from erk_shared.core.prompt_executor import PromptExecutor
+    20→from erk_shared.gateway.git.remote_ops.types import PushError
+    21→from erk_shared.gateway.github.metadata.core import (
+    22→    create_submission_queued_block,
+    23→    render_erk_issue_event,
+    24→)
+    25→from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
+    26→from erk_shared.gateway.github.parsing import construct_workflow_run_url
+    27→from erk_shared.gateway.github.pr_footer import build_pr_body_footer
+    28→from erk_shared.gateway.time.abc import Time
+    29→from erk_shared.naming import (
+    30→    format_branch_timestamp_suffix,
+
+... [387 lines omitted] ...
+
+   216→                click.style("Error: ", fg="red")
+   245→        if isinstance(push_result, PushError):
+   246→            Ensure.invariant(False, f"Failed to push branch: {push_result.message}")
+   362→            except Exception as e:
+   364→                    click.style("Warning: ", fg="yellow")
+   365→                    + f"Failed to update dispatch metadata: {e}"
+   389→            except Exception as e:
+   391→                    click.style("Warning: ", fg="yellow") + f"Failed to post queued comment: {e}"
+   396→    except Exception as exc:
+   397→        user_output(click.style(f"Failed during: {current_step}", fg="red"))
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GEj2Ywyj6jRW3xUqouirW4">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk/cli/commands/doctor_workflow.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4912" cache_read_input_tokens="34690" output_tokens="538" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4912, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GEj2Ywyj6jRW3xUqouirW4">
+     1→"""Doctor workflow subcommand for workflow-specific diagnostics.
+     2→
+     3→Runs GitHub-focused health checks and optionally dispatches a live
+     4→smoke test to verify the full CI pipeline works end-to-end.
+     5→"""
+     6→
+     7→import click
+     8→
+     9→from erk.artifacts.artifact_health import get_artifact_health
+    10→from erk.artifacts.models import ArtifactFileState
+    11→from erk.artifacts.paths import ErkPackageInfo
+    12→from erk.artifacts.state import load_artifact_state, load_installed_capabilities
+    13→from erk.cli.commands.doctor import _format_check_result
+    14→from erk.core.context import ErkContext, NoRepoSentinel
+    15→from erk.core.health_checks import (
+    16→    CheckResult,
+    17→    check_anthropic_api_secret,
+    18→    check_erk_queue_pat_secret,
+    19→    check_github_auth,
+    20→    check_workflow_permissions,
+    21→)
+    22→from erk.core.workflow_smoke_test import SmokeTestError, cleanup_smoke_tests, run_smoke_test
+    23→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+    24→
+    25→
+    26→def _get_repo_location(ctx: ErkContext) -&gt; tuple[str, str] | None:
+    27→    """Get (owner, repo) from ErkContext, or None if not a GitHub repo."""
+    28→    if isinstance(ctx.repo, NoRepoSentinel):
+    29→        return None
+    30→    if ctx.repo.github is None:
+
+... [290 lines omitted] ...
+
+   197→        click.echo(click.style("Error: --wait requires --smoke-test", fg="red"), err=True)
+   205→    critical_failed = False
+   212→                critical_failed = True
+   224→    # Abort smoke test if critical checks failed
+   225→    if critical_failed:
+   228→            click.style("Error: Cannot run smoke test — critical checks failed", fg="red"),
+   243→    if isinstance(result, SmokeTestError):
+   244→        click.echo(click.style(f"Error during {result.step}: {result.message}", fg="red"), err=True)
+   260→    """Report the result of a completed workflow run, exiting on failure."""
+  </tool_result>
+  <thinking>Now I have a clear picture. Let me also read the tests to understand the test structure.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="13356" cache_read_input_tokens="39602" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13356}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the tests to understand what needs to change there.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="13356" cache_read_input_tokens="39602" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13356}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SVbhShoNaxnG8WsW4FDz5i">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/tests/unit/core/test_workflow_smoke_test.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="13356" cache_read_input_tokens="39602" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13356}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SVbhShoNaxnG8WsW4FDz5i">
+     1→"""Tests for workflow smoke test core logic."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from tests.fakes.context import create_test_context
+     6→
+     7→from erk.core.workflow_smoke_test import (
+     8→    SmokeTestError,
+     9→    SmokeTestResult,
+    10→    _extract_branch_name,
+    11→    cleanup_smoke_tests,
+    12→    run_smoke_test,
+    13→)
+    14→from erk_shared.context.context import ErkContext
+    15→from erk_shared.context.types import NoRepoSentinel
+    16→from erk_shared.gateway.git.fake import FakeGit
+    17→from erk_shared.gateway.github.fake import FakeGitHub
+    18→from erk_shared.gateway.github.types import PullRequestInfo, RepoInfo
+    19→
+    20→
+    21→class TestRunSmokeTest:
+    22→    def test_creates_branch_pr_and_triggers_workflow(self) -&gt; None:
+    23→        """Smoke test dispatches branch, PR, and workflow in sequence."""
+    24→        repo_root = Path("/fake/repo")
+    25→        git = FakeGit(
+    26→            git_common_dirs={repo_root: repo_root / ".git"},
+    27→            remote_urls={(repo_root, "origin"): "https://github.com/test-owner/test-repo.git"},
+    28→            default_branches={repo_root: "main"},
+    29→        )
+    30→        github = FakeGitHub(
+
+... [159 lines omitted] ...
+
+    79→    def test_returns_error_when_not_in_repo(self) -&gt; None:
+    80→        """Smoke test returns error for NoRepoSentinel."""
+    85→        assert isinstance(result, SmokeTestError)
+  </tool_result>
+  <tool_use name="Read" id="toolu_015ijBxPP21gzD6p5tXq84PQ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/tests/commands/doctor/test_doctor_workflow.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="13356" cache_read_input_tokens="39602" output_tokens="218" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 13356, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015ijBxPP21gzD6p5tXq84PQ">
+     1→"""Tests for erk doctor workflow CLI subcommand."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.commands.doctor import doctor_cmd
+     6→from erk_shared.gateway.git.fake import FakeGit
+     7→from erk_shared.gateway.github_admin.abc import AuthStatus
+     8→from tests.fakes.github_admin import FakeGitHubAdmin
+     9→from tests.fakes.shell import FakeShell
+    10→from tests.test_utils.context_builders import build_workspace_test_context
+    11→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    12→
+    13→
+    14→def _make_test_shell() -&gt; FakeShell:
+    15→    return FakeShell(
+    16→        installed_tools={
+    17→            "claude": "/usr/local/bin/claude",
+    18→            "gt": "/usr/local/bin/gt",
+    19→            "gh": "/usr/local/bin/gh",
+    20→            "uv": "/usr/local/bin/uv",
+    21→        },
+    22→        tool_versions={
+    23→            "claude": "claude 1.0.41",
+    24→            "gt": "0.29.17",
+    25→            "gh": "gh version 2.66.1 (2025-01-15)\nhttps://github.com/cli/cli/releases/tag/v2.66.1",
+    26→            "uv": "uv 0.5.20",
+    27→        },
+    28→    )
+    29→
+    30→
+
+... [102 lines omitted] ...
+
+    33→        auth_status=AuthStatus(authenticated=True, username="testuser", error=None),
+    66→    """Test that --wait without --smoke-test shows error."""
+  </tool_result>
+  <thinking>Now I have a very clear picture. Let me also check what `dispatch_one_shot` needs that the smoke test doesn't currently provide - specifically the `PromptExecutor` and `plan_backend` from context. Let me check a couple more things.
+
+The key insight is:
+1. The smoke test currently manually creates branch, PR, and dispatches workflow — duplicating logic from `dispatch_one_shot()`
+2. `dispatch_one_shot()` already creates proper plan-header metadata, footer, labels, dispatch metadata, etc.
+3. The smoke test should just call `dispatch_one_shot()` instead of reimplementing everything
+
+
+4. But there are some incompatibilities: the smoke test uses a different branch prefix, doesn't need LLM slug generation, requires a specific return type with branch name and run details, and `dispatch_one_shot` has dependencies and logging patterns that might not fit the smoke test context.
+
+Looking at the approach, the cleanest solution is to have the smoke test call `dispatch_one_shot` directly with the right parameters to go through production code paths. The main issue is that `dispatch_one_shot` returns a result without the `run_url`, but I can compute that from the other fields just like the current implementation does. The extra progress logging from `dispatch_one_shot` isn't a problem—it's part of using the production path.
+
+Now I'm working through what parameters `dispatch_one_shot` actually needs and how the smoke test should provide them, particularly around the slug and branch naming conventions.
+
+The issue is that using `dispatch_one_shot` would generate branches with a `plnd/` prefix instead of the `smoke-test/` prefix that the cleanup code expects, so I need to figure out whether to update the cleanup logic or find a different approach to run through production code paths. The user's requirement for production code paths points toward Option A, but there's a practical concern: `dispatch_one_shot` outputs progress messages that would interleave with the doctor workflow output, and the CLI layer would need adjustment since `dispatch_one_shot` already handles result printing. Let me trace through what dependencies `dispatch_one_shot` actually needs from the context to see if this is feasible. I'm seeing the rest of the dependencies needed, including the workflow trigger and metadata writing. The smoke test would need fakes for plan_backend, issues, and local_config in addition to what's already there. I think the cleanest approach is to have `run_smoke_test()` call `dispatch_one_shot()` directly with a hardcoded slug to skip LLM calls, then map the result back to `SmokeTestResult`, and update the cleanup logic accordingly.
+
+But there's a wrinkle with error handling—`dispatch_one_shot()` raises `SystemExit` on invariant failures, whereas `run_smoke_test()` currently returns `SmokeTestError`. Since the CLI layer already catches `SmokeTestError` and converts it to `SystemExit`, having `dispatch_one_shot()` raise `SystemExit` directly would still propagate correctly, just with different error messages than the custom ones in the doctor module.
+
+The real benefit of wrapping `dispatch_one_shot()` is that tests can verify error conditions without dealing with `SystemExit`—I'd catch exceptions and convert them back to `SmokeTestError` for the return type. Then I need to update the cleanup logic to handle the new branch naming pattern and adjust the tests accordingly. Let me also verify whether `dispatch_one_shot()` actually requires `ctx.plan_backend` to be set up. I'm realizing the cleaner approach is to remove the standalone `run_smoke_test` function entirely and have the CLI handler call `dispatch_one_shot` directly with `slug="smoke-test"` to bypass the LLM, then extract the run URL from the result.
+
+This means simplifying `_handle_smoke_test` since `dispatch_one_shot` already handles printing and workflow triggering, and I'll need to update the cleanup logic to look for `plnd/smoke-test-` branches, potentially consolidate the result types, and adjust the tests accordingly. I'm noticing a design issue here—if I remove `run_smoke_test` entirely and just call `dispatch_one_shot` directly from the CLI, I lose a testable seam that lets me verify the smoke test logic independently of the dispatch machinery. I need to think through whether keeping a wrapper function makes sense or if testing through the CLI is sufficient.
+
+The key constraint is that `dispatch_one_shot` uses `user_output()` for progress and calls `Ensure.invariant()` and `Ensure.gh_authenticated()` which raise `SystemExit`, so I'd need to catch those exceptions in `run_smoke_test` and convert them to proper error types.
+
+Actually, I can simplify this significantly. Instead of wrapping `dispatch_one_shot`, I should have `_handle_smoke_test` in doctor_workflow.py call it directly with try/except error handling, then handle any waiting or polling afterward. This means I can remove `run_smoke_test()` entirely from workflow_smoke_test.py and just keep the cleanup utilities and branch prefix constants there.
+
+Now I'm realizing the branch naming could be problematic—if `dispatch_one_shot` uses `slug="smoke-test"`, the resulting branch would be `plnd/smoke-test-{timestamp}`, which looks too similar to regular planned PR branches and could accidentally get cleaned up. I should use a more distinctive slug like `erk-smoke-test` to avoid this collision, then I need to verify what `generate_planned_pr_branch_name` actually produces to make sure the cleanup pattern matches correctly.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="10941" cache_read_input_tokens="52958" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10941}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01VXxB7K2GDuCD1eryV51XPE">
+    <param name="pattern">def generate_planned_pr_branch_name</param>
+    <param name="output_mode">content</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10941" cache_read_input_tokens="52958" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10941}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Mshdveho9cdphQJwxnLDqu">
+    <param name="pattern">class OneShotDispatchParams</param>
+    <param name="output_mode">content</param>
+    <param name="-A">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10941" cache_read_input_tokens="52958" output_tokens="3900" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 10941, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VXxB7K2GDuCD1eryV51XPE">
+packages/erk-shared/src/erk_shared/naming.py:818:def generate_planned_pr_branch_name(
+packages/erk-shared/src/erk_shared/naming.py-819-    title: str,
+packages/erk-shared/src/erk_shared/naming.py-820-    timestamp: datetime,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/naming.py-821-    *,
+packages/erk-shared/src/erk_shared/naming.py-822-    objective_id: int | None,
+packages/erk-shared/src/erk_shared/naming.py-823-) -&gt; str:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/naming.py-824-    """Generate branch name for planned-PR-backed plans.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/naming.py-825-
+packages/erk-shared/src/erk_shared/naming.py-826-    Format: plnd/{sanitized_title}-{timestamp}
+packages/erk-shared/src/erk_shared/naming.py-827-    Or with objective: plnd/O{objective_id}-{sanitized_title}-{timestamp}
+packages/erk-shared/src/erk_shared/naming.py-828-    Example: plnd/fix-auth-bug-01-15-1430
+packages/erk-shared/src/erk_shared/naming.py-829-    Example with objective: plnd/O456-fix-auth-bug-01-15-1430
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/naming.py-830-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/naming.py-831-    No P{issue} prefix since the PR number isn't known until after creation.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/naming.py-832-
+packages/erk-shared/src/erk_shared/naming.py-833-    Args:
+  </tool_result>
+  <tool_result tool="toolu_01Mshdveho9cdphQJwxnLDqu">
+src/erk/cli/commands/one_shot_dispatch.py:43:class OneShotDispatchParams:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk/cli/commands/one_shot_dispatch.py-44-    """Parameters for dispatching a one-shot workflow."""
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk/cli/commands/one_shot_dispatch.py-45-
+src/erk/cli/commands/one_shot_dispatch.py-46-    prompt: str
+src/erk/cli/commands/one_shot_dispatch.py-47-    model: str | None
+src/erk/cli/commands/one_shot_dispatch.py-48-    extra_workflow_inputs: dict[str, str]
+src/erk/cli/commands/one_shot_dispatch.py-49-    slug: str | None
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk/cli/commands/one_shot_dispatch.py-50-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk/cli/commands/one_shot_dispatch.py-51-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk/cli/commands/one_shot_dispatch.py-52-@dataclass(frozen=True)
+src/erk/cli/commands/one_shot_dispatch.py-53-class OneShotDispatchResult:
+  </tool_result>
+  <thinking>OK, so `generate_planned_pr_branch_name` produces `plnd/{slug}-{timestamp}`. With slug "smoke-test", it would be `plnd/smoke-test-03-01-1128`.
+
+Now let me also check what the one-shot dispatch function does with `dispatch_one_shot` — specifically what happens with `generate_planned_pr_branch_name` vs `generate_branch_name`. Looking at the code:
+
+```python
+# Line 205-209
+branch_name = generate_planned_pr_branch_name(
+    slug,
+    ctx.time.now(),
+    objective_id=objective_id,
+
+
+)
+```
+
+So `dispatch_one_shot` uses `generate_planned_pr_branch_name` which produces `plnd/{slug}-{timestamp}`. The `generate_branch_name` function in the same file produces `oneshot-{slug}-{timestamp}` but it's only used for dry-run mode preview.
+
+Now I need to check what dependencies `dispatch_one_shot` requires from the context — looking at the function signature, it needs `ctx.repo`, `ctx.github`, `ctx.git`, and `ctx.plan_backend` to be available.
+
+For the test setup, I should verify that `ErkContext.for_test` provides these dependencies, particularly `plan_backend` and `issues` which are used for posting comments and triggering workflows.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5066" cache_read_input_tokens="63899" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5066}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Y5gWZfETzuCwa8kH3ssmTM">
+    <param name="pattern">def for_test</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/context</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5066" cache_read_input_tokens="63899" output_tokens="568" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5066, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Y5gWZfETzuCwa8kH3ssmTM">
+Found 1 file
+packages/erk-shared/src/erk_shared/context/context.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_018n2BwVwk5MHAbPNy5jrARY">
+    <param name="pattern">def for_test</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/context/context.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="706" cache_read_input_tokens="68965" output_tokens="154" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 706, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018n2BwVwk5MHAbPNy5jrARY">
+201:    def for_test(
+202-        *,
+203-        github_issues: GitHubIssues | None = None,
+204-        git: Git | None = None,
+205-        github: GitHub | None = None,
+206-        github_admin: GitHubAdmin | None = None,
+207-        claude_installation: ClaudeInstallation | None = None,
+208-        prompt_executor: PromptExecutor | None = None,
+209-        plan_store: PlanBackend | None = None,
+210-        debug: bool = False,
+211-        repo_root: Path | None = None,
+212-        cwd: Path | None = None,
+213-        repo_info: RepoInfo | None = None,
+214-        package_info: ErkPackageInfo | None = None,
+215-    ) -&gt; ErkContext:
+216-        """Create test context with optional pre-configured implementations.
+217-
+218-        Provides full control over all context parameters with sensible test defaults
+219-        for any unspecified values. Uses fakes by default to avoid subprocess calls.
+220-
+221-        Args:
+222-            github_issues: Optional GitHubIssues implementation. If None, creates FakeGitHubIssues.
+223-            git: Optional Git implementation. If None, creates FakeGit.
+224-            github: Optional GitHub implementation. If None, creates FakeGitHub.
+225-            claude_installation: ClaudeInstallation or None. Creates FakeClaudeInstallation if None.
+226-            prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
+227-            plan_store: Optional PlanBackend. If None, creates PlannedPRBackend.
+228-            debug: Whether to enable debug mode (default False).
+229-            repo_root: Repository root path (defaults to Path("/fake/repo"))
+230-            cwd: Current working directory (defaults to Path("/fake/worktree"))
+
+... [28 lines omitted] ...
+  </tool_result>
+  <thinking>Good - `ErkContext.for_test` accepts `plan_store` (which is the `PlanBackend`), `prompt_executor`, and `github_issues`. These all have defaults.
+
+Now let me also check if `dispatch_one_shot` accesses `ctx.local_config` for `dispatch_ref`:
+
+```python
+ref=ctx.local_config.dispatch_ref,
+```
+
+I need to check if `ErkContext.for_test` provides `local_config`. Let me check the ErkContext class.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="990" cache_read_input_tokens="69671" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 990}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_017ojDm3bFw7x9W3GJkn4HtS">
+    <param name="pattern">local_config|dispatch_ref</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/context/context.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="990" cache_read_input_tokens="69671" output_tokens="293" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 990, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017ojDm3bFw7x9W3GJkn4HtS">
+112:    local_config: LoadedConfig
+  </tool_result>
+  <tool_use name="Grep" id="toolu_019f9Ler9svv8MmhxjXEFSNT">
+    <param name="pattern">local_config|LoadedConfig</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/context/testing.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="373" cache_read_input_tokens="70661" output_tokens="157" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 373, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019f9Ler9svv8MmhxjXEFSNT">
+13:from erk_shared.context.types import GlobalConfig, LoadedConfig, RepoContext
+54:    local_config: LoadedConfig | None = None,
+82:        local_config: Optional LoadedConfig. If None, uses LoadedConfig.test().
+174:    resolved_local_config = local_config if local_config is not None else LoadedConfig.test()
+210:        local_config=resolved_local_config,
+  </tool_result>
+  <assistant>Good - `context_for_test` provides a default `LoadedConfig.test()`. Let me check what `dispatch_ref` defaults to in the test config.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="271" cache_read_input_tokens="71034" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 271}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01AxHdMBME3uusDHZBAw7b3P">
+    <param name="pattern">dispatch_ref|class LoadedConfig</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/context/types.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-A">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="271" cache_read_input_tokens="71034" output_tokens="213" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 271, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AxHdMBME3uusDHZBAw7b3P">
+277:class LoadedConfig:
+278-    """In-memory representation of merged repo + project config."""
+279-
+280-    env: dict[str, str]
+281-    post_create_commands: list[str]
+282-    post_create_shell: str | None
+--
+289:    dispatch_ref: str | None  # None = use default branch for workflow dispatch
+290-    docs_path: str | None  # None = use repo root for docs operations
+291-
+292-    @staticmethod
+293-    def test(
+294-        *,
+--
+303:        dispatch_ref: str | None = None,
+304-        docs_path: str | None = None,
+305-    ) -&gt; LoadedConfig:
+306-        """Create a LoadedConfig with sensible test defaults."""
+307-        return LoadedConfig(
+308-            env=env if env is not None else {},
+--
+318:            dispatch_ref=dispatch_ref,
+319-            docs_path=docs_path,
+320-        )
+  </tool_result>
+  <thinking>Good. `dispatch_ref` defaults to `None` in tests, which means "use default branch for workflow dispatch." That's fine.
+
+Now I have all the information I need. Let me write the plan. The user has clarified:1. Smoke test should generate `plnd/` prefix branches (matching production)
+2. Should be as close to production as possible
+
+The plan is clear: rewrite `run_smoke_test()` to delegate to `dispatch_one_shot()`, passing a pre-set slug like "smoke-test" to avoid LLM calls. Update cleanup to match the new `plnd/smoke-test-` branch pattern. Update tests accordingly.
+
+
+Writing the plan file...</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="621" cache_read_input_tokens="71305" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 621}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I have all the information I need. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="621" cache_read_input_tokens="71305" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 621}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_012cr7UGG7Tn9BA3GKrAWFvM">
+    <param name="file_path">/Users/schrockn/.claude/plans/shiny-sleeping-fountain.md</param>
+    <param name="content"># Plan: Smoke test through production `dispatch_one_shot` code path
+
+## Context
+
+The `erk ...[truncated 3378 chars]...st tests/commands/doctor/test_doctor_workflow.py`
+3. Run ty/ruff checks on modified files
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="621" cache_read_input_tokens="71305" output_tokens="1344" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 621, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012cr7UGG7Tn9BA3GKrAWFvM">
+File created successfully at: /Users/schrockn/.claude/plans/shiny-sleeping-fountain.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01Az8r4c4a6UJL1WAHFMX6x5">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests via devrun agent'}, {'tool': 'Bash', 'prompt': 'run linting/type checking via devrun agent'}]</param>
+    <param name="plan"># Plan: Smoke test through production `dispatch_one_shot` code path
+
+## Context
+
+The `erk ...[truncated 3378 chars]...st tests/commands/doctor/test_doctor_workflow.py`
+3. Run ty/ruff checks on modified files
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1381" cache_read_input_tokens="71926" output_tokens="100" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1381, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Az8r4c4a6UJL1WAHFMX6x5">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/shiny-sleeping-fountain.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Smoke test through production `dispatch_one_shot` code path
+Current context: (wt:erk-slot-37) (br:plnd/doctor-workflow-smoke-test-02-25-0128) (pr:#8115)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/doct"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id e6f8285e-6da1-489e-a349-d89069aeefcd \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+     (no PR tracking - this is for small PR iterations)
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_019L4AkxozivxUR471LJ766F">
+    <param name="file_path">/Users/schrockn/.claude/plans/shiny-sleeping-fountain.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="710" cache_read_input_tokens="73307" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 710, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019L4AkxozivxUR471LJ766F">
+     1→# Plan: Smoke test through production `dispatch_one_shot` code path
+     2→
+     3→## Context
+     4→
+     5→The `erk doctor workflow --smoke-test` command manually creates a branch, PR, and dispatches the one-shot workflow — duplicating logic from `dispatch_one_shot()`. The PR it creates lacks the `plan-header` metadata block that the CI workflow expects, causing the "Update lifecycle stage to planning" step to fail with `no_plan_header`.
+     6→
+     7→The fix: rewrite `run_smoke_test()` to delegate to `dispatch_one_shot()`, the production code path that already creates proper plan-header metadata, footer, labels, and dispatch metadata.
+     8→
+     9→## Changes
+    10→
+    11→### 1. Rewrite `src/erk/core/workflow_smoke_test.py`
+    12→
+    13→- **Remove** the manual branch/PR/workflow creation from `run_smoke_test()`
+    14→- **Replace** with a call to `dispatch_one_shot()` from `erk.cli.commands.one_shot_dispatch`
+    15→- Pass `slug="smoke-test"` in `OneShotDispatchParams` to skip LLM slug generation
+    16→- Branch names will change from `smoke-test/{timestamp}` to `plnd/smoke-test-{timestamp}` (production pattern)
+    17→- Map `OneShotDispatchResult` back to `SmokeTestResult` (keeping the existing return type for the CLI layer)
+    18→- Wrap `dispatch_one_shot()` call in try/except to convert exceptions to `SmokeTestError`
+    19→- Compute `run_url` from the result (dispatch_one_shot doesn't return it)
+    20→
+    21→Key details:
+    22→- `OneShotDispatchParams(prompt=SMOKE_TEST_PROMPT, model=None, extra_workflow_inputs={}, slug="smoke-test")`
+    23→- `dispatch_one_shot(ctx, params=params, dry_run=False)`
+    24→- `dispatch_one_shot` already handles: create_branch, commit, push, create_pr with plan-header, add footer, add labels (`erk-pr`, `erk-plan`), trigger workflow, write dispatch metadata, post queued comment
+    25→
+    26→- **Update** `cleanup_smoke_tests()` to find branches matching `plnd/smoke-test-` instead of `smoke-test/`
+    27→- Update `SMOKE_TEST_BRANCH_PREFIX` constant to `"plnd/smoke-test-"`
+    28→
+    29→### 2. Update `src/erk/cli/commands/doctor_workflow.py`
+    30→
+
+... [28 lines omitted] ...
+
+    31→- `_handle_smoke_test` already calls `run_smoke_test(ctx)` and handles the result — this interface stays the same since `run_smoke_test` still returns `SmokeTestResult | SmokeTestError`
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01HTwfKUA9ZNiFxSt8ebMJFb">
+    <param name="questions">[{'question': '📋 Plan: Smoke test through production `dispatch_one_shot` code path\nCurren...[truncated 507 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1345" cache_read_input_tokens="74017" output_tokens="262" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1345, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HTwfKUA9ZNiFxSt8ebMJFb">
+User has answered your questions: "📋 Plan: Smoke test through production `dispatch_one_shot` code path
+Current context: (wt:erk-slot-37) (br:plnd/doctor-workflow-smoke-test-02-25-0128) (pr:#8115)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01XzWdAyzeoUCQYqZS2XW5ZZ">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="821" cache_read_input_tokens="75362" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 821, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XzWdAyzeoUCQYqZS2XW5ZZ">
+Launching skill: erk:plan-save
+  </tool_result>
+</session>
