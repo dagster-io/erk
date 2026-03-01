@@ -4,6 +4,7 @@ These tests verify that RealGraphite correctly constructs subprocess commands
 for external tools (gt) without actually executing them.
 """
 
+import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -55,6 +56,7 @@ def test_real_graphite_is_branch_tracked_constructs_correct_command() -> None:
             capture_output=True,
             text=True,
             check=False,
+            timeout=15,
         )
 
 
@@ -76,3 +78,41 @@ def test_submit_stack_invalidates_branches_cache() -> None:
 
         # Cache should be invalidated after submit_stack
         assert ops._branches_cache is None
+
+
+def test_real_graphite_check_auth_status_returns_false_on_timeout() -> None:
+    """Test check_auth_status returns (False, None, None) and warns when subprocess times out."""
+    with (
+        patch("erk_shared.gateway.graphite.real.subprocess.run") as mock_run,
+        patch("erk_shared.gateway.graphite.real.user_output") as mock_output,
+    ):
+        mock_run.side_effect = subprocess.TimeoutExpired(cmd=["gt", "auth"], timeout=15)
+
+        ops = RealGraphite()
+        result = ops.check_auth_status()
+
+        assert result == (False, None, None)
+        mock_run.assert_called_once()
+        mock_output.assert_called_once_with(
+            "Warning: Graphite auth check timed out after 15 seconds"
+        )
+
+
+def test_real_graphite_is_branch_tracked_returns_false_on_timeout() -> None:
+    """Test is_branch_tracked returns False and warns when subprocess times out."""
+    with (
+        patch("erk_shared.gateway.graphite.real.subprocess.run") as mock_run,
+        patch("erk_shared.gateway.graphite.real.user_output") as mock_output,
+    ):
+        mock_run.side_effect = subprocess.TimeoutExpired(
+            cmd=["gt", "branch", "info", "feature-branch"], timeout=15
+        )
+
+        ops = RealGraphite()
+        result = ops.is_branch_tracked(Path("/test"), "feature-branch")
+
+        assert result is False
+        mock_run.assert_called_once()
+        mock_output.assert_called_once_with(
+            "Warning: Graphite branch tracking check timed out for 'feature-branch'"
+        )

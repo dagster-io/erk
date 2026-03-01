@@ -11,6 +11,7 @@ Runs a linear pipeline of functions transforming a frozen SubmitState:
 8. Finalize PR metadata
 """
 
+import sys
 from pathlib import Path
 
 import click
@@ -169,6 +170,7 @@ def pr_submit(
 
     click.echo(click.style("🚀 Submitting PR...", bold=True))
     click.echo("")
+    sys.stdout.flush()
 
     state = make_initial_state(
         cwd=Path.cwd(),
