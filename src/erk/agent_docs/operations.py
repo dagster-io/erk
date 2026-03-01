@@ -10,6 +10,8 @@ from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any, cast, get_args
 
+import click
+
 from erk.agent_docs.models import (
     AgentDocFrontmatter,
     AgentDocValidationResult,
@@ -24,6 +26,21 @@ from erk.agent_docs.models import (
 )
 from erk_shared.core.frontmatter import parse_markdown_frontmatter
 from erk_shared.gateway.agent_docs.abc import AgentDocs
+
+
+def resolve_docs_project_root(*, repo_root: Path, docs_path: str | None) -> Path:
+    """Resolve the project root for docs operations.
+
+    When docs_path is configured, docs operations target the external
+    repo instead of the main project repo.
+    """
+    if docs_path is None:
+        return repo_root
+    path = Path(docs_path)
+    if not path.exists():
+        raise click.ClickException(f"Configured docs.path does not exist: {docs_path}")
+    return path
+
 
 AGENT_DOCS_DIR = "docs/learned"
 

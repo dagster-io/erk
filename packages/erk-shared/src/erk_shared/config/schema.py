@@ -171,6 +171,10 @@ class RepoConfigSchema(BaseModel):
         description="Repository for storing plan issues (owner/repo format)",
         json_schema_extra={"level": ConfigLevel.REPO_ONLY, "cli_key": "plans.repo"},
     )
+    docs_path: str | None = Field(
+        description="Local path to external repository containing docs/learned/",
+        json_schema_extra={"level": ConfigLevel.REPO_ONLY, "cli_key": "docs.path"},
+    )
 
 
 class FieldMetadata:

@@ -6,7 +6,11 @@ frontmatter with required fields: title and read_when.
 
 import click
 
-from erk.agent_docs.operations import validate_agent_docs, validate_tripwires_index
+from erk.agent_docs.operations import (
+    resolve_docs_project_root,
+    validate_agent_docs,
+    validate_tripwires_index,
+)
 from erk_shared.context.context import ErkContext
 
 
@@ -33,8 +37,10 @@ def validate_command(ctx: ErkContext, *, verbose: bool) -> None:
     - 0: All files are valid
     - 1: Validation errors found
     """
-    # Use repo_root from context
-    project_root = ctx.repo_root
+    project_root = resolve_docs_project_root(
+        repo_root=ctx.repo_root,
+        docs_path=ctx.local_config.docs_path,
+    )
 
     if not ctx.agent_docs.has_docs_dir(project_root):
         click.echo(click.style("No docs/learned/ directory found", fg="cyan"), err=True)
