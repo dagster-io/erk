@@ -30,6 +30,7 @@ def bundled_skills() -> dict[str, str]:
         "dignified-code-simplifier": "Code simplification review",
         "pr-operations": "Pull request operations",
         "pr-feedback-classifier": "PR feedback classification",
+        "cmux": "Terminal multiplexer workspace management",
     }
 
 

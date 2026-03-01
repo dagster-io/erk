@@ -158,8 +158,8 @@ def test_codex_portable_and_claude_only_cover_all_skills() -> None:
             f"Skills not in codex_portable_skills() or claude_only_skills(): "
             f"{sorted(orphaned_skills)}\n"
             f"Add these to src/erk/core/capabilities/codex_portable.py\n"
-            f"  codex_portable: works with any AI coding agent (generic patterns, no Claude-specific features)\n"
-            f"  claude_only: references Claude-specific features (hooks, session logs, Claude Code commands)"
+            f"  codex_portable: works with any AI coding agent\n"
+            f"  claude_only: references Claude-specific features"
         )
 
     # Check for nonexistent skills in registries
