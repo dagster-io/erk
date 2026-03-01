@@ -1,0 +1,425 @@
+<session>
+  <meta branch="plnd/fix-rebase-shortcut-key-03-01-1520" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8560&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 12. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8560` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**CRITICAL**: Never delete the impl directory - leave for user review (no auto-commit).
+
+### Step 12: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 13: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll implement plan #8560. Let me start by setting up the implementation environment.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11206" cache_read_input_tokens="16808" cache_creation="{'ephemeral_5m_input_tokens': 11206, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_017ezWAUGeA1aPbLWxSq5j5R">
+    <param name="command">erk exec setup-impl --issue 8560</param>
+    <param name="description">Set up implementation for plan #8560</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11206" cache_read_input_tokens="16808" cache_creation="{'ephemeral_5m_input_tokens': 11206, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017ezWAUGeA1aPbLWxSq5j5R">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--fix-rebase-shortcut-key-03-01-1520", "plan_number": 8560, "plan_url": "https://github.com/dagster-io/erk/pull/8560", "branch": "plnd/fix-rebase-shortcut-key-03-01-1520", "plan_title": "[erk-plan] Fix rebase shortcut key in TUI launch screen", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8560, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/fix-rebase-shortcut-key-03-01-1520', syncing with remote...
+  </tool_result>
+  <assistant>Setup complete. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="356" cache_read_input_tokens="28014" cache_creation="{'ephemeral_5m_input_tokens': 356, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01R8XPTXBWybf8aNzJLPNxgo">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--fix-rebase-shortcut-key-03-01-1520/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="356" cache_read_input_tokens="28014" cache_creation="{'ephemeral_5m_input_tokens': 356, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01R8XPTXBWybf8aNzJLPNxgo">
+     1→# Fix rebase shortcut key in TUI launch screen
+     2→
+     3→## Context
+     4→
+     5→The TUI launch screen shows `[f]` as the shortcut for rebase, but it should be `[r]` (mnemonic for **r**ebase).
+     6→
+     7→## Change
+     8→
+     9→**File:** `src/erk/tui/screens/launch_screen.py:24`
+    10→
+    11→Change `"rebase_remote": "f"` to `"rebase_remote": "r"` in the `LAUNCH_KEYS` dict.
+    12→
+    13→No conflicts — "r" is not used by any other plan action (existing keys: c, d, l, a).
+    14→
+    15→## Verification
+    16→
+    17→Run `erk dash -i`, select a plan, press Enter to open launch screen, confirm rebase shows `[r]`.
+    18→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Simple one-line fix. Let me load the relevant tripwires for TUI code, read the file, and set up the implementation.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="437" cache_read_input_tokens="28370" cache_creation="{'ephemeral_5m_input_tokens': 437, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01FWVsWq8EX2sBKfuxYoYbcR">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/screens/launch_screen.py</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="437" cache_read_input_tokens="28370" cache_creation="{'ephemeral_5m_input_tokens': 437, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_011vMq3PJAUcD9CWZvQpitgW">
+    <param name="todos">[{'content': "Change rebase_remote key from 'f' to 'r' in LAUNCH_KEYS", 'status': 'in_prog...[truncated 121 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="437" cache_read_input_tokens="28370" cache_creation="{'ephemeral_5m_input_tokens': 437, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FWVsWq8EX2sBKfuxYoYbcR">
+     1→"""Modal screen for quick-launch of ACTION commands."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from textual.app import ComposeResult
+     6→from textual.binding import Binding
+     7→from textual.containers import Vertical
+     8→from textual.events import Key
+     9→from textual.screen import ModalScreen
+    10→from textual.widgets import Label
+    11→
+    12→from erk.tui.commands.registry import CATEGORY_EMOJI, get_available_commands
+    13→from erk.tui.commands.types import CommandCategory, CommandContext, CommandDefinition
+    14→
+    15→# Single-key mappings for ACTION commands, grouped by view context.
+    16→# Plan keys and objective keys can reuse letters because get_available_commands
+    17→# already filters by view mode—plan commands only appear in Plans/Learn views,
+    18→# objective commands only in Objectives view.
+    19→LAUNCH_KEYS: dict[str, str] = {
+    20→    # Plan actions
+    21→    "close_plan": "c",
+    22→    "dispatch_to_queue": "d",
+    23→    "land_pr": "l",
+    24→    "rebase_remote": "f",
+    25→    "address_remote": "a",
+    26→    # Objective actions
+    27→    "close_objective": "c",
+    28→    "one_shot_plan": "s",
+    29→    "check_objective": "k",
+    30→}
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_011vMq3PJAUcD9CWZvQpitgW">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>I can see the issue at line 24. Let me also signal GitHub that implementation has started, then make the fix.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="919" cache_read_input_tokens="28807" cache_creation="{'ephemeral_5m_input_tokens': 919, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_014NdiCGWAPYhskd63TnKaur">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/screens/launch_screen.py</param>
+    <param name="old_string">    "rebase_remote": "f",</param>
+    <param name="new_string">    "rebase_remote": "r",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="919" cache_read_input_tokens="28807" cache_creation="{'ephemeral_5m_input_tokens': 919, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_0193sY3BVYHxEFkRiEWtqD6x">
+    <param name="command">erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="919" cache_read_input_tokens="28807" cache_creation="{'ephemeral_5m_input_tokens': 919, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014NdiCGWAPYhskd63TnKaur">
+The file /home/runner/work/erk/erk/src/erk/tui/screens/launch_screen.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_0193sY3BVYHxEFkRiEWtqD6x">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <assistant>The fix is applied. Let me mark that task complete and proceed with CI.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="399" cache_read_input_tokens="29726" cache_creation="{'ephemeral_5m_input_tokens': 399, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01Mg3Ambqgcsv3xCC8vbNwAA">
+    <param name="todos">[{'content': "Change rebase_remote key from 'f' to 'r' in LAUNCH_KEYS", 'status': 'complet...[truncated 123 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="399" cache_read_input_tokens="29726" cache_creation="{'ephemeral_5m_input_tokens': 399, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01NymMnFMWfKqsPcKGZoLHj8">
+    <param name="description">Run fast CI checks</param>
+    <param name="prompt">Run fast CI checks for the erk project. Run ruff, prettier, ty, and pytest (unit tests onl...[truncated 43 chars]...k/erk. Use `make` targets if available, or run the tools directly. Report results clearly.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="399" cache_read_input_tokens="29726" cache_creation="{'ephemeral_5m_input_tokens': 399, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Mg3Ambqgcsv3xCC8vbNwAA">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_result tool="toolu_01NymMnFMWfKqsPcKGZoLHj8">
+Perfect! I now have complete CI results. Let me provide a comprehensive summary:
+
+## CI Check Results Summary
+
+### Status: MOSTLY PASSED (2 prettier formatting issues)
+
+**Overall:** 8/9 checks passed. Only prettier formatting issues found.
+
+---
+
+### Individual Tool Results
+
+#### 1. **Lint (ruff check)** - PASSED
+- Status: All checks passed
+- No linting violations detected
+
+#### 2. **Format Check (ruff format --check)** - PASSED
+- Status: 1625 files already formatted correctly
+- No formatting issues
+
+#### 3. **Type Check (ty check)** - PASSED
+- Status: All checks passed
+- No type errors detected
+
+#### 4. **Prettier (markdown formatting)** - FAILED
+- Status: Code style issues found in 2 files
+- Files with issues:
+  - `/home/runner/work/erk/erk/docs/learned/integrations/github-review-decision.md`
+  - `/home/runner/work/erk/erk/docs/learned/tui/status-indicators.md`
+- Fix: Run `prettier --write` on these files
+
+... [28 lines omitted] ...
+  </tool_result>
+  <assistant>CI passes. The 2 prettier issues are in pre-existing docs, not related to this change. Let me complete the remaining steps.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="932" cache_read_input_tokens="30125" cache_creation="{'ephemeral_5m_input_tokens': 932, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_013JSLi7tPS4THUwnyUkmzDo">
+    <param name="todos">[{'content': "Change rebase_remote key from 'f' to 'r' in LAUNCH_KEYS", 'status': 'complet...[truncated 125 chars]...hecks'}, {'content': 'Submit PR', 'status': 'in_progress', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="932" cache_read_input_tokens="30125" cache_creation="{'ephemeral_5m_input_tokens': 932, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01F2CjdweBt31xPHRb2ZGd6t">
+    <param name="command">erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="932" cache_read_input_tokens="30125" cache_creation="{'ephemeral_5m_input_tokens': 932, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_018G3NvBhdzZSrsz1HN2veAS">
+    <param name="command">erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="932" cache_read_input_tokens="30125" cache_creation="{'ephemeral_5m_input_tokens': 932, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013JSLi7tPS4THUwnyUkmzDo">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_result tool="toolu_01F2CjdweBt31xPHRb2ZGd6t">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8560
+}
+  </tool_result>
+</session>
