@@ -75,7 +75,7 @@ For each candidate, cross-reference against ExistingDocsChecker findings:
 | STALE_DOC          | Mark for DELETE_OR_REWRITE                  |
 | HAS_PHANTOM_REFS   | Mark for UPDATE_REFERENCES                  |
 
-### Step 3.5: Adversarial Verification of Contradictions
+### Step 4: Adversarial Verification of Contradictions
 
 For each contradiction from ExistingDocsChecker, apply this decision procedure IN ORDER:
 
@@ -85,14 +85,14 @@ For each contradiction from ExistingDocsChecker, apply this decision procedure I
 
 **"The default is VERIFY, not HARMONIZE."** Never propose "add disambiguation note" without first confirming both systems exist via stale reference data.
 
-### Step 4: Cross-Reference Against Diff Inventory
+### Step 5: Cross-Reference Against Diff Inventory
 
 Ensure completeness by checking that every item from CodeDiffAnalyzer inventory is accounted for:
 
 - Each new file, function, CLI command, gateway method should have a documentation decision
 - If an inventory item has no corresponding documentation candidate, add one
 
-### Step 5: Classify Each Item
+### Step 6: Classify Each Item
 
 Assign a classification to each item:
 
@@ -133,7 +133,7 @@ For items extracted from Prevention Insights and Failed Approaches:
 | MEDIUM   | NEW_DOC or UPDATE_EXISTING | Error pattern specific to one area (e.g., specific API quirk)                            |
 | LOW      | Include in related doc     | Minor gotcha, doesn't need standalone doc                                                |
 
-### Step 6: Score Tripwire Worthiness
+### Step 7: Score Tripwire Worthiness
 
 For each item classified as TRIPWIRE or prevention insight with HIGH severity, score its tripwire-worthiness.
 
@@ -154,7 +154,7 @@ For each item classified as TRIPWIRE or prevention insight with HIGH severity, s
 - Score 2-3 → Include in "Potential Tripwires" section
 - Score < 2 → Regular documentation item
 
-### Step 7: Prioritize by Impact
+### Step 8: Prioritize by Impact
 
 Assign priority to each item:
 

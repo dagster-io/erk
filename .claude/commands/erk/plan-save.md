@@ -45,7 +45,7 @@ Else:
   - Set OBJECTIVE_FLAG to empty string
 ```
 
-### Step 1.5: Generate Branch Slug
+### Step 2: Generate Branch Slug
 
 Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
 
@@ -58,7 +58,7 @@ Generate a branch slug from the title:
 
 Store the result as `BRANCH_SLUG`.
 
-### Step 1.75: Generate Plan Summary
+### Step 3: Generate Plan Summary
 
 Write a concise 2-3 sentence summary of the plan. This summary will be visible
 at the top of the PR description (above the collapsed full plan).
@@ -71,7 +71,7 @@ Guidelines:
 - Avoid special shell characters (backticks, dollar signs)
 - Store as PLAN_SUMMARY
 
-### Step 2: Run Save Command
+### Step 4: Run Save Command
 
 Run this command with the session ID, branch slug, summary, and optional flags:
 
@@ -79,13 +79,13 @@ Run this command with the session ID, branch slug, summary, and optional flags:
 erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
 ```
 
-Parse the JSON output to extract `plan_number` for verification in Step 3.
+Parse the JSON output to extract `plan_number` for verification in Step 5.
 
 If the command fails, display the error and stop.
 
-### Step 3: Verify Objective Link (if applicable)
+### Step 5: Verify Objective Link (if applicable)
 
-**Only run this step if `objective_issue` is non-null in the JSON output from Step 2.**
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
 
 Verify the objective link was saved correctly:
 
@@ -118,7 +118,7 @@ ensure the objective-context marker exists, and re-run /erk:plan-save.
 
 Exit without creating the plan-saved marker. The session continues so the user can retry.
 
-### Step 3.5: Update Objective Roadmap (if objective linked)
+### Step 6: Update Objective Roadmap (if objective linked)
 
 **Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
 
@@ -146,7 +146,7 @@ Display: `Updated objective #<objective-issue> roadmap: node <step_id> → plan 
 
 **Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
 
-### Step 4: Display Results
+### Step 7: Display Results
 
 **If JSON contains `skipped_duplicate: true`:**
 
@@ -156,7 +156,7 @@ If `branch_name` is present in the JSON, display the same next-steps block as th
 
 If `branch_name` is absent, display only: `View PR: <plan_url>`
 
-Return immediately (skip Steps 3, 3.5 above if not already executed).
+Return immediately (skip Steps 5, 6 above if not already executed).
 
 **Otherwise, on success**, display:
 
