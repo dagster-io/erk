@@ -149,6 +149,5 @@ Exec commands must return structured JSON with `success: bool`. Without a consis
 
 ## Related Resources
 
-- **Pattern documentation:** `docs/developer/agentic-engineering-patterns/cli-push-down.md`
 - **Exec command reference:** Load the `erk-exec` skill for command listings and conventions
 - **Exec script directory:** `src/erk/cli/commands/exec/scripts/`
