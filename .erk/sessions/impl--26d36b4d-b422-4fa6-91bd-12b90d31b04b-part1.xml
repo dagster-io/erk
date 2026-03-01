@@ -1,0 +1,825 @@
+<session>
+  <meta branch="plnd/show-workflow-source-03-01-1414" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8551&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 12. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8551` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**CRITICAL**: Never delete the impl directory - leave for user review (no auto-commit).
+
+### Step 12: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 13: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #8551.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11225" cache_read_input_tokens="16808" cache_creation="{'ephemeral_5m_input_tokens': 11225, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01C7V2dmnFDJW8eiCmxhMbsv">
+    <param name="command">erk exec setup-impl --issue 8551</param>
+    <param name="description">Set up implementation for plan #8551</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11225" cache_read_input_tokens="16808" cache_creation="{'ephemeral_5m_input_tokens': 11225, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01C7V2dmnFDJW8eiCmxhMbsv">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--show-workflow-source-03-01-1414", "plan_number": 8551, "plan_url": "https://github.com/dagster-io/erk/pull/8551", "branch": "plnd/show-workflow-source-03-01-1414", "plan_title": "[erk-plan] Show Workflow Source in erk run list", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8551, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/show-workflow-source-03-01-1414', syncing with remote...
+  </tool_result>
+  <assistant>Implementation environment ready. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="338" cache_read_input_tokens="28033" cache_creation="{'ephemeral_5m_input_tokens': 338, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Fo7yC5uWjAZ9Z7UvJMBK8Y">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--show-workflow-source-03-01-1414/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="338" cache_read_input_tokens="28033" cache_creation="{'ephemeral_5m_input_tokens': 338, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Fo7yC5uWjAZ9Z7UvJMBK8Y">
+     1→# Plan: Show Workflow Source in `erk run list`
+     2→
+     3→## Context
+     4→
+     5→Currently, `erk run list` only fetches runs from a single workflow (`plan-implement.yml` via `DISPATCH_WORKFLOW_NAME`). Erk registers multiple workflows in `WORKFLOW_COMMAND_MAP` (plan-implement, pr-rebase, pr-address, pr-rewrite, learn, one-shot), but the run list command ignores all workflows except plan-implement.
+     6→
+     7→This plan addresses two user requests:
+     8→1. **Fetch runs from all erk-registered workflows** so the full picture of remote workflow activity is visible
+     9→2. **Add a "workflow" column** so the user can see which workflow each run came from
+    10→
+    11→## Changes
+    12→
+    13→### 1. Modify `_list_runs()` in `src/erk/cli/commands/run/list_cmd.py`
+    14→
+    15→**Current behavior (line 34):**
+    16→```python
+    17→runs = ctx.github.list_workflow_runs(repo.root, DISPATCH_WORKFLOW_NAME)
+    18→```
+    19→
+    20→**New behavior:** Iterate over all workflows in `WORKFLOW_COMMAND_MAP` and fetch runs from each, tagging each run with its source workflow name. Since `WorkflowRun` is immutable and should not gain a `workflow_name` field (it's a gateway type shared across the codebase), use a parallel data structure to track source workflow.
+    21→
+    22→**Implementation approach:**
+    23→
+    24→Create a list of `(WorkflowRun, str)` tuples where the `str` is the human-readable workflow command name (e.g., "plan-implement", "one-shot", "pr-rebase"). This avoids modifying the shared `WorkflowRun` type.
+    25→
+    26→```python
+    27→from erk.cli.constants import WORKFLOW_COMMAND_MAP
+    28→
+    29→# Fetch runs from all registered workflows
+    30→tagged_runs: list[tuple[WorkflowRun, str]] = []
+
+... [156 lines omitted] ...
+  </tool_result>
+  <assistant>Good, I have the plan. Let me now read the key files I need to modify, load tripwires for CLI code, and check existing constants.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3537" cache_read_input_tokens="28371" cache_creation="{'ephemeral_5m_input_tokens': 3537, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01J6LYc5jpBsVNnDz7u2zsTQ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/run/list_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3537" cache_read_input_tokens="28371" cache_creation="{'ephemeral_5m_input_tokens': 3537, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01B8BHjb74pGzYvKHEnQpsDB">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/run/test_list.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3537" cache_read_input_tokens="28371" cache_creation="{'ephemeral_5m_input_tokens': 3537, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_0199CGoCskjC6LK1ig6KuA21">
+    <param name="pattern">WORKFLOW_COMMAND_MAP</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/constants.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3537" cache_read_input_tokens="28371" cache_creation="{'ephemeral_5m_input_tokens': 3537, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_019jzyaGfSBvjsExSVGHxWCz">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3537" cache_read_input_tokens="28371" cache_creation="{'ephemeral_5m_input_tokens': 3537, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01J6LYc5jpBsVNnDz7u2zsTQ">
+     1→"""List workflow runs command."""
+     2→
+     3→import click
+     4→from rich.console import Console
+     5→from rich.table import Table
+     6→
+     7→from erk.cli.commands.pr.list_cmd import format_pr_cell
+     8→from erk.cli.commands.run.shared import extract_plan_number
+     9→from erk.cli.constants import DISPATCH_WORKFLOW_NAME
+    10→from erk.cli.core import discover_repo_context
+    11→from erk.cli.ensure import Ensure
+    12→from erk.core.context import ErkContext
+    13→from erk.core.display_utils import (
+    14→    format_submission_time,
+    15→    format_workflow_outcome,
+    16→    format_workflow_run_id,
+    17→)
+    18→from erk.core.pr_utils import select_display_pr
+    19→from erk_shared.gateway.github.emoji import format_checks_cell
+    20→from erk_shared.gateway.github.parsing import github_repo_location_from_url
+    21→from erk_shared.gateway.github.types import GitHubRepoId
+    22→from erk_shared.output.output import user_output
+    23→
+    24→
+    25→def _list_runs(ctx: ErkContext, show_all: bool = False) -&gt; None:
+    26→    """List workflow runs in a run-centric table view."""
+    27→    # Validate preconditions upfront (LBYL)
+    28→    Ensure.gh_authenticated(ctx)
+    29→
+    30→    # Discover repository context
+
+... [166 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_019jzyaGfSBvjsExSVGHxWCz">
+     1→---
+     2→title: Cli Tripwires
+     3→read_when:
+     4→  - "working on cli code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from cli/*.md frontmatter --&gt;
+    10→
+    11→# Cli Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**Design batch commands that process items despite validation failures** → Read [Batch Exec Commands](batch-exec-commands.md) first. Validate ALL items upfront before processing ANY items. Stop on first validation error.
+    16→
+    17→**Return non-zero exit codes for batch command failures** → Read [Batch Exec Commands](batch-exec-commands.md) first. Always exit 0, encode errors in JSON output with per-item success fields.
+    18→
+    19→**Use OR semantics for batch success (success=true if any item succeeds)** → Read [Batch Exec Commands](batch-exec-commands.md) first. Use AND semantics: top-level success=true only if ALL items succeed.
+    20→
+    21→**Using RuntimeError for expected CLI failures** → Read [CLI Error Handling Anti-Patterns](error-handling-antipatterns.md) first. RuntimeError signals a programmer error (bug in the code), NOT expected user-facing failures. Use UserFacingCliError for expected conditions (missing files, invalid input, precondition violations) that should exit cleanly with an actionable message.
+    22→
+    23→**WORKFLOW_COMMAND_MAP maps command names to .yml filenames** → Read [Workflow Commands](workflow-commands.md) first. command names intentionally diverge from filenames (e.g., pr-rebase → pr-rebase.yml, but plan-implement → plan-implement.yml via DISPATCH_WORKFLOW_NAME constant)
+    24→
+    25→**adding a column to plan list without checking PlanDataTable.\_setup_columns()** → Read [Plan List Provider Pattern](plan-list-provider-pattern.md) first. Column order in list_cmd.py must mirror plan_table.py for consistency between CLI and TUI. Check both files when modifying columns.
+    26→
+    27→**adding a new exec script that produces JSON consumed by another exec script** → Read [Exec Script Schema Patterns](exec-script-schema-patterns.md) first. Define shared TypedDict in packages/erk-shared/ for type-safe schema. Both producer and consumer import from the same schema definition.
+    28→
+    29→**adding a new required gitignore entry** → Read [Upgrade Workflow](upgrade-workflow.md) first. Add to REQUIRED_GITIGNORE_ENTRIES in src/erk/core/init_utils.py:8. The upgrade path in init/main.py automatically syncs these entries.
+    30→
+
+... [151 lines omitted] ...
+
+    33→**adding a new step to the submit pipeline** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. Each step must return SubmitState | SubmitError. Use dataclasses.replace() for state updates. Add the step to \_submit_pipeline() tuple.
+    35→**adding a parameter to erk exec without updating calling command** → Read [Parameter Addition Checklist](parameter-addition-checklist.md) first. 5-step verification required. Parameter additions must thread through skill argument-hint, command invocations, AND exec script. Miss any layer and you get silent failures or discovery problems. See parameter-addition-checklist.md.
+    57→**calling is_learned_docs_available() in CLI code** → Read [erk docs check Command](erk-docs-check.md) first. Function signature requires repo_ops and cwd kwargs: is_learned_docs_available(repo_ops=..., cwd=...). Omitting either kwarg will cause a TypeError.
+    59→**choosing between Ensure and EnsureIdeal** → Read [EnsureIdeal Pattern for Type Narrowing](ensure-ideal-pattern.md) first. Ensure is for invariant checks (preconditions). EnsureIdeal is for type narrowing (handling operations that can return non-ideal states). If the value comes from an operation that returns T | ErrorType, use EnsureIdeal.
+    79→**flagging 5+ parameter violations in code review** → Read [Code Review Filtering](code-review-filtering.md) first. Before flagging, verify NO exception applies (ABC/Protocol/Click)
+    99→**making a separate subprocess call for each item in a batch operation** → Read [Exec Script Performance Patterns](exec-script-performance.md) first. Use batch exec commands pattern (batch-exec-commands.md) to process items in a single invocation with per-item error handling.
+   101→**making session discovery failures block the land command** → Read [Land-Learn Integration](land-learn-integration.md) first. Session discovery uses fire-and-forget error resilience. The entire learn workflow is wrapped in try/except to prevent blocking land. Failures are reported as warnings, never errors.
+   111→**plan-implement exists in WORKFLOW_COMMAND_MAP but erk launch plan-implement always raises UsageError** → Read [Workflow Commands](workflow-commands.md) first. use erk pr submit instead
+   139→**testing prompts without matching confirm_responses array length** → Read [Prompt Consolidation Pattern](prompt-consolidation-pattern.md) first. confirm_responses array length must match the number of prompts. Too few causes IndexError; too many indicates a prompt was removed without updating tests.
+   141→**using EnsureIdeal for discriminated union narrowing** → Read [EnsureIdeal Pattern for Type Narrowing](ensure-ideal-pattern.md) first. Only use when the error type implements NonIdealState protocol OR provides a message field. For custom error types without standard fields, add a specific EnsureIdeal method.
+   153→**using ctx.invoke() with kwargs that don't match target function parameter names** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. Click ctx.invoke() forwards kwargs directly — any name mismatch causes runtime TypeError. Verify all parameter names exactly match the target function signature.
+   155→**using dict .get() to access fields from exec script JSON output without a TypedDict schema** → Read [Exec Script Schema Patterns](exec-script-schema-patterns.md) first. Silent filtering failures occur when field names are mistyped. Define TypedDict in erk_shared and use cast() in consumers.
+   175→**writing multi-line error messages in Ensure method calls** → Read [CLI Output Styling Guide](output-styling.md) first. Use implicit string concatenation with \n at end of first string. Line 1 is the primary error, line 2+ is remediation context. Do NOT use \n\n (double newline) — Ensure handles spacing.
+  </tool_result>
+  <tool_result tool="toolu_01B8BHjb74pGzYvKHEnQpsDB">
+     1→"""CLI tests for erk run list command.
+     2→
+     3→This file focuses on CLI-specific concerns for the list runs command:
+     4→- Command execution and exit codes
+     5→- Output formatting and display (status indicators, Rich table)
+     6→- Run-centric view with plan/PR linkage
+     7→
+     8→The integration layer (list_workflow_runs) is tested in:
+     9→- tests/unit/fakes/test_fake_github.py - Fake infrastructure tests
+    10→- tests/integration/test_real_github.py - Real implementation tests
+    11→
+    12→This file trusts that unit layer and only tests CLI integration.
+    13→"""
+    14→
+    15→from datetime import UTC, datetime
+    16→from pathlib import Path
+    17→
+    18→from click.testing import CliRunner
+    19→
+    20→from erk.cli.commands.run.list_cmd import list_runs
+    21→from erk_shared.gateway.git.abc import WorktreeInfo
+    22→from erk_shared.gateway.git.fake import FakeGit
+    23→from erk_shared.gateway.github.fake import FakeGitHub
+    24→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    25→from erk_shared.gateway.github.issues.types import IssueInfo
+    26→from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
+    27→from tests.fakes.context import create_test_context
+    28→
+    29→
+    30→def test_list_runs_empty_state(tmp_path: Path) -&gt; None:
+
+... [826 lines omitted] ...
+
+    47→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   101→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   140→            conclusion="failure",
+   202→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   251→    result = runner.invoke(list_runs, ["--show-legacy"], obj=ctx, catch_exceptions=False)
+   318→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   386→    result = runner.invoke(list_runs, ["--show-legacy"], obj=ctx, catch_exceptions=False)
+   462→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   518→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   572→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   631→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   723→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   786→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   844→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   848→    # Should display without error - the "-" placeholder is dimmed
+  </tool_result>
+  <tool_result tool="toolu_0199CGoCskjC6LK1ig6KuA21">
+33:WORKFLOW_COMMAND_MAP: dict[str, str] = {
+34-    "plan-implement": DISPATCH_WORKFLOW_NAME,  # plan-implement.yml
+35-    "pr-rebase": REBASE_WORKFLOW_NAME,  # pr-rebase.yml
+36-    "pr-address": PR_ADDRESS_WORKFLOW_NAME,  # pr-address.yml
+37-    "pr-rewrite": PR_REWRITE_WORKFLOW_NAME,  # pr-rewrite.yml
+38-    "learn": "learn.yml",
+39-    "one-shot": ONE_SHOT_WORKFLOW_NAME,  # one-shot.yml
+40-}
+41-
+42-# Workflow names that trigger the autofix workflow
+43-# Must match the `name:` field in each .yml file (which should match filename without .yml)
+44-AUTOFIX_TRIGGER_WORKFLOWS = frozenset(
+45-    {
+46-        "python-format",
+47-        "lint",
+48-        "docs-check",
+  </tool_result>
+  <assistant>Good, I have all the context I need. Let me also check the `WorkflowRun` type and the `list_workflow_runs` signature to understand the limit parameter:</assistant>
+  <usage input_tokens="6091" cache_creation_input_tokens="14236" cache_read_input_tokens="31908" cache_creation="{'ephemeral_5m_input_tokens': 14236, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_016AUCgQRC2ER6LLN1V2WHy5">
+    <param name="pattern">def list_workflow_runs</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared</param>
+    <param name="output_mode">content</param>
+    <param name="-A">5</param>
+  </tool_use>
+  <usage input_tokens="6091" cache_creation_input_tokens="14236" cache_read_input_tokens="31908" cache_creation="{'ephemeral_5m_input_tokens': 14236, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01Xygz75gibyUK5NWBARfoe6">
+    <param name="pattern">DISPATCH_WORKFLOW_NAME</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/constants.py</param>
+    <param name="output_mode">content</param>
+    <param name="-B">2</param>
+    <param name="-A">2</param>
+  </tool_use>
+  <usage input_tokens="6091" cache_creation_input_tokens="14236" cache_read_input_tokens="31908" cache_creation="{'ephemeral_5m_input_tokens': 14236, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Xygz75gibyUK5NWBARfoe6">
+14-
+15-# GitHub Actions workflow for remote implementation dispatch
+16:DISPATCH_WORKFLOW_NAME = "plan-implement.yml"
+17-DISPATCH_WORKFLOW_METADATA_NAME = "plan-implement"
+18-
+--
+32-# This provides a unified interface via `erk launch &lt;name&gt;`
+33-WORKFLOW_COMMAND_MAP: dict[str, str] = {
+34:    "plan-implement": DISPATCH_WORKFLOW_NAME,  # plan-implement.yml
+35-    "pr-rebase": REBASE_WORKFLOW_NAME,  # pr-rebase.yml
+36-    "pr-address": PR_ADDRESS_WORKFLOW_NAME,  # pr-address.yml
+  </tool_result>
+  <tool_result tool="toolu_016AUCgQRC2ER6LLN1V2WHy5">
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:107:    def list_workflow_runs(
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-108-        self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-109-    ) -&gt; list[WorkflowRun]:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-110-        """Delegate read operation to wrapped implementation."""
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-111-        return self._wrapped.list_workflow_runs(repo_root, workflow, limit, user=user)
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-112-
+--
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:149:    def list_workflow_runs(
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-150-        self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-151-    ) -&gt; list[WorkflowRun]:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py-152-        """List workflow runs for a specific workflow.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py-153-
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-154-        Args:
+--
+packages/erk-shared/src/erk_shared/gateway/github/printing.py:55:    def list_workflow_runs(
+packages/erk-shared/src/erk_shared/gateway/github/printing.py-56-        self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
+packages/erk-shared/src/erk_shared/gateway/github/printing.py-57-    ) -&gt; list[WorkflowRun]:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/printing.py-58-        """List workflow runs (read-only, no printing)."""
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/printing.py-59-        return self._wrapped.list_workflow_runs(repo_root, workflow, limit, user=user)
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/printing.py-60-
+--
+packages/erk-shared/src/erk_shared/gateway/github/real.py:573:    def list_workflow_runs(
+packages/erk-shared/src/erk_shared/gateway/github/real.py-574-        self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
+packages/erk-shared/src/erk_shared/gateway/github/real.py-575-    ) -&gt; list[WorkflowRun]:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py-576-        """List workflow runs for a specific workflow."""
+packages/erk-shared/src/erk_shared/gateway/github/real.py-577-        # GH-API-AUDIT: REST - GET actions/workflows/{id}/runs
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py-578-        query_params = f"per_page={limit}"
+--
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:384:    def list_workflow_runs(
+packages/erk-shared/src/erk_shared/gateway/github/fake.py-385-        self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
+
+... [4 lines omitted] ...
+  </tool_result>
+  <assistant>Now I have full understanding of the codebase. Let me set up the todo list and start implementing.</assistant>
+  <usage input_tokens="198" cache_creation_input_tokens="7867" cache_read_input_tokens="46144" cache_creation="{'ephemeral_5m_input_tokens': 7867, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01EUErXTCiCmboZxp9gDKvNb">
+    <param name="todos">[{'content': 'Modify _list_runs() to fetch from all workflows in WORKFLOW_COMMAND_MAP', 's...[truncated 603 chars]... and submit PR', 'status': 'pending', 'activeForm': 'Signaling GitHub and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="198" cache_creation_input_tokens="7867" cache_read_input_tokens="46144" cache_creation="{'ephemeral_5m_input_tokens': 7867, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EUErXTCiCmboZxp9gDKvNb">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01ReHdKDSg9Tb7MC1JGZ2GY2">
+    <param name="command">erk exec impl-signal started --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="522" cache_read_input_tokens="54011" cache_creation="{'ephemeral_5m_input_tokens': 522, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01ReHdKDSg9Tb7MC1JGZ2GY2">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <assistant>Now let me implement the changes. I'll update `list_cmd.py` with the multi-workflow fetch, deduplication, sorting, and new workflow column:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="171" cache_read_input_tokens="54533" cache_creation="{'ephemeral_5m_input_tokens': 171, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01HHzSFzvTwwe66tnptvwfV7">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/run/list_cmd.py</param>
+    <param name="old_string">"""List workflow runs command."""
+
+import click
+from rich.console import Console
+from rich...[truncated 2730 chars]..._output("No runs with plans found. Use --show-legacy to see all runs.")
+            return</param>
+    <param name="new_string">"""List workflow runs command."""
+
+from datetime import UTC
+
+import click
+from rich.consol...[truncated 3892 chars]..._output("No runs with plans found. Use --show-legacy to see all runs.")
+            return</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="171" cache_read_input_tokens="54533" cache_creation="{'ephemeral_5m_input_tokens': 171, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HHzSFzvTwwe66tnptvwfV7">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/run/list_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>I need to add the `datetime` import. Let me check what's at the top:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2217" cache_read_input_tokens="54704" cache_creation="{'ephemeral_5m_input_tokens': 2217, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01HJpbP1SPUNrHGVdNe7YwWF">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/run/list_cmd.py</param>
+    <param name="old_string">from datetime import UTC</param>
+    <param name="new_string">from datetime import UTC, datetime</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2217" cache_read_input_tokens="54704" cache_creation="{'ephemeral_5m_input_tokens': 2217, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HJpbP1SPUNrHGVdNe7YwWF">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/run/list_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me update the rest of the function - the table columns and row building:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="194" cache_read_input_tokens="56921" cache_creation="{'ephemeral_5m_input_tokens': 194, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01RGBvhYTsANThmFxoswYQYJ">
+    <param name="todos">[{'content': 'Modify _list_runs() to fetch from all workflows in WORKFLOW_COMMAND_MAP', 's...[truncated 607 chars]... and submit PR', 'status': 'pending', 'activeForm': 'Signaling GitHub and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="194" cache_read_input_tokens="56921" cache_creation="{'ephemeral_5m_input_tokens': 194, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RGBvhYTsANThmFxoswYQYJ">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01RKGQMKci7mNwvnCEL3c9Af">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/run/list_cmd.py</param>
+    <param name="old_string">    # 5. Build table
+    table = Table(show_header=True, header_style="bold")
+    table.ad...[truncated 242 chars]...olumn("pr", no_wrap=True)
+    table.add_column("chks", no_wrap=True)
+
+    for run in runs:</param>
+    <param name="new_string">    # 5. Build table
+    table = Table(show_header=True, header_style="bold")
+    table.ad...[truncated 321 chars]...ue)
+    table.add_column("chks", no_wrap=True)
+
+    for run, workflow_name in tagged_runs:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="320" cache_read_input_tokens="57115" cache_creation="{'ephemeral_5m_input_tokens': 320, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RKGQMKci7mNwvnCEL3c9Af">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/run/list_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the `table.add_row()` call to include the workflow cell:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="506" cache_read_input_tokens="57435" cache_creation="{'ephemeral_5m_input_tokens': 506, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01HruxTusAahGKYrj5MgedSj">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/run/list_cmd.py</param>
+    <param name="old_string">        table.add_row(
+            run_id_cell,
+            status_cell,
+            submi...[truncated 3 chars]...plan_cell,
+            title_cell,
+            pr_cell,
+            checks_cell,
+        )</param>
+    <param name="new_string">        workflow_cell = f"[dim]{workflow_name}[/dim]"
+
+        table.add_row(
+            ...[truncated 85 chars]...plan_cell,
+            title_cell,
+            pr_cell,
+            checks_cell,
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="506" cache_read_input_tokens="57435" cache_creation="{'ephemeral_5m_input_tokens': 506, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HruxTusAahGKYrj5MgedSj">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/run/list_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Let me verify the final state of the file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="317" cache_read_input_tokens="57941" cache_creation="{'ephemeral_5m_input_tokens': 317, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01MDn2Z4uTimWUNiKGqVtKES">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/run/list_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="317" cache_read_input_tokens="57941" cache_creation="{'ephemeral_5m_input_tokens': 317, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MDn2Z4uTimWUNiKGqVtKES">
+     1→"""List workflow runs command."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→import click
+     6→from rich.console import Console
+     7→from rich.table import Table
+     8→
+     9→from erk.cli.commands.pr.list_cmd import format_pr_cell
+    10→from erk.cli.commands.run.shared import extract_plan_number
+    11→from erk.cli.constants import WORKFLOW_COMMAND_MAP
+    12→from erk.cli.core import discover_repo_context
+    13→from erk.cli.ensure import Ensure
+    14→from erk.core.context import ErkContext
+    15→from erk.core.display_utils import (
+    16→    format_submission_time,
+    17→    format_workflow_outcome,
+    18→    format_workflow_run_id,
+    19→)
+    20→from erk.core.pr_utils import select_display_pr
+    21→from erk_shared.gateway.github.emoji import format_checks_cell
+    22→from erk_shared.gateway.github.parsing import github_repo_location_from_url
+    23→from erk_shared.gateway.github.types import GitHubRepoId, WorkflowRun
+    24→from erk_shared.output.output import user_output
+    25→
+    26→_MAX_DISPLAY_RUNS = 50
+    27→_PER_WORKFLOW_LIMIT = 20
+    28→
+    29→
+    30→def _list_runs(ctx: ErkContext, show_all: bool = False) -&gt; None:
+
+... [199 lines omitted] ...
+  </tool_result>
+  <assistant>The implementation file looks correct. Now let me update the tests to add workflow column assertions:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3353" cache_read_input_tokens="58258" cache_creation="{'ephemeral_5m_input_tokens': 3353, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_015UaooGKgPGLkLYha72rNZX">
+    <param name="todos">[{'content': 'Modify _list_runs() to fetch from all workflows in WORKFLOW_COMMAND_MAP', 's...[truncated 609 chars]... and submit PR', 'status': 'pending', 'activeForm': 'Signaling GitHub and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3353" cache_read_input_tokens="58258" cache_creation="{'ephemeral_5m_input_tokens': 3353, 'ephemeral_1h_input_tokens': 0}" output_tokens="279" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015UaooGKgPGLkLYha72rNZX">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now I need to add workflow column assertions to existing tests and add a new test for the workflow column. The key thing to understand is that `FakeGitHub` returns the same runs for every workflow call, so deduplication will keep only the first occurrence (from the first workflow in `WORKFLOW_COMMAND_MAP` iteration order, which is "plan-implement").</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="321" cache_read_input_tokens="61611" cache_creation="{'ephemeral_5m_input_tokens': 321, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01NaYZmcZN1Kx7LQNDf5yZUz">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/run/test_list.py</param>
+    <param name="old_string">    # Assert
+    assert result.exit_code == 0
+    # Check for Rich table output - run_id s...[truncated 200 chars]...  # Success status indicator
+    assert "Success" in result.output or "✅" in result.output</param>
+    <param name="new_string">    # Assert
+    assert result.exit_code == 0
+    # Check for Rich table output - run_id s...[truncated 320 chars]...appear
+    assert "workflow" in result.output
+    assert "plan-implement" in result.output</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="321" cache_read_input_tokens="61611" cache_creation="{'ephemeral_5m_input_tokens': 321, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NaYZmcZN1Kx7LQNDf5yZUz">
+The file /home/runner/work/erk/erk/tests/commands/run/test_list.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add a dedicated test for the workflow column at the end of the file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="480" cache_read_input_tokens="61932" cache_creation="{'ephemeral_5m_input_tokens': 480, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01J1R38TozMbXoPkTmFRFZcJ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/run/test_list.py</param>
+    <param name="offset">840</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="480" cache_read_input_tokens="61932" cache_creation="{'ephemeral_5m_input_tokens': 480, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01J1R38TozMbXoPkTmFRFZcJ">
+   840→    }
+   841→    issues_ops = FakeGitHubIssues(issues=issues)
+   842→
+   843→    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+   844→    runner = CliRunner()
+   845→
+   846→    # Act
+   847→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   848→
+   849→    # Assert
+   850→    assert result.exit_code == 0
+   851→    # Should display without error - the "-" placeholder is dimmed
+   852→    # Just check it doesn't crash and outputs a table
+   853→    assert "submitted" in result.output
+   854→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01283yRpitVcrUdaQPeKaZCD">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/run/test_list.py</param>
+    <param name="old_string">    # Assert
+    assert result.exit_code == 0
+    # Should display without error - the "-"...[truncated 6 chars]... # Just check it doesn't crash and outputs a table
+    assert "submitted" in result.output</param>
+    <param name="new_string">    # Assert
+    assert result.exit_code == 0
+    # Should display without error - the "-"...[truncated 1778 chars]... display correctly
+    assert "555666" in result.output
+    assert "#142" in result.output</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="395" cache_read_input_tokens="62412" cache_creation="{'ephemeral_5m_input_tokens': 395, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01283yRpitVcrUdaQPeKaZCD">
+The file /home/runner/work/erk/erk/tests/commands/run/test_list.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01NTaKUW8U4Lp4SPzksKtyJa">
+    <param name="todos">[{'content': 'Modify _list_runs() to fetch from all workflows in WORKFLOW_COMMAND_MAP', 's...[truncated 611 chars]... and submit PR', 'status': 'pending', 'activeForm': 'Signaling GitHub and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="795" cache_read_input_tokens="62807" cache_creation="{'ephemeral_5m_input_tokens': 795, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NTaKUW8U4Lp4SPzksKtyJa">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me run the CI checks:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="302" cache_read_input_tokens="63602" cache_creation="{'ephemeral_5m_input_tokens': 302, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_015CEBXCjhEE3tpKAQ54Vbo8">
+    <param name="description">Run pytest on run list tests</param>
+    <param name="prompt">Run pytest on the specific test file `tests/commands/run/test_list.py` and report results. Do NOT fix any errors - just report.
+
+```
+pytest tests/commands/run/test_list.py -v
+```</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="302" cache_read_input_tokens="63602" cache_creation="{'ephemeral_5m_input_tokens': 302, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01RqD8u8qSbu77BRyez7eWt8">
+    <param name="description">Run ty type checker</param>
+    <param name="prompt">Run ty type checker on the file `src/erk/cli/commands/run/list_cmd.py` and report results. Do NOT fix any errors - just report.
+
+```
+ty check src/erk/cli/commands/run/list_cmd.py
+```</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="302" cache_read_input_tokens="63602" cache_creation="{'ephemeral_5m_input_tokens': 302, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01Gsn1g6ie9AD1VVwFLLqwfK">
+    <param name="description">Run ruff linter</param>
+    <param name="prompt">Run ruff check on the two modified files and report results. Do NOT fix any errors - just report.
+
+```
+ruff check src/erk/cli/commands/run/list_cmd.py tests/commands/run/test_list.py
+```</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="302" cache_read_input_tokens="63602" cache_creation="{'ephemeral_5m_input_tokens': 302, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Gsn1g6ie9AD1VVwFLLqwfK">
+**ruff check passed**: All checks passed!
+
+Both files (`src/erk/cli/commands/run/list_cmd.py` and `tests/commands/run/test_list.py`) pass all ruff linting checks with no violations found.
+agentId: add2376 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <tool_result tool="toolu_01RqD8u8qSbu77BRyez7eWt8">
+**ty passed**: All checks passed on `/home/runner/work/erk/erk/src/erk/cli/commands/run/list_cmd.py`
+
+The type checker found no issues with the file.
+agentId: ae01a2f (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <tool_result tool="toolu_015CEBXCjhEE3tpKAQ54Vbo8">
+**pytest passed: 14 tests passed in 1.52s**
+
+All 14 tests in `/home/runner/work/erk/erk/tests/commands/run/test_list.py` passed successfully.
+agentId: a5db6dd (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All CI checks pass: 14 tests pass, ty type checking passes, ruff linting passes.</assistant>
+  <usage input_tokens="212" cache_creation_input_tokens="532" cache_read_input_tokens="63904" cache_creation="{'ephemeral_5m_input_tokens': 532, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01Ez5b1jJ3vKwTKSaaxoNAMv">
+    <param name="todos">[{'content': 'Modify _list_runs() to fetch from all workflows in WORKFLOW_COMMAND_MAP', 's...[truncated 613 chars]... submit PR', 'status': 'in_progress', 'activeForm': 'Signaling GitHub and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="212" cache_creation_input_tokens="532" cache_read_input_tokens="63904" cache_creation="{'ephemeral_5m_input_tokens': 532, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Ez5b1jJ3vKwTKSaaxoNAMv">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01EXRARKEhXBG7PEy1vrVG9U">
+    <param name="command">erk exec impl-signal ended --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="536" cache_read_input_tokens="64436" cache_creation="{'ephemeral_5m_input_tokens': 536, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EXRARKEhXBG7PEy1vrVG9U">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8551
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_017bHMXh54hACNHn5X2j6jQa">
+    <param name="command">erk exec upload-impl-session --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="135" cache_read_input_tokens="64972" cache_creation="{'ephemeral_5m_input_tokens': 135, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+</session>
