@@ -15,6 +15,7 @@ from erk.cli.commands.codespace import codespace_group
 from erk.cli.commands.completion import completion_group
 from erk.cli.commands.config import config_group
 from erk.cli.commands.doctor import doctor_cmd
+from erk.cli.commands.doctor_workflow import workflow_group
 from erk.cli.commands.down import down_cmd
 from erk.cli.commands.exec.group import exec_group
 from erk.cli.commands.implement import implement
@@ -207,6 +208,7 @@ cli.add_command(run_group)
 cli.add_command(stack_group)
 cli.add_command(up_cmd)
 cli.add_command(launch)
+cli.add_command(workflow_group)
 cli.add_command(wt_group)
 cli.add_command(prepare_cwd_recovery_cmd)
 

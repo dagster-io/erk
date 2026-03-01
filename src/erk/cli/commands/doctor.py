@@ -143,8 +143,6 @@ def doctor_cmd(
       # Clear hook execution logs
       erk doctor --clear-hook-logs
 
-      # Check workflow-specific setup
-      erk doctor workflow
     """
     if ctx.invoked_subcommand is not None:
         return
@@ -261,9 +259,3 @@ def doctor_cmd(
         click.echo(click.style("✨ All checks passed!", fg="green", bold=True))
     else:
         click.echo(click.style(f"⚠️  {failed} check(s) failed", fg="yellow", bold=True))
-
-
-# Register subcommands (import after definition to avoid circular import)
-from erk.cli.commands.doctor_workflow import workflow_cmd  # noqa: E402
-
-doctor_cmd.add_command(workflow_cmd)

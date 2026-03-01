@@ -6,7 +6,8 @@ smoke test to verify the full CI pipeline works end-to-end.
 
 import click
 
-from erk.artifacts.artifact_health import get_artifact_health
+from erk.artifacts.artifact_health import get_artifact_health, is_erk_managed
+from erk.artifacts.discovery import discover_artifacts
 from erk.artifacts.models import ArtifactFileState
 from erk.artifacts.paths import ErkPackageInfo
 from erk.artifacts.state import load_artifact_state, load_installed_capabilities
@@ -158,24 +159,27 @@ def _run_static_checks(ctx: ErkContext, *, verbose: bool) -> list[CheckResult]:
 
 @click.group("workflow", invoke_without_command=True)
 @click.pass_context
-def workflow_cmd(ctx: click.Context) -> None:
-    """Workflow diagnostics and smoke testing.
+def workflow_group(ctx: click.Context) -> None:
+    """Workflow diagnostics and management.
 
     \b
     Examples:
 
     \b
+      # List installed workflow files
+      erk workflow list
+
       # Check workflow prerequisites
-      erk doctor workflow check
+      erk workflow check
 
       # Run a live smoke test
-      erk doctor workflow smoke-test
+      erk workflow smoke-test
 
       # Run smoke test and wait for completion
-      erk doctor workflow smoke-test --wait
+      erk workflow smoke-test --wait
 
       # Clean up old smoke test artifacts
-      erk doctor workflow cleanup
+      erk workflow cleanup
     """
     if ctx.invoked_subcommand is None:
         click.echo(ctx.get_help())
@@ -204,7 +208,7 @@ def _display_static_checks(results: list[CheckResult], *, verbose: bool) -> tupl
     return all_passed, critical_failed
 
 
-@workflow_cmd.command("check")
+@workflow_group.command("check")
 @click.option("-v", "--verbose", is_flag=True, help="Show details of static checks")
 @click.pass_obj
 def workflow_check_cmd(ctx: ErkContext, verbose: bool) -> None:
@@ -213,7 +217,7 @@ def workflow_check_cmd(ctx: ErkContext, verbose: bool) -> None:
     _display_static_checks(results, verbose=verbose)
 
 
-@workflow_cmd.command("smoke-test")
+@workflow_group.command("smoke-test")
 @click.option("--wait", is_flag=True, help="Poll workflow run until completion")
 @click.option("-v", "--verbose", is_flag=True, help="Show details of static checks")
 @click.pass_obj
@@ -238,11 +242,38 @@ def workflow_smoke_test_cmd(ctx: ErkContext, wait: bool, verbose: bool) -> None:
     _handle_smoke_test(ctx, wait=wait)
 
 
-@workflow_cmd.command("cleanup")
+@workflow_group.command("cleanup")
 @click.pass_obj
 def workflow_cleanup_cmd(ctx: ErkContext) -> None:
     """Clean up old smoke test branches and PRs."""
     _handle_cleanup(ctx)
+
+
+@workflow_group.command("list")
+@click.pass_obj
+def workflow_list_cmd(ctx: ErkContext) -> None:
+    """List installed workflow files."""
+    project_dir = ctx.repo_root
+    workflows_dir = project_dir / ".github" / "workflows"
+
+    if not workflows_dir.exists():
+        click.echo("No .github/workflows/ directory found")
+        return
+
+    artifacts = discover_artifacts(project_dir)
+    workflow_artifacts = [a for a in artifacts if a.artifact_type == "workflow"]
+
+    if not workflow_artifacts:
+        click.echo("No workflow files found")
+        return
+
+    for artifact in workflow_artifacts:
+        managed = is_erk_managed(artifact)
+        if managed:
+            badge = click.style(" [erk]", fg="cyan")
+        else:
+            badge = click.style(" [unmanaged]", fg="yellow")
+        click.echo(f"  {artifact.name}{badge}")
 
 
 def _handle_smoke_test(ctx: ErkContext, *, wait: bool) -> None:
