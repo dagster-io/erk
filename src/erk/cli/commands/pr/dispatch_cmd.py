@@ -223,28 +223,40 @@ def _dispatch_planned_pr_plan(
         raise SystemExit(1)
     plan = result
 
-    # Fetch and checkout the existing plan branch
-    user_output(f"Checking out existing plan branch: {click.style(branch_name, fg='cyan')}")
+    # Fetch the branch from remote (always needed)
     ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
 
-    local_branches = ctx.git.branch.list_local_branches(repo.root)
-    if branch_name not in local_branches:
-        remote_ref = f"origin/{branch_name}"
-        ctx.branch_manager.create_tracking_branch(repo.root, branch_name, remote_ref)
-
-    ctx.branch_manager.checkout_branch(repo.root, branch_name)
+    # LBYL: Check if branch is already in a worktree (e.g., from prior erk implement)
+    existing_worktree = ctx.git.worktree.find_worktree_for_branch(repo.root, branch_name)
+    if existing_worktree is not None:
+        user_output(
+            f"Branch already in worktree at {click.style(str(existing_worktree), fg='cyan')}, "
+            "using it for dispatch"
+        )
+        work_dir = existing_worktree
+        checked_out_in_root = False
+    else:
+        # Branch not in any worktree — checkout in root
+        user_output(f"Checking out existing plan branch: {click.style(branch_name, fg='cyan')}")
+        local_branches = ctx.git.branch.list_local_branches(repo.root)
+        if branch_name not in local_branches:
+            remote_ref = f"origin/{branch_name}"
+            ctx.branch_manager.create_tracking_branch(repo.root, branch_name, remote_ref)
+        ctx.branch_manager.checkout_branch(repo.root, branch_name)
+        work_dir = repo.root
+        checked_out_in_root = True
 
     # Sync local branch with remote (may be behind from prior submission or CI)
-    pull_result = ctx.git.remote.pull_rebase(repo.root, "origin", branch_name)
+    pull_result = ctx.git.remote.pull_rebase(work_dir, "origin", branch_name)
     if isinstance(pull_result, PullRebaseError):
         raise UserFacingCliError(
             f"Failed to sync branch '{branch_name}' with remote: {pull_result.message}"
         )
 
     # Clean up previous .erk/impl-context/ if it exists (e.g., from a prior failed dispatch)
-    if impl_context_exists(repo.root):
+    if impl_context_exists(work_dir):
         user_output("Cleaning up previous .erk/impl-context/ folder...")
-        remove_impl_context(repo.root)
+        remove_impl_context(work_dir)
 
     # Create .erk/impl-context/ with planned-PR provider
     user_output("Creating .erk/impl-context/ folder...")
@@ -252,7 +264,7 @@ def _dispatch_planned_pr_plan(
         plan_content=plan.body,
         plan_id=str(plan_number),
         url=validated.url,
-        repo_root=repo.root,
+        repo_root=work_dir,
         provider="github-draft-pr",
         objective_id=plan.objective_id,
         now_iso=ctx.time.now().isoformat(),
@@ -260,10 +272,10 @@ def _dispatch_planned_pr_plan(
     )
 
     # Stage, commit, and push
-    ctx.git.commit.stage_files(repo.root, [IMPL_CONTEXT_DIR], force=True)
-    ctx.git.commit.commit(repo.root, f"Add plan for PR #{plan_number}")
+    ctx.git.commit.stage_files(work_dir, [IMPL_CONTEXT_DIR], force=True)
+    ctx.git.commit.commit(work_dir, f"Add plan for PR #{plan_number}")
     push_result = ctx.git.remote.push_to_remote(
-        repo.root, "origin", branch_name, set_upstream=False, force=False
+        work_dir, "origin", branch_name, set_upstream=False, force=False
     )
     if isinstance(push_result, PushError):
         raise UserFacingCliError(push_result.message)
@@ -273,8 +285,9 @@ def _dispatch_planned_pr_plan(
     if ctx.graphite_branch_ops is not None:
         ctx.graphite_branch_ops.retrack_branch(repo.root, branch_name)
 
-    # Switch back to original branch
-    ctx.branch_manager.checkout_branch(repo.root, original_branch)
+    # Switch back to original branch only if we checked out in root
+    if checked_out_in_root:
+        ctx.branch_manager.checkout_branch(repo.root, original_branch)
 
     # Gather submission metadata
     queued_at = datetime.now(UTC).isoformat()
