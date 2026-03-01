@@ -9,7 +9,7 @@ behavior.
 from click.testing import CliRunner
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
-from erk.core.health_checks import check_anthropic_api_secret
+from erk.core.health_checks.anthropic_api_secret import check_anthropic_api_secret
 from erk_shared.gateway.github_admin.fake import FakeGitHubAdmin
 
 

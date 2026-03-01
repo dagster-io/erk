@@ -7,7 +7,7 @@ Uses tmp_path to test with real filesystem I/O since the check reads settings.js
 import json
 from pathlib import Path
 
-from erk.core.health_checks import check_claude_erk_permission
+from erk.core.health_checks.claude_erk_permission import check_claude_erk_permission
 
 
 def test_check_returns_info_when_settings_not_found(tmp_path: Path) -> None:

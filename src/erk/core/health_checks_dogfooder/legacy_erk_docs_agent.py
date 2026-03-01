@@ -6,7 +6,7 @@ all users have migrated their docs to docs/learned/.
 
 from pathlib import Path
 
-from erk.core.health_checks import CheckResult
+from erk.core.health_checks.models import CheckResult
 
 
 def check_legacy_erk_docs_agent(repo_root: Path) -> CheckResult:

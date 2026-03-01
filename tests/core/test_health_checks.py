@@ -6,19 +6,17 @@ from pathlib import Path
 import pytest
 
 from erk.artifacts.paths import ErkPackageInfo
-from erk.core.health_checks import (
-    CheckResult,
-    check_claude_settings,
-    check_erk_version,
-    check_gitignore_entries,
-    check_hooks_disabled,
-    check_legacy_slot_naming,
-    check_managed_artifacts,
-    check_post_init_hook,
-    check_post_plan_implement_ci_hook,
-    check_repository,
-    check_uv_version,
-)
+from erk.core.health_checks.claude_settings import check_claude_settings
+from erk.core.health_checks.erk_version import check_erk_version
+from erk.core.health_checks.gitignore_entries import check_gitignore_entries
+from erk.core.health_checks.hooks_disabled import check_hooks_disabled
+from erk.core.health_checks.legacy_slot_naming import check_legacy_slot_naming
+from erk.core.health_checks.managed_artifacts import check_managed_artifacts
+from erk.core.health_checks.models import CheckResult
+from erk.core.health_checks.post_init_hook import check_post_init_hook
+from erk.core.health_checks.post_plan_implement_ci_hook import check_post_plan_implement_ci_hook
+from erk.core.health_checks.repository import check_repository
+from erk.core.health_checks.uv_version import check_uv_version
 from erk.core.health_checks_dogfooder.legacy_config_locations import (
     check_legacy_config_locations,
 )

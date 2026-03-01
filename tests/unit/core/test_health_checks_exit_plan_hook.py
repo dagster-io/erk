@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 
 from erk.core.claude_settings import ERK_EXIT_PLAN_HOOK_COMMAND
-from erk.core.health_checks import check_exit_plan_hook
+from erk.core.health_checks.exit_plan_hook import check_exit_plan_hook
 
 
 def test_check_fails_when_settings_not_found(tmp_path: Path) -> None:

@@ -7,7 +7,7 @@ status from global Claude settings via FakeClaudeInstallation.
 import pytest
 
 from erk.core.claude_settings import get_erk_statusline_command
-from erk.core.health_checks import check_statusline_configured
+from erk.core.health_checks.statusline_configured import check_statusline_configured
 from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
 
 

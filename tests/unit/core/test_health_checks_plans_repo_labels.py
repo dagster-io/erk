@@ -9,7 +9,7 @@ erk-extraction is optional (for documentation workflows) and not checked.
 
 from tests.test_utils.paths import sentinel_path
 
-from erk.core.health_checks import check_plans_repo_labels
+from erk.core.health_checks.plans_repo_labels import check_plans_repo_labels
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 
 

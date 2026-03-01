@@ -7,7 +7,7 @@ Uses tmp_path to test with real filesystem I/O since the check reads settings.js
 import json
 from pathlib import Path
 
-from erk.core.health_checks import check_user_prompt_hook
+from erk.core.health_checks.user_prompt_hook import check_user_prompt_hook
 
 
 def test_check_fails_when_settings_not_found(tmp_path: Path) -> None:
