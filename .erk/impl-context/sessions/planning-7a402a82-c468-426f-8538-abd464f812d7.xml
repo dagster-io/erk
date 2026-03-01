@@ -1,0 +1,685 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>when we run the cmux sync command in the tui we execute the erk sync twice:
+
+source "$(erk pr checkout 8525 --script --sync)" &amp;&amp; gt submit --no-interactive
+Last login: Sun Mar  1 08:09:16 on ttys002
+direnv: loading ~/code/erk/.envrc
+direnv: loading ~/code/erk/.erk/bin/activate.sh
+-&gt; cd /Users/schrockn/code/erk
+-&gt; Activating venv: /Users/schrockn/code/erk/.venv (3.13.1)
+Activated: /Users/schrockn/code/erk
+direnv: export +VIRTUAL_ENV +VIRTUAL_ENV_PROMPT ~PATH
+➜  erk source "$(erk pr checkout 8525 --script --sync)" &amp;&amp; gt submit --no-interactive
+Fetching PR #8525...
+✓ Assigned plnd/fix-pr-submit-silent-hang-03-01-0611 to erk-slot-54
+-&gt; cd /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-54
+direnv: loading ~/.erk/repos/erk/worktrees/erk-slot-54/.envrc
+direnv: loading ~/.erk/repos/erk/worktrees/erk-slot-54/.erk/bin/activate.sh
+-&gt; cd /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-54
+-&gt; Activating venv: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-54/.venv (3.13.1)
+⚠️  Your erk (0.8.1) doesn't match required (0.9.0)
+   You must update or erk may not work properly.
+   Update: uv sync
+
+Activated: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-54
+direnv: export +VIRTUAL_ENV +VIRTUAL_ENV_PROMPT ~PATH
+-&gt; Activating venv: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-54/.venv (3.13.1)
+Running in non-interactive mode. Inline prompts to fill PR fields will be skipped and new PRs will be created in draft mode.
+
+🥞 Validating that this Graphite stack is ready to submit...
+
+✏️ Preparing to submit PRs for the following branches...
+▸ plnd/fix-pr-submit-silent-hang-03-01-0611 (Sync to Graphite)
+
+let's fix that</user>
+  <thinking>The user is saying that when running the `cmux sync` command in the TUI, it executes `erk sync` twice. Let me look at the output they shared:
+
+```
+source "$(erk pr checkout 8525 --script --sync)" &amp;&amp; gt submit --no-interactive
+```
+
+I can see in the output that the venv is activated twice:
+1. First activation in the worktree
+2. Second activation: `-&gt; Activating venv: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-54/.venv (3.13.1)` appears twice
+
+
+Looking more carefully at the command, I see that `erk pr checkout 8525 --script --sync` already performs a sync, and then `gt submit --no-interactive` runs another submit afterward. So the redundancy is that the `--sync` flag on the checkout command already handles the sync/submit, but then we're doing it again with the separate `gt submit` call.
+
+Now I need to trace through the codebase to understand what each of these commands actually does and where exactly the duplication is occurring.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="11607" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11607}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the relevant code to understand where the double sync happens.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="11607" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11607}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01Hkj2wVD6g5fpRecccgSNqR">
+    <param name="description">Explore cmux sync TUI code</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 749 chars]...x sync related code
+- The `erk pr checkout` CLI command implementation with `--sync` flag
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11607" cache_read_input_tokens="19113" output_tokens="734" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11607, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Hkj2wVD6g5fpRecccgSNqR">
+Perfect! Now I have a complete understanding of the issue. Let me create a comprehensive summary of my findings:
+
+## Summary of Findings
+
+I've identified the source of the duplicate sync issue. Here are the key locations and the problem:
+
+### 1. **cmux_sync_workspace.py** - The Script That Runs the Duplicate Commands
+**File:** `/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/cmux_sync_workspace.py`
+
+**Line 125** contains the problematic command being constructed:
+```python
+checkout_cmd = f'source "$(erk pr checkout {pr} --script --sync)" &amp;&amp; gt submit --no-interactive'
+```
+
+This command is intentionally duplicating the sync/submit operation.
+
+### 2. **checkout_cmd.py** - What `--sync` Does
+**File:** `/Users/schrockn/code/erk/src/erk/cli/commands/pr/checkout_cmd.py`
+
+**Lines 316-318** show that when `--script` and `--sync` flags are used together, the `erk pr checkout` command includes `gt submit --no-interactive` in its post-activation commands:
+```python
+post_cd_commands=["gt submit --no-interactive"]
+if should_track_with_graphite and sync
+else None,
+```
+
+The `--script` flag uses shell activation that returns a script containing these post-activation commands.
+
+### 3. **registry.py** - TUI Command Display
+**File:** `/Users/schrockn/code/erk/src/erk/tui/commands/registry.py`
+
+... [38 lines omitted] ...
+  </tool_result>
+  <assistant>Good, the issue is clear. The fix is in `cmux_sync_workspace.py` line 125 where `gt submit --no-interactive` is appended redundantly. Let me read the key files to confirm.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1697" cache_read_input_tokens="30720" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1697}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Y8CdfUxwMXds97d5CSxKkp">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/cmux_sync_workspace.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1697" cache_read_input_tokens="30720" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1697}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Y8CdfUxwMXds97d5CSxKkp">
+     1→"""Create a cmux workspace with PR checkout and sync.
+     2→
+     3→This script creates a cmux workspace that automatically checks out a PR,
+     4→syncs it with the trunk, and renames the workspace to the PR's head branch.
+     5→
+     6→Usage:
+     7→    erk exec cmux-sync-workspace --pr 8152
+     8→    erk exec cmux-sync-workspace --pr 8152 --branch "my-branch"
+     9→
+    10→Output:
+    11→    JSON with {success, pr_number, branch, workspace_name} on success
+    12→    JSON with {success, error} on failure
+    13→
+    14→Exit Codes:
+    15→    0: Success - workspace created
+    16→    1: Error - cmux/checkout/sync failed or branch lookup failed
+    17→"""
+    18→
+    19→import json
+    20→import subprocess
+    21→from dataclasses import asdict, dataclass
+    22→
+    23→import click
+    24→
+    25→
+    26→@dataclass(frozen=True)
+    27→class CmuxSyncSuccess:
+    28→    """Success response for cmux-sync-workspace command."""
+    29→
+    30→    success: bool
+
+... [142 lines omitted] ...
+
+    37→class CmuxSyncError:
+    38→    """Error response for cmux-sync-workspace command."""
+    41→    error: str
+    64→    except subprocess.CalledProcessError:
+   114→                        CmuxSyncError(
+   116→                            error=f"Failed to detect head branch for PR #{pr}. "
+   159→    except subprocess.CalledProcessError as e:
+   160→        error_output = e.stderr.strip() if e.stderr else e.stdout.strip()
+   164→                    CmuxSyncError(
+   166→                        error=f"Failed to create cmux workspace: {error_output}",
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UzwoKbRD2Ve1deo1ev8NhG">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/checkout_cmd.py</param>
+    <param name="offset">300</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1697" cache_read_input_tokens="30720" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1697}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UzwoKbRD2Ve1deo1ev8NhG">
+   300→        if ctx.branch_manager.get_parent_branch(repo.root, branch_name) is None:
+   301→            ctx.console.info("Tracking branch with Graphite...")
+   302→            ctx.branch_manager.track_branch(repo.root, branch_name, pr.base_ref_name)
+   303→
+   304→    # Navigate and display checkout result
+   305→    navigate_and_display_checkout(
+   306→        ctx,
+   307→        worktree_path=worktree_path,
+   308→        branch_name=branch_name,
+   309→        script=script,
+   310→        command_name="pr-checkout",
+   311→        already_existed=already_existed,
+   312→        existing_message=f"PR #{pr_number} already checked out at {{styled_path}}",
+   313→        new_message=f"Created worktree for PR #{pr_number} at {{styled_path}}",
+   314→        script_message_existing=f'echo "Went to existing worktree for PR #{pr_number}"',
+   315→        script_message_new=f'echo "Checked out PR #{pr_number} at $(pwd)"',
+   316→        post_cd_commands=["gt submit --no-interactive"]
+   317→        if should_track_with_graphite and sync
+   318→        else None,
+   319→    )
+   320→
+   321→    # Print activation instructions (non-script mode only)
+   322→    # In script mode, shell integration handles navigation automatically
+   323→    if not script:
+   324→        script_path = ensure_worktree_activate_script(
+   325→            worktree_path=worktree_path,
+   326→            post_create_commands=None,
+   327→        )
+   328→        print_activation_instructions(
+   329→            script_path,
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BsEu2XRSVkZMJ5biJ2cxMH">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/commands/registry.py</param>
+    <param name="offset">85</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1697" cache_read_input_tokens="30720" output_tokens="329" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1697, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BsEu2XRSVkZMJ5biJ2cxMH">
+    85→        return f"erk pr co {ctx.row.pr_number}"
+    86→    return "erk br co &lt;branch&gt;"
+    87→
+    88→
+    89→def _display_copy_pr_checkout(ctx: CommandContext) -&gt; str:
+    90→    """Display name for copy_pr_checkout command."""
+    91→    if ctx.row.pr_number:
+    92→        pr = ctx.row.pr_number
+    93→        return f'source "$(erk pr checkout {pr} --script --sync)" &amp;&amp; gt submit --no-interactive'
+    94→    return "checkout"
+    95→
+    96→
+    97→def _display_cmux_sync(ctx: CommandContext) -&gt; str:
+    98→    """Display name for cmux_sync command."""
+    99→    return f"erk exec cmux-sync-workspace --pr {ctx.row.pr_number}"
+   100→
+   101→
+   102→def _display_copy_implement_local(ctx: CommandContext) -&gt; str:
+   103→    """Display name for copy_implement_local command."""
+   104→    return f'source "$(erk pr checkout {ctx.row.pr_number} --script)" &amp;&amp; erk implement --dangerous'
+   105→
+   106→
+   107→def _display_copy_dispatch(ctx: CommandContext) -&gt; str:
+   108→    """Display name for copy_dispatch command."""
+   109→    return f"erk pr dispatch {ctx.row.plan_id}"
+   110→
+   111→
+   112→def _display_copy_replan(ctx: CommandContext) -&gt; str:
+   113→    """Display name for copy_replan command."""
+   114→    return f"erk pr replan {ctx.row.plan_id}"
+
+... [20 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a clear picture. Let me also check the `_display_copy_pr_checkout` in registry.py since it also has the same redundant pattern. And I should check if there are tests for cmux_sync_workspace.
+
+The issue:
+1. `cmux_sync_workspace.py` line 125: `checkout_cmd = f'source "$(erk pr checkout {pr} --script --sync)" &amp;&amp; gt submit --no-interactive'`
+2. `checkout_cmd.py` line 316-318: When `--sync` is True, `post_cd_commands=["gt submit --no-interactive"]` is already included in the checkout script output
+
+
+3. So `gt submit --no-interactive` runs twice: once from the sourced script (from --sync), and once from the explicit `&amp;&amp; gt submit`
+
+The fix is straightforward: remove the `&amp;&amp; gt submit --no-interactive` from `cmux_sync_workspace.py` since `--sync` already includes it. I also notice `registry.py` line 93 has the same issue in its display string, which should be corrected as well.
+
+Now let me outline the changes needed.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="6263" cache_read_input_tokens="32417" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6263}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The issue is clear. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6263" cache_read_input_tokens="32417" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6263}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01J2JRHLo6FkzN4q8L4JTSbp">
+    <param name="file_path">/Users/schrockn/.claude/plans/staged-roaming-rainbow.md</param>
+    <param name="content"># Fix: Remove duplicate `gt submit` in cmux sync workflow
+
+## Context
+
+When running cmux s...[truncated 1014 chars]...ber&gt;` and confirm `gt submit` only runs once
+- Run existing tests for cmux_sync_workspace
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6263" cache_read_input_tokens="32417" output_tokens="817" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6263, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01J2JRHLo6FkzN4q8L4JTSbp">
+File created successfully at: /Users/schrockn/.claude/plans/staged-roaming-rainbow.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01EvQM8oxMNTKMz141HSoDJ3">
+    <param name="plan"># Fix: Remove duplicate `gt submit` in cmux sync workflow
+
+## Context
+
+When running cmux s...[truncated 1014 chars]...ber&gt;` and confirm `gt submit` only runs once
+- Run existing tests for cmux_sync_workspace
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="848" cache_read_input_tokens="38680" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 848, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EvQM8oxMNTKMz141HSoDJ3">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/staged-roaming-rainbow.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix: Remove duplicate `gt submit` in cmux sync workflow
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 7a402a82-c468-426f-8538-abd464f812d7 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Fix: Remove duplicate `gt submit` in cmux sync workflow
+
+## Context
+
+When running cmux sync from the TUI, `gt submit --no-interactive` executes twice:
+
+1. `erk pr checkout {pr} --script --sync` already includes `gt submit --no-interactive` as a post-cd command when `--sync` is True (see `checkout_cmd.py:316-318`)
+2. The explicit `&amp;&amp; gt submit --no-interactive` appended in `cmux_sync_workspace.py:125` runs it again
+
+## Changes
+
+### 1. `src/erk/cli/commands/exec/scripts/cmux_sync_workspace.py` (line 125)
+
+Remove redundant `&amp;&amp; gt submit --no-interactive`:
+
+```python
+# Before:
+checkout_cmd = f'source "$(erk pr checkout {pr} --script --sync)" &amp;&amp; gt submit --no-interactive'
+
+# After:
+checkout_cmd = f'source "$(erk pr checkout {pr} --script --sync)"'
+```
+
+### 2. `src/erk/tui/commands/registry.py` (line 93)
+
+Same fix for the display string in `_display_copy_pr_checkout`:
+
+```python
+# Before:
+return f'source "$(erk pr checkout {pr} --script --sync)" &amp;&amp; gt submit --no-interactive'
+
+# After:
+return f'source "$(erk pr checkout {pr} --script --sync)"'
+```
+
+## Verification
+
+- Run `erk exec cmux-sync-workspace --pr &lt;number&gt;` and confirm `gt submit` only runs once
+- Run existing tests for cmux_sync_workspace
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="653" cache_read_input_tokens="39528" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 653}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01DxdBMcGcyZEWXHygSzHh8a">
+    <param name="questions">[{'question': '📋 Fix: Remove duplicate `gt submit` in cmux sync workflow\nCurrent context:...[truncated 439 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="653" cache_read_input_tokens="39528" output_tokens="628" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 653, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DxdBMcGcyZEWXHygSzHh8a">
+User has answered your questions: "📋 Fix: Remove duplicate `gt submit` in cmux sync workflow
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01BKHk3smqiwJs9afYDf2WvC">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="918" cache_read_input_tokens="40181" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 918, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BKHk3smqiwJs9afYDf2WvC">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="7a402a82-c468-426f-8538-abd464f812d7" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "7a402a82-c468-426f-8538-abd464f812d7" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "7a402a82-c468-426f-8538-abd464f812d7" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <user>[Request interrupted by user]</user>
+  <user>continue</user>
+  <assistant>
+
+Let me read the plan file and execute the save command.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2379" cache_read_input_tokens="41157" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2379}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Exa29Mhybri2uXz4xrbPuf">
+    <param name="file_path">/Users/schrockn/.claude/plans/staged-roaming-rainbow.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2379" cache_read_input_tokens="41157" output_tokens="86" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2379, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Exa29Mhybri2uXz4xrbPuf">
+     1→# Fix: Remove duplicate `gt submit` in cmux sync workflow
+     2→
+     3→## Context
+     4→
+     5→When running cmux sync from the TUI, `gt submit --no-interactive` executes twice:
+     6→
+     7→1. `erk pr checkout {pr} --script --sync` already includes `gt submit --no-interactive` as a post-cd command when `--sync` is True (see `checkout_cmd.py:316-318`)
+     8→2. The explicit `&amp;&amp; gt submit --no-interactive` appended in `cmux_sync_workspace.py:125` runs it again
+     9→
+    10→## Changes
+    11→
+    12→### 1. `src/erk/cli/commands/exec/scripts/cmux_sync_workspace.py` (line 125)
+    13→
+    14→Remove redundant `&amp;&amp; gt submit --no-interactive`:
+    15→
+    16→```python
+    17→# Before:
+    18→checkout_cmd = f'source "$(erk pr checkout {pr} --script --sync)" &amp;&amp; gt submit --no-interactive'
+    19→
+    20→# After:
+    21→checkout_cmd = f'source "$(erk pr checkout {pr} --script --sync)"'
+    22→```
+    23→
+    24→### 2. `src/erk/tui/commands/registry.py` (line 93)
+    25→
+    26→Same fix for the display string in `_display_copy_pr_checkout`:
+    27→
+    28→```python
+    29→# Before:
+    30→return f'source "$(erk pr checkout {pr} --script --sync)" &amp;&amp; gt submit --no-interactive'
+
+... [10 lines omitted] ...
+  </tool_result>
+  <assistant>**Title:** "Fix: Remove duplicate `gt submit` in cmux sync workflow"
+**Branch slug:** `fix-duplicate-gt-submit`
+**Summary:** Removes the redundant gt submit --no-interactive from the cmux sync workspace command and TUI display string. The --sync flag on erk pr checkout already includes gt submit as a post-cd command, so appending it again causes a double sync.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="624" cache_read_input_tokens="43536" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 624}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016Uuka7jkJ5s2D1UQcyZ9xj">
+    <param name="command">erk exec plan-save --format json --session-id="7a402a82-c468-426f-8538-abd464f812d7" --bra...[truncated 174 chars]...eady includes gt submit as a post-cd command, so appending it again causes a double sync."</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="624" cache_read_input_tokens="43536" output_tokens="301" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 624, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016Uuka7jkJ5s2D1UQcyZ9xj">
+{"success": true, "plan_number": 8531, "plan_url": "https://github.com/dagster-io/erk/pull/8531", "title": "[erk-plan] Fix: Remove duplicate `gt submit` in cmux sync workflow", "branch_name": "plnd/fix-duplicate-gt-submit-03-01-0813", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/7a402a82-c468-426f-8538-abd464f812d7/plan_snapshots/000001-cc4a85d7"}
+  </tool_result>
+  <assistant>Plan "Fix: Remove duplicate `gt submit` in cmux sync workflow" saved as draft PR #8531
+URL: https://github.com/dagster-io/erk/pull/8531
+
+Next steps:
+
+View PR: https://github.com/dagster-io/erk/pull/8531
+
+In Claude Code:
+  Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: `erk br co --new-slot --for-plan 8531`
+    Implement: `source "$(erk br co --new-slot --for-plan 8531 --script)" &amp;&amp; erk implement --dangerous`
+
+  Same slot:
+    Local: `erk br co --for-plan 8531`
+    Implement: `source "$(erk br co --for-plan 8531 --script)" &amp;&amp; erk implement --dangerous`
+
+  Dispatch to Queue: `erk pr dispatch 8531`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="559" cache_read_input_tokens="44160" output_tokens="250" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 559, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
