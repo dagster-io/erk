@@ -42,11 +42,11 @@ Window (top-level OS window)
 
 Objects can be referenced by:
 
-| Format | Example | Description |
-|--------|---------|-------------|
-| UUID | `A1B2C3D4-...` | Full UUID |
-| Short ref | `workspace:1`, `pane:2`, `surface:3` | Type + index |
-| Index | `0`, `1`, `2` | Numeric index |
+| Format    | Example                              | Description   |
+| --------- | ------------------------------------ | ------------- |
+| UUID      | `A1B2C3D4-...`                       | Full UUID     |
+| Short ref | `workspace:1`, `pane:2`, `surface:3` | Type + index  |
+| Index     | `0`, `1`, `2`                        | Numeric index |
 
 Use `--id-format refs|uuids|both` to control output format.
 
@@ -54,12 +54,12 @@ Use `--id-format refs|uuids|both` to control output format.
 
 cmux automatically sets these inside terminals it manages:
 
-| Variable | Description |
-|----------|-------------|
+| Variable            | Description                                                |
+| ------------------- | ---------------------------------------------------------- |
 | `CMUX_WORKSPACE_ID` | Current workspace UUID (used as default for `--workspace`) |
-| `CMUX_SURFACE_ID` | Current surface UUID |
-| `CMUX_TAB_ID` | Current tab identifier |
-| `CMUX_SOCKET_PATH` | Override socket path (default: `/tmp/cmux.sock`) |
+| `CMUX_SURFACE_ID`   | Current surface UUID                                       |
+| `CMUX_TAB_ID`       | Current tab identifier                                     |
+| `CMUX_SOCKET_PATH`  | Override socket path (default: `/tmp/cmux.sock`)           |
 
 ### Socket Communication
 
@@ -83,62 +83,62 @@ cmux automatically sets these inside terminals it manages:
 
 ### Workspace Commands
 
-| Command | Syntax | Description |
-|---------|--------|-------------|
-| `new-workspace` | `cmux new-workspace [--command <text>]` | Create workspace. `--command` auto-appends `\n`. Returns `OK <uuid>` |
-| `list-workspaces` | `cmux list-workspaces` | List all workspaces |
-| `select-workspace` | `cmux select-workspace --workspace <ref>` | Switch to workspace |
-| `rename-workspace` | `cmux rename-workspace [--workspace <ref>] <title>` | Rename workspace |
-| `close-workspace` | `cmux close-workspace --workspace <ref>` | Close workspace |
-| `current-workspace` | `cmux current-workspace` | Print current workspace ID |
+| Command             | Syntax                                              | Description                                                          |
+| ------------------- | --------------------------------------------------- | -------------------------------------------------------------------- |
+| `new-workspace`     | `cmux new-workspace [--command <text>]`             | Create workspace. `--command` auto-appends `\n`. Returns `OK <uuid>` |
+| `list-workspaces`   | `cmux list-workspaces`                              | List all workspaces                                                  |
+| `select-workspace`  | `cmux select-workspace --workspace <ref>`           | Switch to workspace                                                  |
+| `rename-workspace`  | `cmux rename-workspace [--workspace <ref>] <title>` | Rename workspace                                                     |
+| `close-workspace`   | `cmux close-workspace --workspace <ref>`            | Close workspace                                                      |
+| `current-workspace` | `cmux current-workspace`                            | Print current workspace ID                                           |
 
 ### Pane/Surface Commands
 
-| Command | Syntax | Description |
-|---------|--------|-------------|
-| `new-split` | `cmux new-split <left\|right\|up\|down> [--workspace <ref>]` | Split pane |
-| `new-surface` | `cmux new-surface [--type <terminal\|browser>] [--pane <ref>]` | Add surface |
-| `list-panes` | `cmux list-panes [--workspace <ref>]` | List panes |
-| `focus-pane` | `cmux focus-pane --pane <ref>` | Focus pane |
-| `close-surface` | `cmux close-surface [--surface <ref>]` | Close surface |
-| `tree` | `cmux tree [--all] [--workspace <ref>]` | Show hierarchy tree |
+| Command         | Syntax                                                         | Description         |
+| --------------- | -------------------------------------------------------------- | ------------------- |
+| `new-split`     | `cmux new-split <left\|right\|up\|down> [--workspace <ref>]`   | Split pane          |
+| `new-surface`   | `cmux new-surface [--type <terminal\|browser>] [--pane <ref>]` | Add surface         |
+| `list-panes`    | `cmux list-panes [--workspace <ref>]`                          | List panes          |
+| `focus-pane`    | `cmux focus-pane --pane <ref>`                                 | Focus pane          |
+| `close-surface` | `cmux close-surface [--surface <ref>]`                         | Close surface       |
+| `tree`          | `cmux tree [--all] [--workspace <ref>]`                        | Show hierarchy tree |
 
 ### Input Commands
 
-| Command | Syntax | Description |
-|---------|--------|-------------|
-| `send` | `cmux send [--workspace <ref>] [--surface <ref>] <text>` | Send text (must include `\n` to execute) |
-| `send-key` | `cmux send-key [--workspace <ref>] [--surface <ref>] <key>` | Send keystroke |
-| `read-screen` | `cmux read-screen [--workspace <ref>] [--surface <ref>] [--scrollback] [--lines <n>]` | Read terminal content |
+| Command       | Syntax                                                                                | Description                              |
+| ------------- | ------------------------------------------------------------------------------------- | ---------------------------------------- |
+| `send`        | `cmux send [--workspace <ref>] [--surface <ref>] <text>`                              | Send text (must include `\n` to execute) |
+| `send-key`    | `cmux send-key [--workspace <ref>] [--surface <ref>] <key>`                           | Send keystroke                           |
+| `read-screen` | `cmux read-screen [--workspace <ref>] [--surface <ref>] [--scrollback] [--lines <n>]` | Read terminal content                    |
 
 ### Notification/Status Commands
 
-| Command | Syntax | Description |
-|---------|--------|-------------|
-| `notify` | `cmux notify --title <text> [--subtitle <text>] [--body <text>]` | Send notification |
-| `set-status` | `cmux set-status <key> <value> [--icon <name>] [--color <hex>]` | Set sidebar status |
-| `set-progress` | `cmux set-progress <0.0-1.0> [--label <text>]` | Set progress bar |
-| `log` | `cmux log [--level <level>] [--source <name>] <message>` | Add log entry |
+| Command        | Syntax                                                           | Description        |
+| -------------- | ---------------------------------------------------------------- | ------------------ |
+| `notify`       | `cmux notify --title <text> [--subtitle <text>] [--body <text>]` | Send notification  |
+| `set-status`   | `cmux set-status <key> <value> [--icon <name>] [--color <hex>]`  | Set sidebar status |
+| `set-progress` | `cmux set-progress <0.0-1.0> [--label <text>]`                   | Set progress bar   |
+| `log`          | `cmux log [--level <level>] [--source <name>] <message>`         | Add log entry      |
 
 ### Browser Commands
 
-| Command | Syntax | Description |
-|---------|--------|-------------|
-| `browser open` | `cmux browser open [url]` | Open browser split |
-| `browser navigate` | `cmux browser navigate <url>` | Navigate to URL |
-| `browser click` | `cmux browser click <selector>` | Click element |
-| `browser snapshot` | `cmux browser snapshot [--interactive]` | Take snapshot |
+| Command            | Syntax                                  | Description        |
+| ------------------ | --------------------------------------- | ------------------ |
+| `browser open`     | `cmux browser open [url]`               | Open browser split |
+| `browser navigate` | `cmux browser navigate <url>`           | Navigate to URL    |
+| `browser click`    | `cmux browser click <selector>`         | Click element      |
+| `browser snapshot` | `cmux browser snapshot [--interactive]` | Take snapshot      |
 
 ### tmux Compatibility
 
-| Command | Syntax | Description |
-|---------|--------|-------------|
-| `capture-pane` | `cmux capture-pane [options]` | Alias for `read-screen` |
-| `rename-window` | `cmux rename-window [--workspace <ref>] <title>` | Alias for `rename-workspace` |
-| `resize-pane` | `cmux resize-pane --pane <ref> (-L\|-R\|-U\|-D) [--amount <n>]` | Resize pane |
-| `swap-pane` | `cmux swap-pane --pane <ref> --target-pane <ref>` | Swap panes |
-| `break-pane` | `cmux break-pane [--workspace <ref>] [--pane <ref>]` | Break pane to workspace |
-| `join-pane` | `cmux join-pane --target-pane <ref>` | Join pane |
+| Command         | Syntax                                                          | Description                  |
+| --------------- | --------------------------------------------------------------- | ---------------------------- |
+| `capture-pane`  | `cmux capture-pane [options]`                                   | Alias for `read-screen`      |
+| `rename-window` | `cmux rename-window [--workspace <ref>] <title>`                | Alias for `rename-workspace` |
+| `resize-pane`   | `cmux resize-pane --pane <ref> (-L\|-R\|-U\|-D) [--amount <n>]` | Resize pane                  |
+| `swap-pane`     | `cmux swap-pane --pane <ref> --target-pane <ref>`               | Swap panes                   |
+| `break-pane`    | `cmux break-pane [--workspace <ref>] [--pane <ref>]`            | Break pane to workspace      |
+| `join-pane`     | `cmux join-pane --target-pane <ref>`                            | Join pane                    |
 
 ## Critical Gotchas
 
@@ -297,10 +297,10 @@ cmux select-workspace --workspace workspace:0
 
 ## Troubleshooting
 
-| Issue | Cause | Fix |
-|-------|-------|-----|
-| `Connection refused` | cmux app not running | Launch cmux.app |
-| `Socket not found` | Wrong socket path | Check `/tmp/cmux.sock` exists |
-| Command typed but not executed | Missing `\n` in `send` | Use `$'command\n'` |
-| Wrong workspace targeted | No `--workspace` flag | Use `$CMUX_WORKSPACE_ID` or explicit ref |
-| `--command` text expanded too early | Double quotes around `$()` | Use single quotes |
+| Issue                               | Cause                      | Fix                                      |
+| ----------------------------------- | -------------------------- | ---------------------------------------- |
+| `Connection refused`                | cmux app not running       | Launch cmux.app                          |
+| `Socket not found`                  | Wrong socket path          | Check `/tmp/cmux.sock` exists            |
+| Command typed but not executed      | Missing `\n` in `send`     | Use `$'command\n'`                       |
+| Wrong workspace targeted            | No `--workspace` flag      | Use `$CMUX_WORKSPACE_ID` or explicit ref |
+| `--command` text expanded too early | Double quotes around `$()` | Use single quotes                        |
