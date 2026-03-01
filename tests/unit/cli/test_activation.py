@@ -477,6 +477,50 @@ def test_render_activation_script_post_cd_commands_empty_list_no_section() -> No
     assert "# Post-activation commands" not in script
 
 
+# VIRTUAL_ENV guard tests
+
+
+def test_render_activation_script_contains_virtual_env_guard() -> None:
+    """Activation script contains guard to prevent double activation."""
+    script = render_activation_script(
+        worktree_path=Path("/path/to/worktree"),
+        target_subpath=None,
+        post_cd_commands=None,
+        final_message='echo "Activated worktree: $(pwd)"',
+        comment="work activate-script",
+    )
+    # Should contain the VIRTUAL_ENV guard check
+    assert 'if [ "$VIRTUAL_ENV" != "/path/to/worktree/.venv" ]' in script
+    # Guard should wrap activation code
+    assert "unset VIRTUAL_ENV" in script
+    assert "uv sync" in script
+    assert "uv pip install" in script
+    # Post-activation section should be outside guard
+    assert "# Optional: show where we are" in script
+
+
+def test_render_activation_script_guard_with_post_cd_commands() -> None:
+    """Post-activation commands stay outside the VIRTUAL_ENV guard."""
+    script = render_activation_script(
+        worktree_path=Path("/path/to/worktree"),
+        target_subpath=None,
+        post_cd_commands=[
+            "echo 'Post command 1'",
+            "echo 'Post command 2'",
+        ],
+        final_message='echo "Activated worktree: $(pwd)"',
+        comment="work activate-script",
+    )
+    # Guard should be present
+    assert 'if [ "$VIRTUAL_ENV" != "/path/to/worktree/.venv" ]' in script
+    # Post-activation commands should be outside the guard (after fi)
+    guard_end_index = script.find("fi\n", script.find('if [ "$VIRTUAL_ENV"'))
+    post_cmd_index = script.find("# Post-activation commands")
+    assert guard_end_index != -1
+    assert post_cmd_index != -1
+    assert guard_end_index < post_cmd_index
+
+
 # write_worktree_activate_script tests
 
 

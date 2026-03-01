@@ -193,32 +193,36 @@ cd {wt}"""
     return f"""# {comment}
 {logging_helper}
 {cd_command}
-# Unset VIRTUAL_ENV to avoid conflicts with previous activations
-unset VIRTUAL_ENV
-# Create venv if it doesn't exist
-if [ ! -d {venv_dir} ]; then
-  echo 'Creating virtual environment with uv sync...'
-  uv sync
-fi
-# Refresh workspace packages (no-deps = skip external packages)
-uv pip install --no-deps --quiet -e . -e packages/erk-shared -e packages/erk-statusline
-if [ -f {venv_activate} ]; then
-  . {venv_activate}
-  __py_ver=$(python -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')
-  __erk_log "->" "Activating venv: {worktree_path / ".venv"} ($__py_ver)"
-fi
-# Load .env into the environment (allexport)
-set -a
-if [ -f ./.env ]; then
-  __erk_log "->" "Loading .env"
-  . ./.env
-fi
-set +a
-# Shell completion
-if [ -n "$BASH_VERSION" ]; then
-  eval "$(erk completion bash)"
-elif [ -n "$ZSH_VERSION" ]; then
-  eval "$(erk completion zsh)"
+# Skip activation if VIRTUAL_ENV already points to this worktree's .venv
+# (guards against double activation when direnv triggers on cd)
+if [ "$VIRTUAL_ENV" != "{worktree_path}/.venv" ]; then
+  # Unset VIRTUAL_ENV to avoid conflicts with previous activations
+  unset VIRTUAL_ENV
+  # Create venv if it doesn't exist
+  if [ ! -d {venv_dir} ]; then
+    echo 'Creating virtual environment with uv sync...'
+    uv sync
+  fi
+  # Refresh workspace packages (no-deps = skip external packages)
+  uv pip install --no-deps --quiet -e . -e packages/erk-shared -e packages/erk-statusline
+  if [ -f {venv_activate} ]; then
+    . {venv_activate}
+    __py_ver=$(python -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')
+    __erk_log "->" "Activating venv: {worktree_path / ".venv"} ($__py_ver)"
+  fi
+  # Load .env into the environment (allexport)
+  set -a
+  if [ -f ./.env ]; then
+    __erk_log "->" "Loading .env"
+    . ./.env
+  fi
+  set +a
+  # Shell completion
+  if [ -n "$BASH_VERSION" ]; then
+    eval "$(erk completion bash)"
+  elif [ -n "$ZSH_VERSION" ]; then
+    eval "$(erk completion zsh)"
+  fi
 fi
 {post_activation_section}# Optional: show where we are
 {final_message}
