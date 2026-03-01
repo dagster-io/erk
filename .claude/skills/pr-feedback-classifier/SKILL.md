@@ -37,6 +37,14 @@ Check `$ARGUMENTS` for flags.
 
    This returns JSON with `pr_number`, `pr_title`, `pr_url`, `review_threads`, and `discussion_comments`.
 
+   **Also fetch file-level restructuring context:**
+
+   ```bash
+   git diff --stat -M -C main...HEAD
+   ```
+
+   This reveals renames, copies, and splits. Use this to inform pre-existing detection in step 2.
+
 2. **Classify each comment** using the Comment Classification Model below.
 
 3. **Group into batches** by complexity.
@@ -58,6 +66,20 @@ Classification determines how the thread is presented to the user, not whether i
 
 Discussion comments that are purely informational (CI status updates, Graphite stack comments, PR description summaries) are still counted in `informational_count` and do NOT appear in `actionable_threads`.
 
+### Pre-Existing Detection
+
+For each thread in `actionable_threads`, determine the `pre_existing` field:
+
+- **`pre_existing: true`** when ALL of:
+  1. Author is a bot (`[bot]` suffix)
+  2. PR involves file restructuring (renames, splits, moves visible in `git diff --stat -M -C`)
+  3. The flagged pattern would have been equally flaggable in the original file location (generic code quality issue, not specific to the restructuring)
+
+- **`pre_existing: false`** when ANY of:
+  - Author is human
+  - The issue is specifically caused by the restructuring (e.g., `__all__` in a new `__init__.py`, new import paths)
+  - No restructuring detected in the PR
+
 ### Complexity
 
 - `local`: Single line change at specified location
@@ -67,6 +89,7 @@ Discussion comments that are purely informational (CI status updates, Graphite s
 
 ### Batch Ordering
 
+0. **Pre-Existing (Auto-Resolve)** (auto_proceed: true): Pre-existing issues in moved/restructured code (`pre_existing: true`)
 1. **Local Fixes** (auto_proceed: true): Single-line changes
 2. **Single-File** (auto_proceed: true): Multi-location in one file
 3. **Cross-Cutting** (auto_proceed: false): Multiple files
@@ -91,6 +114,7 @@ Output ONLY the following JSON (no prose, no markdown, no code fences):
       "line": 42,
       "is_outdated": false,
       "classification": "actionable",
+      "pre_existing": false,
       "action_summary": "Add integration tests for new endpoint",
       "complexity": "local",
       "original_comment": "This needs integration tests"
@@ -102,8 +126,9 @@ Output ONLY the following JSON (no prose, no markdown, no code fences):
       "line": 55,
       "is_outdated": false,
       "classification": "actionable",
+      "pre_existing": true,
       "action_summary": "Bot suggestion: add unit tests for error handling paths",
-      "complexity": "single_file",
+      "complexity": "pre_existing",
       "original_comment": "Consider adding unit tests for the error handling paths in this endpoint"
     }
   ],
@@ -118,6 +143,12 @@ Output ONLY the following JSON (no prose, no markdown, no code fences):
   "informational_count": 12,
   "batches": [
     {
+      "name": "Pre-Existing (Auto-Resolve)",
+      "complexity": "pre_existing",
+      "auto_proceed": true,
+      "item_indices": [1]
+    },
+    {
       "name": "Local Fixes",
       "complexity": "local",
       "auto_proceed": true,
@@ -127,13 +158,13 @@ Output ONLY the following JSON (no prose, no markdown, no code fences):
       "name": "Single-File",
       "complexity": "single_file",
       "auto_proceed": true,
-      "item_indices": [1]
+      "item_indices": []
     },
     {
       "name": "Cross-Cutting",
       "complexity": "cross_cutting",
       "auto_proceed": false,
-      "item_indices": [0]
+      "item_indices": []
     }
   ],
   "error": null
@@ -145,6 +176,7 @@ Output ONLY the following JSON (no prose, no markdown, no code fences):
 - `thread_id`: The ID needed for `erk exec resolve-review-thread`
 - `comment_id`: The ID needed for `erk exec reply-to-discussion-comment`
 - `classification`: `"actionable"` or `"informational"` — determines how the user handles the thread
+- `pre_existing`: `true` if the issue existed before this PR (bot comment on moved/restructured code). Pre-existing threads use `complexity: "pre_existing"` and are placed in the first batch for auto-resolution
 - `item_indices`: References into `actionable_threads` (type=review) or `discussion_actions` (type=discussion)
 - `original_comment`: First 200 characters of the comment text
 - `informational_count`: Count of informational **discussion** comments only (CI status, Graphite stack). Review threads always appear individually in `actionable_threads` with a `classification` field
