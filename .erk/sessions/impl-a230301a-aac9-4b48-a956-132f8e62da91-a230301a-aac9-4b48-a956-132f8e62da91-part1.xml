@@ -826,4 +826,129 @@ Todos have been modified successfully. Ensure that you continue to use the todo 
   "plan_number": 8547
 }
   </tool_result>
+  <tool_result tool="toolu_013eQMDbwiqEjgMdtUxSU5Fc">
+{"uploaded": true, "plan_id": 8547}
+  </tool_result>
+  <assistant>Now submit the PR:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="314" cache_read_input_tokens="73062" cache_creation="{'ephemeral_5m_input_tokens': 314, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01BpccwcJSuFDW8rXFhwfxXo">
+    <param name="command">git add -A &amp;&amp; git status</param>
+    <param name="description">Stage all changes and check status</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="314" cache_read_input_tokens="73062" cache_creation="{'ephemeral_5m_input_tokens': 314, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BpccwcJSuFDW8rXFhwfxXo">
+On branch plnd/improve-cmux-skill-03-01-1402
+Your branch is up to date with 'origin/plnd/improve-cmux-skill-03-01-1402'.
+
+Changes to be committed:
+  (use "git restore --staged &lt;file&gt;..." to unstage)
+	modified:   .claude/skills/cmux/SKILL.md
+	new file:   .claude/skills/cmux/references/cmux-reference.md
+  </tool_result>
+  <tool_use name="Bash" id="toolu_011UbQVMS9KVm9v91GfDKKA6">
+    <param name="command">git commit -m "$(cat &lt;&lt;'EOF'
+Improve cmux skill: extract reference, streamline SKILL.md
+
+M...[truncated 368 chars]...de](https://claude.com/claude-code)
+
+Co-Authored-By: Claude &lt;noreply@anthropic.com&gt;
+EOF
+)"</param>
+    <param name="description">Create commit</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="207" cache_read_input_tokens="73376" cache_creation="{'ephemeral_5m_input_tokens': 207, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011UbQVMS9KVm9v91GfDKKA6">
+[plnd/improve-cmux-skill-03-01-1402 dc49e631e] Improve cmux skill: extract reference, streamline SKILL.md
+ 2 files changed, 489 insertions(+), 127 deletions(-)
+ create mode 100644 .claude/skills/cmux/references/cmux-reference.md
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01CiGJXCCDjmgba8EW1Wq7EU">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="331" cache_read_input_tokens="73583" cache_creation="{'ephemeral_5m_input_tokens': 331, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CiGJXCCDjmgba8EW1Wq7EU">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #8547 found (already exists)
+
+Phase 2: Getting diff
+
+Phase 3: Fetching plan context
+   Incorporating plan #8547
+
+Phase 4: Generating PR description
+   Reading diff file...
+   Diff loaded (45,086 chars)
+   Analyzing changes with Claude...
+   PR description generated
+
+Phase 5: Graphite enhancement
+
+Phase 6: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+
+✅ PR submitted
+
+  Action:      Updated PR #8547
+  Branch:      plnd/improve-cmux-skill-03-01-1402 → master
+  Title:       Improve cmux skill: extract reference, streamline SKILL.md
+  PR:          ]8;;https://github.com/dagster-io/erk/pull/8547\https://github.com/dagster-io/erk/pull/8547]8;;\
+
+... [1 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_017Kxxt44ncX7CDcMPUVrzy3">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="556" cache_read_input_tokens="73914" cache_creation="{'ephemeral_5m_input_tokens': 556, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01Km3aZbRra3gvDrTc9dAEew">
+    <param name="command">erk pr check --stage=impl 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR completion</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="556" cache_read_input_tokens="73914" cache_creation="{'ephemeral_5m_input_tokens': 556, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017Kxxt44ncX7CDcMPUVrzy3">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 8547
+}
+  </tool_result>
+  <tool_result tool="toolu_01Km3aZbRra3gvDrTc9dAEew">
+
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_011wxFUrxa97vojih8CoAhsS">
+    <param name="todos">[{'content': 'Create references/cmux-reference.md with comprehensive command reference', '...[truncated 422 chars]...Signal GitHub ended and submit PR', 'status': 'completed', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="248" cache_read_input_tokens="74470" cache_creation="{'ephemeral_5m_input_tokens': 248, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011wxFUrxa97vojih8CoAhsS">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan #8547 implementation complete. Summary:
+
+**Changes made:**
+
+1. **Created `.claude/skills/cmux/references/cmux-reference.md`** (414 lines) -- Comprehensive command reference covering all cmux commands organized by category:
+   - Workspace, Window Management, Pane, Surface, Input, Tab commands
+   - Full Notification/Status/Sidebar commands (including `clear-status`, `list-status`, `sidebar-state`, etc.)
+   - Complete Browser subsystem (40+ commands: navigation, interaction, forms, finding, JS eval, waiting, dialogs, downloads, cookies/storage, tabs, console/errors, visual, state persistence, scripts/styles, advanced)
+   - Full tmux Compatibility Layer (aliases, pane ops, window navigation, buffer/copy mode, history, hooks/keys, pipe/sync, display)
+   - Utility/diagnostic commands (`ping`, `capabilities`, `claude-hook`, etc.)
+   - Workflow pattern recipes
+
+2. **Updated `.claude/skills/cmux/SKILL.md`** (254 lines, down from 307):
+   - Removed `tree` command (not in help output)
+   - Added "When to Load the Reference" section with clear guidance
+   - Added Browser Subsystem summary with `--snapshot-after` pattern
+   - Added "Key Commands Not in Quick Reference" callouts (`wait-for`, `claude-hook`, `pipe-pane`, `popup`, key bindings)
+   - Compacted addressing/refs, environment variables, and scripting patterns sections
+   - Kept all high-value content: mental model, gotchas, erk integration, troubleshooting
+
+**PR:** https://github.com/dagster-io/erk/pull/8547</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="257" cache_read_input_tokens="74718" cache_creation="{'ephemeral_5m_input_tokens': 257, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
 </session>
