@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Rename \"fix-conflicts\" to \"rebase\" across the codebase"
+}
