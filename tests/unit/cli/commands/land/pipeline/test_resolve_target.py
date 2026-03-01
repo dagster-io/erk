@@ -53,6 +53,7 @@ def _make_state(cwd: Path, *, target_arg: str | None = None, up_flag: bool = Fal
         no_delete=False,
         up_flag=up_flag,
         dry_run=False,
+        skip_learn=False,
         target_arg=target_arg,
         repo_root=cwd,
         main_repo_root=cwd,

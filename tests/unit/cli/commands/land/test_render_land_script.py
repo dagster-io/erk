@@ -15,6 +15,7 @@ def test_render_land_execution_script_uses_shell_variables_for_pr_and_branch() -
         objective_number=None,
         plan_number=None,
         use_graphite=False,
+        skip_learn=False,
         cleanup_confirmed=True,
         target_path=Path("/repo"),
     )
@@ -42,6 +43,7 @@ def test_render_land_execution_script_includes_usage_comment() -> None:
         objective_number=None,
         plan_number=None,
         use_graphite=False,
+        skip_learn=False,
         cleanup_confirmed=True,
         target_path=Path("/repo"),
     )
@@ -59,6 +61,7 @@ def test_render_land_execution_script_includes_shift_and_passthrough() -> None:
         objective_number=None,
         plan_number=None,
         use_graphite=False,
+        skip_learn=False,
         cleanup_confirmed=True,
         target_path=Path("/repo"),
     )
@@ -80,6 +83,7 @@ def test_render_land_execution_script_bakes_in_static_flags() -> None:
         objective_number=42,
         plan_number=100,
         use_graphite=True,
+        skip_learn=False,
         cleanup_confirmed=True,
         target_path=Path("/repo"),
     )
@@ -103,6 +107,7 @@ def test_render_land_execution_script_without_static_flags() -> None:
         objective_number=None,
         plan_number=None,
         use_graphite=False,
+        skip_learn=False,
         cleanup_confirmed=True,
         target_path=Path("/repo"),
     )
@@ -129,6 +134,7 @@ def test_render_land_execution_script_does_not_bake_user_flags() -> None:
         objective_number=None,
         plan_number=None,
         use_graphite=False,
+        skip_learn=False,
         cleanup_confirmed=True,
         target_path=Path("/repo"),
     )
@@ -150,6 +156,7 @@ def test_render_land_execution_script_includes_cd_command() -> None:
         objective_number=None,
         plan_number=None,
         use_graphite=False,
+        skip_learn=False,
         cleanup_confirmed=True,
         target_path=Path("/path/to/target"),
     )
@@ -167,6 +174,7 @@ def test_render_land_execution_script_bakes_no_cleanup_when_cleanup_declined() -
         objective_number=None,
         plan_number=None,
         use_graphite=False,
+        skip_learn=False,
         cleanup_confirmed=False,
         target_path=Path("/repo"),
     )
@@ -184,6 +192,7 @@ def test_render_land_execution_script_omits_no_cleanup_when_cleanup_confirmed() 
         objective_number=None,
         plan_number=None,
         use_graphite=False,
+        skip_learn=False,
         cleanup_confirmed=True,
         target_path=Path("/repo"),
     )
@@ -201,6 +210,7 @@ def test_render_land_execution_script_stops_on_execute_failure() -> None:
         objective_number=None,
         plan_number=None,
         use_graphite=False,
+        skip_learn=False,
         cleanup_confirmed=True,
         target_path=Path("/repo"),
     )
@@ -224,6 +234,7 @@ def test_render_land_execution_script_has_header_comment() -> None:
         objective_number=None,
         plan_number=None,
         use_graphite=False,
+        skip_learn=False,
         cleanup_confirmed=True,
         target_path=Path("/repo"),
     )

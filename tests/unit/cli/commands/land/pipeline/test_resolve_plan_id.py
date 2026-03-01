@@ -47,6 +47,7 @@ def _validation_state(tmp_path: Path, *, branch: str) -> LandState:
         no_delete=False,
         up_flag=False,
         dry_run=False,
+        skip_learn=False,
         target_arg=None,
         repo_root=tmp_path,
         main_repo_root=tmp_path,
