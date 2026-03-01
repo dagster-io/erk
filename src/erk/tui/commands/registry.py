@@ -348,6 +348,20 @@ def get_all_commands() -> list[CommandDefinition]:
             get_display_name=_display_copy_pr_checkout,
         ),
         CommandDefinition(
+            id="cmux_sync",
+            name="cmux sync",
+            description="cmux sync",
+            category=CommandCategory.ACTION,
+            shortcut=None,
+            is_available=lambda ctx: (
+                _is_plan_view(ctx)
+                and ctx.row.pr_number is not None
+                and ctx.row.pr_head_branch is not None
+                and ctx.cmux_integration
+            ),
+            get_display_name=_display_copy_cmux_sync,
+        ),
+        CommandDefinition(
             id="copy_cmux_sync",
             name="cmux sync",
             description="cmux sync",

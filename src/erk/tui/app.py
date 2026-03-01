@@ -849,6 +849,44 @@ class ErkDashApp(App):
             )
 
     @work(thread=True)
+    def _cmux_sync_async(self, op_id: str, pr_number: int, branch: str) -> None:
+        """Create cmux workspace and sync PR in background thread with toast.
+
+        Args:
+            op_id: Operation identifier for status bar tracking
+            pr_number: The PR number to checkout and sync
+            branch: The PR head branch name (used to rename the workspace)
+        """
+        checkout_cmd = (
+            f'source "$(erk pr checkout {pr_number} --script --sync)"'
+            " && gt submit --no-interactive"
+        )
+        shell_cmd = (
+            f"WS=$(cmux new-workspace --command '{checkout_cmd}' | awk '{{print $2}}') && "
+            f'cmux rename-workspace --workspace "$WS" "{branch}"'
+        )
+        result = self._run_streaming_operation(
+            op_id=op_id,
+            command=["bash", "-c", shell_cmd],
+        )
+        self.call_from_thread(self._finish_operation, op_id=op_id)
+        if result.success:
+            self.call_from_thread(
+                self.notify,
+                f"Created cmux workspace for PR #{pr_number}",
+                timeout=3,
+            )
+            self.call_from_thread(self.action_refresh)
+        else:
+            error_msg = _last_output_line(result)
+            self.call_from_thread(
+                self.notify,
+                f"Failed to create cmux workspace for PR #{pr_number}: {error_msg}",
+                severity="error",
+                timeout=5,
+            )
+
+    @work(thread=True)
     def _rewrite_remote_async(self, op_id: str, pr_number: int) -> None:
         """Dispatch rewrite workflow in background thread with toast."""
         result = self._run_streaming_operation(
@@ -1395,6 +1433,24 @@ class ErkDashApp(App):
                 cmd = f"erk launch pr-rewrite --pr {row.pr_number}"
                 self._provider.clipboard.copy(cmd)
                 self.notify(f"Copied: {cmd}")
+
+        elif command_id == "copy_cmux_sync":
+            ctx = CommandContext(
+                row=row, view_mode=self._view_mode, cmux_integration=self._cmux_integration
+            )
+            text = get_copy_text(command_id, ctx)
+            if text is not None:
+                self._provider.clipboard.copy(text)
+                self.notify(f"Copied: {text}")
+
+        elif command_id == "cmux_sync":
+            if row.pr_number and row.pr_head_branch:
+                op_id = f"cmux-sync-{row.pr_number}"
+                self._start_operation(
+                    op_id=op_id,
+                    label=f"Creating cmux workspace for PR #{row.pr_number}...",
+                )
+                self._cmux_sync_async(op_id, row.pr_number, row.pr_head_branch)
 
         elif command_id == "rebase_remote":
             if row.pr_number:

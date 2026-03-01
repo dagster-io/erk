@@ -330,19 +330,30 @@ def test_display_name_copy_cmux_sync() -> None:
     assert "erk pr checkout 456 --script --sync" in result
 
 
+def test_display_name_cmux_sync_action() -> None:
+    """cmux_sync ACTION command uses same display name as copy_cmux_sync."""
+    row = make_plan_row(5831, "Test Plan", pr_number=456, pr_head_branch="feature-branch")
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=True)
+    action_cmd = next(c for c in get_all_commands() if c.id == "cmux_sync")
+    copy_cmd = next(c for c in get_all_commands() if c.id == "copy_cmux_sync")
+    assert get_display_name(action_cmd, ctx) == get_display_name(copy_cmd, ctx)
+
+
 def test_copy_cmux_sync_unavailable_without_branch() -> None:
-    """copy_cmux_sync is unavailable when no head branch exists."""
+    """cmux_sync and copy_cmux_sync are unavailable when no head branch exists."""
     row = make_plan_row(5831, "Test Plan", pr_number=456)
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=True)
     cmd_ids = [cmd.id for cmd in get_available_commands(ctx)]
+    assert "cmux_sync" not in cmd_ids
     assert "copy_cmux_sync" not in cmd_ids
 
 
 def test_copy_cmux_sync_unavailable_without_cmux_integration() -> None:
-    """copy_cmux_sync is unavailable when cmux_integration is disabled."""
+    """cmux_sync and copy_cmux_sync are unavailable when cmux_integration is disabled."""
     row = make_plan_row(5831, "Test Plan", pr_number=456, pr_head_branch="feature-branch")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     cmd_ids = [cmd.id for cmd in get_available_commands(ctx)]
+    assert "cmux_sync" not in cmd_ids
     assert "copy_cmux_sync" not in cmd_ids
 
 
@@ -588,11 +599,13 @@ def test_plan_commands_hidden_in_objectives_view() -> None:
         "rebase_remote",
         "address_remote",
         "rewrite_remote",
+        "cmux_sync",
         "open_issue",
         "open_pr",
         "open_run",
         "copy_checkout",
         "copy_pr_checkout",
+        "copy_cmux_sync",
         "copy_dispatch",
         "copy_replan",
         "copy_land",
