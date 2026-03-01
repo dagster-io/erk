@@ -31,7 +31,7 @@ Ctrl+Enter (not Enter) submits because Enter inserts newlines in the `TextArea`.
 
 ## App Integration
 
-<!-- Source: src/erk/tui/app.py:476-510 -->
+<!-- Source: src/erk/tui/actions/palette.py, action_one_shot_prompt -->
 
 ### Global Action
 

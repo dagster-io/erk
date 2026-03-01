@@ -127,8 +127,8 @@ The branch slug was the first inference hoisting case. Plan summary generation f
 
 The `--summary` Click option was added to exec scripts that need a plan summary:
 
-- `plan_save.py` — `--summary` at line 501-505
-- `plan_update.py` — accepts `--summary` similarly
+- `plan_save.py` — `--summary` Click option
+- `plan_update.py` — `--summary` Click option
 - `create-pr-from-session` — summary passed from skill layer
 
 The calling skills generate the summary through LLM reasoning and pass it via the flag:

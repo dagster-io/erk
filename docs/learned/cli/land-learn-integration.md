@@ -76,11 +76,12 @@ This ensures that learn failures never block the primary `erk land` operation. A
 
 When `erk land` creates a learn plan, the TUI displays a toast notification. The integration works through output parsing:
 
-1. `_extract_learn_plan_number()` at `src/erk/tui/app.py:64-73` scans operation output lines with regex `r"Created learn plan #(\d+)"`
+1. `extract_learn_plan_number()` in `src/erk/tui/operations/logic.py` scans operation output lines with regex `r"Created learn plan #(\d+)"`
 2. On match, the TUI shows a toast via `notify()` after successful land
 3. **Cycle prevention**: When the TUI triggers a land, it passes `plan_id=None` for learn plans (`row.plan_id if not row.is_learn_plan else None`). This prevents learn plans from creating learn plans of their own.
 
-<!-- Source: src/erk/tui/app.py:64-73, 882-920 -->
+<!-- Source: src/erk/tui/operations/logic.py, extract_learn_plan_number -->
+<!-- Source: src/erk/tui/operations/workers.py, _land_pr_async -->
 
 ## Related Documentation
 
