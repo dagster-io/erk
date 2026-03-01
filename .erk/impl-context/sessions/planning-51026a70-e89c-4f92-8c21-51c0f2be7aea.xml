@@ -1,0 +1,722 @@
+<session>
+  <meta branch="cl-update-03-01-022" />
+  <meta model="claude-sonnet-4-6" />
+  <user>why is this hanging</user>
+  <thinking>The user is asking why `erk land -f -d` is hanging after showing "No sessions discovered for this plan". Let me look at the land script to understand what's happening.
+
+Let me explore the land.sh script and related code to understand what might be causing the hang.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="11922" cache_read_input_tokens="19034" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11922}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_011nhPMVBtAAww5s2eNxVwy9">
+    <param name="description">Explore land.sh and erk land command</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic. Read relevant ...[truncated 572 chars].../bin/land.sh`
+- Any CLI land command in `src/erk/cli/`
+- The erk:land skill in `.claude/`
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11922" cache_read_input_tokens="19034" output_tokens="386" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11922, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011nhPMVBtAAww5s2eNxVwy9">
+I now have a complete picture. Here is the full analysis:
+
+---
+
+## What happens after "No sessions discovered for this plan"
+
+### The execution flow
+
+After the PR merged successfully, `land.sh` calls:
+
+```
+erk exec land-execute --pr-number=8563 --branch=cl-update-03-01-022 --worktree-path=/Users/schrockn/code/erk --is-current-branch --use-graphite --plan-number=8563
+```
+
+`land_execute` runs the **execution pipeline** in this order:
+
+1. `merge_pr` - merges the PR via Graphite (already done, prints "Merged PR #8563")
+2. `create_learn_pr` - creates a learn plan PR with session data
+3. `cleanup_and_navigate` - deletes worktree/branch, navigates to trunk
+
+### Where it gets stuck: `create_learn_pr` -&gt; `generate_branch_slug` -&gt; LLM subprocess
+
+After printing "No sessions discovered for this plan" (because no session IDs are found for this branch), `_create_learn_pr_impl` in `/Users/schrockn/code/erk/src/erk/cli/commands/land_learn.py` continues regardless -- the zero-session case prints the warning and returns an empty `{}` dict, but execution continues to:
+
+```python
+# land_learn.py lines 386-389
+slug = generate_branch_slug(ctx.prompt_executor, learn_title)
+branch_name = generate_planned_pr_branch_name(slug, ctx.time.now(), objective_id=None)
+```
+
+
+... [39 lines omitted] ...
+
+The "No sessions discovered" message is misleading -- it's a warning from the session logging step, but the code continues to attempt creating a learn plan PR anyway (it doesn't bail out early when there are no sessions). The hang is in the subsequent LLM call to generate the branch name slug.
+  </tool_result>
+  <thinking>The agent has identified the root cause. The hang is in `generate_branch_slug` which spawns a nested `claude` subprocess. This is happening after "No sessions discovered for this plan" because the code continues to try to create a learn plan PR anyway.
+
+Now I need to plan a fix. The issue is:
+1. When no sessions are discovered, `_create_learn_pr_impl` still tries to create a learn plan PR
+2. It calls `generate_branch_slug` which spawns a nested `claude` subprocess
+3. This subprocess hangs
+
+The fix could be:
+1. Early return from `_create_learn_pr_impl` when no sessions are found (simplest fix)
+
+
+2. Or there's a deeper bug causing the subprocess to hang in the first place
+
+I should examine the land_learn.py code to understand what's actually happening and determine whether we need to prevent the call entirely or fix the hanging subprocess itself.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1509" cache_read_input_tokens="30956" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1509}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>The hang is in `generate_branch_slug` — after "No sessions discovered", the code continues and spawns a nested `claude --print` subprocess to generate a branch name slug for the learn PR. This nested Claude invocation hangs (120s timeout).
+
+Let me read the relevant code to plan a fix.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1509" cache_read_input_tokens="30956" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1509}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01V5dgChH3x5hfmo1E67sqYV">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/land_learn.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1509" cache_read_input_tokens="30956" output_tokens="390" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1509, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01V5dgChH3x5hfmo1E67sqYV">
+     1→"""Learn plan creation for the land command.
+     2→
+     3→Handles creating erk-learn plans when a PR is landed.
+     4→Extracted to avoid circular imports between land_cmd and land_pipeline.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from dataclasses import dataclass
+    10→from typing import TYPE_CHECKING
+    11→
+    12→import click
+    13→from rich.console import Console
+    14→from rich.table import Table
+    15→
+    16→from erk.cli.commands.exec.scripts.preprocess_session import (
+    17→    deduplicate_assistant_messages,
+    18→    deduplicate_documentation_blocks,
+    19→    discover_agent_logs,
+    20→    is_empty_session,
+    21→    is_warmup_session,
+    22→    process_log_file,
+    23→    split_entries_to_chunks,
+    24→    truncate_tool_parameters,
+    25→)
+    26→from erk.core.branch_slug_generator import generate_branch_slug
+    27→from erk.core.context import ErkContext
+    28→from erk_shared.learn.extraction.session_schema import (
+    29→    iter_jsonl_entries,
+    30→    parse_session_timestamp,
+
+... [408 lines omitted] ...
+
+   190→    except Exception as exc:
+   191→        user_output(click.style("Warning: ", fg="yellow") + f"Could not create learn plan: {exc}")
+   350→    """Inner implementation for learn plan creation (raises on error)."""
+   429→    elif result.error:
+   431→            click.style("Warning: ", fg="yellow") + f"Learn plan creation failed: {result.error}"
+  </tool_result>
+  <thinking>Now I can see the issue clearly. At line 388, `generate_branch_slug` is called unconditionally even when there are no sessions. This triggers an LLM subprocess call that may hang.
+
+The fix is simple: when `all_session_ids` is empty (no sessions discovered), we could skip creating the learn PR entirely. Looking at the flow:
+- Line 371: `xml_files = _log_session_discovery(...)` - logs "No sessions discovered" and returns `{}`
+- Line 374: `if all_session_ids:` - session_section becomes `["- (none)"]`
+
+
+- Line 388: `slug = generate_branch_slug(...)` - THIS HANGS
+
+I'm weighing two approaches: either skip the entire learn PR creation when there are no sessions since it would have minimal value, or keep the PR but use a deterministic fallback slug instead of calling the LLM when sessions are empty.
+
+The cleanest solution is to add an early return right after session discovery completes, which avoids both the hanging LLM call and creating a useless plan with no actual content.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="6331" cache_read_input_tokens="32465" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6331}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a clear picture. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6331" cache_read_input_tokens="32465" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6331}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01477Xwq61pDjAuTerjR1Ej6">
+    <param name="file_path">/Users/schrockn/.claude/plans/twinkling-skipping-willow.md</param>
+    <param name="content"># Context
+
+When landing a PR with `erk land`, the `_create_learn_pr_impl` function calls `...[truncated 1378 chars]...plan should still be created as before
+3. Confirm no test regressions with `make fast-ci`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6331" cache_read_input_tokens="32465" output_tokens="877" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6331, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01477Xwq61pDjAuTerjR1Ej6">
+File created successfully at: /Users/schrockn/.claude/plans/twinkling-skipping-willow.md
+  </tool_result>
+  <assistant>**Root cause:** After "No sessions discovered", `_create_learn_pr_impl` continues to call `generate_branch_slug` (line 388 in `land_learn.py`), which spawns a nested `claude --print` subprocess to generate a branch name. That subprocess hangs because it's Claude calling Claude.
+
+**Fix:** Early-return from `_create_learn_pr_impl` when `all_session_ids` is empty — a learn plan with no session content has no value anyway.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1011" cache_read_input_tokens="38796" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1011}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01X94bb3ZnWcnHSRuD23oMnA">
+    <param name="plan"># Context
+
+When landing a PR with `erk land`, the `_create_learn_pr_impl` function calls `...[truncated 1378 chars]...plan should still be created as before
+3. Confirm no test regressions with `make fast-ci`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1011" cache_read_input_tokens="38796" output_tokens="152" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1011, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01X94bb3ZnWcnHSRuD23oMnA">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/twinkling-skipping-willow.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Context
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 51026a70-e89c-4f92-8c21-51c0f2be7aea \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>## Plan
+
+**Context:** When landing a PR with `erk land`, the `_create_learn_pr_impl` function calls `generate_branch_slug` unconditionally — even when no sessions are discovered. `generate_branch_slug` spawns a nested `claude --print` subprocess to generate a branch name slug, which hangs (120s timeout) because it's Claude calling Claude.
+
+**Fix:** Add an early return after `_log_session_discovery` when `all_session_ids` is empty. A learn plan with no session content has no value anyway.
+
+**File:** `src/erk/cli/commands/land_learn.py`, line ~372
+
+```python
+xml_files = _log_session_discovery(ctx, sessions=sessions, all_session_ids=all_session_ids)
+
+# Skip learn plan creation if no sessions were discovered
+if not all_session_ids:
+    return
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="765" cache_read_input_tokens="39807" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 765}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01UzgEq2HzVumcUhqLFMqhUp">
+    <param name="questions">[{'question': '📋 Context\nCurrent context: (wt:erk) (br:master)\n\nWhat would you like to ...[truncated 391 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="765" cache_read_input_tokens="39807" output_tokens="422" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 765, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UzgEq2HzVumcUhqLFMqhUp">
+User has answered your questions: "📋 Context
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create a plan PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01PrsXiY7W6SbobnuHWnYKr8">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="493" cache_read_input_tokens="40572" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 493, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PrsXiY7W6SbobnuHWnYKr8">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="51026a70-e89c-4f92-8c21-51c0f2be7aea" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "51026a70-e89c-4f92-8c21-51c0f2be7aea" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "51026a70-e89c-4f92-8c21-51c0f2be7aea" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "51026a70-e89c-4f92-8c21-51c0f2be7aea" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "51026a70-e89c-4f92-8c21-51c0f2be7aea" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <thinking>The user has invoked the `/erk:plan-save` skill. I need to follow the steps outlined:
+
+1. Parse arguments (no --plan-type or --objective flags)
+2. Generate branch slug from the plan title
+3. Generate plan summary
+4. Run save command
+5. Display results
+
+Let me read the plan file to get the title and generate the slug and summary.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="2829" cache_read_input_tokens="41065" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2829}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BVv7wrqQYkNG1DZhTzZuLB">
+    <param name="file_path">/Users/schrockn/.claude/plans/twinkling-skipping-willow.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2829" cache_read_input_tokens="41065" output_tokens="175" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2829, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BVv7wrqQYkNG1DZhTzZuLB">
+     1→# Context
+     2→
+     3→When landing a PR with `erk land`, the `_create_learn_pr_impl` function calls `generate_branch_slug` unconditionally — even when no sessions are discovered. `generate_branch_slug` spawns a nested `claude --print` subprocess to generate a branch name slug, which hangs (120s timeout) because it runs Claude-within-Claude.
+     4→
+     5→The output shows "No sessions discovered for this plan" but then the process hangs indefinitely because the code continues to the `generate_branch_slug` LLM call on line 388.
+     6→
+     7→When there are no sessions, a learn plan has minimal value (just PR metadata, no session content). The fix is to early-return after session discovery when no sessions are found.
+     8→
+     9→# Fix
+    10→
+    11→**File:** `src/erk/cli/commands/land_learn.py`
+    12→
+    13→In `_create_learn_pr_impl`, add an early return after `_log_session_discovery` when `all_session_ids` is empty:
+    14→
+    15→```python
+    16→# Log session discovery summary and collect XML files for embedding
+    17→xml_files = _log_session_discovery(ctx, sessions=sessions, all_session_ids=all_session_ids)
+    18→
+    19→# Skip learn plan creation if no sessions were discovered — nothing meaningful to capture
+    20→if not all_session_ids:
+    21→    return
+    22→```
+    23→
+    24→This goes at line ~372, right after the `_log_session_discovery` call and before building the plan body.
+    25→
+    26→# Verification
+    27→
+    28→1. Run `erk land -f -d` on a PR where no sessions are associated — it should complete quickly after "No sessions discovered for this plan" without hanging
+    29→2. Run `erk land -f -d` on a PR with sessions — learn plan should still be created as before
+    30→3. Confirm no test regressions with `make fast-ci`
+
+... [6 lines omitted] ...
+  </tool_result>
+  <thinking>The plan title is derived from the context - looking at the plan, I'll use "fix-land-hang-no-sessions" as the branch slug. Let me generate:
+
+- BRANCH_SLUG: "fix-land-no-sessions"
+- PLAN_SUMMARY: A brief 2-3 sentence summary
+
+Now let me run the save command.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="782" cache_read_input_tokens="43894" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 782}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>**Branch slug:** `fix-land-no-sessions`
+
+**Summary:** When `erk land` is run and no sessions are discovered for a plan, the code continues to call `generate_branch_slug` which spawns a nested `claude --print` subprocess that hangs indefinitely. This fix adds an early return in `_create_learn_pr_impl` after session discovery when no sessions are found, since a learn plan with no session content has no value.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="782" cache_read_input_tokens="43894" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 782}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016ytKUqEsPwvGdujk3qhW71">
+    <param name="command">erk exec plan-save --format json --session-id="51026a70-e89c-4f92-8c21-51c0f2be7aea" --bra...[truncated 274 chars]...very when no sessions are found, since a learn plan with no session content has no value."</param>
+    <param name="description">Save plan as draft PR</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="782" cache_read_input_tokens="43894" output_tokens="400" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 782, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016ytKUqEsPwvGdujk3qhW71">
+{"success": true, "plan_number": 8568, "plan_url": "https://github.com/dagster-io/erk/pull/8568", "title": "[erk-plan] Context", "branch_name": "plnd/fix-land-no-sessions-03-01-1543", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/51026a70-e89c-4f92-8c21-51c0f2be7aea/plan_snapshots/000001-2907aeee"}
+  </tool_result>
+  <thinking>The plan was saved successfully. Now let me push the planning session and display results.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="569" cache_read_input_tokens="44676" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 569}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01FuSzGXGHQSwhZz1EyTLC71">
+    <param name="command">erk exec capture-session-info --session-id "51026a70-e89c-4f92-8c21-51c0f2be7aea" 2&gt;/dev/null | head -5</param>
+    <param name="description">Get session file path</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="569" cache_read_input_tokens="44676" output_tokens="153" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 569, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FuSzGXGHQSwhZz1EyTLC71">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0115GZs6yqqyJd42bzP8VfZH">
+    <param name="command">erk exec push-session \
+    --session-id "51026a70-e89c-4f92-8c21-51c0f2be7aea" \
+    --stage planning \
+    --source local \
+    --plan-id 8568 \
+    2&gt;/dev/null || true</param>
+    <param name="description">Push planning session</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="0" cache_read_input_tokens="45424" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0115GZs6yqqyJd42bzP8VfZH">
+
+  </tool_result>
+  <thinking>Good. Now let me display the results. The plan was saved successfully as PR #8568.</thinking>
+  <usage input_tokens="8" cache_creation_input_tokens="26813" cache_read_input_tokens="19095" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 26813}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>✓ **Plan saved as draft PR #8568**
+
+**View PR:** https://github.com/dagster-io/erk/pull/8568
+
+**Next steps:**
+
+In Claude Code:
+- Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+```bash
+erk br co --for-plan 8568                                          # Checkout to implement locally
+erk pr dispatch 8568                                               # Dispatch for remote implementation
+```</assistant>
+  <usage input_tokens="8" cache_creation_input_tokens="26813" cache_read_input_tokens="19095" output_tokens="155" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 26813, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-dispatch&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-dispatch&lt;/command-name&gt;</user>
+  <user># /erk:pr-dispatch
+
+## Goal
+
+Find the most recent plan created in this conversation and dispatch it for remote AI implementation via `erk pr dispatch`.
+
+## What This Command Does
+
+1. Search conversation for the last plan reference
+2. Extract the plan number
+3. Run `erk pr dispatch &lt;plan_number&gt;` to trigger remote implementation
+
+## Finding the Plan
+
+Search the conversation from bottom to top for these patterns (in priority order):
+
+1. **Draft PR reference**: `saved as draft PR #&lt;number&gt;` or `draft PR #&lt;number&gt;`
+2. **Pull request URL**: `https://github.com/&lt;owner&gt;/&lt;repo&gt;/pull/&lt;number&gt;`
+3. **Plan URL**: `https://github.com/.../pull/&lt;number&gt;` (legacy: `https://github.com/.../issues/&lt;number&gt;`)
+
+Extract the plan number from the most recent match.
+
+## Execution
+
+Once you have the plan number, run:
+
+```bash
+erk pr dispatch &lt;plan_number&gt;
+```
+
+If the command succeeds, clear the session marker to allow creating new plans in this session:
+
+```bash
+erk exec marker delete --session-id "51026a70-e89c-4f92-8c21-51c0f2be7aea" plan-saved-issue
+```
+
+Display the command output to the user. The `erk pr dispatch` command handles all validation (plan existence, labels, state).
+
+## Error Cases
+
+- **No plan found in conversation**: Report "No plan found in conversation. Run /erk:plan-save first to create a plan."
+- **erk pr dispatch fails**: Display the error output from the command (erk pr dispatch validates the plan)
+</user>
+  <thinking>The user is invoking `/erk:pr-dispatch` to dispatch the plan we just saved. Looking at the conversation, I can see the plan was saved as draft PR #8568. Let me extract that and run the dispatch command.</thinking>
+  <usage input_tokens="9" cache_creation_input_tokens="1747" cache_read_input_tokens="45908" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1747}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <assistant>Dispatching plan #8568 for remote implementation...</assistant>
+  <usage input_tokens="9" cache_creation_input_tokens="1747" cache_read_input_tokens="45908" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1747}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01X3yNgCJnNASMBJTAh4NjYm">
+    <param name="command">erk pr dispatch 8568</param>
+    <param name="description">Dispatch plan for remote AI implementation</param>
+  </tool_use>
+  <usage input_tokens="9" cache_creation_input_tokens="1747" cache_read_input_tokens="45908" output_tokens="152" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1747, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01X3yNgCJnNASMBJTAh4NjYm">
+Checking GitHub authentication...
+Syncing trunk with remote...
+Resolving GitHub username...
+Validating 1 planned-PR plan(s)...
+
+Validating PR #8568...
+
+✓ All 1 plan(s) validated
+
+  #8568: [erk-plan] Context
+
+Dispatching PR #8568...
+
+Fetching plan content...
+Checking out existing plan branch: plnd/fix-land-no-sessions-03-01-1543
+Cleaning up previous .erk/impl-context/ folder...
+Creating .erk/impl-context/ folder...
+✓ Branch pushed to remote
+
+Triggering workflow: plan-implement.yml
+  Waiting for workflow run... (attempt 1/11)
+  Waiting for workflow run... (attempt 2/11)
+✓ Workflow triggered.
+✓ Dispatch metadata written
+Posting queued event comment...
+✓ Queued event comment posted
+
+
+✓ 1 plan(s) dispatched successfully!
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <thinking>Great! The plan was dispatched successfully. Now let me clear the session marker as instructed.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="499" cache_read_input_tokens="47655" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 499}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01YNsrkfZqQbS3r5vYmkJ4FE">
+    <param name="command">erk exec marker delete --session-id "51026a70-e89c-4f92-8c21-51c0f2be7aea" plan-saved-issue 2&gt;/dev/null || true</param>
+    <param name="description">Clear plan-saved-issue marker</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="499" cache_read_input_tokens="47655" output_tokens="152" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 499, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YNsrkfZqQbS3r5vYmkJ4FE">
+{"success": true, "message": "Deleted marker: plan-saved-issue"}
+  </tool_result>
+  <thinking>Perfect! The plan has been dispatched and the marker cleared. I should report the results to the user. 
+
+Now I should exit plan mode since the plan has been dispatched for remote implementation.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="190" cache_read_input_tokens="48154" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 190}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>✓ **Plan #8568 dispatched successfully!**
+
+- **Plan:** https://github.com/dagster-io/erk/pull/8568
+- **Workflow run:** https://github.com/dagster-io/erk/actions/runs/22552330906
+
+The fix for the `erk land` hang is now queued for remote implementation. A remote agent will:
+
+1. Checkout the plan branch
+2. Add the early return in `_create_learn_pr_impl` when no sessions are discovered
+3. Run tests to verify no regressions
+4. Push the implementation as a PR
+
+You can monitor progress at the workflow link above.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="190" cache_read_input_tokens="48154" output_tokens="204" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 190, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
