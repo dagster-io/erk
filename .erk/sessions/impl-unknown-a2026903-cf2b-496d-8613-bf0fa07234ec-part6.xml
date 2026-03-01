@@ -1,0 +1,354 @@
+<session>
+  <meta source="agent-a2ed245" />
+  <meta branch="plnd/eliminate-master-checkout-03-01-1556" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic. Then find the find_worktree_for_branch method - search for it across the codebase to understand the signature and where it's defined (likely in a worktree ops gateway). I need to know the exact method signature and which module it's in.</user>
+  <assistant>I'll help you find the `find_worktree_for_branch` method. Let me start by checking the documentation and then searching the codebase.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6766" cache_read_input_tokens="11735" cache_creation="{'ephemeral_5m_input_tokens': 6766, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RG5EuvNakJxMu1VoorhWs4">
+    <param name="pattern">find_worktree_for_branch</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6766" cache_read_input_tokens="11735" cache_creation="{'ephemeral_5m_input_tokens': 6766, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01138egFrYG4S3W5BmAuHkxP">
+    <param name="pattern">docs/learned/**/*.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6766" cache_read_input_tokens="11735" cache_creation="{'ephemeral_5m_input_tokens': 6766, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RG5EuvNakJxMu1VoorhWs4">
+Found 20 files
+tests/unit/cli/commands/land/test_cleanup_and_navigate.py
+tests/commands/navigation/test_down.py
+tests/commands/navigation/test_graphite_find_worktrees.py
+tests/commands/navigation/test_stack_navigation.py
+tests/commands/navigation/test_up.py
+tests/commands/land/test_up_flag.py
+src/erk/cli/commands/pr/checkout_cmd.py
+src/erk/cli/commands/pr/dispatch_cmd.py
+src/erk/cli/commands/navigation_helpers.py
+src/erk/cli/commands/land_cmd.py
+src/erk/cli/commands/land_pipeline.py
+src/erk/cli/commands/checkout_helpers.py
+packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py
+packages/erk-shared/src/erk_shared/gateway/git/worktree/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/worktree/printing.py
+packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py
+packages/erk-shared/src/erk_shared/gateway/git/abc.py
+packages/erk-shared/src/erk_shared/gateway/git/__init__.py
+packages/erk-shared/src/erk_shared/__init__.py
+  </tool_result>
+  <tool_result tool="toolu_01138egFrYG4S3W5BmAuHkxP">
+/home/runner/work/erk/erk/docs/learned/architecture/abc-convenience-methods.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-execution-modes.md
+/home/runner/work/erk/erk/docs/learned/architecture/cli-binary-ops-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/click-context-di-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-installation-gateway.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-error-reporting.md
+/home/runner/work/erk/erk/docs/learned/architecture/bash-python-integration.md
+/home/runner/work/erk/erk/docs/learned/architecture/at-reference-resolution.md
+/home/runner/work/erk/erk/docs/learned/architecture/agent-schema-enforcement.md
+/home/runner/work/erk/erk/docs/learned/architecture/bundled-artifacts.md
+/home/runner/work/erk/erk/docs/learned/architecture/agent-backpressure-gates.md
+/home/runner/work/erk/erk/docs/learned/architecture/command-boundaries.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-integration.md
+/home/runner/work/erk/erk/docs/learned/architecture/capability-system.md
+/home/runner/work/erk/erk/docs/learned/architecture/callback-progress-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/command-composition.md
+/home/runner/work/erk/erk/docs/learned/architecture/branch-manager-abstraction.md
+/home/runner/work/erk/erk/docs/learned/architecture/branch-manager-decision-tree.md
+/home/runner/work/erk/erk/docs/learned/architecture/cli-to-pipeline-boundary.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-progress.md
+/home/runner/work/erk/erk/docs/learned/architecture/defense-in-depth-enforcement.md
+/home/runner/work/erk/erk/docs/learned/architecture/discriminated-union-error-handling.md
+/home/runner/work/erk/erk/docs/learned/architecture/derived-flags.md
+/home/runner/work/erk/erk/docs/learned/architecture/composable-remote-commands.md
+/home/runner/work/erk/erk/docs/learned/architecture/convergence-points.md
+/home/runner/work/erk/erk/docs/learned/architecture/direct-condition-vs-derived-output.md
+/home/runner/work/erk/erk/docs/learned/architecture/context-injection-tiers.md
+/home/runner/work/erk/erk/docs/learned/architecture/context-efficiency.md
+/home/runner/work/erk/erk/docs/learned/architecture/commandresult-extension-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/event-progress-pattern.md
+
+... [71 lines omitted] ...
+
+/home/runner/work/erk/erk/docs/learned/architecture/exception-logging-patterns.md
+/home/runner/work/erk/erk/docs/learned/architecture/error-handling-patterns.md
+/home/runner/work/erk/erk/docs/learned/architecture/gateway-error-boundaries.md
+  </tool_result>
+  <assistant>Good! I found references to the method. Now let me read the ABC definition and look at a few key files to understand the method signature:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="3373" cache_read_input_tokens="18501" cache_creation="{'ephemeral_5m_input_tokens': 3373, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01M5X2pJffCuA8jxpNugh8zc">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3373" cache_read_input_tokens="18501" cache_creation="{'ephemeral_5m_input_tokens': 3373, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PmwqDoMeJT72649UxXv61n">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3373" cache_read_input_tokens="18501" cache_creation="{'ephemeral_5m_input_tokens': 3373, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01M5X2pJffCuA8jxpNugh8zc">
+     1→"""Abstract interface for git worktree operations.
+     2→
+     3→This module provides a clean abstraction over git worktree subprocess calls,
+     4→making the codebase more testable and maintainable.
+     5→
+     6→Architecture:
+     7→- Worktree: Abstract base class defining the interface
+     8→- RealWorktree: Production implementation using subprocess
+     9→- FakeWorktree: In-memory implementation for testing
+    10→"""
+    11→
+    12→from abc import ABC, abstractmethod
+    13→from pathlib import Path
+    14→
+    15→# Re-export WorktreeInfo from the main git.abc module for backwards compatibility
+    16→from erk_shared.gateway.git.abc import WorktreeInfo
+    17→
+    18→
+    19→class Worktree(ABC):
+    20→    """Abstract interface for git worktree operations.
+    21→
+    22→    All implementations (real and fake) must implement this interface.
+    23→    """
+    24→
+    25→    @abstractmethod
+    26→    def list_worktrees(self, repo_root: Path) -&gt; list[WorktreeInfo]:
+    27→        """List all worktrees in the repository."""
+    28→        ...
+    29→
+    30→    @abstractmethod
+
+... [141 lines omitted] ...
+
+    50→            RuntimeError: If the worktree add operation fails.
+    69→            RuntimeError: If the worktree remove operation fails.
+  </tool_result>
+  <tool_result tool="toolu_01PmwqDoMeJT72649UxXv61n">
+     1→"""Production worktree implementation using subprocess.
+     2→
+     3→This module provides the real worktree implementation that executes actual git
+     4→worktree commands via subprocess.
+     5→"""
+     6→
+     7→import os
+     8→import subprocess
+     9→from pathlib import Path
+    10→
+    11→from erk_shared.gateway.git.abc import WorktreeInfo
+    12→from erk_shared.gateway.git.worktree.abc import Worktree
+    13→from erk_shared.subprocess_utils import run_subprocess_with_context
+    14→
+    15→
+    16→class RealWorktree(Worktree):
+    17→    """Production implementation using subprocess.
+    18→
+    19→    All worktree operations execute actual git commands via subprocess.
+    20→    """
+    21→
+    22→    def list_worktrees(self, repo_root: Path) -&gt; list[WorktreeInfo]:
+    23→        """List all worktrees in the repository."""
+    24→        result = run_subprocess_with_context(
+    25→            cmd=["git", "worktree", "list", "--porcelain"],
+    26→            operation_context="list worktrees",
+    27→            cwd=repo_root,
+    28→        )
+    29→
+    30→        worktrees: list[WorktreeInfo] = []
+
+... [181 lines omitted] ...
+
+   174→        # Exit code 0 means no changes, non-zero means changes exist or error
+  </tool_result>
+  <assistant>Perfect! Now let me check the fake implementation and the WorktreeInfo dataclass to give you the complete picture:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="5099" cache_read_input_tokens="21874" cache_creation="{'ephemeral_5m_input_tokens': 5099, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GUsfPNVTXd5BL7AAPLgdRw">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5099" cache_read_input_tokens="21874" cache_creation="{'ephemeral_5m_input_tokens': 5099, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0179owzE2nNB2Mc17YTnrJT1">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/abc.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5099" cache_read_input_tokens="21874" cache_creation="{'ephemeral_5m_input_tokens': 5099, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GUsfPNVTXd5BL7AAPLgdRw">
+     1→"""Fake worktree operations for testing.
+     2→
+     3→FakeWorktree is an in-memory implementation that accepts pre-configured state
+     4→in its constructor. Construct instances directly with keyword arguments.
+     5→"""
+     6→
+     7→import os
+     8→from pathlib import Path
+     9→
+    10→from erk_shared.gateway.git.abc import WorktreeInfo
+    11→from erk_shared.gateway.git.worktree.abc import Worktree
+    12→
+    13→
+    14→class FakeWorktree(Worktree):
+    15→    """In-memory fake implementation of git worktree operations.
+    16→
+    17→    State Management:
+    18→    -----------------
+    19→    This fake maintains mutable state to simulate git's stateful behavior.
+    20→    Operations like add_worktree, move_worktree modify internal state.
+    21→    State changes are visible to subsequent method calls within the same test.
+    22→
+    23→    Constructor Injection:
+    24→    ---------------------
+    25→    All INITIAL state is provided via constructor (immutable after construction).
+    26→    Runtime mutations occur through operation methods.
+    27→    Tests should construct fakes with complete initial state.
+    28→
+    29→    Mutation Tracking:
+    30→    -----------------
+
+... [272 lines omitted] ...
+
+    43→        add_worktree_error: str | None = None,
+    44→        remove_worktree_error: str | None = None,
+    52→            add_worktree_error: If set, add_worktree raises RuntimeError with this message
+    53→            remove_worktree_error: Error message to raise from remove_worktree() for error injection
+    60→        self._add_worktree_error = add_worktree_error
+    61→        self._remove_worktree_error = remove_worktree_error
+   102→        Raises RuntimeError if add_worktree_error is configured.
+   104→        if self._add_worktree_error is not None:
+   105→            raise RuntimeError(self._add_worktree_error)
+   133→        # Check for error injection first
+   134→        if self._remove_worktree_error is not None:
+   135→            raise RuntimeError(self._remove_worktree_error)
+   188→        except ImportError:
+   217→            except (ValueError, OSError, RuntimeError):
+   218→                # Not relative to this existing_path or error checking, continue
+   228→            except (OSError, RuntimeError):
+  </tool_result>
+  <tool_result tool="toolu_0179owzE2nNB2Mc17YTnrJT1">
+     1→"""High-level git operations interface.
+     2→
+     3→This module provides a clean abstraction over git subprocess calls, making the
+     4→codebase more testable and maintainable.
+     5→
+     6→Architecture:
+     7→- Git: Abstract base class defining the interface
+     8→- RealGit: Production implementation using subprocess
+     9→- Standalone functions: Convenience wrappers delegating to module singleton
+    10→"""
+    11→
+    12→from __future__ import annotations
+    13→
+    14→from abc import ABC, abstractmethod
+    15→from dataclasses import dataclass
+    16→from pathlib import Path
+    17→from typing import TYPE_CHECKING, NamedTuple
+    18→
+    19→if TYPE_CHECKING:
+    20→    from erk_shared.gateway.git.analysis_ops.abc import GitAnalysisOps
+    21→    from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+    22→    from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
+    23→    from erk_shared.gateway.git.config_ops.abc import GitConfigOps
+    24→    from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
+    25→    from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
+    26→    from erk_shared.gateway.git.repo_ops.abc import GitRepoOps
+    27→    from erk_shared.gateway.git.status_ops.abc import GitStatusOps
+    28→    from erk_shared.gateway.git.tag_ops.abc import GitTagOps
+    29→    from erk_shared.gateway.git.worktree.abc import Worktree
+    30→
+
+... [75 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now I have all the information you need. Let me provide you with a comprehensive summary:
+
+## Summary: `find_worktree_for_branch` Method
+
+### Method Location &amp; Signature
+
+The method exists in **two places** with slightly different contexts:
+
+#### 1. **Gateway ABC Method** (Abstract Method)
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py`
+
+**Module:** `erk_shared.gateway.git.worktree.abc.Worktree`
+
+**Signature:**
+```python
+@abstractmethod
+def find_worktree_for_branch(self, repo_root: Path, branch: str) -&gt; Path | None:
+    """Find worktree path for given branch name.
+
+    Args:
+        repo_root: Repository root path
+        branch: Branch name to search for
+
+    Returns:
+        Path to worktree if branch is checked out, None otherwise
+    """
+```
+
+#### 2. **Real Implementation**
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py`
+
+**Class:** `RealWorktree`
+
+**Implementation:**
+```python
+def find_worktree_for_branch(self, repo_root: Path, branch: str) -&gt; Path | None:
+    """Find worktree path for given branch name."""
+    worktrees = self.list_worktrees(repo_root)
+    for wt in worktrees:
+        if wt.branch == branch:
+            return wt.path
+    return None
+```
+
+#### 3. **Fake Implementation** (for testing)
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py`
+
+**Class:** `FakeWorktree`
+
+**Implementation:** (Lines 150-156) - identical logic to RealWorktree
+
+#### 4. **Convenience Function** (Module-level)
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/abc.py`
+
+**Module:** `erk_shared.gateway.git` (at module level, lines 79-92)
+
+**Signature:**
+```python
+def find_worktree_for_branch(worktrees: list[WorktreeInfo], branch: str) -&gt; Path | None:
+    """Find the path of the worktree that has the given branch checked out.
+
+    Args:
+        worktrees: List of worktrees to search
+        branch: Branch name to find
+
+    Returns:
+        Path to the worktree with the branch checked out, or None if not found
+    """
+    for wt in worktrees:
+        if wt.branch == branch:
+            return wt.path
+    return None
+```
+
+### Related Data Structures
+
+**WorktreeInfo** (frozen dataclass from `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/abc.py`, lines 47-53):
+```python
+@dataclass(frozen=True)
+class WorktreeInfo:
+    """Information about a single git worktree."""
+    
+    path: Path
+    branch: str | None
+    is_root: bool = False
+```
+
+### Usage Patterns
+
+The method is referenced in 20 files across the codebase, primarily in:
+- Navigation helpers and commands (`src/erk/cli/commands/`)
+- Land pipeline operations (`src/erk/cli/commands/land_*.py`)
+- Navigation tests (`tests/commands/navigation/`)
+- Graphite integration tests
+
+The method filters worktrees to find which one has a specific branch checked out.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="5805" cache_read_input_tokens="26973" cache_creation="{'ephemeral_5m_input_tokens': 5805, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

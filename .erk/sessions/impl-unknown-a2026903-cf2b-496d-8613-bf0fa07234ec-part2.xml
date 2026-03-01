@@ -1,0 +1,1021 @@
+<session>
+  <meta branch="plnd/eliminate-master-checkout-03-01-1556" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01MwVPbSMcc1w1rNh1nBpTdx">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01EJ9oaaxPNumyhyUhH5q4MT">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py</param>
+    <param name="old_string">    def get_branch_commits_with_authors(
+        self, repo_root: Path, branch: str, trunk: str, *, limit: int
+    ) -&gt; list[dict[str, str]]:</param>
+    <param name="new_string">    def update_local_ref(self, repo_root: Path, branch: str, target_sha: str) -&gt; None:
+   ...[truncated 345 chars]...lf, repo_root: Path, branch: str, trunk: str, *, limit: int
+    ) -&gt; list[dict[str, str]]:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="471" cache_read_input_tokens="107381" cache_creation="{'ephemeral_5m_input_tokens': 471, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EJ9oaaxPNumyhyUhH5q4MT">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01UnHFWURf9qStdvPs39mYq3">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py</param>
+    <param name="old_string">    def link_mutation_tracking(</param>
+    <param name="new_string">    def update_local_ref(self, repo_root: Path, branch: str, target_sha: str) -&gt; None:
+   ...[truncated 185 chars]...get_sha))
+        self._branch_heads[branch] = target_sha
+
+    def link_mutation_tracking(</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="394" cache_read_input_tokens="107852" cache_creation="{'ephemeral_5m_input_tokens': 394, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UnHFWURf9qStdvPs39mYq3">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I need to add the `_updated_refs` tracking list to the `__init__` and a property for test assertions:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="293" cache_read_input_tokens="108246" cache_creation="{'ephemeral_5m_input_tokens': 293, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_012YPVmtShsWrHnZ95inPfPd">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py</param>
+    <param name="old_string">        # Mutation tracking
+        self._created_branches: list[
+            tuple[Path, ...[truncated 227 chars]...       self._created_tracking_branches: list[tuple[str, str]] = []  # (branch, remote_ref)</param>
+    <param name="new_string">        # Mutation tracking
+        self._created_branches: list[
+            tuple[Path, ...[truncated 323 chars]...   self._updated_refs: list[tuple[Path, str, str]] = []  # (repo_root, branch, target_sha)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="293" cache_read_input_tokens="108246" cache_creation="{'ephemeral_5m_input_tokens': 293, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012YPVmtShsWrHnZ95inPfPd">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the property for test assertions:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="745" cache_read_input_tokens="108539" cache_creation="{'ephemeral_5m_input_tokens': 745, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_018AUuWprQUGqwJCSFYYgLoA">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py</param>
+    <param name="old_string">    @property
+    def created_tracking_branches(self) -&gt; list[tuple[str, str]]:
+        ""...[truncated 112 chars]...or test assertions only.
+        """
+        return self._created_tracking_branches.copy()</param>
+    <param name="new_string">    @property
+    def created_tracking_branches(self) -&gt; list[tuple[str, str]]:
+        ""...[truncated 403 chars]...property is for test assertions only.
+        """
+        return self._updated_refs.copy()</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="745" cache_read_input_tokens="108539" cache_creation="{'ephemeral_5m_input_tokens': 745, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018AUuWprQUGqwJCSFYYgLoA">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the `link_mutation_tracking` method to include `_updated_refs`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="424" cache_read_input_tokens="109284" cache_creation="{'ephemeral_5m_input_tokens': 424, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01QtDuLDmkCz5Z4jEpMNfKqV">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py</param>
+    <param name="old_string">    def link_mutation_tracking(
+        self,
+        created_branches: list[tuple[Path, s...[truncated 1046 chars]...s = detached_checkouts
+        self._created_tracking_branches = created_tracking_branches</param>
+    <param name="new_string">    def link_mutation_tracking(
+        self,
+        created_branches: list[tuple[Path, s...[truncated 1206 chars]...ed_tracking_branches = created_tracking_branches
+        self._updated_refs = updated_refs</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="424" cache_read_input_tokens="109284" cache_creation="{'ephemeral_5m_input_tokens': 424, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QtDuLDmkCz5Z4jEpMNfKqV">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I need to update the callers of `link_mutation_tracking` to pass the new parameter. Let me find them:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1138" cache_read_input_tokens="109708" cache_creation="{'ephemeral_5m_input_tokens': 1138, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01Dr4TenHNAJD84TRzZQnfu6">
+    <param name="pattern">link_mutation_tracking</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1138" cache_read_input_tokens="109708" cache_creation="{'ephemeral_5m_input_tokens': 1138, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Dr4TenHNAJD84TRzZQnfu6">
+Found 15 files
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/graphite/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/tag_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/config_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/fake.py
+docs/learned/testing/frozen-dataclass-test-doubles.md
+docs/learned/testing/gateway-fake-testing-exemplar.md
+docs/learned/architecture/tripwires.md
+docs/learned/architecture/flatten-subgateway-pattern.md
+docs/learned/architecture/gateway-decomposition-phases.md
+docs/learned/architecture/gateway-removal-pattern.md
+  </tool_result>
+  <assistant>I need to find the caller in `fake.py` (FakeGit) that calls `link_mutation_tracking` on FakeGitBranchOps:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="444" cache_read_input_tokens="110846" cache_creation="{'ephemeral_5m_input_tokens': 444, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01BUZ6prpw6WYVEd2iDh919t">
+    <param name="pattern">link_mutation_tracking</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="444" cache_read_input_tokens="110846" cache_creation="{'ephemeral_5m_input_tokens': 444, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BUZ6prpw6WYVEd2iDh919t">
+324-            diffs=self._diff_to_branch,
+325-        )
+326-
+327-        # Config operations subgateway
+328-        self._config_gateway = FakeGitConfigOps(git_user_name=git_user_name)
+329-        self._config_gateway.link_state(
+330-            user_names={},
+331-            config_values={},
+332-            git_user_name=git_user_name,
+333-        )
+334:        self._config_gateway.link_mutation_tracking(
+335-            config_sets=self._config_sets_records,
+336-        )
+337-
+338-        # Worktree subgateway
+339-        self._worktree_gateway = FakeWorktree(
+340-            worktrees=self._worktrees,
+341-            existing_paths=self._existing_paths,
+342-            dirty_worktrees=self._dirty_worktrees,
+343-            add_worktree_error=add_worktree_error,
+344-            remove_worktree_error=self._remove_worktree_error,
+--
+357-            branch_sync_info=self._branch_sync_info,
+358-            behind_commit_authors=self._behind_commit_authors,
+359-            branch_last_commit_times=self._branch_last_commit_times,
+360-            branch_commits_with_authors=self._branch_commits_with_authors,
+361-            delete_branch_raises=self._delete_branch_raises,
+362-            tracking_branch_failures=self._tracking_branch_failures,
+363-            create_branch_error=create_branch_error,
+364-            ahead_behind_raises=ahead_behind_raises,
+
+... [83 lines omitted] ...
+
+380-            push_to_remote_error=self._push_to_remote_error,
+381-            pull_rebase_error=self._pull_rebase_error,
+  </tool_result>
+  <assistant>I need to add `_updated_refs` tracking in FakeGit and pass it to `link_mutation_tracking`. Let me read the relevant section of FakeGit:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2057" cache_read_input_tokens="111290" cache_creation="{'ephemeral_5m_input_tokens': 2057, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Gk2uoCZQJTgeP3otGC4Zdj">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="offset">1</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2057" cache_read_input_tokens="111290" cache_creation="{'ephemeral_5m_input_tokens': 2057, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Gk2uoCZQJTgeP3otGC4Zdj">
+     1→"""Fake git operations for testing.
+     2→
+     3→FakeGit is an in-memory implementation that accepts pre-configured state
+     4→in its constructor. Construct instances directly with keyword arguments.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from collections.abc import Callable
+    10→from pathlib import Path
+    11→from typing import NamedTuple
+    12→
+    13→from erk_shared.gateway.git.abc import (
+    14→    BranchDivergence,
+    15→    BranchSyncInfo,
+    16→    Git,
+    17→    RebaseResult,
+    18→    WorktreeInfo,
+    19→)
+    20→from erk_shared.gateway.git.analysis_ops.abc import GitAnalysisOps
+    21→from erk_shared.gateway.git.analysis_ops.fake import FakeGitAnalysisOps
+    22→from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+    23→from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
+    24→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+    25→from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
+    26→from erk_shared.gateway.git.commit_ops.fake import (
+    27→    BranchCommitRecord,
+    28→    CommitRecord,
+    29→    FakeGitCommitOps,
+    30→)
+
+... [75 lines omitted] ...
+
+    37→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0116LNh48ujzTuiE1LiCAWsp">
+    <param name="pattern">_created_tracking_branches</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1695" cache_read_input_tokens="113347" cache_creation="{'ephemeral_5m_input_tokens': 1695, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0116LNh48ujzTuiE1LiCAWsp">
+293:        self._created_tracking_branches: list[tuple[str, str]] = []
+372:            created_tracking_branches=self._created_tracking_branches,
+594:        return self._created_tracking_branches.copy()
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Jz8wx1r1ykkvFWGHqgovHo">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="offset">288</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="450" cache_read_input_tokens="115042" cache_creation="{'ephemeral_5m_input_tokens': 450, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Jz8wx1r1ykkvFWGHqgovHo">
+   288→        self._deleted_branches: list[str] = []
+   289→        self._checked_out_branches: list[tuple[Path, str]] = []
+   290→        self._detached_checkouts: list[tuple[Path, str]] = []
+   291→        self._fetched_branches: list[tuple[str, str]] = []
+   292→        self._pulled_branches: list[tuple[str, str, bool]] = []
+   293→        self._created_tracking_branches: list[tuple[str, str]] = []
+   294→        self._staged_files: list[str] = []
+   295→        self._commits: list[CommitRecord] = []
+   296→        self._branch_commits: list[BranchCommitRecord] = []
+   297→        self._pushed_branches: list[PushedBranch] = []
+   298→        self._created_branches: list[
+   299→            tuple[Path, str, str, bool]
+   300→        ] = []  # (cwd, branch_name, start_point, force)
+   301→        self._rebase_continue_calls: list[Path] = []
+   302→        self._config_settings: list[tuple[str, str, str]] = []  # (key, value, scope)
+   303→        self._created_tags: list[tuple[str, str]] = []  # (tag_name, message)
+   304→        self._pushed_tags: list[tuple[str, str]] = []  # (remote, tag_name)
+   305→        self._rebase_onto_calls: list[tuple[Path, str]] = []  # (cwd, target_ref)
+   306→        self._rebase_abort_calls: list[Path] = []
+   307→        self._pull_rebase_calls: list[tuple[Path, str, str]] = []  # (cwd, remote, branch)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01VHC9Qg8GjPgji8TYBjNqz5">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="offset">307</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="674" cache_read_input_tokens="115492" cache_creation="{'ephemeral_5m_input_tokens': 674, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VHC9Qg8GjPgji8TYBjNqz5">
+   307→        self._pull_rebase_calls: list[tuple[Path, str, str]] = []  # (cwd, remote, branch)
+   308→        self._config_sets_records: list[ConfigSetRecord] = []
+   309→
+   310→        # Repo operations subgateway
+   311→        self._repo_gateway = FakeGitRepoOps()
+   312→        self._repo_gateway.link_state(
+   313→            repository_roots=self._repository_roots,
+   314→            git_common_dirs=self._git_common_dirs,
+   315→            worktrees=self._worktrees,
+   316→        )
+   317→
+   318→        # Analysis operations subgateway
+   319→        self._analysis_gateway = FakeGitAnalysisOps()
+   320→        self._analysis_gateway.link_state(
+   321→            commits_ahead=self._commits_ahead,
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now let me add the `_updated_refs` list to FakeGit and pass it through:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="440" cache_read_input_tokens="116166" cache_creation="{'ephemeral_5m_input_tokens': 440, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_014iVZmzTiuf6mkCZfYMXdfC">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="old_string">        self._config_sets_records: list[ConfigSetRecord] = []</param>
+    <param name="new_string">        self._config_sets_records: list[ConfigSetRecord] = []
+        self._updated_refs: list[tuple[Path, str, str]] = []  # (repo_root, branch, target_sha)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="440" cache_read_input_tokens="116166" cache_creation="{'ephemeral_5m_input_tokens': 440, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014iVZmzTiuf6mkCZfYMXdfC">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01YNJ1j2z9DcPqQjEaQBNN68">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="old_string">        self._branch_gateway.link_mutation_tracking(
+            created_branches=self._cr...[truncated 157 chars]...heckouts,
+            created_tracking_branches=self._created_tracking_branches,
+        )</param>
+    <param name="new_string">        self._branch_gateway.link_mutation_tracking(
+            created_branches=self._cr...[truncated 202 chars]...es=self._created_tracking_branches,
+            updated_refs=self._updated_refs,
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="504" cache_read_input_tokens="116606" cache_creation="{'ephemeral_5m_input_tokens': 504, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01YNJ1j2z9DcPqQjEaQBNN68">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the `updated_refs` property to FakeGit. Let me find where the other tracking properties are:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="362" cache_read_input_tokens="117110" cache_creation="{'ephemeral_5m_input_tokens': 362, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Ux8qZcWfppxwdDXYrZdBcw">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="offset">585</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="362" cache_read_input_tokens="117110" cache_creation="{'ephemeral_5m_input_tokens': 362, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Ux8qZcWfppxwdDXYrZdBcw">
+   585→        This property is for test assertions only.
+   586→        """
+   587→        return self._worktree_gateway.chdir_history
+   588→
+   589→    @property
+   590→    def created_tracking_branches(self) -&gt; list[tuple[str, str]]:
+   591→        """Get list of tracking branches created during test.
+   592→
+   593→        Returns list of (branch, remote_ref) tuples.
+   594→        This property is for test assertions only.
+   595→        """
+   596→        return self._created_tracking_branches.copy()
+   597→
+   598→    def read_file(self, path: Path) -&gt; str:
+   599→        """Read file content from in-memory store.
+   600→
+   601→        Used in erk_inmem_env for commands that need to read files
+   602→        (e.g., plan files, config files) without actual filesystem I/O.
+   603→
+   604→        Raises:
+   605→            FileNotFoundError: If path not in file_contents mapping.
+   606→        """
+   607→        if path not in self._file_contents:
+   608→            raise FileNotFoundError(f"No content for {path}")
+   609→        return self._file_contents[path]
+   610→
+   611→    @property
+   612→    def staged_files(self) -&gt; list[str]:
+   613→        """Read-only access to currently staged files for test assertions."""
+   614→        return self._staged_files
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0156YFa6NkkYYd5BtokLg818">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="old_string">        return self._created_tracking_branches.copy()
+
+    def read_file(self, path: Path) -&gt; str:</param>
+    <param name="new_string">        return self._created_tracking_branches.copy()
+
+    @property
+    def updated_refs(...[truncated 189 chars]... """
+        return self._updated_refs.copy()
+
+    def read_file(self, path: Path) -&gt; str:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="847" cache_read_input_tokens="117472" cache_creation="{'ephemeral_5m_input_tokens': 847, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0156YFa6NkkYYd5BtokLg818">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py has been updated successfully.
+  </tool_result>
+  <assistant>Now implement in dry_run.py and printing.py:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="307" cache_read_input_tokens="118319" cache_creation="{'ephemeral_5m_input_tokens': 307, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01XUGUp1zFbPs6gZULrx6bvA">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py</param>
+    <param name="old_string">    def create_tracking_branch(self, repo_root: Path, branch: str, remote_ref: str) -&gt; Non...[truncated 251 chars]...gation)
+    # ============================================================================</param>
+    <param name="new_string">    def create_tracking_branch(self, repo_root: Path, branch: str, remote_ref: str) -&gt; Non...[truncated 496 chars]...gation)
+    # ============================================================================</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="307" cache_read_input_tokens="118319" cache_creation="{'ephemeral_5m_input_tokens': 307, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XUGUp1zFbPs6gZULrx6bvA">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01LTffGnFHJX6DzayGEcyefr">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py</param>
+    <param name="old_string">    def create_tracking_branch(self, repo_root: Path, branch: str, remote_ref: str) -&gt; Non...[truncated 259 chars]...gation)
+    # ============================================================================</param>
+    <param name="new_string">    def create_tracking_branch(self, repo_root: Path, branch: str, remote_ref: str) -&gt; Non...[truncated 588 chars]...gation)
+    # ============================================================================</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="687" cache_read_input_tokens="118626" cache_creation="{'ephemeral_5m_input_tokens': 687, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LTffGnFHJX6DzayGEcyefr">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Do2TYwHRDQ2bRrL8WowqeG">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="447" cache_read_input_tokens="119313" cache_creation="{'ephemeral_5m_input_tokens': 447, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Do2TYwHRDQ2bRrL8WowqeG">
+     1→"""Printing Git branch operations wrapper for verbose output."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo
+     6→from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+     7→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
+     8→from erk_shared.printing.base import PrintingBase
+     9→
+    10→
+    11→class PrintingGitBranchOps(PrintingBase, GitBranchOps):
+    12→    """Wrapper that prints operations before delegating to inner implementation.
+    13→
+    14→    This wrapper prints styled output for branch operations, then delegates to the
+    15→    wrapped implementation (which could be Real or DryRun).
+    16→
+    17→    Usage:
+    18→        # For production
+    19→        printing_ops = PrintingGitBranchOps(real_ops, script_mode=False, dry_run=False)
+    20→
+    21→        # For dry-run
+    22→        noop_inner = DryRunGitBranchOps(real_ops)
+    23→        printing_ops = PrintingGitBranchOps(noop_inner, script_mode=False, dry_run=True)
+    24→    """
+    25→
+    26→    # Inherits __init__, _emit, and _format_command from PrintingBase
+    27→
+    28→    def create_branch(
+    29→        self, cwd: Path, branch_name: str, start_point: str, *, force: bool
+    30→    ) -&gt; BranchCreated | BranchAlreadyExists:
+
+... [92 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Gct7JN3HbRx1NTSGG8CdG4">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py</param>
+    <param name="old_string">    def create_tracking_branch(self, repo_root: Path, branch: str, remote_ref: str) -&gt; Non...[truncated 259 chars]...gation)
+    # ============================================================================</param>
+    <param name="new_string">    def create_tracking_branch(self, repo_root: Path, branch: str, remote_ref: str) -&gt; Non...[truncated 588 chars]...gation)
+    # ============================================================================</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2136" cache_read_input_tokens="119760" cache_creation="{'ephemeral_5m_input_tokens': 2136, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Gct7JN3HbRx1NTSGG8CdG4">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py has been updated successfully.
+  </tool_result>
+  <assistant>Good. Now I also need to add `update_local_ref` to the dry_run.py's query section. Let me re-read it to confirm the full implementation:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="698" cache_read_input_tokens="121896" cache_creation="{'ephemeral_5m_input_tokens': 698, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_013DDCgCMX4M3wqBu28ASUKA">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py</param>
+    <param name="offset">55</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="698" cache_read_input_tokens="121896" cache_creation="{'ephemeral_5m_input_tokens': 698, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013DDCgCMX4M3wqBu28ASUKA">
+    55→
+    56→    def create_tracking_branch(self, repo_root: Path, branch: str, remote_ref: str) -&gt; None:
+    57→        """No-op for creating tracking branch in dry-run mode."""
+    58→        # Do nothing - prevents actual tracking branch creation
+    59→        pass
+    60→
+    61→    def update_local_ref(self, repo_root: Path, branch: str, target_sha: str) -&gt; None:
+    62→        """No-op for updating local ref in dry-run mode."""
+    63→        user_output(f"[DRY RUN] Would run: git update-ref refs/heads/{branch} {target_sha[:8]}")
+    64→
+    65→    # ============================================================================
+    66→    # Query Operations (pass-through delegation)
+    67→    # ============================================================================
+    68→
+    69→    def get_current_branch(self, cwd: Path) -&gt; str | None:
+    70→        """Get the currently checked-out branch."""
+    71→        return self._wrapped.get_current_branch(cwd)
+    72→
+    73→    def list_local_branches(self, repo_root: Path) -&gt; list[str]:
+    74→        """List all local branch names in the repository."""
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>All 5 places are implemented. Now let me move on to Phase 3: Rewrite `ensure_trunk_synced`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="568" cache_read_input_tokens="122594" cache_creation="{'ephemeral_5m_input_tokens': 568, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_018Z3CM2upsXApuoQxbJybbs">
+    <param name="todos">[{'content': 'Fix plan-save: add branch_exists_on_remote check', 'status': 'completed', 'a...[truncated 759 chars]...unning CI'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="568" cache_read_input_tokens="122594" cache_creation="{'ephemeral_5m_input_tokens': 568, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018Z3CM2upsXApuoQxbJybbs">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me rewrite `ensure_trunk_synced`. The key changes:
+1. Remove the "root worktree must be on trunk" check
+2. Remove the "must be clean" check
+3. Replace `pull_branch` with `update_local_ref`
+4. Add a conditional clean-check when trunk IS checked out in a worktree</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="399" cache_read_input_tokens="123162" cache_creation="{'ephemeral_5m_input_tokens': 399, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_019UCGXGKYkHuED5BKwouq3U">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_helpers.py</param>
+    <param name="content">"""Helper functions for dispatch command."""
+
+import click
+
+from erk.core.context import E...[truncated 2789 chars]...g: This will discard any local commits on {trunk}."
+        )
+        raise SystemExit(1)
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="399" cache_read_input_tokens="123162" cache_creation="{'ephemeral_5m_input_tokens': 399, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019UCGXGKYkHuED5BKwouq3U">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_helpers.py has been updated. Here's the result of running `cat -n` on a snippet of the edited file:
+     1→"""Helper functions for dispatch command."""
+     2→
+     3→import click
+     4→
+     5→from erk.core.context import ErkContext
+     6→from erk.core.repo_discovery import RepoContext
+     7→from erk_shared.output.output import user_output
+     8→
+     9→
+    10→def ensure_trunk_synced(ctx: ErkContext, repo: RepoContext) -&gt; None:
+    11→    """Ensure local trunk ref is synced with remote, without requiring checkout.
+    12→
+    13→    Uses fetch + update_local_ref to advance the local trunk branch pointer
+    14→    without needing trunk to be checked out. If trunk IS checked out in a
+    15→    worktree, falls back to requiring a clean worktree before updating.
+    16→
+    17→    Raises SystemExit(1) on sync failure with clear error message.
+    18→    """
+    19→    trunk = ctx.git.branch.detect_trunk_branch(repo.root)
+    20→
+    21→    # Fetch latest remote trunk
+    22→    ctx.git.remote.fetch_branch(repo.root, "origin", trunk)
+    23→
+    24→    local_sha = ctx.git.branch.get_branch_head(repo.root, trunk)
+    25→    remote_sha = ctx.git.branch.get_branch_head(repo.root, f"origin/{trunk}")
+    26→
+    27→    if local_sha == remote_sha:
+    28→        return  # Already synced
+    29→
+
+... [41 lines omitted] ...
+
+    41→                    click.style("Error: ", fg="red")
+    54→            click.style("Error: ", fg="red")
+    63→            click.style("Error: ", fg="red")
+    67→            f"Warning: This will discard any local commits on {trunk}."
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01CvJKC35jG5ehmGraLvAfAm">
+    <param name="todos">[{'content': 'Fix plan-save: add branch_exists_on_remote check', 'status': 'completed', 'a...[truncated 761 chars]...unning CI'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2161" cache_read_input_tokens="123561" cache_creation="{'ephemeral_5m_input_tokens': 2161, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CvJKC35jG5ehmGraLvAfAm">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now Phase 4: Update existing tests and add new tests. I need to:
+
+1. Fix existing tests that expect feature branch stacking — they need `remote_branches` set so `branch_exists_on_remote` returns True
+2. Add a new test for unpushed feature branch falling back to trunk
+
+Let me look at which existing tests need updating. The test `test_planned_pr_branch_stacked_on_current_feature_branch` and `test_planned_pr_feature_branch_creates_correct_pr_base` both operate on a feature branch but don't set `remote_branches` — they will now fall through to trunk since the branch won't be found on remote.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="369" cache_read_input_tokens="125722" cache_creation="{'ephemeral_5m_input_tokens': 369, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_013bwFASey6Gyqm3BMBeEbsr">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="old_string">def test_planned_pr_branch_stacked_on_current_feature_branch(
+    tmp_path: Path, monkeypa...[truncated 178 chars]...branches={tmp_path: "feature/my-work"},
+        trunk_branches={tmp_path: "master"},
+    )</param>
+    <param name="new_string">def test_planned_pr_branch_stacked_on_current_feature_branch(
+    tmp_path: Path, monkeypa...[truncated 265 chars]...tmp_path: "master"},
+        remote_branches={tmp_path: ["origin/feature/my-work"]},
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="369" cache_read_input_tokens="125722" cache_creation="{'ephemeral_5m_input_tokens': 369, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013bwFASey6Gyqm3BMBeEbsr">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_011MAruCgeuyonqiuPpNYXGS">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="old_string">def test_planned_pr_feature_branch_creates_correct_pr_base(
+    tmp_path: Path, monkeypatc...[truncated 136 chars]...branches={tmp_path: "feature/my-work"},
+        trunk_branches={tmp_path: "master"},
+    )</param>
+    <param name="new_string">def test_planned_pr_feature_branch_creates_correct_pr_base(
+    tmp_path: Path, monkeypatc...[truncated 205 chars]...tmp_path: "master"},
+        remote_branches={tmp_path: ["origin/feature/my-work"]},
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="583" cache_read_input_tokens="126091" cache_creation="{'ephemeral_5m_input_tokens': 583, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011MAruCgeuyonqiuPpNYXGS">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py has been updated successfully.
+  </tool_result>
+  <assistant>Now also update `test_planned_pr_does_not_checkout_branch` which is on a feature branch:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="407" cache_read_input_tokens="126674" cache_creation="{'ephemeral_5m_input_tokens': 407, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01DtQShKB9T6TFUnMk84pPxQ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="old_string">def test_planned_pr_does_not_checkout_branch(
+    tmp_path: Path, monkeypatch: pytest.Monk...[truncated 64 chars]... the plan branch."""
+    fake_git = FakeGit(current_branches={tmp_path: "feature-branch"})</param>
+    <param name="new_string">def test_planned_pr_does_not_checkout_branch(
+    tmp_path: Path, monkeypatch: pytest.Monk...[truncated 142 chars]...h: "feature-branch"},
+        remote_branches={tmp_path: ["origin/feature-branch"]},
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="407" cache_read_input_tokens="126674" cache_creation="{'ephemeral_5m_input_tokens': 407, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DtQShKB9T6TFUnMk84pPxQ">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the new test for unpushed feature branch falling back to trunk:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="387" cache_read_input_tokens="127081" cache_creation="{'ephemeral_5m_input_tokens': 387, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01BqHTxfWNqC8tKA1ibDgWJ9">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="old_string">def test_planned_pr_learn_branch_uses_trunk_as_base(</param>
+    <param name="new_string">def test_planned_pr_unpushed_feature_branch_falls_back_to_trunk(
+    tmp_path: Path, monke...[truncated 1125 chars]...sert start_point == "origin/master"
+
+
+def test_planned_pr_learn_branch_uses_trunk_as_base(</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="387" cache_read_input_tokens="127081" cache_creation="{'ephemeral_5m_input_tokens': 387, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BqHTxfWNqC8tKA1ibDgWJ9">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py has been updated successfully.
+  </tool_result>
+  <assistant>I need to add the missing import for `context_for_test` in the new test — let me check if it's already imported:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="886" cache_read_input_tokens="127468" cache_creation="{'ephemeral_5m_input_tokens': 886, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_013PAAyM8LdSRhsupzKApFbJ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="offset">1</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="886" cache_read_input_tokens="127468" cache_creation="{'ephemeral_5m_input_tokens': 886, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013PAAyM8LdSRhsupzKApFbJ">
+     1→"""Unit tests for plan-save command (draft PR creation)."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→
+     6→import pytest
+     7→from click.testing import CliRunner
+     8→
+     9→from erk.cli.commands.exec.scripts.plan_save import plan_save
+    10→from erk_shared.context.context import ErkContext
+    11→from erk_shared.context.testing import context_for_test
+    12→from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
+    13→from erk_shared.gateway.git.fake import FakeGit
+    14→from erk_shared.gateway.github.fake import FakeGitHub
+    15→from erk_shared.gateway.graphite.fake import FakeGraphite
+    16→from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+    17→
+    18→# Valid plan content that passes validation (100+ chars with structure)
+    19→VALID_PLAN_CONTENT = """# Feature Plan
+    20→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Good, `context_for_test`, `FakeGitHub`, and `FakeClaudeInstallation` are already imported. Now let me move on to Phase 5: Add dispatch/ensure_trunk_synced tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="519" cache_read_input_tokens="128354" cache_creation="{'ephemeral_5m_input_tokens': 519, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_015Cp3hgjkfyDoFwn9U8Yu6y">
+    <param name="todos">[{'content': 'Fix plan-save: add branch_exists_on_remote check', 'status': 'completed', 'a...[truncated 763 chars]...unning CI'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="519" cache_read_input_tokens="128354" cache_creation="{'ephemeral_5m_input_tokens': 519, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015Cp3hgjkfyDoFwn9U8Yu6y">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me check how existing dispatch tests create test contexts to follow the same pattern:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="422" cache_read_input_tokens="128873" cache_creation="{'ephemeral_5m_input_tokens': 422, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01XTKpY5zn8YYz6UGsXaC3LY">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_dispatch.py</param>
+    <param name="offset">1</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="422" cache_read_input_tokens="128873" cache_creation="{'ephemeral_5m_input_tokens': 422, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XTKpY5zn8YYz6UGsXaC3LY">
+     1→"""Tests for erk pr dispatch command."""
+     2→
+     3→import json
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk_shared.gateway.git.abc import WorktreeInfo
+     9→from erk_shared.gateway.git.fake import FakeGit
+    10→from erk_shared.gateway.github.fake import FakeGitHub
+    11→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    12→from erk_shared.gateway.github.metadata.core import MetadataBlock, render_metadata_block
+    13→from erk_shared.gateway.github.types import PRDetails
+    14→from erk_shared.gateway.graphite.fake import FakeGraphite
+    15→from erk_shared.gateway.graphite.types import BranchMetadata
+    16→from erk_shared.gateway.time.fake import FakeTime
+    17→from erk_shared.impl_folder import build_plan_ref_json
+    18→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    19→from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+    20→from tests.test_utils.context_builders import build_workspace_test_context
+    21→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    22→
+    23→
+    24→def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() -&gt; None:
+    25→    """Test that dispatching a planned-PR plan triggers workflow with plan_backend=planned_pr.
+    26→
+    27→    Planned-PR plans already have a branch and PR. Dispatch should:
+    28→    - Validate the PR has the erk-plan label and is OPEN
+    29→    - Fetch and checkout the existing branch
+    30→    - Create .erk/impl-context/ with provider="github-draft-pr"
+
+... [25 lines omitted] ...
+  </tool_result>
+  <assistant>I see the dispatch tests use `build_workspace_test_context` and `erk_isolated_fs_env`. For ensure_trunk_synced unit tests, I need simpler context. Let me find the right test utilities:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="993" cache_read_input_tokens="129295" cache_creation="{'ephemeral_5m_input_tokens': 993, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_019y7UohzVnYe9Q9RxMxUqCG">
+    <param name="description">Find ErkContext test builder</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic. I need to find...[truncated 281 chars]...creates an ErkContext (not Click context). Look at tests/test_utils/ for context builders.</param>
+    <param name="subagent_type">Explore</param>
+    <param name="model">haiku</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="993" cache_read_input_tokens="129295" cache_creation="{'ephemeral_5m_input_tokens': 993, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019y7UohzVnYe9Q9RxMxUqCG">
+Now let me create a comprehensive summary with all the information I've gathered:
+
+## Summary: Building ErkContext and RepoContext for Testing ensure_trunk_synced
+
+Based on my exploration of the test codebase, here's exactly how to build an `ErkContext` and `RepoContext` for testing functions like `ensure_trunk_synced(ctx: ErkContext, repo: RepoContext)`:
+
+### Key Files and Pattern
+
+**File Locations:**
+- Function signature: `/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_helpers.py` (line 10)
+- `ErkContext` definition: `/home/runner/work/erk/erk/src/erk/core/context.py` (re-exported from erk_shared)
+- Test factory: `/home/runner/work/erk/erk/src/erk/core/context.py` (line 195: `context_for_test()`)
+- Test environment helpers: `/home/runner/work/erk/erk/tests/test_utils/env_helpers.py`
+- Context builders: `/home/runner/work/erk/erk/tests/test_utils/context_builders.py`
+- Example test: `/home/runner/work/erk/erk/tests/commands/pr/test_dispatch.py` (lines 24-148)
+
+### Pattern 1: Using env.build_context() (RECOMMENDED)
+
+This is the preferred pattern for most tests:
+
+```python
+from click.testing import CliRunner
+from erk.cli.cli import cli
+from erk_shared.gateway.git.fake import FakeGit
+from tests.test_utils.env_helpers import erk_isolated_fs_env
+
+def test_ensure_trunk_synced_when_already_synced() -&gt; None:
+    """Test ensure_trunk_synced when local trunk is already synced."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+
+... [210 lines omitted] ...
+  </tool_result>
+  <assistant>Now I have enough context. Let me look at how ensure_trunk_synced is tested. The function takes `ErkContext` and `RepoContext` — I'll write unit tests that test it directly. Let me look at how `ErkContext` is imported and how to create a `RepoContext`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3096" cache_read_input_tokens="130288" cache_creation="{'ephemeral_5m_input_tokens': 3096, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_019b8UM7vJLdN29L4Q85VQZg">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/repo_discovery.py</param>
+    <param name="offset">1</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3096" cache_read_input_tokens="130288" cache_creation="{'ephemeral_5m_input_tokens': 3096, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019b8UM7vJLdN29L4Q85VQZg">
+     1→"""Repository discovery functionality.
+     2→
+     3→Discovers git repository information from a given path without requiring
+     4→full ErkContext (enables config loading before context creation).
+     5→"""
+     6→
+     7→from pathlib import Path
+     8→
+     9→# Re-export context types from erk_shared for backwards compatibility
+    10→from erk_shared.context.types import NoRepoSentinel as NoRepoSentinel
+    11→from erk_shared.context.types import RepoContext as RepoContext
+    12→from erk_shared.gateway.git.abc import Git
+    13→from erk_shared.gateway.git.real import RealGit
+    14→from erk_shared.gateway.github.parsing import parse_git_remote_url
+    15→from erk_shared.gateway.github.types import GitHubRepoId
+    16→
+    17→
+    18→def in_erk_repo(repo_root: Path) -&gt; bool:
+    19→    """Check if the given path is inside the erk development repository.
+    20→
+    21→    This is used internally to detect when erk is running in its own development
+    22→    repo, where artifacts are read directly from source rather than installed.
+    23→
+    24→    Args:
+    25→        repo_root: Repository root path to check
+    26→
+    27→    Returns:
+    28→        True if this appears to be the erk development repo
+    29→    """
+    30→    return (repo_root / "packages" / "erk-shared").exists()
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_019VVbENSHjkkGoM5sak4xcK">
+    <param name="pattern">class RepoContext</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/types.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1030" cache_read_input_tokens="133384" cache_creation="{'ephemeral_5m_input_tokens': 1030, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019VVbENSHjkkGoM5sak4xcK">
+88-    Returns:
+89-        List of CLI flag strings to pass to the codex command.
+90-    """
+91-    lookup: dict[PermissionMode, list[str]] = {
+92-        "safe": ["--sandbox", "read-only", "-a", "untrusted"],
+93-        "edits": ["--sandbox", "workspace-write", "-a", "on-request"],
+94-        "plan": ["--sandbox", "read-only", "-a", "never"],
+95-        "dangerous": ["--yolo"],
+96-    }
+97-    if permission_mode in lookup:
+98-        return lookup[permission_mode]
+99-    raise ValueError(f"Unknown permission_mode: {permission_mode}")
+100-
+101-
+102-@dataclass(frozen=True)
+103:class RepoContext:
+104-    """Represents a git repo root and its managed worktrees directory.
+105-
+106-    Attributes:
+107-        root: The actual working tree root (where git commands run).
+108-              For worktrees, this is the worktree directory.
+109-              For main repos, this equals main_repo_root.
+110-        repo_name: Name of the repository (derived from main_repo_root).
+111-        repo_dir: Path to erk metadata directory (~/.erk/repos/&lt;repo-name&gt;).
+112-        worktrees_dir: Path to worktrees directory (~/.erk/repos/&lt;repo-name&gt;/worktrees).
+113-        main_repo_root: The main repository root (for consistent metadata paths).
+114-                       For worktrees, this is the parent repo's root directory.
+115-                       For main repos, this equals root.
+116-                       Defaults to root for backwards compatibility.
+117-        github: GitHub repository identity, if available.
+
+... [1 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me check how `ErkContext` is created for tests and what's needed:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="610" cache_read_input_tokens="134414" cache_creation="{'ephemeral_5m_input_tokens': 610, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01E7iKURm29MXW9uuWcToMP9">
+    <param name="pattern">class ErkContext</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/core/context.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="610" cache_read_input_tokens="134414" cache_creation="{'ephemeral_5m_input_tokens': 610, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01E7iKURm29MXW9uuWcToMP9">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01G9RBrLTEZPXohoPnhandKz">
+    <param name="pattern">class ErkContext</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="66349" cache_read_input_tokens="20015" cache_creation="{'ephemeral_5m_input_tokens': 66349, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01G9RBrLTEZPXohoPnhandKz">
+packages/erk-shared/src/erk_shared/context/context.py:58:class ErkContext:
+  </tool_result>
+  <tool_use name="Read" id="toolu_015zfgYM3nAd22FfEYVbvMxj">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py</param>
+    <param name="offset">58</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="172" cache_read_input_tokens="86364" cache_creation="{'ephemeral_5m_input_tokens': 172, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015zfgYM3nAd22FfEYVbvMxj">
+    58→class ErkContext:
+    59→    """Immutable context holding all dependencies for erk and erk-kits operations.
+    60→
+    61→    Created at CLI entry point and threaded through the application via Click's
+    62→    context system. Frozen to prevent accidental modification at runtime.
+    63→
+    64→    This unified context combines functionality that was previously split across
+    65→    multiple context types (erk.core.context.ErkContext and erk_kits.context).
+    66→
+    67→    Note:
+    68→    - global_config may be None only during init command before config is created.
+    69→      All other commands should have a valid GlobalConfig.
+    70→
+    71→    Field naming conventions:
+    72→    - github_issues property -&gt; issues (renamed for consistency)
+    73→    - repo_root property -&gt; repo.root (access via repo property or require_repo_root helper)
+    74→    """
+    75→
+    76→    # Gateway integrations (from erk_shared)
+    77→    git: Git  # Note: branch ops accessed via git.branch subgateway
+    78→    github: GitHub  # Note: issues accessed via github.issues property
+    79→    github_admin: GitHubAdmin  # GitHub Actions admin operations
+    80→    graphite: Graphite
+    81→    graphite_branch_ops: GraphiteBranchOps | None  # None when Graphite disabled
+    82→    console: Console  # TTY detection, user feedback, and confirmation prompts
+    83→    time: Time
+    84→    erk_installation: ErkInstallation  # ~/.erk/ installation data (config, pool state)
+    85→    claude_installation: ClaudeInstallation  # ~/.claude/ installation data (sessions, settings)
+    86→    agent_docs: AgentDocs  # docs/learned/ file access
+    87→    plan_store: PlanBackend
+
+... [35 lines omitted] ...
+  </tool_result>
+  <assistant>The approach of testing `ensure_trunk_synced` directly via `context_for_test` is cleaner. Let me check how `context_for_test` is used in the plan-save tests — it already builds an `ErkContext` with the right gateways.
+
+Now let me also look at what FakeGit needs to support the new function. `ensure_trunk_synced` calls:
+1. `ctx.git.branch.detect_trunk_branch(repo.root)` 
+2. `ctx.git.remote.fetch_branch(repo.root, "origin", trunk)`
+3. `ctx.git.branch.get_branch_head(repo.root, trunk)` 
+4. `ctx.git.branch.get_branch_head(repo.root, f"origin/{trunk}")`
+5. `ctx.git.analysis.get_merge_base(repo.root, trunk, f"origin/{trunk}")`
+6. `ctx.git.worktree.find_worktree_for_branch(repo.root, trunk)`
+7. `ctx.git.status.has_uncommitted_changes(trunk_worktree)`
+8. `ctx.git.branch.update_local_ref(repo.root, trunk, remote_sha)`
+
+I need to check what FakeGit supports for `branch_heads`, `get_merge_base`, etc.:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1040" cache_read_input_tokens="86536" cache_creation="{'ephemeral_5m_input_tokens': 1040, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01UM1R4Az4oFLpffkuavofgL">
+    <param name="pattern">get_branch_head|branch_heads"</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1040" cache_read_input_tokens="86536" cache_creation="{'ephemeral_5m_input_tokens': 1040, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UM1R4Az4oFLpffkuavofgL">
+299-
+300-    def list_remote_branches(self, repo_root: Path) -&gt; list[str]:
+301-        """List all remote branch names in the repository."""
+302-        return self._remote_branches.get(repo_root, [])
+303-
+304:    def get_branch_head(self, repo_root: Path, branch: str) -&gt; str | None:
+305-        """Get the commit SHA at the head of a branch."""
+306-        return self._branch_heads.get(branch)
+307-
+308-    def get_all_branch_heads(self, repo_root: Path) -&gt; dict[str, str]:
+309-        """Get commit SHAs for all local branches."""
+  </tool_result>
+  <tool_use name="Grep" id="toolu_012KEM37R5Zkzi1Jfn4NB3mq">
+    <param name="pattern">branch_heads</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="908" cache_read_input_tokens="87576" cache_creation="{'ephemeral_5m_input_tokens': 908, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012KEM37R5Zkzi1Jfn4NB3mq">
+39:        branch_heads: dict[str, str] | None = None,
+60:            branch_heads: Mapping of branch name -&gt; commit SHA
+78:        self._branch_heads = branch_heads if branch_heads is not None else {}
+254:        Tracks the update for test assertions and updates branch_heads state.
+257:        self._branch_heads[branch] = target_sha
+306:        return self._branch_heads.get(branch)
+308:    def get_all_branch_heads(self, repo_root: Path) -&gt; dict[str, str]:
+310:        return dict(self._branch_heads)
+  </tool_result>
+  <assistant>Good - `branch_heads` is a dict that maps branch name to SHA. Now let me check `get_merge_base`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="302" cache_read_input_tokens="88484" cache_creation="{'ephemeral_5m_input_tokens': 302, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01EnUMeMvepka1bPtNqYx9FR">
+    <param name="pattern">get_merge_base|merge_base"</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="302" cache_read_input_tokens="88484" cache_creation="{'ephemeral_5m_input_tokens': 302, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EnUMeMvepka1bPtNqYx9FR">
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py:34:    def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -&gt; str | None:
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py:49:    def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -&gt; str | None:
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/dry_run.py:30:    def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -&gt; str | None:
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/dry_run.py:32:        return self._wrapped.get_merge_base(repo_root, ref1, ref2)
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/fake.py:53:    def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -&gt; str | None:
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/printing.py:26:    def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -&gt; str | None:
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/printing.py:28:        return self._wrapped.get_merge_base(repo_root, ref1, ref2)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Qo9Y8ySoSMoMsTALhnMuaf">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/fake.py</param>
+    <param name="offset">40</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="834" cache_read_input_tokens="88786" cache_creation="{'ephemeral_5m_input_tokens': 834, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Qo9Y8ySoSMoMsTALhnMuaf">
+    40→
+    41→    # ============================================================================
+    42→    # Query Operations
+    43→    # ============================================================================
+    44→
+    45→    def count_commits_ahead(self, cwd: Path, base_branch: str) -&gt; int:
+    46→        """Count commits in HEAD that are not in base_branch."""
+    47→        return self._commits_ahead.get((cwd, base_branch), 0)
+    48→
+    49→    def count_commits_behind(self, cwd: Path, target_branch: str) -&gt; int:
+    50→        """Count commits in target_branch that are not in HEAD."""
+    51→        return self._commits_behind.get((cwd, target_branch), 0)
+    52→
+    53→    def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -&gt; str | None:
+    54→        """Get the merge base commit SHA between two refs.
+    55→
+    56→        Checks both (ref1, ref2) and (ref2, ref1) key orderings.
+    57→        """
+    58→        if (ref1, ref2) in self._merge_bases:
+    59→            return self._merge_bases[(ref1, ref2)]
+    60→        if (ref2, ref1) in self._merge_bases:
+    61→            return self._merge_bases[(ref2, ref1)]
+    62→        return None
+    63→
+    64→    def get_diff_to_branch(self, cwd: Path, branch: str) -&gt; str:
+    65→        """Get diff between branch and HEAD."""
+    66→        return self._diffs.get((cwd, branch), "")
+    67→
+    68→    # ============================================================================
+    69→    # Test Setup (FakeGit integration)
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Now I need to check how `merge_bases` is configured in FakeGit:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="661" cache_read_input_tokens="89620" cache_creation="{'ephemeral_5m_input_tokens': 661, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_013G8f8YgTXRQrNtVdmFq54z">
+    <param name="pattern">merge_bases</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="661" cache_read_input_tokens="89620" cache_creation="{'ephemeral_5m_input_tokens': 661, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013G8f8YgTXRQrNtVdmFq54z">
+166:        merge_bases: dict[tuple[str, str], str] | None = None,
+229:            merge_bases: Mapping of (ref1, ref2) -&gt; merge base commit SHA for
+283:        self._merge_bases = merge_bases or {}
+324:            merge_bases=self._merge_bases,
+  </tool_result>
+  <assistant>I have all the information I need. Now let me write the tests. I'll place them in the appropriate test directory:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="488" cache_read_input_tokens="90281" cache_creation="{'ephemeral_5m_input_tokens': 488, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_01AWdgbtHdPXakVoGFkTZ2PS">
+    <param name="pattern">tests/unit/cli/commands/pr/*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="488" cache_read_input_tokens="90281" cache_creation="{'ephemeral_5m_input_tokens': 488, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AWdgbtHdPXakVoGFkTZ2PS">
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/__init__.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_lifecycle_update.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_shared.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_metadata_helpers.py
+  </tool_result>
+</session>
