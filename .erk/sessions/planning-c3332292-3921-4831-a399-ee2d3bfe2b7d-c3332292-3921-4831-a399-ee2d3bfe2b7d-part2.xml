@@ -1,0 +1,77 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01WmQs2eK5DsH4jQqMzDVB6h">
+     1→# Plan: Restructure review prompt to prevent duplicate bot comments
+     2→
+     3→## Context
+     4→
+     5→Review bots post duplicate inline comments on PRs because deduplication is only prompt-based — the AI agent is *instructed* to check for duplicates but sometimes fails. The current prompt structure encourages the agent to interleave finding violations and posting comments, making it easy to skip the dedup step. This is a prompt-only fix (no code changes).
+     6→
+     7→## Problem analysis
+     8→
+     9→Current Steps 4-5 in `REVIEW_PROMPT_TEMPLATE`:
+    10→- **Step 4**: "Fetch existing comments, build a dedup index" (abstract, easy to skip)
+    11→- **Step 5**: "Post an inline comment for EACH violation found. Skip if duplicate." (finding + posting interleaved, dedup is a side note)
+    12→
+    13→The agent often posts-as-it-goes and forgets the dedup check.
+    14→
+    15→## Changes
+    16→
+    17→### File: `src/erk/review/prompt_assembly.py`
+    18→
+    19→Rewrite Steps 4-5 into a **collect → dedup → post** flow with 3 sub-steps:
+    20→
+    21→**Step 4: Collect violations** (analysis only, no posting)
+    22→- Analyze the diff from Step 3
+    23→- Build a numbered list of ALL violations found
+    24→- Each entry: `{path, line, body}`
+    25→- Explicit instruction: **DO NOT post any comments in this step**
+    26→
+    27→**Step 5: Deduplicate against existing comments**
+    28→- Fetch existing review comments: `erk exec get-pr-review-comments --pr {pr_number} --include-resolved`
+    29→- For EACH violation in the list, check against existing comments using the matching heuristic (same path, line ±2, same 80-char body prefix, same review prefix)
+    30→- Mark each violation as `NEW` or `DUPLICATE`
+
+... [31 lines omitted] ...
+
+    36→- This forced output makes silent dedup failures impossible
+    52→2. **Forced dedup reasoning output**: Requiring the agent to print `NEW`/`DUPLICATE` for each violation makes failures visible. If the agent skips dedup, the missing output is obvious.
+  </tool_result>
+  <assistant>The plan title is "Restructure review prompt to prevent duplicate bot comments".
+
+**Branch slug:** `restructure-review-dedup-prompt`
+
+**Plan summary:** Review bots post duplicate inline comments because dedup logic is only prompt-instructed and agents skip it. This restructures the review prompt template from an interleaved find-and-post flow into a collect-then-dedup-then-post pipeline, with forced dedup reasoning output to prevent silent failures.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1326" cache_read_input_tokens="68921" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1326}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01AhMHHRG9BePxx957JY6Do4">
+    <param name="command">erk exec plan-save --format json --session-id="c3332292-3921-4831-a399-ee2d3bfe2b7d" --bra...[truncated 246 chars]...-dedup-then-post pipeline, with forced dedup reasoning output to prevent silent failures."</param>
+    <param name="description">Save plan as draft PR via erk</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1326" cache_read_input_tokens="68921" output_tokens="318" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1326, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AhMHHRG9BePxx957JY6Do4">
+{"success": true, "plan_number": 8545, "plan_url": "https://github.com/dagster-io/erk/pull/8545", "title": "[erk-plan] Plan: Restructure review prompt to prevent duplicate bot comments", "branch_name": "plnd/restructure-review-dedup-p-03-01-1838", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/workspaces/erk/.erk/scratch/sessions/c3332292-3921-4831-a399-ee2d3bfe2b7d/plan_snapshots/000001-cb36a8a4"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01G5dsB57uKj8p7wXogvmvpg">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null | head -5</param>
+    <param name="description">Get session file path for push</param>
+    <param name="timeout">10000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="494" cache_read_input_tokens="70247" output_tokens="109" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 494, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01G5dsB57uKj8p7wXogvmvpg">
+SESSION_ID=c3332292-3921-4831-a399-ee2d3bfe2b7d
+SESSION_FILE=/home/vscode/.claude/projects/-workspaces-erk/c3332292-3921-4831-a399-ee2d3bfe2b7d.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01WyDNP7MLgUpNYNTTkRfmEV">
+    <param name="command">erk exec push-session \
+    --session-file "/home/vscode/.claude/projects/-workspaces-erk/...[truncated 82 chars]...\
+    --stage planning \
+    --source local \
+    --plan-id 8545 \
+    2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="197" cache_read_input_tokens="70741" output_tokens="217" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 197, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>

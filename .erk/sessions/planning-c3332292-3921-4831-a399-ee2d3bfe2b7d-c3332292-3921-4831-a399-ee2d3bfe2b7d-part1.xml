@@ -1,0 +1,1128 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user> Skill(pr-feedback-classifier)
+  ⎿  Done
+
+⏺ PR #8115: "Add erk doctor workflow subcommand with smoke testing capabilities"
+
+  Pre-Existing Items (Auto-Resolve) (0 total)
+
+  None
+
+  Actionable Items (10 total)
+
+  ┌─────┬────────┬─────────────────────────────┬─────────────────────────────────────────────────────────┬───────────────┐
+  │  #  │  Type  │          Location           │                         Summary                         │  Complexity   │
+  ├─────┼────────┼─────────────────────────────┼─────────────────────────────────────────────────────────┼───────────────┤
+  │ 1   │ review │ real.py:826                 │ Fix URL path: uses /issues/{num} but should use         │ local         │
+  │     │        │                             │ /pull/{num} for PR references                           │               │
+  ├─────┼────────┼─────────────────────────────┼─────────────────────────────────────────────────────────┼───────────────┤
+  │ 2   │ review │ test_execute_command.py:188 │ Bot (run 1): Add missing objective_deps_plans and       │ single_file   │
+  │     │        │                             │ objective_next_node_display fields                      │               │
+  ├─────┼────────┼─────────────────────────────┼─────────────────────────────────────────────────────────┼───────────────┤
+  │ 3   │ review │ test_execute_command.py:188 │ Bot (run 2): Same missing fields issue at line 188      │ single_file   │
+  ├─────┼────────┼─────────────────────────────┼─────────────────────────────────────────────────────────┼───────────────┤
+  │ 4   │ review │ test_execute_command.py:188 │ Bot (run 3): Same missing fields issue at line 188      │ single_file   │
+  ├─────┼────────┼─────────────────────────────┼─────────────────────────────────────────────────────────┼───────────────┤
+  │ 5   │ review │ test_execute_command.py:260 │ Bot (run 1): Add missing fields in second test          │ single_file   │
+  │     │        │                             │ constructor                                             │               │
+  ├─────┼────────┼─────────────────────────────┼─────────────────────────────────────────────────────────┼───────────────┤
+  │ 6   │ review │ test_execute_command.py:260 │ Bot (run 2): Same missing fields at line 260            │ single_file   │
+  ├─────┼────────┼─────────────────────────────┼─────────────────────────────────────────────────────────┼───────────────┤
+  │ 7   │ review │ test_execute_command.py:260 │ Bot (run 3): Same missing fields at line 260            │ single_file   │
+  ├─────┼────────┼─────────────────────────────┼─────────────────────────────────────────────────────────┼───────────────┤
+  │ 8   │ review │ test_execute_command.py:260 │ Bot (run 4): Same missing fields at line 260            │ single_file   │
+  ├─────┼────────┼─────────────────────────────┼─────────────────────────────────────────────────────────┼───────────────┤
+  │ 9   │ review │ test_execute_command.py:260 │ Bot (run 5): Same missing fields at line 260            │ single_file   │
+  ├─────┼────────┼─────────────────────────────┼─────────────────────────────────────────────────────────┼───────────────┤
+  │     │        │                             │ Author: "is there a better way to do this? seems fishy" │               │
+  │ 10  │ review │ doctor.py:269               │  - restructure CLI into erk doctor workflow check with  │ cross_cutting │
+  │     │        │                             │ flags                                                   │               │
+  └─────┴────────┴─────────────────────────────┴─────────────────────────────────────────────────────────┴───────────────┘
+
+  Informational Items (0 actionable, 14 informational discussion comments)
+
+  All 14 discussion comments are informational (CI bots, Graphite, review summaries).
+
+  Execution Plan Preview
+
+  Batch 1: Local Fixes (auto-proceed)
+  - Item #1: real.py:826 - Fix /issues/ to /pull/ URL path
+
+  Batch 2: Single-File (auto-proceed, deduplicated: 2 unique fixes across 8 duplicate bot threads)
+  - Items #2-4: test_execute_command.py:188 - Add missing objective_deps_plans and objective_next_node_display fields
+  - Items #5-9: test_execute_command.py:260 - Add same missing fields in second constructor
+
+  Batch 3: Cross-Cutting (user confirmation)
+  - Item #10: doctor.py:269 - CLI restructuring: rename command and add subcommands
+
+  Statistics
+
+  - Pre-existing items (auto-resolve): 0
+  - Actionable items: 10 (8 are duplicate bot comments on 2 unique issues)
+  - Unique fixes needed: 3 (URL fix, 2 test constructor fixes, CLI restructuring)
+  - Informational discussion comments: 14
+  - Estimated batches: 3
+  - Auto-proceed batches: 2
+  - User confirmation batches: 1
+
+  ---
+  To address these comments, run: /erk:pr-address
+
+✻ Cogitated for 1m 12s
+
+can we change our review bots to not post repetitive comments?</user>
+  <thinking>The user is asking about the review bots that are posting repetitive comments on PRs. Looking at the PR feedback classification, items #2-9 are all duplicate bot comments about the same two issues (missing fields at line 188 and line 260). The user wants to fix the bots so they don't post repetitive comments.
+
+Let me explore the codebase to understand how the review bots work and where they're configured.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="29946" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 29946}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good question. Let me look at how the review bots are configured and what's causing the repetitive comments.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="29946" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 29946}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01PJyYzzfYpvie8b9cNfcxAb">
+    <param name="description">Explore review bot config</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 741 chars]...ws/` and `docs/learned/review/` for documentation
+
+Be thorough - check all relevant files.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="29946" cache_read_input_tokens="0" output_tokens="469" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 29946, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PJyYzzfYpvie8b9cNfcxAb">
+Perfect! Now I have enough information to provide a comprehensive answer. Let me compile all the findings:
+
+## Summary
+
+I've completed a thorough exploration of erk's review bot system. Here are my findings:
+
+---
+
+## How Erk's Review Bots Work
+
+### 1. **CI Workflow Trigger**
+**File:** `.github/workflows/code-reviews.yml`
+
+The review system runs on PR events (`opened`, `synchronize`, `ready_for_review`). The workflow has two jobs:
+
+- **Discovery job**: Scans the `.erk/reviews/` directory, parses review specs, matches them against changed files, and outputs a matrix of matching reviews
+- **Review jobs**: Runs in parallel (one per matched review) via GitHub Actions matrix strategy
+
+### 2. **Convention-Based Review Discovery**
+**Files:** 
+- `src/erk/review/parsing.py` - Parsing and validation
+- `.erk/reviews/*.md` - Review definitions
+
+Reviews are defined as markdown files with YAML frontmatter in `.erk/reviews/`. The `discover_matching_reviews()` function:
+1. Parses all review files from the directory
+2. Validates frontmatter (required fields: `name`, `paths`, `marker`, `model`)
+3. Checks for duplicate markers across reviews (treated as errors)
+4. Matches path patterns against changed files using gitignore-style glob patterns
+5. Returns only reviews that match at least one changed file
+
+
+... [119 lines omitted] ...
+
+1. **Agent prompt execution failure**: Step 4 deduplication not executed or incorrectly executed by the Claude agent
+  </tool_result>
+  <thinking>Good, now I have a comprehensive understanding of the review bot system. The key issue is that deduplication is prompt-embedded (relies on the AI agent to follow instructions) rather than code-enforced. Let me look at the specific details to understand the best approach to fix this.
+
+Let me look at the prompt template to understand the dedup instructions, and also at the CI workflow to understand how multiple runs happen.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2449" cache_read_input_tokens="29946" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2449}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good findings. Let me look at the specific deduplication logic and the CI workflow to understand where the repetition is happening.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2449" cache_read_input_tokens="29946" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2449}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HXLQVo4pvk5TMjUpSwhndy">
+    <param name="file_path">/workspaces/erk/src/erk/review/prompt_assembly.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2449" cache_read_input_tokens="29946" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2449}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HXLQVo4pvk5TMjUpSwhndy">
+     1→"""Prompt assembly for code reviews.
+     2→
+     3→This module injects standard boilerplate around review-specific instructions
+     4→to create a complete prompt for Claude to execute.
+     5→
+     6→Supports two modes:
+     7→- PR mode: Reviews an existing pull request, posts comments to GitHub
+     8→- Local mode: Reviews uncommitted changes locally, outputs to stdout
+     9→"""
+    10→
+    11→from erk.review.models import ParsedReview
+    12→
+    13→# Boilerplate template for PR reviews (posts comments to GitHub)
+    14→REVIEW_PROMPT_TEMPLATE = """\
+    15→REPO: {repository}
+    16→PR NUMBER: {pr_number}
+    17→
+    18→## Task
+    19→
+    20→{review_name}: Review code changes.
+    21→
+    22→## Step 1: Review-Specific Instructions
+    23→
+    24→{review_body}
+    25→
+    26→## Step 2: Get Existing Review Comment
+    27→
+    28→Fetch the existing review comment to preserve the activity log:
+    29→
+    30→```
+
+... [217 lines omitted] ...
+
+   222→        ValueError: If both pr_number and base_branch are provided,
+   226→        raise ValueError("Cannot specify both pr_number and base_branch")
+   228→        raise ValueError("Must specify either pr_number or base_branch")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BJgConXWZbUQmoc3ZAjTmy">
+    <param name="file_path">/workspaces/erk/.github/workflows/code-reviews.yml</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2449" cache_read_input_tokens="29946" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2449}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BJgConXWZbUQmoc3ZAjTmy">
+     1→# Convention-based code reviews
+     2→# Add a new review by dropping a markdown file in .erk/reviews/
+     3→name: code-reviews
+     4→
+     5→on:
+     6→  pull_request:
+     7→    types: [opened, synchronize, ready_for_review]
+     8→
+     9→jobs:
+    10→  discover:
+    11→    if: vars.CLAUDE_ENABLED != 'false' &amp;&amp; github.event.pull_request.draft != true &amp;&amp; !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
+    12→    runs-on: ubuntu-latest
+    13→    timeout-minutes: 5
+    14→    outputs:
+    15→      matrix: ${{ steps.discover.outputs.matrix }}
+    16→      has_reviews: ${{ steps.discover.outputs.has_reviews }}
+    17→    permissions:
+    18→      contents: read
+    19→      pull-requests: read
+    20→
+    21→    steps:
+    22→      - name: Check local review marker
+    23→        id: check_local_review
+    24→        env:
+    25→          GH_TOKEN: ${{ github.token }}
+    26→        run: |
+    27→          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+    28→          MARKER="&lt;!-- erk:local-review-passed:${HEAD_SHA} --&gt;"
+    29→          PR_BODY=$(gh pr view ${{ github.event.pull_request.number }} \
+    30→            --repo ${{ github.repository }} --json body -q .body)
+
+... [98 lines omitted] ...
+
+    66→            echo "Discovery failed"
+  </tool_result>
+  <tool_use name="Read" id="toolu_013ccMTdDi4JNLbDntLeE2gE">
+    <param name="file_path">/workspaces/erk/docs/learned/review/inline-comment-deduplication.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2449" cache_read_input_tokens="29946" output_tokens="311" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2449, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013ccMTdDi4JNLbDntLeE2gE">
+     1→---
+     2→title: Inline Comment Deduplication
+     3→read_when:
+     4→  - "modifying how PR review comments are posted or fetched"
+     5→  - "debugging duplicate review comments on a PR"
+     6→  - "changing the review prompt template's deduplication instructions"
+     7→tripwires:
+     8→  - action: "posting inline review comments without deduplication"
+     9→    warning: "Always deduplicate before posting. The dedup logic is prompt-embedded, not code-enforced — see Step 4 of REVIEW_PROMPT_TEMPLATE."
+    10→last_audited: "2026-02-16 14:20 PT"
+    11→audit_result: edited
+    12→---
+    13→
+    14→# Inline Comment Deduplication
+    15→
+    16→## Why This Exists
+    17→
+    18→Automated reviews run repeatedly on the same PR (after each push, on re-review requests). Without deduplication, every review iteration posts the same violations again, flooding the PR with identical comments. The problem is worse than simple repetition — GitHub doesn't collapse duplicate review comments, so reviewers see N copies of each violation where N is the number of review iterations.
+    19→
+    20→## Architecture Decision: Prompt-Embedded, Not Code-Enforced
+    21→
+    22→The deduplication logic lives entirely in the prompt template, not in Python code. The AI agent executing the review is instructed to fetch existing comments, build a dedup index, and skip matches — all within the prompt steps.
+    23→
+    24→&lt;!-- Source: src/erk/review/prompt_assembly.py, REVIEW_PROMPT_TEMPLATE --&gt;
+    25→
+    26→This is intentional: the agent needs flexibility to interpret near-matches and make judgment calls that rigid code dedup cannot. For example, a slightly reworded violation on a line that shifted by 1 is "the same comment" to a human reviewer but would slip past exact-match code.
+    27→
+    28→The trade-off is that dedup quality depends on the AI agent correctly following the instructions. If the prompt template's Step 4 instructions are unclear, dedup fails silently — the agent just posts duplicates.
+    29→
+    30→## Design Trade-offs in the Matching Heuristic
+
+... [33 lines omitted] ...
+  </tool_result>
+  <thinking>Now I understand the full picture. The deduplication is entirely prompt-based - it relies on the AI agent following Step 4 instructions to fetch existing comments and skip duplicates. This is fragile because the AI agent can fail to follow the instructions correctly.
+
+Looking at the PR feedback from #8115, the duplicate comments are all from bot runs (labeled "Bot (run 1)", "Bot (run 2)", etc.), which means the review workflow ran multiple times (likely on each push/synchronize event), and each time the AI agent failed to properly deduplicate.
+
+The fundamental issue is that the dedup is only in the prompt, not enforced in code. 
+
+The agent can explore existing comments but still fail to properly skip duplicates. I see a few potential fixes: adding code-enforced deduplication as a safety net in the `post-pr-inline-comment` function before posting, pre-filtering in the workflow to check if a violation was already posted, or strengthening the prompt instructions. The most robust solution would be implementing the code-level check - that way we're not relying solely on the agent following instructions.
+
+Now I'm examining the `post-pr-inline-comment` script to see where I can add this deduplication logic.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5864" cache_read_input_tokens="32395" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5864}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me look at the posting script to understand where code-level dedup could be added.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5864" cache_read_input_tokens="32395" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5864}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01J1XiSHU9WvqTKEdsM2rYcc">
+    <param name="file_path">/workspaces/erk/src/erk/cli/commands/exec/scripts/post_pr_inline_comment.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5864" cache_read_input_tokens="32395" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5864}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01J1XiSHU9WvqTKEdsM2rYcc">
+     1→"""Post an inline review comment on a specific line of a PR.
+     2→
+     3→This exec command creates a pull request review comment attached to a
+     4→specific line of a file in the PR diff.
+     5→
+     6→Usage:
+     7→    erk exec post-pr-inline-comment --pr-number 123 \\
+     8→        --path "src/foo.py" --line 42 --body "Comment text"
+     9→
+    10→Output:
+    11→    JSON with success status and comment ID
+    12→
+    13→Exit Codes:
+    14→    0: Always (even on error, to support || true pattern)
+    15→
+    16→Examples:
+    17→    $ erk exec post-pr-inline-comment --pr-number 123 \\
+    18→        --path "src/foo.py" --line 42 --body "Use LBYL"
+    19→    {"success": true, "comment_id": 12345}
+    20→
+    21→    $ erk exec post-pr-inline-comment --pr-number 123 \\
+    22→        --path "bad.py" --line 999 --body "Comment"
+    23→    {"success": false, "error_type": "github_api_failed", "message": "..."}
+    24→"""
+    25→
+    26→import json
+    27→from dataclasses import asdict, dataclass
+    28→from pathlib import Path
+    29→
+    30→import click
+
+... [110 lines omitted] ...
+
+    45→class InlineCommentError:
+    46→    """Error response for inline comment posting."""
+    49→    error_type: str
+    68→        RuntimeError: If gh command fails
+   107→    except RuntimeError as e:
+   108→        result = InlineCommentError(
+   110→            error_type="pr-not-found",
+   131→    except RuntimeError as e:
+   132→        result = InlineCommentError(
+   134→            error_type="github-api-failed",
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UN68T8bLpnznfc6tugpLog">
+    <param name="file_path">/workspaces/erk/src/erk/cli/commands/exec/scripts/get_pr_review_comments.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5864" cache_read_input_tokens="32395" output_tokens="518" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5864, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UN68T8bLpnznfc6tugpLog">
+     1→"""Fetch PR review comments for agent context injection.
+     2→
+     3→This exec command fetches unresolved (or all) PR review comments from GitHub
+     4→and outputs them as JSON for agent processing.
+     5→
+     6→Usage:
+     7→    erk exec get-pr-review-comments
+     8→    erk exec get-pr-review-comments --pr 123
+     9→    erk exec get-pr-review-comments --include-resolved
+    10→
+    11→Output:
+    12→    JSON with success status, PR info, and review threads
+    13→
+    14→Exit Codes:
+    15→    0: Success (or graceful error with JSON output)
+    16→    1: Context not initialized
+    17→
+    18→Examples:
+    19→    $ erk exec get-pr-review-comments
+    20→    {"success": true, "pr_number": 123, "threads": [...]}
+    21→
+    22→    $ erk exec get-pr-review-comments --pr 456
+    23→    {"success": true, "pr_number": 456, "threads": [...]}
+    24→"""
+    25→
+    26→from __future__ import annotations
+    27→
+    28→import json
+    29→from dataclasses import asdict, dataclass
+    30→from typing import TypedDict
+
+... [129 lines omitted] ...
+
+    34→from erk.cli.script_output import exit_with_error
+    69→    """Ensure branch was detected, exit with error if not."""
+    71→        exit_with_error("branch-detection-failed", "Could not determine current branch")
+    82→    """Ensure PR lookup succeeded, exit with appropriate error if not."""
+    85→            exit_with_error("no-pr-for-branch", f"No PR found for branch '{branch}'")
+    87→            exit_with_error("pr-not-found", f"PR #{pr_number} not found")
+   144→    except RuntimeError as e:
+   145→        exit_with_error("github-api-failed", str(e))
+  </tool_result>
+  <thinking>Now I have a clear picture. The problem is:
+
+1. The deduplication is entirely prompt-based (in the REVIEW_PROMPT_TEMPLATE Step 4)
+2. The `post-pr-inline-comment` script has NO dedup logic - it blindly posts whatever the AI tells it to
+3. When the AI agent fails to follow the prompt instructions correctly, duplicates get posted
+
+The solution is to add **code-enforced deduplication** in the `post-pr-inline-comment` script as a safety net. Before posting, it should:
+1. Fetch existing review comments (same as what the prompt tells the AI to do)
+
+
+2. Check if a similar comment already exists (same path, similar line, same body prefix)
+3. Skip posting if it's a duplicate, returning a "skipped_duplicate" response
+
+For the implementation, I'd add a `--dedup` flag to `post-pr-inline-comment` that fetches existing comments via the GitHub API, checks for duplicates using the same heuristic (same path, ±2 lines, same 80-char prefix), and skips posting if a match is found.
+
+The performance concern is real though—fetching all comments before each post would be slow. I could either batch the posting to deduplicate all comments at once, or cache the existing threads in a file and reuse them across multiple calls in the same session. Actually, the cleanest approach is to have `post-pr-inline-comment` accept an optional `--existing-threads-json` parameter so the caller can pass in pre-fetched comments instead of making redundant API calls. The issue is that the review workflow ran multiple times, creating duplicate comments from different bot runs. The safest fix is to add dedup logic directly into `post-pr-inline-comment` before posting—it'll fetch existing comments, build a dedup index based on file path, line number, and comment text, then skip if a match is found. Even though this adds an API call per comment, the overhead is minimal since reviews typically have fewer than 10 inline comments.
+
+But I'm second-guessing whether to dedup against resolved comments too. The `--include-resolved` flag suggests we want to avoid re-posting dismissed comments, so yes, we should check those. Though this does change the semantics of the post command from a simple "post this" to something more complex. Maybe the cleaner approach is to handle dedup earlier in the pipeline, before individual posting calls even happen, rather than embedding it in the post command itself.
+
+The user is asking specifically about preventing repetitive comments, so they probably want an actual implementation. I should think through the main approaches: code-enforced dedup in the posting function with a flag, a new batch posting command that fetches existing comments once and deduplicates efficiently, making the prompt instructions more explicit, or something else. Let me figure out which is most practical.
+
+I think code-enforced dedup in the existing post command is the sweet spot—it's straightforward and reliable without requiring major architectural changes. I should switch to planning mode since this will touch multiple files.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4927" cache_read_input_tokens="38259" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4927}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Here's the situation. The deduplication is entirely **prompt-based** — the AI agent running the review is *instructed* to fetch existing comments and skip duplicates (Step 4 of `REVIEW_PROMPT_TEMPLATE`), but there's no code enforcement. When the agent fails to follow the instructions correctly, duplicates get posted.
+
+The `post-pr-inline-comment` script blindly posts whatever it's told — no dedup check at all.
+
+The fix is to add **code-enforced deduplication** as a safety net. Let me plan the approach.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4927" cache_read_input_tokens="38259" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4927}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="EnterPlanMode" id="toolu_0157BurNjuQyogME3Wq8dwqB">
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4927" cache_read_input_tokens="38259" output_tokens="1558" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4927, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0157BurNjuQyogME3Wq8dwqB">
+Entered plan mode. You should now focus on exploring the codebase and designing an implementation approach.
+
+In plan mode, you should:
+1. Thoroughly explore the codebase to understand existing patterns
+2. Identify similar features and architectural approaches
+3. Consider multiple approaches and their trade-offs
+4. Use AskUserQuestion if you need to clarify the approach
+5. Design a concrete implementation strategy
+6. When ready, use ExitPlanMode to present your plan for approval
+
+Remember: DO NOT write or edit any files yet. This is a read-only exploration and planning phase.
+  </tool_result>
+  <thinking>Let me explore the codebase to understand:
+
+1. The gateway methods for fetching PR review threads (to reuse in the dedup logic)
+2. The existing test patterns for the post-pr-inline-comment script
+3. How the run-review exec script works
+
+Let me launch explore agents in parallel.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2983" cache_read_input_tokens="43186" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2983}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01U1XeFaM3dGC3KmVSnSQwLj">
+    <param name="description">Explore GitHub gateway methods</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 535 chars]..._pr_review_threads` before posting.
+
+Be thorough - read the actual method implementations.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2983" cache_read_input_tokens="43186" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2983}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01QTiuBi82PkLhgj98QLK7nS">
+    <param name="description">Explore post-comment tests</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 384 chars]...tests
+
+I need this to plan how to add tests for a dedup feature in post-pr-inline-comment.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2983" cache_read_input_tokens="43186" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2983}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01T5ZpsUZAFw3rMBKmAhd3j9">
+    <param name="description">Explore run-review script</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 323 chars]...ew specs in `.erk/reviews/` to understand what reviews are configured and their structure.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2983" cache_read_input_tokens="43186" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2983}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QTiuBi82PkLhgj98QLK7nS">
+Perfect! Now I have comprehensive information. Let me create a summary document based on all the findings:
+
+## Summary: Existing Test Patterns for PR Review Scripts
+
+Based on my exploration of the erk codebase, here's a comprehensive report of the existing testing infrastructure and patterns:
+
+### 1. **Test Location and File Structure**
+
+The test file for PR review comment scripts is located at:
+- `/workspaces/erk/tests/unit/cli/commands/exec/scripts/test_pr_review_comments.py` - Tests for both `get-pr-review-comments` and `resolve-review-thread` commands
+
+Tests follow this directory structure:
+```
+tests/unit/cli/commands/exec/scripts/
+├── __init__.py
+├── fixtures.py          # Shared test fixtures and helper functions
+├── test_pr_review_comments.py
+└── test_*.py           # Other exec script tests (84 test files total)
+```
+
+### 2. **Testing Pattern Used (CliRunner + Dependency Injection)**
+
+The existing tests use **Click's CliRunner with ErkContext dependency injection**. Key pattern:
+
+```python
+from click.testing import CliRunner
+from erk_shared.context.context import ErkContext
+
+def test_example(tmp_path: Path) -&gt; None:
+    runner = CliRunner()
+
+... [213 lines omitted] ...
+
+    resolved_thread_failures=set(),         # Optional: set of thread IDs that fail to resolve
+2. Error cases
+- Returns JSON with `success`, `comment_id`, or error details
+- Always exits with code 0 (graceful degradation on errors)
+class InlineCommentError:
+    error_type: str
+  </tool_result>
+  <tool_result tool="toolu_01U1XeFaM3dGC3KmVSnSQwLj">
+Perfect! Now I have a complete picture. Let me create a comprehensive summary document:
+
+## GitHub Gateway PR Review Methods - Comprehensive Analysis
+
+I've thoroughly explored the GitHub gateway implementation for PR review threads and comments. Here's the complete technical analysis:
+
+### 1. **Type Definitions** (`/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py`)
+
+**PRReviewThread** (lines 64-82):
+```python
+@dataclass(frozen=True)
+class PRReviewThread:
+    id: str                              # GraphQL node ID (needed for resolution)
+    path: str                            # File path the thread is on
+    line: int | None                     # Line number (None for file-level comments)
+    is_resolved: bool                    # Whether the thread has been resolved
+    is_outdated: bool                    # Whether code changed
+    comments: tuple[PRReviewComment, ...]  # Comments in this thread
+```
+
+**PRReviewComment** (lines 52-61):
+```python
+@dataclass(frozen=True)
+class PRReviewComment:
+    id: int                    # Database ID
+    body: str                  # Comment text
+    author: str                # GitHub username
+    path: str                  # File path
+    line: int | None           # Line number
+    created_at: str            # ISO format timestamp
+
+... [389 lines omitted] ...
+
+    Raises RuntimeError if review_threads_rate_limited is True, simulating
+    a GraphQL API rate limit error.
+        raise RuntimeError("GraphQL API RATE_LIMIT exceeded")
+  </tool_result>
+  <tool_result tool="toolu_01T5ZpsUZAFw3rMBKmAhd3j9">
+Perfect! Now I have all the context I need. Let me provide a comprehensive analysis document based on what I've found:
+
+## Summary: `run-review` Exec Script and Review Orchestration Architecture
+
+I've thoroughly examined the `run-review` exec script and the entire review infrastructure. Here's a complete understanding of how code reviews are orchestrated and where batch deduplication could be applied:
+
+### 1. **Core `run-review` Script** (`/workspaces/erk/src/erk/cli/commands/exec/scripts/run_review.py`)
+
+The script is elegantly simple—it orchestrates through prompt injection rather than code logic:
+
+**Key flow:**
+1. Parses CLI flags: `--name`, `--pr-number` (PR mode) OR `--local` (local mode), optional `--base-branch`
+2. Validates mutual exclusivity: Can't specify both PR and local mode
+3. Loads review definition from `.erk/reviews/&lt;name&gt;.md`
+4. Calls `assemble_review_prompt()` which injects the review spec into a boilerplate template
+5. Either prints the prompt (`--dry-run`) or invokes Claude via `PromptExecutor.execute_prompt_passthrough()`
+
+**Two distinct prompt templates:**
+- **PR mode** (`REVIEW_PROMPT_TEMPLATE`): Posts inline comments and summary to GitHub, includes deduplication logic
+- **Local mode** (`LOCAL_REVIEW_PROMPT_TEMPLATE`): Outputs violations to stdout, no GitHub interaction
+
+### 2. **Prompt-Embedded Orchestration &amp; Deduplication** (`/workspaces/erk/src/erk/review/prompt_assembly.py`)
+
+The review system uses **prompt-as-orchestration** pattern. All steps are numbered and sequenced:
+
+**PR Mode Steps (from REVIEW_PROMPT_TEMPLATE):**
+1. Review-Specific Instructions (injected from `.erk/reviews/&lt;name&gt;.md`)
+2. Get Existing Review Comment (fetch activity log via `gh pr view`)
+3. Get the Diff (`gh pr diff`)
+4. **Fetch Existing Review Comments** (`erk exec get-pr-review-comments --pr {pr_number} --include-resolved`)
+
+... [96 lines omitted] ...
+
+- Always exits 0, errors in JSON
+  </tool_result>
+  <thinking>Now I have a comprehensive understanding of the system. Let me also quickly read the existing test file for post_pr_inline_comment and the FakeGitHub's `_get_pr_head_sha` equivalent.
+
+Actually, I notice the `post_pr_inline_comment` script calls `_get_pr_head_sha()` which uses `execute_gh_command`. This is a private function that calls `gh api` directly, not through the gateway. For dedup, we need to call `github.get_pr_review_threads()` which IS through the gateway.
+
+Let me also check if there's an existing test file for `post_pr_inline_comment`.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="9417" cache_read_input_tokens="46169" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9417}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check one more thing - whether there's already a test file for post_pr_inline_comment.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="9417" cache_read_input_tokens="46169" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9417}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01PrmxdswFviKkTv2WAT679w">
+    <param name="pattern">tests/unit/cli/commands/exec/scripts/test_post_pr*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9417" cache_read_input_tokens="46169" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9417}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PrmxdswFviKkTv2WAT679w">
+No files found
+  </tool_result>
+  <tool_use name="Glob" id="toolu_013usE6Gq4tPm2VZ8SZSMqtb">
+    <param name="pattern">tests/**/test_post_pr_inline*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9417" cache_read_input_tokens="46169" output_tokens="303" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9417, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013usE6Gq4tPm2VZ8SZSMqtb">
+No files found
+  </tool_result>
+  <thinking>No existing test file for `post_pr_inline_comment`. Let me check if there are tests in the general PR review comments test file.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="464" cache_read_input_tokens="55586" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 464}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01TWs3Qz75inCMdNnsz2VXd3">
+    <param name="pattern">post_pr_inline_comment</param>
+    <param name="path">/workspaces/erk/tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="464" cache_read_input_tokens="55586" output_tokens="128" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 464, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TWs3Qz75inCMdNnsz2VXd3">
+No files found
+  </tool_result>
+  <thinking>So there are no tests for `post_pr_inline_comment` at all. Let me also check what `_get_pr_head_sha` does - it uses `execute_gh_command` directly rather than through the gateway. For dedup, we'll need to call `github.get_pr_review_threads()`.
+
+Now let me also check the FakeGitHub more carefully. I need to understand if `_get_pr_head_sha` will work in tests, since it calls `execute_gh_command` directly rather than through the gateway ABC.
+
+Actually, I already know from the exploration that `_get_pr_head_sha` calls `execute_gh_command` which is a raw `gh api` call. 
+
+For the dedup feature, I could mock `execute_gh_command`, refactor `_get_pr_head_sha` to use the gateway, or take a different approach entirely. But actually, `_get_pr_head_sha` is only needed for posting - the dedup logic itself would fetch existing review threads through the gateway, check if the new comment matches any of them, and skip posting if there's a match.
+
+Now I'm weighing the design options. Adding dedup directly in `post_pr_inline_comment` would be the simplest - a single enforcement point that works regardless of prompt compliance and is easy to test - but it means an extra API call per comment and couples posting with fetching. A batch posting command would be more efficient with one fetch and dedup before posting multiple comments, though it's a bigger change that requires updating the prompt template. The executor-level approach isn't really viable.
+
+I think Option 1 with a `--dedup/--no-dedup` flag is the way to go. The extra API call per comment is worth it since review bots typically post fewer than 10 comments anyway, and the GraphQL API has separate rate limits. But actually, there's a smarter optimization: since the review bot calls the command multiple times in sequence, I could cache the fetched threads in a temporary file between calls.
+
+On second thought, that adds unnecessary complexity. The cleanest solution is to add a `--existing-threads-json` option that accepts a path to a JSON file with the review comments. The prompt template would fetch the comments once, save them to a temp file, then pass that file path to each subsequent `post-pr-inline-comment` call. This way we get a single fetch for all the dedup checks without the overhead of multiple API calls or the complexity of file-based caching.
+
+But that requires the AI to correctly manage the file path, which could fail. Actually, the most robust approach is just fetching every time—GitHub API calls are cheap and we're only talking about a handful per review. Let me go with a simpler design: add a `--dedup/--no-dedup` flag to `post_pr_inline_comment` that fetches existing threads and checks for duplicates before posting. Though I'm realizing the command doesn't have access to the review name, which complicates things.
+
+Wait, the body already contains the review prefix like `**Test Coverage**: ...`, so I can still match on that. Let me finalize this: when dedup is enabled, fetch all existing review threads, build an index from comment bodies, and skip posting if the new comment matches an existing one by path, line proximity, and body prefix.
+
+I'll also need a new response type to indicate when a comment was skipped due to duplication, and then write tests covering the main scenarios—posting when there are no existing comments, skipping exact duplicates, skipping near-duplicates within the same path and line range, and posting when the comment is genuinely different.
+
+Now I need to add a test for the `--no-dedup` flag to ensure it bypasses the deduplication logic, update the prompt template to document this new safety mechanism, and revise the documentation to explain how the code-level deduplication works alongside the existing prompt-level approach.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="143" cache_read_input_tokens="56050" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 143}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a complete picture. Let me design the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="143" cache_read_input_tokens="56050" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 143}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01HyQFe4fk6PogcMGwTAkPcS">
+    <param name="description">Design dedup enforcement plan</param>
+    <param name="prompt">I need you to design an implementation plan for adding code-enforced deduplication to the ...[truncated 3236 chars]...hreads - should we skip posting for them too?
+- Performance implications of extra API call</param>
+    <param name="subagent_type">Plan</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="143" cache_read_input_tokens="56050" output_tokens="2748" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 143, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HyQFe4fk6PogcMGwTAkPcS">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+  <user>i would still rather have this be a prompt-only change. code-based might be complicated and fragile. do you have ahy suggestions?</user>
+  <thinking>The user wants to keep the dedup prompt-only (no code changes) but make it more effective so the AI agents actually follow the dedup instructions. Let me think about what's going wrong and how to fix it at the prompt level.
+
+Looking at the current prompt template, the dedup instructions are in Steps 4-5. The issue is that the AI agent sometimes doesn't follow them correctly. Let me re-read the exact instructions.
+
+From the prompt template:
+- Step 4: Fetch existing comments, build dedup index keyed by (path, line, body_prefix) 
+- Step 5: Skip posting if existing comment from this review exists on same file and line
+ 
+I'm seeing a few core issues: the dedup instructions are too abstract and don't give the agent a concrete mechanism to follow, the check and post steps are separated which causes the agent to lose context between them, and there's no explicit verification happening right before posting. I should consolidate these into a single, tighter instruction that embeds the dedup check directly into the posting action itself, rather than treating it as a separate preliminary step.
+
+The most effective fix would be to restructure the entire flow so the agent collects all violations upfront, deduplicates them against existing comments in one batch operation, and then posts only the new ones—this prevents the agent from posting incrementally and forgetting to check.
+
+To implement this, I'd reorganize the prompt steps so violation collection happens before any posting, add explicit reasoning requirements where the agent must state whether each comment is new or a duplicate, and use a structured format like a numbered list with dedup status for each violation.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="3029" cache_read_input_tokens="56193" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3029}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Yeah, a few ideas. The root cause is that the current flow encourages the agent to post comments one-by-one as it finds violations, making it easy to skip or forget the dedup step. The fix is structural:
+
+**1. Collect-then-post pattern.** Restructure Steps 4-5 so the agent collects ALL violations into a list *first*, then deduplicates the batch against existing comments, then posts only the unique ones. Right now the agent interleaves finding and posting, which is when dedup gets dropped.
+
+**2. Require explicit dedup reasoning.** Before posting each comment, force the agent to output something like `POSTING (no match)` or `SKIPPING (matches existing comment on path:line)`. This makes silent dedup failures visible.
+
+**3. Put the dedup check *inside* the posting instruction.** Right now Step 4 says "fetch and build index" and Step 5 says "post, skip duplicates." The agent treats these as separate concerns. Merging the check into the posting instruction ("For each violation, check your dedup index THEN post") keeps them coupled.
+
+Want me to go ahead and rewrite the prompt template with these changes? The main edit would be in `src/erk/review/prompt_assembly.py` — restructuring Steps 4-5 into a collect → dedup → post flow.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3029" cache_read_input_tokens="56193" output_tokens="1025" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3029, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>plan the change</user>
+  <tool_use name="EnterPlanMode" id="toolu_01A4ohdc8vd4PHxoTKHPV4Ev">
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="269" cache_read_input_tokens="60237" output_tokens="39" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 269, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01A4ohdc8vd4PHxoTKHPV4Ev">
+Entered plan mode. You should now focus on exploring the codebase and designing an implementation approach.
+
+In plan mode, you should:
+1. Thoroughly explore the codebase to understand existing patterns
+2. Identify similar features and architectural approaches
+3. Consider multiple approaches and their trade-offs
+4. Use AskUserQuestion if you need to clarify the approach
+5. Design a concrete implementation strategy
+6. When ready, use ExitPlanMode to present your plan for approval
+
+Remember: DO NOT write or edit any files yet. This is a read-only exploration and planning phase.
+  </tool_result>
+  <thinking>I already have strong context from the previous exploration. The key file is `src/erk/review/prompt_assembly.py` and the current Steps 4-5 of `REVIEW_PROMPT_TEMPLATE`. I've already read this file. The change is a prompt-only rewrite of Steps 4-5 to use a collect-then-dedup-then-post pattern.
+
+This is a focused change to one file. I don't need to launch explore agents since I already read the file. Let me also consider what other files might need updates (the dedup doc).
+
+Let me just re-read the prompt template to make sure I have the exact current text fresh, then write the plan.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1374" cache_read_input_tokens="60506" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1374}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I already have strong context from the earlier exploration. Let me re-read the key file to confirm the exact text, then write the plan directly.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1374" cache_read_input_tokens="60506" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1374}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QW5fxcWZ9vSFbmB2hjR7fb">
+    <param name="file_path">/workspaces/erk/src/erk/review/prompt_assembly.py</param>
+    <param name="offset">45</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1374" cache_read_input_tokens="60506" output_tokens="305" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1374, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QW5fxcWZ9vSFbmB2hjR7fb">
+    45→## Step 4: Fetch Existing Review Comments
+    46→
+    47→Before posting inline comments, fetch all existing review comments to avoid
+    48→duplicates:
+    49→
+    50→```
+    51→erk exec get-pr-review-comments --pr {pr_number} --include-resolved
+    52→```
+    53→
+    54→This returns JSON with a `threads` array. Each thread has `path`, `line`,
+    55→and `comments` (each with `body`).
+    56→
+    57→Build a set of existing comments keyed by `(path, line, body_prefix)` where
+    58→`body_prefix` is the first 80 characters of the comment body. This catches
+    59→near-duplicates even if wording varies slightly.
+    60→
+    61→When checking for duplicates, match comments that:
+    62→1. Are on the same file path
+    63→2. Are on the same line (or within 2 lines, to handle diff shifts)
+    64→3. Start with the same review prefix (`**{review_name}**:`)
+    65→
+    66→## Step 5: Post Inline Comments for Violations
+    67→
+    68→**IMPORTANT: Post an inline comment for EACH violation found.**
+    69→
+    70→**Skip posting if an existing comment from this review already exists on the
+    71→same file and line** (as determined in Step 4). Log skipped duplicates so they
+    72→appear in the summary.
+    73→
+    74→```
+
+... [70 lines omitted] ...
+  </tool_result>
+  <assistant>Good, I have the full picture. Now let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1417" cache_read_input_tokens="61880" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1417}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01GZ1svMPqf4Lkrz1kqJEv8U">
+    <param name="file_path">/home/vscode/.claude/plans/fluffy-brewing-kernighan.md</param>
+    <param name="content"># Plan: Restructure review prompt to prevent duplicate bot comments
+
+## Context
+
+Review bo...[truncated 2899 chars]...s correct
+3. On the next PR push, observe whether bot comments are deduplicated correctly
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1417" cache_read_input_tokens="61880" output_tokens="923" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1417, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GZ1svMPqf4Lkrz1kqJEv8U">
+File created successfully at: /home/vscode/.claude/plans/fluffy-brewing-kernighan.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01WRsCPsEi9JJy35HJyf5rQ7">
+    <param name="plan"># Plan: Restructure review prompt to prevent duplicate bot comments
+
+## Context
+
+Review bo...[truncated 2899 chars]...s correct
+3. On the next PR push, observe whether bot comments are deduplicated correctly
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="960" cache_read_input_tokens="63297" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 960, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WRsCPsEi9JJy35HJyf5rQ7">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /home/vscode/.claude/plans/fluffy-brewing-kernighan.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Restructure review prompt to prevent duplicate bot comments
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id c3332292-3921-4831-a399-ee2d3bfe2b7d \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Plan: Restructure review prompt to prevent duplicate bot comments
+
+## Context
+
+Review bots post duplicate inline comments on PRs because deduplication is only prompt-based — the AI agent is *instructed* to check for duplicates but sometimes fails. The current prompt structure encourages the agent to interleave finding violations and posting comments, making it easy to skip the dedup step. This is a prompt-only fix (no code changes).
+
+## Problem analysis
+
+Current Steps 4-5 in `REVIEW_PROMPT_TEMPLATE`:
+- **Step 4**: "Fetch existing comments, build a dedup index" (abstract, easy to skip)
+- **Step 5**: "Post an inline comment for EACH violation found. Skip if duplicate." (finding + posting interleaved, dedup is a side note)
+
+The agent often posts-as-it-goes and forgets the dedup check.
+
+## Changes
+
+### File: `src/erk/review/prompt_assembly.py`
+
+Rewrite Steps 4-5 into a **collect → dedup → post** flow with 3 sub-steps:
+
+**Step 4: Collect violations** (analysis only, no posting)
+- Analyze the diff from Step 3
+- Build a numbered list of ALL violations found
+- Each entry: `{path, line, body}`
+- Explicit instruction: **DO NOT post any comments in this step**
+
+**Step 5: Deduplicate against existing comments**
+- Fetch existing review comments: `erk exec get-pr-review-comments --pr {pr_number} --include-resolved`
+- For EACH violation in the list, check against existing comments using the matching heuristic (same path, line ±2, same 80-char body prefix, same review prefix)
+- Mark each violation as `NEW` or `DUPLICATE`
+- **Output the dedup decision for every violation** — e.g.:
+  ```
+  1. src/foo.py:42 - NEW (no matching existing comment)
+  2. src/bar.py:10 - DUPLICATE (matches existing comment on line 11)
+  ```
+- This forced output makes silent dedup failures impossible
+
+**Step 6: Post only NEW violations**
+- For each violation marked `NEW`, post via `erk exec post-pr-inline-comment`
+- Log the count of skipped duplicates for the summary
+
+**Step 7: Post Summary Comment** (renumbered from current Step 6, unchanged)
+
+### File: `docs/learned/review/inline-comment-deduplication.md`
+
+Update to document the collect-then-dedup-then-post pattern and why it replaced the previous interleaved approach.
+
+## Key design decisions
+
+1. **Collect-then-post, not post-as-you-go**: Separating analysis from posting forces the agent to have a complete violation list before touching GitHub, making dedup a required gate rather than an optional side-check.
+
+2. **Forced dedup reasoning output**: Requiring the agent to print `NEW`/`DUPLICATE` for each violation makes failures visible. If the agent skips dedup, the missing output is obvious.
+
+3. **No code changes**: The dedup remains prompt-embedded. This preserves the fuzzy matching advantage (AI judgment on near-duplicates) without adding code complexity.
+
+## Verification
+
+1. Review the rewritten prompt template for clarity
+2. Run a local review (`erk exec run-review --name test-coverage --local --dry-run`) to verify the assembled prompt looks correct
+3. On the next PR push, observe whether bot comments are deduplicated correctly
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="987" cache_read_input_tokens="64257" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 987}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01P6Hz3ar5cSBdSgF3VBEiwE">
+    <param name="questions">[{'question': 'What would you like to do with this plan?', 'header': 'br:master', 'options...[truncated 339 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="987" cache_read_input_tokens="64257" output_tokens="1017" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 987, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01P6Hz3ar5cSBdSgF3VBEiwE">
+User has answered your questions: "What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_011eeYHBQufck7Dvs9HURDhG">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1067" cache_read_input_tokens="65244" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1067, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011eeYHBQufck7Dvs9HURDhG">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="c3332292-3921-4831-a399-ee2d3bfe2b7d" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "c3332292-3921-4831-a399-ee2d3bfe2b7d" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "c3332292-3921-4831-a399-ee2d3bfe2b7d" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "c3332292-3921-4831-a399-ee2d3bfe2b7d" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "c3332292-3921-4831-a399-ee2d3bfe2b7d" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Let me read the plan file and execute the save.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2610" cache_read_input_tokens="66311" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2610}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WmQs2eK5DsH4jQqMzDVB6h">
+    <param name="file_path">/home/vscode/.claude/plans/fluffy-brewing-kernighan.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2610" cache_read_input_tokens="66311" output_tokens="85" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2610, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
