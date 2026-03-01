@@ -319,15 +319,12 @@ def test_display_name_copy_pr_checkout_shows_pr() -> None:
 
 
 def test_display_name_copy_cmux_sync() -> None:
-    """copy_cmux_sync generates cmux workspace command."""
+    """copy_cmux_sync generates erk exec command."""
     row = make_plan_row(5831, "Test Plan", pr_number=456, pr_head_branch="feature-branch")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=True)
     cmd = next(c for c in get_all_commands() if c.id == "copy_cmux_sync")
     result = get_display_name(cmd, ctx)
-    assert "cmux new-workspace" in result
-    assert "cmux rename-workspace" in result
-    assert "feature-branch" in result
-    assert "erk pr checkout 456 --script --sync" in result
+    assert result == "erk exec cmux-sync-workspace --pr 456"
 
 
 def test_display_name_cmux_sync_action() -> None:
@@ -862,11 +859,8 @@ def test_get_copy_text_returns_none_for_wrong_view_mode() -> None:
 
 
 def test_get_copy_text_copy_cmux_sync() -> None:
-    """get_copy_text for copy_cmux_sync generates cmux workspace command."""
+    """get_copy_text for copy_cmux_sync generates erk exec command."""
     row = make_plan_row(123, "Test", pr_number=456, pr_head_branch="my-branch")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=True)
     result = get_copy_text("copy_cmux_sync", ctx)
-    assert result is not None
-    assert "cmux new-workspace" in result
-    assert "cmux rename-workspace" in result
-    assert "my-branch" in result
+    assert result == "erk exec cmux-sync-workspace --pr 456"

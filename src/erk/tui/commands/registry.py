@@ -94,15 +94,9 @@ def _display_copy_pr_checkout(ctx: CommandContext) -> str:
     return "checkout"
 
 
-def _display_copy_cmux_sync(ctx: CommandContext) -> str:
-    """Display name for copy_cmux_sync command."""
-    pr = ctx.row.pr_number
-    branch = ctx.row.pr_head_branch
-    checkout_cmd = f'source "$(erk pr checkout {pr} --script --sync)" && gt submit --no-interactive'
-    return (
-        f"WS=$(cmux new-workspace --command '{checkout_cmd}' | awk '{{print $2}}') && "
-        f'cmux rename-workspace --workspace "$WS" "{branch}"'
-    )
+def _display_cmux_sync(ctx: CommandContext) -> str:
+    """Display name for cmux_sync command."""
+    return f"erk exec cmux-sync-workspace --pr {ctx.row.pr_number}"
 
 
 def _display_copy_implement_local(ctx: CommandContext) -> str:
@@ -262,6 +256,20 @@ def get_all_commands() -> list[CommandDefinition]:
             is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_number is not None,
             get_display_name=_display_rewrite_remote,
         ),
+        CommandDefinition(
+            id="cmux_sync",
+            name="cmux sync",
+            description="cmux sync",
+            category=CommandCategory.ACTION,
+            shortcut=None,
+            is_available=lambda ctx: (
+                _is_plan_view(ctx)
+                and ctx.row.pr_number is not None
+                and ctx.row.pr_head_branch is not None
+                and ctx.cmux_integration
+            ),
+            get_display_name=_display_cmux_sync,
+        ),
         # === OBJECTIVE ACTIONS ===
         CommandDefinition(
             id="one_shot_plan",
@@ -348,20 +356,6 @@ def get_all_commands() -> list[CommandDefinition]:
             get_display_name=_display_copy_pr_checkout,
         ),
         CommandDefinition(
-            id="cmux_sync",
-            name="cmux sync",
-            description="cmux sync",
-            category=CommandCategory.ACTION,
-            shortcut=None,
-            is_available=lambda ctx: (
-                _is_plan_view(ctx)
-                and ctx.row.pr_number is not None
-                and ctx.row.pr_head_branch is not None
-                and ctx.cmux_integration
-            ),
-            get_display_name=_display_copy_cmux_sync,
-        ),
-        CommandDefinition(
             id="copy_cmux_sync",
             name="cmux sync",
             description="cmux sync",
@@ -373,7 +367,7 @@ def get_all_commands() -> list[CommandDefinition]:
                 and ctx.row.pr_head_branch is not None
                 and ctx.cmux_integration
             ),
-            get_display_name=_display_copy_cmux_sync,
+            get_display_name=_display_cmux_sync,
         ),
         CommandDefinition(
             id="copy_implement_local",

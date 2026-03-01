@@ -857,17 +857,17 @@ class ErkDashApp(App):
             pr_number: The PR number to checkout and sync
             branch: The PR head branch name (used to rename the workspace)
         """
-        checkout_cmd = (
-            f'source "$(erk pr checkout {pr_number} --script --sync)"'
-            " && gt submit --no-interactive"
-        )
-        shell_cmd = (
-            f"WS=$(cmux new-workspace --command '{checkout_cmd}' | awk '{{print $2}}') && "
-            f'cmux rename-workspace --workspace "$WS" "{branch}"'
-        )
         result = self._run_streaming_operation(
             op_id=op_id,
-            command=["bash", "-c", shell_cmd],
+            command=[
+                "erk",
+                "exec",
+                "cmux-sync-workspace",
+                "--pr",
+                str(pr_number),
+                "--branch",
+                branch,
+            ],
         )
         self.call_from_thread(self._finish_operation, op_id=op_id)
         if result.success:
