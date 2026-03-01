@@ -1,0 +1,8 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Refactor download_remote_session.py to use read_file_from_ref gateway",
+  "objective_id": 7813,
+  "node_ids": [
+    "3.1"
+  ]
+}
