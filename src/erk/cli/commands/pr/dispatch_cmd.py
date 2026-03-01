@@ -20,7 +20,7 @@ from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure, UserFacingCliError
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
-from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.metadata.core import (
     create_submission_queued_block,
     render_erk_issue_event,
@@ -31,14 +31,9 @@ from erk_shared.gateway.github.parsing import (
     extract_owner_repo_from_github_url,
 )
 from erk_shared.gateway.github.types import PRNotFound
-from erk_shared.impl_context import (
-    create_impl_context,
-    impl_context_exists,
-    remove_impl_context,
-)
+from erk_shared.impl_context import build_impl_context_files
 from erk_shared.impl_folder import read_plan_ref, resolve_impl_dir
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 from erk_shared.plan_store.types import PlanNotFound
 
 logger = logging.getLogger(__name__)
@@ -190,23 +185,20 @@ def _dispatch_planned_pr_plan(
     repo: RepoContext,
     validated: ValidatedPlannedPR,
     submitted_by: str,
-    original_branch: str,
     base_branch: str,
 ) -> DispatchResult:
     """Dispatch a validated planned-PR plan for implementation.
 
     For planned-PR plans, the branch and PR already exist. This function:
-    - Fetches and checks out the existing plan branch
-    - Creates .erk/impl-context/ with provider="github-draft-pr"
-    - Commits and pushes .erk/impl-context/ to existing branch
-    - Triggers the workflow with plan_backend="planned_pr"
+    - Syncs local branch ref to remote using git plumbing (no checkout)
+    - Commits .erk/impl-context/ files directly to branch (no checkout)
+    - Pushes and triggers the workflow with plan_backend="planned_pr"
 
     Args:
         ctx: ErkContext with git operations
         repo: Repository context
         validated: Validated planned PR information
         submitted_by: GitHub username of submitter
-        original_branch: Original branch name (to restore after)
         base_branch: Base branch for PR
 
     Returns:
@@ -223,71 +215,34 @@ def _dispatch_planned_pr_plan(
         raise SystemExit(1)
     plan = result
 
-    # Fetch the branch from remote (always needed)
+    # Sync local branch ref to remote (no checkout required)
+    user_output(f"Syncing branch: {click.style(branch_name, fg='cyan')}")
     ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
+    ctx.git.branch.create_branch(repo.root, branch_name, f"origin/{branch_name}", force=True)
 
-    # LBYL: Check if branch is already in a worktree (e.g., from prior erk implement)
-    existing_worktree = ctx.git.worktree.find_worktree_for_branch(repo.root, branch_name)
-    if existing_worktree is not None:
-        user_output(
-            f"Branch already in worktree at {click.style(str(existing_worktree), fg='cyan')}, "
-            "using it for dispatch"
-        )
-        work_dir = existing_worktree
-        checked_out_in_root = False
-    else:
-        # Branch not in any worktree — checkout in root
-        user_output(f"Checking out existing plan branch: {click.style(branch_name, fg='cyan')}")
-        local_branches = ctx.git.branch.list_local_branches(repo.root)
-        if branch_name not in local_branches:
-            remote_ref = f"origin/{branch_name}"
-            ctx.branch_manager.create_tracking_branch(repo.root, branch_name, remote_ref)
-        ctx.branch_manager.checkout_branch(repo.root, branch_name)
-        work_dir = repo.root
-        checked_out_in_root = True
-
-    # Sync local branch with remote (may be behind from prior submission or CI)
-    pull_result = ctx.git.remote.pull_rebase(work_dir, "origin", branch_name)
-    if isinstance(pull_result, PullRebaseError):
-        raise UserFacingCliError(
-            f"Failed to sync branch '{branch_name}' with remote: {pull_result.message}"
-        )
-
-    # Clean up previous .erk/impl-context/ if it exists (e.g., from a prior failed dispatch)
-    if impl_context_exists(work_dir):
-        user_output("Cleaning up previous .erk/impl-context/ folder...")
-        remove_impl_context(work_dir)
-
-    # Create .erk/impl-context/ with planned-PR provider
-    user_output("Creating .erk/impl-context/ folder...")
-    create_impl_context(
+    # Commit impl-context files directly to branch (no checkout required)
+    user_output("Committing plan to branch...")
+    files = build_impl_context_files(
         plan_content=plan.body,
         plan_id=str(plan_number),
         url=validated.url,
-        repo_root=work_dir,
         provider="github-draft-pr",
         objective_id=plan.objective_id,
         now_iso=ctx.time.now().isoformat(),
         node_ids=None,
     )
-
-    # Stage, commit, and push
-    ctx.git.commit.stage_files(work_dir, [IMPL_CONTEXT_DIR], force=True)
-    ctx.git.commit.commit(work_dir, f"Add plan for PR #{plan_number}")
+    ctx.git.commit.commit_files_to_branch(
+        repo.root,
+        branch=branch_name,
+        files=files,
+        message=f"Add plan for PR #{plan_number}",
+    )
     push_result = ctx.git.remote.push_to_remote(
-        work_dir, "origin", branch_name, set_upstream=False, force=False
+        repo.root, "origin", branch_name, set_upstream=False, force=False
     )
     if isinstance(push_result, PushError):
         raise UserFacingCliError(push_result.message)
     user_output(click.style("✓", fg="green") + " Branch pushed to remote")
-
-    # Fix Graphite tracking divergence caused by pull_rebase + commit
-    if ctx.graphite_branch_ops is not None:
-        ctx.graphite_branch_ops.retrack_branch(repo.root, branch_name)
-
-    # Switch back to original branch only if we checked out in root
-    if checked_out_in_root:
-        ctx.branch_manager.checkout_branch(repo.root, original_branch)
 
     # Gather submission metadata
     queued_at = datetime.now(UTC).isoformat()
@@ -546,7 +501,6 @@ def pr_dispatch(ctx: ErkContext, plan_numbers: tuple[int, ...], base: str | None
             repo=repo,
             validated=v,
             submitted_by=submitted_by,
-            original_branch=original_branch,
             base_branch=target_branch,
         )
         results.append(result)
