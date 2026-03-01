@@ -7,56 +7,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of: 127b8c20b -->
+## [0.9.1] - 2026-03-01 16:06 PT
 
 ### Added
 
-- Add `erk doctor workflow` subcommand with smoke testing for verifying GitHub workflow health (3545fe9fb)
-- Support external learned docs repository via `[docs] path` config in `.erk/config.local.toml` (c261c6d98)
-- Add cmux workspace integration to dashboard and CLI, enabled via `cmux_integration = true` config (b74658edc)
-- Add auto-resolution of pre-existing bot threads in code-move PRs via `pr-address` and `pr-preview-address` commands (56dd99df3)
-- Add "p" keybinding to open objective issue page in Objectives view (18ab7408e)
-- Add "rewrite" command to TUI command palette for remote PR rebase and AI summary regeneration (704bbe6ad)
-- Add `gt submit` to TUI sync checkout command for streamlined branch submission (6240893fa)
-- Add `erk init --upgrade` flag for self-service upgrades after version changes (a59de3ee3)
-- Add `dispatch_ref` config to override workflow dispatch branch for testing workflow changes on feature branches (064737c47)
-- Add `launch one-shot` command for triggering one-shot workflows with `--prompt`/`-f` options (e86efb1e4)
-- Display learn plan PR link in `erk land` output (90bfd7870)
-- Add session preprocessing stats to `erk land` discovery output (2ed31d082)
-- Add one-shot prompt modal to `erk dash` (`x` keybinding) for quick dispatch without leaving the TUI (a87c69bab)
-- Add visible AI-generated summary to plan PRs, displayed above collapsed plan details for quick overview (bd69797ac)
-- Show toast notification when learn plan is created during TUI landing (682827afc)
+- Add `erk doctor workflow` subcommand with smoke testing for verifying GitHub workflow health
+- Support external learned docs repository via `[docs] path` config in `.erk/config.local.toml`
+- Add cmux workspace integration to dashboard and CLI, enabled via `cmux_integration = true` config
+- Add auto-resolution of pre-existing bot threads in code-move PRs via `pr-address` and `pr-preview-address` commands
+- Add "p" keybinding to open objective issue page in Objectives view
+- Add "rewrite" command to TUI command palette for remote PR rebase and AI summary regeneration
+- Add `gt submit` to TUI sync checkout command for streamlined branch submission
+- Add `erk init --upgrade` flag for self-service upgrades after version changes
+- Add `dispatch_ref` config to override workflow dispatch branch for testing workflow changes on feature branches
+- Add `launch one-shot` command for triggering one-shot workflows with `--prompt`/`-f` options
+- Display learn plan PR link in `erk land` output
+- Add session preprocessing stats to `erk land` discovery output
+- Add one-shot prompt modal to `erk dash` (`x` keybinding) for quick dispatch without leaving the TUI
+- Add visible AI-generated summary to plan PRs, displayed above collapsed plan details for quick overview
+- Show toast notification when learn plan is created during TUI landing
 
 ### Changed
 
-- Rename "fix-conflicts" to "rebase" across CLI, TUI, workflows, and config -- `erk pr rebase` now always rebases (d26ac8d2c)
-- Accumulate sessions across lifecycle stages on git branches for cross-machine learning (036715082)
-- Improve session discovery logging in `erk land` with per-session type badges and sizes (86d2118cc)
-- Fix sync command clipboard text to include full command in TUI command palette (add2748d2)
-- Delay impl-context cleanup until submit phase to preserve plan tracking during implementation (a14a62273)
-- Rebase slot worktree placeholder branch onto master after `erk land` to keep slots fresh (92f5f2e7f)
-- Rename "Fix Conflicts Remote" to "Rebase Remote" in TUI and always perform rebase (fe5c1231c)
-- Require `--summary` flag on `erk pr create` instead of auto-generating summaries (b9fc51011)
-- Use LLM-generated branch name slugs for plan PRs, producing more descriptive branch names (f5b9b5c50)
+- Rename "fix-conflicts" to "rebase" across CLI, TUI, workflows, and config -- `erk pr rebase` now always rebases
+- Accumulate sessions across lifecycle stages on git branches for cross-machine learning
+- Improve session discovery logging in `erk land` with per-session type badges and sizes
+- Fix sync command clipboard text to include full command in TUI command palette
+- Delay impl-context cleanup until submit phase to preserve plan tracking during implementation
+- Rebase slot worktree placeholder branch onto master after `erk land` to keep slots fresh
+- Rename "Fix Conflicts Remote" to "Rebase Remote" in TUI and always perform rebase
+- Require `--summary` flag on `erk pr create` instead of auto-generating summaries
+- Use LLM-generated branch name slugs for plan PRs, producing more descriptive branch names
+- Move `erk run` under `erk workflow run` command hierarchy for consolidated workflow management
+- Fix rebase shortcut key in TUI launch screen from 'f' to 'r' for mnemonic consistency
 
 ### Fixed
 
-- Fix `erk pr dispatch` failure when plan branch is already checked out in a worktree slot (cbd936bc5)
-- Fix double activation when direnv triggers during `erk pr checkout --script` (49ecb3a21)
-- Fix `erk pr submit` silent hang with no output in piped environments (628ef45e2)
-- Fix duplicate `gt submit` execution in cmux sync workflow (ca6e79f3a)
-- Fix misleading data when GraphQL enrichment fails in `erk pr list` -- unenriched PRs now excluded from linkages with explicit degradation warnings (04dc3d38a)
-- Make `--script` mode resilient to errors in `erk br co` -- failures now produce a valid error script instead of empty stdout (04c46a7bb)
-- Fix workflow-started metadata block rendering to prevent parse failures during `erk land` (ffd28b870)
-- Add resilient plan-header recovery for PR submission when metadata block is destroyed by implementation runs (ad6559fde)
-- Fix CI check counts where skipped checks were counted as passing — planned PRs now show "0/0" instead of "13/13" (02cd44a1f)
-- Fix stacked plan branch checkout by rebasing onto parent before `gt track` (6b0978292)
-- Consolidate all plan creation paths to use draft PR workflow, completing migration away from issue-based plans (c638d7272)
-- Fix stale stack indicator showing incorrectly when parent PR is already merged (d04377e0d)
+- Fix `erk pr dispatch` failure when plan branch is already checked out in a worktree slot
+- Fix double activation when direnv triggers during `erk pr checkout --script`
+- Fix `erk pr submit` silent hang with no output in piped environments
+- Fix duplicate `gt submit` execution in cmux sync workflow
+- Fix misleading data when GraphQL enrichment fails in `erk pr list` -- unenriched PRs now excluded from linkages with explicit degradation warnings
+- Make `--script` mode resilient to errors in `erk br co` -- failures now produce a valid error script instead of empty stdout
+- Fix workflow-started metadata block rendering to prevent parse failures during `erk land`
+- Add resilient plan-header recovery for PR submission when metadata block is destroyed by implementation runs
+- Fix CI check counts where skipped checks were counted as passing — planned PRs now show "0/0" instead of "13/13"
+- Fix stacked plan branch checkout by rebasing onto parent before `gt track`
+- Consolidate all plan creation paths to use draft PR workflow, completing migration away from issue-based plans
+- Fix stale stack indicator showing incorrectly when parent PR is already merged
 
 ### Removed
 
-- Remove erkdesk Electron desktop app and all references (0d58bd0b7)
+- Remove erkdesk Electron desktop app and all references
 
 ## [0.9.0] - 2026-02-27 14:23 PT
 
