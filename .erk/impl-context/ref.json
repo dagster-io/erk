@@ -1,8 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Refactor download_remote_session.py to use read_file_from_ref gateway",
+  "plan_id": "8579",
+  "url": "https://github.com/dagster-io/erk/pull/8579",
+  "created_at": "2026-03-01T23:50:19.670482",
+  "synced_at": "2026-03-01T23:50:19.670482",
+  "labels": [],
   "objective_id": 7813,
-  "node_ids": [
-    "3.1"
-  ]
+  "node_ids": null
 }
