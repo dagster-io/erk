@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "plan_id": 8579,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-01T23:53:14.152346+00:00",
+      "files": [
+        "impl--4919624b-e3f7-4f44-bb25-572eeaa3492f-part1.xml",
+        "impl--4919624b-e3f7-4f44-bb25-572eeaa3492f-part2.xml",
+        "impl--4919624b-e3f7-4f44-bb25-572eeaa3492f-part3.xml",
+        "impl--4919624b-e3f7-4f44-bb25-572eeaa3492f-part4.xml",
+        "impl--4919624b-e3f7-4f44-bb25-572eeaa3492f-part5.xml"
+      ]
+    }
+  ]
+}
