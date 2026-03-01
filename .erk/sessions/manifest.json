@@ -14,8 +14,8 @@
     {
       "session_id": "be69bb55-966d-48bc-afca-a17e418ff6e7",
       "stage": "impl",
-      "source": "local",
-      "uploaded_at": "2026-03-01T20:28:54.675931+00:00",
+      "source": "remote",
+      "uploaded_at": "2026-03-01T20:29:43.398795+00:00",
       "files": [
         "impl-be69bb55-966d-48bc-afca-a17e418ff6e7-be69bb55-966d-48bc-afca-a17e418ff6e7-part1.xml",
         "impl-be69bb55-966d-48bc-afca-a17e418ff6e7-be69bb55-966d-48bc-afca-a17e418ff6e7-part2.xml",

@@ -133,4 +133,101 @@ Todos have been modified successfully. Ensure that you continue to use the todo 
   "plan_number": 8559
 }
   </tool_result>
+  <tool_result tool="toolu_011WxpqDqq1xpbZCD3fQbxtC">
+{"uploaded": true, "plan_id": 8559}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0172hb7h71Q8yPycHwyL7aPE">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="312" cache_read_input_tokens="77647" cache_creation="{'ephemeral_5m_input_tokens': 312, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0172hb7h71Q8yPycHwyL7aPE">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #8559 found (already exists)
+
+Phase 2: Getting diff
+
+Phase 3: Fetching plan context
+   Incorporating plan #8559
+
+Phase 4: Generating PR description
+   Reading diff file...
+   Diff loaded (19,432 chars)
+   Analyzing changes with Claude...
+   PR description generated
+
+Phase 5: Graphite enhancement
+
+Phase 6: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+
+✅ PR submitted
+
+  Action:      Updated PR #8559
+  Branch:      plnd/unify-launch-key-source-03-01-1519 → master
+  Title:       Unify Launch Modal and Command Palette via Single Source of Truth
+
+... [2 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01DqtjnGunRC8m4qk87sAZFa">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="376" cache_read_input_tokens="77959" cache_creation="{'ephemeral_5m_input_tokens': 376, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_011ZAFSDogsjp5NNfmYM3WWy">
+    <param name="command">erk pr check --stage=impl 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR completion</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="376" cache_read_input_tokens="77959" cache_creation="{'ephemeral_5m_input_tokens': 376, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DqtjnGunRC8m4qk87sAZFa">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 8559
+}
+  </tool_result>
+  <tool_result tool="toolu_011ZAFSDogsjp5NNfmYM3WWy">
+
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01CA1m8n43DrQ7pJ6gQYnBi6">
+    <param name="todos">[{'content': 'Add launch_key field to CommandDefinition in types.py', 'status': 'completed...[truncated 761 chars]...ication'}, {'content': 'Submit PR', 'status': 'completed', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="248" cache_read_input_tokens="78335" cache_creation="{'ephemeral_5m_input_tokens': 248, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CA1m8n43DrQ7pJ6gQYnBi6">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan #8559 implementation complete. Here's a summary:
+
+## Changes Made
+
+### 1. `src/erk/tui/commands/types.py`
+- Added `launch_key: str | None` field to `CommandDefinition` between `shortcut` and `is_available`
+
+### 2. `src/erk/tui/commands/registry.py`
+- Added `launch_key` to all 27 command definitions
+- ACTION commands got their key letter: close_plan=c, dispatch=d, land=l, rebase=f, address=a, **rewrite=w** (new), **cmux_sync=m** (new), close_objective=c, one_shot_plan=s, check_objective=k
+- All OPEN and COPY commands got `launch_key=None`
+
+### 3. `src/erk/tui/screens/launch_screen.py`
+- Removed the `LAUNCH_KEYS` dict entirely
+- Changed the init loop from `LAUNCH_KEYS.get(cmd.id)` to `cmd.launch_key`
+
+### 4. `tests/tui/screens/test_launch_screen.py`
+- Removed `LAUNCH_KEYS` import
+- Rewrote 3 tests to verify `launch_key` from the registry instead of the removed dict
+- Added "w" (rewrite_remote) assertions to plan view key mapping tests
+
+### 5. `tests/tui/commands/test_registry.py`
+- Added `test_launch_key_no_conflicts_within_view_mode` — verifies no duplicate launch_keys per view
+- Added `test_launch_key_only_on_action_commands` — verifies only ACTION commands have launch_key set
+
+**PR**: https://github.com/dagster-io/erk/pull/8559</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="351" cache_read_input_tokens="78583" cache_creation="{'ephemeral_5m_input_tokens': 351, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
 </session>
