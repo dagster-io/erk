@@ -43,6 +43,8 @@ class CommandDefinition:
         description: Brief description of what the command does
         category: Command category for emoji prefix display
         shortcut: Optional keyboard shortcut for display (e.g., "c")
+        launch_key: Optional single-key binding for the Launch modal (e.g., "c").
+            Only ACTION commands should have a launch_key.
         is_available: Predicate function to check if command is available
         get_display_name: Optional function to generate context-aware display name.
             If provided, returns the name to show in the palette
@@ -55,5 +57,6 @@ class CommandDefinition:
     description: str
     category: CommandCategory
     shortcut: str | None
+    launch_key: str | None
     is_available: Callable[[CommandContext], bool]
     get_display_name: Callable[[CommandContext], str] | None

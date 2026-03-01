@@ -2,39 +2,49 @@
 
 from erk.tui.commands.registry import get_all_commands
 from erk.tui.commands.types import CommandCategory, CommandContext
-from erk.tui.screens.launch_screen import LAUNCH_KEYS, LaunchScreen
+from erk.tui.screens.launch_screen import LaunchScreen
 from erk.tui.views.types import ViewMode
 from erk_shared.gateway.plan_data_provider.fake import make_plan_row
 
 
-def test_launch_keys_only_maps_action_commands() -> None:
-    """All command IDs in LAUNCH_KEYS should be ACTION category commands."""
+def test_launch_key_only_set_on_action_commands() -> None:
+    """launch_key should only be set on ACTION category commands."""
     all_commands = get_all_commands()
-    action_ids = {cmd.id for cmd in all_commands if cmd.category == CommandCategory.ACTION}
-    for command_id in LAUNCH_KEYS:
-        assert command_id in action_ids, (
-            f"LAUNCH_KEYS maps {command_id} but it's not an ACTION command"
-        )
+    for cmd in all_commands:
+        if cmd.launch_key is not None:
+            assert cmd.category == CommandCategory.ACTION, (
+                f"Command {cmd.id} has launch_key={cmd.launch_key!r} but is {cmd.category.name}"
+            )
 
 
-def test_launch_keys_no_duplicate_keys_within_plan_view() -> None:
-    """Plan action keys should not have duplicate key bindings."""
-    plan_action_ids = [
-        "close_plan",
-        "dispatch_to_queue",
-        "land_pr",
-        "rebase_remote",
-        "address_remote",
+def test_launch_key_no_duplicate_keys_within_plan_view() -> None:
+    """Plan action launch_keys should not have duplicate key bindings."""
+    all_commands = get_all_commands()
+    plan_action_keys = [
+        cmd.launch_key
+        for cmd in all_commands
+        if cmd.category == CommandCategory.ACTION
+        and cmd.launch_key is not None
+        and cmd.id not in {"close_objective", "one_shot_plan", "check_objective"}
     ]
-    keys = [LAUNCH_KEYS[cid] for cid in plan_action_ids if cid in LAUNCH_KEYS]
-    assert len(keys) == len(set(keys)), f"Duplicate keys in plan actions: {keys}"
+    assert len(plan_action_keys) == len(set(plan_action_keys)), (
+        f"Duplicate launch_keys in plan actions: {plan_action_keys}"
+    )
 
 
-def test_launch_keys_no_duplicate_keys_within_objective_view() -> None:
-    """Objective action keys should not have duplicate key bindings."""
-    obj_action_ids = ["close_objective", "one_shot_plan", "check_objective"]
-    keys = [LAUNCH_KEYS[cid] for cid in obj_action_ids if cid in LAUNCH_KEYS]
-    assert len(keys) == len(set(keys)), f"Duplicate keys in objective actions: {keys}"
+def test_launch_key_no_duplicate_keys_within_objective_view() -> None:
+    """Objective action launch_keys should not have duplicate key bindings."""
+    all_commands = get_all_commands()
+    obj_action_keys = [
+        cmd.launch_key
+        for cmd in all_commands
+        if cmd.category == CommandCategory.ACTION
+        and cmd.launch_key is not None
+        and cmd.id in {"close_objective", "one_shot_plan", "check_objective"}
+    ]
+    assert len(obj_action_keys) == len(set(obj_action_keys)), (
+        f"Duplicate launch_keys in objective actions: {obj_action_keys}"
+    )
 
 
 def test_launch_screen_builds_key_mapping_for_plan_view() -> None:
@@ -57,6 +67,7 @@ def test_launch_screen_builds_key_mapping_for_plan_view() -> None:
     assert "l" in screen._key_to_command_id  # land_pr
     assert "f" in screen._key_to_command_id  # rebase_remote
     assert "a" in screen._key_to_command_id  # address_remote
+    assert "w" in screen._key_to_command_id  # rewrite_remote
 
     # Should NOT have objective keys
     assert screen._key_to_command_id.get("k") is None
@@ -120,3 +131,4 @@ def test_launch_screen_maps_command_ids_correctly() -> None:
     assert screen._key_to_command_id["d"] == "dispatch_to_queue"
     assert screen._key_to_command_id["f"] == "rebase_remote"
     assert screen._key_to_command_id["a"] == "address_remote"
+    assert screen._key_to_command_id["w"] == "rewrite_remote"

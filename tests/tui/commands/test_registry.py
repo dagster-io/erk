@@ -864,3 +864,48 @@ def test_get_copy_text_copy_cmux_sync() -> None:
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=True)
     result = get_copy_text("copy_cmux_sync", ctx)
     assert result == "erk exec cmux-sync-workspace --pr 456"
+
+
+# === Launch Key Safety Tests ===
+
+
+def test_launch_key_no_conflicts_within_view_mode() -> None:
+    """launch_key values should not conflict within the same view mode.
+
+    Plan commands and objective commands can reuse keys (e.g., "c")
+    because they are mutually exclusive. But within a single view,
+    launch_keys must be unique.
+    """
+    row = make_plan_row(
+        123,
+        "Test",
+        plan_url="https://github.com/test/repo/issues/123",
+        pr_number=456,
+        pr_url="https://github.com/test/repo/pull/456",
+        pr_state="OPEN",
+        pr_head_branch="feature-123",
+        worktree_branch="feature-123",
+        run_url="https://github.com/test/repo/actions/runs/789",
+    )
+
+    for view_mode in (ViewMode.PLANS, ViewMode.OBJECTIVES):
+        ctx = CommandContext(row=row, view_mode=view_mode, cmux_integration=True)
+        commands = get_available_commands(ctx)
+        action_keys = [
+            cmd.launch_key
+            for cmd in commands
+            if cmd.category == CommandCategory.ACTION and cmd.launch_key is not None
+        ]
+        assert len(action_keys) == len(set(action_keys)), (
+            f"Duplicate launch_keys in {view_mode.name} view: {action_keys}"
+        )
+
+
+def test_launch_key_only_on_action_commands() -> None:
+    """launch_key should only be set on ACTION category commands."""
+    commands = get_all_commands()
+    for cmd in commands:
+        if cmd.launch_key is not None:
+            assert cmd.category == CommandCategory.ACTION, (
+                f"Command {cmd.id} has launch_key={cmd.launch_key!r} but is {cmd.category.name}"
+            )
