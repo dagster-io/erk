@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Learn: Break up src/erk/tui/app.py into organized subpackage"
+}
