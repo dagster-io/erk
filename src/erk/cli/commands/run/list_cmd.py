@@ -25,6 +25,7 @@ from erk_shared.output.output import user_output
 
 _MAX_DISPLAY_RUNS = 50
 _PER_WORKFLOW_LIMIT = 20
+_MAX_TITLE_LENGTH = 50
 
 
 def _list_runs(ctx: ErkContext) -> None:
@@ -43,13 +44,11 @@ def _list_runs(ctx: ErkContext) -> None:
             tagged_runs.append((run, command_name))
 
     # Deduplicate by run_id (a run belongs to exactly one workflow)
-    seen_run_ids: set[str] = set()
-    unique_tagged_runs: list[tuple[WorkflowRun, str]] = []
+    seen: dict[str, tuple[WorkflowRun, str]] = {}
     for pair in tagged_runs:
-        if pair[0].run_id not in seen_run_ids:
-            seen_run_ids.add(pair[0].run_id)
-            unique_tagged_runs.append(pair)
-    tagged_runs = unique_tagged_runs
+        if pair[0].run_id not in seen:
+            seen[pair[0].run_id] = pair
+    tagged_runs = list(seen.values())
 
     # Sort by created_at descending (newest first), with None timestamps last
     tagged_runs.sort(
@@ -87,20 +86,23 @@ def _list_runs(ctx: ErkContext) -> None:
         location = github_repo_location_from_url(repo.root, issues[0].url)
 
     # 4. Batch fetch PRs linked to plan issues (for old-format plan-implement runs)
+    #    Pre-build plan→run_ids lookup for efficient mapping
+    plan_to_run_ids: dict[int, list[str]] = {}
+    for run, _wf in tagged_runs:
+        if run.run_id not in run_pr_numbers:
+            run_plan = extract_plan_number(run.display_title)
+            if run_plan is not None:
+                plan_to_run_ids.setdefault(run_plan, []).append(run.run_id)
+
     pr_info_map: dict[int, PullRequestInfo] = {}  # pr_number → PullRequestInfo
     if plan_numbers and location is not None:
         pr_linkages = ctx.github.get_prs_linked_to_issues(location, plan_numbers)
-        # For each plan, select the best PR and map it back to the run
         for plan_num, prs in pr_linkages.items():
             selected_pr = select_display_pr(prs, exclude_pr_numbers=None)
             if selected_pr is not None:
                 pr_info_map[selected_pr.number] = selected_pr
-                # Map plan-number runs to their linked PR
-                for run, _wf in tagged_runs:
-                    if run.run_id not in run_pr_numbers:
-                        run_plan = extract_plan_number(run.display_title)
-                        if run_plan == plan_num:
-                            run_pr_numbers[run.run_id] = selected_pr.number
+                for run_id in plan_to_run_ids.get(plan_num, []):
+                    run_pr_numbers[run_id] = selected_pr.number
 
     # Determine use_graphite for URL selection
     use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
@@ -145,8 +147,8 @@ def _list_runs(ctx: ErkContext) -> None:
                     pr_info, use_graphite=use_graphite, graphite_url=graphite_url
                 )
                 title = pr_info.title or "-"
-                if len(title) > 50:
-                    title = title[:47] + "..."
+                if len(title) > _MAX_TITLE_LENGTH:
+                    title = title[: _MAX_TITLE_LENGTH - 3] + "..."
                 title_cell = title
                 checks_cell = format_checks_cell(pr_info)
             else:
