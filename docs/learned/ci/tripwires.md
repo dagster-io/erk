@@ -50,9 +50,13 @@ Rules triggered by matching actions in code.
 
 **calling create_commit_status() immediately after git push** → Read [GitHub Commit Indexing Timing](github-commit-indexing-timing.md) first. GitHub's commit indexing has a race condition. Commits may not be immediately available for status updates after push. Use execute_gh_command_with_retry() wrapper, not direct subprocess calls.
 
+**changing the ci-summarize job `needs` array** → Read [CI Failure Summarization](ci-failure-summarization.md) first. The `needs` array must reference actual job names in ci.yml. Broken references silently skip the job. Verify every name exists.
+
 **committing .erk/impl-context/ without git add -f** → Read [CI Gitignored Directory Commit Patterns](gitignored-directory-commit-patterns.md) first. The directory is gitignored. Use git add -f .erk/impl-context to force-add it. Without -f, git silently skips the directory.
 
 **composing conditions across multiple GitHub Actions workflow steps** → Read [GitHub Actions Workflow Patterns](github-actions-workflow-patterns.md) first. Verify each `steps.step_id.outputs.key` reference exists and matches actual step IDs.
+
+**counting SKIPPED checks in the total** → Read [Check State Classification](check-state-classification.md) first. SKIPPED checks must be excluded from BOTH passing and total counts. They are subtracted from total_count at return time in parse_aggregated_check_counts().
 
 **creating .claude/ markdown commands without formatting** → Read [Prettier Formatting for Claude Commands](claude-commands-prettier.md) first. Run 'make prettier' via devrun after editing markdown. CI runs prettier-check as a separate job and will fail on unformatted files.
 
@@ -72,6 +76,10 @@ Rules triggered by matching actions in code.
 
 **investigating a bot complaint about formatting** → Read [Prettier Formatting for Claude Commands](claude-commands-prettier.md) first. Prettier is the formatting authority for markdown/YAML/JSON files. If prettier --check passes locally, dismiss the bot complaint. See docs/learned/pr-operations/automated-review-handling.md.
 
+**matching check names from summaries to GitHub check runs** → Read [CI Failure Summarization](ci-failure-summarization.md) first. GitHub prepends 'ci / ' to check names in statusCheckRollup. Use match_summary_to_check() which strips this prefix.
+
+**parsing ERK-CI-SUMMARY markers without re.DOTALL** → Read [CI Failure Summarization](ci-failure-summarization.md) first. Summary content is multiline. The regex uses re.DOTALL so `.` matches newlines. Without it, multiline summaries won't be captured.
+
 **placing test files outside both tests/ and packages/\*/tests/ directories** → Read [Test Coverage Detection](test-coverage-detection.md) first. The test-coverage-review bot only searches tests/**/ and packages/\*/tests/**/ for corresponding test files. Tests placed elsewhere will not be detected and will cause false 'no tests' flags.
 
 **pushing code without running formatters locally first** → Read [Formatting Workflow Decision Tree](formatting-workflow.md) first. Format-then-commit: run ruff format (Python) and prettier (Markdown) locally and commit the formatted output BEFORE pushing. CI format checks verify but do not auto-fix. Pushing unformatted code requires a second commit to fix.
@@ -89,6 +97,8 @@ Rules triggered by matching actions in code.
 **running prettier on Python files** → Read [Formatter Tools](formatter-tools.md) first. Prettier cannot format Python. Use `ruff format` or `make format` for Python. Prettier only handles Markdown in this project.
 
 **running prettier programmatically on content containing underscore emphasis** → Read [Formatter Tools](formatter-tools.md) first. Prettier converts `__text__` to `**text**` on first pass, then escapes asterisks on second pass. If programmatically applying prettier, run twice to reach stable output.
+
+**treating NEUTRAL the same as SKIPPED** → Read [Check State Classification](check-state-classification.md) first. NEUTRAL counts as PASSING (it's in PASSING_CHECK_RUN_STATES). Do not confuse with SKIPPED. NEUTRAL checks are real checks that completed successfully with no opinion.
 
 **using Edit tool on Python files** → Read [Edit Tool Formatting Behavior](edit-tool-formatting.md) first. Edit tool preserves exact indentation without auto-formatting. Always run 'make format' after editing Python code.
 

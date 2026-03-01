@@ -36,6 +36,8 @@ Rules triggered by matching actions in code.
 
 **adding a get_X() method to a gateway ABC without a corresponding X_exists() convenience method** → Read [LBYL Gateway Pattern](lbyl-gateway-pattern.md) first. Gateway ABCs pair fetch methods with lightweight existence checks. Add X_exists() alongside get_X() for LBYL compliance at CLI boundaries.
 
+**adding a new CLI entry point that calls plan or objective services** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. Must validate ctx.http_client is not None before calling service methods. Follow the pattern in existing entry points (pr list, pr duplicate-check, objective list, exec dash-data).
+
 **adding a new field to ErkContext dataclass** → Read [Erk Architecture Patterns](erk-architecture.md) first. Update ALL factory functions. Grep: `grep -r 'ErkContext(' packages/erk-shared/src/ src/erk/core/context.py` to find all construction sites. Missing a factory causes runtime errors or silent None values.
 
 **adding a new field to agent-produced JSON without updating normalization** → Read [Agent Schema Enforcement](agent-schema-enforcement.md) first. Add the field to CANONICAL_FIELDS and any aliases to FIELD_ALIASES in the normalization script. Without this, the field may be stripped during normalization.
@@ -82,7 +84,7 @@ Rules triggered by matching actions in code.
 
 **auto-enabling a flag without informing the user** → Read [Derived Flags Pattern](derived-flags.md) first. When deriving a flag from auto-detection, always print a dim-styled informational message explaining why the behavior was activated. Users should never be surprised by automatic actions.
 
-**bypassing PlanListService for direct GitHub API plan queries** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. PlanListService handles the CLI-vs-HTTP path selection. Direct API calls bypass caching and error handling.
+**bypassing PlanListService for direct GitHub API plan queries** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. PlanListService handles HTTP API calls. Direct API calls bypass caching and error handling.
 
 **calling .read_text() or .write_text() without encoding parameter** → Read [Erk Architecture Patterns](erk-architecture.md) first. Always pass encoding='utf-8' to .read_text() and .write_text(). Python's default encoding varies by platform.
 
@@ -227,6 +229,8 @@ Rules triggered by matching actions in code.
 **mutating pipeline state directly instead of using dataclasses.replace()** → Read [State Threading Pattern](state-threading-pattern.md) first. Pipeline state must be frozen. Use dataclasses.replace() to create new state at each step.
 
 **parsing CalledProcessError messages for git operations** → Read [Git Operation Patterns](git-operation-patterns.md) first. Avoid parsing git error messages to determine failure modes. Use LBYL with git show-ref --verify to check existence before operations, or design discriminated unions that handle all returncode cases explicitly.
+
+**passing None for http_client in service methods** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. http_client is a required parameter (not optional) in PlanListService and ObjectiveListService. Passing None causes TypeError. Validate at CLI entry point.
 
 **passing array or object variables to gh api graphql with -F and json.dumps()** [pattern: `json\.dumps\(.*-F`] → Read [GitHub GraphQL API Patterns](github-graphql.md) first. Arrays and objects require special gh syntax: arrays use -f key[]=value1 -f key[]=value2, objects use -f key[subkey]=value. Using -F key=[...] or -F key={...} passes them as literal strings, not typed values.
 

@@ -68,6 +68,8 @@ Rules triggered by matching actions in code.
 
 **calling gh issue view with a plan_id from PlannedPRBackend** → Read [Plan ID Semantics](plan-id-semantics.md) first. For planned-PR plans, plan_id is a PR number, not an issue number. Use gh pr view instead. Check provider type before assuming plan_id semantics.
 
+**calling gt track before rebasing a stacked plan branch** → Read [Stacked Plan Branch Rebase](stacked-plan-branch-rebase.md) first. Always rebase BEFORE gt track for stacked plans (not after). gt track requires the parent branch to be an ancestor in git history.
+
 **calling preprocess_session functions from trigger_async_learn** → Read [Session Preprocessing Architecture](session-preprocessing.md) first. trigger_async_learn duplicates the exec script's filtering pipeline as \_preprocess_session_direct(). If you change the exec script's pipeline, update the direct function too.
 
 **calling update_metadata() on PlanBackend** → Read [PlanBackend Migration Guide](plan-backend-migration.md) first. Always check isinstance(result, PlanNotFound) before calling update_metadata()
@@ -185,6 +187,8 @@ Rules triggered by matching actions in code.
 **reading learn_plan_issue or learn_status** → Read [Learn Plan Metadata Preservation](learn-plan-metadata-fields.md) first. Verify field came through full pipeline. If null, check if filtered out earlier. Use gateway abstractions; never hand-construct Plan objects.
 
 **reading parallel agent output without verifying files exist** → Read [Parallel Agent Orchestration for Bulk Operations](parallel-audit-pattern.md) first. Always verify output files exist (ls -la) before reading. Agent failures may produce empty or missing files.
+
+**rebasing a plan branch when parent is trunk** → Read [Stacked Plan Branch Rebase](stacked-plan-branch-rebase.md) first. Only rebase when parent != trunk. Trunk parents are always correctly based and don't need rebase.
 
 **recovering a branch name from a PR number using UI or truncated display** → Read [Branch Name Inference](branch-name-inference.md) first. Use `gh pr view <pr-number> --json headRefName` to recover exact branch names. UI display may truncate long branch names.
 

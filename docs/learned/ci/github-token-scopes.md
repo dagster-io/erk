@@ -58,14 +58,54 @@ The automatic `github.token` is intentionally limited to repository operations f
 
 ## Operation Reference
 
-| Operation                        | Token to Use       | Why                          |
-| -------------------------------- | ------------------ | ---------------------------- |
-| Create/comment on issues         | `github.token`     | Repository-scoped operation  |
-| Create/update PRs                | `github.token`     | Repository-scoped operation  |
-| Push commits                     | `github.token`     | Repository-scoped operation  |
-| Push session to branch           | `ERK_QUEUE_GH_PAT` | Requires push access         |
-| Get current user (`gh api user`) | `ERK_QUEUE_GH_PAT` | User identity is user-scoped |
-| Checkout with PAT                | `ERK_QUEUE_GH_PAT` | Enables pushing back to repo |
+| Operation                            | Token to Use       | Why                                        |
+| ------------------------------------ | ------------------ | ------------------------------------------ |
+| Create/comment on issues             | `github.token`     | Repository-scoped operation                |
+| Create/update PRs                    | `github.token`     | Repository-scoped operation                |
+| Push commits                         | `github.token`     | Repository-scoped operation                |
+| Create gists                         | `ERK_QUEUE_GH_PAT` | Gists are user-owned resources             |
+| Upload session to gist               | `ERK_QUEUE_GH_PAT` | Gists are user-owned resources             |
+| Get current user (`gh api user`)     | `ERK_QUEUE_GH_PAT` | User identity is user-scoped               |
+| Checkout with PAT                    | `ERK_QUEUE_GH_PAT` | Enables pushing back to repo               |
+| Auto-commit that needs CI re-trigger | `ERK_QUEUE_GH_PAT` | `GITHUB_TOKEN` pushes don't trigger events |
+
+## Auto-Commit Re-Triggering Pattern
+
+When CI auto-commits fixes (e.g., the `markdown-fix` job running Prettier), the push must trigger a new CI run to validate the fixed code. Pushes made with `GITHUB_TOKEN` do not trigger workflow events (a GitHub security measure to prevent infinite loops).
+
+**Solution:** Use `ERK_QUEUE_GH_PAT` for checkout so that `git push` triggers a new CI run:
+
+```yaml
+- uses: actions/checkout@v4
+  with:
+    ref: ${{ github.head_ref || github.ref }}
+    token: ${{ secrets.ERK_QUEUE_GH_PAT }}
+```
+
+### Loop Safety
+
+Infinite loops are prevented by two guarantees:
+
+1. **Idempotent formatters**: Prettier and `erk docs sync` produce stable output. Running them twice yields no diff.
+2. **`git diff --quiet` exit guard**: The auto-commit step checks for changes before committing. If the formatter produced no changes (because the previous run already fixed them), the step exits early.
+
+### Concurrency Cancellation
+
+The CI workflow uses `cancel-in-progress: true` concurrency:
+
+```yaml
+concurrency:
+  group: ci-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+```
+
+When the auto-commit push triggers a new CI run, the original (now-stale) run is cancelled automatically. The new run validates the fixed code from a clean state.
+
+### Safety Constraints
+
+- Auto-commits only run on PR events (fail on push to master)
+- Fork PRs are rejected (cannot push to fork repositories)
+- Only same-repo PRs are eligible for auto-fix
 
 ## Error Symptoms
 
