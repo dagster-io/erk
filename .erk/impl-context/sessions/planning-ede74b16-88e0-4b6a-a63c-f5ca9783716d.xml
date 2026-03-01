@@ -1,0 +1,1344 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>we introduced "remote rebase" as a command/term to replace/agument "fix conflits". is that in master?</user>
+  <thinking>The user is asking whether "remote rebase" as a command/term has been introduced in master to replace/augment "fix conflicts". Let me search for this in the codebase.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="10916" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10916}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the current state of master for "remote rebase" references.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="10916" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10916}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01UZeoCVdUwWBWsZunpfA6uK">
+    <param name="pattern">remote.rebase</param>
+    <param name="-i">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="10916" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10916}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UZeoCVdUwWBWsZunpfA6uK">
+Found 4 files
+src/erk/tui/screens/plan_detail_screen.py
+src/erk/cli/constants.py
+docs/howto/conflict-resolution.md
+.github/workflows/pr-fix-conflicts.yml
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01FAxRP5xjoNyZuR2MgUmcAY">
+    <param name="pattern">remote-rebase</param>
+    <param name="-i">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="10916" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10916}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FAxRP5xjoNyZuR2MgUmcAY">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01PnNAx8RbCAeptGaqjCbS9A">
+    <param name="pattern">fix.conflicts</param>
+    <param name="-i">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="10916" cache_read_input_tokens="19113" output_tokens="257" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 10916, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PnNAx8RbCAeptGaqjCbS9A">
+Found 53 files
+src/erk/tui/app.py
+tests/tui/app/test_async_operations.py
+tests/tui/commands/test_registry.py
+tests/tui/app/test_command_palette.py
+tests/tui/commands/test_execute_command.py
+src/erk/tui/commands/registry.py
+src/erk/cli/commands/exec/scripts/rebase_with_conflict_resolution.py
+docs/learned/tui/action-inventory.md
+docs/learned/cli/tripwires.md
+CHANGELOG.md
+tests/commands/launch/test_launch_cmd.py
+src/erk/cli/commands/launch_cmd.py
+packages/erk-shared/src/erk_shared/context/types.py
+docs/learned/tui/view-aware-commands.md
+docs/learned/tui/multi-operation-tracking.md
+src/erk/cli/constants.py
+src/erk/cli/output.py
+src/erk/cli/commands/admin.py
+pyproject.toml
+docs/learned/tui/subprocess-feedback.md
+docs/learned/cli/command-organization.md
+docs/learned/ci/github-actions-output-patterns.md
+.erk/state.toml
+tests/commands/pr/test_reconcile_with_remote.py
+src/erk/cli/commands/pr/__init__.py
+src/erk/cli/commands/pr/reconcile_with_remote_cmd.py
+docs/learned/cli/commands/pr-reconcile-with-remote.md
+docs/howto/conflict-resolution.md
+docs/learned/cli/workflow-commands.md
+
+... [24 lines omitted] ...
+  </tool_result>
+  <assistant>No, "remote rebase" is **not** in master. The search for `remote-rebase` and `remote rebase` found no matches. The existing code still uses the "fix conflicts" terminology throughout — in CLI commands (`fix_conflicts_cmd.py`), workflows (`pr-fix-conflicts.yml`), capabilities, tests, and docs.
+
+The `remote_rebase` concept appears only as the broader term "rebase" in `rebase_with_conflict_resolution.py`, but there's no dedicated "remote-rebase" command or rename.
+
+It looks like that work either hasn't been merged yet or is still on a branch. Want me to check for any open branches or PRs related to it?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1173" cache_read_input_tokens="30029" output_tokens="161" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1173, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>hmmm is there a pr or branch where we did that? we changed behavior of fix-conflicts to rebase even if there is no conflict</user>
+  <assistant>
+
+Let me check for open PRs and branches related to this.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="442" cache_read_input_tokens="31202" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 442}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018qVnRzCJ76JrBDnyz2qogQ">
+    <param name="command">gh pr list --search "remote rebase" --state all --limit 10 2&gt;/dev/null; echo "---"; gh pr list --search "fix conflicts rebase" --state all --limit 10 2&gt;/dev/null</param>
+    <param name="description">Search for PRs related to remote rebase</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="442" cache_read_input_tokens="31202" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 442}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011aYYGEdydaRrYCwc1v9vQt">
+    <param name="command">git branch -a | grep -i -E "rebase|remote.rebase" 2&gt;/dev/null</param>
+    <param name="description">Search for branches with rebase in name</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="442" cache_read_input_tokens="31202" output_tokens="254" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 442, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018qVnRzCJ76JrBDnyz2qogQ">
+8484	Rename "Fix Conflicts Remote" to "Rebase Remote" and always rebase	plnd/rename-rebase-remote-02-28-1353	MERGED	2026-02-28T18:54:03Z
+8074	Implement mechanical tripwire pre-scan to reduce code review cost	plnd/optimize-tripwire-prescan-02-24-0836	OPEN	2026-02-24T16:36:07Z
+7991	Convert `_submit_draft_pr_plan` to Git Plumbing	plnd/O7813-plan-convert-submit-02-23-1928	OPEN	2026-02-23T19:28:31Z
+8115	Add `erk doctor workflow` subcommand with smoke testing capabilities	plnd/doctor-workflow-smoke-test-02-25-0128	OPEN	2026-02-25T01:28:32Z
+8154	Add objective maintenance tooling and safety guards	plnd/objective-maintenance-tool-02-25-1059	OPEN	2026-02-25T10:59:12Z
+8432	Add "rewrite" TUI command for remote PR rebase and AI summary regeneration	plnd/add-tui-rewrite-cmd-02-27-1757	MERGED	2026-02-28T01:58:03Z
+7927	Add `erk plan runs` command to list workflow runs for a plan	plnd/plan-add-erk-plan-runs-com-02-23-0014	OPEN	2026-02-23T00:14:41Z
+8096	Implement typed output models with class-level rendering metadata for plan commands	plnd/O8088-prototype-approach-c-02-24-2018	OPEN	2026-02-24T20:18:45Z
+8090	Prototype Approach A: IR types with pluggable renderers for plan JSON output	plnd/O8088-prototype-ir-rendere-02-24-1924	OPEN	2026-02-24T19:24:51Z
+8435	[erk-learn] Learn: Add "rewrite" TUI command for remote PR rebase and AI summary regeneration	plnd/learn-add-rewrite-tui-comm-02-27-1924	CLOSED	2026-02-28T03:24:51Z
+---
+8484	Rename "Fix Conflicts Remote" to "Rebase Remote" and always rebase	plnd/rename-rebase-remote-02-28-1353	MERGED	2026-02-28T18:54:03Z
+8460	[erk-plan] Fix Merge Conflicts for Rebase	plnd/fix-merge-conflicts-02-28-0937	CLOSED	2026-02-28T14:38:02Z
+8154	Add objective maintenance tooling and safety guards	plnd/objective-maintenance-tool-02-25-1059	OPEN	2026-02-25T10:59:12Z
+8115	Add `erk doctor workflow` subcommand with smoke testing capabilities	plnd/doctor-workflow-smoke-test-02-25-0128	OPEN	2026-02-25T01:28:32Z
+8504	Require branch_name in create_plan_draft_pr, use LLM slugs at call sites	plnd/require-branch-name-02-28-1826	OPEN	2026-02-28T23:26:05Z
+4403	Fix incorrect rebase command in erk/fix-conflicts documentation	P4401-fix-fix-conflicts-md-to-b-01-07-0317	MERGED	2026-01-07T11:21:34Z
+8502	Add `erk stack restack` command with auto-launch Claude on conflicts	plnd/add-stack-restack-cmd-02-28-2226	OPEN	2026-02-28T22:26:22Z
+8140	Delete `erk plan` CLI group and migrate active commands to `erk pr`	plnd/O7978-delete-plan-cli-grou-02-25-0522	MERGED	2026-02-25T05:22:55Z
+7799	Consolidate documentation from Feb 8-22 learn sessions: add 8 new docs, update 10 existing docs	planned/plan-consolidated-docum-02-22-0354	MERGED	2026-02-22T08:54:11Z
+8350	[erk-learn] Documentation Plan: Fix modal dismiss keys (Esc/q/Space) in TUI screens	plnd/doc-modal-dismiss-keys-02-26-2118	CLOSED	2026-02-26T21:18:06Z
+  </tool_result>
+  <tool_result tool="toolu_011aYYGEdydaRrYCwc1v9vQt">
+  plnd/learn-fix-rebase-stacked-p-02-28-0948
+  remotes/origin/P6580-erk-plan-fix-rebase-workf-02-02-0623
+  remotes/origin/P7182-erk-plan-fix-rebase-with-02-16-0629
+  remotes/origin/plnd/learn-fix-rebase-stacked-p-02-28-0948
+  remotes/origin/plnd/rename-rebase-remote-02-28-1353
+  </tool_result>
+  <assistant>Found it! **PR #8484** — "Rename 'Fix Conflicts Remote' to 'Rebase Remote' and always rebase" — is **already merged** (merged today, Feb 28). But it doesn't appear to be in `master` yet based on your earlier clean status. Let me check.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1563" cache_read_input_tokens="31644" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1563}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XM2w5wgtrHaCuTuvzknyTU">
+    <param name="command">git log --oneline master | head -20</param>
+    <param name="description">Check recent master commits</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1563" cache_read_input_tokens="31644" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1563}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XM2w5wgtrHaCuTuvzknyTU">
+ba4590225 Run fix-formatting before other CI jobs (#8508)
+bccad1071 Add pyproject.toml force-include sync test for bundled skills (#8467)
+682827afc TUI: Show toast when learn plan is created on landing (#8494)
+b9fc51011 Remove PlanSummaryGenerator and require --summary flag on `erk pr create` (#8480)
+d04377e0d Fix: Suppress stale stack (🥞) indicator when parent PR is already merged (#8468)
+f86a3c439 Log learn PR file inventory after creation (#8501)
+fe5c1231c Rename "Fix Conflicts Remote" to "Rebase Remote" and always rebase (#8484)
+36b93592e Fix consolidated learn plans missing `erk-plan` label and add replan validation (#8490)
+efea76384 Rename `markdown-fix` to `fix-formatting` and add ruff format step to CI autofix job (#8492)
+0d58bd0b7 Delete erkdesk Electron app and all references (#8495)
+bfa7566d3 Improve pr-triage command output format with readable tier codes and flat table layout (#8498)
+6edfcabe8 Embed session XML files in learn plans created by `erk land` (#8496)
+a87c69bab Add one-shot prompt modal to erk dash (x keybinding) (#8476)
+07ca35cdc Embed session XML files in learn plan PR diffs (#8488)
+ae9b30db5 Sync CHANGELOG.md unreleased entries with recent master commits (#8485)
+bd69797ac Add visible AI-generated summary to plan PRs (#8464)
+a17e26257 Add parameterized round-trip tests for all metadata block types (#8473)
+b372dfbcc Fix docstrings and help text across exec scripts to use "plan" instead of "plan issue" (#8471)
+02cd44a1f Exclude skipped checks from CI check counts (#8469)
+064737c47 Add `dispatch_ref` config to override workflow dispatch branch (#8479)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01VVx2RMj4Jg6tERJyvMjG8p">
+    <param name="command">gh pr view 8484 --json mergedAt,mergeCommit,baseRefName,headRefName,title,state</param>
+    <param name="description">Get details on PR 8484</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1563" cache_read_input_tokens="31644" output_tokens="238" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1563, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VVx2RMj4Jg6tERJyvMjG8p">
+{"baseRefName":"master","headRefName":"plnd/rename-rebase-remote-02-28-1353","mergeCommit":{"oid":"fe5c1231c39d83db132b87b57b2c256774382500"},"mergedAt":"2026-02-28T22:19:40Z","state":"MERGED","title":"Rename \"Fix Conflicts Remote\" to \"Rebase Remote\" and always rebase"}
+  </tool_result>
+  <assistant>Yes, it **is in master**. PR #8484 — *"Rename 'Fix Conflicts Remote' to 'Rebase Remote' and always rebase"* — was merged as commit `fe5c1231c`. Your local `master` already has it (it's 7 commits behind HEAD).
+
+Your local checkout just needs a `git pull` to be fully up to date — the commit is already there at `fe5c1231c`.
+
+Is there something you'd like to do with this, or was this purely a fact-check?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1113" cache_read_input_tokens="33207" output_tokens="127" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1113, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>i still see a mix of terimonology (note rebase versus fix-conflicts)
+
+first of all i think wek should indicate that it is doing more than rebase. what do you suggest?</user>
+  <assistant>
+
+Looking at the screenshot, I see the issue — the command palette shows `rebase` but it calls `erk launch pr-fix-conflicts` under the hood. And you're saying the operation does more than just rebase (it rebases remotely, resolves conflicts if any, force-pushes, etc.).
+
+A few naming options for what this operation actually does:
+
+1. **`restack`** — Graphite's own term for "rebase your stack onto the latest base". Familiar to gt users, implies more than a raw rebase.
+
+2. **`sync`** — Already used in the palette for a different operation though, so probably out.
+
+3. **`rebase-remote`** — Explicit about where it happens. Matches the PR #8484 rename direction. But still just says "rebase".
+
+4. **`refresh`** — Implies updating the branch to latest state. Less technical, but vague.
+
+5. **`rebase &amp; push`** — Descriptive but wordy for a command name.
+
+Given that `sync` is taken and you want to convey "this does more than just rebase":</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="874" cache_read_input_tokens="34320" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 874}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01MQU7ufA9iL6vqxCQWr1ocR">
+    <param name="questions">[{'question': "What name best captures the 'remote rebase + conflict resolution + force pu...[truncated 534 chars]...at capture both the rebase and the conflict resolution aspects.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="874" cache_read_input_tokens="34320" output_tokens="493" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 874, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MQU7ufA9iL6vqxCQWr1ocR">
+User has answered your questions: "What name best captures the 'remote rebase + conflict resolution + force push' operation?"="we are going to have a cli that does it and can do it locally, so we shouldn't distinguish via remote" user notes: we are going to have a cli that does it and can do it locally, so we shouldn't distinguish via remote. You can now continue with the user's answers in mind.
+  </tool_result>
+  <assistant>Good point — if the same operation will exist both locally and remotely, the name shouldn't include "remote". That rules out `rebase-remote`.
+
+So the name should describe the *what*, not the *where*. The operation is: rebase onto latest base + resolve conflicts if needed + push.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="597" cache_read_input_tokens="35194" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 597}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01Xwwj3fgzxSYNz6mHd1WFUJ">
+    <param name="questions">[{'question': "With local+remote parity in mind, which name for 'rebase + resolve conflict...[truncated 436 chars]... rebase workflow. Add description text to explain it does more.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="597" cache_read_input_tokens="35194" output_tokens="286" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 597, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Xwwj3fgzxSYNz6mHd1WFUJ">
+User has answered your questions: "With local+remote parity in mind, which name for 'rebase + resolve conflicts + push'?"="slightly concernedd people might confuse git rebase and erk rebase" user notes: slightly concernedd people might confuse git rebase and erk rebase. You can now continue with the user's answers in mind.
+  </tool_result>
+  <assistant>That's a valid concern — `erk rebase` vs `git rebase` confusion. That pushes toward a distinct term.
+
+`restack` is nice because:
+- It's already an established term in the Graphite ecosystem (`gt restack`)
+- It's clearly *not* `git rebase` — no confusion
+- It implies "more than rebase" — restacking a stack handles conflicts, updates dependencies
+- Your users already know Graphite, so the mental model transfers
+
+The alternative would be something entirely new like `refresh` or `realign`, but `restack` has the advantage of prior art.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="471" cache_read_input_tokens="35791" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 471}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_013MM7C3VtcoTTsNSy39vksX">
+    <param name="questions">[{'question': "Go with 'restack' as the unified term? It avoids git rebase confusion and l...[truncated 232 chars]...l': 'Something else', 'description': 'Suggest a different name.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="471" cache_read_input_tokens="35791" output_tokens="307" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 471, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013MM7C3VtcoTTsNSy39vksX">
+User has answered your questions: "Go with 'restack' as the unified term? It avoids git rebase confusion and leverages Graphite familiarity."="let's do rebase" user notes: let's do rebase. You can now continue with the user's answers in mind.
+  </tool_result>
+  <thinking>The user wants to go with "rebase" despite the concern about confusion. Let me now explore what needs to change to make this happen. Let me look at the current state of the codebase to understand what needs to be renamed.
+
+Let me explore:
+1. The current fix-conflicts command and how it's referenced
+2. The TUI command palette entries
+3. The launch command structure
+4. The skill/slash command for fix-conflicts</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="382" cache_read_input_tokens="36262" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 382}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Got it — `rebase` it is. Let me explore what needs to change across the codebase.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="382" cache_read_input_tokens="36262" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 382}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01Cyjoft1vVYRUrnc6mPVkTN">
+    <param name="description">Explore fix-conflicts references</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 972 chars]... Conflicts", pr-fix-conflicts, fix_conflicts_cmd, rebase_remote, "Rebase Remote", "rebase"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="382" cache_read_input_tokens="36262" output_tokens="549" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 382, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Cyjoft1vVYRUrnc6mPVkTN">
+Perfect! Now I have a comprehensive understanding of the codebase. Let me create a thorough summary report for the user.
+
+## COMPREHENSIVE ANALYSIS: "fix-conflicts" → "rebase" Rename
+
+I've thoroughly explored the codebase and found everything related to the "fix-conflicts" terminology and the recent "Rebase Remote" rename (commit `fe5c1231c`). Here's the complete inventory of what needs to change to finish renaming to just "rebase":
+
+---
+
+### 1. CLI COMMANDS
+
+**File: `/Users/schrockn/code/erk/src/erk/cli/commands/pr/fix_conflicts_cmd.py`**
+- **Command name**: `fix-conflicts` (line 14)
+- **Function**: `fix_conflicts()` (line 22)
+- **Description**: "Fix merge conflicts with AI-powered resolution" (line 1)
+- **Current state**: Local command for resolving conflicts locally
+- **What to change**: Rename to `rebase` command, update docstrings and help text to reference "rebase" instead of "fix-conflicts"
+
+**File: `/Users/schrockn/code/erk/src/erk/cli/commands/launch_cmd.py`**
+- **Function**: `_trigger_pr_fix_conflicts()` (line 73)
+- **Workflow dispatch**: "pr-fix-conflicts" (line 132)
+- **Help text references**: Lines 397, 407, 411, 428
+- **Current state**: Remote workflow trigger for rebasing via GitHub Actions
+- **What to change**: Rename function to `_trigger_pr_rebase()`, update docstring, update help text to say "rebase" instead of "fix-conflicts"
+
+---
+
+### 2. WORKFLOW COMMAND MAPPING
+
+**File: `/Users/schrockn/code/erk/src/erk/cli/constants.py`**
+- **Line 20**: `REBASE_WORKFLOW_NAME = "pr-fix-conflicts.yml"` - Currently uses the old "pr-fix-conflicts" filename
+
+... [168 lines omitted] ...
+  </tool_result>
+  <thinking>Great, I have a comprehensive view of the situation. Let me now understand the scope:
+
+1. PR #8484 already renamed the TUI-facing stuff from `fix_conflicts_remote` to `rebase_remote`
+2. But there's still a lot of `fix-conflicts` / `fix_conflicts` references throughout
+
+The user wants to rename everything to "rebase". Let me also check what the command palette screenshot shows more carefully:
+
+From the screenshot:
+- `rebase: erk launch pr-fix-conflicts --pr 8504` (yellow lightning bolt - remote)
+- `rebase: erk launch pr-fix-conflicts --pr 8504` (red square - local copy)
+
+
+So the TUI displays "rebase" as the label, but the underlying command is still `pr-fix-conflicts`. The user initially wanted to emphasize that this does more than just a standard rebase, but after discussing it, they settled on "rebase" as the command name.
+
+Now I need to think through the implementation: rename `fix-conflicts` to `rebase` everywhere, but make sure the help text and descriptions clarify that it handles conflict resolution, force pushing, and other operations beyond a basic git rebase. I'm also wondering if both the local CLI command (`erk pr rebase`) and the remote workflow (`erk launch pr-rebase`) should follow this naming convention consistently.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3703" cache_read_input_tokens="36644" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3703}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, comprehensive picture. Let me check a few key files to understand the exact current state before writing the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3703" cache_read_input_tokens="36644" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3703}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AUzdmVeqiL3WM7VhFQCwrd">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/fix_conflicts_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3703" cache_read_input_tokens="36644" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3703}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AUzdmVeqiL3WM7VhFQCwrd">
+     1→"""Fix merge conflicts with AI-powered resolution.
+     2→
+     3→This command resolves merge conflicts locally using Claude CLI.
+     4→For remote resolution via GitHub Actions, use `erk launch pr-fix-conflicts`.
+     5→"""
+     6→
+     7→import click
+     8→
+     9→from erk.cli.ensure import Ensure
+    10→from erk.cli.output import stream_fix_conflicts
+    11→from erk.core.context import ErkContext
+    12→
+    13→
+    14→@click.command("fix-conflicts")
+    15→@click.option(
+    16→    "-d",
+    17→    "--dangerous",
+    18→    is_flag=True,
+    19→    help="Acknowledge that this command invokes Claude with --dangerously-skip-permissions.",
+    20→)
+    21→@click.pass_obj
+    22→def fix_conflicts(ctx: ErkContext, *, dangerous: bool) -&gt; None:
+    23→    """Fix merge conflicts with AI-powered resolution.
+    24→
+    25→    Resolves merge conflicts on the current branch using Claude. Does not
+    26→    require or interact with Graphite stacks.
+    27→
+    28→    For remote resolution via GitHub Actions workflow, use:
+    29→
+    30→    \b
+
+... [58 lines omitted] ...
+
+    50→            raise click.UsageError(
+    83→        raise click.ClickException("Semantic conflict requires interactive resolution")
+    85→        raise click.ClickException(result.error_message or "Conflict resolution failed")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MTMFVRvuD58yATHj6AQe4z">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/constants.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3703" cache_read_input_tokens="36644" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3703}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MTMFVRvuD58yATHj6AQe4z">
+     1→"""Shared constants for erk CLI commands."""
+     2→
+     3→# GitHub issue label for erk plans
+     4→ERK_PLAN_LABEL = "erk-plan"
+     5→
+     6→# Title prefix for erk-plan issues (with trailing space for easy stripping)
+     7→ERK_PLAN_TITLE_PREFIX = "[erk-plan] "
+     8→
+     9→# Plan markdown heading prefix (with trailing space for easy stripping)
+    10→PLAN_HEADING_PREFIX = "Plan: "
+    11→
+    12→# PR title prefix for plan-originated PRs
+    13→PLANNED_PR_TITLE_PREFIX = "plnd/"
+    14→
+    15→# GitHub Actions workflow for remote implementation dispatch
+    16→DISPATCH_WORKFLOW_NAME = "plan-implement.yml"
+    17→DISPATCH_WORKFLOW_METADATA_NAME = "plan-implement"
+    18→
+    19→# GitHub Actions workflow for remote rebase with conflict resolution
+    20→REBASE_WORKFLOW_NAME = "pr-fix-conflicts.yml"
+    21→
+    22→# GitHub Actions workflow for remote PR comment addressing
+    23→PR_ADDRESS_WORKFLOW_NAME = "pr-address.yml"
+    24→
+    25→# GitHub Actions workflow for remote PR rewrite (rebase + AI PR summary)
+    26→PR_REWRITE_WORKFLOW_NAME = "pr-rewrite.yml"
+    27→
+    28→# GitHub Actions workflow for one-shot autonomous execution
+    29→ONE_SHOT_WORKFLOW_NAME = "one-shot.yml"
+    30→
+
+... [31 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UKNguhr1X2abEAFvKyaFXK">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/commands/registry.py</param>
+    <param name="offset">220</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3703" cache_read_input_tokens="36644" output_tokens="900" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3703, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UKNguhr1X2abEAFvKyaFXK">
+   220→            description="land",
+   221→            category=CommandCategory.ACTION,
+   222→            shortcut=None,
+   223→            is_available=lambda ctx: (
+   224→                _is_plan_view(ctx) and ctx.row.pr_number is not None and ctx.row.pr_state == "OPEN"
+   225→            ),
+   226→            get_display_name=_display_land_pr,
+   227→        ),
+   228→        CommandDefinition(
+   229→            id="rebase_remote",
+   230→            name="Rebase Remote",
+   231→            description="rebase",
+   232→            category=CommandCategory.ACTION,
+   233→            shortcut="5",
+   234→            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_number is not None,
+   235→            get_display_name=_display_rebase_remote,
+   236→        ),
+   237→        CommandDefinition(
+   238→            id="address_remote",
+   239→            name="Address Remote",
+   240→            description="address",
+   241→            category=CommandCategory.ACTION,
+   242→            shortcut=None,
+   243→            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_number is not None,
+   244→            get_display_name=_display_address_remote,
+   245→        ),
+   246→        CommandDefinition(
+   247→            id="rewrite_remote",
+   248→            name="Rewrite Remote",
+   249→            description="rewrite",
+  </tool_result>
+  <thinking>Now I have a good picture. Let me also check the launch_cmd.py to see how the remote trigger works, and the PR __init__.py to see how the command is registered.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5278" cache_read_input_tokens="40347" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5278}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check a few more files to understand the command registration and the launch flow.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5278" cache_read_input_tokens="40347" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5278}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01J8deqQguKMjvPhF1iYAdKf">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5278" cache_read_input_tokens="40347" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5278}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01J8deqQguKMjvPhF1iYAdKf">
+     1→"""PR management commands."""
+     2→
+     3→import click
+     4→
+     5→from erk.cli.alias import register_with_aliases
+     6→from erk.cli.commands.pr.address_cmd import address
+     7→from erk.cli.commands.pr.check_cmd import pr_check
+     8→from erk.cli.commands.pr.checkout_cmd import pr_checkout
+     9→from erk.cli.commands.pr.close_cmd import pr_close
+    10→from erk.cli.commands.pr.create_cmd import pr_create
+    11→from erk.cli.commands.pr.dispatch_cmd import pr_dispatch
+    12→from erk.cli.commands.pr.duplicate_check_cmd import duplicate_check_plan
+    13→from erk.cli.commands.pr.fix_conflicts_cmd import fix_conflicts
+    14→from erk.cli.commands.pr.list_cmd import pr_list
+    15→from erk.cli.commands.pr.log_cmd import pr_log
+    16→from erk.cli.commands.pr.reconcile_with_remote_cmd import pr_reconcile_with_remote
+    17→from erk.cli.commands.pr.replan_cmd import pr_replan
+    18→from erk.cli.commands.pr.rewrite_cmd import pr_rewrite
+    19→from erk.cli.commands.pr.submit_cmd import pr_submit
+    20→from erk.cli.commands.pr.view_cmd import pr_view
+    21→
+    22→
+    23→@click.group("pr")
+    24→def pr_group() -&gt; None:
+    25→    """Manage pull requests."""
+    26→    pass
+    27→
+    28→
+    29→pr_group.add_command(address, name="address")
+    30→pr_group.add_command(pr_check, name="check")
+
+... [14 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_016D92Ea1pj9w1m4gZFkBscR">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/launch_cmd.py</param>
+    <param name="offset">60</param>
+    <param name="limit">90</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5278" cache_read_input_tokens="40347" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5278}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016D92Ea1pj9w1m4gZFkBscR">
+    60→        Actual workflow filename (e.g., "erk-rebase.yml")
+    61→
+    62→    Raises:
+    63→        click.UsageError: If workflow name is not recognized
+    64→    """
+    65→    if workflow_name not in WORKFLOW_COMMAND_MAP:
+    66→        available = ", ".join(sorted(WORKFLOW_COMMAND_MAP.keys()))
+    67→        raise click.UsageError(
+    68→            f"Unknown workflow '{workflow_name}'. Available workflows: {available}"
+    69→        )
+    70→    return WORKFLOW_COMMAND_MAP[workflow_name]
+    71→
+    72→
+    73→def _trigger_pr_fix_conflicts(
+    74→    ctx: ErkContext,
+    75→    repo: RepoContext,
+    76→    *,
+    77→    pr_number: int | None,
+    78→    no_squash: bool,
+    79→    model: str | None,
+    80→) -&gt; None:
+    81→    """Trigger pr-fix-conflicts workflow."""
+    82→    # Get PR details - either from explicit PR number or current branch
+    83→    user_output("Checking PR status...")
+    84→    if pr_number is not None:
+    85→        pr = ctx.github.get_pr(repo.root, pr_number)
+    86→        Ensure.invariant(
+    87→            not isinstance(pr, PRNotFound),
+    88→            f"No pull request found with number #{pr_number}",
+    89→        )
+
+... [60 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NMiSjkMkPMipxziEWLmcra">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/output.py</param>
+    <param name="offset">1</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5278" cache_read_input_tokens="40347" output_tokens="340" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5278, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NMiSjkMkPMipxziEWLmcra">
+     1→"""Output utilities for CLI commands with clear intent.
+     2→
+     3→For user_output, machine_output, format_duration - import from erk_shared.output.
+     4→This module provides format_implement_summary and stream_command_with_feedback.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→import sys
+    10→import time
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01W33EzjKnMdfcLDfxL4coEE">
+    <param name="pattern">stream_fix_conflicts</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2439" cache_read_input_tokens="45625" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2439}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01W33EzjKnMdfcLDfxL4coEE">
+src/erk/cli/output.py:275:def stream_fix_conflicts(
+src/erk/cli/commands/pr/fix_conflicts_cmd.py:10:from erk.cli.output import stream_fix_conflicts
+src/erk/cli/commands/pr/fix_conflicts_cmd.py:80:    result = stream_fix_conflicts(executor, cwd)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UaZSRzbep1vj25YdDo16fr">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/launch_cmd.py</param>
+    <param name="offset">380</param>
+    <param name="limit">70</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2439" cache_read_input_tokens="45625" output_tokens="171" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2439, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UaZSRzbep1vj25YdDo16fr">
+   380→@click.pass_obj
+   381→def launch(
+   382→    ctx: ErkContext,
+   383→    workflow_name: str,
+   384→    *,
+   385→    pr_number: int | None,
+   386→    plan_number: int | None,
+   387→    no_squash: bool,
+   388→    model: str | None,
+   389→    prompt: str | None,
+   390→    file_path: str | None,
+   391→) -&gt; None:
+   392→    """Trigger a GitHub Actions workflow.
+   393→
+   394→    WORKFLOW_NAME is the workflow to trigger. Available workflows:
+   395→
+   396→    \b
+   397→      pr-fix-conflicts    - Rebase PR with AI-powered conflict resolution
+   398→      pr-address          - Address PR review comments remotely
+   399→      pr-rewrite          - Rebase PR and regenerate AI PR summary
+   400→      learn               - Extract insights from a plan issue
+   401→      one-shot            - Run one-shot workflow against an existing PR
+   402→
+   403→    Examples:
+   404→
+   405→    \b
+   406→      # Fix conflicts on current branch's PR
+   407→      erk launch pr-fix-conflicts
+   408→
+   409→    \b
+
+... [40 lines omitted] ...
+
+   445→    _ = _get_workflow_file(workflow_name)  # Raises UsageError if invalid
+  </tool_result>
+  <thinking>Now I have a clear picture. Let me also check the slash command file and the capability file briefly.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2287" cache_read_input_tokens="48064" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2287}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check the slash command and a couple remaining areas.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2287" cache_read_input_tokens="48064" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2287}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BusKcrKqU8f2GDBuSxU7mN">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/commands/erk/fix-conflicts.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2287" cache_read_input_tokens="48064" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2287}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BusKcrKqU8f2GDBuSxU7mN">
+     1→---
+     2→description: Fix all merge conflicts and continue the git rebase
+     3→---
+     4→
+     5→# Fix Merge Conflicts
+     6→
+     7→Fix all merge conflicts and continue the git rebase.
+     8→
+     9→## Steps
+    10→
+    11→1. **Check status** - Run `git status` to understand the state of the rebase and identify conflicted files
+    12→
+    13→2. **Separate auto-generated files from real content** - Check each conflicted file for the `&lt;!-- AUTO-GENERATED FILE --&gt;` header comment. These files are regenerated by tooling and don't need manual resolution.
+    14→   - **Auto-generated files** (e.g., `tripwires.md`, `index.md` with the auto-generated header): Accept either side (`git checkout --theirs &lt;file&gt;` or `git checkout --ours &lt;file&gt;`), stage with `git add`, and regenerate after the rebase completes (e.g., `erk docs sync` for tripwires/index files).
+    15→   - **Real content files**: Proceed to step 3 for manual resolution.
+    16→
+    17→3. **For each real content file:**
+    18→
+    19→For each conflicted file that is NOT auto-generated:
+    20→
+    21→a. **Read the file** - Understand both sides of the conflict by examining the conflict markers:
+    22→
+    23→- `&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD` marks the start of your local changes
+    24→- `=======` separates local from incoming changes
+    25→- `&gt;&gt;&gt;&gt;&gt;&gt;&gt; &lt;commit&gt;` marks the end of incoming changes
+    26→
+    27→b. **Understand intent** - Determine what each side was trying to accomplish:
+    28→
+    29→- What was the local change trying to do?
+    30→- What was the remote change trying to do?
+
+... [29 lines omitted] ...
+
+    44→   - If project memory includes a precommit check, run it and ensure no failures
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Tzi1mPRz9Meyptmm3Fw7H8">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/capabilities/workflows/pr_fix_conflicts.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2287" cache_read_input_tokens="48064" output_tokens="191" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2287, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Tzi1mPRz9Meyptmm3Fw7H8">
+     1→"""PrFixConflictsWorkflowCapability - GitHub Action for PR fix-conflicts workflow."""
+     2→
+     3→import shutil
+     4→from pathlib import Path
+     5→
+     6→from erk.artifacts.paths import get_bundled_github_dir
+     7→from erk.artifacts.state import add_installed_capability, remove_installed_capability
+     8→from erk.core.capabilities.base import (
+     9→    Capability,
+    10→    CapabilityArtifact,
+    11→    CapabilityResult,
+    12→    CapabilityScope,
+    13→    ManagedArtifact,
+    14→)
+    15→from erk_shared.context.types import AgentBackend
+    16→
+    17→
+    18→class PrFixConflictsWorkflowCapability(Capability):
+    19→    """GitHub Action for PR fix-conflicts workflow.
+    20→
+    21→    Installs:
+    22→    - .github/workflows/pr-fix-conflicts.yml
+    23→    """
+    24→
+    25→    @property
+    26→    def name(self) -&gt; str:
+    27→        return "pr-fix-conflicts-workflow"
+    28→
+    29→    @property
+    30→    def description(self) -&gt; str:
+
+... [81 lines omitted] ...
+
+    57→            raise ValueError("PrFixConflictsWorkflowCapability requires repo_root")
+    62→            raise ValueError("PrFixConflictsWorkflowCapability requires repo_root")
+    93→            raise ValueError("PrFixConflictsWorkflowCapability requires repo_root")
+  </tool_result>
+  <thinking>Now I have a comprehensive picture. Let me also check the TUI command palette display to understand what the "rebase" entry looks like and what needs to change for the description. The user was concerned about indicating "more than just rebase."
+
+Let me also check if there's a `_display_rebase_remote` function to see what it displays.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2531" cache_read_input_tokens="50351" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2531}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the display function to see what users see in the command palette.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2531" cache_read_input_tokens="50351" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2531}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KKPhczs7mz84rafxVRxhRM">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/commands/registry.py</param>
+    <param name="offset">45</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2531" cache_read_input_tokens="50351" output_tokens="219" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2531, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KKPhczs7mz84rafxVRxhRM">
+    45→def _display_land_pr(ctx: CommandContext) -&gt; str:
+    46→    """Display name for land_pr command."""
+    47→    return f"erk land {ctx.row.pr_number}"
+    48→
+    49→
+    50→def _display_rebase_remote(ctx: CommandContext) -&gt; str:
+    51→    """Display name for rebase_remote command."""
+    52→    return f"erk launch pr-fix-conflicts --pr {ctx.row.pr_number}"
+    53→
+    54→
+    55→def _display_address_remote(ctx: CommandContext) -&gt; str:
+    56→    """Display name for address_remote command."""
+    57→    return f"erk launch pr-address --pr {ctx.row.pr_number}"
+    58→
+    59→
+  </tool_result>
+  <assistant>Now I have the full picture. Before I write the plan, I have a couple clarifying questions:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="634" cache_read_input_tokens="52882" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 634}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01G7gkBPR6MihemQpgJr9pkM">
+    <param name="questions">[{'question': 'The local CLI command `erk pr fix-conflicts` currently ONLY resolves confli...[truncated 1703 chars]...guish from the rebase command while removing 'fix' terminology."}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="634" cache_read_input_tokens="52882" output_tokens="554" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 634, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01G7gkBPR6MihemQpgJr9pkM">
+User has answered your questions: "The local CLI command `erk pr fix-conflicts` currently ONLY resolves conflicts (checks for conflicted files first, exits early if none). The remote workflow always rebases. Should `erk pr rebase` also always rebase (even with no conflicts), matching the remote behavior?"="Always rebase (Recommended)", "Should we also rename the GitHub workflow file from `pr-fix-conflicts.yml` to `pr-rebase.yml`? This is a breaking change for any existing workflow runs/references."="Rename to pr-rebase.yml (Recommended)", "The slash command `/erk:fix-conflicts` is about LOCAL manual conflict resolution during an interactive rebase (not the remote workflow). Should it also be renamed?"="Rename to /erk:rebase". You can now continue with the user's answers in mind.
+  </tool_result>
+  <thinking>Great, clear answers:
+1. Always rebase (match remote behavior) - this means the local command needs to be reworked, not just renamed
+2. Rename workflow file to pr-rebase.yml
+3. Rename slash command to /erk:rebase
+
+Now let me write the plan. This is a comprehensive rename with a behavior change for the local command.
+
+Let me think about all the files that need to change:
+
+**CLI command (behavior change + rename):**
+- `src/erk/cli/commands/pr/fix_conflicts_cmd.py` → rename to `rebase_cmd.py`, change behavior to always rebase
+
+
+- `src/erk/cli/commands/pr/__init__.py` → update import and registration
+- `src/erk/cli/output.py` → rename `stream_fix_conflicts` to `stream_rebase` or similar
+
+**Launch command (rename):**
+- `src/erk/cli/commands/launch_cmd.py` → rename function, update strings
+- `src/erk/cli/constants.py` → update workflow name, map key
+
+**GitHub workflow (rename):**
+- `.github/workflows/pr-fix-conflicts.yml` → rename to `pr-rebase.yml`, update `name:` field
+
+I also need to check for any capability definitions or documentation that references the old command names.
+
+**Capability (rename):**
+- `src/erk/capabilities/workflows/pr_fix_conflicts.py` → rename to `pr_rebase.py`, rename class
+- `src/erk/core/capabilities/registry.py` → update import
+
+**Config (rename):**
+- `packages/erk-shared/src/erk_shared/config/schema.py` → rename field
+- `packages/erk-shared/src/erk_shared/context/types.py` → rename field  
+- `packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py` → update reference
+
+**TUI (already mostly done, just display command):**
+- `src/erk/tui/commands/registry.py` → update `_display_rebase_remote` to show `erk launch pr-rebase`
+
+Now I need to handle the slash command definition, rename the test files and update their references, update any documentation that mentions the old name, check the pyproject.toml for bundled workflow paths, and look for any state files that might reference the old command. This is a fairly mechanical rename across the codebase, so I should also verify if there's a bundled copy of the workflow that needs updating.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="755" cache_read_input_tokens="53516" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 755}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check a few more files for the pyproject bundling and config references.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="755" cache_read_input_tokens="53516" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 755}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Ner1ZHEJxmGegAbviVBgMf">
+    <param name="pattern">pr-fix-conflicts</param>
+    <param name="path">/Users/schrockn/code/erk/pyproject.toml</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="755" cache_read_input_tokens="53516" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 755}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ner1ZHEJxmGegAbviVBgMf">
+86:".github/workflows/pr-fix-conflicts.yml" = "erk/data/github/workflows/pr-fix-conflicts.yml"
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0121752nYYCy4fEZxbgRPARk">
+    <param name="pattern">fix_conflicts_require</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="755" cache_read_input_tokens="53516" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 755}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0121752nYYCy4fEZxbgRPARk">
+tests/commands/pr/test_fix_conflicts.py:42:def test_pr_fix_conflicts_requires_dangerous_flag() -&gt; None:
+tests/commands/pr/test_fix_conflicts.py:64:        assert "fix_conflicts_require_dangerous_flag false" in result.output
+tests/commands/pr/test_fix_conflicts.py:82:        # Create GlobalConfig with fix_conflicts_require_dangerous_flag=False
+tests/commands/pr/test_fix_conflicts.py:85:            fix_conflicts_require_dangerous_flag=False,  # Disable --dangerous requirement
+tests/commands/pr/test_reconcile_with_remote.py:75:        assert "fix_conflicts_require_dangerous_flag false" in result.output
+tests/commands/pr/test_reconcile_with_remote.py:98:        # Create GlobalConfig with fix_conflicts_require_dangerous_flag=False
+tests/commands/pr/test_reconcile_with_remote.py:101:            fix_conflicts_require_dangerous_flag=False,  # Disable --dangerous requirement
+src/erk/cli/commands/pr/reconcile_with_remote_cmd.py:38:      erk config set fix_conflicts_require_dangerous_flag false
+src/erk/cli/commands/pr/reconcile_with_remote_cmd.py:43:            ctx.global_config is None or ctx.global_config.fix_conflicts_require_dangerous_flag
+src/erk/cli/commands/pr/reconcile_with_remote_cmd.py:48:                "To disable: erk config set fix_conflicts_require_dangerous_flag false"
+src/erk/cli/commands/pr/fix_conflicts_cmd.py:42:      erk config set fix_conflicts_require_dangerous_flag false
+src/erk/cli/commands/pr/fix_conflicts_cmd.py:47:            ctx.global_config is None or ctx.global_config.fix_conflicts_require_dangerous_flag
+src/erk/cli/commands/pr/fix_conflicts_cmd.py:52:                "To disable: erk config set fix_conflicts_require_dangerous_flag false"
+docs/learned/cli/commands/pr-reconcile-with-remote.md:48:erk config set fix_conflicts_require_dangerous_flag false
+packages/erk-shared/src/erk_shared/config/schema.py:98:    fix_conflicts_require_dangerous_flag: bool = Field(
+packages/erk-shared/src/erk_shared/config/schema.py:102:            "cli_key": "fix_conflicts_require_dangerous_flag",
+packages/erk-shared/src/erk_shared/context/types.py:236:    fix_conflicts_require_dangerous_flag: bool = True
+packages/erk-shared/src/erk_shared/context/types.py:249:        fix_conflicts_require_dangerous_flag: bool = True,
+packages/erk-shared/src/erk_shared/context/types.py:261:            fix_conflicts_require_dangerous_flag=fix_conflicts_require_dangerous_flag,
+packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py:78:            fix_conflicts_require_dangerous_flag=bool(
+packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py:79:                data.get("fix_conflicts_require_dangerous_flag", True)
+packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py:139:        doc["fix_conflicts_require_dangerous_flag"] = config.fix_conflicts_require_dangerous_flag
+packages/erk-statusline/tests/test_context.py:33:            fix_conflicts_require_dangerous_flag=True,
+packages/erk-statusline/tests/test_context.py:50:            fix_conflicts_require_dangerous_flag=True,
+packages/erk-statusline/tests/test_context.py:67:            fix_conflicts_require_dangerous_flag=True,
+packages/erk-shared/tests/unit/config/test_schema.py:29:            "fix_conflicts_require_dangerous_flag",
+packages/erk-shared/tests/unit/config/test_schema.py:124:            "fix_conflicts_require_dangerous_flag",
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01LfVspSzEpxMP787W7BdE7v">
+    <param name="pattern">fix.conflicts</param>
+    <param name="path">/Users/schrockn/code/erk/.erk/state.toml</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="755" cache_read_input_tokens="53516" output_tokens="953" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 755, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LfVspSzEpxMP787W7BdE7v">
+20:[artifacts.files."commands/erk/fix-conflicts.md"]
+  </tool_result>
+  <tool_use name="Grep" id="toolu_011F5S7KUgdLjXvREbaggeLh">
+    <param name="pattern">fix.conflicts</param>
+    <param name="path">/Users/schrockn/code/erk/docs/learned/</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2215" cache_read_input_tokens="54271" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2215}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011F5S7KUgdLjXvREbaggeLh">
+Found 17 files
+docs/learned/tui/action-inventory.md
+docs/learned/cli/tripwires.md
+docs/learned/tui/view-aware-commands.md
+docs/learned/tui/multi-operation-tracking.md
+docs/learned/tui/subprocess-feedback.md
+docs/learned/cli/command-organization.md
+docs/learned/ci/github-actions-output-patterns.md
+docs/learned/cli/commands/pr-reconcile-with-remote.md
+docs/learned/cli/workflow-commands.md
+docs/learned/architecture/subprocess-wrappers.md
+docs/learned/ci/workflow-model-policy.md
+docs/learned/ci/workflow-naming-conventions.md
+docs/learned/ci/github-cli-comment-patterns.md
+docs/learned/testing/rebase-conflicts.md
+docs/learned/erk/remote-workflow-template.md
+docs/learned/cli/local-remote-command-groups.md
+docs/learned/ci/containerless-ci.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_016u6TZHtpSLdJu9g59X36Sp">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/rebase_with_conflict_resolution.py</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2215" cache_read_input_tokens="54271" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2215}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016u6TZHtpSLdJu9g59X36Sp">
+     1→#!/usr/bin/env python3
+     2→"""Rebase onto target branch and resolve conflicts with Claude.
+     3→
+     4→This command handles merge conflicts during CI workflows by:
+     5→1. Fetching the target branch (trunk or parent branch for stacked PRs)
+     6→2. Checking if the current branch is behind
+     7→3. Starting a rebase
+     8→4. Using Claude to resolve any conflicts
+     9→5. Force pushing after successful rebase
+    10→6. Generating an intelligent summary of the rebase operation
+    11→
+    12→Usage:
+    13→    erk exec rebase-with-conflict-resolution \
+    14→        --target-branch master \
+    15→        --branch-name feature-branch \
+    16→        --model claude-sonnet-4-5
+    17→
+    18→Output:
+    19→    Natural language summary suitable for PR comments.
+    20→
+    21→Exit Codes:
+    22→    0: Success (rebase completed and pushed, or already up-to-date)
+    23→    1: Error (conflict resolution failed after max attempts)
+    24→
+    25→Examples:
+    26→    $ erk exec rebase-with-conflict-resolution --target-branch main --branch-name my-feature
+    27→    Rebased `my-feature` onto `main`, resolving 3 commits behind.
+    28→    Resolved merge conflicts in 2 files:
+    29→    - src/config.py: Merged new logging settings with updated timeout values
+    30→    - tests/test_api.py: Combined new test cases with fixture updates
+
+... [10 lines omitted] ...
+  </tool_result>
+  <assistant>Good, now I have the complete picture. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1768" cache_read_input_tokens="56486" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1768}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01RCv7SQTJwVHf7W2CV52swB">
+    <param name="file_path">/Users/schrockn/.claude/plans/ancient-chasing-whale.md</param>
+    <param name="content"># Plan: Rename "fix-conflicts" to "rebase" across the codebase
+
+## Context
+
+PR #8484 renam...[truncated 6540 chars]...e_dangerous_flag false` — config key works
+6. `/erk:rebase` slash command loads correctly
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1768" cache_read_input_tokens="56486" output_tokens="2339" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1768, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RCv7SQTJwVHf7W2CV52swB">
+File created successfully at: /Users/schrockn/.claude/plans/ancient-chasing-whale.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01WqgbULtDqjVa1YL6HntV6m">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run git mv to rename files'}, {'tool': 'Bash', 'prompt': 'run ls to verify directories'}]</param>
+    <param name="plan"># Plan: Rename "fix-conflicts" to "rebase" across the codebase
+
+## Context
+
+PR #8484 renam...[truncated 6540 chars]...e_dangerous_flag false` — config key works
+6. `/erk:rebase` slash command loads correctly
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2486" cache_read_input_tokens="58254" output_tokens="95" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2486, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WqgbULtDqjVa1YL6HntV6m">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/ancient-chasing-whale.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Rename "fix-conflicts" to "rebase" across the codebase
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id ede74b16-88e0-4b6a-a63c-f5ca9783716d \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Nz6yLpL9iAESF99XKFA6tu">
+    <param name="file_path">/Users/schrockn/.claude/plans/ancient-chasing-whale.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="813" cache_read_input_tokens="60740" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 813, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Nz6yLpL9iAESF99XKFA6tu">
+     1→# Plan: Rename "fix-conflicts" to "rebase" across the codebase
+     2→
+     3→## Context
+     4→
+     5→PR #8484 renamed the TUI-facing references from `fix_conflicts_remote` to `rebase_remote`, but the underlying CLI commands, workflow files, config keys, capabilities, and slash command still use `fix-conflicts` terminology. This creates a confusing mix where the UI says "rebase" but the commands say "fix-conflicts". Additionally, the local `erk pr fix-conflicts` command currently only acts when conflicts exist — it should always rebase (matching the remote workflow behavior).
+     6→
+     7→## Scope
+     8→
+     9→Three changes:
+    10→1. **Rename** all `fix-conflicts` / `fix_conflicts` references to `rebase`
+    11→2. **Behavior change**: Local command always rebases (not just when conflicts exist)
+    12→3. **Rename** the slash command `/erk:fix-conflicts` → `/erk:rebase`
+    13→
+    14→## File Changes
+    15→
+    16→### 1. CLI Command — rename file + behavior change
+    17→- **`src/erk/cli/commands/pr/fix_conflicts_cmd.py`** → rename to **`rebase_cmd.py`**
+    18→  - Rename function `fix_conflicts()` → `rebase()`
+    19→  - Change Click command name from `"fix-conflicts"` to `"rebase"`
+    20→  - Update docstring/help text: "Rebase PR onto base branch with AI-powered conflict resolution"
+    21→  - **Behavior change**: Remove the early exit when no conflicts. Instead, invoke the rebase-with-conflict-resolution exec script (or equivalent logic) that always rebases
+    22→  - Update `--dangerous` flag help text references
+    23→- **`src/erk/cli/commands/pr/__init__.py`**
+    24→  - Update import: `from erk.cli.commands.pr.rebase_cmd import rebase`
+    25→  - Update registration: `pr_group.add_command(rebase, name="rebase")`
+    26→- **`src/erk/cli/output.py`**
+    27→  - Rename `stream_fix_conflicts` → `stream_rebase`
+    28→
+    29→### 2. Config key rename
+    30→- **`packages/erk-shared/src/erk_shared/config/schema.py`**
+
+... [101 lines omitted] ...
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_0119kKSPho5iQq7WcnH3ts5b">
+    <param name="questions">[{'question': 'Plan: Rename "fix-conflicts" to "rebase" across the codebase\nCurrent conte...[truncated 442 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2733" cache_read_input_tokens="61553" output_tokens="228" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2733, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0119kKSPho5iQq7WcnH3ts5b">
+User has answered your questions: "Plan: Rename "fix-conflicts" to "rebase" across the codebase
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01Y5TtddZfjM4fSRpAwsuQQ3">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="314" cache_read_input_tokens="64286" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 314, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Y5TtddZfjM4fSRpAwsuQQ3">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 1.5: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 1.75: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 2: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="ede74b16-88e0-4b6a-a63c-f5ca9783716d" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 3.
+
+If the command fails, display the error and stop.
+
+### Step 3: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 2.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 3.5: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "ede74b16-88e0-4b6a-a63c-f5ca9783716d" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 4: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 3, 3.5 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "ede74b16-88e0-4b6a-a63c-f5ca9783716d" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Let me save the plan to GitHub.
+
+**Branch slug:** `rename-fix-conflicts-to-rebase`
+
+**Plan summary:** Completes the rename from "fix-conflicts" to "rebase" across CLI commands, workflow files, config keys, capabilities, tests, and documentation. Also changes the local rebase command to always rebase (matching remote behavior) rather than only acting when conflicts exist.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2301" cache_read_input_tokens="64600" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2301}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UmoxS5C1yYTudUAs5hjKBc">
+    <param name="command">erk exec plan-save --format json --session-id="ede74b16-88e0-4b6a-a63c-f5ca9783716d" --bra...[truncated 211 chars]...to always rebase (matching remote behavior) rather than only acting when conflicts exist."</param>
+    <param name="description">Save plan as draft PR via erk exec</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2301" cache_read_input_tokens="64600" output_tokens="310" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2301, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UmoxS5C1yYTudUAs5hjKBc">
+{"success": true, "plan_number": 8514, "plan_url": "https://github.com/dagster-io/erk/pull/8514", "title": "[erk-plan] Plan: Rename \"fix-conflicts\" to \"rebase\" across the codebase", "branch_name": "plnd/rename-fix-conflicts-to-re-02-28-1934", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/ede74b16-88e0-4b6a-a63c-f5ca9783716d/plan_snapshots/000001-66513e8d"}
+  </tool_result>
+  <assistant>Plan **"Rename 'fix-conflicts' to 'rebase' across the codebase"** saved as draft PR **#8514**
+
+URL: https://github.com/dagster-io/erk/pull/8514
+
+---
+
+**Next steps:**
+
+View PR: https://github.com/dagster-io/erk/pull/8514
+
+In Claude Code:
+  Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: `erk br co --new-slot --for-plan 8514`
+    Implement: `source "$(erk br co --new-slot --for-plan 8514 --script)" &amp;&amp; erk implement --dangerous`
+
+  Same slot:
+    Local: `erk br co --for-plan 8514`
+    Implement: `source "$(erk br co --for-plan 8514 --script)" &amp;&amp; erk implement --dangerous`
+
+  Dispatch to Queue: `erk pr dispatch 8514`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="582" cache_read_input_tokens="66901" output_tokens="263" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 582, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-dispatch&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-dispatch&lt;/command-name&gt;</user>
+  <user># /erk:pr-dispatch
+
+## Goal
+
+Find the most recent plan created in this conversation and dispatch it for remote AI implementation via `erk pr dispatch`.
+
+## What This Command Does
+
+1. Search conversation for the last plan reference
+2. Extract the plan number
+3. Run `erk pr dispatch &lt;plan_number&gt;` to trigger remote implementation
+
+## Finding the Plan
+
+Search the conversation from bottom to top for these patterns (in priority order):
+
+1. **Draft PR reference**: `saved as draft PR #&lt;number&gt;` or `draft PR #&lt;number&gt;`
+2. **Pull request URL**: `https://github.com/&lt;owner&gt;/&lt;repo&gt;/pull/&lt;number&gt;`
+3. **Plan URL**: `https://github.com/.../pull/&lt;number&gt;` (legacy: `https://github.com/.../issues/&lt;number&gt;`)
+
+Extract the plan number from the most recent match.
+
+## Execution
+
+Once you have the plan number, run:
+
+```bash
+erk pr dispatch &lt;plan_number&gt;
+```
+
+If the command succeeds, clear the session marker to allow creating new plans in this session:
+
+```bash
+erk exec marker delete --session-id "ede74b16-88e0-4b6a-a63c-f5ca9783716d" plan-saved-issue
+```
+
+Display the command output to the user. The `erk pr dispatch` command handles all validation (plan existence, labels, state).
+
+## Error Cases
+
+- **No plan found in conversation**: Report "No plan found in conversation. Run /erk:plan-save first to create a plan."
+- **erk pr dispatch fails**: Display the error output from the command (erk pr dispatch validates the plan)
+</user>
+  <assistant>
+
+The most recent plan is **#8514**. Let me dispatch it for remote implementation.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="832" cache_read_input_tokens="67483" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 832}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Xit3792uYvo96KdTt4AyCP">
+    <param name="command">erk pr dispatch 8514</param>
+    <param name="description">Dispatch plan #8514 for remote implementation</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="832" cache_read_input_tokens="67483" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 832, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Xit3792uYvo96KdTt4AyCP">
+Checking GitHub authentication...
+Syncing trunk with remote...
+Resolving GitHub username...
+Validating 1 planned-PR plan(s)...
+
+Validating PR #8514...
+
+✓ All 1 plan(s) validated
+
+  #8514: [erk-plan] Plan: Rename "fix-conflicts" to "rebase" across the codebase
+
+Dispatching PR #8514...
+
+Fetching plan content...
+Checking out existing plan branch: plnd/rename-fix-conflicts-to-re-02-28-1934
+Cleaning up previous .erk/impl-context/ folder...
+Creating .erk/impl-context/ folder...
+✓ Branch pushed to remote
+
+Triggering workflow: plan-implement.yml
+  Waiting for workflow run... (attempt 1/11)
+  Waiting for workflow run... (attempt 2/11)
+✓ Workflow triggered.
+✓ Dispatch metadata written
+Posting queued event comment...
+✓ Queued event comment posted
+
+
+✓ 1 plan(s) dispatched successfully!
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0141qSQ9P9hKJkc4zrxQ1QnS">
+    <param name="command">erk exec marker delete --session-id "ede74b16-88e0-4b6a-a63c-f5ca9783716d" plan-saved-issue</param>
+    <param name="description">Clear plan-saved marker for this session</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="501" cache_read_input_tokens="68315" output_tokens="117" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 501, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0141qSQ9P9hKJkc4zrxQ1QnS">
+{"success": true, "message": "Deleted marker: plan-saved-issue"}
+  </tool_result>
+  <assistant>Plan **#8514** dispatched for remote implementation.
+
+- **Plan**: https://github.com/dagster-io/erk/pull/8514
+- **Workflow run**: https://github.com/dagster-io/erk/actions/runs/22532441218
+
+The remote agent will pick it up and implement the rename. You can monitor progress via the workflow run link.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="258" cache_read_input_tokens="68816" output_tokens="90" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 258, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Catch you later!&lt;/local-command-stdout&gt;</user>
+</session>
