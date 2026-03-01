@@ -63,36 +63,6 @@ from erk.core.health_checks.uv_version import check_uv_version
 from erk.core.health_checks.workflow_permissions import check_workflow_permissions
 from erk.core.repo_discovery import RepoContext
 
-__all__ = [
-    "CheckResult",
-    "check_anthropic_api_secret",
-    "check_claude_cli",
-    "check_claude_erk_permission",
-    "check_claude_settings",
-    "check_erk_queue_pat_secret",
-    "check_erk_version",
-    "check_exit_plan_hook",
-    "check_gitignore_entries",
-    "check_github_auth",
-    "check_github_cli",
-    "check_graphite_cli",
-    "check_hook_health",
-    "check_hooks_disabled",
-    "check_legacy_prompt_hooks",
-    "check_legacy_slot_naming",
-    "check_managed_artifacts",
-    "check_plans_repo_labels",
-    "check_post_init_hook",
-    "check_post_plan_implement_ci_hook",
-    "check_repository",
-    "check_required_tool_version",
-    "check_statusline_configured",
-    "check_user_prompt_hook",
-    "check_uv_version",
-    "check_workflow_permissions",
-    "run_all_checks",
-]
-
 
 def run_all_checks(ctx: ErkContext, *, check_hooks: bool) -> list[CheckResult]:
     """Run all health checks and return results.
