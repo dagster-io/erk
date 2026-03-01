@@ -1,9 +1,9 @@
-"""CLI tests for erk run list command.
+"""CLI tests for erk workflow run list command.
 
 This file focuses on CLI-specific concerns for the list runs command:
 - Command execution and exit codes
 - Output formatting and display (status indicators, Rich table)
-- Run-centric view with plan/PR linkage
+- PR-centric view with direct PR extraction and plan→PR fallback
 
 The integration layer (list_workflow_runs) is tested in:
 - tests/unit/fakes/test_fake_github.py - Fake infrastructure tests
@@ -12,12 +12,15 @@ The integration layer (list_workflow_runs) is tested in:
 This file trusts that unit layer and only tests CLI integration.
 """
 
+from __future__ import annotations
+
 from datetime import UTC, datetime
 from pathlib import Path
 
 from click.testing import CliRunner
 
 from erk.cli.commands.run.list_cmd import list_runs
+from erk.core.context import ErkContext
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
@@ -27,43 +30,80 @@ from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
 from tests.fakes.context import create_test_context
 
 
-def test_list_runs_empty_state(tmp_path: Path) -> None:
-    """Test list command displays message when no runs found."""
-    # Arrange
+def _make_git(tmp_path: Path) -> FakeGit:
+    """Create a standard FakeGit for run list tests."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     (repo_root / ".git").mkdir()
-    git_ops = FakeGit(
+    return FakeGit(
         worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
         current_branches={repo_root: "main"},
         git_common_dirs={repo_root: repo_root / ".git"},
     )
-    github_ops = FakeGitHub(workflow_runs=[])  # Empty runs
-    ctx = create_test_context(git=git_ops, github=github_ops, cwd=repo_root)
+
+
+def _repo_root(tmp_path: Path) -> Path:
+    return tmp_path / "repo"
+
+
+def _make_issue(number: int, title: str) -> IssueInfo:
+    """Create a standard IssueInfo for testing."""
+    now = datetime.now(UTC)
+    return IssueInfo(
+        number=number,
+        title=title,
+        body="",
+        state="OPEN",
+        url=f"https://github.com/owner/repo/issues/{number}",
+        labels=["erk-pr", "erk-plan"],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        author="test-user",
+    )
+
+
+def _make_ctx(
+    tmp_path: Path,
+    *,
+    workflow_runs: list[WorkflowRun],
+    issues: dict[int, IssueInfo] | None = None,
+    github: FakeGitHub | None = None,
+) -> ErkContext:
+    """Create a test context with standard setup."""
+    git_ops = _make_git(tmp_path)
+    if issues is None:
+        issues = {1: _make_issue(1, "Dummy")}
+    issues_ops = FakeGitHubIssues(issues=issues)
+    if github is None:
+        github = FakeGitHub(workflow_runs=workflow_runs)
+    return create_test_context(
+        git=git_ops,
+        github=github,
+        issues=issues_ops,
+        cwd=_repo_root(tmp_path),
+    )
+
+
+def test_list_runs_empty_state(tmp_path: Path) -> None:
+    """Test list command displays message when no runs found."""
+    git_ops = _make_git(tmp_path)
+    github_ops = FakeGitHub(workflow_runs=[])
+    ctx = create_test_context(
+        git=git_ops,
+        github=github_ops,
+        cwd=_repo_root(tmp_path),
+    )
 
     runner = CliRunner()
-
-    # Act
     result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
 
-    # Assert
     assert result.exit_code == 0
     assert "No workflow runs found" in result.output
 
 
-def test_list_runs_single_success_run_with_issue_linkage(tmp_path: Path) -> None:
-    """Test list command displays single successful run with plan linkage."""
-    # Arrange
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-    (repo_root / ".git").mkdir()
-    git_ops = FakeGit(
-        worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
-        current_branches={repo_root: "main"},
-        git_common_dirs={repo_root: repo_root / ".git"},
-    )
-
-    now = datetime.now(UTC)
+def test_list_runs_pr_address_format_shows_pr(tmp_path: Path) -> None:
+    """PR-address runs with #NNN in display_title show the PR number."""
     workflow_runs = [
         WorkflowRun(
             run_id="1234567890",
@@ -71,347 +111,50 @@ def test_list_runs_single_success_run_with_issue_linkage(tmp_path: Path) -> None
             conclusion="success",
             branch="feat-1",
             head_sha="abc123",
-            display_title="142:abc456",  # New format: plan_number:distinct_id
+            display_title="pr-address:#456:abc123",
         ),
     ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-
-    # Create issue for linkage
-    issues = {
-        142: IssueInfo(
-            number=142,
-            title="Add user authentication with OAuth2",
-            body="Plan content",
-            state="OPEN",
-            url="https://github.com/owner/repo/issues/142",
-            labels=["erk-pr", "erk-plan"],
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-            author="test-user",
-        ),
-    }
-    issues_ops = FakeGitHubIssues(issues=issues)
-
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
 
     runner = CliRunner()
-
-    # Act
     result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
 
-    # Assert
     assert result.exit_code == 0
-    # Check for Rich table output - run_id should appear
     assert "1234567890" in result.output
-    # Check for issue linkage
-    assert "#142" in result.output
-    # Check for title (or truncated version)
-    assert "Add user authentication" in result.output
-    # Success status indicator
-    assert "Success" in result.output or "✅" in result.output
+    assert "#456" in result.output
 
 
-def test_list_runs_multiple_runs_different_statuses(tmp_path: Path) -> None:
-    """Test list command displays multiple runs with different statuses."""
-    # Arrange
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-    (repo_root / ".git").mkdir()
-    git_ops = FakeGit(
-        worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
-        current_branches={repo_root: "main"},
-        git_common_dirs={repo_root: repo_root / ".git"},
-    )
-
-    now = datetime.now(UTC)
+def test_list_runs_new_plan_implement_format_shows_pr(
+    tmp_path: Path,
+) -> None:
+    """New plan-implement format with #pr_number shows PR directly."""
     workflow_runs = [
         WorkflowRun(
-            run_id="123",
+            run_id="555666",
             status="completed",
             conclusion="success",
             branch="feat-1",
             head_sha="abc123",
-            display_title="142:abc",
-        ),
-        WorkflowRun(
-            run_id="999888",
-            status="completed",
-            conclusion="failure",
-            branch="feat-2",
-            head_sha="def456",
-            display_title="143:def",
-        ),
-        WorkflowRun(
-            run_id="789",
-            status="in_progress",
-            conclusion=None,
-            branch="feat-3",
-            head_sha="ghi789",
-            display_title="144:ghi",
+            display_title="142:#460:abc456",
         ),
     ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-
-    # Create issues for linkage
-    issues = {
-        142: IssueInfo(
-            number=142,
-            title="Feature one",
-            body="",
-            state="OPEN",
-            url="https://github.com/owner/repo/issues/142",
-            labels=["erk-pr", "erk-plan"],
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-            author="test-user",
-        ),
-        143: IssueInfo(
-            number=143,
-            title="Feature two",
-            body="",
-            state="OPEN",
-            url="https://github.com/owner/repo/issues/143",
-            labels=["erk-pr", "erk-plan"],
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-            author="test-user",
-        ),
-        144: IssueInfo(
-            number=144,
-            title="Feature three",
-            body="",
-            state="OPEN",
-            url="https://github.com/owner/repo/issues/144",
-            labels=["erk-pr", "erk-plan"],
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-            author="test-user",
-        ),
-    }
-    issues_ops = FakeGitHubIssues(issues=issues)
-
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
 
     runner = CliRunner()
-
-    # Act
     result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
 
-    # Assert
     assert result.exit_code == 0
-    # All run IDs should appear
-    assert "123" in result.output
-    assert "999888" in result.output
-    assert "789" in result.output
-    # All issue numbers should appear
-    assert "#142" in result.output
-    assert "#143" in result.output
-    assert "#144" in result.output
+    assert "#460" in result.output
+    assert "plan-implement" in result.output
 
 
-def test_list_runs_run_without_issue_linkage(tmp_path: Path) -> None:
-    """Test list command handles runs without valid issue linkage (old format).
-
-    By default, runs without issue linkage should be filtered out.
-    Use --show-legacy flag to see them.
-    """
-    # Arrange
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-    (repo_root / ".git").mkdir()
-    git_ops = FakeGit(
-        worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
-        current_branches={repo_root: "main"},
-        git_common_dirs={repo_root: repo_root / ".git"},
-    )
-
+def test_list_runs_old_plan_format_falls_back_to_plan_pr_linkage(
+    tmp_path: Path,
+) -> None:
+    """Old plan-implement format (no #pr) falls back to plan→PR linkage."""
     workflow_runs = [
         WorkflowRun(
-            run_id="123",
-            status="completed",
-            conclusion="success",
-            branch="feat-1",
-            head_sha="abc123",
-            # Old format - no issue linkage possible
-            display_title="Add user authentication [abc123]",
-        ),
-    ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-    issues_ops = FakeGitHubIssues(issues={})
-
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
-
-    runner = CliRunner()
-
-    # Act - With --show-legacy flag to see legacy runs
-    result = runner.invoke(list_runs, ["--show-legacy"], obj=ctx, catch_exceptions=False)
-
-    # Assert
-    assert result.exit_code == 0
-    # Run ID should still appear
-    assert "123" in result.output
-    # Should show "X" for plan/title/pr/chks columns since legacy format can't be parsed
-    # (distinguishes "can't parse" from "no data available" which uses "-")
-    assert "X" in result.output
-
-
-def test_list_runs_default_filters_out_runs_without_plans(tmp_path: Path) -> None:
-    """By default, filter out runs without plan linkage (legacy format)."""
-    # Arrange
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-    (repo_root / ".git").mkdir()
-    git_ops = FakeGit(
-        worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
-        current_branches={repo_root: "main"},
-        git_common_dirs={repo_root: repo_root / ".git"},
-    )
-
-    now = datetime.now(UTC)
-    workflow_runs = [
-        # New format - has plan linkage
-        WorkflowRun(
-            run_id="123",
-            status="completed",
-            conclusion="success",
-            branch="feat-1",
-            head_sha="abc123",
-            display_title="142:abc456",  # Can be parsed
-        ),
-        # Old format - no plan linkage
-        WorkflowRun(
-            run_id="999888",
-            status="completed",
-            conclusion="success",
-            branch="feat-2",
-            head_sha="def456",
-            display_title="Add feature [def456]",  # Cannot be parsed
-        ),
-    ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-
-    issues = {
-        142: IssueInfo(
-            number=142,
-            title="Feature one",
-            body="",
-            state="OPEN",
-            url="https://github.com/owner/repo/issues/142",
-            labels=["erk-pr", "erk-plan"],
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-            author="test-user",
-        ),
-    }
-    issues_ops = FakeGitHubIssues(issues=issues)
-
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
-
-    runner = CliRunner()
-
-    # Act - Default behavior (without --all)
-    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
-
-    # Assert
-    assert result.exit_code == 0
-    # New format run should appear
-    assert "123" in result.output
-    assert "#142" in result.output
-    # Old format run should NOT appear
-    assert "999888" not in result.output
-    assert "Add feature" not in result.output
-
-
-def test_list_runs_with_show_legacy_flag_shows_all_runs(tmp_path: Path) -> None:
-    """With --show-legacy flag, show all runs including legacy format."""
-    # Arrange
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-    (repo_root / ".git").mkdir()
-    git_ops = FakeGit(
-        worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
-        current_branches={repo_root: "main"},
-        git_common_dirs={repo_root: repo_root / ".git"},
-    )
-
-    now = datetime.now(UTC)
-    workflow_runs = [
-        # New format - has plan linkage
-        WorkflowRun(
-            run_id="123",
-            status="completed",
-            conclusion="success",
-            branch="feat-1",
-            head_sha="abc123",
-            display_title="142:abc456",  # Can be parsed
-        ),
-        # Old format - no plan linkage
-        WorkflowRun(
-            run_id="999888",
-            status="completed",
-            conclusion="success",
-            branch="feat-2",
-            head_sha="def456",
-            display_title="Add feature [def456]",  # Cannot be parsed
-        ),
-    ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-
-    issues = {
-        142: IssueInfo(
-            number=142,
-            title="Feature one",
-            body="",
-            state="OPEN",
-            url="https://github.com/owner/repo/issues/142",
-            labels=["erk-pr", "erk-plan"],
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-            author="test-user",
-        ),
-    }
-    issues_ops = FakeGitHubIssues(issues=issues)
-
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
-
-    runner = CliRunner()
-
-    # Act - With --show-legacy flag
-    result = runner.invoke(list_runs, ["--show-legacy"], obj=ctx, catch_exceptions=False)
-
-    # Assert
-    assert result.exit_code == 0
-    # New format run should appear
-    assert "123" in result.output
-    assert "#142" in result.output
-    # Old format run SHOULD appear with --show-legacy
-    assert "999888" in result.output
-    # Legacy run should show "X" for plan/title/pr/chks
-    assert "X" in result.output
-
-
-def test_list_runs_with_pr_linkage(tmp_path: Path) -> None:
-    """Test list command displays PR information when linked."""
-    # Arrange
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-    (repo_root / ".git").mkdir()
-    git_ops = FakeGit(
-        worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
-        current_branches={repo_root: "main"},
-        git_common_dirs={repo_root: repo_root / ".git"},
-    )
-
-    now = datetime.now(UTC)
-    workflow_runs = [
-        WorkflowRun(
-            run_id="123",
+            run_id="111222",
             status="completed",
             conclusion="success",
             branch="feat-1",
@@ -420,7 +163,6 @@ def test_list_runs_with_pr_linkage(tmp_path: Path) -> None:
         ),
     ]
 
-    # PR linked to issue 142
     pr_info = PullRequestInfo(
         number=201,
         state="OPEN",
@@ -433,55 +175,252 @@ def test_list_runs_with_pr_linkage(tmp_path: Path) -> None:
         has_conflicts=False,
     )
 
-    github_ops = FakeGitHub(
+    github = FakeGitHub(
         workflow_runs=workflow_runs,
         pr_plan_linkages={142: [pr_info]},
     )
-
-    issues = {
-        142: IssueInfo(
-            number=142,
-            title="Add user authentication",
-            body="",
-            state="OPEN",
-            url="https://github.com/owner/repo/issues/142",
-            labels=["erk-pr", "erk-plan"],
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-            author="test-user",
-        ),
-    }
-    issues_ops = FakeGitHubIssues(issues=issues)
-
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    ctx = _make_ctx(
+        tmp_path,
+        workflow_runs=workflow_runs,
+        issues={142: _make_issue(142, "Add user authentication")},
+        github=github,
+    )
 
     runner = CliRunner()
-
-    # Act
     result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
 
-    # Assert
     assert result.exit_code == 0
-    # PR number should appear
     assert "#201" in result.output
-    # Checks emoji should appear (✅ for passing)
+    assert "Add user auth" in result.output
     assert "✅" in result.output
+
+
+def test_list_runs_no_pr_shows_dash(tmp_path: Path) -> None:
+    """Runs with no extractable PR number show '-' for pr/title/chks."""
+    workflow_runs = [
+        WorkflowRun(
+            run_id="999888",
+            status="completed",
+            conclusion="success",
+            branch="feat-1",
+            head_sha="abc123",
+            display_title="Some legacy title [abc123]",
+        ),
+    ]
+    ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
+
+    runner = CliRunner()
+    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+
+    assert result.exit_code == 0
+    assert "999888" in result.output
+    assert "X" not in result.output
+
+
+def test_list_runs_all_workflow_types_shown(tmp_path: Path) -> None:
+    """All workflow types are shown without needing --show-legacy."""
+    workflow_runs = [
+        WorkflowRun(
+            run_id="111111",
+            status="completed",
+            conclusion="success",
+            branch="feat-1",
+            head_sha="abc123",
+            display_title="142:#460:abc456",
+        ),
+        WorkflowRun(
+            run_id="222222",
+            status="completed",
+            conclusion="success",
+            branch="feat-2",
+            head_sha="def456",
+            display_title="pr-address:#460:def456",
+        ),
+        WorkflowRun(
+            run_id="333333",
+            status="completed",
+            conclusion="success",
+            branch="feat-3",
+            head_sha="ghi789",
+            display_title="one-shot:#461:ghi789",
+        ),
+    ]
+    ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
+
+    runner = CliRunner()
+    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+
+    assert result.exit_code == 0
+    assert "111111" in result.output
+    assert "222222" in result.output
+    assert "333333" in result.output
+    assert "#460" in result.output
+    assert "#461" in result.output
+
+
+def test_list_runs_multiple_statuses(tmp_path: Path) -> None:
+    """Test list command displays multiple runs with different statuses."""
+    workflow_runs = [
+        WorkflowRun(
+            run_id="123",
+            status="completed",
+            conclusion="success",
+            branch="feat-1",
+            head_sha="abc123",
+            display_title="142:#201:abc",
+        ),
+        WorkflowRun(
+            run_id="999888",
+            status="completed",
+            conclusion="failure",
+            branch="feat-2",
+            head_sha="def456",
+            display_title="143:#202:def",
+        ),
+        WorkflowRun(
+            run_id="789",
+            status="in_progress",
+            conclusion=None,
+            branch="feat-3",
+            head_sha="ghi789",
+            display_title="144:#203:ghi",
+        ),
+    ]
+    ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
+
+    runner = CliRunner()
+    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+
+    assert result.exit_code == 0
+    assert "123" in result.output
+    assert "999888" in result.output
+    assert "789" in result.output
+    assert "#201" in result.output
+    assert "#202" in result.output
+    assert "#203" in result.output
+
+
+def test_list_runs_truncates_long_titles(tmp_path: Path) -> None:
+    """Test list command truncates PR titles longer than 50 characters."""
+    long_title = (
+        "This is a very long title that exceeds fifty characters "
+        "and should be truncated with ellipsis"
+    )
+    workflow_runs = [
+        WorkflowRun(
+            run_id="123",
+            status="completed",
+            conclusion="success",
+            branch="feat-1",
+            head_sha="abc123",
+            display_title="142:abc",
+        ),
+    ]
+
+    pr_info = PullRequestInfo(
+        number=201,
+        state="OPEN",
+        url="https://github.com/owner/repo/pull/201",
+        is_draft=False,
+        title=long_title,
+        checks_passing=True,
+        owner="owner",
+        repo="repo",
+        has_conflicts=False,
+    )
+
+    github = FakeGitHub(
+        workflow_runs=workflow_runs,
+        pr_plan_linkages={142: [pr_info]},
+    )
+    ctx = _make_ctx(
+        tmp_path,
+        workflow_runs=workflow_runs,
+        issues={142: _make_issue(142, "Plan title")},
+        github=github,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+
+    assert result.exit_code == 0
+    assert long_title not in result.output
+    assert "..." in result.output
+    assert "This is a very long" in result.output
+
+
+def test_list_runs_displays_submission_time(tmp_path: Path) -> None:
+    """Test list command displays submission time in local timezone."""
+    timestamp = datetime(2024, 11, 26, 14, 30, 45, tzinfo=UTC)
+    workflow_runs = [
+        WorkflowRun(
+            run_id="1234567890",
+            status="completed",
+            conclusion="success",
+            branch="feat-1",
+            head_sha="abc123",
+            display_title="pr-address:#456:abc456",
+            created_at=timestamp,
+        ),
+    ]
+    ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
+
+    runner = CliRunner()
+    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+
+    assert result.exit_code == 0
+    assert "11-26" in result.output or "11-25" in result.output or "11-27" in result.output
+    assert "submitted" in result.output
+
+
+def test_list_runs_handles_missing_timestamp(tmp_path: Path) -> None:
+    """Test list command handles missing created_at gracefully."""
+    workflow_runs = [
+        WorkflowRun(
+            run_id="1234567890",
+            status="completed",
+            conclusion="success",
+            branch="feat-1",
+            head_sha="abc123",
+            display_title="pr-address:#456:abc456",
+            created_at=None,
+        ),
+    ]
+    ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
+
+    runner = CliRunner()
+    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+
+    assert result.exit_code == 0
+    assert "submitted" in result.output
+
+
+def test_list_runs_shows_workflow_column(tmp_path: Path) -> None:
+    """Test that runs display the workflow source column."""
+    workflow_runs = [
+        WorkflowRun(
+            run_id="555666",
+            status="completed",
+            conclusion="success",
+            branch="feat-1",
+            head_sha="abc123",
+            display_title="142:#460:abc456",
+        ),
+    ]
+    ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
+
+    runner = CliRunner()
+    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+
+    assert result.exit_code == 0
+    assert "workflow" in result.output
+    assert "plan-implement" in result.output
+    assert "555666" in result.output
+    assert "#460" in result.output
 
 
 def test_list_runs_handles_queued_status(tmp_path: Path) -> None:
     """Test list command displays queued status correctly."""
-    # Arrange
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-    (repo_root / ".git").mkdir()
-    git_ops = FakeGit(
-        worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
-        current_branches={repo_root: "main"},
-        git_common_dirs={repo_root: repo_root / ".git"},
-    )
-
-    now = datetime.now(UTC)
     workflow_runs = [
         WorkflowRun(
             run_id="123",
@@ -489,53 +428,20 @@ def test_list_runs_handles_queued_status(tmp_path: Path) -> None:
             conclusion=None,
             branch="feat-1",
             head_sha="abc123",
-            display_title="142:abc",
+            display_title="pr-address:#456:abc",
         ),
     ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-
-    issues = {
-        142: IssueInfo(
-            number=142,
-            title="Queued feature",
-            body="",
-            state="OPEN",
-            url="https://github.com/owner/repo/issues/142",
-            labels=["erk-pr", "erk-plan"],
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-            author="test-user",
-        ),
-    }
-    issues_ops = FakeGitHubIssues(issues=issues)
-
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
 
     runner = CliRunner()
-
-    # Act
     result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
 
-    # Assert
     assert result.exit_code == 0
-    # Queued status indicator
     assert "Queued" in result.output or "⧗" in result.output
 
 
 def test_list_runs_handles_cancelled_status(tmp_path: Path) -> None:
     """Test list command displays cancelled status correctly."""
-    # Arrange
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-    (repo_root / ".git").mkdir()
-    git_ops = FakeGit(
-        worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
-        current_branches={repo_root: "main"},
-        git_common_dirs={repo_root: repo_root / ".git"},
-    )
-
-    now = datetime.now(UTC)
     workflow_runs = [
         WorkflowRun(
             run_id="123",
@@ -543,58 +449,20 @@ def test_list_runs_handles_cancelled_status(tmp_path: Path) -> None:
             conclusion="cancelled",
             branch="feat-1",
             head_sha="abc123",
-            display_title="142:abc",
+            display_title="pr-address:#456:abc",
         ),
     ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-
-    issues = {
-        142: IssueInfo(
-            number=142,
-            title="Cancelled feature",
-            body="",
-            state="OPEN",
-            url="https://github.com/owner/repo/issues/142",
-            labels=["erk-pr", "erk-plan"],
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-            author="test-user",
-        ),
-    }
-    issues_ops = FakeGitHubIssues(issues=issues)
-
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
 
     runner = CliRunner()
-
-    # Act
     result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
 
-    # Assert
     assert result.exit_code == 0
-    # Cancelled status indicator
     assert "Cancelled" in result.output or "⛔" in result.output
 
 
-def test_list_runs_truncates_long_titles(tmp_path: Path) -> None:
-    """Test list command truncates titles longer than 50 characters."""
-    # Arrange
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-    (repo_root / ".git").mkdir()
-    git_ops = FakeGit(
-        worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
-        current_branches={repo_root: "main"},
-        git_common_dirs={repo_root: repo_root / ".git"},
-    )
-
-    now = datetime.now(UTC)
-    long_title = (
-        "This is a very long title that exceeds fifty characters "
-        "and should be truncated with ellipsis"
-    )
-
+def test_list_runs_pr_column_header(tmp_path: Path) -> None:
+    """Table uses 'pr' column header instead of 'plan'."""
     workflow_runs = [
         WorkflowRun(
             run_id="123",
@@ -602,249 +470,14 @@ def test_list_runs_truncates_long_titles(tmp_path: Path) -> None:
             conclusion="success",
             branch="feat-1",
             head_sha="abc123",
-            display_title="142:abc",
+            display_title="pr-address:#456:abc",
         ),
     ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-
-    issues = {
-        142: IssueInfo(
-            number=142,
-            title=long_title,
-            body="",
-            state="OPEN",
-            url="https://github.com/owner/repo/issues/142",
-            labels=["erk-pr", "erk-plan"],
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-            author="test-user",
-        ),
-    }
-    issues_ops = FakeGitHubIssues(issues=issues)
-
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
 
     runner = CliRunner()
-
-    # Act
     result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
 
-    # Assert
     assert result.exit_code == 0
-    # Full title should NOT appear (it's too long)
-    assert long_title not in result.output
-    # Truncated version should appear with ellipsis
-    assert "..." in result.output
-    # Start of title should appear
-    assert "This is a very long" in result.output
-
-
-def test_list_runs_filters_missing_issue_data(tmp_path: Path) -> None:
-    """Runs with missing/empty issue data are filtered by default."""
-    # Arrange
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-    (repo_root / ".git").mkdir()
-    git_ops = FakeGit(
-        worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
-        current_branches={repo_root: "main"},
-        git_common_dirs={repo_root: repo_root / ".git"},
-    )
-
-    now = datetime.now(UTC)
-    # Use distinctive run_ids that won't appear in ANSI escape codes
-    # (short numbers like "200" can appear in 256-color ANSI sequences)
-    workflow_runs = [
-        # Valid run with issue
-        WorkflowRun(
-            run_id="111111",
-            status="completed",
-            conclusion="success",
-            branch="feat-1",
-            head_sha="abc123",
-            display_title="142:abc123",
-        ),
-        # Run with issue not found in issue_map
-        WorkflowRun(
-            run_id="222222",
-            status="completed",
-            conclusion="success",
-            branch="feat-2",
-            head_sha="def456",
-            display_title="999:def456",  # Issue 999 doesn't exist
-        ),
-        # Run with empty title
-        WorkflowRun(
-            run_id="333333",
-            status="completed",
-            conclusion="success",
-            branch="feat-3",
-            head_sha="ghi789",
-            display_title="143:ghi789",  # Issue 143 has empty title
-        ),
-    ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-
-    # Only create issues 142 (valid) and 143 (empty title)
-    issues = {
-        142: IssueInfo(
-            number=142,
-            title="Valid issue with title",
-            body="",
-            state="OPEN",
-            url="https://github.com/owner/repo/issues/142",
-            labels=["erk-pr", "erk-plan"],
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-            author="test-user",
-        ),
-        143: IssueInfo(
-            number=143,
-            title="",  # Empty title
-            body="",
-            state="OPEN",
-            url="https://github.com/owner/repo/issues/143",
-            labels=["erk-pr", "erk-plan"],
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-            author="test-user",
-        ),
-    }
-    issues_ops = FakeGitHubIssues(issues=issues)
-
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
-
-    runner = CliRunner()
-
-    # Act - Default behavior (without --show-legacy)
-    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
-
-    # Assert - Only run 111111 should appear
-    assert result.exit_code == 0
-    assert "111111" in result.output
-    assert "#142" in result.output
-    # Runs 222222 and 333333 should be filtered out
-    assert "222222" not in result.output
-    assert "333333" not in result.output
-    # Issue #999 and #143 should not be in the output
-    # (use #-prefixed form to avoid false positives from timestamps)
-    assert "#999" not in result.output
-    assert "#143" not in result.output
-
-
-def test_list_runs_displays_submission_time(tmp_path: Path) -> None:
-    """Test list command displays submission time in local timezone."""
-    # Arrange
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-    (repo_root / ".git").mkdir()
-    git_ops = FakeGit(
-        worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
-        current_branches={repo_root: "main"},
-        git_common_dirs={repo_root: repo_root / ".git"},
-    )
-
-    # Create a specific timestamp
-    timestamp = datetime(2024, 11, 26, 14, 30, 45, tzinfo=UTC)
-
-    workflow_runs = [
-        WorkflowRun(
-            run_id="1234567890",
-            status="completed",
-            conclusion="success",
-            branch="feat-1",
-            head_sha="abc123",
-            display_title="142:abc456",
-            created_at=timestamp,
-        ),
-    ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-
-    issues = {
-        142: IssueInfo(
-            number=142,
-            title="Test issue",
-            body="",
-            state="OPEN",
-            url="https://github.com/owner/repo/issues/142",
-            labels=["erk-pr", "erk-plan"],
-            assignees=[],
-            created_at=timestamp,
-            updated_at=timestamp,
-            author="test-user",
-        ),
-    }
-    issues_ops = FakeGitHubIssues(issues=issues)
-
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
-    runner = CliRunner()
-
-    # Act
-    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
-
-    # Assert
-    assert result.exit_code == 0
-    # The timestamp will be converted to local timezone
-    # Check for the date part (month-day) which should be 11-26
-    # (unless timezone shifts to next/previous day)
-    assert "11-26" in result.output or "11-25" in result.output or "11-27" in result.output
-    # Also check the table header
-    assert "submitted" in result.output
-
-
-def test_list_runs_handles_missing_timestamp(tmp_path: Path) -> None:
-    """Test list command handles missing created_at gracefully."""
-    # Arrange
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-    (repo_root / ".git").mkdir()
-    git_ops = FakeGit(
-        worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
-        current_branches={repo_root: "main"},
-        git_common_dirs={repo_root: repo_root / ".git"},
-    )
-
-    now = datetime.now(UTC)
-    workflow_runs = [
-        WorkflowRun(
-            run_id="1234567890",
-            status="completed",
-            conclusion="success",
-            branch="feat-1",
-            head_sha="abc123",
-            display_title="142:abc456",
-            created_at=None,  # Missing timestamp
-        ),
-    ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-
-    issues = {
-        142: IssueInfo(
-            number=142,
-            title="Test issue",
-            body="",
-            state="OPEN",
-            url="https://github.com/owner/repo/issues/142",
-            labels=["erk-pr", "erk-plan"],
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-            author="test-user",
-        ),
-    }
-    issues_ops = FakeGitHubIssues(issues=issues)
-
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
-    runner = CliRunner()
-
-    # Act
-    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
-
-    # Assert
-    assert result.exit_code == 0
-    # Should display without error - the "-" placeholder is dimmed
-    # Just check it doesn't crash and outputs a table
-    assert "submitted" in result.output
+    # The "pr" header appears in the table
+    assert "pr" in result.output

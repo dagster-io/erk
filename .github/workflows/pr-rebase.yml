@@ -1,5 +1,5 @@
 name: pr-rebase
-run-name: "rebase:${{ inputs.branch_name }}:${{ inputs.distinct_id }}"
+run-name: "rebase:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"
 
 on:
   workflow_dispatch:

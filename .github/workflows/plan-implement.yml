@@ -1,5 +1,5 @@
 name: plan-implement
-run-name: "${{ inputs.plan_id }}:${{ inputs.distinct_id }}"
+run-name: "${{ inputs.plan_id }}:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"
 
 on:
   workflow_dispatch:

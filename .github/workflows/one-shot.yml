@@ -1,5 +1,5 @@
 name: one-shot
-run-name: "one-shot:${{ inputs.distinct_id }}"
+run-name: "one-shot:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"
 
 on:
   workflow_dispatch:
