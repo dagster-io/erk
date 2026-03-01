@@ -144,6 +144,7 @@ class FakeGit(Git):
         commits_ahead: dict[tuple[Path, str], int] | None = None,
         commits_behind: dict[tuple[Path, str], int] | None = None,
         remote_urls: dict[tuple[Path, str], str] | None = None,
+        ref_file_contents: dict[tuple[str, str], bytes] | None = None,
         add_all_raises: Exception | None = None,
         fetch_branch_raises: Exception | None = None,
         pull_branch_raises: Exception | None = None,
@@ -204,6 +205,7 @@ class FakeGit(Git):
             commits_ahead: Mapping of (cwd, base_branch) -> commit count
             commits_behind: Mapping of (cwd, target_branch) -> commit count
             remote_urls: Mapping of (repo_root, remote_name) -> remote URL
+            ref_file_contents: Mapping of (ref, file_path) -> bytes for read_file_from_ref
             add_all_raises: Exception to raise when add_all() is called
             fetch_branch_raises: Exception to raise when fetch_branch() is called
             pull_branch_raises: Exception to raise when pull_branch() is called
@@ -394,6 +396,7 @@ class FakeGit(Git):
             commit_messages_since=self._commit_messages_since,
             head_commit_messages_full=self._head_commit_messages_full,
             commits_ahead=self._commits_ahead,
+            ref_file_contents=ref_file_contents,
             add_all_raises=self._add_all_raises,
             dirty_worktrees=self._dirty_worktrees,
         )

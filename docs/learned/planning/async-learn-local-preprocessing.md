@@ -3,7 +3,7 @@ title: Async Learn Local Preprocessing
 read_when:
   - modifying trigger-async-learn orchestration
   - debugging why learn materials are missing or malformed in CI
-  - understanding the local-to-gist-to-codespace data flow
+  - understanding the local-to-branch-to-learn data flow
 tripwires:
   - action: "adding subprocess calls to trigger-async-learn"
     warning: "This command uses direct Python function calls, not subprocess invocations. This is intentional — see the direct-call architecture section below."
@@ -23,8 +23,6 @@ Moving preprocessing to the developer's local machine eliminates this overhead. 
 
 ## Direct-Call Architecture
 
-<!-- Source: src/erk/cli/commands/exec/scripts/upload_session.py, upload_session -->
-
 The `trigger-async-learn` command imports functions directly from sibling exec scripts rather than invoking them as subprocesses. This is a deliberate architectural choice:
 
 | Approach                                                             | Trade-off                                                                                                              |
@@ -38,15 +36,13 @@ The direct-call approach won because `trigger-async-learn` orchestrates 6 tightl
 
 ## Session Classification: Planning vs Implementation
 
-<!-- Source: src/erk/cli/commands/exec/scripts/upload_session.py, upload_session -->
-
 During preprocessing, each session is classified as either `"planning"` or `"impl"` based on whether its session ID matches the `planning_session_id` from the plan's GitHub metadata. This classification becomes the filename prefix (e.g., `planning-abc123.xml` vs `impl-def456.xml`), which downstream learn agents use to weight insights differently — planning sessions contain design rationale, while implementation sessions contain execution details.
 
 **Both local and remote sessions are preprocessed.** Since PR #6974, remote sessions are downloaded locally (via `_download_remote_session_for_learn()`) and then passed through the same `_preprocess_session_direct()` pipeline as local sessions. The unified loop at trigger_async_learn.py:409-460 handles both source types.
 
 ## Material Assembly Pipeline
 
-The learn materials directory (`.erk/scratch/learn-{issue_number}`) is a staging area that accumulates three types of files before gist upload:
+The learn materials directory (`.erk/scratch/learn-{issue_number}`) is a staging area that accumulates three types of files before branch push:
 
 1. **Preprocessed session XML** — from local session preprocessing
 2. **PR review comments** — inline code review threads serialized as JSON
@@ -59,8 +55,6 @@ PR comments are fetched via gateway calls, not `gh` CLI. This matters because th
 All files are committed to an `async-learn/{plan_id}` git branch under `.erk/impl-context/`, then the branch name is passed to the `learn.yml` workflow via `workflow_dispatch`.
 
 ## Preprocessing Pipeline Internals
-
-<!-- Source: src/erk/cli/commands/exec/scripts/upload_session.py, _preprocess_session_direct -->
 
 The local preprocessing pipeline (`_preprocess_session_direct`) replicates the same logic as the `preprocess-session` CLI command but as a direct function call. It processes both the main session log and any discovered agent logs (subagent sessions), applying the same filtering chain to each:
 

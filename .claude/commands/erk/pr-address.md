@@ -302,6 +302,17 @@ erk exec update-pr-description --session-id "${CLAUDE_SESSION_ID}"
 
 This generates an AI-powered title and body from the full PR diff, preserving existing header and footer metadata.
 
+### Phase 6: Upload Address Session
+
+After addressing review comments, upload the session for cross-machine learning.
+Resolve the plan_id from the current branch, then push the session:
+
+```bash
+erk exec upload-impl-session --session-id "${CLAUDE_SESSION_ID}" 2>/dev/null || true
+```
+
+This is non-critical — if it fails (no plan tracking, no session found), addressing was still successful.
+
 ### Common Mistakes
 
 See `pr-operations` skill for the complete table of common mistakes and correct approaches.

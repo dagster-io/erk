@@ -931,38 +931,30 @@ A marker state indicating a merged PR is queued for insight extraction. When `er
 
 **Related**: [erk-skip-learn](#erk-skip-learn), [Learn Plan](#learn-plan)
 
-### Session Gist Fields
+### Session Branch Fields
 
-Plan-header metadata fields for tracking uploaded session logs. Added in PR #5403 to replace artifact-based session storage.
+Plan-header metadata fields for tracking pushed session logs. Sessions are accumulated on `async-learn/{plan_id}` branches.
 
 **Fields:**
 
-| Field                   | Type                        | Description                                                                               |
-| ----------------------- | --------------------------- | ----------------------------------------------------------------------------------------- |
-| `last_session_gist_url` | string \| null              | URL of the GitHub gist containing the session JSONL file                                  |
-| `last_session_gist_id`  | string \| null              | Gist ID extracted from URL (e.g., "abc123def456")                                         |
-| `last_session_id`       | string \| null              | Claude Code session ID of the uploaded session                                            |
-| `last_session_at`       | string \| null              | ISO 8601 timestamp of when the session was uploaded                                       |
-| `last_session_source`   | "local" \| "remote" \| null | Where the session originated - "local" for developer machine, "remote" for GitHub Actions |
+| Field                 | Type                        | Description                                                                               |
+| --------------------- | --------------------------- | ----------------------------------------------------------------------------------------- |
+| `last_session_branch` | string \| null              | Branch containing accumulated preprocessed session XMLs                                   |
+| `last_session_id`     | string \| null              | Claude Code session ID of the last pushed session                                         |
+| `last_session_at`     | string \| null              | ISO 8601 timestamp of when the session was pushed                                         |
+| `last_session_source` | "local" \| "remote" \| null | Where the session originated - "local" for developer machine, "remote" for GitHub Actions |
 
 **Usage:**
 
 These fields are set by:
 
-- `erk exec upload-session` - Uploads session JSONL to gist and updates plan-header
-- GitHub Actions workflow (`plan-implement.yml`) - Automatically uploads session after remote implementation
+- `erk exec push-session` - Pushes preprocessed session to learn branch and updates plan-header
+- GitHub Actions workflow (`plan-implement.yml`) - Automatically pushes session after remote implementation
 
 These fields are read by:
 
-- `erk exec get-learn-sessions` - Returns session sources with `gist_url` for download
-- `/erk:learn` command - Uses gist URL to download remote sessions for analysis
-
-**Relationship to Legacy Fields:**
-
-The `last_session_*` fields replace the artifact-based approach:
-
-- `last_remote_impl_run_id` - Legacy: GitHub Actions run ID (still populated for backwards compatibility)
-- `last_session_gist_url` - New: Direct download URL for session
+- `erk exec get-learn-sessions` - Returns session sources with `preprocessed_manifest` for download
+- `/erk:learn` command - Uses branch reference to download remote sessions for analysis
 
 **Related**: [Learn Plan](#learn-plan), [Plan Header Metadata](architecture/erk-architecture.md)
 

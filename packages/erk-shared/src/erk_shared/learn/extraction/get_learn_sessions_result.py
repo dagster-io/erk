@@ -29,6 +29,7 @@ class GetLearnSessionsResultDict(TypedDict):
     last_session_branch: str | None
     last_session_id: str | None
     last_session_source: str | None
+    preprocessed_manifest: dict | None
 
 
 class GetLearnSessionsErrorDict(TypedDict):

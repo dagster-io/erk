@@ -132,7 +132,7 @@ Rules triggered by matching actions in code.
 
 **running gh pr create** → Read [PR Operations: Duplicate Prevention and Detection](pr-operations.md) first. Query for existing PRs first via `gh pr list --head <branch> --state all`. Prevents duplicate PR creation and workflow breaks.
 
-**skipping session upload after local implementation** → Read [Plan-Implement Workflow](plan-implement.md) first. Local implementations must upload session via capture-session-info + upload-session. This enables async learn workflow. See session upload section below.
+**skipping session push after local implementation** → Read [Plan-Implement Workflow](plan-implement.md) first. Local implementations must push session via capture-session-info + push-session. This enables async learn workflow. See session upload section below.
 
 **submitting PRs** → Read [PR Submission Decision Framework](pr-submission.md) first. Before creating PRs, understand the workflow tradeoffs
 

@@ -42,6 +42,7 @@ from erk.cli.commands.exec.scripts.download_remote_session import (
 )
 from erk.cli.commands.exec.scripts.exit_plan_mode_hook import exit_plan_mode_hook
 from erk.cli.commands.exec.scripts.extract_latest_plan import extract_latest_plan
+from erk.cli.commands.exec.scripts.fetch_sessions import fetch_sessions
 from erk.cli.commands.exec.scripts.generate_pr_address_summary import (
     generate_pr_address_summary,
 )
@@ -117,6 +118,7 @@ from erk.cli.commands.exec.scripts.pr_sync_commit import pr_sync_commit
 from erk.cli.commands.exec.scripts.pre_tool_use_hook import pre_tool_use_hook
 from erk.cli.commands.exec.scripts.preprocess_session import preprocess_session
 from erk.cli.commands.exec.scripts.push_and_create_pr import push_and_create_pr
+from erk.cli.commands.exec.scripts.push_session import push_session
 from erk.cli.commands.exec.scripts.quick_submit import quick_submit
 from erk.cli.commands.exec.scripts.rebase_with_conflict_resolution import (
     rebase_with_conflict_resolution,
@@ -161,7 +163,6 @@ from erk.cli.commands.exec.scripts.update_pr_description import (
     update_pr_description,
 )
 from erk.cli.commands.exec.scripts.upload_impl_session import upload_impl_session
-from erk.cli.commands.exec.scripts.upload_session import upload_session
 from erk.cli.commands.exec.scripts.user_prompt_hook import user_prompt_hook
 from erk.cli.commands.exec.scripts.validate_claude_credentials import (
     validate_claude_credentials,
@@ -193,6 +194,7 @@ exec_group.add_command(discover_reviews, name="discover-reviews")
 exec_group.add_command(download_remote_session, name="download-remote-session")
 exec_group.add_command(exit_plan_mode_hook, name="exit-plan-mode-hook")
 exec_group.add_command(extract_latest_plan, name="extract-latest-plan")
+exec_group.add_command(fetch_sessions, name="fetch-sessions")
 exec_group.add_command(generate_pr_address_summary, name="generate-pr-address-summary")
 exec_group.add_command(get_plan_info, name="get-plan-info")
 exec_group.add_command(get_plan_metadata, name="get-plan-metadata")
@@ -234,6 +236,7 @@ exec_group.add_command(post_workflow_started_comment, name="post-workflow-starte
 exec_group.add_command(pre_tool_use_hook, name="pre-tool-use-hook")
 exec_group.add_command(preprocess_session, name="preprocess-session")
 exec_group.add_command(push_and_create_pr, name="push-and-create-pr")
+exec_group.add_command(push_session, name="push-session")
 exec_group.add_command(quick_submit, name="quick-submit")
 exec_group.add_command(rebase_with_conflict_resolution, name="rebase-with-conflict-resolution")
 exec_group.add_command(register_one_shot_plan, name="register-one-shot-plan")
@@ -254,7 +257,6 @@ exec_group.add_command(update_plan_header, name="update-plan-header")
 exec_group.add_command(update_objective_node, name="update-objective-node")
 exec_group.add_command(update_pr_description, name="update-pr-description")
 exec_group.add_command(upload_impl_session, name="upload-impl-session")
-exec_group.add_command(upload_session, name="upload-session")
 exec_group.add_command(ci_fetch_summaries, name="ci-fetch-summaries")
 exec_group.add_command(ci_generate_summaries, name="ci-generate-summaries")
 exec_group.add_command(ci_update_pr_body)

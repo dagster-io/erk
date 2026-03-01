@@ -12,8 +12,8 @@ tripwires:
     warning: ".impl/plan.md is immutable during implementation. Never edit it. Never delete .impl/ folder - it must be preserved for user review. Only .erk/impl-context/ should be auto-deleted."
   - action: "committing .impl/ folder to git"
     warning: ".impl/ lives in .gitignore and should never be committed. Only .erk/impl-context/ (remote execution artifact) gets committed and later removed."
-  - action: "skipping session upload after local implementation"
-    warning: "Local implementations must upload session via capture-session-info + upload-session. This enables async learn workflow. See session upload section below."
+  - action: "skipping session push after local implementation"
+    warning: "Local implementations must push session via capture-session-info + push-session. This enables async learn workflow. See session upload section below."
 ---
 
 # Plan-Implement Workflow
@@ -70,21 +70,21 @@ In GitHub Actions workflow:
 
 The distinction exists because `.erk/impl-context/` is a git-based transport mechanism while `.impl/` is Claude's working directory.
 
-## Session Upload for Async Learn
+## Session Push for Async Learn
 
-Local implementations must upload the session to enable `erk learn --async`. This isn't optional — it's what makes the learn workflow work for local PRs.
+Local implementations must push the session to enable `erk learn --async`. This isn't optional — it's what makes the learn workflow work for local PRs.
 
-### Why Session Upload Exists
+### Why Session Push Exists
 
-Without session upload:
+Without session push:
 
 - Learn workflow requires manual session file handling
 - No consistent session storage location
 - Async learn can't find the session for locally-implemented PRs
 
-With session upload:
+With session push:
 
-- Session stored in GitHub Gist (linked to issue)
+- Session preprocessed and stored on learn branch (linked to issue)
 - Learn workflow finds session via issue metadata
 - Local and remote implementations treated uniformly
 
@@ -92,7 +92,7 @@ With session upload:
 
 <!-- Source: .claude/commands/erk/plan-implement.md, Step 10b -->
 
-The command uses `capture-session-info` to extract session ID and file path from Claude's project directory, then uploads via `upload-session` with issue linking:
+The command uses `capture-session-info` to extract session ID and file path from Claude's project directory, then pushes via `push-session` with issue linking:
 
 See `capture_session_info()` in `src/erk/cli/commands/exec/scripts/capture_session_info.py` for session discovery logic.
 

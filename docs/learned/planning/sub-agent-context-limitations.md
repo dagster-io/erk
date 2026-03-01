@@ -39,7 +39,7 @@ The `impl-signal` command validates session ID upfront and returns a structured 
 
 The solution is architectural: **session-dependent commands must always run in the root agent**, not be delegated. The `/erk:plan-implement` command already follows this pattern — it runs `impl-signal started` and `impl-signal ended` directly (Steps 6 and 10) rather than including them in any sub-agent prompt.
 
-This creates a sandwich pattern: root agent handles session-bound bookkeeping (signal start, signal end, upload session), while the actual implementation work in between can safely be delegated.
+This creates a sandwich pattern: root agent handles session-bound bookkeeping (signal start, signal end, push session), while the actual implementation work in between can safely be delegated.
 
 ### Anti-Pattern: Delegating Signaling to Sub-Agents
 

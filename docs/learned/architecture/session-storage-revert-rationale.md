@@ -2,11 +2,11 @@
 title: Session Storage Architecture
 read_when:
   - "proposing changes to session storage mechanism"
-  - "understanding how sessions are uploaded and retrieved"
-  - "working with upload-session exec script"
+  - "understanding how sessions are pushed and retrieved"
+  - "working with push-session exec script"
 tripwires:
   - action: "proposing branch-based session storage as a new idea"
-    warning: "Session storage IS branch-based (async-learn/{plan_id} branches). An earlier attempt at a different branch-based approach was tried and reverted in PR #7757→#7765. The current branch-based approach (upload_session.py) is the stable implementation."
+    warning: "Session storage IS branch-based (async-learn/{plan_id} branches). An earlier attempt at a different branch-based approach was tried and reverted in PR #7757→#7765. The current branch-based approach (push_session.py) is the stable implementation."
 ---
 
 # Session Storage Architecture
@@ -15,9 +15,7 @@ Sessions are stored on dedicated git branches and referenced via plan metadata. 
 
 ## Current Implementation
 
-<!-- Source: src/erk/cli/commands/exec/scripts/upload_session.py -->
-
-`upload_session.py` creates an `async-learn/{plan_id}` branch from `origin/master`, commits the session JSONL file to `.erk/session/{session_id}.jsonl`, and force-pushes. Plan metadata is updated with:
+`push_session.py` preprocesses session JSONL to compressed XML and pushes to an `async-learn/{plan_id}` branch, accumulating multiple sessions across lifecycle stages. Plan metadata is updated with:
 
 | Metadata Field        | Value                   |
 | --------------------- | ----------------------- |
@@ -30,12 +28,10 @@ Sessions are stored on dedicated git branches and referenced via plan metadata. 
 
 - **PR #7757**: Migrated sessions from gists to branch-based storage (initial attempt)
 - **PR #7765**: Reverted the migration on the same day due to reliability issues
-- **Current state**: Branch-based storage via `upload_session.py` with `async-learn/{plan_id}` branches — a refined approach that addressed the earlier issues
+- **Current state**: Branch-based storage via `push_session.py` with `async-learn/{plan_id}` branches — a refined approach that addressed the earlier issues
 
 The current implementation differs from the reverted one in its use of dedicated `async-learn/` branches (isolated from feature branches) and atomic force-push semantics.
 
 ## Code Location
 
-<!-- Source: src/erk/cli/commands/exec/scripts/upload_session.py -->
-
-`src/erk/cli/commands/exec/scripts/upload_session.py` — full upload flow including branch creation, JSONL commit, and metadata update.
+`src/erk/cli/commands/exec/scripts/push_session.py` — full push flow including preprocessing, branch creation, session accumulation, and metadata update.
