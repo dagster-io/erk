@@ -1,0 +1,473 @@
+<session>
+  <meta source="agent-a91daeb" />
+  <meta branch="plnd/eliminate-master-checkout-03-01-1556" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Search for test files related to dispatch_helpers.py or ensure_trunk_synced. Look for files matching patterns like *dispatch_helpers* or *dispatch* in the tests directory. Also search for any imports or references to ensure_trunk_synced in test files.</user>
+  <assistant>I'll search for test files related to dispatch_helpers.py and ensure_trunk_synced. Let me start with some targeted searches.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6750" cache_read_input_tokens="11735" cache_creation="{'ephemeral_5m_input_tokens': 6750, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01Fc1sG6YBAQGzVdwZ5PQPfy">
+    <param name="pattern">**/tests/**/*dispatch*</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6750" cache_read_input_tokens="11735" cache_creation="{'ephemeral_5m_input_tokens': 6750, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01XUBML6X9NetQQKs3qqhAnP">
+    <param name="pattern">**/tests/**/*dispatch_helpers*</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6750" cache_read_input_tokens="11735" cache_creation="{'ephemeral_5m_input_tokens': 6750, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01LVEHBwVuigtLcWWr2W3pVS">
+    <param name="pattern">dispatch_helpers</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6750" cache_read_input_tokens="11735" cache_creation="{'ephemeral_5m_input_tokens': 6750, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01VxsG2md7ZdB9tuhW6onojs">
+    <param name="pattern">ensure_trunk_synced</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6750" cache_read_input_tokens="11735" cache_creation="{'ephemeral_5m_input_tokens': 6750, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LVEHBwVuigtLcWWr2W3pVS">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01Fc1sG6YBAQGzVdwZ5PQPfy">
+/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_dispatch.py
+/home/runner/work/erk/erk/tests/commands/pr/test_dispatch.py
+/home/runner/work/erk/erk/tests/unit/gateways/github/metadata_blocks/test_update_dispatch.py
+  </tool_result>
+  <tool_result tool="toolu_01VxsG2md7ZdB9tuhW6onojs">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01XUBML6X9NetQQKs3qqhAnP">
+No files found
+  </tool_result>
+  <assistant>Now let me search for the actual dispatch_helpers module and ensure_trunk_synced function to understand what they are:</assistant>
+  <usage input_tokens="61" cache_creation_input_tokens="498" cache_read_input_tokens="18485" cache_creation="{'ephemeral_5m_input_tokens': 498, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01EchngC88ZPQGNstJKUPvgT">
+    <param name="pattern">**/src/**/*dispatch_helpers*</param>
+  </tool_use>
+  <usage input_tokens="61" cache_creation_input_tokens="498" cache_read_input_tokens="18485" cache_creation="{'ephemeral_5m_input_tokens': 498, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01EjCVdfFCj9r2eiqSuCfJN9">
+    <param name="pattern">dispatch_helpers</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="61" cache_creation_input_tokens="498" cache_read_input_tokens="18485" cache_creation="{'ephemeral_5m_input_tokens': 498, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Ht1CGDzZX3ASDuAvFMiRpA">
+    <param name="pattern">ensure_trunk_synced</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="61" cache_creation_input_tokens="498" cache_read_input_tokens="18485" cache_creation="{'ephemeral_5m_input_tokens': 498, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EjCVdfFCj9r2eiqSuCfJN9">
+Found 1 file
+src/erk/cli/commands/pr/dispatch_cmd.py
+  </tool_result>
+  <tool_result tool="toolu_01Ht1CGDzZX3ASDuAvFMiRpA">
+Found 2 files
+src/erk/cli/commands/pr/dispatch_cmd.py
+src/erk/cli/commands/pr/dispatch_helpers.py
+  </tool_result>
+  <tool_result tool="toolu_01EchngC88ZPQGNstJKUPvgT">
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_helpers.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/__pycache__/dispatch_helpers.cpython-313.pyc
+  </tool_result>
+  <assistant>Good! Now let me read the dispatch_helpers.py file and check the test files to understand their current structure:</assistant>
+  <usage input_tokens="116" cache_creation_input_tokens="568" cache_read_input_tokens="18983" cache_creation="{'ephemeral_5m_input_tokens': 568, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018Xa16qELeadPSFoyuD2JDq">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="116" cache_creation_input_tokens="568" cache_read_input_tokens="18983" cache_creation="{'ephemeral_5m_input_tokens': 568, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SuNdGm8PR9Hs78NrgbrM9V">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="116" cache_creation_input_tokens="568" cache_read_input_tokens="18983" cache_creation="{'ephemeral_5m_input_tokens': 568, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017VyAprrh4bpQoAD4pJwhjg">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="116" cache_creation_input_tokens="568" cache_read_input_tokens="18983" cache_creation="{'ephemeral_5m_input_tokens': 568, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018Xa16qELeadPSFoyuD2JDq">
+     1→"""Helper functions for dispatch command."""
+     2→
+     3→import click
+     4→
+     5→from erk.core.context import ErkContext
+     6→from erk.core.repo_discovery import RepoContext
+     7→from erk_shared.output.output import user_output
+     8→
+     9→
+    10→def ensure_trunk_synced(ctx: ErkContext, repo: RepoContext) -&gt; None:
+    11→    """Ensure root worktree is on trunk and synced with remote.
+    12→
+    13→    Validates:
+    14→    1. Root worktree has trunk checked out
+    15→    2. Root worktree is clean (no uncommitted changes)
+    16→    3. Local trunk matches or can fast-forward to origin/trunk
+    17→
+    18→    Raises SystemExit(1) on validation failure with clear error message.
+    19→    """
+    20→    trunk = ctx.git.branch.detect_trunk_branch(repo.root)
+    21→
+    22→    # Find root worktree
+    23→    worktrees = ctx.git.worktree.list_worktrees(repo.root)
+    24→    root_worktree = None
+    25→    for wt in worktrees:
+    26→        if wt.is_root:
+    27→            root_worktree = wt
+    28→            break
+    29→
+    30→    if root_worktree is None:
+
+... [68 lines omitted] ...
+
+    37→            click.style("Error: ", fg="red")
+    50→            click.style("Error: ", fg="red") + "Root worktree has uncommitted changes.\n\n"
+    77→            click.style("Error: ", fg="red")
+    86→            click.style("Error: ", fg="red")
+    90→            f"Warning: This will discard any local commits on {trunk}."
+  </tool_result>
+  <tool_result tool="toolu_01SuNdGm8PR9Hs78NrgbrM9V">
+     1→"""Tests for erk pr dispatch command."""
+     2→
+     3→import json
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk_shared.gateway.git.abc import WorktreeInfo
+     9→from erk_shared.gateway.git.fake import FakeGit
+    10→from erk_shared.gateway.github.fake import FakeGitHub
+    11→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    12→from erk_shared.gateway.github.metadata.core import MetadataBlock, render_metadata_block
+    13→from erk_shared.gateway.github.types import PRDetails
+    14→from erk_shared.gateway.graphite.fake import FakeGraphite
+    15→from erk_shared.gateway.graphite.types import BranchMetadata
+    16→from erk_shared.gateway.time.fake import FakeTime
+    17→from erk_shared.impl_folder import build_plan_ref_json
+    18→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    19→from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+    20→from tests.test_utils.context_builders import build_workspace_test_context
+    21→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    22→
+    23→
+    24→def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() -&gt; None:
+    25→    """Test that dispatching a planned-PR plan triggers workflow with plan_backend=planned_pr.
+    26→
+    27→    Planned-PR plans already have a branch and PR. Dispatch should:
+    28→    - Validate the PR has the erk-plan label and is OPEN
+    29→    - Fetch and checkout the existing branch
+    30→    - Create .erk/impl-context/ with provider="github-draft-pr"
+
+... [598 lines omitted] ...
+
+   143→        # Verify: no warnings, dispatch metadata written successfully
+   144→        assert "Warning:" not in result.output
+   153→    When a previous dispatch failed and left behind a .erk/impl-context/ folder,
+   229→        # Pre-create a stale .erk/impl-context/ folder (simulating a prior failed dispatch)
+   262→        # Verify: no warnings, dispatch metadata written successfully
+   263→        assert "Warning:" not in result.output
+   453→    """Test that dispatch with no arguments and no context gives helpful error."""
+  </tool_result>
+  <tool_result tool="toolu_017VyAprrh4bpQoAD4pJwhjg">
+     1→"""Dispatch plans for remote AI implementation via GitHub Actions."""
+     2→
+     3→import logging
+     4→import tomllib
+     5→from dataclasses import dataclass
+     6→from datetime import UTC, datetime
+     7→from pathlib import Path
+     8→
+     9→import click
+    10→
+    11→from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced
+    12→from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+    13→from erk.cli.commands.slot.common import is_placeholder_branch
+    14→from erk.cli.constants import (
+    15→    DISPATCH_WORKFLOW_METADATA_NAME,
+    16→    DISPATCH_WORKFLOW_NAME,
+    17→    ERK_PLAN_LABEL,
+    18→)
+    19→from erk.cli.core import discover_repo_context
+    20→from erk.cli.ensure import Ensure, UserFacingCliError
+    21→from erk.core.context import ErkContext
+    22→from erk.core.repo_discovery import RepoContext
+    23→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+    24→from erk_shared.gateway.github.metadata.core import (
+    25→    create_submission_queued_block,
+    26→    render_erk_issue_event,
+    27→)
+    28→from erk_shared.gateway.github.parsing import (
+    29→    construct_pr_url,
+    30→    construct_workflow_run_url,
+
+... [541 lines omitted] ...
+
+   159→        user_output(click.style("Error: ", fg="red") + f"PR #{plan_number} not found")
+   165→            click.style("Error: ", fg="red")
+   174→            click.style("Error: ", fg="red") + f"PR #{plan_number} is {pr_result.state}\n\n"
+   222→        user_output(click.style("Error: ", fg="red") + f"PR #{plan_number}: plan content not found")
+   251→    if isinstance(pull_result, PullRebaseError):
+   252→        raise UserFacingCliError(
+   253→            f"Failed to sync branch '{branch_name}' with remote: {pull_result.message}"
+   256→    # Clean up previous .erk/impl-context/ if it exists (e.g., from a prior failed dispatch)
+   280→    if isinstance(push_result, PushError):
+   281→        raise UserFacingCliError(push_result.message)
+   335→    except Exception as e:
+   337→            click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
+   347→    except Exception as e:
+   348→        logger.warning("Failed to update PR body with workflow run link: %s", e)
+   379→    except Exception as e:
+   381→            click.style("Warning: ", fg="yellow")
+   382→            + f"Failed to post queued comment: {e}\n"
+   473→            click.style("Error: ", fg="red")
+   483→                click.style("Error: ", fg="red")
+   496→                click.style("Error: ", fg="red") + f"Base branch '{base}' does not exist on remote"
+  </tool_result>
+  <assistant>Let me search for any other references to dispatch_helpers or ensure_trunk_synced in the codebase:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="23461" cache_read_input_tokens="19551" cache_creation="{'ephemeral_5m_input_tokens': 23461, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01VjKAn3zEaMQtgoeq4uECmf">
+    <param name="pattern">from.*dispatch_helpers import|import.*dispatch_helpers</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="23461" cache_read_input_tokens="19551" cache_creation="{'ephemeral_5m_input_tokens': 23461, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BqXySZGGqJ6BXWi1sGmTTr">
+    <param name="command">find /home/runner/work/erk/erk -name "*.py" -type f | xargs grep -l "ensure_trunk_synced" 2&gt;/dev/null | head -20</param>
+    <param name="description">Find all files that reference ensure_trunk_synced</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="23461" cache_read_input_tokens="19551" cache_creation="{'ephemeral_5m_input_tokens': 23461, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VjKAn3zEaMQtgoeq4uECmf">
+Found 1 file
+src/erk/cli/commands/pr/dispatch_cmd.py
+  </tool_result>
+  <tool_result tool="toolu_01BqXySZGGqJ6BXWi1sGmTTr">
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_helpers.py
+  </tool_result>
+  <assistant>Perfect! Now let me look at any test files in the one_shot directory since I saw a test_one_shot_dispatch.py earlier:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="526" cache_read_input_tokens="43012" cache_creation="{'ephemeral_5m_input_tokens': 526, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018vzPNEPXMSQHfN1kdywnFP">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="526" cache_read_input_tokens="43012" cache_creation="{'ephemeral_5m_input_tokens': 526, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018vzPNEPXMSQHfN1kdywnFP">
+     1→"""Tests for one-shot dispatch shared logic."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.cli import cli
+     6→from erk.cli.commands.one_shot_dispatch import (
+     7→    OneShotDispatchParams,
+     8→    dispatch_one_shot,
+     9→)
+    10→from erk_shared.gateway.git.fake import FakeGit
+    11→from erk_shared.gateway.git.remote_ops.types import PushError
+    12→from erk_shared.gateway.github.fake import FakeGitHub
+    13→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    14→from tests.test_utils.context_builders import build_workspace_test_context
+    15→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    16→
+    17→
+    18→def test_dispatch_happy_path() -&gt; None:
+    19→    """Test dispatch creates plnd/ branch, PR with metadata, and triggers workflow."""
+    20→    runner = CliRunner()
+    21→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    22→        env.setup_repo_structure()
+    23→
+    24→        git = FakeGit(
+    25→            git_common_dirs={env.cwd: env.git_dir},
+    26→            default_branches={env.cwd: "main"},
+    27→            trunk_branches={env.cwd: "main"},
+    28→            current_branches={env.cwd: "main"},
+    29→        )
+    30→        issues = FakeGitHubIssues()
+
+... [240 lines omitted] ...
+
+   149→            catch_exceptions=False,
+   163→def test_dispatch_stays_on_current_branch_on_error() -&gt; None:
+   174→            push_to_remote_error=PushError(message="network error"),
+   186→        # Verify command failed
+  </tool_result>
+  <assistant>Now let me check if there are any other test files related to metadata or update_dispatch:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="3877" cache_read_input_tokens="43538" cache_creation="{'ephemeral_5m_input_tokens': 3877, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0122NwL5WT15bNNcHfjeLSzc">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/github/metadata_blocks/test_update_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="3877" cache_read_input_tokens="43538" cache_creation="{'ephemeral_5m_input_tokens': 3877, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0122NwL5WT15bNNcHfjeLSzc">
+     1→"""Tests for update_plan_header_dispatch function."""
+     2→
+     3→import pytest
+     4→
+     5→from erk_shared.gateway.github.metadata.plan_header import update_plan_header_dispatch
+     6→
+     7→
+     8→def test_update_plan_header_dispatch_basic() -&gt; None:
+     9→    """Test update_plan_header_dispatch updates dispatch fields."""
+    10→    body = """&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+    11→&lt;!-- erk:metadata-block:plan-header --&gt;
+    12→&lt;details&gt;
+    13→&lt;summary&gt;&lt;code&gt;plan-header&lt;/code&gt;&lt;/summary&gt;
+    14→
+    15→```yaml
+    16→
+    17→schema_version: '2'
+    18→created_at: '2025-11-25T14:37:43.513418+00:00'
+    19→created_by: testuser
+    20→worktree_name: test-worktree
+    21→last_dispatched_run_id: null
+    22→last_dispatched_at: null
+    23→
+    24→```
+    25→
+    26→&lt;/details&gt;
+    27→&lt;!-- /erk:metadata-block:plan-header --&gt;
+    28→
+    29→# Plan Content"""
+    30→
+
+... [84 lines omitted] ...
+
+    63→    with pytest.raises(ValueError, match="plan-header block not found"):
+    76→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+  </tool_result>
+  <assistant>Perfect! Now let me verify the location and structure of the existing test files:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="3115" cache_read_input_tokens="47415" cache_creation="{'ephemeral_5m_input_tokens': 3115, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MQ6mjGksWZ9R61tqcEpAMg">
+    <param name="command">ls -la /home/runner/work/erk/erk/tests/commands/pr/ 2&gt;/dev/null | head -20</param>
+    <param name="description">List files in tests/commands/pr directory</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="3115" cache_read_input_tokens="47415" cache_creation="{'ephemeral_5m_input_tokens': 3115, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UFig37aw1aCZLvCMzXsqbV">
+    <param name="command">ls -la /home/runner/work/erk/erk/tests/commands/one_shot/ 2&gt;/dev/null | head -20</param>
+    <param name="description">List files in tests/commands/one_shot directory</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="3115" cache_read_input_tokens="47415" cache_creation="{'ephemeral_5m_input_tokens': 3115, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MQ6mjGksWZ9R61tqcEpAMg">
+total 424
+drwxr-xr-x  2 runner runner  4096 Mar  1 20:58 .
+drwxr-xr-x 26 runner runner  4096 Mar  1 20:58 ..
+-rw-r--r--  1 runner runner    38 Mar  1 20:58 __init__.py
+-rw-r--r--  1 runner runner  4180 Mar  1 20:58 test_address.py
+-rw-r--r--  1 runner runner   428 Mar  1 20:58 test_address_remote_cmd.py
+-rw-r--r--  1 runner runner 20648 Mar  1 20:58 test_check.py
+-rw-r--r--  1 runner runner 19154 Mar  1 20:58 test_check_plan.py
+-rw-r--r--  1 runner runner 38228 Mar  1 20:58 test_checkout.py
+-rw-r--r--  1 runner runner 20110 Mar  1 20:58 test_checkout_graphite_linking.py
+-rw-r--r--  1 runner runner 16908 Mar  1 20:58 test_checkout_plan.py
+-rw-r--r--  1 runner runner 15568 Mar  1 20:58 test_close.py
+-rw-r--r--  1 runner runner 13478 Mar  1 20:58 test_create.py
+-rw-r--r--  1 runner runner 23009 Mar  1 20:58 test_dispatch.py
+-rw-r--r--  1 runner runner 10122 Mar  1 20:58 test_duplicate_check.py
+-rw-r--r--  1 runner runner 26206 Mar  1 20:58 test_list.py
+-rw-r--r--  1 runner runner 14079 Mar  1 20:58 test_log.py
+-rw-r--r--  1 runner runner  2996 Mar  1 20:58 test_parse_pr_reference.py
+-rw-r--r--  1 runner runner  7818 Mar  1 20:58 test_rebase.py
+-rw-r--r--  1 runner runner   437 Mar  1 20:58 test_rebase_remote.py
+  </tool_result>
+  <tool_result tool="toolu_01UFig37aw1aCZLvCMzXsqbV">
+total 40
+drwxr-xr-x  2 runner runner  4096 Mar  1 20:58 .
+drwxr-xr-x 26 runner runner  4096 Mar  1 20:58 ..
+-rw-r--r--  1 runner runner     0 Mar  1 20:58 __init__.py
+-rw-r--r--  1 runner runner  1885 Mar  1 20:58 test_branch_name.py
+-rw-r--r--  1 runner runner 13467 Mar  1 20:58 test_one_shot.py
+-rw-r--r--  1 runner runner  9598 Mar  1 20:58 test_one_shot_dispatch.py
+  </tool_result>
+  <assistant>Excellent! Let me verify the dispatch_helpers.py is properly structured:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="1213" cache_read_input_tokens="50530" cache_creation="{'ephemeral_5m_input_tokens': 1213, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Lkp9siFdrFwT2VtWm3LRXJ">
+    <param name="command">wc -l /home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_helpers.py</param>
+    <param name="description">Count lines in dispatch_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1213" cache_read_input_tokens="50530" cache_creation="{'ephemeral_5m_input_tokens': 1213, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Lkp9siFdrFwT2VtWm3LRXJ">
+92 /home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_helpers.py
+  </tool_result>
+  <assistant>Perfect! Now let me create a comprehensive summary report:
+
+## Summary Report: Test Files for dispatch_helpers.py and ensure_trunk_synced
+
+Based on my thorough search of the codebase, here are the key findings:
+
+### Test Files Located
+
+1. **Main Dispatch Tests**: `/home/runner/work/erk/erk/tests/commands/pr/test_dispatch.py`
+   - 623 lines of comprehensive tests
+   - Tests the `pr_dispatch` CLI command which uses `ensure_trunk_synced`
+   - Contains 5 main test functions:
+     - `test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend()` (lines 24-148)
+     - `test_dispatch_planned_pr_plan_cleans_up_stale_impl_context_folder()` (lines 150-267)
+     - `test_dispatch_auto_detects_from_impl_folder()` (lines 305-377)
+     - `test_dispatch_auto_detects_from_impl_context()` (lines 379-450)
+     - `test_dispatch_no_args_no_context_fails()` (lines 452-499)
+     - `test_dispatch_planned_pr_plan_uses_existing_worktree_when_branch_occupied()` (lines 501-623)
+
+2. **One-Shot Dispatch Tests**: `/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_dispatch.py`
+   - 265 lines of tests for one-shot plan dispatch
+   - 6 test functions covering:
+     - Happy path dispatch
+     - Extra workflow inputs
+     - Dry-run mode
+     - Error handling with branch restoration
+     - Pre-generated slug support
+     - Long prompt truncation
+
+3. **Metadata Update Tests**: `/home/runner/work/erk/erk/tests/unit/gateways/github/metadata_blocks/test_update_dispatch.py`
+   - 109 lines testing `update_plan_header_dispatch` function
+   - 3 test functions covering metadata block updates and error cases
+
+### Source Files
+
+1. **dispatch_helpers.py**: `/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_helpers.py`
+   - 92 lines
+   - Contains `ensure_trunk_synced()` function (lines 10-92)
+   - Purpose: Validates that root worktree is on trunk and synced with remote
+   - Validates:
+     - Root worktree has trunk checked out
+     - Root worktree is clean (no uncommitted changes)
+     - Local trunk matches or can fast-forward to origin/trunk
+     - Raises SystemExit(1) on validation failure
+
+2. **dispatch_cmd.py**: `/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py`
+   - 566 lines
+   - Main dispatch command implementation
+   - Imports `ensure_trunk_synced` from dispatch_helpers (line 11)
+   - Calls `ensure_trunk_synced()` at line 467 in the `pr_dispatch` function
+
+### Import References
+
+The function `ensure_trunk_synced` is:
+- **Defined in**: `/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_helpers.py` (line 10)
+- **Imported in**: `/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py` (line 11)
+- **Called in**: `pr_dispatch()` function at line 467 of dispatch_cmd.py
+
+### Test Coverage Summary
+
+**Direct tests of `ensure_trunk_synced`:** Currently there are **NO dedicated unit tests** for `ensure_trunk_synced` itself. The function is tested indirectly through the integration tests in `test_dispatch.py` which exercise the full dispatch workflow.
+
+**Test coverage chain:**
+- `test_dispatch.py` tests the entire `pr dispatch` command (which calls `ensure_trunk_synced`)
+- Tests verify workflow is triggered correctly when validation passes
+- Tests verify auto-detection and error handling in dispatch operations
+
+**Related metadata tests:**
+- `test_update_dispatch.py` tests the plan-header metadata updates (separate from ensure_trunk_synced)
+- Tests metadata block parsing and YAML field updates
+
+### Directory Structure
+
+```
+/home/runner/work/erk/erk/
+├── src/erk/cli/commands/pr/
+│   ├── dispatch_helpers.py          # Helper functions (includes ensure_trunk_synced)
+│   └── dispatch_cmd.py              # Main dispatch command
+└── tests/
+    ├── commands/pr/
+    │   └── test_dispatch.py         # Tests for pr dispatch command
+    ├── commands/one_shot/
+    │   └── test_one_shot_dispatch.py # Tests for one-shot dispatch
+    └── unit/gateways/github/metadata_blocks/
+        └── test_update_dispatch.py   # Tests for metadata updates
+```</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="205" cache_read_input_tokens="51743" cache_creation="{'ephemeral_5m_input_tokens': 205, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+</session>

@@ -1,0 +1,350 @@
+<session>
+  <meta source="agent-a6d5e2c" />
+  <meta branch="plnd/eliminate-master-checkout-03-01-1556" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Find the implementation of BranchManager.create_branch. Search for it in the gateway/branch_manager directory. I need to see the full implementation to understand why creating a branch from "origin/master" would create TWO branches (the target branch and also 'master').</user>
+  <assistant>I'll search for the BranchManager.create_branch implementation in the gateway/branch_manager directory.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="5854" cache_read_input_tokens="12633" cache_creation="{'ephemeral_5m_input_tokens': 5854, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01UvCURG5kBqi6smStLUexvu">
+    <param name="pattern">**/branch_manager/**/*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5854" cache_read_input_tokens="12633" cache_creation="{'ephemeral_5m_input_tokens': 5854, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01KbBrPV2rkmr7VdnAbdYhuP">
+    <param name="pattern">def create_branch</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5854" cache_read_input_tokens="12633" cache_creation="{'ephemeral_5m_input_tokens': 5854, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KbBrPV2rkmr7VdnAbdYhuP">
+Found 10 files
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py
+packages/erk-shared/src/erk_shared/gateway/branch_manager/abc.py
+packages/erk-shared/src/erk_shared/gateway/branch_manager/factory.py
+packages/erk-shared/src/erk_shared/gateway/branch_manager/fake.py
+packages/erk-shared/src/erk_shared/gateway/branch_manager/git.py
+packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py
+  </tool_result>
+  <tool_result tool="toolu_01UvCURG5kBqi6smStLUexvu">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/factory.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/git.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/types.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/abc.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/branch_manager/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/branch_manager/test_graphite_branch_manager.py
+/home/runner/work/erk/erk/tests/unit/branch_manager/__init__.py
+/home/runner/work/erk/erk/tests/unit/branch_manager/test_graphite_branch_manager.py
+  </tool_result>
+  <assistant>Let me read the ABC first to understand the interface, then the implementations:</assistant>
+  <usage input_tokens="289" cache_creation_input_tokens="620" cache_read_input_tokens="18487" cache_creation="{'ephemeral_5m_input_tokens': 620, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Lj7W3gSPHrNeFP5qRzfzGA">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/abc.py</param>
+  </tool_use>
+  <usage input_tokens="289" cache_creation_input_tokens="620" cache_read_input_tokens="18487" cache_creation="{'ephemeral_5m_input_tokens': 620, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011ncBvTzYGXmWpsfMFyRo54">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/git.py</param>
+  </tool_use>
+  <usage input_tokens="289" cache_creation_input_tokens="620" cache_read_input_tokens="18487" cache_creation="{'ephemeral_5m_input_tokens': 620, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SCkmQA9dqZZLfsSoFCHjY1">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py</param>
+  </tool_use>
+  <usage input_tokens="289" cache_creation_input_tokens="620" cache_read_input_tokens="18487" cache_creation="{'ephemeral_5m_input_tokens': 620, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Lj7W3gSPHrNeFP5qRzfzGA">
+     1→"""Abstract base class for BranchManager operations."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from abc import ABC, abstractmethod
+     6→from pathlib import Path
+     7→
+     8→from erk_shared.gateway.branch_manager.types import PrInfo, SubmitBranchError, SubmitBranchResult
+     9→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
+    10→
+    11→
+    12→class BranchManager(ABC):
+    13→    """Dual-mode interface for branch operations.
+    14→
+    15→    Provides consistent interface regardless of whether
+    16→    Graphite or plain Git is being used. This abstraction
+    17→    allows the statusline (and other consumers) to work
+    18→    transparently with both Graphite-managed and plain Git
+    19→    repositories.
+    20→
+    21→    Key operations:
+    22→    - get_pr_for_branch: Get PR info from Graphite cache (fast) or GitHub API (fallback)
+    23→    - create_branch: Create branch via gt create (Graphite) or git branch (Git)
+    24→    """
+    25→
+    26→    @abstractmethod
+    27→    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PrInfo | None:
+    28→        """Get PR info for a branch.
+    29→
+    30→        For Graphite: Reads from .graphite_pr_info cache (fast, no network).
+
+... [206 lines omitted] ...
+
+    76→    def submit_branch(self, repo_root: Path, branch: str) -&gt; SubmitBranchResult | SubmitBranchError:
+    87→            SubmitBranchResult on success, SubmitBranchError on failure.
+   198→            RuntimeError: If the branch is already checked out in another worktree
+  </tool_result>
+  <tool_result tool="toolu_011ncBvTzYGXmWpsfMFyRo54">
+     1→"""Git-based BranchManager implementation (no Graphite)."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from dataclasses import dataclass
+     6→from pathlib import Path
+     7→
+     8→from erk_shared.gateway.branch_manager.abc import BranchManager
+     9→from erk_shared.gateway.branch_manager.types import PrInfo, SubmitBranchError, SubmitBranchResult
+    10→from erk_shared.gateway.git.abc import Git
+    11→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
+    12→from erk_shared.gateway.git.remote_ops.types import PushError
+    13→from erk_shared.gateway.github.abc import GitHub
+    14→from erk_shared.gateway.github.types import PRNotFound
+    15→
+    16→
+    17→@dataclass(frozen=True)
+    18→class GitBranchManager(BranchManager):
+    19→    """BranchManager implementation using plain Git and GitHub.
+    20→
+    21→    Falls back to GitHub REST API for PR lookups when Graphite
+    22→    is not available or not configured.
+    23→    """
+    24→
+    25→    git: Git
+    26→    github: GitHub
+    27→
+    28→    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PrInfo | None:
+    29→        """Get PR info from GitHub REST API.
+    30→
+
+... [174 lines omitted] ...
+
+    82→    def submit_branch(self, repo_root: Path, branch: str) -&gt; SubmitBranchResult | SubmitBranchError:
+    94→            SubmitBranchResult on success, SubmitBranchError on failure.
+    99→        if isinstance(push_result, PushError):
+   100→            return SubmitBranchError(message=push_result.message)
+  </tool_result>
+  <tool_result tool="toolu_01SCkmQA9dqZZLfsSoFCHjY1">
+     1→"""Graphite-based BranchManager implementation."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from dataclasses import dataclass
+     6→from pathlib import Path
+     7→
+     8→from erk_shared.gateway.branch_manager.abc import BranchManager
+     9→from erk_shared.gateway.branch_manager.types import PrInfo, SubmitBranchError, SubmitBranchResult
+    10→from erk_shared.gateway.git.abc import Git
+    11→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
+    12→from erk_shared.gateway.github.abc import GitHub
+    13→from erk_shared.gateway.github.types import PRNotFound
+    14→from erk_shared.gateway.graphite.abc import Graphite
+    15→from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
+    16→
+    17→
+    18→@dataclass(frozen=True)
+    19→class GraphiteBranchManager(BranchManager):
+    20→    """BranchManager implementation using Graphite.
+    21→
+    22→    Uses Graphite's local cache for fast PR lookups and `gt create`
+    23→    for branch creation with parent tracking. Falls back to GitHub API
+    24→    when PR info is not in Graphite cache.
+    25→    """
+    26→
+    27→    git: Git
+    28→    graphite: Graphite
+    29→    graphite_branch_ops: GraphiteBranchOps
+    30→    github: GitHub
+
+... [271 lines omitted] ...
+
+   172→    def submit_branch(self, repo_root: Path, branch: str) -&gt; SubmitBranchResult | SubmitBranchError:
+   182→            SubmitBranchResult on success, SubmitBranchError on failure.
+   189→        except RuntimeError as e:
+   190→            return SubmitBranchError(message=str(e))
+  </tool_result>
+  <assistant>Now I need to look at the underlying git.branch.create_branch implementation:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="10282" cache_read_input_tokens="19107" cache_creation="{'ephemeral_5m_input_tokens': 10282, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01T4bxhq6zrj5Ey1VLXy24uc">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10282" cache_read_input_tokens="19107" cache_creation="{'ephemeral_5m_input_tokens': 10282, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015G1Ue1KcDnERofEwnfTUaG">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10282" cache_read_input_tokens="19107" cache_creation="{'ephemeral_5m_input_tokens': 10282, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01T4bxhq6zrj5Ey1VLXy24uc">
+     1→"""Abstract base class for Git branch operations.
+     2→
+     3→This sub-gateway extracts branch operations from the main Git gateway,
+     4→including both mutation and query operations.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from abc import ABC, abstractmethod
+    10→from pathlib import Path
+    11→from typing import TYPE_CHECKING
+    12→
+    13→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
+    14→
+    15→if TYPE_CHECKING:
+    16→    from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo
+    17→
+    18→
+    19→class GitBranchOps(ABC):
+    20→    """Abstract interface for Git branch operations.
+    21→
+    22→    This interface contains both mutation and query operations for branches.
+    23→    All implementations (real, fake, dry-run, printing) must implement this interface.
+    24→    """
+    25→
+    26→    @abstractmethod
+    27→    def create_branch(
+    28→        self, cwd: Path, branch_name: str, start_point: str, *, force: bool
+    29→    ) -&gt; BranchCreated | BranchAlreadyExists:
+    30→        """Create a new branch without checking it out.
+
+... [293 lines omitted] ...
+
+    84→            subprocess.CalledProcessError: If git command fails
+   184→            RuntimeError: If the specified branch doesn't exist
+  </tool_result>
+  <tool_result tool="toolu_015G1Ue1KcDnERofEwnfTUaG">
+     1→"""Production implementation of Git branch operations using subprocess."""
+     2→
+     3→import re
+     4→import subprocess
+     5→from pathlib import Path
+     6→
+     7→from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo
+     8→from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+     9→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
+    10→from erk_shared.gateway.git.lock import wait_for_index_lock
+    11→from erk_shared.gateway.time.abc import Time
+    12→from erk_shared.gateway.time.real import RealTime
+    13→from erk_shared.subprocess_utils import run_subprocess_with_context
+    14→
+    15→
+    16→class RealGitBranchOps(GitBranchOps):
+    17→    """Production implementation of branch operations using subprocess.
+    18→
+    19→    All git operations execute actual git commands via subprocess.
+    20→    """
+    21→
+    22→    def __init__(self, time: Time | None = None) -&gt; None:
+    23→        """Initialize RealGitBranchOps with optional Time provider.
+    24→
+    25→        Args:
+    26→            time: Time provider for lock waiting. Defaults to RealTime().
+    27→        """
+    28→        self._time = time if time is not None else RealTime()
+    29→
+    30→    def create_branch(
+
+... [440 lines omitted] ...
+
+   228→            RuntimeError: If the specified branch doesn't exist
+   239→        error_msg = (
+   240→            f"Error: Configured trunk branch '{name}' does not exist in repository.\n"
+   243→        raise RuntimeError(error_msg)
+  </tool_result>
+  <assistant>Perfect! Now I have a clear picture of the issue. Let me create a detailed report.
+
+## Analysis of BranchManager.create_branch Implementation
+
+I found the full implementation chain. Here's the complete picture of why creating a branch from "origin/master" creates TWO branches:
+
+### The Call Chain
+
+1. **BranchManager.create_branch** (ABC interface at `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/abc.py:43-59`)
+
+2. **GraphiteBranchManager.create_branch** (Implementation at `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py:69-106`)
+
+3. **The Root Cause - _ensure_local_matches_remote**
+
+### The Problem
+
+In `GraphiteBranchManager.create_branch` (lines 69-106), when you pass `base_branch="origin/master"`:
+
+```python
+def create_branch(
+    self, repo_root: Path, branch_name: str, base_branch: str
+) -&gt; BranchCreated | BranchAlreadyExists:
+    # Step 1: Create the target branch from origin/master
+    result = self.git.branch.create_branch(repo_root, branch_name, base_branch, force=False)
+    
+    # Step 2: Extract local branch name
+    parent_for_graphite = base_branch.removeprefix("origin/")  # "origin/master" -&gt; "master"
+    
+    # Step 3: If base was origin/something, ensure local parent branch matches remote
+    # THIS IS THE PROBLEM:
+    if base_branch.startswith("origin/"):
+        self._ensure_local_matches_remote(repo_root, parent_for_graphite, base_branch)
+```
+
+### The _ensure_local_matches_remote Method (lines 108-145)
+
+This method checks if a local "master" branch exists. **If it doesn't exist**, it creates it:
+
+```python
+def _ensure_local_matches_remote(
+    self, repo_root: Path, local_branch: str, remote_ref: str
+) -&gt; None:
+    local_branches = self.git.branch.list_local_branches(repo_root)
+    
+    if local_branch not in local_branches:
+        # Local doesn't exist - CREATE IT from remote
+        self.git.branch.create_branch(repo_root, local_branch, remote_ref, force=False)
+        return
+```
+
+### Why Two Branches Get Created
+
+**Scenario:** Creating a new branch `plnd/my-feature` from `origin/master` when the local `master` branch doesn't exist:
+
+1. **First branch created:** `plnd/my-feature` is created from `origin/master` (line 85)
+2. **Second branch created:** `master` is created from `origin/master` (line 129 inside `_ensure_local_matches_remote`)
+
+This happens because Graphite needs a local `master` branch to exist so it can track the parent relationship correctly. The code comment on line 93-94 explains why:
+
+```python
+# If base was origin/something, ensure local parent branch matches remote
+# so Graphite's ancestry check passes (local must be ancestor of new branch)
+```
+
+### Implementation Details
+
+The underlying git command (from `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py:30-57`):
+
+```python
+def create_branch(
+    self, cwd: Path, branch_name: str, start_point: str, *, force: bool
+) -&gt; BranchCreated | BranchAlreadyExists:
+    cmd = ["git", "branch"]
+    if force:
+        cmd.append("-f")
+    cmd.extend([branch_name, start_point])
+```
+
+This becomes: `git branch plnd/my-feature origin/master` and then `git branch master origin/master`
+
+### Summary
+
+The design intentionally creates the local parent branch (`master`) when creating a child branch from a remote reference. This is necessary for Graphite's stack tracking to work correctly, because Graphite requires:
+
+1. The child branch to exist locally
+2. A local parent branch to exist
+3. The local parent to be an ancestor of the child
+
+When you use a remote ref as the base, the code auto-creates the local branch to satisfy Graphite's requirements.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="9985" cache_read_input_tokens="29389" cache_creation="{'ephemeral_5m_input_tokens': 9985, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
