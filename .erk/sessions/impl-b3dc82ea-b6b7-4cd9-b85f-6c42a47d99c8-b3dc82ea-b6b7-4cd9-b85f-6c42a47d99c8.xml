@@ -1,0 +1,496 @@
+<session>
+  <meta branch="plnd/fix-pr-address-gitignore-n-03-01-1357" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8546&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 12. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8546` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**CRITICAL**: Never delete the impl directory - leave for user review (no auto-commit).
+
+### Step 12: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 13: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll implement plan #8546. Let me start by setting up the implementation environment.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28014" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28014, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01GbJRUzPoHK8Tmo1QjX8bRv">
+    <param name="command">erk exec setup-impl --issue 8546</param>
+    <param name="description">Set up implementation for plan #8546</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28014" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28014, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GbJRUzPoHK8Tmo1QjX8bRv">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--fix-pr-address-gitignore-n-03-01-1357", "plan_number": 8546, "plan_url": "https://github.com/dagster-io/erk/pull/8546", "branch": "plnd/fix-pr-address-gitignore-n-03-01-1357", "plan_title": "[erk-plan] Plan: Fix pr-address commit instructions for plan-only PRs", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8546, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/fix-pr-address-gitignore-n-03-01-1357', syncing with remote...
+  </tool_result>
+  <assistant>Good, the implementation environment is set up. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="365" cache_read_input_tokens="28014" cache_creation="{'ephemeral_5m_input_tokens': 365, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01RkmtAHUKioxoXFgGEsQtAX">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--fix-pr-address-gitignore-n-03-01-1357/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="365" cache_read_input_tokens="28014" cache_creation="{'ephemeral_5m_input_tokens': 365, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RkmtAHUKioxoXFgGEsQtAX">
+     1→# Plan: Fix pr-address commit instructions for plan-only PRs
+     2→
+     3→## Context
+     4→
+     5→When `pr-address` runs on a plan-only PR (e.g. #8544), the agent edits `.erk/impl-context/plan.md`. But `.erk/impl-context/` is gitignored, so the Step 3 instruction `git add &lt;changed files&gt;` silently fails. The agent had to discover and recover with `git add -f`, wasting 2 extra turns and ~$0.20.
+     6→
+     7→The tripwire in `docs/learned/ci/gitignored-directory-commit-patterns.md` already documents this, but `pr-address.md` doesn't account for it.
+     8→
+     9→## Change
+    10→
+    11→**File:** `.claude/commands/erk/pr-address.md` (~line 200)
+    12→
+    13→Add a note about gitignored files to Step 3:
+    14→
+    15→```markdown
+    16→#### Step 3: Commit the Batch
+    17→
+    18→Create a single commit for all changes in the batch:
+    19→
+    20→```bash
+    21→git add &lt;changed files&gt;
+    22→git commit -m "Address PR review comments (batch N/M)
+    23→
+    24→- &lt;summary of comment 1&gt;
+    25→- &lt;summary of comment 2&gt;
+    26→..."
+    27→```
+    28→
+    29→**Note:** If any changed files are in `.erk/impl-context/` (plan-only PRs), use `git add -f` instead — the directory is gitignored.
+    30→```
+
+... [11 lines omitted] ...
+  </tool_result>
+  <assistant>Clear plan. This is a documentation-only change to `.claude/commands/erk/pr-address.md`. Let me set up todos and start.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="688" cache_read_input_tokens="28379" cache_creation="{'ephemeral_5m_input_tokens': 688, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01P8DD2AdDvKsRgDBBfgwhfq">
+    <param name="todos">[{'content': 'Read pr-address.md and locate Step 3 commit section', 'status': 'in_progress...[truncated 400 chars]... submit PR', 'status': 'pending', 'activeForm': 'Signaling completion and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="688" cache_read_input_tokens="28379" cache_creation="{'ephemeral_5m_input_tokens': 688, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01P8DD2AdDvKsRgDBBfgwhfq">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01NSZuQaCg1VMYCCXPYQgJLr">
+    <param name="command">erk exec impl-signal started --session-id="b3dc82ea-b6b7-4cd9-b85f-6c42a47d99c8" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="294" cache_read_input_tokens="29067" cache_creation="{'ephemeral_5m_input_tokens': 294, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NSZuQaCg1VMYCCXPYQgJLr">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8546
+}
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MA3gNTGbTDUs7yZqc7Aq2S">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/pr-address.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="157" cache_read_input_tokens="29361" cache_creation="{'ephemeral_5m_input_tokens': 157, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MA3gNTGbTDUs7yZqc7Aq2S">
+     1→---
+     2→description: Address PR review comments on current branch
+     3→---
+     4→
+     5→# /erk:pr-address
+     6→
+     7→## Description
+     8→
+     9→Fetches unresolved PR review comments AND PR discussion comments from the current branch's PR and addresses them using holistic analysis with smart batching. Comments are grouped by complexity and relationship, then processed batch-by-batch with incremental commits and resolution.
+    10→
+    11→## Usage
+    12→
+    13→```bash
+    14→/erk:pr-address
+    15→/erk:pr-address --all               # Include resolved threads (for reference)
+    16→/erk:pr-address --pr 6631           # Target specific PR
+    17→/erk:pr-address --pr 6631 --all     # Target specific PR with resolved threads
+    18→```
+    19→
+    20→## Prerequisite
+    21→
+    22→**Load the `pr-operations` skill first** for complete command reference and common mistake patterns.
+    23→
+    24→## Agent Instructions
+    25→
+    26→&gt; **Prerequisite**: Load `pr-operations` skill first for command reference.
+    27→
+    28→&gt; **CRITICAL: Use ONLY `erk exec` Commands**
+    29→&gt;
+    30→&gt; See `pr-operations` skill for the complete command reference. Never use raw `gh api` calls for thread operations.
+
+... [302 lines omitted] ...
+
+    56→- `error`: Error message if `success` is false
+    58→**Handle errors**: If `success` is false, display the error and exit.
+   320→### Error Handling
+   322→**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+   324→**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+   326→**CI failure during batch:** Stop, display the failure, and let the user decide whether to fix and continue or abort
+  </tool_result>
+  <assistant>I can see the file. The plan says to add a note to Step 3 (around line 200) about using `git add -f` for gitignored `.erk/impl-context/` files. Let me also check for other commands that commit `.erk/impl-context/` files for consistency.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4467" cache_read_input_tokens="29518" cache_creation="{'ephemeral_5m_input_tokens': 4467, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01XH9AX5LVBmP4zHrE3dCCGJ">
+    <param name="todos">[{'content': 'Read pr-address.md and locate Step 3 commit section', 'status': 'completed',...[truncated 402 chars]... submit PR', 'status': 'pending', 'activeForm': 'Signaling completion and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4467" cache_read_input_tokens="29518" cache_creation="{'ephemeral_5m_input_tokens': 4467, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XH9AX5LVBmP4zHrE3dCCGJ">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me add the note to Step 3:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="330" cache_read_input_tokens="33985" cache_creation="{'ephemeral_5m_input_tokens': 330, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01RnNvQ8Zm7nNELfw8rbW7es">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/pr-address.md</param>
+    <param name="old_string">```bash
+git add &lt;changed files&gt;
+git commit -m "Address PR review comments (batch N/M)
+
+- &lt;...[truncated 4 chars]...&lt;summary of comment 2&gt;
+..."
+```
+
+#### Step 4: Resolve All Threads in the Batch (MANDATORY)</param>
+    <param name="new_string">```bash
+git add &lt;changed files&gt;
+git commit -m "Address PR review comments (batch N/M)
+
+- &lt;...[truncated 137 chars]... — the directory is gitignored.
+
+#### Step 4: Resolve All Threads in the Batch (MANDATORY)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="330" cache_read_input_tokens="33985" cache_creation="{'ephemeral_5m_input_tokens': 330, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RnNvQ8Zm7nNELfw8rbW7es">
+The file /home/runner/work/erk/erk/.claude/commands/erk/pr-address.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_019JAKck83bphJGeLcij2T2v">
+    <param name="todos">[{'content': 'Read pr-address.md and locate Step 3 commit section', 'status': 'completed',...[truncated 404 chars]... submit PR', 'status': 'pending', 'activeForm': 'Signaling completion and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="340" cache_read_input_tokens="34315" cache_creation="{'ephemeral_5m_input_tokens': 340, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019JAKck83bphJGeLcij2T2v">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me check for other commands/skills that commit `.erk/impl-context/` files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="260" cache_read_input_tokens="34655" cache_creation="{'ephemeral_5m_input_tokens': 260, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01VCnRCUk7qnmBZFRNCo7mup">
+    <param name="pattern">impl-context.*git add|git add.*impl-context</param>
+    <param name="path">/home/runner/work/erk/erk/.claude</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="260" cache_read_input_tokens="34655" cache_creation="{'ephemeral_5m_input_tokens': 260, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01BJJEC4NDnKkpxr1iEwTfdJ">
+    <param name="pattern">\.erk/impl-context.*commit|commit.*\.erk/impl-context</param>
+    <param name="path">/home/runner/work/erk/erk/.claude</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="260" cache_read_input_tokens="34655" cache_creation="{'ephemeral_5m_input_tokens': 260, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BJJEC4NDnKkpxr1iEwTfdJ">
+.claude/commands/erk/plan-implement.md:76:- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+.claude/commands/erk/learn.md:66:Check if `.erk/impl-context/` exists and contains files (this is the case when running in CI after the upload-impl-session pipeline committed materials to the learn branch):
+  </tool_result>
+  <tool_result tool="toolu_01VCnRCUk7qnmBZFRNCo7mup">
+.claude/commands/erk/pr-address.md:209:**Note:** If any changed files are in `.erk/impl-context/` (plan-only PRs), use `git add -f` instead — the directory is gitignored.
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01M4y1zTHis5XP6PAdtiaqzK">
+    <param name="pattern">git add.*-f|git add -f</param>
+    <param name="path">/home/runner/work/erk/erk/.claude</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="123" cache_creation_input_tokens="323" cache_read_input_tokens="34915" cache_creation="{'ephemeral_5m_input_tokens': 323, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01M4y1zTHis5XP6PAdtiaqzK">
+.claude/commands/erk/pr-address.md:209:**Note:** If any changed files are in `.erk/impl-context/` (plan-only PRs), use `git add -f` instead — the directory is gitignored.
+  </tool_result>
+  <assistant>Let me also check the existing tripwire documentation that's referenced in the plan:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="298" cache_read_input_tokens="35238" cache_creation="{'ephemeral_5m_input_tokens': 298, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01YCJULt6rSbxszGagZbVBPg">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/gitignored-directory-commit-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="298" cache_read_input_tokens="35238" cache_creation="{'ephemeral_5m_input_tokens': 298, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01YCJULt6rSbxszGagZbVBPg">
+     1→---
+     2→title: CI Gitignored Directory Commit Patterns
+     3→read_when:
+     4→  - "working with .erk/impl-context/ in CI workflows"
+     5→  - "force-adding gitignored files in GitHub Actions"
+     6→  - "debugging why .erk/impl-context/ appears in PR diffs"
+     7→tripwires:
+     8→  - action: "committing .erk/impl-context/ without git add -f"
+     9→    warning: "The directory is gitignored. Use git add -f .erk/impl-context to force-add it. Without -f, git silently skips the directory."
+    10→    score: 5
+    11→---
+    12→
+    13→# CI Gitignored Directory Commit Patterns
+    14→
+    15→`.erk/impl-context/` is gitignored but needs temporary git tracking during CI workflows. This requires force-add and explicit cleanup.
+    16→
+    17→## Three-Phase Lifecycle
+    18→
+    19→### Phase 1: Force-Add During Setup
+    20→
+    21→&lt;!-- Source: .github/workflows/plan-implement.yml, Phase 1 setup step --&gt;
+    22→
+    23→The setup step creates the implementation context, force-adds it to git tracking, and pushes to the remote branch. `git add -f` overrides `.gitignore` to track the directory. This creates a committed snapshot that the implementation agent reads from.
+    24→
+    25→### Phase 2: Remove Before Implementation
+    26→
+    27→&lt;!-- Source: .github/workflows/plan-implement.yml, cleanup step --&gt;
+    28→
+    29→The cleanup step in `plan-implement.yml` (lines 406-409 and similar patterns) uses `git rm -r --cached` to remove from git tracking while preserving files on disk. The implementation agent still reads the local files, but they no longer appear in the PR diff. This is idempotent — safe to run even if already cleaned up.
+    30→
+
+... [28 lines omitted] ...
+
+    41→| `git ls-files --error-unmatch .erk/impl-context/` | Check if directory is tracked (exit 1 if not) |
+    45→&lt;!-- Source: src/erk/cli/commands/exec/scripts/ci_update_pr_body.py, plan-header error handling --&gt;
+    47→When rewriting PR bodies in CI, the plan-header metadata block must be preserved. The error handling in `ci_update_pr_body.py` (around lines 266-277) validates that the plan-header metadata block exists, using a `UpdateError` discriminated union with a specific `plan-header-not-found` variant to signal metadata loss in previous CI steps.
+  </tool_result>
+  <assistant>Good. The grep results show that only `pr-address.md` (our change), `plan-implement.md` (which delegates to `erk exec setup-impl` that handles it automatically), and `learn.md` (which only reads, doesn't commit) reference `.erk/impl-context/` with commit operations. The `plan-implement.md` uses `erk exec setup-impl` which handles the `git rm` cleanup automatically, so no additional changes are needed elsewhere. Our change is consistent with the existing tripwire documentation.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1306" cache_read_input_tokens="35536" cache_creation="{'ephemeral_5m_input_tokens': 1306, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01Q4E6a3S35HkhdRtPLN8HgX">
+    <param name="todos">[{'content': 'Read pr-address.md and locate Step 3 commit section', 'status': 'completed',...[truncated 406 chars]...mit PR', 'status': 'in_progress', 'activeForm': 'Signaling completion and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1306" cache_read_input_tokens="35536" cache_creation="{'ephemeral_5m_input_tokens': 1306, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Q4E6a3S35HkhdRtPLN8HgX">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me signal completion and submit:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="380" cache_read_input_tokens="36842" cache_creation="{'ephemeral_5m_input_tokens': 380, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_016z2riBGVpE4aE896KJWmk1">
+    <param name="command">erk exec impl-signal ended --session-id="b3dc82ea-b6b7-4cd9-b85f-6c42a47d99c8" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="380" cache_read_input_tokens="36842" cache_creation="{'ephemeral_5m_input_tokens': 380, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01DkG39bDScxoAye3yMU3dfU">
+    <param name="command">erk exec upload-impl-session --session-id="b3dc82ea-b6b7-4cd9-b85f-6c42a47d99c8" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="380" cache_read_input_tokens="36842" cache_creation="{'ephemeral_5m_input_tokens': 380, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016z2riBGVpE4aE896KJWmk1">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8546
+}
+  </tool_result>
+</session>
