@@ -1,0 +1,638 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;local:changelog-update&lt;/command-message&gt;
+&lt;command-name&gt;/local:changelog-update&lt;/command-name&gt;</user>
+  <user># /local:changelog-update
+
+Brings the CHANGELOG.md Unreleased section up-to-date with commits merged to master.
+
+&gt; **Note:** Run this regularly during development. At release time, use `/local:changelog-release`.
+
+## Usage
+
+```bash
+/local:changelog-update
+```
+
+## What It Does
+
+1. Reads the "As of" marker in the Unreleased section (adds one if missing)
+2. Finds commits on master since that marker
+3. Categorizes commits and presents proposal for user review
+4. Updates changelog only after user approval
+5. Always updates the "As of" marker to current HEAD (even if no new entries)
+
+---
+
+## Agent Instructions
+
+### Phase 1: Launch Categorization Agent
+
+Launch a subagent to fetch commits, read the CHANGELOG, and categorize:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  description: "Categorize changelog commits",
+  prompt: |
+    Load and follow the agent instructions in `.claude/agents/changelog/commit-categorizer.md`
+)
+```
+
+### Phase 2: Parse Result
+
+Parse the agent's output by examining the `STATUS` line:
+
+- **`STATUS: ERROR`** - Display the `ERROR_MESSAGE` and stop.
+- **`STATUS: NO_COMMITS`** - Update the "As of" line in CHANGELOG.md to the `HEAD_COMMIT` value. Report "CHANGELOG.md is already up-to-date. Updated marker to {HEAD_COMMIT}." and stop.
+- **`STATUS: OK`** - Extract the proposal text after `---PROPOSAL---` and proceed to Phase 3.
+
+### Phase 3: Present Proposal for Review
+
+**CRITICAL: Do NOT edit the changelog yet. Present the proposal and wait for user approval.**
+
+Display the proposal text from the agent verbatim. The proposal includes categorized entries, filtered commits, low-confidence flags, and asks the user to approve or adjust.
+
+Wait for the user to:
+
+1. Approve as-is
+2. Request adjustments to categorizations
+3. Request rephrased descriptions
+4. Include or exclude specific commits
+
+### Phase 4: Update CHANGELOG.md (After Approval)
+
+Only proceed after the user confirms or provides adjustments.
+
+Update the Unreleased section:
+
+1. **Update "As of" line** to current HEAD commit hash
+2. **Add new entries** under appropriate category headers
+3. **Preserve existing entries** - do not remove or modify them
+4. **Create category headers** only if they have new entries
+
+Category order (if present):
+
+1. Major Changes
+2. Added
+3. Changed
+4. Fixed
+5. Removed
+
+If a category header already exists, append new entries below existing ones.
+
+### Phase 5: Report
+
+After successful update:
+
+```
+Updated CHANGELOG.md:
+- Processed {n} commits
+- Added {m} entries to: {categories}
+- Now as of {commit}
+```
+
+### Entry Format
+
+Format each entry as:
+
+```markdown
+- Brief user-facing description (commit_hash)
+```
+
+Guidelines:
+
+- Focus on **user benefit**, not implementation details
+- Start with a verb (Add, Fix, Improve, Remove, Move, Migrate)
+- Be concise but clear (1 sentence)
+- Include the short commit hash in parentheses
+- Add notes for entries that may cause user-visible issues (e.g., "note: this may cause hard failures, please report if encountered")
+</user>
+  <thinking>The user wants to run the changelog update command. Let me follow the instructions:
+
+Phase 1: Launch the categorization agent.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="14220" cache_read_input_tokens="16898" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14220}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll launch the commit categorization agent to analyze what needs to be added to the changelog.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="14220" cache_read_input_tokens="16898" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14220}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01WWKLoBqX5EwCtEke6vBKdS">
+    <param name="description">Categorize changelog commits</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="prompt">Load and follow the agent instructions in `.claude/agents/changelog/commit-categorizer.md`</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="14220" cache_read_input_tokens="16898" output_tokens="178" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 14220, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WWKLoBqX5EwCtEke6vBKdS">
+Now I have all the information needed. Let me produce the categorization output.
+
+STATUS: OK
+HEAD_COMMIT: f5b9b5c50
+SINCE_COMMIT: 6928c601086e02e9f577de42974736e619bd7643
+TOTAL_COMMITS: 48
+
+---PROPOSAL---
+
+Found 16 commits since last sync (b372dfbcc).
+
+**Proposed Entries:**
+
+**Added (3):**
+1. `a87c69bab` - Add one-shot prompt modal to `erk dash` (`x` keybinding) for quick dispatch without leaving the TUI
+   - Reasoning: New user-facing TUI feature -- global keybinding opens a text input modal for inline one-shot dispatch
+2. `bd69797ac` - Add visible AI-generated summary to plan PRs, displayed above the collapsed plan details for quick overview
+   - Reasoning: New user-facing feature -- plan PRs now show a readable summary without expanding the details section
+3. `682827afc` - Show toast notification when learn plan is created during TUI landing
+   - Reasoning: New user-visible feedback -- TUI now confirms learn plan creation after landing a PR, matching CLI behavior
+
+**Changed (3):**
+1. `fe5c1231c` - Rename "Fix Conflicts Remote" to "Rebase Remote" in TUI and always perform rebase
+   - Reasoning: User-facing rename and behavior change in TUI command palette
+2. `b9fc51011` - Require `--summary` flag on `erk pr create` instead of auto-generating summaries
+   - Reasoning: User-facing CLI change -- `erk pr create` now requires explicit summary instead of invoking LLM internally
+3. `f5b9b5c50` - Use LLM-generated branch name slugs for plan PRs, producing more descriptive branch names
+   - Reasoning: User-visible change -- plan PR branches now have more descriptive names derived from plan content
+
+**Fixed (1):**
+
+... [40 lines omitted] ...
+
+**Low-Confidence Categorizations:** (warning)
+  </tool_result>
+  <thinking>The agent returned STATUS: OK with a proposal. Let me present it to the user for review.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1468" cache_read_input_tokens="31118" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1468}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Here's the proposed changelog update (16 commits since last sync, 8 entries, 8 filtered):
+
+### Added (3)
+1. Add one-shot prompt modal to `erk dash` (`x` keybinding) for quick dispatch without leaving the TUI (`a87c69b`)
+2. Add visible AI-generated summary to plan PRs, displayed above the collapsed plan details for quick overview (`bd69797`)
+3. Show toast notification when learn plan is created during TUI landing (`682827a`)
+
+### Changed (3)
+1. Rename "Fix Conflicts Remote" to "Rebase Remote" in TUI and always perform rebase (`fe5c123`)
+2. Require `--summary` flag on `erk pr create` instead of auto-generating summaries (`b9fc510`)
+3. Use LLM-generated branch name slugs for plan PRs, producing more descriptive branch names (`f5b9b5c`) *(low confidence — could be filtered as internal refactoring since branch names are only subtly visible)*
+
+### Fixed (1)
+1. Fix stale stack indicator showing incorrectly when parent PR is already merged (`d04377e`)
+
+### Removed (1)
+1. Remove erkdesk Electron desktop app and all references (`0d58bd0`) *(low confidence — could be filtered if erkdesk was never externally shipped)*
+
+### Filtered Out (8)
+CI-only, test-only, internal pipeline (learn plan XML embedding), and changelog sync commits.
+
+---
+
+Would you like to:
+1. **Approve as-is**
+2. **Adjust** any categorizations (e.g., filter the low-confidence items)
+3. **Rephrase** any descriptions
+4. **Include/exclude** specific commits</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1468" cache_read_input_tokens="31118" output_tokens="443" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1468, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>1</user>
+  <thinking>The user approved as-is. Now I need to update the CHANGELOG.md. Let me read it first, then update the Unreleased section.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="600" cache_read_input_tokens="32586" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 600}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Approved. Let me read the current CHANGELOG and update it.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="600" cache_read_input_tokens="32586" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 600}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WwKCuRbQ5opny1MqyhVnJB">
+    <param name="file_path">/Users/schrockn/code/erk/CHANGELOG.md</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="600" cache_read_input_tokens="32586" output_tokens="150" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 600, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WwKCuRbQ5opny1MqyhVnJB">
+     1→# Changelog
+     2→
+     3→All notable changes to erk will be documented in this file.
+     4→
+     5→The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+     6→and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+     7→
+     8→## [Unreleased]
+     9→
+    10→&lt;!-- As of: b372dfbcc --&gt;
+    11→
+    12→### Added
+    13→
+    14→- Add "rewrite" command to TUI command palette for remote PR rebase and AI summary regeneration (704bbe6ad)
+    15→- Add `gt submit` to TUI sync checkout command for streamlined branch submission (6240893fa)
+    16→- Add `erk init --upgrade` flag for self-service upgrades after version changes (a59de3ee3)
+    17→- Add `dispatch_ref` config to override workflow dispatch branch for testing workflow changes on feature branches (064737c47)
+    18→- Add `launch one-shot` command for triggering one-shot workflows with `--prompt`/`-f` options (e86efb1e4)
+    19→- Display learn plan PR link in `erk land` output (90bfd7870)
+    20→- Add session preprocessing stats to `erk land` discovery output (2ed31d082)
+    21→
+    22→### Changed
+    23→
+    24→- Improve session discovery logging in `erk land` with per-session type badges and sizes (86d2118cc)
+    25→- Fix sync command clipboard text to include full command in TUI command palette (add2748d2)
+    26→- Delay impl-context cleanup until submit phase to preserve plan tracking during implementation (a14a62273)
+    27→- Rebase slot worktree placeholder branch onto master after `erk land` to keep slots fresh (92f5f2e7f)
+    28→
+    29→### Fixed
+    30→
+
+... [50 lines omitted] ...
+
+    31→- Fix misleading data when GraphQL enrichment fails in `erk pr list` -- unenriched PRs now excluded from linkages with explicit degradation warnings (04dc3d38a)
+    32→- Make `--script` mode resilient to errors in `erk br co` -- failures now produce a valid error script instead of empty stdout (04c46a7bb)
+    33→- Fix workflow-started metadata block rendering to prevent parse failures during `erk land` (ffd28b870)
+  </tool_result>
+  <thinking>I'm in plan mode, which means I can only edit the plan file and take read-only actions. But the user invoked `/local:changelog-update` which is a command that requires editing CHANGELOG.md. Let me update the CHANGELOG.md as instructed by the command.
+
+Wait, I'm in plan mode. The system reminder says "Read-only except plan file". But the user explicitly invoked a command (`/local:changelog-update`) that requires editing the changelog. This is a conflict.
+
+Actually, looking more carefully, the user approved the changelog update (said "1" for approve as-is). The command workflow is clear: Phase 4 is to update CHANGELOG.md after approval. 
+
+I'm caught between the explicit user command and the plan mode constraint. The instructions are clear that I can't make edits outside the plan file, even though the user invoked a changelog update command and approved the changes. The plan mode restriction takes precedence over the command workflow.
+
+I should let the user know that plan mode is preventing me from executing the edit, and ask them to either exit plan mode or run the command separately.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1799" cache_read_input_tokens="33186" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1799}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'm currently in plan mode, which prevents me from editing files other than the plan file. To apply the changelog update, I need to exit plan mode first.
+
+Let me write the plan for this update so we can proceed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1799" cache_read_input_tokens="33186" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1799}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_019ueAaKW336gGjV1AiFSCmM">
+    <param name="file_path">/Users/schrockn/.claude/plans/cheeky-moseying-puppy.md</param>
+    <param name="content"># Changelog Update Plan
+
+## Context
+Sync CHANGELOG.md unreleased section with 16 commits m...[truncated 1165 chars]...ll 8 entries present under correct headers
+- Confirm existing entries preserved unchanged
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1799" cache_read_input_tokens="33186" output_tokens="989" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1799, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019ueAaKW336gGjV1AiFSCmM">
+File created successfully at: /Users/schrockn/.claude/plans/cheeky-moseying-puppy.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01813vWZteRjoqxxHb7WALjk">
+    <param name="plan"># Changelog Update Plan
+
+## Context
+Sync CHANGELOG.md unreleased section with 16 commits m...[truncated 1165 chars]...ll 8 entries present under correct headers
+- Confirm existing entries preserved unchanged
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1027" cache_read_input_tokens="34985" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1027, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01813vWZteRjoqxxHb7WALjk">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/cheeky-moseying-puppy.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Changelog Update Plan
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 06a35cb3-0bf3-4d48-9726-2cd6e453db50 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <thinking>The hook intercepted ExitPlanMode and wants me to present options to the user. Let me follow the instructions.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="655" cache_read_input_tokens="36012" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 655}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Here's the changelog update plan:
+
+## Changelog Update Plan
+
+**Context:** Sync CHANGELOG.md unreleased section with 16 commits merged to master since last sync marker (b372dfbcc).
+
+**Changes** — Update `CHANGELOG.md` Unreleased section:
+
+1. Update "As of" marker from `b372dfbcc` to `f5b9b5c50`
+2. Add 8 new entries under existing category headers:
+
+**Added (3 new entries)**
+- Add one-shot prompt modal to `erk dash` (`x` keybinding) for quick dispatch without leaving the TUI (a87c69bab)
+- Add visible AI-generated summary to plan PRs, displayed above collapsed plan details for quick overview (bd69797ac)
+- Show toast notification when learn plan is created during TUI landing (682827afc)
+
+**Changed (3 new entries)**
+- Rename "Fix Conflicts Remote" to "Rebase Remote" in TUI and always perform rebase (fe5c1231c)
+- Require `--summary` flag on `erk pr create` instead of auto-generating summaries (b9fc51011)
+- Use LLM-generated branch name slugs for plan PRs, producing more descriptive branch names (f5b9b5c50)
+
+**Fixed (1 new entry)**
+- Fix stale stack indicator showing incorrectly when parent PR is already merged (d04377e0d)
+
+**Removed (1 new entry, new header)**
+- Remove erkdesk Electron desktop app and all references (0d58bd0b7)</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="655" cache_read_input_tokens="36012" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 655}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01DwhZiHNndmUkYsK58CHkc4">
+    <param name="questions">[{'question': '📋 Changelog Update Plan\nCurrent context: (wt:erk) (br:master)\n\nWhat woul...[truncated 416 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="655" cache_read_input_tokens="36012" output_tokens="635" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 655, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DwhZiHNndmUkYsK58CHkc4">
+User has answered your questions: "📋 Changelog Update Plan
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01AgjJaigqPujSoL6aGriXUH">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3370" cache_read_input_tokens="36667" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3370, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AgjJaigqPujSoL6aGriXUH">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="06a35cb3-0bf3-4d48-9726-2cd6e453db50" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "06a35cb3-0bf3-4d48-9726-2cd6e453db50" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "06a35cb3-0bf3-4d48-9726-2cd6e453db50" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+**Arguments:** No `--plan-type` or `--objective` flags.
+
+**Branch slug:** `changelog-update`
+
+**Plan summary:** Syncs the CHANGELOG.md unreleased section with 16 commits merged to master since the last sync marker, adding 8 new user-facing entries across Added, Changed, Fixed, and Removed categories.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2287" cache_read_input_tokens="40037" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2287}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KaoV19483Q6yEcWfrN6nWw">
+    <param name="command">erk exec plan-save --format json --session-id="06a35cb3-0bf3-4d48-9726-2cd6e453db50" --bra...[truncated 119 chars]...r, adding 8 new user-facing entries across Added, Changed, Fixed, and Removed categories."</param>
+    <param name="description">Save changelog update plan as draft PR</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2287" cache_read_input_tokens="40037" output_tokens="285" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2287, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KaoV19483Q6yEcWfrN6nWw">
+{"success": true, "plan_number": 8522, "plan_url": "https://github.com/dagster-io/erk/pull/8522", "title": "[erk-plan] Changelog Update Plan", "branch_name": "plnd/changelog-update-03-01-0556", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/06a35cb3-0bf3-4d48-9726-2cd6e453db50/plan_snapshots/000001-a1d88dd4"}
+  </tool_result>
+  <assistant>Plan "Changelog Update Plan" saved as draft PR **#8522**
+URL: https://github.com/dagster-io/erk/pull/8522
+
+**Next steps:**
+
+View PR: https://github.com/dagster-io/erk/pull/8522
+
+In Claude Code:
+  Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: `erk br co --new-slot --for-plan 8522`
+    Implement: `source "$(erk br co --new-slot --for-plan 8522 --script)" &amp;&amp; erk implement --dangerous`
+
+  Same slot:
+    Local: `erk br co --for-plan 8522`
+    Implement: `source "$(erk br co --for-plan 8522 --script)" &amp;&amp; erk implement --dangerous`
+
+  Dispatch to Queue: `erk pr dispatch 8522`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="440" cache_read_input_tokens="42324" output_tokens="244" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 440, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;See ya!&lt;/local-command-stdout&gt;</user>
+</session>
