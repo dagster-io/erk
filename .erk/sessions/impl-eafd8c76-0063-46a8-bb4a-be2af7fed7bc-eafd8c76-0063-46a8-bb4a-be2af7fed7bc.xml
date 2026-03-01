@@ -1,0 +1,950 @@
+<session>
+  <meta branch="plnd/fix-double-activation-dire-03-01-1430" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 12. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="eafd8c76-0063-46a8-bb4a-be2af7fed7bc" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="eafd8c76-0063-46a8-bb4a-be2af7fed7bc" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="eafd8c76-0063-46a8-bb4a-be2af7fed7bc" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="eafd8c76-0063-46a8-bb4a-be2af7fed7bc" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**CRITICAL**: Never delete the impl directory - leave for user review (no auto-commit).
+
+### Step 12: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 13: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <thinking>The user has invoked `/erk:plan-implement`, which is a skill that orchestrates plan implementation. Looking at the command message, I can see this is the implementation workflow that:
+
+1. Sets up the impl directory under `.erk/impl-context/&lt;branch&gt;/`
+2. Executes the implementation
+3. Runs CI and submits the PR
+
+The current branch is `plnd/fix-double-activation-dire-03-01-1430`, which appears to be a plan branch. The status shows the working tree is clean.
+
+Looking at the recent commits, I can see:
+```
+e7c5fe40e Add plan: Fix: Double activation when `erk pr checkout --script --sync` triggers direnv
+```
+
+This suggests there's a plan already created on this branch. The skill instructions indicate that if I'm on a plan branch, I should auto-detect from the branch name.
+
+Let me follow the workflow:
+
+**Step 1: Set Up Implementation**
+Since the current branch is `plnd/fix-double-activation-dire-03-01-1430` and the working tree is clean, I should run `erk exec setup-impl` to auto-detect from the branch.
+
+Let me start by running the setup-impl command.</thinking>
+  <usage input_tokens="9" cache_creation_input_tokens="32498" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 32498}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll implement the plan on the current branch. Let me start by setting up the implementation environment.</assistant>
+  <usage input_tokens="9" cache_creation_input_tokens="32498" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 32498}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NEDdv4eFRk3AyXeFshsWwJ">
+    <param name="command">erk exec setup-impl</param>
+    <param name="description">Set up implementation environment from current plan branch</param>
+  </tool_use>
+  <usage input_tokens="9" cache_creation_input_tokens="32498" cache_read_input_tokens="0" output_tokens="389" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 32498, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NEDdv4eFRk3AyXeFshsWwJ">
+Found existing impl dir for plan #8555, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-58/.erk/impl-context/plnd--fix-double-activation-dire-03-01-1430", "plan_number": 8555, "plan_url": "https://github.com/dagster-io/erk/pull/8555", "branch": "plnd/fix-double-activation-dire-03-01-1430", "plan_title": "", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8555, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <thinking>Great! The setup was successful. I can see:
+- Plan #8555 is found
+- Impl directory is set up at `.erk/impl-context/plnd--fix-double-activation-dire-03-01-1430`
+- The branch is `plnd/fix-double-activation-dire-03-01-1430`
+- Plan tracking is active on GitHub
+
+Now I need to:1. Read the plan.md from the impl directory
+2. Understand the goal and context
+3. Proceed with implementation
+
+Let me read the plan.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="595" cache_read_input_tokens="32498" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 595}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LDh8f3bZjwVbJJJAp7DqGQ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-58/.erk/impl-context/plnd--fix-double-activation-dire-03-01-1430/plan.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="595" cache_read_input_tokens="32498" output_tokens="242" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 595, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LDh8f3bZjwVbJJJAp7DqGQ">
+     1→# Fix: Double activation when `erk pr checkout --script --sync` triggers direnv
+     2→
+     3→## Context
+     4→
+     5→When running `source "$(erk pr checkout X --script --sync)"`, the activation (venv setup, `uv pip install`, .env loading) runs **twice**:
+     6→
+     7→1. The temp script does `cd /worktree` → triggers direnv's `chpwd` hook → direnv sources `.envrc` → `.envrc` calls `source_env_if_exists .erk/bin/activate.sh` → **full activation**
+     8→2. The temp script continues → runs its own activation code (same venv creation, `uv pip install`, .env loading) → **duplicate activation**
+     9→
+    10→Both the temp script and `.erk/bin/activate.sh` are generated by `render_activation_script()`, so they contain identical activation logic. The `cd` in the temp script synchronously triggers direnv (via zsh's `chpwd_functions`), which already does the activation before the temp script's own activation section runs.
+    11→
+    12→This affects both manual `source "$(erk pr checkout ...)"` and the TUI's cmux sync workflow (which passes this command via `cmux new-workspace --command`).
+    13→
+    14→## Fix
+    15→
+    16→Add a `$VIRTUAL_ENV` guard in `render_activation_script()` around the activation section. After `cd`, if `$VIRTUAL_ENV` already points to this worktree's `.venv`, skip activation (direnv already did it).
+    17→
+    18→### File: `src/erk/cli/activation.py` — `render_activation_script()`
+    19→
+    20→Wrap the activation block (from `unset VIRTUAL_ENV` through shell completion) in:
+    21→
+    22→```sh
+    23→if [ "$VIRTUAL_ENV" != "{worktree_path}/.venv" ]; then
+    24→  # ... existing activation code ...
+    25→fi
+    26→```
+    27→
+    28→Keep `post_cd_commands` and `final_message` **outside** the guard — they must always run.
+    29→
+    30→Shell completion (`eval "$(erk completion ...)"`) stays **inside** the guard — direnv's subshell can't set up shell functions, but when the activation runs once (either from direnv or from the script), completion gets set up in the current shell. When the guard skips (because direnv already ran activate.sh), completion was already set up by the activate.sh sourced via direnv, but only as env diffs, not functions. However, `erk completion` output is just function definitions that are idempotent and fast — the cost of double-running is negligible compared to `uv pip install`. The expensive operations (uv pip install, venv creation) are the priority to guard.
+
+... [45 lines omitted] ...
+  </tool_result>
+  <thinking>Perfect! Now I understand the plan. The issue is:
+
+1. When running `source "$(erk pr checkout X --script --sync)"`, the activation runs twice:
+   - First time: the `cd` triggers direnv which sources `.erk/bin/activate.sh` → full activation
+   - Second time: the temp script runs its own activation code (which contains duplicate logic)
+
+2. The fix is to add a `$VIRTUAL_ENV` guard in the `render_activation_script()` function in `src/erk/cli/activation.py` so that if `$VIRTUAL_ENV` already points to the correct worktree, it skips activation.
+
+3. Keep `post_cd_commands` and `final_message` outside the guard since they must always run.
+
+4. Verification involves:
+   - Running the command and seeing "Activating venv" only once
+   - Testing without direnv to ensure activation still works
+   - Running existing tests
+   - Updating tests to assert the guard is present
+
+Let me start implementing this. First, I need to read the current `src/erk/cli/activation.py` file to understand the structure.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="1613" cache_read_input_tokens="33093" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1613}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the current activation script to understand its structure:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1613" cache_read_input_tokens="33093" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1613}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0131JUuj86pGoPiYabWXwj9c">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-58/src/erk/cli/activation.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1613" cache_read_input_tokens="33093" output_tokens="374" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1613, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0131JUuj86pGoPiYabWXwj9c">
+     1→"""Shell activation script generation for worktree environments.
+     2→
+     3→This module provides utilities for generating shell scripts that activate
+     4→worktree environments by setting up virtual environments and loading .env files.
+     5→"""
+     6→
+     7→import shlex
+     8→from collections.abc import Sequence
+     9→from dataclasses import dataclass
+    10→from pathlib import Path
+    11→
+    12→import click
+    13→
+    14→from erk.core.display_utils import copy_to_clipboard_osc52
+    15→from erk_shared.output.output import user_output
+    16→
+    17→
+    18→@dataclass(frozen=True)
+    19→class ActivationConfig:
+    20→    """Configuration for activation instructions.
+    21→
+    22→    Replaces the combinatorial ActivationMode Literal with composable flags.
+    23→    All fields required - use factory functions for convenience.
+    24→
+    25→    Attributes:
+    26→        implement: If True, append `erk implement` to the source command.
+    27→            False means activate-only mode (just source the script).
+    28→        dangerous: If True, include --dangerous flag (skip permission prompts).
+    29→        docker: If True, include --docker flag (filesystem isolation).
+    30→        codespace: If not None, include --codespace flag for codespace isolation.
+
+... [414 lines omitted] ...
+
+    86→def render_error_script() -&gt; str:
+    94→    return "# erk error\nreturn 1\n"
+   104→    Quiet mode (ERK_QUIET=1): Suppresses transparency output (errors still shown)
+   144→            If the subpath doesn't exist, a warning is shown and the script
+   171→        # Check if subpath exists in target worktree, fall back to root with warning
+   178→  echo "Warning: '{target_subpath}' doesn't exist in target, using worktree root" &gt;&amp;2
+  </tool_result>
+  <thinking>Good! I can see the `render_activation_script()` function starting at line 123. The current script structure is:
+
+1. Logging helper
+2. CD command
+3. Unset VIRTUAL_ENV
+4. Create venv if it doesn't exist
+5. Install packages with uv pip install
+6. Source .venv/bin/activate if it exists
+7. Load .env file
+8. Shell completion
+9. Post-activation commands
+10. Final message
+
+The plan says to wrap the activation block (from `unset VIRTUAL_ENV` through shell completion) in a guard that checks if `$VIRTUAL_ENV` already points to the correct `.venv`. If it does, skip the activation.
+
+Let me implement the fix:
+
+```sh
+if [ "$VIRTUAL_ENV" != "{worktree_path}/.venv" ]; then
+  # ... existing activation code ...
+fi
+```
+
+The guard should:
+- Include: unset VIRTUAL_ENV through shell completion (lines 196-222 in the current script)
+- Exclude: logging_helper, cd_command, post_activation_section, final_message
+
+Let me make the edit to the `render_activation_script()` function.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="6202" cache_read_input_tokens="34706" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6202}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I'll implement the fix by adding the `$VIRTUAL_ENV` guard to the `render_activation_script()` function:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="6202" cache_read_input_tokens="34706" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6202}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QGtKBbDHHXFHyDoGqRStfH">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-58/src/erk/cli/activation.py</param>
+    <param name="old_string">    return f"""# {comment}
+{logging_helper}
+{cd_command}
+# Unset VIRTUAL_ENV to avoid conf...[truncated 789 chars]...letion zsh)"
+fi
+{post_activation_section}# Optional: show where we are
+{final_message}
+"""</param>
+    <param name="new_string">    return f"""# {comment}
+{logging_helper}
+{cd_command}
+# Guard against double activation...[truncated 1007 chars]...n zsh)"
+  fi
+fi
+{post_activation_section}# Optional: show where we are
+{final_message}
+"""</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6202" cache_read_input_tokens="34706" output_tokens="1228" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6202, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QGtKBbDHHXFHyDoGqRStfH">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-58/src/erk/cli/activation.py has been updated successfully.
+  </tool_result>
+  <thinking>Great! I've added the guard. Now I need to:1. Update the tests to verify that the guard is present in rendered scripts
+2. Run the existing tests to make sure nothing breaks
+
+Let me first check what tests exist for the activation module.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="1299" cache_read_input_tokens="40908" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1299}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check the existing tests to understand what needs to be updated:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1299" cache_read_input_tokens="40908" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1299}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012QbbK7efa94d6GfUjC3VMx">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-58/tests/unit/cli/test_activation.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1299" cache_read_input_tokens="40908" output_tokens="167" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1299, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012QbbK7efa94d6GfUjC3VMx">
+&lt;persisted-output&gt;
+Output too large (50.5KB). Full output saved to: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-58/eafd8c76-0063-46a8-bb4a-be2af7fed7bc/tool-results/toolu_012QbbK7efa94d6GfUjC3VMx.txt
+
+Preview (first 2KB):
+     1→"""Tests for activation script generation."""
+     2→
+     3→import base64
+     4→from pathlib import Path
+     5→
+     6→import pytest
+     7→
+     8→from erk.cli.activation import (
+     9→    ActivationConfig,
+    10→    _render_logging_helper,
+    11→    activation_config_activate_only,
+    12→    activation_config_for_implement,
+    13→    build_activation_command,
+    14→    ensure_land_script,
+    15→    ensure_worktree_activate_script,
+    16→    print_activation_instructions,
+    17→    print_temp_script_instructions,
+    18→    render_activation_script,
+    19→    render_land_script,
+    20→    write_worktree_activate_script,
+    21→)
+    22→
+    23→# ActivationConfig tests
+    24→
+    25→
+    26→def test_activation_config_frozen() -&gt; None:
+
+... [27 lines omitted] ...
+
+    29→    with pytest.raises(AttributeError):
+  </tool_result>
+  <thinking>The file is too large. Let me read just the tests that are relevant to render_activation_script to see what I need to test. Let me use a grep to find the relevant tests.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="5084" cache_read_input_tokens="42207" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5084}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me search for tests related to `render_activation_script`:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="5084" cache_read_input_tokens="42207" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5084}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01MFpkQnYzuGx7vq3y1EHYQy">
+    <param name="pattern">def test.*render_activation</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-58/tests/unit/cli/test_activation.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5084" cache_read_input_tokens="42207" output_tokens="193" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5084, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MFpkQnYzuGx7vq3y1EHYQy">
+160:def test_render_activation_script_without_subpath() -&gt; None:
+178:def test_render_activation_script_refreshes_workspace_packages() -&gt; None:
+198:def test_render_activation_script_with_subpath() -&gt; None:
+218:def test_render_activation_script_with_deeply_nested_subpath() -&gt; None:
+231:def test_render_activation_script_subpath_none_no_subpath_logic() -&gt; None:
+244:def test_render_activation_script_custom_final_message() -&gt; None:
+256:def test_render_activation_script_custom_comment() -&gt; None:
+268:def test_render_activation_script_quotes_paths_with_spaces() -&gt; None:
+320:def test_render_activation_script_contains_logging_helper() -&gt; None:
+333:def test_render_activation_script_logs_switching_message() -&gt; None:
+345:def test_render_activation_script_logs_venv_activation() -&gt; None:
+359:def test_render_activation_script_logs_env_loading() -&gt; None:
+371:def test_render_activation_script_contains_completion_setup() -&gt; None:
+390:def test_render_activation_script_shows_full_paths_in_normal_mode() -&gt; None:
+405:def test_render_activation_script_with_subpath_logs_correctly() -&gt; None:
+421:def test_render_activation_script_with_post_cd_commands() -&gt; None:
+444:def test_render_activation_script_without_post_cd_commands() -&gt; None:
+456:def test_render_activation_script_post_cd_commands_none_no_post_section() -&gt; None:
+468:def test_render_activation_script_post_cd_commands_empty_list_no_section() -&gt; None:
+  </tool_result>
+  <thinking>Good! There are many tests for the render_activation_script function. I need to:1. Check if any tests will fail with my changes
+2. Add a new test to assert that the guard is present in the rendered script
+
+Let me read some of the relevant tests to understand the structure better.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="758" cache_read_input_tokens="47291" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 758}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the test file to see the relevant test patterns:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="758" cache_read_input_tokens="47291" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 758}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MqUkW22asXFMpkJbA4iZ2m">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-58/tests/unit/cli/test_activation.py</param>
+    <param name="offset">160</param>
+    <param name="limit">350</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="758" cache_read_input_tokens="47291" output_tokens="209" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 758, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MqUkW22asXFMpkJbA4iZ2m">
+   160→def test_render_activation_script_without_subpath() -&gt; None:
+   161→    """Basic activation script without target_subpath."""
+   162→    script = render_activation_script(
+   163→        worktree_path=Path("/path/to/worktree"),
+   164→        target_subpath=None,
+   165→        post_cd_commands=None,
+   166→        final_message='echo "Activated worktree: $(pwd)"',
+   167→        comment="work activate-script",
+   168→    )
+   169→    # shlex.quote doesn't add quotes for simple paths without special characters
+   170→    assert "cd /path/to/worktree" in script
+   171→    assert "# work activate-script" in script
+   172→    assert "uv sync" in script
+   173→    assert ".venv/bin/activate" in script
+   174→    # Should NOT have subpath logic
+   175→    assert "Try to preserve relative directory position" not in script
+   176→
+   177→
+   178→def test_render_activation_script_refreshes_workspace_packages() -&gt; None:
+   179→    """Activation script includes unconditional workspace package refresh."""
+   180→    script = render_activation_script(
+   181→        worktree_path=Path("/path/to/worktree"),
+   182→        target_subpath=None,
+   183→        post_cd_commands=None,
+   184→        final_message='echo "Activated worktree: $(pwd)"',
+   185→        comment="work activate-script",
+   186→    )
+   187→    assert "uv pip install --no-deps --quiet" in script
+   188→    assert "-e packages/erk-shared" in script
+   189→    assert "-e packages/erk-statusline" in script
+
+... [325 lines omitted] ...
+
+   213→    # Should have fallback warning
+   214→    assert "Warning: 'src/lib' doesn't exist in target" in script
+   215→    assert "&gt;&amp;2" in script  # Warning goes to stderr
+   428→            'git pull --ff-only origin main || echo "Warning: git pull failed" &gt;&amp;2',
+  </tool_result>
+  <thinking>Perfect! Now I understand the test structure. I need to add a test that verifies the VIRTUAL_ENV guard is present in the rendered script. Let me add a test after the existing ones. I'll also check if the existing tests still pass - they should because the guard doesn't change the structure of the script, just wraps some parts in a conditional.
+
+Let me add a test that checks for the guard. I'll add it after the post_cd_commands tests.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="5291" cache_read_input_tokens="48049" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5291}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I'll add a test to verify the guard is present in the rendered script. Let me add it to the test file:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="5291" cache_read_input_tokens="48049" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5291}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HnhyZnBFBMStktszDF2hmV">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-58/tests/unit/cli/test_activation.py</param>
+    <param name="offset">468</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5291" cache_read_input_tokens="48049" output_tokens="259" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5291, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HnhyZnBFBMStktszDF2hmV">
+   468→def test_render_activation_script_post_cd_commands_empty_list_no_section() -&gt; None:
+   469→    """Passing empty post_cd_commands list produces no post-activation section."""
+   470→    script = render_activation_script(
+   471→        worktree_path=Path("/path/to/worktree"),
+   472→        target_subpath=None,
+   473→        post_cd_commands=[],
+   474→        final_message='echo "Activated worktree: $(pwd)"',
+   475→        comment="work activate-script",
+   476→    )
+   477→    assert "# Post-activation commands" not in script
+   478→
+   479→
+   480→# write_worktree_activate_script tests
+   481→
+   482→
+   483→def test_write_worktree_activate_script_creates_script(tmp_path: Path) -&gt; None:
+   484→    """write_worktree_activate_script creates .erk/bin/activate.sh with correct content."""
+   485→    script_path = write_worktree_activate_script(
+   486→        worktree_path=tmp_path,
+   487→        post_create_commands=None,
+   488→    )
+   489→
+   490→    assert script_path == tmp_path / ".erk" / "bin" / "activate.sh"
+   491→    assert script_path.exists()
+   492→
+   493→    content = script_path.read_text(encoding="utf-8")
+   494→    assert f"cd {tmp_path}" in content
+   495→    assert "uv sync" in content
+   496→    assert ".venv/bin/activate" in content
+   497→
+
+... [25 lines omitted] ...
+  </tool_result>
+  <thinking>Good. I'll add the test before the "write_worktree_activate_script tests" section. The test will verify that the VIRTUAL_ENV guard is present and wraps the activation code.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="1082" cache_read_input_tokens="53340" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1082}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01S2fFz5KVaT2pcgRuCxUwY2">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-58/tests/unit/cli/test_activation.py</param>
+    <param name="old_string">def test_render_activation_script_post_cd_commands_empty_list_no_section() -&gt; None:
+    ""...[truncated 312 chars]...assert "# Post-activation commands" not in script
+
+
+# write_worktree_activate_script tests</param>
+    <param name="new_string">def test_render_activation_script_post_cd_commands_empty_list_no_section() -&gt; None:
+    ""...[truncated 2024 chars]...!= -1
+    assert guard_end_index &lt; post_cmd_index
+
+
+# write_worktree_activate_script tests</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1082" cache_read_input_tokens="53340" output_tokens="974" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1082, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01S2fFz5KVaT2pcgRuCxUwY2">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-58/tests/unit/cli/test_activation.py has been updated successfully.
+  </tool_result>
+  <thinking>Great! I've added the tests. Now I need to run the tests to make sure:1. The new tests pass
+2. The existing tests still pass (they should, since I only wrapped code in a conditional)Let me run the activation tests to verify everything works.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="1056" cache_read_input_tokens="54422" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1056}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me run the activation tests to verify the implementation:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1056" cache_read_input_tokens="54422" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1056}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MBYcECWEtU1wCfDERqLyzu">
+    <param name="command">python -m pytest tests/unit/cli/test_activation.py -xvs</param>
+    <param name="description">Run activation script tests to verify the guard implementation</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1056" cache_read_input_tokens="54422" output_tokens="220" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1056, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MBYcECWEtU1wCfDERqLyzu">
+============================= test session starts ==============================
+platform darwin -- Python 3.13.1, pytest-9.0.2, pluggy-1.6.0
+rootdir: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-58
+configfile: pyproject.toml
+plugins: anyio-4.12.1, xdist-3.8.0, asyncio-1.3.0, cov-7.0.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 75 items
+
+tests/unit/cli/test_activation.py ...........................................................................
+
+============================== 75 passed in 0.40s ==============================
+  </tool_result>
+  <thinking>Excellent! All 75 tests passed, including the 2 new tests I added. This is a great sign - the existing tests still pass, which means the guard wrapping doesn't break anything. The new tests verify that the guard is present and works correctly.
+
+Now let me verify the manual behavior. According to the plan, I should test:
+1. Run `source "$(erk pr checkout &lt;pr&gt; --script --sync)"` — confirm "Activating venv" appears only once
+2. Run without direnv (`DIRENV_DISABLE=1 source "$(erk pr checkout &lt;pr&gt; --script)"`) — confirm activation still works
+
+But first, let me create a simple test to see if the guard logic is working correctly. Let me write a simple shell script test or create a minimal test case.
+
+Actually, let me also read through the code to verify that the guard logic is correct. I need to make sure:
+1. The guard checks `$VIRTUAL_ENV` correctly
+2. The guard wraps all the activation code (except post_cd_commands and final_message)
+3. The guard allows the script to work both with and without direnv
+
+Let me check the rendered script to see the exact output:</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="401" cache_read_input_tokens="55478" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 401}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <assistant>Perfect! All tests pass. Now let me verify the rendered script output to ensure the guard is correctly placed:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="401" cache_read_input_tokens="55478" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 401}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01G7LyEJcyWF936BqZ1AGG6h">
+    <param name="command">python -c "
+from pathlib import Path
+from src.erk.cli.activation import render_activation_...[truncated 128 chars]...mand\"'],
+    final_message='echo \"final\"',
+    comment='test script'
+)
+print(script)
+"
+</param>
+    <param name="description">Print the rendered activation script to verify guard placement</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="401" cache_read_input_tokens="55478" output_tokens="507" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 401, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01G7LyEJcyWF936BqZ1AGG6h">
+# test script
+# Transparency logging helper
+__erk_log() {
+  [ -n "$ERK_QUIET" ] &amp;&amp; return
+  local prefix="$1" msg="$2"
+  if [ -t 2 ]; then
+    printf '\033[0;36m%s\033[0m %s\n' "$prefix" "$msg" &gt;&amp;2
+  else
+    printf '%s %s\n' "$prefix" "$msg" &gt;&amp;2
+  fi
+}
+__erk_log_verbose() {
+  [ -z "$ERK_VERBOSE" ] &amp;&amp; return
+  __erk_log "$1" "$2"
+}
+__erk_log "-&gt;" "cd /test/worktree"
+cd /test/worktree
+# Guard against double activation: if VIRTUAL_ENV already points to this worktree's venv, skip activation
+if [ "$VIRTUAL_ENV" != "/test/worktree/.venv" ]; then
+  # Unset VIRTUAL_ENV to avoid conflicts with previous activations
+  unset VIRTUAL_ENV
+  # Create venv if it doesn't exist
+  if [ ! -d /test/worktree/.venv ]; then
+    echo 'Creating virtual environment with uv sync...'
+    uv sync
+  fi
+  # Refresh workspace packages (no-deps = skip external packages)
+  uv pip install --no-deps --quiet -e . -e packages/erk-shared -e packages/erk-statusline
+  if [ -f /test/worktree/.venv/bin/activate ]; then
+    . /test/worktree/.venv/bin/activate
+
+... [21 lines omitted] ...
+  </tool_result>
+  <thinking>Perfect! The rendered script shows exactly what we want:
+1. The logging helper and cd command are outside the guard - they always run
+2. The `if [ "$VIRTUAL_ENV" != "/test/worktree/.venv" ]` guard wraps all the activation code (unset VIRTUAL_ENV through shell completion)
+3. The post-activation commands and final message are outside the guard - they always run
+
+This is exactly what the plan specified. The guard will:- When direnv runs `.erk/bin/activate.sh`, it sets `$VIRTUAL_ENV` to the correct path before the script returns
+- When the temp script runs after the cd command, `$VIRTUAL_ENV` is already set to the correct path, so the guard skips the activation
+- Post-activation commands and final message always run
+
+Now let me signal GitHub that the implementation has started and then complete the implementation. Let me also make sure to signal completion at the end.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="1095" cache_read_input_tokens="55879" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1095}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Excellent! The guard is correctly placed. Let me signal GitHub that the implementation has started:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1095" cache_read_input_tokens="55879" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1095}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01184XCGeDxC5XHM9qroYyG3">
+    <param name="command">erk exec impl-signal started --session-id="eafd8c76-0063-46a8-bb4a-be2af7fed7bc" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub that implementation has started</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1095" cache_read_input_tokens="55879" output_tokens="357" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1095, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01184XCGeDxC5XHM9qroYyG3">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8555
+}
+  </tool_result>
+  <thinking>Good! GitHub has been signaled that the implementation started. Now let me verify the changes by checking what's been modified so far.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="511" cache_read_input_tokens="56974" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 511}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me verify the changes and commit them:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="511" cache_read_input_tokens="56974" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 511}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013HvW7QvhYQsBvwLq1wYZwW">
+    <param name="command">git diff src/erk/cli/activation.py | head -100</param>
+    <param name="description">Show the changes to the activation script</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="511" cache_read_input_tokens="56974" output_tokens="164" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 511, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013HvW7QvhYQsBvwLq1wYZwW">
+diff --git a/src/erk/cli/activation.py b/src/erk/cli/activation.py
+index 29550bdb0..64276990e 100644
+--- a/src/erk/cli/activation.py
++++ b/src/erk/cli/activation.py
+@@ -193,32 +193,35 @@ cd {wt}"""
+     return f"""# {comment}
+ {logging_helper}
+ {cd_command}
+-# Unset VIRTUAL_ENV to avoid conflicts with previous activations
+-unset VIRTUAL_ENV
+-# Create venv if it doesn't exist
+-if [ ! -d {venv_dir} ]; then
+-  echo 'Creating virtual environment with uv sync...'
+-  uv sync
+-fi
+-# Refresh workspace packages (no-deps = skip external packages)
+-uv pip install --no-deps --quiet -e . -e packages/erk-shared -e packages/erk-statusline
+-if [ -f {venv_activate} ]; then
+-  . {venv_activate}
+-  __py_ver=$(python -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')
+-  __erk_log "-&gt;" "Activating venv: {worktree_path / ".venv"} ($__py_ver)"
+-fi
+-# Load .env into the environment (allexport)
+-set -a
+-if [ -f ./.env ]; then
+-  __erk_log "-&gt;" "Loading .env"
+-  . ./.env
+-fi
+-set +a
+-# Shell completion
+
+... [36 lines omitted] ...
+  </tool_result>
+  <thinking>Perfect! The diff shows exactly the changes I made - wrapping the activation code in the guard while keeping post-activation commands and final message outside. Now let me verify the test changes as well.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="1049" cache_read_input_tokens="57485" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1049}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KLa2kf6nGXS9CxT2jCKW7b">
+    <param name="command">git diff tests/unit/cli/test_activation.py | head -150</param>
+    <param name="description">Show the test changes</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1049" cache_read_input_tokens="57485" output_tokens="136" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1049, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KLa2kf6nGXS9CxT2jCKW7b">
+diff --git a/tests/unit/cli/test_activation.py b/tests/unit/cli/test_activation.py
+index 9c322da2e..5d5348363 100644
+--- a/tests/unit/cli/test_activation.py
++++ b/tests/unit/cli/test_activation.py
+@@ -477,6 +477,50 @@ def test_render_activation_script_post_cd_commands_empty_list_no_section() -&gt; No
+     assert "# Post-activation commands" not in script
+ 
+ 
++# VIRTUAL_ENV guard tests
++
++
++def test_render_activation_script_contains_virtual_env_guard() -&gt; None:
++    """Activation script contains guard to prevent double activation."""
++    script = render_activation_script(
++        worktree_path=Path("/path/to/worktree"),
++        target_subpath=None,
++        post_cd_commands=None,
++        final_message='echo "Activated worktree: $(pwd)"',
++        comment="work activate-script",
++    )
++    # Should contain the VIRTUAL_ENV guard check
++    assert 'if [ "$VIRTUAL_ENV" != "/path/to/worktree/.venv" ]' in script
++    # Guard should wrap activation code
++    assert "unset VIRTUAL_ENV" in script
++    assert "uv sync" in script
++    assert "uv pip install" in script
++    # Post-activation section should be outside guard
++    assert "# Optional: show where we are" in script
++
++
+
+... [23 lines omitted] ...
+  </tool_result>
+  <thinking>Good! The tests are showing exactly what I added. Now let me commit these changes. According to the plan, this is phase 1 - the core implementation. Let me create a commit for this.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="858" cache_read_input_tokens="58534" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 858}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me commit the implementation changes:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="858" cache_read_input_tokens="58534" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 858}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PEPi84rvBYdWz7PGYiyqJL">
+    <param name="command">git add src/erk/cli/activation.py tests/unit/cli/test_activation.py &amp;&amp; git commit -m "$(ca...[truncated 681 chars]...mands stay outside guard
+
+Co-Authored-By: Claude Haiku 4.5 &lt;noreply@anthropic.com&gt;
+EOF
+)"
+</param>
+    <param name="description">Commit implementation changes</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="858" cache_read_input_tokens="58534" output_tokens="379" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 858, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PEPi84rvBYdWz7PGYiyqJL">
+[plnd/fix-double-activation-dire-03-01-1430 7337d9d26] Fix: Double activation when direnv triggers during pr checkout
+ 2 files changed, 73 insertions(+), 26 deletions(-)
+  </tool_result>
+  <thinking>Great! The commit is done. Now let me run a broader test suite to make sure I haven't broken anything else. Let me run the full test suite for the CLI module to be sure.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="455" cache_read_input_tokens="59392" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 455}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me run the full CLI tests to ensure nothing else is broken:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="455" cache_read_input_tokens="59392" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 455}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016Rmym2L1baizLkkit7hUV4">
+    <param name="command">python -m pytest tests/unit/cli/ -x --tb=short</param>
+    <param name="description">Run all CLI unit tests to verify no regressions</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="455" cache_read_input_tokens="59392" output_tokens="175" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 455, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016Rmym2L1baizLkkit7hUV4">
+........................................................................ [  3%]
+........................................................................ [  7%]
+........................................................................ [ 11%]
+........................................................................ [ 15%]
+........................................................................ [ 19%]
+........................................................................ [ 23%]
+........................................................................ [ 27%]
+........................................................................ [ 31%]
+........................................................................ [ 35%]
+........................................................................ [ 39%]
+........................................................................ [ 43%]
+........................................................................ [ 47%]
+........................................................................ [ 51%]
+........................................................................ [ 55%]
+........................................................................ [ 59%]
+........................................................................ [ 63%]
+........................................................................ [ 67%]
+........................................................................ [ 71%]
+........................................................................ [ 75%]
+........................................................................ [ 79%]
+........................................................................ [ 83%]
+........................................................................ [ 87%]
+........................................................................ [ 91%]
+........................................................................ [ 95%]
+........................................................................ [ 99%]
+.............                                                            [100%]
+1813 passed in 4.21s
+  </tool_result>
+  <thinking>Excellent! All 1813 CLI tests pass. The implementation is working correctly. Now according to the plan, I need to:1. Verify the implementation manually:
+   - Run `source "$(erk pr checkout &lt;pr&gt; --script --sync)"` — confirm "Activating venv" appears only once
+   - Run without direnv (`DIRENV_DISABLE=1 source "$(erk pr checkout &lt;pr&gt; --script)"`) — confirm activation still works
+2. Run existing tests (done - all pass)3. Update tests to assert the guard is present (done - added 2 new tests)
+
+However, the manual verification requires an actual PR checkout command which I can't fully simulate in this context since it would require real git operations. But I can simulate the script generation and verify the logic is correct by examining the rendered scripts.Let me create a simple test to verify the behavior manually.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="439" cache_read_input_tokens="59847" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 439}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <assistant>Perfect! All tests pass. Now let me verify the behavior of the guard with a simple test to ensure it works correctly:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="439" cache_read_input_tokens="59847" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 439}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01YYuC5cyWUP7haH2ArxcZa1">
+    <param name="command">cat &gt; /tmp/test_guard.sh &lt;&lt; 'EOF'
+#!/bin/bash
+
+# Simulate the rendered activation script b...[truncated 907 chars]...venvs)"
+else
+  echo "✗ Activation would skip (unexpected)"
+fi
+EOF
+bash /tmp/test_guard.sh
+</param>
+    <param name="description">Test the guard logic with various VIRTUAL_ENV states</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="439" cache_read_input_tokens="59847" output_tokens="694" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 439, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YYuC5cyWUP7haH2ArxcZa1">
+=== Test 1: VIRTUAL_ENV not set ===
+✓ Activation would run (VIRTUAL_ENV not set)
+
+=== Test 2: VIRTUAL_ENV already correct ===
+✓ Activation would skip (correct - guard prevents duplication)
+
+=== Test 3: VIRTUAL_ENV points to different venv ===
+✓ Activation would run (correct - need to switch venvs)
+  </tool_result>
+  <thinking>Perfect! The guard logic is working correctly:
+1. When VIRTUAL_ENV is not set → activation runs
+2. When VIRTUAL_ENV points to the correct venv → activation skips (preventing duplicate activation)
+3. When VIRTUAL_ENV points to a different venv → activation runs (allowing switching between venvs)
+
+This is exactly the behavior we want. Now let me signal GitHub that the implementation has ended and prepare for CI.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="806" cache_read_input_tokens="60286" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 806}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Excellent! The guard logic is working perfectly. Let me signal GitHub that the implementation is complete:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="806" cache_read_input_tokens="60286" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 806}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0122thA9DxKTTPYTN38Ufiut">
+    <param name="command">erk exec impl-signal ended --session-id="eafd8c76-0063-46a8-bb4a-be2af7fed7bc" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub that implementation has ended</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="806" cache_read_input_tokens="60286" output_tokens="243" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 806, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0122thA9DxKTTPYTN38Ufiut">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8555
+}
+  </tool_result>
+  <thinking>Good! Now let me upload the session for async learning, then run CI and submit the PR.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="397" cache_read_input_tokens="61092" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 397}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me upload the session for async learning:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="397" cache_read_input_tokens="61092" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 397}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01B5WW7BRadGJWaiQrT4vEf7">
+    <param name="command">erk exec upload-impl-session --session-id="eafd8c76-0063-46a8-bb4a-be2af7fed7bc" 2&gt;/dev/null || true</param>
+    <param name="description">Upload implementation session for async learning</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="397" cache_read_input_tokens="61092" output_tokens="159" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 397, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
