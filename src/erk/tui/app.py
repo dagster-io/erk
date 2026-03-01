@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import re
 import subprocess
 import time
@@ -850,12 +851,12 @@ class ErkDashApp(App):
 
     @work(thread=True)
     def _cmux_sync_async(self, op_id: str, pr_number: int, branch: str) -> None:
-        """Create cmux workspace and sync PR in background thread with toast.
+        """Create cmux workspace, sync PR, and focus the workspace.
 
         Args:
             op_id: Operation identifier for status bar tracking
             pr_number: The PR number to checkout and sync
-            branch: The PR head branch name (used to rename the workspace)
+            branch: The PR head branch name (used to rename and focus the workspace)
         """
         result = self._run_streaming_operation(
             op_id=op_id,
@@ -871,9 +872,10 @@ class ErkDashApp(App):
         )
         self.call_from_thread(self._finish_operation, op_id=op_id)
         if result.success:
+            self._cmux_focus_workspace(branch)
             self.call_from_thread(
                 self.notify,
-                f"Created cmux workspace for PR #{pr_number}",
+                f"Created and focused cmux workspace for PR #{pr_number}",
                 timeout=3,
             )
             self.call_from_thread(self.action_refresh)
@@ -885,6 +887,41 @@ class ErkDashApp(App):
                 severity="error",
                 timeout=5,
             )
+
+    def _cmux_focus_workspace(self, branch: str) -> None:
+        """Focus the cmux workspace matching a branch name.
+
+        Lists cmux workspaces, finds one whose title matches the branch,
+        and selects it. Both cmux calls are fast Unix socket operations.
+        Called from a background thread — does not need @work decorator.
+
+        Args:
+            branch: The branch name to match against workspace titles
+        """
+        try:
+            list_result = subprocess.run(
+                ["cmux", "--json", "list-workspaces"],
+                capture_output=True,
+                text=True,
+                stdin=subprocess.DEVNULL,
+                check=True,
+            )
+            data = json.loads(list_result.stdout)
+            workspaces = data.get("workspaces", [])
+            matching = [ws for ws in workspaces if ws.get("title") == branch]
+            if not matching:
+                return
+
+            ref = matching[0]["ref"]
+            subprocess.run(
+                ["cmux", "select-workspace", "--workspace", ref],
+                capture_output=True,
+                text=True,
+                stdin=subprocess.DEVNULL,
+                check=True,
+            )
+        except (subprocess.CalledProcessError, json.JSONDecodeError, KeyError):
+            pass
 
     @work(thread=True)
     def _rewrite_remote_async(self, op_id: str, pr_number: int) -> None:

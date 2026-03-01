@@ -20,11 +20,11 @@ from erk.cli.commands.exec.scripts.ci_generate_summaries import ci_generate_summ
 from erk.cli.commands.exec.scripts.ci_update_pr_body import ci_update_pr_body
 from erk.cli.commands.exec.scripts.ci_verify_autofix import ci_verify_autofix
 from erk.cli.commands.exec.scripts.cleanup_impl_context import cleanup_impl_context
-from erk.cli.commands.exec.scripts.cmux_sync_workspace import cmux_sync_workspace
 from erk.cli.commands.exec.scripts.close_pr import (
     close_pr,
 )
 from erk.cli.commands.exec.scripts.close_prs import close_prs
+from erk.cli.commands.exec.scripts.cmux_sync_workspace import cmux_sync_workspace
 from erk.cli.commands.exec.scripts.create_impl_context_from_plan import (
     create_impl_context_from_plan,
 )

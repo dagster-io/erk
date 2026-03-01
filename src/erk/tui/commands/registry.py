@@ -99,6 +99,7 @@ def _display_cmux_sync(ctx: CommandContext) -> str:
     return f"erk exec cmux-sync-workspace --pr {ctx.row.pr_number}"
 
 
+
 def _display_copy_implement_local(ctx: CommandContext) -> str:
     """Display name for copy_implement_local command."""
     return f'source "$(erk pr checkout {ctx.row.pr_number} --script)" && erk implement --dangerous'
