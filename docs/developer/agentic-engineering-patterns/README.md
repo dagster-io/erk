@@ -36,6 +36,20 @@ Commands that immediately delegate to specialized agents for workflow orchestrat
 
 **Implementation Guide:** [../../learned/command-agent-delegation.md](../../learned/command-agent-delegation.md)
 
+### 2. CLI Push Down
+
+Moving mechanical computation from LLM prompts into tested CLI commands.
+
+**Key Benefits:**
+
+- Token reduction (50-70% prompt size decrease)
+- Testability (unit tests for deterministic logic)
+- Reliability (real Python environment, structured JSON contracts)
+
+**Documentation:** [cli-push-down.md](cli-push-down.md)
+
+**Skill:** Load `cli-push-down` skill for procedural guidance and case studies
+
 ---
 
 ## Contributing Patterns
