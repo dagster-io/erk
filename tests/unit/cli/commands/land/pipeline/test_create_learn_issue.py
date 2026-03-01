@@ -15,6 +15,7 @@ from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 
 def _execution_state(
@@ -80,11 +81,13 @@ def test_returns_state_unchanged_when_merged_pr_none(tmp_path: Path) -> None:
 def test_returns_state_after_creating_pr(tmp_path: Path) -> None:
     """With plan_id and merged_pr_number set, delegates to learn PR creation."""
     now = datetime(2024, 1, 1, tzinfo=UTC)
+    session_id = "aaaa1111-2222-3333-4444-555566667777"
+    body = format_plan_header_body_for_test(created_from_session=session_id)
     pr = PRDetails(
         number=100,
         url="https://github.com/owner/repo/pull/100",
         title="Add feature",
-        body="Test body",
+        body=body,
         state="OPEN",
         base_ref_name="main",
         head_ref_name="feature",
