@@ -15,7 +15,8 @@ def test_capability_remove_removes_capability() -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(
-            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False)
+            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False
+        )
 
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -56,7 +57,8 @@ def test_capability_remove_not_installed() -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(
-            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False)
+            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False
+        )
 
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -78,7 +80,8 @@ def test_capability_remove_unknown_name_fails() -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(
-            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False)
+            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False
+        )
 
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -101,7 +104,8 @@ def test_capability_remove_required_capability_blocked() -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(
-            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False)
+            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False
+        )
 
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -123,7 +127,8 @@ def test_capability_remove_multiple() -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(
-            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False)
+            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False
+        )
 
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -167,7 +172,8 @@ def test_capability_remove_requires_repo() -> None:
         # FakeGit returns None for git_common_dir when not in a repo
         git_ops = FakeGit(git_common_dirs={})
         global_config = GlobalConfig.test(
-            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False)
+            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False
+        )
 
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -189,7 +195,8 @@ def test_capability_remove_requires_at_least_one_name() -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(
-            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False)
+            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False
+        )
 
         erk_installation = FakeErkInstallation(config=global_config)
 

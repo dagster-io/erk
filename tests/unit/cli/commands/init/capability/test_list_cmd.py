@@ -17,7 +17,8 @@ def test_capability_list_shows_available_capabilities() -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(
-            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False)
+            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False
+        )
 
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -48,7 +49,8 @@ def test_capability_list_works_without_repo() -> None:
         # FakeGit returns None for git_common_dir when not in a repo
         git_ops = FakeGit(git_common_dirs={})
         global_config = GlobalConfig.test(
-            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False)
+            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False
+        )
 
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -70,7 +72,8 @@ def test_capability_list_sorts_alphabetically() -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(
-            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False)
+            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False
+        )
 
         erk_installation = FakeErkInstallation(config=global_config)
 

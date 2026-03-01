@@ -116,10 +116,7 @@ def setup_submit_context(
     )
 
     # Create GlobalConfig with use_graphite setting
-    global_config = GlobalConfig.test(
-        erk_root=repo_dir,
-        use_graphite=use_graphite,
-    )
+    global_config = GlobalConfig.test(erk_root=repo_dir, use_graphite=use_graphite)
 
     # Create FakeConsole with confirm responses if provided
     fake_console = FakeConsole(

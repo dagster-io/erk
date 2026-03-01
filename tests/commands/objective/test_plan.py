@@ -104,7 +104,8 @@ def test_plan_respects_allow_dangerous_config() -> None:
     )
     global_config = GlobalConfig.test(
         erk_root=Path("/tmp/erk"),
-        interactive_agent=ic_config)
+        interactive_agent=ic_config,
+    )
     fake_launcher = FakeAgentLauncher()
     ctx = context_for_test(global_config=global_config, agent_launcher=fake_launcher)
 

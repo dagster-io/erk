@@ -70,7 +70,8 @@ def test_complete_branch_names_local_branches(tmp_path: Path) -> None:
     global_config = GlobalConfig.test(
         erk_root,
         use_graphite=False,
-        shell_setup_complete=False)
+        shell_setup_complete=False,
+    )
 
     ctx_obj = context_for_test(git=git, cwd=repo_root, global_config=global_config)
 
@@ -105,7 +106,8 @@ def test_complete_branch_names_remote_branches_strip_prefix(tmp_path: Path) -> N
     global_config = GlobalConfig.test(
         erk_root,
         use_graphite=False,
-        shell_setup_complete=False)
+        shell_setup_complete=False,
+    )
 
     ctx_obj = context_for_test(git=git, cwd=repo_root, global_config=global_config)
 
@@ -140,7 +142,8 @@ def test_complete_branch_names_deduplication(tmp_path: Path) -> None:
     global_config = GlobalConfig.test(
         erk_root,
         use_graphite=False,
-        shell_setup_complete=False)
+        shell_setup_complete=False,
+    )
 
     ctx_obj = context_for_test(git=git, cwd=repo_root, global_config=global_config)
 
@@ -176,7 +179,8 @@ def test_complete_branch_names_filters_by_prefix(tmp_path: Path) -> None:
     global_config = GlobalConfig.test(
         erk_root,
         use_graphite=False,
-        shell_setup_complete=False)
+        shell_setup_complete=False,
+    )
 
     ctx_obj = context_for_test(git=git, cwd=repo_root, global_config=global_config)
 
@@ -216,7 +220,8 @@ def test_complete_plan_files_finds_markdown_files(tmp_path: Path) -> None:
     global_config = GlobalConfig.test(
         erk_root,
         use_graphite=False,
-        shell_setup_complete=False)
+        shell_setup_complete=False,
+    )
 
     ctx_obj = context_for_test(git=git, cwd=repo_root, global_config=global_config)
 
@@ -255,7 +260,8 @@ def test_complete_plan_files_no_markdown_files(tmp_path: Path) -> None:
     global_config = GlobalConfig.test(
         erk_root,
         use_graphite=False,
-        shell_setup_complete=False)
+        shell_setup_complete=False,
+    )
 
     ctx_obj = context_for_test(git=git, cwd=repo_root, global_config=global_config)
 
@@ -295,7 +301,8 @@ def test_complete_plan_files_filters_by_prefix(tmp_path: Path) -> None:
     global_config = GlobalConfig.test(
         erk_root,
         use_graphite=False,
-        shell_setup_complete=False)
+        shell_setup_complete=False,
+    )
 
     ctx_obj = context_for_test(git=git, cwd=repo_root, global_config=global_config)
 
@@ -335,7 +342,8 @@ def test_complete_plan_files_returns_sorted_results(tmp_path: Path) -> None:
     global_config = GlobalConfig.test(
         erk_root,
         use_graphite=False,
-        shell_setup_complete=False)
+        shell_setup_complete=False,
+    )
 
     ctx_obj = context_for_test(git=git, cwd=repo_root, global_config=global_config)
 
@@ -373,7 +381,8 @@ def test_delete_branch_and_worktree_escapes_cwd_when_inside(tmp_path: Path) -> N
     global_config = GlobalConfig.test(
         erk_root,
         use_graphite=False,
-        shell_setup_complete=False)
+        shell_setup_complete=False,
+    )
 
     ctx = context_for_test(git=git, cwd=repo_root, global_config=global_config)
     repo = make_test_repo_context(repo_root, erk_root=erk_root)
@@ -421,7 +430,8 @@ def test_delete_branch_and_worktree_no_escape_when_outside(tmp_path: Path) -> No
     global_config = GlobalConfig.test(
         erk_root,
         use_graphite=False,
-        shell_setup_complete=False)
+        shell_setup_complete=False,
+    )
 
     ctx = context_for_test(git=git, cwd=repo_root, global_config=global_config)
     repo = make_test_repo_context(repo_root, erk_root=erk_root)
@@ -483,7 +493,8 @@ def test_delete_branch_and_worktree_escapes_via_symlink(tmp_path: Path) -> None:
     global_config = GlobalConfig.test(
         erk_root,
         use_graphite=False,
-        shell_setup_complete=False)
+        shell_setup_complete=False,
+    )
 
     ctx = context_for_test(git=git, cwd=repo_root, global_config=global_config)
     repo = make_test_repo_context(repo_root, erk_root=erk_root)
@@ -546,7 +557,8 @@ def test_delete_branch_and_worktree_uses_main_repo_root(tmp_path: Path) -> None:
     global_config = GlobalConfig.test(
         erk_root,
         use_graphite=False,
-        shell_setup_complete=False)
+        shell_setup_complete=False,
+    )
 
     ctx = context_for_test(git=git, cwd=main_repo, global_config=global_config)
 
@@ -602,7 +614,8 @@ def test_delete_branch_and_worktree_escapes_from_subdirectory(tmp_path: Path) ->
     global_config = GlobalConfig.test(
         erk_root,
         use_graphite=False,
-        shell_setup_complete=False)
+        shell_setup_complete=False,
+    )
 
     ctx = context_for_test(git=git, cwd=repo_root, global_config=global_config)
     repo = make_test_repo_context(repo_root, erk_root=erk_root)
@@ -661,7 +674,8 @@ def test_activate_root_repo_uses_main_repo_root_not_worktree_path(tmp_path: Path
     global_config = GlobalConfig.test(
         erk_root,
         use_graphite=False,
-        shell_setup_complete=True)
+        shell_setup_complete=True,  # Enable script mode
+    )
 
     script_writer = FakeScriptWriter()
 
@@ -927,7 +941,8 @@ def test_validate_for_deletion_passes_when_all_checks_pass(tmp_path: Path) -> No
     global_config = GlobalConfig.test(
         erk_root,
         use_graphite=False,
-        shell_setup_complete=False)
+        shell_setup_complete=False,
+    )
 
     ctx = context_for_test(git=git, github=github, cwd=repo_root, global_config=global_config)
 
@@ -965,7 +980,8 @@ def test_validate_for_deletion_blocks_with_uncommitted_changes(tmp_path: Path) -
     global_config = GlobalConfig.test(
         erk_root,
         use_graphite=False,
-        shell_setup_complete=False)
+        shell_setup_complete=False,
+    )
 
     ctx = context_for_test(git=git, github=FakeGitHub(), cwd=repo_root, global_config=global_config)
 
@@ -1003,7 +1019,8 @@ def test_delete_branch_and_worktree_raises_on_worktree_remove_error(tmp_path: Pa
     global_config = GlobalConfig.test(
         erk_root,
         use_graphite=False,
-        shell_setup_complete=False)
+        shell_setup_complete=False,
+    )
 
     ctx = context_for_test(git=git, cwd=repo_root, global_config=global_config)
     repo = make_test_repo_context(repo_root, erk_root=erk_root)
@@ -1036,7 +1053,8 @@ def test_unallocate_worktree_and_branch_raises_on_worktree_remove_error(tmp_path
     global_config = GlobalConfig.test(
         erk_root,
         use_graphite=False,
-        shell_setup_complete=False)
+        shell_setup_complete=False,
+    )
 
     ctx = context_for_test(git=git, cwd=repo_root, global_config=global_config)
     repo = make_test_repo_context(repo_root, erk_root=erk_root)

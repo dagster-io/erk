@@ -82,7 +82,8 @@ def test_pr_fix_conflicts_skip_dangerous_with_config() -> None:
         # Create GlobalConfig with fix_conflicts_require_dangerous_flag=False
         global_config = GlobalConfig.test(
             env.erk_root,
-            fix_conflicts_require_dangerous_flag=False)
+            fix_conflicts_require_dangerous_flag=False,  # Disable --dangerous requirement
+        )
 
         ctx = build_workspace_test_context(
             env,

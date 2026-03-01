@@ -30,7 +30,8 @@ def test_global_config_test_factory_with_overrides(tmp_path: Path) -> None:
         tmp_path / "erks",
         use_graphite=False,
         shell_setup_complete=False,
-        show_hidden_commands=True)
+        show_hidden_commands=True,
+    )
 
     assert config.erk_root == tmp_path / "erks"
     assert config.use_graphite is False
