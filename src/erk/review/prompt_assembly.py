@@ -42,10 +42,24 @@ gh pr diff {pr_number} --name-only
 gh pr diff {pr_number}
 ```
 
-## Step 4: Fetch Existing Review Comments
+## Step 4: Collect Violations (analysis only — DO NOT post comments)
 
-Before posting inline comments, fetch all existing review comments to avoid
-duplicates:
+Analyze the diff from Step 3. Build a numbered list of ALL violations found.
+Each entry must include: path, line number, and comment body.
+
+Example output format:
+
+```
+Violations found:
+1. path=src/foo.py line=42 body="**{review_name}**: bare subprocess.run call - use wrapper"
+2. path=src/bar.py line=10 body="**{review_name}**: /tmp/ path usage - use tempfile"
+```
+
+**DO NOT post any comments in this step.** Only collect and list them.
+
+## Step 5: Deduplicate Against Existing Comments
+
+Fetch all existing review comments:
 
 ```
 erk exec get-pr-review-comments --pr {pr_number} --include-resolved
@@ -54,22 +68,27 @@ erk exec get-pr-review-comments --pr {pr_number} --include-resolved
 This returns JSON with a `threads` array. Each thread has `path`, `line`,
 and `comments` (each with `body`).
 
-Build a set of existing comments keyed by `(path, line, body_prefix)` where
-`body_prefix` is the first 80 characters of the comment body. This catches
-near-duplicates even if wording varies slightly.
+For EACH violation collected in Step 4, check against existing comments.
+A violation is a DUPLICATE if an existing comment matches ALL of:
+1. Same file path
+2. Same line (or within ±2 lines, to handle diff shifts)
+3. Starts with the same review prefix (`**{review_name}**:`)
+4. First 80 characters of the body match
 
-When checking for duplicates, match comments that:
-1. Are on the same file path
-2. Are on the same line (or within 2 lines, to handle diff shifts)
-3. Start with the same review prefix (`**{review_name}**:`)
+**You MUST output the dedup decision for EVERY violation:**
 
-## Step 5: Post Inline Comments for Violations
+```
+Dedup results:
+1. src/foo.py:42 — NEW (no matching existing comment)
+2. src/bar.py:10 — DUPLICATE (matches existing comment on line 11)
+```
 
-**IMPORTANT: Post an inline comment for EACH violation found.**
+If you skip this output, dedup has failed. Every violation MUST appear with
+a NEW or DUPLICATE label.
 
-**Skip posting if an existing comment from this review already exists on the
-same file and line** (as determined in Step 4). Log skipped duplicates so they
-appear in the summary.
+## Step 6: Post Only NEW Violations
+
+For each violation marked NEW in Step 5, post an inline comment:
 
 ```
 erk exec post-pr-inline-comment \\
@@ -79,7 +98,10 @@ erk exec post-pr-inline-comment \\
   --body "**{review_name}**: [pattern detected] - [rule/doc reference]"
 ```
 
-## Step 6: Post Summary Comment
+Do NOT post violations marked DUPLICATE. Log the count of skipped duplicates
+for the summary (e.g., "Skipped 2 duplicate comments").
+
+## Step 7: Post Summary Comment
 
 **IMPORTANT: All timestamps MUST be in Pacific Time (PT), NOT UTC.**
 

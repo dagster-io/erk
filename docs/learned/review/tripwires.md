@@ -16,4 +16,4 @@ Rules triggered by matching actions in code.
 
 **adding code blocks longer than 5 lines to docs/learned/ files** → Read [Learned Docs Review](learned-docs-review.md) first. Verbatim source code will go stale. Use source pointers instead. See docs/learned/documentation/source-pointers.md.
 
-**posting inline review comments without deduplication** → Read [Inline Comment Deduplication](inline-comment-deduplication.md) first. Always deduplicate before posting. The dedup logic is prompt-embedded, not code-enforced — see Step 4 of REVIEW_PROMPT_TEMPLATE.
+**posting inline review comments without deduplication** → Read [Inline Comment Deduplication](inline-comment-deduplication.md) first. Always deduplicate before posting. The dedup logic is prompt-embedded using a collect→dedup→post flow — see Steps 4-6 of REVIEW_PROMPT_TEMPLATE.
