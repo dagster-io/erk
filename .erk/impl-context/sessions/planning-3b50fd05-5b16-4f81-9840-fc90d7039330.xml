@@ -1,0 +1,1419 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>I want you to play on a feature where you can configure the system to build all the learned docs in its repo that is separate from the main repo </user>
+  <thinking>The user wants to build a feature where learned docs (`docs/learned/`) can be configured to live in a separate repository from the main erk repo. Let me explore the codebase to understand the current learned docs system and how it works before planning.
+
+Let me start by understanding:
+1. How learned docs are currently managed (the `docs/learned/` directory structure, the sync mechanism)
+2. The existing configuration system for erk
+3. How docs are referenced and built
+
+Let me launch explore agents to understand these areas.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="10988" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10988}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll explore the codebase to understand the current learned docs system and configuration patterns before designing this feature.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="10988" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10988}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01UWmhhq8PvANV7mQv4Z3buj">
+    <param name="description">Explore learned docs system</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 727 chars]...ough - trace the full lifecycle of a learned doc from creation to indexing to consumption.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="10988" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10988}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_014C1KhNCXoamC43A9fcHDi2">
+    <param name="description">Explore erk config system</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 812 chars]...ration files does it look for?
+
+Be thorough in tracing config loading and path resolution.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="10988" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10988}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01AbkrYwhyB177jywcn9hYrw">
+    <param name="description">Explore docs sync and build</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 1011 chars]...e feature or erk-specific?
+
+Be very thorough - I need to understand the complete pipeline.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="10988" cache_read_input_tokens="19113" output_tokens="1207" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 10988, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UWmhhq8PvANV7mQv4Z3buj">
+Perfect! Now I have all the information I need. Let me create a comprehensive summary of the learned docs system.
+
+## Full Learned Docs System Overview
+
+Based on my exploration of the erk codebase, here's a comprehensive understanding of the learned docs system:
+
+### 1. **Directory Structure &amp; File Organization**
+
+**Location**: `/Users/schrockn/code/erk/docs/learned/`
+
+The learned docs system uses a hierarchical organization:
+
+```
+docs/learned/
+├── index.md                    # AUTO-GENERATED root index
+├── tripwires-index.md          # AUTO-GENERATED tripwires directory
+├── universal-tripwires.md      # Manual: Universal rules for all code areas
+├── conventions.md              # Manual: Naming conventions
+├── glossary.md                 # Manual: Project terminology
+├── guide.md                    # Manual: Navigation guide
+├── claude-md-best-practices.md # Manual: CLAUDE.md/AGENTS.md writing
+├── architecture/               # Category directory
+│   ├── index.md               # AUTO-GENERATED category index
+│   ├── tripwires.md           # AUTO-GENERATED tripwire collection
+│   ├── subprocess-wrappers.md # Manual: Document with frontmatter
+│   ├── erk-architecture.md    # Manual: Document with frontmatter
+│   └── ... (more docs)
+├── cli/                        # Category directory
+│   ├── index.md               # AUTO-GENERATED
+│   ├── tripwires.md           # AUTO-GENERATED
+
+... [268 lines omitted] ...
+
+    warning: "Use Y instead"
+- `Tripwire`: Action, warning, optional regex pattern
+- `AgentDocValidationResult`: Validation result with errors
+erk docs validate --verbose  # Show all files, not just errors
+    warning: "Use wrapper functions..."
+- `warning`: Actionable guidance
+- `tripwires[].warning`: Required string
+  </tool_result>
+  <tool_result tool="toolu_014C1KhNCXoamC43A9fcHDi2">
+Perfect! Now I have a complete picture. Let me create a comprehensive summary document with all my findings:
+
+## Summary: Erk Configuration System
+
+I've thoroughly explored erk's configuration system. Here's what I found:
+
+### 1. Configuration System Overview
+
+Erk uses a **3-layer configuration system** with merge semantics:
+
+**Layer Structure** (from `/Users/schrockn/code/erk/docs/learned/configuration/config-layers.md`):
+
+| Layer  | Location                 | Scope       | Versioned | Purpose                              |
+| ------ | ------------------------ | ----------- | --------- | ------------------------------------ |
+| Global | `~/.erk/config.toml`     | All repos   | No        | User-wide settings across all repos  |
+| Repo   | `.erk/config.toml`       | All users   | Yes       | Team-shared settings (in git)        |
+| Local  | `.erk/config.local.toml` | Single user | No        | Per-user overrides (gitignored)      |
+
+**Key Files:**
+- `/Users/schrockn/code/erk/src/erk/cli/config.py` - Core config loading logic
+- `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/context/types.py` - `LoadedConfig` type definition
+
+### 2. Project Root Detection
+
+Erk detects the project root by **walking up the directory tree looking for `.git`**:
+
+**Discovery Flow** (from `/Users/schrockn/code/erk/src/erk/core/repo_discovery.py`):
+
+1. Start from current working directory (`cwd`)
+2. Walk up parents looking for `.git` directory
+
+... [139 lines omitted] ...
+
+        raise RuntimeError("Not in a git repository")
+  </tool_result>
+  <tool_result tool="toolu_01AbkrYwhyB177jywcn9hYrw">
+Perfect! Now I have all the information needed to provide a comprehensive analysis. Let me compile my findings:
+
+## Comprehensive Learned Docs Pipeline Analysis
+
+Based on my thorough exploration of the codebase, here's the complete pipeline for how learned docs are synced, built, and indexed:
+
+---
+
+### 1. THE `erk docs sync` COMMAND (Orchestration Point)
+
+**File**: `/Users/schrockn/code/erk/src/erk/cli/commands/docs/sync.py`
+
+This is the user-facing command that regenerates index files from frontmatter metadata. It:
+- Validates that `docs/learned/` exists
+- Calls `sync_agent_docs()` from operations.py
+- Supports `--dry-run` and `--check` flags
+- Reports created/updated/unchanged files and tripwire statistics
+- Uses the `AgentDocs` gateway (abstraction) for file I/O
+
+---
+
+### 2. THE SYNC ENGINE (Core Logic)
+
+**File**: `/Users/schrockn/code/erk/src/erk/agent_docs/operations.py`
+
+This is the heart of the system. Key functions:
+
+**Frontmatter Validation** (`validate_agent_doc_frontmatter`):
+- Validates required fields: `title` (string), `read_when` (list[string])
+- Validates optional fields: `tripwires` (list of action/warning/pattern), `last_audited` (datetime format), `audit_result` ("clean" or "edited")
+
+... [279 lines omitted] ...
+
+    warning: str          # Brief explanation
+- Returns `FrontmatterParseResult` with metadata dict, body content, and error message
+  </tool_result>
+  <thinking>Now I have a thorough understanding of the system. Let me read the key files to deepen my understanding before designing the plan.
+
+Key findings:
+1. **Learned docs** live in `docs/learned/` relative to project root
+2. **Gateway abstraction** (`AgentDocs` ABC) already decouples I/O - this is the key extension point
+3. **Config system** has 3 layers (global, repo, local) and already supports external repos for plans via `[plans] repo = "owner/plans-repo"`
+4. **`erk docs sync`** regenerates indexes from frontmatter
+5. The `@` include syntax in AGENTS.md is a Claude Code feature that inlines file content
+
+
+6. The feature request is to enable storing learned docs in a separate repository, mirroring the existing plans repo pattern
+
+I need to work through the design questions around whether external docs should be cloned locally or fetched via API, how syncing and @-includes would work across repositories, and what patterns already exist that I can follow.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="10857" cache_read_input_tokens="30101" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10857}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, I have a comprehensive understanding of the system. Let me read a few critical files to deepen my understanding of the extension points.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="10857" cache_read_input_tokens="30101" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10857}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019e3YkYchFLFuEv1wAbqPCq">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/agent_docs/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10857" cache_read_input_tokens="30101" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10857}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019e3YkYchFLFuEv1wAbqPCq">
+     1→"""Agent documentation gateway ABC.
+     2→
+     3→This gateway provides access to files in the docs/learned/ directory.
+     4→All paths are relative to docs/learned/.
+     5→"""
+     6→
+     7→from abc import ABC, abstractmethod
+     8→from pathlib import Path
+     9→
+    10→
+    11→class AgentDocs(ABC):
+    12→    """Abstract gateway for agent documentation operations."""
+    13→
+    14→    @abstractmethod
+    15→    def has_docs_dir(self, project_root: Path) -&gt; bool:
+    16→        """Check if docs/learned/ directory exists.
+    17→
+    18→        Args:
+    19→            project_root: Root of the project
+    20→
+    21→        Returns:
+    22→            True if docs/learned/ directory exists
+    23→        """
+    24→        ...
+    25→
+    26→    @abstractmethod
+    27→    def list_files(self, project_root: Path) -&gt; list[str]:
+    28→        """List all markdown files in docs/learned/ directory.
+    29→
+    30→        Args:
+
+... [47 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01PUJMy4jCwZQGY8ByLbHsSo">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/agent_docs/real.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10857" cache_read_input_tokens="30101" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10857}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PUJMy4jCwZQGY8ByLbHsSo">
+     1→"""Real AgentDocs implementation using filesystem operations.
+     2→
+     3→Production implementation that reads/writes to docs/learned/ directory
+     4→and formats markdown with prettier.
+     5→"""
+     6→
+     7→from pathlib import Path
+     8→
+     9→from erk_shared.gateway.agent_docs.abc import AgentDocs
+    10→from erk_shared.subprocess_utils import run_subprocess_with_context
+    11→
+    12→
+    13→class RealAgentDocs(AgentDocs):
+    14→    """Production implementation backed by filesystem."""
+    15→
+    16→    def has_docs_dir(self, project_root: Path) -&gt; bool:
+    17→        """Check if docs/learned/ directory exists.
+    18→
+    19→        Args:
+    20→            project_root: Root of the project
+    21→
+    22→        Returns:
+    23→            True if docs/learned/ directory exists
+    24→        """
+    25→        docs_dir = project_root / "docs" / "learned"
+    26→        if not docs_dir.exists():
+    27→            return False
+    28→        return docs_dir.is_dir()
+    29→
+    30→    def list_files(self, project_root: Path) -&gt; list[str]:
+
+... [82 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01VYKw65AnUF7xhV3FQrE3E6">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/agent_docs/operations.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10857" cache_read_input_tokens="30101" output_tokens="557" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 10857, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VYKw65AnUF7xhV3FQrE3E6">
+     1→"""Operations for agent documentation management.
+     2→
+     3→This module provides functionality for validating and syncing agent documentation
+     4→files with frontmatter metadata.
+     5→"""
+     6→
+     7→import re
+     8→from collections import defaultdict
+     9→from collections.abc import Callable, Mapping
+    10→from pathlib import Path
+    11→from typing import Any, cast, get_args
+    12→
+    13→from erk.agent_docs.models import (
+    14→    AgentDocFrontmatter,
+    15→    AgentDocValidationResult,
+    16→    AuditResult,
+    17→    CategoryInfo,
+    18→    CategoryTripwireStats,
+    19→    CollectedTripwire,
+    20→    DocInfo,
+    21→    SyncResult,
+    22→    Tripwire,
+    23→    TripwiresIndexValidationResult,
+    24→)
+    25→from erk_shared.core.frontmatter import parse_markdown_frontmatter
+    26→from erk_shared.gateway.agent_docs.abc import AgentDocs
+    27→
+    28→AGENT_DOCS_DIR = "docs/learned"
+    29→
+    30→LAST_AUDITED_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2} PT$")
+
+... [896 lines omitted] ...
+
+   118→        Tuple of (tripwires, errors). If validation succeeds,
+   119→        errors is empty and tripwires contains parsed Tripwire objects.
+   121→    errors: list[str] = []
+   125→        errors.append("Field 'tripwires' must be a list")
+   126→        return [], errors
+   130→            errors.append(f"Field 'tripwires[{i}]' must be an object")
+   136→        warning = item_dict.get("warning")
+   139→            errors.append(f"Field 'tripwires[{i}].action' is required")
+   141→            errors.append(f"Field 'tripwires[{i}].action' must be a string")
+   143→        if not warning:
+   144→            errors.append(f"Field 'tripwires[{i}].warning' is required")
+   145→        elif not isinstance(warning, str):
+   146→            errors.append(f"Field 'tripwires[{i}].warning' must be a string")
+   153→                errors.append(f"Field 'tripwires[{i}].pattern' must be a string")
+   155→                errors.append(f"Field 'tripwires[{i}].pattern' must not be empty")
+   159→                except re.error as e:
+   160→                    errors.append(f"Field 'tripwires[{i}].pattern' is not a valid regex: {e}")
+   165→        if isinstance(action, str) and action and isinstance(warning, str) and warning:
+   166→            tripwires.append(Tripwire(action=action, warning=warning, pattern=pattern))
+   168→    return tripwires, errors
+   180→        Tuple of (frontmatter, errors). If validation succeeds,
+   181→        errors is empty. If validation fails, frontmatter is None.
+   183→    errors: list[str] = []
+   188→        errors.append("Missing required field: title")
+   190→        errors.append("Field 'title' must be a string")
+   195→        errors.append("Missing required field: read_when")
+   197→        errors.append("Field 'read_when' must be a list")
+   199→        errors.append("Field 'read_when' must not be empty")
+   203→                errors.append(f"Field 'read_when[{i}]' must be a string")
+   209→        tripwires, tripwire_errors = _validate_tripwires(tripwires_data)
+   210→        errors.extend(tripwire_errors)
+   217→            errors.append("Field 'last_audited' must be a string")
+   219→            errors.append(
+   231→            errors.append("Field 'audit_result' must be a string")
+   233→            errors.append(
+   239→    if errors:
+   240→        return None, errors
+   262→        Validation result with any errors found.
+   265→    if result.error is not None:
+   269→            errors=(result.error,),
+   272→    # result.error is None means result.metadata is not None
+   274→    frontmatter, validation_errors = validate_agent_doc_frontmatter(result.metadata)
+   278→        errors=tuple(validation_errors),
+   342→                    errors=("File does not exist",),
+   380→                    warning=tripwire.warning,
+   475→            f"{tripwire.warning}"
+   882→        Validation result with any errors found.
+   889→            errors=("tripwires-index.md does not exist. Run 'erk docs sync' to generate it.",),
+   913→    errors: list[str] = []
+   915→        errors.append(
+   921→        is_valid=len(errors) == 0,
+   922→        errors=tuple(errors),
+  </tool_result>
+  <thinking>Now let me also read the config system and the existing cross-repo pattern for plans, to understand how to model the docs repo config.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="14648" cache_read_input_tokens="40958" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14648}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014pLTJgFpv4N31kWeiBo7tH">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/config.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14648" cache_read_input_tokens="40958" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14648}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014pLTJgFpv4N31kWeiBo7tH">
+     1→import tomllib
+     2→from dataclasses import dataclass
+     3→from pathlib import Path
+     4→
+     5→# Re-export LoadedConfig from erk_shared for backwards compatibility
+     6→from erk_shared.context.types import LoadedConfig as LoadedConfig
+     7→
+     8→
+     9→@dataclass(frozen=True)
+    10→class ProjectConfig:
+    11→    """In-memory representation of `.erk/project.toml`.
+    12→
+    13→    Example project.toml:
+    14→      # Optional: custom name (defaults to directory name)
+    15→      # name = "dagster-open-platform"
+    16→
+    17→      [env]
+    18→      # Project-specific env vars (merged with repo-level)
+    19→      DAGSTER_HOME = "{project_root}"
+    20→
+    21→      [post_create]
+    22→      # Runs AFTER repo-level commands, FROM project directory
+    23→      shell = "bash"
+    24→      commands = [
+    25→        "source .venv/bin/activate",
+    26→      ]
+    27→    """
+    28→
+    29→    name: str | None  # Custom project name (None = use directory name)
+    30→    env: dict[str, str]
+
+... [322 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_013KVgmBkvnzELJQswaX2d4p">
+    <param name="file_path">/Users/schrockn/code/erk/docs/learned/configuration/issues-repo.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14648" cache_read_input_tokens="40958" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14648}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013KVgmBkvnzELJQswaX2d4p">
+     1→---
+     2→title: External Issues Repository Configuration
+     3→last_audited: "2026-02-17 09:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "configuring plans to be stored in a separate repository"
+     7→  - "setting up plans.repo in config.toml"
+     8→---
+     9→
+    10→# External Issues Repository Configuration
+    11→
+    12→Configure erk to store plan issues in a separate repository from your working repository.
+    13→
+    14→## Configuration
+    15→
+    16→In `.erk/config.toml`:
+    17→
+    18→```toml
+    19→[plans]
+    20→repo = "owner/repo"
+    21→```
+    22→
+    23→**Format:** `"owner/repo"` - the GitHub repository where plan issues will be created.
+    24→
+    25→**Example:**
+    26→
+    27→```toml
+    28→[plans]
+    29→repo = "myorg/engineering-plans"
+    30→```
+
+... [49 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Q9R2qdwYWt1DagrjEeoh7y">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/capabilities/learned_docs.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14648" cache_read_input_tokens="40958" output_tokens="237" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 14648, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Q9R2qdwYWt1DagrjEeoh7y">
+     1→"""LearnedDocsCapability - agent-discoverable documentation system."""
+     2→
+     3→import shutil
+     4→from pathlib import Path
+     5→
+     6→from erk.artifacts.paths import get_bundled_claude_dir, get_bundled_codex_dir
+     7→from erk.core.capabilities.base import (
+     8→    Capability,
+     9→    CapabilityArtifact,
+    10→    CapabilityResult,
+    11→    CapabilityScope,
+    12→    ManagedArtifact,
+    13→    backend_agent_dir,
+    14→)
+    15→from erk_shared.context.types import AgentBackend
+    16→
+    17→LEARNED_DOCS_README = """\
+    18→---
+    19→title: "Learned Documentation Guide"
+    20→read_when:
+    21→  - "setting up learned docs"
+    22→  - "understanding learned docs structure"
+    23→  - "adding new documentation"
+    24→---
+    25→
+    26→# Learned Documentation
+    27→
+    28→This directory contains agent-discoverable documentation for AI assistants.
+    29→
+    30→## Purpose
+
+... [295 lines omitted] ...
+  </tool_result>
+  <thinking>Now let me also look at the LoadedConfig type and the context creation to understand how docs_repo would be integrated.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="9777" cache_read_input_tokens="55606" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9777}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EDM1pkxNYXrGtYf5Dg8fEe">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/context/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9777" cache_read_input_tokens="55606" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9777}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EDM1pkxNYXrGtYf5Dg8fEe">
+     1→"""Context types for erk and erk-kits.
+     2→
+     3→This module provides the core data types used by ErkContext:
+     4→- RepoContext: Repository discovery result
+     5→- NoRepoSentinel: Sentinel for when not in a repository
+     6→- GlobalConfig: Global erk configuration
+     7→- LoadedConfig: Repository-level configuration
+     8→- InteractiveAgentConfig: Configuration for interactive agent launches (Claude or Codex)
+     9→- AgentBackend: Type for agent backend selection
+    10→- PermissionMode: Generic permission mode for both Claude and Codex
+    11→"""
+    12→
+    13→from __future__ import annotations
+    14→
+    15→from dataclasses import dataclass
+    16→from functools import cache
+    17→from pathlib import Path
+    18→from typing import Literal, Self
+    19→
+    20→from erk_shared.gateway.github.types import GitHubRepoId
+    21→
+    22→# Agent backend types
+    23→AgentBackend = Literal["claude", "codex"]
+    24→
+    25→# Claude CLI permission modes:
+    26→# - "default": Default mode with permission prompts
+    27→# - "acceptEdits": Accept edits without prompts (--permission-mode acceptEdits)
+    28→# - "plan": Plan mode for exploration and planning (--permission-mode plan)
+    29→# - "bypassPermissions": Bypass all permissions (--permission-mode bypassPermissions)
+    30→ClaudePermissionMode = Literal["default", "acceptEdits", "plan", "bypassPermissions"]
+
+... [288 lines omitted] ...
+
+    51→    raise ValueError(f"Unknown permission_mode: {permission_mode}")
+    75→    raise ValueError(f"Unknown permission_mode: {permission_mode}")
+    99→    raise ValueError(f"Unknown permission_mode: {permission_mode}")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01LU9KWuxpFp2t5V4W6Hqz7n">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/core/context.py</param>
+    <param name="offset">580</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9777" cache_read_input_tokens="55606" output_tokens="216" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9777, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LU9KWuxpFp2t5V4W6Hqz7n">
+   580→            remote_url = git.remote.get_remote_url(repo.root, "origin")
+   581→            owner, name = parse_git_remote_url(remote_url)
+   582→            repo_info = RepoInfo(owner=owner, name=name)
+   583→        except ValueError:
+   584→            # No origin remote configured - repo_info stays None
+   585→            pass
+   586→
+   587→    # 6b. Create HTTP client for GitHub API (needs token from gh auth)
+   588→    http_client: HttpClient | None = None
+   589→    if not isinstance(repo, NoRepoSentinel):
+   590→        token = fetch_github_token_or_none()
+   591→        if token is not None:
+   592→            http_client = RealHttpClient(token=token, base_url="https://api.github.com")
+   593→
+   594→    # 7. Load local config (or defaults if no repo)
+   595→    # Loaded early so plans_repo can be used for GitHubIssues
+   596→    if isinstance(repo, NoRepoSentinel):
+   597→        local_config = LoadedConfig.test()
+   598→    else:
+   599→        # Ensure metadata directories exist (needed for worktrees)
+   600→        ensure_erk_metadata_dir(repo)
+   601→        # Load config from primary location (.erk/config.toml)
+   602→        # Legacy locations are detected by 'erk doctor' only
+   603→        # Use main_repo_root so config is shared across all worktrees
+   604→        main_root = repo.main_repo_root or repo.root
+   605→        repo_config = load_config(main_root)
+   606→        # Load per-user local config (.erk/config.local.toml) and merge
+   607→        user_local_config = load_local_config(main_root)
+   608→        local_config = merge_configs_with_local(
+   609→            base_config=repo_config,
+
+... [90 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a thorough understanding of the full system. Let me also check how the CLI sync command accesses the project root and the agent_docs gateway, then I'll design the plan.
+
+Key observations:
+1. The `AgentDocs` gateway already abstracts file I/O with `project_root` as a parameter
+2. The config system already has a `plans_repo` pattern for external repos
+3. `RealAgentDocs` hardcodes `docs/learned` relative to `project_root`
+4. The sync command gets `project_root` from `ctx.repo_root`
+
+For the feature, the user wants to be able to configure learned docs to live in a separate repository. This is analogous to `plans_repo` but for docs.
+
+
+I'm considering three main approaches: a git clone strategy where external repos are configured and synced to a local cache, a simpler symlink approach that points to a pre-checked-out docs directory, or creating a new `AgentDocs` implementation to handle external repositories.
+
+The cleanest path seems to be adding a `docs_repo` config field similar to `plans_repo`, then automatically cloning external repos to a standard location like `~/.erk/repos/&lt;repo&gt;/docs-repo/`. When configured, `AgentDocs` would resolve the docs path from the cloned repo instead of the project root, and `erk docs sync` and push operations would work against that cloned location.
+
+Now I'm thinking through the actual use cases—multiple projects sharing one docs repo, keeping docs separate from the main codebase, and managing docs independently. I'd propose a TOML config that specifies the external docs repo, then have the system clone it to a local cache and wire up the `AgentDocs` gateway to point there.
+
+The real challenge is the `@` references in AGENTS.md—when docs live in a separate repo, those inline expansions break. I'm considering a symlink approach where the cloned docs directory gets linked into the project structure, so all the references work transparently without needing special handling. be fragile, especially in worktrees
+
+**Approach 2: Overlay/Mount**
+- Keep a local `docs/learned/` but populate it from the external repo
+- `erk docs pull` fetches from external, `erk docs push` pushes back
+- `docs/learned/` is gitignored in the working repo
+
+**Approach 3: Build into a local path**
+- The external repo is just where docs are stored/versioned
+- At init/setup time, docs are copied into the local project
+- Changes are committed back to the external repo
+
+The user probably wants something straightforward. Let me reconsider what they're asking for—they want the learned docs directory to live in a completely separate git repository rather than in the main project.
+
+The simplest implementation would be to add a config option pointing to an external docs repo, clone it to a local cache directory, have the docs gateway read and write from that cache, and provide commands to sync changes back to the remote repository. I could use a symlink from the project's docs folder to the cache so Claude Code's references still work, keeping the actual docs out of version control.
+
+I need to clarify a few things with the user: whether docs should be shared across multiple projects or tied one-to-one with each project, how they want to handle pushing changes back to the docs repo, and whether they prefer a transparent symlink approach or something more explicit.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="6481" cache_read_input_tokens="65383" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6481}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a thorough understanding of the system. Let me design the approach.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6481" cache_read_input_tokens="65383" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6481}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01UzYd5maFdK59muUBVGLJrf">
+    <param name="description">Design external docs repo feature</param>
+    <param name="prompt">Design an implementation plan for adding external learned docs repository support to erk.
+...[truncated 3758 chars]...rgonomics
+
+Produce a detailed implementation plan with specific files to modify and steps.</param>
+    <param name="subagent_type">Plan</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6481" cache_read_input_tokens="65383" output_tokens="2805" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6481, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UzYd5maFdK59muUBVGLJrf">
+I now have a thorough understanding of the entire system. Let me synthesize my analysis into a detailed implementation plan.
+
+---
+
+## Implementation Plan: External Learned Docs Repository Support
+
+### Analysis Summary
+
+After thoroughly examining the codebase, here is my assessment of the three proposed options and my recommendation.
+
+---
+
+### Option Assessment
+
+**Option A (Symlink Approach) -- RECOMMENDED**
+
+This is the clear winner for the following reasons:
+
+1. **Zero changes to `AgentDocs` ABC or its 5 implementations** (Real, Fake, DryRun, Printing, and the test factory). The ABC's `project_root` parameter semantics remain unchanged. Every method in `RealAgentDocs` resolves `project_root / "docs" / "learned"` -- a symlink at that location makes all existing code transparently work against the external repo.
+
+2. **Zero changes to operations.py** (866 lines). All 8 functions (sync, validate, collect_tripwires, etc.) pass `project_root` through to the gateway. They all work unmodified.
+
+3. **Zero changes to CLI commands** (sync, validate, check). They all use `ctx.repo_root` and `ctx.agent_docs`, which both remain unchanged.
+
+4. **@-include compatibility is free.** `@docs/learned/index.md` in `AGENTS.md` resolves relative to the project root. A symlink at `docs/learned/` makes this work transparently. Claude Code follows symlinks.
+
+5. **Worktree compatibility.** The symlink lives inside the git working tree. Each worktree gets its own `docs/learned/` symlink. Since `docs/learned/` is gitignored when external docs is configured, each worktree independently resolves the symlink. The cache location (`~/.erk/repos/&lt;repo&gt;/docs-cache/`) is shared across worktrees, which is the correct behavior -- the external docs repo is a single shared resource.
+
+**Option B (Project Root Override)** -- Rejected. Redefining `project_root` semantics is confusing and requires threading a different "docs project_root" through all operations. It would also not solve the @-include problem, which requires files to be on disk at the relative path.
+
+
+... [210 lines omitted] ...
+
+- `ensure_docs_symlink(*, project_root: Path, target: Path) -&gt; None`: Creates or updates a symlink at `project_root / "docs" / "learned"` pointing to `target`. LBYL checks: if `docs/learned` exists and is already a symlink pointing to `target`, do nothing. If it exists and is a real directory, raise an error (user has local docs that would be shadowed -- they need to migrate first). If it is a symlink pointing elsewhere, update it. Create parent `docs/` directory if needed.
+The refined logic: in context creation, only call `ensure_docs_symlink` (fast, just an lstat check). The initial `ensure_docs_cache` (clone) should only be done by `erk docs setup` or on first invocation when the cache is missing. We can add a check: if `docs_repo` is configured but the cache does not exist, print a warning suggesting `erk docs setup`.
+2. **Unit tests for `symlink.py`**: Test symlink creation (target does not exist), update (target changed), idempotent (already correct), error (real directory exists). Use `tmp_path` fixture.
+  </tool_result>
+  <thinking>Now I have a thorough plan from the Plan agent. Let me also check the schema.py file the agent referenced to make sure it exists.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="6944" cache_read_input_tokens="71864" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6944}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me verify a couple of the files referenced in the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6944" cache_read_input_tokens="71864" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6944}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_014Ed7hqws5DJPTNUmTGWVBi">
+    <param name="pattern">**/erk_shared/config/schema.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6944" cache_read_input_tokens="71864" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6944}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UEgyzZp8TBT7cGjEmhN5gK">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/docs/group.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6944" cache_read_input_tokens="71864" output_tokens="184" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6944, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014Ed7hqws5DJPTNUmTGWVBi">
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/config/schema.py
+  </tool_result>
+  <tool_result tool="toolu_01UEgyzZp8TBT7cGjEmhN5gK">
+     1→"""Agent documentation command group."""
+     2→
+     3→import click
+     4→
+     5→from erk.cli.commands.docs.check import check_command
+     6→from erk.cli.commands.docs.sync import sync_command
+     7→from erk.cli.commands.docs.validate import validate_command
+     8→
+     9→
+    10→@click.group(name="docs")
+    11→def docs_group() -&gt; None:
+    12→    """Manage and validate agent documentation."""
+    13→
+    14→
+    15→# Register commands
+    16→docs_group.add_command(check_command)
+    17→docs_group.add_command(sync_command)
+    18→docs_group.add_command(validate_command)
+    19→
+  </tool_result>
+  <tool_use name="Read" id="toolu_01G81fdAeiHWLQrE6YUo7KNw">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/config/schema.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="564" cache_read_input_tokens="78808" output_tokens="84" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 564, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01G81fdAeiHWLQrE6YUo7KNw">
+     1→"""Pydantic schemas for erk configuration.
+     2→
+     3→These schemas serve as the single source of truth for:
+     4→- Configuration field names and CLI keys
+     5→- Field descriptions (for `erk config keys`)
+     6→- Configuration levels (global-only vs overridable vs repo-only)
+     7→- Display formatting
+     8→"""
+     9→
+    10→from __future__ import annotations
+    11→
+    12→from collections.abc import Iterator
+    13→from enum import StrEnum
+    14→
+    15→from pydantic import BaseModel, Field
+    16→
+    17→
+    18→class ConfigLevel(StrEnum):
+    19→    """Defines where a configuration key can be set.
+    20→
+    21→    GLOBAL_ONLY: Can only be set in ~/.erk/config.toml
+    22→    OVERRIDABLE: Can be set at global, repo (.erk/config.toml), or local level
+    23→    REPO_ONLY: Can only be set in repository config (not global)
+    24→    """
+    25→
+    26→    GLOBAL_ONLY = "global_only"
+    27→    OVERRIDABLE = "overridable"
+    28→    REPO_ONLY = "repo_only"
+    29→
+    30→
+
+... [295 lines omitted] ...
+  </tool_result>
+  <thinking>Good, now I have all the information I need. Let me also consider a key question I want to ask the user: should the external docs repo contain the entire `docs/learned/` structure (i.e., the root of the external repo has `docs/learned/`), or should the root of the external repo BE the contents of `docs/learned/` (i.e., the external repo root has `architecture/`, `cli/`, `index.md`, etc.)?
+
+I think the more natural approach is that the external repo IS the docs - its root contains the doc categories directly. This is simpler and more intuitive. The symlink would point from `project_root/docs/learned/` to the root of the cloned repo.
+
+
+That said, I could over-complicate this by designing for a scenario where the external docs repo is shared across multiple projects, but that's premature optimization. For now, I'll go with the simpler approach and ask the user to clarify their setup.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4309" cache_read_input_tokens="79372" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4309}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, I now have a thorough understanding of the full system. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4309" cache_read_input_tokens="79372" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4309}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01PDwnn4aU3copF1oFrM4LG7">
+    <param name="file_path">/Users/schrockn/.claude/plans/glowing-petting-hippo.md</param>
+    <param name="content"># External Learned Docs Repository
+
+## Context
+
+Currently, learned docs (`docs/learned/`) ...[truncated 6892 chars]...:** Unit tests for `docs_cache.py` and `symlink.py`; config parsing tests for `docs_repo`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4309" cache_read_input_tokens="79372" output_tokens="2645" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4309, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PDwnn4aU3copF1oFrM4LG7">
+File created successfully at: /Users/schrockn/.claude/plans/glowing-petting-hippo.md
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01SvgsCEVtVHxNQHRzm1PUDy">
+    <param name="questions">[{'question': "What should the external docs repo's directory structure look like?", 'head...[truncated 848 chars]... docs. More convenient but adds latency and network dependency.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2794" cache_read_input_tokens="83681" output_tokens="324" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2794, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SvgsCEVtVHxNQHRzm1PUDy">
+User has answered your questions: "What should the external docs repo's directory structure look like?"="Mirror project layout (Recommended)", "Should the external docs cache auto-clone on first erk command, or require explicit `erk docs setup`?"="Explicit setup only (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <assistant>Good, the recommended options align with the plan as written. The plan already specifies:
+- External repo mirrors the project layout with `docs/learned/` at its root
+- Explicit `erk docs setup` required (other commands warn if cache is missing)</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="417" cache_read_input_tokens="86475" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 417}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01PLWk9JSkcSPnNDcii4P3y4">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run erk CLI commands for testing (erk docs, erk config)'}, {'...[truncated 31 chars]... diff, add, commit)'}, {'tool': 'Bash', 'prompt': 'run ls to verify directory structure'}]</param>
+    <param name="plan"># External Learned Docs Repository
+
+## Context
+
+Currently, learned docs (`docs/learned/`) ...[truncated 6892 chars]...:** Unit tests for `docs_cache.py` and `symlink.py`; config parsing tests for `docs_repo`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="417" cache_read_input_tokens="86475" output_tokens="186" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 417, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PLWk9JSkcSPnNDcii4P3y4">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/glowing-petting-hippo.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 External Learned Docs Repository
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 3b50fd05-5b16-4f81-9840-fc90d7039330 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MdLCbdLzogpGMGgHdAwZiP">
+    <param name="file_path">/Users/schrockn/.claude/plans/glowing-petting-hippo.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="896" cache_read_input_tokens="86892" output_tokens="74" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 896, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MdLCbdLzogpGMGgHdAwZiP">
+     1→# External Learned Docs Repository
+     2→
+     3→## Context
+     4→
+     5→Currently, learned docs (`docs/learned/`) are stored in the same repository as the project code. This plan adds the ability to configure an external Git repository to hold all learned docs, keeping them separate from the working codebase. This mirrors the existing `[plans] repo` pattern used for external issue storage.
+     6→
+     7→**Key insight:** The `AgentDocs` gateway already abstracts all file I/O through `project_root / "docs" / "learned"`. By using a **symlink** from that path to a local clone of the external repo, all existing code (sync, validate, check, @-includes in AGENTS.md) works transparently with zero changes to the gateway, operations, or CLI commands.
+     8→
+     9→## Approach: Symlink to Cached Clone
+    10→
+    11→1. User configures `[docs] repo = "owner/docs-repo"` in `.erk/config.toml`
+    12→2. `erk docs setup` clones the external repo to `~/.erk/repos/&lt;repo&gt;/docs-cache/`
+    13→3. A symlink is created: `&lt;project&gt;/docs/learned/` → `&lt;cache&gt;/docs/learned/`
+    14→4. `docs/learned` is added to `.gitignore`
+    15→5. All existing code works transparently through the symlink
+    16→
+    17→**Why symlink wins over gateway changes:**
+    18→- Zero changes to `AgentDocs` ABC or its 4 implementations (Real, Fake, DryRun, Printing)
+    19→- Zero changes to `operations.py` (866 lines)
+    20→- Zero changes to existing CLI commands (sync, validate, check)
+    21→- Claude Code's `@docs/learned/index.md` @-includes work transparently
+    22→
+    23→## Implementation Steps
+    24→
+    25→### 1. Add `docs_repo` field to `LoadedConfig`
+    26→
+    27→**File:** `packages/erk-shared/src/erk_shared/context/types.py`
+    28→
+    29→Add `docs_repo: str | None` field to `LoadedConfig` dataclass, after `plans_repo`. Update `LoadedConfig.test()` factory.
+    30→
+
+... [146 lines omitted] ...
+
+    72→- `ensure_docs_symlink(*, project_root: Path, target: Path) -&gt; None` — create/update symlink at `project_root / "docs" / "learned"` → `target`. LBYL: if already correct symlink, no-op. If real directory exists, raise error (user must migrate first).
+    82→2. If not configured, error with guidance
+   131→| `src/erk/core/context.py` | Add symlink validation warning |
+  </tool_result>
+  <user>[Request interrupted by user]</user>
+  <user>wait i don't want a symlink. the use case here is that a user wants to experiment introducing the learned docs without anyone in the main repo knowing.</user>
+  <thinking>The user is clarifying the use case. They don't want a symlink approach because the whole point is that the learned docs should be invisible to the main repo. A symlink would still require changes to the main repo (gitignore, symlink in docs/learned/).
+
+The use case is: a user wants to try out learned docs in a separate repo, without modifying the main project repo at all. No symlink, no gitignore changes, nothing visible in the main repo.
+
+This changes the design significantly. Instead of a symlink approach, we need:
+
+1. The `AgentDocs` gateway needs to know to look at a different location entirely
+
+
+2. The `@` includes in AGENTS.md won't work since there's no docs/learned/ in the main repo
+3. The operations need to work against the external repo's path
+
+So the approach should be configuring `docs_repo` to point to the external repo, having `AgentDocs` resolve `docs/learned/` from that external path instead of the project root, and overriding the `project_root` passed to operations. But the real challenge is that `@` includes in AGENTS.md reference paths that don't exist in the main repo.
+
+Actually, thinking about the user's actual constraints—they want to keep the main repo untouched while experimenting with learned docs in a separate repo—the simplest solution is to treat the external repo's local clone as the effective project root for all docs operations when `docs_repo` is configured. symlink needed.
+
+The `@` includes would need to be in the external repo's AGENTS.md or CLAUDE.md, or... actually, the `@` includes are a Claude Code feature that works relative to the file containing the `@` reference. If AGENTS.md is in the main repo and references `@docs/learned/index.md`, it won't find it because docs/learned/ doesn't exist in the main repo.
+
+But maybe that's fine. The user is experimenting - they might have Claude Code hooks that inject the docs content, have erk handle the doc injection differently, or not use `@` includes at all initially.
+
+For the core feature, the key change is making the `AgentDocs` gateway resolve paths from a configurable location instead of always using `project_root / "docs" / "learned"`.
+
+I could override `project_root` for docs operations when `docs_repo` is configured - the CLI commands would pass the external repo's path to agent_docs operations instead of `ctx.repo_root`. This keeps the main repo untouched while the external repo maintains its own `docs/learned/` directory, and all docs commands get redirected there. The tradeoff is that `@` includes in the main repo's AGENTS.md wouldn't work unless the user adds them to the external repo instead, which somewhat defeats the purpose of keeping the main repo clean. I'm realizing the simplest path forward is to just let users redirect the docs operations to their external repo, then they can decide how to surface those docs to their agent—whether through a personal CLAUDE.md file, hooks, or by having the agent search the repo directly when needed.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="3069" cache_read_input_tokens="87863" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3069}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>That changes the design significantly. So the use case is: someone wants to try learned docs on a project without touching the main repo at all — no symlink, no gitignore, no `docs/learned/` directory, completely invisible.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3069" cache_read_input_tokens="87863" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3069}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_0136xNqnpXdzu5vN12LR56HS">
+    <param name="questions">[{'question': 'To confirm my understanding: the external repo is a standalone repo where d...[truncated 1067 chars]...nfig + redirected docs commands). Discovery can be a follow-up.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3069" cache_read_input_tokens="87863" output_tokens="1561" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3069, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0136xNqnpXdzu5vN12LR56HS">
+User has answered your questions: "To confirm my understanding: the external repo is a standalone repo where docs/learned/ lives, and all `erk docs` commands (sync, validate, check) should operate against that repo instead of the main project repo. The main repo stays completely untouched. Is that right?"="Yes, exactly", "How should Claude Code discover the docs at runtime? Since there's no docs/learned/ or @-includes in the main repo, the agent needs another way to find them."="Personal CLAUDE.md references". You can now continue with the user's answers in mind.
+  </tool_result>
+  <thinking>Now I understand clearly:
+
+1. All `erk docs` commands redirect to the external repo
+2. The main repo stays untouched
+3. User adds `@` references in their personal `~/.claude/projects/&lt;project&gt;/CLAUDE.md` pointing to the external repo's docs
+
+This is a much simpler design. The key changes:
+
+1. **Config**: Add `docs_repo` config (but this could be a local path or a GitHub repo identifier)
+2. **Project root override**: When `docs_repo` is configured, `erk docs` commands use the external repo path as their project root
+3. **No symlinks, no gitignore, no main repo changes**
+
+
+4. **Config location**: The `docs_repo` setting needs to live somewhere that doesn't touch the main repo—either in a gitignored `.erk/config.local.toml`, a global `~/.erk/config.toml`, or a per-repo config under `~/.erk/repos/`. The local config file makes the most sense since it's already part of the pattern.
+
+5. **The `.erk/` directory problem**: If the user hasn't initialized erk in the main repo yet, `.erk/` won't exist. Creating it would be a minimal change, but I need to verify whether `.erk/` is gitignored by default in the erk setup.
+
+6. **Where the config should live**: `.erk/config.local.toml` seems like the right choice since it's explicitly gitignored and per-user, meaning no one else on the team sees it. Alternatively, if the user wants truly zero changes to the main repo, the config could live globally at `~/.erk/config.toml` or in erk's metadata directory at `~/.erk/repos/&lt;repo&gt;/`.
+
+7. **Settling on the approach**: I think `.erk/config.local.toml` is the best option—it's the standard place for per-user overrides, it's invisible to git, and it keeps the configuration close to the project.
+
+8. **Clarifying the external repo**: I need to understand what exactly "the external repo" refers to—is it a separate GitHub repository, a local directory, or something else?
+
+9. **Choosing a local path approach**: For the initial implementation, supporting a local path is simpler and more flexible than trying to auto-clone from GitHub. The user can clone the docs repo themselves and point erk to it via a config like `path = "/Users/schrockn/code/my-docs-repo"`. We can add GitHub repo support with auto-cloning later if needed.
+
+10. **Reconsidering the pattern**: I'm thinking about how `plans_repo` handles this and whether there's a similar pattern I should follow.
+
+11. **Weighing both approaches**: A local path is practical for the stealth experiment since the user likely already has the repo cloned, but supporting `owner/repo` format would let `erk docs setup` handle cloning automatically. For now, starting with just a local path keeps things simple—the user configures the path in `.erk/config.local.toml` and all docs commands operate on that directory without any auto-cloning or push logic.
+
+Now I'm realizing the `@` references in CLAUDE.md need to resolve correctly—they typically work relative to the project root in Claude Code, so if the docs are in a separate directory, the user would need absolute paths or paths relative to the CLAUDE.md file itself.
+
+Rather than getting bogged down in the exact syntax details, I'll keep this simple and let the user figure out the reference format that works for their setup.
+
+So the revised approach drops symlinks and auto-cloning entirely—the user manages their external docs repo with standard git. I'll add a `docs.path` config option that points to a local directory, and when docs commands run, they'll use that path as the project root instead. This removes the need for push/pull commands, context.py warnings, or any of the complexity from the symlink approach.
+
+The implementation is straightforward: add the config field, resolve the project root from it in the CLI commands, and that handles it. But I'm realizing there's a structural question here—when checking if docs exist, the code looks for `docs/learned/` inside the project root. If I override the project root to point to an external repo, does that repo need to mirror the full project structure with `docs/learned/` at its root, or should the external repo just contain the docs content directly?
+
+Mirroring the project structure seems cleaner since the gateway already expects that layout, so I'll go with having the external repo's root contain `docs/learned/` and passing that as the project root to the docs operations.
+
+Actually, there's a simpler fix than overriding project_root entirely—I can just modify the CLI commands to resolve the path based on whether `docs_path` is configured, using that instead of `ctx.repo_root` when available. That's just a one-line change per command and avoids touching the gateway logic.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1688" cache_read_input_tokens="90932" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1688}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Got it — completely invisible to the main repo, docs in a separate repo, discovered through personal CLAUDE.md references. This is a much simpler design than the symlink approach. Let me rethink.
+
+The core change becomes: when `docs.path` is configured (in `.erk/config.local.toml`, which is gitignored), all `erk docs` commands use that path as their project root instead of the actual repo root. No symlinks, no auto-cloning, no push/pull — the user manages the external repo with regular git.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1688" cache_read_input_tokens="90932" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1688}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NNZShXct5P2tY57Jj54EZm">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/docs/sync.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1688" cache_read_input_tokens="90932" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1688}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NNZShXct5P2tY57Jj54EZm">
+     1→"""Sync agent documentation index files.
+     2→
+     3→This command generates index.md files for docs/learned/ from frontmatter metadata.
+     4→"""
+     5→
+     6→import click
+     7→
+     8→from erk.agent_docs.operations import sync_agent_docs
+     9→from erk_shared.context.context import ErkContext
+    10→
+    11→
+    12→@click.command(name="sync")
+    13→@click.option(
+    14→    "--dry-run",
+    15→    is_flag=True,
+    16→    help="Show what would be done without writing files.",
+    17→)
+    18→@click.option(
+    19→    "--check",
+    20→    is_flag=True,
+    21→    help="Check if files are in sync without writing. Exit 1 if changes needed.",
+    22→)
+    23→@click.pass_obj
+    24→def sync_command(ctx: ErkContext, *, dry_run: bool, check: bool) -&gt; None:
+    25→    """Regenerate index files from frontmatter.
+    26→
+    27→    Generates index.md files for:
+    28→    - docs/learned/index.md (root index with categories and uncategorized docs)
+    29→    - docs/learned/&lt;category&gt;/index.md (for categories with 2+ docs)
+    30→
+
+... [94 lines omitted] ...
+
+    35→    - 1: Error during sync (or --check finds files out of sync)
+   101→        click.echo("  Run 'erk docs validate' to see errors", err=True)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01YBh2t7rzqfTfu3AWb4VgVg">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/docs/validate.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1688" cache_read_input_tokens="90932" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1688}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YBh2t7rzqfTfu3AWb4VgVg">
+     1→"""Validate agent documentation frontmatter.
+     2→
+     3→This command validates that all markdown files in docs/learned/ have valid
+     4→frontmatter with required fields: title and read_when.
+     5→"""
+     6→
+     7→import click
+     8→
+     9→from erk.agent_docs.operations import validate_agent_docs, validate_tripwires_index
+    10→from erk_shared.context.context import ErkContext
+    11→
+    12→
+    13→@click.command(name="validate")
+    14→@click.option(
+    15→    "--verbose",
+    16→    "-v",
+    17→    is_flag=True,
+    18→    help="Show details for all files, not just errors.",
+    19→)
+    20→@click.pass_obj
+    21→def validate_command(ctx: ErkContext, *, verbose: bool) -&gt; None:
+    22→    """Validate agent documentation frontmatter.
+    23→
+    24→    Checks that all markdown files in docs/learned/ have valid frontmatter:
+    25→    - title: Human-readable document title
+    26→    - read_when: List of conditions when agent should read this doc
+    27→
+    28→    Also validates that tripwires-index.md is complete and up-to-date.
+    29→
+    30→    Index files (index.md) are skipped as they are auto-generated.
+
+... [81 lines omitted] ...
+
+    34→    - 1: Validation errors found
+    63→                for error in validation_result.errors:
+    64→                    click.echo(f"    {error}", err=True)
+    70→            # Only show header if we haven't shown validation errors above
+    74→        for error in tripwires_index_result.errors:
+    75→            click.echo(f"    {error}", err=True)
+    81→    has_errors = invalid_count &gt; 0 or not tripwires_index_result.is_valid
+    83→    if not has_errors:
+    93→            click.style("Agent docs validation: FAILED", fg="red", bold=True),
+  </tool_result>
+  <tool_use name="Read" id="toolu_01XvEZZRL5962NW7y3rSAQnc">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/docs/check.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1688" cache_read_input_tokens="90932" output_tokens="2472" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1688, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XvEZZRL5962NW7y3rSAQnc">
+     1→"""Check agent documentation health.
+     2→
+     3→This command runs both frontmatter validation and sync checking in a single pass.
+     4→It's the unified health check for agent docs, combining:
+     5→- erk docs validate (frontmatter schema check)
+     6→- erk docs sync --check (generated files in sync check)
+     7→"""
+     8→
+     9→import click
+    10→
+    11→from erk.agent_docs.operations import (
+    12→    sync_agent_docs,
+    13→    validate_agent_docs,
+    14→    validate_tripwires_index,
+    15→)
+    16→from erk_shared.context.context import ErkContext
+    17→
+    18→
+    19→@click.command(name="check")
+    20→@click.pass_obj
+    21→def check_command(ctx: ErkContext) -&gt; None:
+    22→    """Check agent documentation health.
+    23→
+    24→    This is the testable core of the check command. It validates frontmatter
+    25→    and checks that generated index/tripwire files are in sync.
+    26→
+    27→    Raises:
+    28→        SystemExit: With code 0 if no docs found, code 1 if checks fail.
+    29→    """
+    30→    # Use repo_root from context
+
+... [122 lines omitted] ...
+
+    52→    # Show validation errors only
+    57→                for error in validation_result.errors:
+    58→                    click.echo(f"    {error}", err=True)
+    60→    # Show tripwires index errors
+    65→        for error in tripwires_index_result.errors:
+    66→            click.echo(f"    {error}", err=True)
+    78→            click.style("Frontmatter validation failed", fg="red"),
+   138→            click.style("Agent docs health check: FAILED", fg="red", bold=True),
+  </tool_result>
+  <thinking>Now I can see the pattern clearly. All three CLI commands have `project_root = ctx.repo_root` at the top. The change is simple: resolve `project_root` from config if `docs_repo`/`docs_path` is configured, otherwise fall back to `ctx.repo_root`.
+
+Let me also check if there's a helper function pattern I should follow, and think about the best config field name.
+
+The key question: should the config be `docs.repo = "owner/repo"` (a GitHub repo identifier that gets cloned) or `docs.path = "/path/to/local/repo"` (a local path)? 
+
+
+For the user's stealth experiment where they're cloning manually, a local path is the pragmatic choice right now. But supporting both makes sense—I could let `docs.path` take precedence when set, while keeping `docs.repo` as a future option for auto-cloning.
+
+Actually, the cleanest approach is just `docs.path` pointing to a local directory. No ambiguity, no magic. Then I need to extract the "resolve project root" logic into a helper function that checks if `docs.path` is configured and uses that, otherwise falls back to the repo root.
+
+Writing the helper function... a `resolve_docs_project_root()` helper that the three CLI commands can use, then wire it all together—this should be a pretty minimal change, maybe fifty lines total.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="9139" cache_read_input_tokens="92620" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9139}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I can see the pattern. All three CLI commands start with `project_root = ctx.repo_root`. The entire feature reduces to: resolve that from config when set. Let me rewrite the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="9139" cache_read_input_tokens="92620" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9139}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01GAvMHD78dU3ArpmzL4yUK4">
+    <param name="file_path">/Users/schrockn/.claude/plans/glowing-petting-hippo.md</param>
+    <param name="content"># External Learned Docs Repository
+
+## Context
+
+A user wants to experiment with learned do...[truncated 4848 chars]...t for `docs_path`; test `resolve_docs_project_root()` with both None and configured paths
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9139" cache_read_input_tokens="92620" output_tokens="2464" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9139, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GAvMHD78dU3ArpmzL4yUK4">
+The file /Users/schrockn/.claude/plans/glowing-petting-hippo.md has been updated successfully.
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01AAuE9TPxaCsvro3QxD7d9A">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run erk CLI commands for testing (erk docs, erk config)'}, {'...[truncated 31 chars]... diff, add, commit)'}, {'tool': 'Bash', 'prompt': 'run ls to verify directory structure'}]</param>
+    <param name="plan"># External Learned Docs Repository
+
+## Context
+
+A user wants to experiment with learned do...[truncated 4848 chars]...t for `docs_path`; test `resolve_docs_project_root()` with both None and configured paths
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2491" cache_read_input_tokens="101759" output_tokens="129" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2491, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AAuE9TPxaCsvro3QxD7d9A">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/glowing-petting-hippo.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 External Learned Docs Repository
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 3b50fd05-5b16-4f81-9840-fc90d7039330 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the revised plan:
+
+## External Learned Docs Repository
+
+**Context:** A user wants to experiment with learned docs on a project without anyone in the main repo knowing. Docs live in a completely separate repository. The main project repo stays 100% untouched.
+
+**Approach:** All three `erk docs` commands start with `project_root = ctx.repo_root`. A new `[docs] path` config (in gitignored `.erk/config.local.toml`) overrides this to point at the external repo. Discovery happens via personal `~/.claude/projects/&lt;project&gt;/CLAUDE.md` with `@` references.
+
+**Scope:** ~30 lines across 7 existing files. No new files. Gateway, operations, and models are completely unchanged.
+
+**Key changes:**
+1. Add `docs_path: str | None` to `LoadedConfig`
+2. Add to config schema, parse `[docs] path` from TOML
+3. Add `resolve_docs_project_root()` helper in `operations.py`
+4. Use it in `sync.py`, `validate.py`, `check.py`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="743" cache_read_input_tokens="104250" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 743}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_016jrwJw6PV8T6zRZVxZKvzF">
+    <param name="questions">[{'question': '📋 External Learned Docs Repository\nCurrent context: (wt:erk) (br:master)\n...[truncated 416 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="743" cache_read_input_tokens="104250" output_tokens="481" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 743, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016jrwJw6PV8T6zRZVxZKvzF">
+User has answered your questions: "📋 External Learned Docs Repository
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01Xev5AwivVq7eWxoyGcJoHr">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="655" cache_read_input_tokens="104993" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 655}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Xev5AwivVq7eWxoyGcJoHr">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="3b50fd05-5b16-4f81-9840-fc90d7039330" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "3b50fd05-5b16-4f81-9840-fc90d7039330" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "3b50fd05-5b16-4f81-9840-fc90d7039330" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Let me save this plan as a draft PR.
+
+**Branch slug:** `external-docs-repo-path`
+
+**Plan summary:** Adds a `[docs] path` config option that redirects all erk docs commands (sync, validate, check) to an external repository, allowing users to experiment with learned docs without modifying the main project repo. The implementation overrides project_root resolution in ~30 lines across 7 existing files.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2284" cache_read_input_tokens="105648" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2284}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018sX6xoQEAUQ56jq5e29nQN">
+    <param name="command">erk exec plan-save --format json --session-id="3b50fd05-5b16-4f81-9840-fc90d7039330" --bra...[truncated 239 chars]...plementation overrides project_root resolution in about 30 lines across 7 existing files."</param>
+    <param name="description">Save plan as draft PR via erk</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2284" cache_read_input_tokens="105648" output_tokens="308" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2284, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018sX6xoQEAUQ56jq5e29nQN">
+{"success": true, "plan_number": 8534, "plan_url": "https://github.com/dagster-io/erk/pull/8534", "title": "[erk-plan] External Learned Docs Repository", "branch_name": "plnd/external-docs-repo-path-03-01-0950", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/3b50fd05-5b16-4f81-9840-fc90d7039330/plan_snapshots/000001-489b63bd"}
+  </tool_result>
+  <assistant>Plan "External Learned Docs Repository" saved as draft PR #8534
+URL: https://github.com/dagster-io/erk/pull/8534
+
+Next steps:
+
+**View PR:** https://github.com/dagster-io/erk/pull/8534
+
+**In Claude Code:**
+- Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+**OR exit Claude Code first, then run one of:**
+
+New slot (recommended — you're on trunk):
+- Local: `erk br co --new-slot --for-plan 8534`
+- Implement: `source "$(erk br co --new-slot --for-plan 8534 --script)" &amp;&amp; erk implement --dangerous`
+
+Same slot:
+- Local: `erk br co --for-plan 8534`
+- Implement: `source "$(erk br co --for-plan 8534 --script)" &amp;&amp; erk implement --dangerous`
+
+Dispatch to Queue: `erk pr dispatch 8534`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="480" cache_read_input_tokens="107932" output_tokens="243" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 480, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
