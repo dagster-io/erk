@@ -1,0 +1,1037 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>I have docuemnted a thing called "cli push down" i would like to turn it into a skill. first of all locate the docs in learned</user>
+  <thinking>The user wants to find documentation about "cli push down" in the docs/learned/ directory.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="9846" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9846}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01V4miDNV8yubrZGZ1Uq4gZH">
+    <param name="pattern">push.?down</param>
+    <param name="path">/Users/schrockn/code/erk/docs/learned/</param>
+    <param name="glob">*.md</param>
+    <param name="-i">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="9846" cache_read_input_tokens="19113" output_tokens="160" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9846, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01V4miDNV8yubrZGZ1Uq4gZH">
+Found 1 file
+docs/learned/sessions/parallel-session-awareness.md
+  </tool_result>
+  <assistant>That only found one tangential hit. Let me broaden the search.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="192" cache_read_input_tokens="28959" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 192}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01NFWgcd565GTiBvbeJ5styE">
+    <param name="pattern">push.?down|pushdown|cli.*push|push.*cli</param>
+    <param name="path">/Users/schrockn/code/erk/docs/learned/</param>
+    <param name="glob">*.md</param>
+    <param name="-i">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="192" cache_read_input_tokens="28959" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 192}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NFWgcd565GTiBvbeJ5styE">
+Found 22 files
+docs/learned/sessions/lifecycle.md
+docs/learned/architecture/session-storage-revert-rationale.md
+docs/learned/ci/tripwires.md
+docs/learned/pr-operations/pr-creation-patterns.md
+docs/learned/planning/planned-pr-branch-sync.md
+docs/learned/pr-operations/draft-pr-handling.md
+docs/learned/integrations/issue-pr-closing-integration.md
+docs/learned/architecture/erk-architecture.md
+docs/learned/architecture/discriminated-union-error-handling.md
+docs/learned/sessions/parallel-session-awareness.md
+docs/learned/planning/pr-submission-patterns.md
+docs/learned/erk/pr-commands.md
+docs/learned/cli/pr-submit-pipeline.md
+docs/learned/cli/error-handling-antipatterns.md
+docs/learned/cli/output-styling.md
+docs/learned/pr-operations/pr-submission-workflow.md
+docs/learned/architecture/gateway-signature-migration.md
+docs/learned/cli/auto-generated-reference-docs.md
+docs/learned/ci/github-actions-label-filtering.md
+docs/learned/ci/github-actions-label-queries.md
+docs/learned/ci/git-force-push-decision-tree.md
+docs/learned/workflows/commit-messages.md
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01T6rZSXH5LxmNfUrUCBkgRu">
+    <param name="pattern">push.?down|pushdown</param>
+    <param name="path">/Users/schrockn/code/erk/</param>
+    <param name="glob">*.md</param>
+    <param name="-i">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="192" cache_read_input_tokens="28959" output_tokens="257" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 192, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01T6rZSXH5LxmNfUrUCBkgRu">
+Found 2 files
+docs/learned/sessions/parallel-session-awareness.md
+docs/developer/agentic-engineering-patterns/cli-push-down.md
+  </tool_result>
+  <assistant>Found it — it's in the developer docs, not learned docs.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="688" cache_read_input_tokens="29151" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 688}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SBK5p5c25ssrLs2bSv2cx5">
+    <param name="file_path">/Users/schrockn/code/erk/docs/developer/agentic-engineering-patterns/cli-push-down.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="688" cache_read_input_tokens="29151" output_tokens="99" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 688, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SBK5p5c25ssrLs2bSv2cx5">
+     1→# CLI Push Down Pattern
+     2→
+     3→## The Problem with Embedded Scripts
+     4→
+     5→Claude Code skills and slash commands support embedded bash scripts directly in markdown. This seems convenient—you write a script inline and the agent executes it. But this approach has fundamental limitations:
+     6→
+     7→**No execution environment.** Embedded scripts run in whatever shell context the agent happens to be in. There's no virtual environment, no dependency management, no guaranteed Python version. A script that works on one machine may fail on another.
+     8→
+     9→**No testability.** You cannot unit test a bash snippet embedded in markdown. You cannot mock dependencies, assert on edge cases, or verify error handling. The only way to test is to run the agent and hope it works.
+    10→
+    11→**No type safety.** Bash has no types. A typo in a variable name silently produces wrong results. Complex string manipulation with regex varies between shells and fails in subtle ways.
+    12→
+    13→**No reusability.** The same parsing logic gets copy-pasted across multiple commands and skills. When you find a bug, you fix it in one place and forget the others.
+    14→
+    15→**Token overhead.** Every embedded script consumes prompt tokens. Error handling code, edge case logic, and fallback behavior all bloat the prompt—and the agent still has to read and understand it.
+    16→
+    17→## The Push Down Solution
+    18→
+    19→Instead of embedding mechanical computation in prompts, push it down to `erk exec` commands—proper Python programs installed as packages.
+    20→
+    21→**Analogy**: Like database query optimizers that "push down" predicates closer to the data layer for efficiency, this pattern moves computation from LLM prompts to Python CLI where it belongs.
+    22→
+    23→### What erk exec Commands Provide
+    24→
+    25→**Real Python environment.** The `erk exec` commands are installed Python packages with proper dependency management. They run in a known environment with a specific Python version. Dependencies are declared in `pyproject.toml` and installed via `uv`.
+    26→
+    27→**Full testability.** Commands are regular Python functions. You can write unit tests with pytest, mock external services, test edge cases exhaustively, and measure coverage. A command like `plan-title-to-filename` has comprehensive unit tests covering edge cases and boundary conditions.
+    28→
+    29→**Type safety.** Python type hints catch errors before runtime. Dataclasses enforce structured output. The type checker validates that success and error responses have consistent schemas.
+    30→
+
+... [51 lines omitted] ...
+
+    33→**Structured JSON contracts.** Commands return JSON with explicit success/failure indicators. The agent doesn't parse free-form text—it reads structured data with predictable fields.
+    56→    echo "Error: Invalid input format"
+  </tool_result>
+  <assistant>Found it at `docs/developer/agentic-engineering-patterns/cli-push-down.md`. It's a well-written doc describing the pattern of pushing mechanical computation from agent prompts down to `erk exec` CLI commands.
+
+Want me to go ahead and turn this into a skill? I'll use the `cli-skill-creator` or `command-creator` skill pattern to create it, or would you prefer I just create the skill file directly based on the doc content?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1460" cache_read_input_tokens="29839" output_tokens="108" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1460, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>let's do a different approach. let's search historical commits and find examples that would qualify</user>
+  <thinking>The user wants to find historical commits that demonstrate the "CLI push down" pattern - where mechanical computation was moved from agent prompts (skills/commands) into `erk exec` commands. Let me search for commits that show this pattern.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="174" cache_read_input_tokens="31405" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 174}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good idea — find real examples of the pattern being applied. Let me search for commits that moved logic from prompts/skills into `erk exec` commands.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="174" cache_read_input_tokens="31405" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 174}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014xCrmi4p3jZxFodiQpfCEA">
+    <param name="command">git log --oneline --all --grep="push down" | head -20</param>
+    <param name="description">Search commits mentioning "push down"</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="174" cache_read_input_tokens="31405" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 174}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014xCrmi4p3jZxFodiQpfCEA">
+ffd504a93 /gt:squash-to-pr-commit - Squash Commits Using PR Body as Message (#1916)
+f29755534 /gt:squash-to-pr-commit - Squash Commits Using PR Body as Message (#1916)
+476f30e95 /gt:squash-to-pr-commit - Squash Commits Using PR Body as Message (#1916)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0186A7a98NaFAwoiu6T4YAuT">
+    <param name="command">git log --oneline --all --grep="erk exec" | head -30</param>
+    <param name="description">Search commits mentioning "erk exec"</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="174" cache_read_input_tokens="31405" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 174}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0186A7a98NaFAwoiu6T4YAuT">
+036715082 Implement session accumulation for cross-machine learning via preprocessed XML on git branches (#8511)
+ca6e79f3a Fix duplicate `gt submit` in cmux sync workflow (#8531)
+50d5d5e87 Add 🥞 stacked PR emoji to dashboard (#7964)
+f761b96cb Add plan: Learn: [no-changes] #8409 Impl Attempt: Remove 13 unused erk exec commands
+56dd99df3 Add auto-resolution of pre-existing bot threads in code-move PRs (#8523)
+b74658edc Add cmux workspace integration to dashboard and CLI (#8503)
+21d220304 Add erk exec cmux-sync-workspace and fix TUI command palette
+682827afc TUI: Show toast when learn plan is created on landing (#8494)
+b9fc51011 Remove PlanSummaryGenerator and require --summary flag on `erk pr create` (#8480)
+36b93592e Fix consolidated learn plans missing `erk-plan` label and add replan validation (#8490)
+07ca35cdc Embed session XML files in learn plan PR diffs (#8488)
+bd69797ac Add visible AI-generated summary to plan PRs (#8464)
+97f488263 Add CI failure summarization via Haiku and enhanced failing checks modal (#8395)
+5e3d00e5a Remove dead code: NodeSlugGenerator, validate_node_slug, extract_trailing_number, derive_branch_name_from_title (#8450)
+c9147a90d [no-changes] #8409 Impl Attempt: Remove 13 unused erk exec commands (#8409)
+5b1860475 Address PR review comments (batch 1/1)
+494d047bc [no-changes] #8409 Impl Attempt: Remove 13 unused erk exec commands
+885ce1956 Add "rewrite" TUI command for remote PR rebase and AI summary regeneration (#8432)
+704bbe6ad Add "rewrite" TUI command for remote PR rebase and AI summary regeneration (#8432)
+c638d7272 Consolidate plan creation to use draft PRs via create_plan_draft_pr() (#8404)
+a14a62273 Move impl-context cleanup from setup-impl to submit pipeline (#8414)
+280451f14 Remove impl-verify guardrail from plan-implement workflow (#8393)
+ed73e16ca Remove impl-verify step from plan-implement command
+cc0b693fc Update command files and documentation for .erk/impl-context/ protocol (Phase 3) (#8369)
+53b68da02 Update plan-implement.yml to eliminate .impl/ copy and add has_tracked_files to GitStatusOps (#8370)
+b8735cae7 Update impl-verify docstring to reference canonical .erk/impl-context/ location (#8362)
+1ddde7175 Fix objective-link preservation in replan flow (#8348)
+b94b466e9 Simplify learn trigger in `erk land` with direct issue creation (#8323)
+66a3b1735 Rename "issue" exec scripts to PR terminology + add batch variants (#8280)
+6a2144c3c Update impl-verify docstring to reference canonical .erk/impl-context/ location (#8362)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0117PAzauXjyhDsDDntKtPp8">
+    <param name="command">git log --oneline --all --grep="exec script" | head -20</param>
+    <param name="description">Search commits mentioning "exec script"</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="174" cache_read_input_tokens="31405" output_tokens="385" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 174, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0117PAzauXjyhDsDDntKtPp8">
+56dd99df3 Add auto-resolution of pre-existing bot threads in code-move PRs (#8523)
+d26ac8d2c Rename "fix-conflicts" to "rebase" across the codebase (#8514)
+f5b9b5c50 Require branch_name in create_plan_draft_pr, use LLM slugs at call sites (#8504)
+d68062e47 Address PR review comments (batch 2/2): hoist inference out of exec script
+b9fc51011 Remove PlanSummaryGenerator and require --summary flag on `erk pr create` (#8480)
+fe5c1231c Rename "Fix Conflicts Remote" to "Rebase Remote" and always rebase (#8484)
+b372dfbcc Fix docstrings and help text across exec scripts to use "plan" instead of "plan issue" (#8471)
+d8b06e787 Fix docstrings and help text across exec scripts to use "plan" instead of "plan issue"
+97f488263 Add CI failure summarization via Haiku and enhanced failing checks modal (#8395)
+4efa20cb4 Entity Store: Generic KV State + Append-Only Log for GitHub Issues/PRs (#8452)
+2ed31d082 Add session preprocessing stats to `erk land` discovery output (#8463)
+795b3b559 Fix Drift in docs/learned/ Corpus (#8448)
+623898bca Consolidate Feb 26-27 learn documentation and fix _land_pr_async kwargs bug (#8402)
+1fb9d668a Remove dead code: NodeSlugGenerator, validate_node_slug, extract_trailing_number, derive_branch_name_from_title
+ffd28b870 Fix workflow-started metadata block rendering in post-workflow-started-comment script (#8421)
+80cbfdcfa Fix workflow-started metadata block rendering in post-workflow-started-comment script
+0034d793c Fix Click help strings and module docstrings (Nodes 4.1 + 4.4 + 4.5) (#8400)
+519880cea Thread `plan_id` through land execution pipeline for `create_learn_issue` support (#8394)
+efdc30136 Fix exec script terminology: plan issue → plan (Phase 5)
+2994b75a5 Fix plan-as-PR terminology in Claude Code commands (Phase 3) (#8396)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_014v4wv7DnLcAzEs8guZm5Na">
+    <param name="command">git log --oneline --all --grep="move.*to.*exec\|replace.*bash\|replace.*script\|extract.*to.*exec\|move.*logic.*to\|push.*down\|token.*reduction\|shrink.*prompt\|reduce.*prompt" -i | head -30</param>
+    <param name="description">Search for commits about moving logic to exec commands</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1985" cache_read_input_tokens="31579" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1985}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014v4wv7DnLcAzEs8guZm5Na">
+e846cd362 Untrack stub branches from Graphite and add auto-cleanup to audit-branches (#8530)
+50d5d5e87 Add 🥞 stacked PR emoji to dashboard (#7964)
+682827afc TUI: Show toast when learn plan is created on landing (#8494)
+e0fc26738 TUI: Show toast when learn plan is created on landing
+b372dfbcc Fix docstrings and help text across exec scripts to use "plan" instead of "plan issue" (#8471)
+c432d06f1 Fix CI check gap after markdown-fix auto-commits and unbreak ci-summarize (#8477)
+2ed31d082 Add session preprocessing stats to `erk land` discovery output (#8463)
+795b3b559 Fix Drift in docs/learned/ Corpus (#8448)
+5e3d00e5a Remove dead code: NodeSlugGenerator, validate_node_slug, extract_trailing_number, derive_branch_name_from_title (#8450)
+1fb9d668a Remove dead code: NodeSlugGenerator, validate_node_slug, extract_trailing_number, derive_branch_name_from_title
+d605a5fea Restore session discovery logging in `erk land` (#8437)
+10ea581b5 Fix pr-rewrite workflow by removing invalid --pr flag (#8439)
+a14a62273 Move impl-context cleanup from setup-impl to submit pipeline (#8414)
+894fb01e6 Auto-fix markdown formatting (docs-sync + Prettier) (#8410)
+efdc30136 Fix exec script terminology: plan issue → plan (Phase 5)
+2994b75a5 Fix plan-as-PR terminology in Claude Code commands (Phase 3) (#8396)
+21f8eddc5 Fix plan-as-PR terminology in Claude Code commands (Phase 3)
+36d42311b Fix slash command terminology: replace "issue" with "plan" in prose
+45148fca1 Update CLAUDE.md and AGENTS.md plan terminology to draft PR (#8381) (#8382)
+085f74837 Fix Graphite tracking divergence by retracking immediately after SHA changes (#8377)
+f3815401b Fix Graphite tracking divergence by retracking immediately after SHA changes
+b94b466e9 Simplify learn trigger in `erk land` with direct issue creation (#8323)
+abe3c8602 Simplify learn trigger in `erk land` with direct issue creation (#8323)
+66430b83c Eliminate .impl/ folder references — consolidate on .erk/impl-context/&lt;branch&gt;/
+2f667975a Simplify learn trigger in `erk land` with direct issue creation (#8323)
+912269285 Address PR review: fix inaccurate function references and import counts in roadmap docs
+c3c4ec3fd Delete -t/--tmux feature from erk codespace connect (#8267)
+3ce0977b5 Simplify PR checkout to eliminate `erk pr sync` dependency (#8238)
+e63934c3e [erk-plan] Eliminate "Closes #N" from PR Bodies (#8235)
+a076c9822 Delete -t/--tmux feature from erk codespace connect (#8267)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01GPTquAV4Mhu8DbmirfvwKL">
+    <param name="command">git log --oneline --all --grep="new exec\|add exec\|create exec\|implement exec" -i | head -30</param>
+    <param name="description">Search for commits adding new exec commands</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1985" cache_read_input_tokens="31579" output_tokens="231" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1985, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GPTquAV4Mhu8DbmirfvwKL">
+036715082 Implement session accumulation for cross-machine learning via preprocessed XML on git branches (#8511)
+56dd99df3 Add auto-resolution of pre-existing bot threads in code-move PRs (#8523)
+b74658edc Add cmux workspace integration to dashboard and CLI (#8503)
+21d220304 Add erk exec cmux-sync-workspace and fix TUI command palette
+97f488263 Add CI failure summarization via Haiku and enhanced failing checks modal (#8395)
+b94b466e9 Simplify learn trigger in `erk land` with direct issue creation (#8323)
+abe3c8602 Simplify learn trigger in `erk land` with direct issue creation (#8323)
+da20c720c Link PR numbers to objective roadmap nodes at submit time (#8281)
+2f667975a Simplify learn trigger in `erk land` with direct issue creation (#8323)
+861644307 Link PR numbers to objective roadmap nodes at submit time (#8281)
+d33a3185d Consolidate Feb 25-26 learn documentation (19 plans) (#8277)
+daa8cf583 Consolidate Feb 25-26 learn documentation (19 plans) (#8277)
+43db9f606 Consolidate Feb 25-26 learn documentation (19 plans) (#8277)
+34bdd3c47 Refactor stacked PR indicator and ready-to-land logic with formal `_non_blocking` set (#7974)
+28cb8cc2f Consolidate objective update workflow into single exec command (#8069)
+0157faf58 Consolidate objective update workflow into single exec command
+e2bd53d05 Consolidate PR validation into --stage=impl flag, remove scattered exec scripts (#7987)
+d5f81b974 Fix: `/local:objective-reevaluate` fails on startup by replacing `objective-fetch-context` with `get-issue-body` (#8008)
+4bf1b6dcb Simplify plan-implement workflow with consolidated setup-impl command (#7998)
+5a98e2572 Add pr-check-complete exec command for validating PR submission readiness
+2bbcbfc67 Add local review marker to skip CI reviews (#7965)
+4c5e7ef92 Replace `erk pr submit --skip-description` with composable `erk exec push-and-create-pr` (#7955)
+9338f36ea Add `copy_land` command to command palette and introduce `update-plan-remote-session` exec command (#7909)
+48dfb7e87 Add `copy_land` command and consolidate remote session metadata updates
+4b6e075fd Add `erk exec update-plan-objective` command
+93dddde56 Complete lifecycle stage tracking with exec commands and write points
+5771cd085 Complete lifecycle stage tracking with exec commands and write points (#7656)
+f66013791 Complete lifecycle stage tracking with exec commands and write points
+95d64b0bb Complete lifecycle stage tracking with exec commands and write points
+d44188c7e Support draft PR mode in replan workflow (#7648)
+  </tool_result>
+  <assistant>Good leads. Let me look at some of the most promising commits that show the consolidation/push-down pattern.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1796" cache_read_input_tokens="33564" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1796}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TUXr2eN1M6XgBe3Th2cPKy">
+    <param name="command">git log --oneline --all --grep="consolidate.*exec\|consolidate.*into\|replace.*with.*exec\|replace.*with.*erk" -i | head -20</param>
+    <param name="description">Search for consolidation commits</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1796" cache_read_input_tokens="33564" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1796}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TUXr2eN1M6XgBe3Th2cPKy">
+036715082 Implement session accumulation for cross-machine learning via preprocessed XML on git branches (#8511)
+476bfd9c5 Restructure docs around composability layers in Phase 1
+50d5d5e87 Add 🥞 stacked PR emoji to dashboard (#7964)
+ad4b32a02 Address PR review comments (batch 1/2): subprocess wrappers and patterns
+d6013fd08 Restructure docs around composability layers in Phase 1
+93a1bb36c Add `erk stack restack` command with auto-launch Claude on conflicts
+b372dfbcc Fix docstrings and help text across exec scripts to use "plan" instead of "plan issue" (#8471)
+795b3b559 Fix Drift in docs/learned/ Corpus (#8448)
+b774fde49 Consolidate 16 Feb 26 learn plans into coordinated documentation updates (#8324)
+523df911d Consolidate 16 Feb 26 learn plans into coordinated documentation updates
+51e462c2f Update documentation for metadata blocks, CLI patterns, and TUI features (#8447)
+5e3d00e5a Remove dead code: NodeSlugGenerator, validate_node_slug, extract_trailing_number, derive_branch_name_from_title (#8450)
+623898bca Consolidate Feb 26-27 learn documentation and fix _land_pr_async kwargs bug (#8402)
+1663ed44c Consolidate Feb 24-25 Learn Session Documentation (#8142)
+11afb5c0b Remove artifact test mocks and refactor sync_cmd for context injection (#8422)
+35ea9aca8 Remove artifact test mocks and refactor sync_cmd for context injection (#8422)
+ffd28b870 Fix workflow-started metadata block rendering in post-workflow-started-comment script (#8421)
+80cbfdcfa Fix workflow-started metadata block rendering in post-workflow-started-comment script
+c638d7272 Consolidate plan creation to use draft PRs via create_plan_draft_pr() (#8404)
+894fb01e6 Auto-fix markdown formatting (docs-sync + Prettier) (#8410)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01W4uaUhqHt16p1hjrrQgm32">
+    <param name="command">git show --stat 4bf1b6dcb | head -30</param>
+    <param name="description">Show stats for "Simplify plan-implement with consolidated setup-impl"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1796" cache_read_input_tokens="33564" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1796}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01W4uaUhqHt16p1hjrrQgm32">
+commit 4bf1b6dcb3e365ec0a4e45dd12098aa15bb1c483
+Author: Nick Schrock &lt;schrockn@dagsterlabs.com&gt;
+Date:   Mon Feb 23 16:25:47 2026 -0800
+
+    Simplify plan-implement workflow with consolidated setup-impl command (#7998)
+    
+    Consolidates Steps 0-2d of plan-implement.md into a single, testable `setup-impl` exec command that handles issue-based setup, file-based setup, and auto-detection from branch/existing .impl/. Extracts three additional exec commands (detect-plan-from-branch, cleanup-impl-context, upload-impl-session) to replace inline bash logic with unit-tested, idempotent implementations. Reduces plan-implement.md from 360 to ~180 lines. Also fixes a bug where upload-impl-session incorrectly passed `--issue-number` instead of `--plan-id` to the plan backend.
+    
+    ## Files Changed
+    
+    &lt;details&gt;
+    &lt;summary&gt;Files Changed&lt;/summary&gt;
+    
+    ### Added (8 files)
+    - `src/erk/cli/commands/exec/scripts/cleanup_impl_context.py` - Idempotent cleanup of .erk/impl-context/ (replaces Step 2d bash)
+    - `src/erk/cli/commands/exec/scripts/detect_plan_from_branch.py` - Plan detection from branch name (replaces Step 1b bash)
+    - `src/erk/cli/commands/exec/scripts/setup_impl.py` - Consolidated setup handling all input paths (replaces Steps 0-2d)
+    - `src/erk/cli/commands/exec/scripts/upload_impl_session.py` - Session upload for async learn (replaces Step 10b bash)
+    - `tests/unit/cli/commands/exec/scripts/test_cleanup_impl_context.py` - Unit tests for cleanup command
+    - `tests/unit/cli/commands/exec/scripts/test_detect_plan_from_branch.py` - Unit tests for branch detection
+    - `tests/unit/cli/commands/exec/scripts/test_setup_impl.py` - Unit tests for consolidated setup
+    - `tests/unit/cli/commands/exec/scripts/test_upload_impl_session.py` - Unit tests for session upload
+    
+    ### Modified (2 files)
+    - `.claude/commands/erk/plan-implement.md` - Simplified from 15 steps to ~10; delegates inline bash to exec commands
+    - `src/erk/cli/commands/exec/group.py` - Registered 4 new exec commands (cleanup-impl-context, detect-plan-from-branch, setup-impl, upload-impl-session)
+    
+    &lt;/details&gt;
+    
+    ## Key Changes
+  </tool_result>
+  <tool_use name="Bash" id="toolu_012LGckKX3PZL5sdVeP1g3Wg">
+    <param name="command">git show --stat e2bd53d05 | head -30</param>
+    <param name="description">Show stats for "Consolidate PR validation into --stage=impl flag"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1796" cache_read_input_tokens="33564" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1796}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012LGckKX3PZL5sdVeP1g3Wg">
+commit e2bd53d0584592504f73fa4677d5a3422956dcfd
+Author: Nick Schrock &lt;schrockn@dagsterlabs.com&gt;
+Date:   Mon Feb 23 16:48:11 2026 -0800
+
+    Consolidate PR validation into --stage=impl flag, remove scattered exec scripts (#7987)
+    
+    Migrates PR completion validation from 4 scattered exec scripts (setup-impl, cleanup-impl-context, detect-plan-from-branch, upload-impl-session) into an integrated `--stage=impl` flag on erk pr check. Refactors check_cmd.py with PrCheck NamedTuple for type safety, LBYL pattern for plan-ref validation, and consolidates setup/cleanup logic into plan-implement.md workflow with explicit decision trees.
+    
+    ## Files Changed
+    
+    &lt;details&gt;
+    &lt;summary&gt;Files Changed&lt;/summary&gt;
+    
+    ### Deleted (8 files)
+    - `src/erk/cli/commands/exec/scripts/cleanup_impl_context.py` - Moved to pr check --stage=impl
+    - `src/erk/cli/commands/exec/scripts/detect_plan_from_branch.py` - Moved to plan-implement.md decision tree
+    - `src/erk/cli/commands/exec/scripts/setup_impl.py` - Simplified via plan-implement workflow
+    - `src/erk/cli/commands/exec/scripts/upload_impl_session.py` - Moved to plan-implement.md Step 10b
+    - `tests/unit/cli/commands/exec/scripts/test_cleanup_impl_context.py` - Validation moved to pr check tests
+    - `tests/unit/cli/commands/exec/scripts/test_detect_plan_from_branch.py` - Logic moved to workflow docs
+    - `tests/unit/cli/commands/exec/scripts/test_setup_impl.py` - Consolidated with setup-impl-from-issue
+    - `tests/unit/cli/commands/exec/scripts/test_upload_impl_session.py` - Logic moved to workflow docs
+    
+    ### Modified (9 files)
+    - `src/erk/cli/commands/pr/check_cmd.py` - Added --stage=impl flag, PrCheck NamedTuple, LBYL plan-ref checks
+    - `.claude/commands/erk/plan-implement.md` - Expanded Steps 0-2d with decision trees, branch detection, cleanup sequencing
+    - `src/erk/cli/commands/exec/group.py` - Removed exec script registrations
+    - `.claude/skills/erk-exec/reference.md` - Removed deprecated exec commands
+    - `src/erk/cli/commands/exec/scripts/impl_signal.py` - Removed lifecycle_stage metadata
+    - `tests/commands/pr/test_check.py` - Added 3 tests for --stage=impl validation
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01G3NkD6GAg1G2Ccknetfpt3">
+    <param name="command">git show --stat 28cb8cc2f | head -30</param>
+    <param name="description">Show stats for "Consolidate objective update workflow into single exec command"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1796" cache_read_input_tokens="33564" output_tokens="382" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1796, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01G3NkD6GAg1G2Ccknetfpt3">
+commit 28cb8cc2fbad714000d2748e219f1c8ecea0511a
+Author: Nick Schrock &lt;schrockn@dagsterlabs.com&gt;
+Date:   Tue Feb 24 08:16:27 2026 -0800
+
+    Consolidate objective update workflow into single exec command (#8069)
+    
+    Introduces `erk exec objective-apply-landed-update` to replace a 7-step manual workflow with 3 simple steps. The new exec script combines fetch-context, update-roadmap-nodes, and post-action-comment into a single atomic call, eliminating 5+ sequential agent commands and moving deterministic work (YAML parsing, node ref extraction) from the agent to Python. The `/erk:objective-update-with-landed-pr` skill instructions shrink from 173 to ~70 lines, with agents now focused only on prose reconciliation. Also fixes a bug in `objective-fetch-context` by adding a `--plan` flag for direct lookups.
+    
+    ## Files Changed
+    
+    &lt;details&gt;
+    &lt;summary&gt;Files Changed&lt;/summary&gt;
+    
+    ### Added (3 files)
+    - `packages/erk-shared/src/erk_shared/objective_apply_landed_update_result.py` - TypedDict definitions for the new exec command's JSON schema
+    - `src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py` - New exec script combining fetch, node updates, and action comment posting
+    - `tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py` - Comprehensive test suite (happy path, errors, no-match scenarios, discovery)
+    
+    ### Modified (6 files)
+    - `.claude/commands/erk/objective-update-with-landed-pr.md` - Simplified from 7 steps to 3 (fetch/update, prose reconciliation, closing)
+    - `.claude/commands/erk/objective-update-with-closed-plan.md` - Updated to use exec script for action comments
+    - `.claude/skills/erk-exec/reference.md` - Added new `objective-apply-landed-update` command reference
+    - `src/erk/cli/commands/exec/group.py` - Registered new exec command
+    - `src/erk/cli/commands/exec/scripts/objective_fetch_context.py` - Added `--plan` flag for direct plan lookup (fixes sister command bug)
+    - `src/erk/cli/commands/exec/scripts/update_objective_node.py` - Added clarifying comment on status inference behavior
+    
+    ### Deleted (2 files)
+    - `.erk/impl-context/plan.md` - Implementation plan artifact
+    - `.erk/impl-context/ref.json` - Reference metadata file
+  </tool_result>
+  <assistant>These are great examples. Let me get a few more and also look at the `4c5e7ef92` one about replacing `--skip-description`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3071" cache_read_input_tokens="35360" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3071}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CVmUAxgkNonVjEhD8LJzA6">
+    <param name="command">git show --stat 4c5e7ef92 | head -40</param>
+    <param name="description">Show stats for "Replace erk pr submit --skip-description with composable push-and-create-pr"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3071" cache_read_input_tokens="35360" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3071}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CVmUAxgkNonVjEhD8LJzA6">
+commit 4c5e7ef92be1b3df4fc2cb6c6cf6b1bda3dd1149
+Author: Nick Schrock &lt;schrockn@dagsterlabs.com&gt;
+Date:   Mon Feb 23 07:29:26 2026 -0800
+
+    Replace `erk pr submit --skip-description` with composable `erk exec push-and-create-pr` (#7955)
+    
+    &lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+    &lt;!-- erk:metadata-block:plan-header --&gt;
+    &lt;details&gt;
+    &lt;summary&gt;plan-header&lt;/summary&gt;
+    
+    ```yaml
+    
+    schema_version: '2'
+    created_at: '2026-02-23T05:04:33.616315+00:00'
+    created_by: schrockn
+    plan_comment_id: null
+    last_dispatched_run_id: null
+    last_dispatched_node_id: null
+    last_dispatched_at: null
+    last_local_impl_at: '2026-02-23T14:34:31.234335+00:00'
+    last_local_impl_event: ended
+    last_local_impl_session: b30ba927-029b-4594-b4bc-7d4294196b94
+    last_local_impl_user: schrockn
+    last_remote_impl_at: null
+    last_remote_impl_run_id: null
+    last_remote_impl_session_id: null
+    branch_name: plnd/migrate-pr-submit-02-23-0504
+    created_from_session: 1b0aba8b-d686-4e1f-833a-c04f5566643f
+    lifecycle_stage: implemented
+
+... [9 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01BHBVmiRSrWDwruKFcsVqxe">
+    <param name="command">git show --stat c638d7272 | head -40</param>
+    <param name="description">Show stats for "Consolidate plan creation to use draft PRs"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3071" cache_read_input_tokens="35360" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3071}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BHBVmiRSrWDwruKFcsVqxe">
+commit c638d7272f028502a424aaba1ba2e6c32f5db698
+Author: Nick Schrock &lt;schrockn@dagsterlabs.com&gt;
+Date:   Fri Feb 27 15:27:53 2026 -0800
+
+    Consolidate plan creation to use draft PRs via create_plan_draft_pr() (#8404)
+    
+    ## Summary
+    
+    This branch consolidates all plan creation paths (CLI, session extraction, stdin) to use a unified draft PR workflow instead of GitHub issues. The key change is introducing `create_plan_draft_pr()` in `plan_store/` as the single source of truth for plan creation.
+    
+    Previously, plans were created as GitHub issues with plan content in comments. Now all plan creation flows create draft PRs with plan files committed to branches, providing a cleaner implementation model and better integration with the worktree-based workflow.
+    
+    ## Files Changed
+    
+    &lt;details&gt;
+    &lt;summary&gt;Files Changed&lt;/summary&gt;
+    
+    ### Added (1 file)
+    - `packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py` - New unified plan creation function handling branch creation, file commitment, and draft PR creation
+    
+    ### Modified (16 files)
+    - `.claude/skills/erk-exec/reference.md` - Updated command descriptions to reference draft PRs instead of issues
+    - `docs/learned/integrations/github-review-decision.md` - Minor formatting fix
+    - `docs/learned/tui/status-indicators.md` - Minor formatting fix
+    - `packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py` - Removed `create_plan_issue()` function; now objectives and label management only
+    - `src/erk/cli/commands/exec/scripts/create_plan_from_context.py` - Now uses `create_plan_draft_pr()` instead of `create_plan_issue()`
+    - `src/erk/cli/commands/exec/scripts/create_pr_from_session.py` - Now uses `create_plan_draft_pr()` instead of `create_plan_issue()`
+    - `src/erk/cli/commands/land_learn.py` - Refactored to use draft PR creation for learn plans
+    - `src/erk/cli/commands/land_pipeline.py` - Renamed step from `create_learn_issue` to `create_learn_pr`
+    - `src/erk/cli/commands/pr/create_cmd.py` - Now uses `create_plan_draft_pr()` with improved output formatting
+
+... [9 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_016vdx9u7Q8HwKvLMqgzn1qj">
+    <param name="command">git show --stat b94b466e9 | head -40</param>
+    <param name="description">Show stats for "Simplify learn trigger in erk land"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3071" cache_read_input_tokens="35360" output_tokens="301" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3071, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016vdx9u7Q8HwKvLMqgzn1qj">
+commit b94b466e96c254a0c0591b2ea62355f1beab19e0
+Author: Nick Schrock &lt;schrockn@dagsterlabs.com&gt;
+Date:   Thu Feb 26 13:09:51 2026 -0800
+
+    Simplify learn trigger in `erk land` with direct issue creation (#8323)
+    
+    This removes the complex async learn pipeline (~363 lines across 7 helper functions) that handled session discovery, gist upload, CI workflow dispatch, and metadata tracking. The new approach is simpler: `erk land` now creates a learn issue directly with a reference to the landed plan, then delegates analysis to the replan flow. No CI workflow, no interactive menu, no blocking. The TUI learn trigger is removed since the execution pipeline now handles it. Learn plans no longer stack on parent branches.
+    
+    ## Files Changed
+    
+    &lt;details&gt;
+    &lt;summary&gt;Files Changed&lt;/summary&gt;
+    
+    ### Modified (4 files)
+    - `src/erk/cli/commands/land_cmd.py` - Replace complex async learn code with lightweight `_create_learn_issue_with_sessions` helper
+    - `src/erk/cli/commands/land_pipeline.py` - Replace pipeline steps: `check_learn_status` → `resolve_plan_id`, `update_learn_plan` → `create_learn_issue`
+    - `src/erk/cli/commands/pr/dispatch_cmd.py` - Remove learn plan parent branch detection and stacking logic
+    - `src/erk/tui/app.py` - Remove independent learn trigger from `_land_pr_async`, simplify method signature
+    
+    ### Deleted (3 files)
+    - `tests/commands/dispatch/test_learn_plans.py` - Tests for removed stacking logic (125 lines)
+    - `tests/unit/cli/commands/land/test_learn_status.py` - Tests for removed async check function (712 lines)
+    - `tests/unit/cli/commands/land/test_update_parent_learn_status.py` - Tests for removed parent update (184 lines)
+    
+    ### Updated (1 file)
+    - `tests/tui/test_app.py` - Remove learn-related assertions and test parameters from TUI land tests
+    
+    &lt;/details&gt;
+    
+    ## Key Changes
+
+... [10 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me find a few more canonical examples — especially the early ones that established the pattern.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2535" cache_read_input_tokens="38431" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2535}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01P9cwJQQqxGx1Y7zL1Ar8bm">
+    <param name="command">git log --oneline --all --grep="plan-title-to-filename\|plan.title.to.filename" -i | head -10</param>
+    <param name="description">Find the plan-title-to-filename commit (mentioned in the doc)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2535" cache_read_input_tokens="38431" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2535}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01P9cwJQQqxGx1Y7zL1Ar8bm">
+623898bca Consolidate Feb 26-27 learn documentation and fix _land_pr_async kwargs bug (#8402)
+66a3b1735 Rename "issue" exec scripts to PR terminology + add batch variants (#8280)
+8b42efd47 Rename "issue" exec scripts to PR terminology + add batch variants (#8280)
+e6b0b083a Rename "issue" exec scripts to PR terminology + add batch variants (#8280)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01EeE7neP518YcYxZMNit7Mg">
+    <param name="command">git log --oneline --all --diff-filter=A -- 'src/erk/cli/commands/exec/scripts/*.py' | head -40</param>
+    <param name="description">Find commits that added new exec scripts</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2535" cache_read_input_tokens="38431" output_tokens="227" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2535, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EeE7neP518YcYxZMNit7Mg">
+036715082 Implement session accumulation for cross-machine learning via preprocessed XML on git branches (#8511)
+0883aac7b Add plan: Session Accumulation for Cross-Machine Learning
+b74658edc Add cmux workspace integration to dashboard and CLI (#8503)
+21d220304 Add erk exec cmux-sync-workspace and fix TUI command palette
+15c3523f7 Add objective maintenance tooling and safety guards
+97f488263 Add CI failure summarization via Haiku and enhanced failing checks modal (#8395)
+c2b0b68fc update
+7461597a6 Add CI failure summarization via Haiku and enhanced failing checks modal
+5919c7938 Implement mechanical tripwire pre-scan to reduce code review cost
+636146696 Implement mechanical tripwire pre-scan to reduce code review cost
+66a3b1735 Rename "issue" exec scripts to PR terminology + add batch variants (#8280)
+8b42efd47 Rename "issue" exec scripts to PR terminology + add batch variants (#8280)
+da20c720c Link PR numbers to objective roadmap nodes at submit time (#8281)
+e6b0b083a Rename "issue" exec scripts to PR terminology + add batch variants (#8280)
+b3b6db141 Rename "issue" exec scripts to PR terminology + add batch variants
+861644307 Link PR numbers to objective roadmap nodes at submit time (#8281)
+1d264fc4c Make pr-feedback-classifier faster with combined PR feedback command (#8252)
+69dbd4394 Link PR numbers to objective roadmap nodes at submit time
+5164bb9b4 Make pr-feedback-classifier faster with combined PR feedback command (#8252)
+45cb6c498 Make pr-feedback-classifier faster with combined PR feedback command (#8252)
+44f97c583 Make pr-feedback-classifier faster with combined PR feedback command
+28cb8cc2f Consolidate objective update workflow into single exec command (#8069)
+0157faf58 Consolidate objective update workflow into single exec command
+4bf1b6dcb Simplify plan-implement workflow with consolidated setup-impl command (#7998)
+5a98e2572 Add pr-check-complete exec command for validating PR submission readiness
+a275a163f Add plan: Add Print Statement to First Python File
+0fd01a7df Add plan: Simplify `/erk:plan-implement` Command
+2bbcbfc67 Add local review marker to skip CI reviews (#7965)
+4c5e7ef92 Replace `erk pr submit --skip-description` with composable `erk exec push-and-create-pr` (#7955)
+d939c39a2 Add plan: Plan: Split AI Generation Out of `erk pr submit`
+
+... [10 lines omitted] ...
+  </tool_result>
+  <assistant>Excellent data. Here's a summary of the historical commits that demonstrate the CLI push-down pattern:
+
+## CLI Push Down Examples from Git History
+
+### Tier 1: Canonical examples (consolidate multi-step agent workflows → single exec command)
+
+1. **`4bf1b6dcb` — Simplify plan-implement with consolidated setup-impl (#7998)**
+   - Consolidated Steps 0-2d of plan-implement.md into a single `setup-impl` exec command
+   - Extracted 3 additional exec commands replacing inline bash
+   - **Reduced plan-implement.md from 360 → ~180 lines**
+   - Added unit tests for all 4 new exec commands
+
+2. **`28cb8cc2f` — Consolidate objective update workflow into single exec command (#8069)**
+   - Replaced 7-step manual workflow → 3 steps
+   - Combined fetch-context, update-roadmap-nodes, post-action-comment into single atomic `objective-apply-landed-update`
+   - **Skill instructions shrank from 173 → ~70 lines**
+   - Moved deterministic work (YAML parsing, node ref extraction) from agent to Python
+
+3. **`4c5e7ef92` — Replace `erk pr submit --skip-description` with composable `push-and-create-pr` (#7955)**
+   - Extracted composable exec command from monolithic CLI command
+   - Separated AI description generation from mechanical git/PR operations
+
+4. **`b94b466e9` — Simplify learn trigger in `erk land` (#8323)**
+   - Removed ~363 lines across 7 helper functions (session discovery, gist upload, CI dispatch)
+   - Replaced with lightweight direct issue creation
+   - Deleted 1,021 lines of tests for removed complexity
+
+### Tier 2: Further consolidation and refinement
+
+5. **`e2bd53d05` — Consolidate PR validation into `--stage=impl` flag (#7987)**
+   - Moved 4 scattered exec scripts into integrated `pr check --stage=impl`
+   - Shows the pattern evolving: sometimes push-down goes *too far* into exec scripts, and the right answer is consolidation into proper CLI commands
+
+6. **`3340f8021` — Consolidate plan-header metadata commands into generic `update-plan-header` (#7842)**
+   - Multiple single-purpose exec scripts → one generic command
+
+7. **`1d264fc4c` — Make pr-feedback-classifier faster with combined PR feedback command (#8252)**
+   - Combined multiple API calls into single exec command for token reduction
+
+8. **`c638d7272` — Consolidate plan creation to use draft PRs via `create_plan_draft_pr()` (#8404)**
+   - Unified 3 plan creation paths into single Python function
+
+The pattern `e2bd53d05` is particularly interesting — it shows that sometimes the first push-down creates *too many* small exec scripts, and a second pass consolidates them back into a proper CLI subcommand. That's a nuance worth capturing in the skill.
+
+Want me to proceed with creating the skill from these examples?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1262" cache_read_input_tokens="40966" output_tokens="736" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1262, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>yes plan the skill creation. reference https://github.com/anthropics/skills/tree/main/skills/skill-creator for how to create skill</user>
+  <assistant>
+
+Let me explore the skill-creator reference and existing erk skills to understand the patterns.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1378" cache_read_input_tokens="42962" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1378}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="WebFetch" id="toolu_01KhuCPXjFuHCnokAqdAg7vL">
+    <param name="url">https://github.com/anthropics/skills/tree/main/skills/skill-creator</param>
+    <param name="prompt">Show me all the files and content in this skill-creator directory. I need to understand the structure, the skill.md file, and any other files that define how to create a skill.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1378" cache_read_input_tokens="42962" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1378}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KhuCPXjFuHCnokAqdAg7vL">
+# Skill Creator Directory Structure
+
+Based on the GitHub repository page, here's what's in the `skills/skill-creator` directory:
+
+## Directory Contents
+
+```
+skills/skill-creator/
+├── agents/              (directory)
+├── assets/              (directory)
+├── eval-viewer/         (directory)
+├── references/          (directory)
+├── scripts/             (directory)
+├── LICENSE.txt          (file)
+└── SKILL.md             (file)
+```
+
+## Key Files
+
+**SKILL.md** - This is the primary documentation file that defines how to create a skill. It should contain:
+- Skill definition and specifications
+- Requirements and setup instructions
+- Guidelines for skill creation
+- Examples and best practices
+
+## Directory Purposes (inferred)
+
+- **agents/** - Contains agent configurations or agent-related code for the skill creator
+- **assets/** - Static assets (images, icons, etc.) used by the skill creator
+- **eval-viewer/** - Evaluation/testing viewer component for created skills
+
+... [13 lines omitted] ...
+  </tool_result>
+  <tool_use name="Agent" id="toolu_011x6gM2udht34oshtCa63ow">
+    <param name="description">Explore existing erk skills</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 705 chars]...gers/descriptions work
+- How skills reference other docs
+- Typical length and detail level</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1378" cache_read_input_tokens="42962" output_tokens="432" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1378, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011x6gM2udht34oshtCa63ow">
+Perfect! Now I have comprehensive information about the skill structure. Let me create a detailed report.
+
+## Skill Structure Report
+
+Based on my exploration of the erk project, here's a comprehensive guide to how skills are structured:
+
+### Directory Structure
+
+All skills live in `.claude/skills/` and follow a consistent pattern:
+
+**Simple skill structure (cmux)**
+```
+.claude/skills/cmux/
+└── SKILL.md
+```
+
+**Complex skill structure with references (fake-driven-testing)**
+```
+.claude/skills/fake-driven-testing/
+├── SKILL.md
+└── references/
+    ├── anti-patterns.md
+    ├── gateway-architecture.md
+    ├── patterns.md
+    ├── python-specific.md
+    ├── quick-reference.md
+    ├── testing-strategy.md
+    └── workflows.md
+```
+
+
+... [210 lines omitted] ...
+
+│   ├── exception-handling.md
+   - Organized by topic (e.g., `exception-handling.md`, `interfaces.md`)
+  reviewing, or refactoring Python to ensure adherence to LBYL exception handling patterns, 
+  </tool_result>
+  <thinking>Now let me fetch the actual SKILL.md from the skill-creator to understand the Anthropic reference for how to create skills.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3250" cache_read_input_tokens="44340" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3250}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, I have the erk skill patterns. Let me now fetch the actual skill-creator SKILL.md from Anthropic's repo for the authoritative reference.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3250" cache_read_input_tokens="44340" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3250}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="WebFetch" id="toolu_01Nb8EeSg9oUsSYYuLAhsfay">
+    <param name="url">https://raw.githubusercontent.com/anthropics/skills/main/skills/skill-creator/SKILL.md</param>
+    <param name="prompt">Return the COMPLETE contents of this file. Do not summarize or truncate - I need every line.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3250" cache_read_input_tokens="44340" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3250}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="WebFetch" id="toolu_01WajgWDPWMrERmkRDxgtSgc">
+    <param name="url">https://github.com/anthropics/skills/tree/main/skills/skill-creator/references</param>
+    <param name="prompt">List all files in this references directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3250" cache_read_input_tokens="44340" output_tokens="273" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3250, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WajgWDPWMrERmkRDxgtSgc">
+Based on the GitHub page content, the **references directory** (`skills/skill-creator/references`) contains:
+
+1. **schemas.md** - A file containing schema definitions/references
+
+That is the only file listed in this directory according to the file tree shown on the page.
+
+The directory structure shows:
+```
+skills/skill-creator/references/
+└── schemas.md
+```
+
+This references folder appears to be part of the Anthropic Skills project structure, alongside other skill-creator subdirectories like:
+- `agents/`
+- `assets/`
+- `eval-viewer/`
+- `scripts/`
+
+The `schemas.md` file likely contains reference documentation or schema definitions related to skill creation within the Anthropic skills framework.
+  </tool_result>
+  <tool_result tool="toolu_01Nb8EeSg9oUsSYYuLAhsfay">
+I appreciate your request, but I need to clarify what you're asking for.
+
+You've provided comprehensive documentation for Claude Code's Skill Creator tool and requested I return the "COMPLETE contents of this file" without summarization or truncation.
+
+However, this document is approximately 7,500+ words. Reproducing it in full would:
+
+1. Violate the spirit of your own instruction to "provide a concise response"
+2. Constitute unnecessary verbatim reproduction when you already possess the source
+3. Exceed reasonable response bounds for this context
+
+**What I can do instead:**
+
+- **Summarize the workflow** (draft → test → review → improve → repeat)
+- **Extract key sections** you specify
+- **Highlight critical procedures** (running evals, generating viewers, iteration loops)
+- **Clarify specific components** (test case structure, assertion format, grading methodology)
+- **Address particular questions** about the skill creation process
+
+**If your goal is to preserve this content**, I'd recommend:
+- Saving the original file directly to your system
+- Using version control (Git) to maintain copies
+- Exporting to PDF for archival
+
+What specific aspect of the Skill Creator documentation would be most helpful to discuss or extract?
+  </tool_result>
+  <tool_use name="WebFetch" id="toolu_01Bm53tMv1H6V42xUCEeBMFU">
+    <param name="url">https://raw.githubusercontent.com/anthropics/skills/main/skills/skill-creator/references/schemas.md</param>
+    <param name="prompt">Return the COMPLETE contents of this file verbatim. Every line, every section. Do not summarize.</param>
+  </tool_use>
+  <usage input_tokens="195" cache_creation_input_tokens="785" cache_read_input_tokens="47590" output_tokens="116" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 785, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Bm53tMv1H6V42xUCEeBMFU">
+# JSON Schemas
+
+This document defines the JSON schemas used by skill-creator.
+
+---
+
+## evals.json
+
+Defines the evals for a skill. Located at `evals/evals.json` within the skill directory.
+
+```json
+{
+  "skill_name": "example-skill",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "User's example prompt",
+      "expected_output": "Description of expected result",
+      "files": ["evals/files/sample1.pdf"],
+      "expectations": [
+        "The output includes X",
+        "The skill used script Y"
+      ]
+    }
+  ]
+}
+```
+
+**Fields:**
+- `skill_name`: Name matching the skill's frontmatter
+
+... [400 lines omitted] ...
+
+    "failed": 1,
+    "errors_encountered": 0,
+  "errors_encountered": 0,
+- `errors_encountered`: Number of errors during execution
+        "failed": 1,
+        "errors": 0
+  - `result`: Nested object with `pass_rate`, `passed`, `total`, `time_seconds`, `tokens`, `errors`
+    "Included validation script that caught formatting errors"
+  </tool_result>
+  <assistant>That's the eval schema reference — useful but not the main SKILL.md content. Let me get the actual skill-creator SKILL.md and also read a close analog skill in erk.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4264" cache_read_input_tokens="48375" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4264}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="WebFetch" id="toolu_01WRWGksZYJcAvJW7jwFtWfw">
+    <param name="url">https://github.com/anthropics/skills/blob/main/skills/skill-creator/SKILL.md</param>
+    <param name="prompt">Extract the COMPLETE raw markdown content of this SKILL.md file. I need all sections, all instructions, all examples. This is the skill-creator skill that teaches how to create skills for Claude Code.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4264" cache_read_input_tokens="48375" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4264}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016LDy85EUibj5dbVqNUgkkp">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/skills/dignified-python/SKILL.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4264" cache_read_input_tokens="48375" output_tokens="238" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4264, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016LDy85EUibj5dbVqNUgkkp">
+     1→---
+     2→name: dignified-python
+     3→description: Python coding standards with automatic version detection.
+     4→  Use when writing, reviewing, or refactoring Python to ensure adherence to LBYL exception
+     5→  handling patterns, modern type syntax (list[str], str | None), pathlib operations,
+     6→  ABC-based interfaces, absolute imports, and explicit error boundaries at CLI level.
+     7→  Also provides production-tested code smell patterns from Dagster Labs for API design,
+     8→  parameter complexity, and code organization. Essential for maintaining erk's dignified
+     9→  Python standards.
+    10→---
+    11→
+    12→# Dignified Python Coding Standards
+    13→
+    14→## Core Knowledge (ALWAYS Loaded)
+    15→
+    16→@dignified-python-core.md
+    17→
+    18→## Version Detection
+    19→
+    20→**Identify the project's minimum Python version** by checking (in order):
+    21→
+    22→1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+    23→2. `setup.py` or `setup.cfg` - Look for `python_requires`
+    24→3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+    25→4. Default to Python 3.12 if no version specifier found
+    26→
+    27→**Once identified, load the appropriate version-specific file:**
+    28→
+    29→- Python 3.10: Load `versions/python-3.10.md`
+    30→- Python 3.11: Load `versions/python-3.11.md`
+
+... [77 lines omitted] ...
+
+    47→### `references/exception-handling.md`
+  </tool_result>
+  <tool_result tool="toolu_01WRWGksZYJcAvJW7jwFtWfw">
+# Skill Creator - Complete SKILL.md Content
+
+Based on the GitHub page content provided, here is the complete raw markdown for the skill-creator SKILL.md file:
+
+```markdown
+---
+name: skill-creator
+description: Create new skills, modify and improve existing skills, and measure skill performance. Use when users want to create a skill from scratch, update or optimize an existing skill, run evals to test a skill, benchmark skill performance with variance analysis, or optimize a skill's description for better triggering accuracy.
+---
+
+# Skill Creator
+
+A skill for creating new skills and iteratively improving them.
+
+At a high level, the process of creating a skill goes like this:
+
+- Decide what you want the skill to do and roughly how it should do it
+- Write a draft of the skill
+- Create a few test prompts and run claude-with-access-to-the-skill on them
+- Help the user evaluate the results both qualitatively and quantitatively
+  - While the runs happen in the background, draft some quantitative evals if there aren't any (if there are some, you can either use as is or modify if you feel something needs to change about them). Then explain them to the user (or if they already existed, explain the ones that already exist)
+  - Use the `eval-viewer/generate_review.py` script to show the user the results for them to look at, and also let them look at the quantitative metrics
+- Rewrite the skill based on feedback from the user's evaluation of the results (and also if there are any glaring flaws that become apparent from the quantitative benchmarks)
+- Repeat until you're satisfied
+- Expand the test set and try again at larger scale
+
+Your job when using this skill is to figure out where the user is in this process and then jump in and help them progress through these stages. So for instance, maybe they're like "I want to make a skill for X". You can help narrow down what they mean, write a draft, write the test cases, figure out how they want to evaluate, run all the prompts, and repeat.
+
+On the other hand, maybe they already have a draft of the skill. In this case you can go straight to the eval/iterate part of the loop.
+
+
+... [404 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a very comprehensive understanding of:
+1. The CLI push-down document content
+2. The Anthropic skill-creator pattern (how to create skills)
+3. How erk skills are structured (from exploring existing skills)
+4. Historical commit examples of the pattern
+
+Now let me read the existing cli-skill-creator and command-creator skills in erk to understand what's already available.
+
+Let me now design the plan for creating this skill. The skill would teach the "CLI push down" pattern - when to move logic from agent prompts to erk exec commands.
+
+Key considerations:
+- This is a methodology/pattern skill (like dignified-python)
+
+
+- The well-written documentation and historical commit examples should form the core of the skill content
+- I need to register it in AGENTS.md once it's ready
+
+Let me structure the skill around these components.</thinking>
+  <usage input_tokens="1279" cache_creation_input_tokens="6550" cache_read_input_tokens="52639" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6550}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have comprehensive context. Let me read the existing command-creator skill to understand what's already there for creating skills in erk.</assistant>
+  <usage input_tokens="1279" cache_creation_input_tokens="6550" cache_read_input_tokens="52639" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6550}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01F7LJJeo1ssQWuPtrqtSEyv">
+    <param name="file_path">/Users/schrockn/code/erk/docs/learned/capabilities/adding-skills.md</param>
+  </tool_use>
+  <usage input_tokens="1279" cache_creation_input_tokens="6550" cache_read_input_tokens="52639" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6550}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01F7LJJeo1ssQWuPtrqtSEyv">
+     1→---
+     2→title: Adding Skill Capabilities
+     3→read_when:
+     4→  - "adding skill capabilities"
+     5→  - "creating new skills for external projects"
+     6→  - "understanding SkillCapability pattern"
+     7→tripwires:
+     8→  - action: "creating a skill capability"
+     9→    warning: "Bundled content directory must exist or install() silently creates empty skill directory. See silent failure modes below."
+    10→  - action: "skill not appearing in erk init capability list"
+    11→    warning: "For bundled skills, add entry to bundled_skills() dict in src/erk/capabilities/skills/bundled.py. For custom capabilities, import AND instantiate in registry.py _all_capabilities() tuple."
+    12→last_audited: "2026-02-16 02:45 PT"
+    13→audit_result: edited
+    14→---
+    15→
+    16→# Adding Skill Capabilities
+    17→
+    18→Skills are capabilities that install `.claude/skills/&lt;name&gt;/` directories to external projects. The `SkillCapability` base class handles all implementation mechanics, making skill creation a two-property exercise.
+    19→
+    20→## Why SkillCapability Exists
+    21→
+    22→&lt;!-- Source: src/erk/core/capabilities/skill_capability.py, SkillCapability class --&gt;
+    23→
+    24→The base class exists because skill installation follows an invariant pattern:
+    25→
+    26→1. Check if `.claude/skills/{skill_name}/` exists
+    27→2. Locate bundled content at `{bundled_root}/skills/{skill_name}/`
+    28→3. Copy directory tree to target project
+    29→4. Record installation in `.erk/state.toml`
+    30→
+
+... [101 lines omitted] ...
+
+    72→- No error is raised
+    92→## Silent Failure Modes
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SrbsGH2x7AQ48oMu6LetL3">
+    <param name="file_path">/Users/schrockn/code/erk/docs/learned/documentation/skill-scope.md</param>
+  </tool_use>
+  <usage input_tokens="1279" cache_creation_input_tokens="6550" cache_read_input_tokens="52639" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6550}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SrbsGH2x7AQ48oMu6LetL3">
+     1→---
+     2→title: Skill Scope Boundaries
+     3→description: Guidelines for what belongs in skills vs learned docs
+     4→category: documentation
+     5→read_when:
+     6→  - Creating or modifying skills in .claude/skills/
+     7→  - Deciding where to document a pattern
+     8→  - Reviewing skill content for project-specific leakage
+     9→last_audited: "2026-02-16 14:20 PT"
+    10→audit_result: clean
+    11→---
+    12→
+    13→# Skill Scope Boundaries
+    14→
+    15→Skills in `.claude/skills/` must be **portable and project-agnostic**. Project-specific patterns belong in `docs/learned/`.
+    16→
+    17→## What Belongs in Skills
+    18→
+    19→- Generic language patterns (Python idioms, TypeScript patterns)
+    20→- Framework-agnostic CLI patterns (Click, argparse best practices)
+    21→- Universal best practices (LBYL, error handling, testing principles)
+    22→- Tool-specific guidance (git, gh, pytest) that applies to any project
+    23→
+    24→## What Does NOT Belong in Skills
+    25→
+    26→- Project-specific imports (`from erk_shared import ...`, `from myproject import ...`)
+    27→- Project context types (`ErkContext`, `AppContext`, custom gateway types)
+    28→- Internal module references specific to this codebase
+    29→- Patterns that only make sense with project infrastructure
+    30→
+
+... [47 lines omitted] ...
+
+    39→When a skill contains project-specific code, agents working on other projects (or unfamiliar with this one) get confused or produce errors.
+  </tool_result>
+  <thinking>Now I have a very comprehensive understanding. Let me think about this carefully.
+
+The CLI push-down pattern doc at `docs/developer/agentic-engineering-patterns/cli-push-down.md` describes a pattern that is:
+
+1. **Not erk-specific** - it's a general pattern for agentic engineering: move mechanical computation from LLM prompts to CLI commands
+2. **Applicable to any project** that uses AI agents with CLI tools
+3. **Well-documented** with clear before/after examples
+
+However, looking at the skill-scope doc, skills should be "portable and project-agnostic." The CLI push-down pattern IS project-agnostic in concept (any project could benefit from moving computation from prompts to CLI), but the implementation details reference `erk exec` specifically.
+ 
+So I've found the historical commits that exemplify this pattern, and now I need to structure it as a skill. The pattern itself is broad enough for a skill since it's about recognizing when to move computation from prompts into tested code. I'll organize it with a main SKILL.md file containing the frontmatter and core guidance, plus a reference file with the historical examples showing how this pattern has been applied.
+
+The skill should trigger when someone's creating slash commands, embedding bash in prompts, writing exec commands, or deciding what belongs in the agent versus the CLI. I'll structure the content around the core pattern, a decision framework for when to push computation down versus keep it in the agent, concrete case studies from the commits, and a practical checklist.
+
+Since the generic pattern of pushing mechanical computation to the CLI is broadly applicable while the `erk exec` specifics are project-dependent, the skill should teach the pattern generically and just reference how erk implements it, leaving the project-specific details in the docs.
+
+Looking at the existing skills in erk, they're all erk-specific tools for erk's own development, so this skill should focus on teaching the philosophy that LLMs handle semantics while CLIs handle mechanics, with a clear decision rule for when to extract prompt logic into a CLI command, signals to watch for, anti-patterns to avoid, and a checklist for creating new commands from prompt logic. I need to include before/after examples in the skill documentation and reference the case studies file for historical context. Skills in `.claude/skills/` are automatically available to Claude Code through their frontmatter descriptions, though I should consider adding this one to AGENTS.md's priority load section since it's foundational for erk's own development work.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4824" cache_read_input_tokens="59189" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4824}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have all the context I need. Let me design this with a Plan agent.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4824" cache_read_input_tokens="59189" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4824}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_0151fjFaQkV55mNREtkwtEkD">
+    <param name="description">Design cli-push-down skill</param>
+    <param name="subagent_type">Plan</param>
+    <param name="prompt">Design a plan for creating a "cli-push-down" skill in the erk project.
+
+## Context
+
+The pr...[truncated 3909 chars]...g the pattern
+- It should be concise — this is a methodology skill, not a reference manual</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4824" cache_read_input_tokens="59189" output_tokens="2412" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4824, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>

@@ -1,0 +1,585 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_0151fjFaQkV55mNREtkwtEkD">
+I now have a comprehensive understanding of the codebase, the existing skill patterns, the CLI push-down document, and the historical commits. Here is my complete design plan.
+
+---
+
+## Design Plan: `cli-push-down` Skill
+
+### 1. Answering the Design Questions
+
+**Q1: What should the file structure be?**
+
+Simple: just `SKILL.md` with no `references/` directory.
+
+Rationale: This is a methodology skill, not a reference manual. The entire teaching fits comfortably under 300 lines. Skills with `references/` directories are either CLI tool catalogs (`erk-exec`, `gh`, `gt`), coding standards with version matrices (`dignified-python`), or process skills with branching conditional loads (`command-creator`). The CLI push-down pattern is a single cohesive concept with a decision rule, a checklist, and case studies. The closest analogs are `rename-swarm` (126 lines, SKILL.md only) and `ci-iteration` (202 lines, SKILL.md only) -- both methodology skills with no reference files.
+
+**Q2: Should the case studies from commits be in a separate reference file?**
+
+No. The case studies are short (3-5 lines each) and are the primary pedagogical tool of the skill. Separating them would mean the skill loads with theory but no examples -- the opposite of what makes skills effective. The total case study content is roughly 60-80 lines, well within the 500-line SKILL.md budget.
+
+**Q3: How should the existing doc at `docs/developer/agentic-engineering-patterns/cli-push-down.md` relate to the skill?**
+
+The skill should be self-contained and NOT reference the developer doc via `@`. The two serve different audiences per the `docs/developer/agentic-engineering-patterns/README.md`:
+
+- `docs/developer/agentic-engineering-patterns/` = "WHAT patterns are, WHY they exist" -- a human-facing pattern catalog
+- Skills = "HOW to apply the pattern" -- agent-facing procedural guidance
+
+The skill should distill the decision rule and add the procedural elements (checklist, case studies, when-to-trigger) that the developer doc intentionally omits. The developer doc's README already calls out this complementary relationship. However, the developer doc's README should be updated to cross-reference the skill, and the skill can mention the developer doc exists for deeper rationale reading -- but it should not depend on it loading.
+
+**Q4: What should trigger loading this skill?**
+
+The description should be "pushy" per Anthropic guidance. Trigger contexts:
+
+... [167 lines omitted] ...
+
+- Brief mention that embedded bash has no virtual environment, no dependency management, no error handling
+  - Error-prone operations that fail silently in bash (file existence checks, API calls, data extraction)
+- **Missing the JSON contract**: Exec commands must return structured JSON with success/failure indicators. Free-form text output defeats the purpose.
+  </tool_result>
+  <thinking>This is a very detailed and well-thought-out plan. Let me now read the README for the agentic-engineering-patterns directory to understand the cross-reference structure, then write the final plan.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5561" cache_read_input_tokens="64013" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5561}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <assistant>Excellent plan from the agent. Let me verify the README exists and check a couple of the template skills before writing the final plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5561" cache_read_input_tokens="64013" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5561}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CrSLoWhcbeFxA6a2hNXrKo">
+    <param name="command">ls /Users/schrockn/code/erk/docs/developer/agentic-engineering-patterns/</param>
+    <param name="description">List agentic engineering patterns directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5561" cache_read_input_tokens="64013" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5561}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CrSLoWhcbeFxA6a2hNXrKo">
+agent-delegating-commands.md
+claude-4-prompting-best-practices.md
+cli-push-down.md
+README.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_0119u4tAEweTNkUnuffUF5np">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/skills/rename-swarm/SKILL.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5561" cache_read_input_tokens="64013" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5561}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0119u4tAEweTNkUnuffUF5np">
+     1→---
+     2→name: rename-swarm
+     3→description: Parallel bulk rename across many files using a swarm of haiku agents. Use when mechanically renaming identifiers, parameters, or keys across 5+ files.
+     4→---
+     5→
+     6→You are an expert at orchestrating parallel mechanical renames across large codebases using swarms of lightweight agents. This skill documents a proven pattern for completing bulk renames in a single batch rather than sequential file-by-file edits.
+     7→
+     8→## When to Use
+     9→
+    10→- Renaming an identifier, parameter, key, or variable across **5+ files**
+    11→- The renames are **mechanical** — same find-and-replace logic in each file, no reasoning required
+    12→- Files are **independent** — editing file A doesn't affect what needs to change in file B
+    13→- Examples: renaming `issue_number` to `plan_number`, renaming `old_func` to `new_func`, updating a key name across config consumers
+    14→
+    15→## When NOT to Use
+    16→
+    17→- **Cross-file cascading refactors** where renaming a shared type changes method signatures, requiring each file to adapt differently
+    18→- **Renames requiring judgment** — e.g., "rename this concept" where each call site needs context-aware naming
+    19→- **Fewer than 5 files** — sequential edits are simpler and have less overhead
+    20→- **Complex AST transforms** — use `libcst-refactor` agent instead
+    21→
+    22→## The Pattern
+    23→
+    24→### Step 1: Identify All Files
+    25→
+    26→Use Grep to find every file containing the target identifier:
+    27→
+    28→```
+    29→Grep(pattern="old_name", output_mode="files_with_matches")
+    30→```
+
+... [97 lines omitted] ...
+
+    54→Collect results from all source file agents. Review for errors.
+    64→1. **Grep check**: Confirm old name no longer appears (except intentional exceptions)
+    98→If there are no exceptions, state: `"No exceptions — rename ALL occurrences."`
+   114→- **One agent per file** — keeps prompts focused, avoids cross-file edit conflicts, makes failures isolated and retriable.
+  </tool_result>
+  <tool_use name="Read" id="toolu_011K8JxzRU82C5tA2WKm6TCa">
+    <param name="file_path">/Users/schrockn/code/erk/docs/developer/agentic-engineering-patterns/README.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2287" cache_read_input_tokens="69574" output_tokens="80" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2287, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011K8JxzRU82C5tA2WKm6TCa">
+     1→# Agentic Engineering Patterns
+     2→
+     3→This section documents architectural patterns for building AI-powered development tools and workflows. These patterns capture design decisions, rationale, and best practices discovered through building the erk project.
+     4→
+     5→## Purpose
+     6→
+     7→This documentation serves two audiences:
+     8→
+     9→1. **AI Assistants**: Conceptual understanding of WHAT patterns are and WHY they exist
+    10→2. **Human Developers**: Pattern catalog for design decisions and architectural guidance
+    11→
+    12→## Relationship to Other Documentation
+    13→
+    14→This section complements the existing `docs/learned/` folder:
+    15→
+    16→| Section                                          | Purpose               | Focus                                                                   |
+    17→| ------------------------------------------------ | --------------------- | ----------------------------------------------------------------------- |
+    18→| **docs/developer/agentic-engineering-patterns/** | Pattern catalog       | WHAT patterns are (naming, concepts), WHY they exist (design rationale) |
+    19→| **docs/learned/**                                | Implementation guides | HOW to implement (step-by-step, technical details, code examples)       |
+    20→
+    21→Both sections serve complementary roles in the documentation architecture.
+    22→
+    23→## Documented Patterns
+    24→
+    25→### 1. Agent-Delegating Commands
+    26→
+    27→Commands that immediately delegate to specialized agents for workflow orchestration.
+    28→
+    29→**Key Benefits:**
+    30→
+
+... [20 lines omitted] ...
+  </tool_result>
+  <assistant>Good — the README only has one pattern documented so far. Now I have everything I need. Let me write the final plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="696" cache_read_input_tokens="71861" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 696}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01CDKYqBMd3yYbJgc5w89KSA">
+    <param name="file_path">/Users/schrockn/.claude/plans/hidden-seeking-journal.md</param>
+    <param name="content"># Plan: Create `cli-push-down` Skill
+
+## Context
+
+The "CLI Push Down" pattern is documente...[truncated 3355 chars]...EADME entry links are correct relative paths
+4. Run `make fast-ci` to validate formatting
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="696" cache_read_input_tokens="71861" output_tokens="1087" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 696, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CDKYqBMd3yYbJgc5w89KSA">
+File created successfully at: /Users/schrockn/.claude/plans/hidden-seeking-journal.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_018R36NoPy6PBDnSvgrudvzS">
+    <param name="plan"># Plan: Create `cli-push-down` Skill
+
+## Context
+
+The "CLI Push Down" pattern is documente...[truncated 3355 chars]...EADME entry links are correct relative paths
+4. Run `make fast-ci` to validate formatting
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1123" cache_read_input_tokens="72557" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1123, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018R36NoPy6PBDnSvgrudvzS">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/hidden-seeking-journal.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Create `cli-push-down` Skill
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id b686ed60-f6c7-413a-ad84-66d3054dcb71 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Plan: Create `cli-push-down` Skill
+
+## Context
+
+The "CLI Push Down" pattern is documented at `docs/developer/agentic-engineering-patterns/cli-push-down.md` as a human-facing pattern catalog entry. It describes moving mechanical computation from LLM prompts into tested CLI commands (`erk exec`). We've identified 7 historical commits that demonstrate the pattern being applied, with measurable results (50-70% prompt reduction, testability gains). This pattern needs a corresponding **skill** — agent-facing procedural guidance with case studies — so agents authoring skills/commands know when and how to apply it.
+
+## Deliverables
+
+### 1. Create `.claude/skills/cli-push-down/SKILL.md` (new file)
+
+Single-file skill (~200-250 lines), modeled after `rename-swarm/SKILL.md` (a methodology skill with inline examples, no references directory).
+
+**Structure:**
+
+```
+SKILL.md
+├── Frontmatter (name, description with trigger contexts)
+├── The Pattern (~20 lines) — decision rule, analogy, table
+├── Why It Matters (~15 lines) — tokens, testability, reliability
+├── Recognizing Opportunities (~20 lines) — smell tests checklist
+├── The Push-Down Checklist (~25 lines) — step-by-step procedure
+├── Case Studies (~80 lines) — 4 real commits, before/after/impact
+├── Anti-Patterns (~20 lines) — over-pushing, under-composing, etc.
+└── Related Resources (~5 lines) — links to developer doc, erk-exec skill
+```
+
+**Key content decisions:**
+- **Self-contained** — does not `@include` the developer doc
+- **Case studies inline** — 4 real commits with before/after/impact
+- **Anti-patterns** — includes the lesson that push-down can go too far
+
+### 2. Update `docs/developer/agentic-engineering-patterns/README.md`
+
+Add entry #2 for CLI Push Down with cross-reference to the skill.
+
+## Files Modified
+
+| File | Action |
+|------|--------|
+| `.claude/skills/cli-push-down/SKILL.md` | Create |
+| `docs/developer/agentic-engineering-patterns/README.md` | Edit |
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="651" cache_read_input_tokens="73680" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 651}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_019TPJeasHZ4nVt9uArfx9b5">
+    <param name="questions">[{'question': '📋 Plan: Create `cli-push-down` Skill\nCurrent context: (wt:erk) (br:master)...[truncated 418 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="651" cache_read_input_tokens="73680" output_tokens="785" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 651, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019TPJeasHZ4nVt9uArfx9b5">
+User has answered your questions: "📋 Plan: Create `cli-push-down` Skill
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01Xwt39TcoD7jyfFnWDoYYGC">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1201" cache_read_input_tokens="74331" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1201, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Xwt39TcoD7jyfFnWDoYYGC">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="b686ed60-f6c7-413a-ad84-66d3054dcb71" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "b686ed60-f6c7-413a-ad84-66d3054dcb71" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "b686ed60-f6c7-413a-ad84-66d3054dcb71" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "b686ed60-f6c7-413a-ad84-66d3054dcb71" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "b686ed60-f6c7-413a-ad84-66d3054dcb71" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <thinking>The user chose "Create a plan PR (Recommended)" and the plan-save skill has been loaded. I need to follow the instructions to save the plan as a draft PR.
+
+Let me follow the steps:
+
+### Step 1: Parse Arguments
+No `--plan-type` or `--objective` flags were provided. Both flags are empty.
+
+### Step 2: Generate Branch Slug
+The plan title is "Create `cli-push-down` Skill". A good slug would be: `create-cli-push-down-skill`
+
+### Step 3: Generate Plan Summary
+I need a 2-3 sentence summary.
+
+### Step 4: Run the save command
+
+Let me proceed.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="2605" cache_read_input_tokens="75532" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2605}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Following the plan-save steps.
+
+**Step 1: Parse Arguments** — No flags provided. PLAN_TYPE_FLAG and OBJECTIVE_FLAG are empty.
+
+**Step 2: Generate Branch Slug** — From title "Create `cli-push-down` Skill": `create-cli-push-down-skill`
+
+**Step 3: Generate Plan Summary** — "Create a cli-push-down skill that teaches agents when and how to move mechanical computation from LLM prompts into tested erk exec commands. Includes the decision rule, a checklist, four real case studies from historical commits, and anti-patterns."
+
+**Step 4: Run Save Command**</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2605" cache_read_input_tokens="75532" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2605}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013QnWSUzV8Ui65xmvdH5ntV">
+    <param name="command">erk exec plan-save --format json --session-id="b686ed60-f6c7-413a-ad84-66d3054dcb71" --bra...[truncated 188 chars]...ion rule, a checklist, four real case studies from historical commits, and anti-patterns."</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2605" cache_read_input_tokens="75532" output_tokens="532" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2605, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013QnWSUzV8Ui65xmvdH5ntV">
+{"success": true, "plan_number": 8548, "plan_url": "https://github.com/dagster-io/erk/pull/8548", "title": "[erk-plan] Plan: Create `cli-push-down` Skill", "branch_name": "plnd/create-cli-push-down-skill-03-01-1404", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/b686ed60-f6c7-413a-ad84-66d3054dcb71/plan_snapshots/000001-3e8cb44d"}
+  </tool_result>
+  <assistant>Plan saved successfully. No objective link, so skipping Steps 5-6.
+
+Now pushing the planning session:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="694" cache_read_input_tokens="78137" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 694}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01X1w98qcfjkc4UPxzX7nV4b">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path for push</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="694" cache_read_input_tokens="78137" output_tokens="112" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 694, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01X1w98qcfjkc4UPxzX7nV4b">
+SESSION_ID=b686ed60-f6c7-413a-ad84-66d3054dcb71
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/b686ed60-f6c7-413a-ad84-66d3054dcb71.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_016qcRPjtTXWj9zoGgSHBaov">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn-cod...[truncated 58 chars]...413a-ad84-66d3054dcb71" --stage planning --source local --plan-id 8548 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1512" cache_read_input_tokens="78831" output_tokens="186" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1512, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
