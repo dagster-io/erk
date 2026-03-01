@@ -29,6 +29,7 @@ from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.sessions.discovery import SessionsForPlan
+from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 
 def _make_pr_details(
@@ -36,6 +37,7 @@ def _make_pr_details(
     pr_number: int,
     branch: str,
     title: str = "Test PR",
+    body: str = "Test body",
     labels: tuple[str, ...] = (),
 ) -> PRDetails:
     now = datetime(2024, 1, 1, tzinfo=UTC)
@@ -43,7 +45,7 @@ def _make_pr_details(
         number=pr_number,
         url=f"https://github.com/owner/repo/pull/{pr_number}",
         title=title,
-        body="Test body",
+        body=body,
         state="OPEN",
         base_ref_name="main",
         head_ref_name=branch,
@@ -251,11 +253,14 @@ def test_creates_pr_and_shows_success(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Happy path: plan found, not erk-learn, creates learn draft PR."""
+    """Happy path: plan found with session, not erk-learn, creates learn draft PR."""
+    session_id = "aaaa1111-2222-3333-4444-555566667777"
+    body = format_plan_header_body_for_test(created_from_session=session_id)
     pr = _make_pr_details(
         pr_number=100,
         branch="feature",
         title="Add widgets",
+        body=body,
         labels=("erk-plan",),
     )
     fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn", "erk-plan"})
@@ -281,15 +286,48 @@ def test_creates_pr_and_shows_success(
     _branch, pr_title, _body, _base, _draft = fake_github.created_prs[0]
     assert "Learn: Add widgets" in pr_title
 
-    # Success output (includes session discovery warning since no sessions configured)
+    # Success output
     captured = capsys.readouterr()
     assert "Created learn plan" in captured.err
     assert "#100" in captured.err
-    assert "No sessions discovered" in captured.err
     assert "https://github.com/" in captured.err
     # File inventory output
     assert "file(s) committed" in captured.err
     assert "plan.md" in captured.err
+
+
+def test_skips_when_no_sessions_discovered(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Returns early without creating PR when no sessions are discovered."""
+    pr = _make_pr_details(
+        pr_number=100,
+        branch="feature",
+        title="Add widgets",
+        labels=("erk-plan",),
+    )
+    fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn", "erk-plan"})
+    fake_github = FakeGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
+    fake_time = FakeTime()
+    plan_store = PlannedPRBackend(fake_github, fake_issues, time=fake_time)
+
+    ctx = context_for_test(
+        github=fake_github,
+        issues=fake_issues,
+        plan_store=plan_store,
+        time=fake_time,
+        cwd=tmp_path,
+    )
+    state = _land_state(tmp_path, plan_id="100", merged_pr_number=42)
+
+    _create_learn_pr_impl(ctx, state=state)
+
+    # No PR should have been created
+    assert len(fake_github.created_prs) == 0
+
+    captured = capsys.readouterr()
+    assert "No sessions discovered" in captured.err
 
 
 # ---------------------------------------------------------------------------

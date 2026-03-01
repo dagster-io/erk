@@ -370,11 +370,12 @@ def _create_learn_pr_impl(
     # Log session discovery summary and collect XML files for embedding
     xml_files = _log_session_discovery(ctx, sessions=sessions, all_session_ids=all_session_ids)
 
+    # Skip learn plan creation if no sessions were discovered — nothing meaningful to capture
+    if not all_session_ids:
+        return
+
     # Build learn plan body
-    if all_session_ids:
-        session_lines = [f"- `{sid}`" for sid in all_session_ids]
-    else:
-        session_lines = ["- (none)"]
+    session_lines = [f"- `{sid}`" for sid in all_session_ids]
     session_section = "\n".join(session_lines)
     plan_content = (
         f"# Learn: {plan_result.title}\n\n"
