@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "plan_id": 8567,
+  "sessions": [
+    {
+      "session_id": "4a2105ca-3c79-49a4-a718-8df3818b0fb0",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-01T20:51:37.380380+00:00",
+      "files": [
+        "impl-4a2105ca-3c79-49a4-a718-8df3818b0fb0-4a2105ca-3c79-49a4-a718-8df3818b0fb0-part1.xml",
+        "impl-4a2105ca-3c79-49a4-a718-8df3818b0fb0-4a2105ca-3c79-49a4-a718-8df3818b0fb0-part2.xml"
+      ]
+    }
+  ]
+}
