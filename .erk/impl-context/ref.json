@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Document mid-rebase behavior for `erk pr rebase`"
+}
