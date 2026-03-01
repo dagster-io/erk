@@ -86,7 +86,7 @@ git diff --staged
 
 Load the `erk-diff-analysis` skill for commit message generation guidance.
 
-### Step 3.5: Add Planned Prefix (if from plan)
+### Step 4: Add Planned Prefix (if from plan)
 
 If this worktree was created from a plan (an `.erk/impl-context/` subdirectory containing `ref.json` exists), prepend `plnd/` to the PR title:
 
@@ -100,7 +100,7 @@ else
 fi
 ```
 
-When generating the commit message in Step 4, if `has_impl_dir` is true, prepend `plnd/` to the title:
+When generating the commit message in Step 5, if `has_impl_dir` is true, prepend `plnd/` to the title:
 
 ```bash
 if [ "$has_impl_dir" = true ]; then
@@ -108,7 +108,7 @@ if [ "$has_impl_dir" = true ]; then
 fi
 ```
 
-### Step 4: Create Commit
+### Step 5: Create Commit
 
 Create the commit with your AI-generated message using heredoc:
 
@@ -119,7 +119,7 @@ COMMIT_MSG
 )"
 ```
 
-### Step 5: Push to Remote
+### Step 6: Push to Remote
 
 Push the branch to origin with upstream tracking:
 
@@ -127,7 +127,7 @@ Push the branch to origin with upstream tracking:
 git push -u origin "$(git branch --show-current)"
 ```
 
-### Step 6: Check for Existing PR
+### Step 7: Check for Existing PR
 
 Before creating a new PR, check if one already exists for the current branch:
 
@@ -137,13 +137,13 @@ existing_pr=$(gh pr list --head "$(git branch --show-current)" --state open --js
 
 **Decision logic:**
 
-- If `existing_pr` is empty or null: No existing PR, proceed to Step 7
-- If `existing_pr` has data: PR exists, skip Step 7 and go directly to Step 7.5 (Add Checkout Footer)
+- If `existing_pr` is empty or null: No existing PR, proceed to Step 8
+- If `existing_pr` has data: PR exists, skip Step 8 and go directly to Step 9 (Add Checkout Footer)
 
 > **CRITICAL: When an existing PR is found, do NOT run `gh pr edit --body` or `gh pr edit --title`.**
 > The PR body may contain plan-header metadata blocks (`<!-- erk:metadata-block:plan-header -->`)
 > that must be preserved. The body will be updated by a later workflow step (`ci-update-pr-body`).
-> Only push code (Step 5) and add the checkout footer (Step 7.5).
+> Only push code (Step 6) and add the checkout footer (Step 9).
 
 If an existing PR was found, extract its details for reporting:
 
@@ -153,9 +153,9 @@ pr_number=$(echo "$existing_pr" | jq -r '.number')
 is_draft=$(echo "$existing_pr" | jq -r '.isDraft')
 ```
 
-### Step 7: Create GitHub PR (if no existing PR)
+### Step 8: Create GitHub PR (if no existing PR)
 
-**Skip this step if an existing PR was found in Step 6.** The push in Step 5 already updated the existing PR with new commits.
+**Skip this step if an existing PR was found in Step 7.** The push in Step 6 already updated the existing PR with new commits.
 
 Extract PR title (first line) and body (remaining lines) from commit message:
 
@@ -177,14 +177,14 @@ pr_number=$(echo "$pr_output" | grep -oE '[0-9]+$')
 pr_url="$pr_output"
 ```
 
-### Step 7.5: Add Checkout Footer
+### Step 9: Add Checkout Footer
 
-Extract the PR number (from Step 7 if PR was created, or from Step 6.5 if existing PR was found), then generate and append the checkout footer:
+Extract the PR number (from Step 8 if PR was created, or from Step 7 if existing PR was found), then generate and append the checkout footer:
 
 **Determining PR number:**
 
-- If Step 7 was executed: Use `pr_number` extracted from `gh pr create` output
-- If Step 7 was skipped: Use `pr_number` extracted from `existing_pr` in Step 6
+- If Step 8 was executed: Use `pr_number` extracted from `gh pr create` output
+- If Step 8 was skipped: Use `pr_number` extracted from `existing_pr` in Step 7
 
 **Generate and append footer:**
 
@@ -202,7 +202,7 @@ gh pr edit "$pr_number" --body "${current_body}${footer}"
 
 **Note:** The footer includes the checkout command. This ensures `erk pr check` passes.
 
-### Step 7.75: Link PR to Objective (if applicable)
+### Step 10: Link PR to Objective (if applicable)
 
 If `ref.json` exists in the resolved impl directory (`.erk/impl-context/<branch>/ref.json`):
 
@@ -212,7 +212,7 @@ erk exec objective-link-pr --pr-number "$pr_number"
 
 If this fails, warn but continue -- PR creation succeeded.
 
-### Step 8: Validate PR Rules
+### Step 11: Validate PR Rules
 
 Run the PR check command to validate the PR was created correctly:
 
@@ -224,13 +224,13 @@ This validates:
 
 - PR body contains the standard checkout footer
 
-If any checks fail, display the output and warn the user, but continue to Step 9.
+If any checks fail, display the output and warn the user, but continue to Step 12.
 
-### Step 9: Report Results
+### Step 12: Report Results
 
 Display a clear summary based on whether a PR was created or found:
 
-**If a NEW PR was created (Step 7 was executed):**
+**If a NEW PR was created (Step 8 was executed):**
 
 ```
 ## Branch Submission Complete
@@ -247,7 +247,7 @@ Display a clear summary based on whether a PR was created or found:
 [PR URL from gh pr create output]
 ```
 
-**If an EXISTING PR was found (Step 7 was skipped):**
+**If an EXISTING PR was found (Step 8 was skipped):**
 
 ```
 ## Branch Submission Complete
@@ -307,7 +307,7 @@ Option 2: Force push (⚠️ overwrites remote)
     git push -f origin [branch]
 ```
 
-Note: The "PR already exists" case is now handled automatically in Step 6.5. If a PR exists for the current branch, the command will skip PR creation and report the existing PR URL instead.
+Note: The "PR already exists" case is now handled automatically in Step 7. If a PR exists for the current branch, the command will skip PR creation and report the existing PR URL instead.
 
 ## Best Practices
 

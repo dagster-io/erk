@@ -38,7 +38,7 @@ gh api repos/dagster-io/erk/issues \
 
 Note: Uses REST API (not `gh issue list`) to avoid GraphQL rate limits.
 
-### Step 1b: Filter Out Already-Consolidated Plans
+### Step 2: Filter Out Already-Consolidated Plans
 
 From the results, filter out any plans that have the `erk-consolidated` label.
 
@@ -52,11 +52,11 @@ Filtered out N already-consolidated plan(s): #X, #Y, ...
 
 Store the filtered results as a list of plans with their numbers and titles.
 
-### Step 2: Handle Edge Cases
+### Step 3: Handle Edge Cases
 
 Based on the number of **filtered** plans (after excluding `erk-consolidated`):
 
-#### 2a: Zero Plans
+#### 3a: Zero Plans
 
 If no open erk-learn plans found (after filtering):
 
@@ -72,7 +72,7 @@ All N open erk-learn plans are already consolidated. Nothing new to consolidate.
 
 Stop here.
 
-#### 2b: One Plan
+#### 3b: One Plan
 
 If exactly one plan found, present it and ask the user:
 
@@ -93,7 +93,7 @@ Use AskUserQuestion with options:
 
 If user cancels, stop here.
 
-#### 2c: Multiple Plans
+#### 3c: Multiple Plans
 
 If 2+ plans found, present the list:
 
@@ -116,7 +116,7 @@ Use AskUserQuestion with options:
 
 If user cancels, stop here.
 
-### Step 3: Invoke /erk:replan
+### Step 4: Invoke /erk:replan
 
 Build the plan list and invoke the replan skill:
 
@@ -136,7 +136,7 @@ Use the Skill tool with `skill: "erk:replan"` and `args: "<space-separated plan 
 
 **IMPORTANT:** The `/erk:replan` skill will launch background Explore agents for deep investigation. Per Step 4e of that skill, you MUST wait for ALL background agents to complete before creating the consolidated plan. Use `timeout: 600000` (10 minutes) when calling TaskOutput to wait for each agent. Do not proceed to plan creation until every investigation agent has returned its findings.
 
-### Step 3.5: Context Preservation for Learn Plans (CRITICAL)
+### Step 5: Context Preservation for Learn Plans (CRITICAL)
 
 Learn plans document patterns discovered during implementation sessions. When the `/erk:replan` skill creates the consolidated plan, ensure it captures:
 

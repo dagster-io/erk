@@ -31,7 +31,7 @@ Parse `$ARGUMENTS` for `--node <node-id>`. If `--node` is present along with an 
 /erk:system:objective-plan-node <objective-number> --node <node-id>
 ```
 
-This skips the interactive selection flow (Steps 1-4 below) since the node is already known. The inner skill handles marker creation, marking as planning, context gathering, plan mode, and saving.
+This skips the interactive selection flow (Steps 1-5 below) since the node is already known. The inner skill handles marker creation, marking as planning, context gathering, plan mode, and saving.
 
 **STOP here** — do not proceed to the steps below.
 
@@ -146,7 +146,7 @@ Replace `<objective-number>` with the objective number from Step 1.
 
 **Important:** The Task agent handles all JSON parsing and marker creation. The main conversation only receives the formatted summary.
 
-### Step 2.5: Verify Objective Context Marker
+### Step 3: Verify Objective Context Marker
 
 Verify the marker was created by the Task agent:
 
@@ -159,11 +159,11 @@ If it fails or returns wrong value, STOP and report:
 "ERROR: objective-context marker not created. Re-run the marker command manually:
 erk exec marker create --session-id '${CLAUDE_SESSION_ID}' --associated-objective <issue-number> objective-context"
 
-### Step 3: Load Objective Skill
+### Step 4: Load Objective Skill
 
 Load the `objective` skill for format templates and guidance.
 
-### Step 4: Display Roadmap and Prompt User
+### Step 5: Display Roadmap and Prompt User
 
 Display the roadmap table from the Task agent's output to the user.
 
@@ -190,7 +190,7 @@ If all nodes are complete or have plans in progress, report appropriately:
 - All complete: "All roadmap nodes are complete! Consider closing the objective."
 - All have plans: "All pending nodes have plans in progress. You can still select one via 'Other' to create a parallel plan."
 
-### Step 5: Invoke Inner Skill
+### Step 6: Invoke Inner Skill
 
 After the user selects a node, invoke the inner skill via the Skill tool:
 

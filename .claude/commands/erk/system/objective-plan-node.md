@@ -8,7 +8,7 @@ allowed-tools: Bash, Task, Skill, AskUserQuestion, EnterPlanMode
 
 Inner skill for creating an implementation plan when the objective issue and node ID are already known. Called by the outer `/erk:objective-plan` command or directly by `plan_cmd.py` via Claude launch.
 
-This skips interactive node selection (Steps 3-4 of the outer command) since the node is already determined.
+This skips interactive node selection (Steps 4-5 of the outer command) since the node is already determined.
 
 ## Usage
 
@@ -85,7 +85,7 @@ Use the "next_step" field from check output as RECOMMENDED.
 
 Replace `<objective-number>` with the parsed objective number.
 
-### Step 2.5: Verify Objective Context Marker
+### Step 3: Verify Objective Context Marker
 
 ```bash
 erk exec marker read --session-id "${CLAUDE_SESSION_ID}" objective-context
@@ -96,7 +96,7 @@ If it fails or returns wrong value, STOP and report:
 "ERROR: objective-context marker not created. Re-run the marker command manually:
 erk exec marker create --session-id '${CLAUDE_SESSION_ID}' --associated-objective <issue-number> objective-context"
 
-### Step 3: Create Roadmap Node Marker and Mark as Planning
+### Step 4: Create Roadmap Node Marker and Mark as Planning
 
 Create the roadmap-step marker for the known node:
 
@@ -115,11 +115,11 @@ erk exec update-objective-node <objective-number> --node <node-id> --status plan
 
 If this fails, continue with planning — the CLI may have already marked it.
 
-### Step 4: Load Objective Skill
+### Step 5: Load Objective Skill
 
 Load the `objective` skill for format templates and guidance.
 
-### Step 5: Gather Context
+### Step 6: Gather Context
 
 Before entering plan mode, gather relevant context:
 
@@ -129,7 +129,7 @@ Before entering plan mode, gather relevant context:
 
 Use this context to inform the plan.
 
-### Step 6: Enter Plan Mode
+### Step 7: Enter Plan Mode
 
 Enter plan mode to create the implementation plan:
 
@@ -145,7 +145,7 @@ Enter plan mode to create the implementation plan:
 - Files to modify
 - Test requirements
 
-### Step 7: Save Plan with Objective Link
+### Step 8: Save Plan with Objective Link
 
 After the plan is approved in plan mode, the `exit-plan-mode-hook` will prompt to save or implement.
 
@@ -160,7 +160,7 @@ erk exec marker create --session-id "${CLAUDE_SESSION_ID}" --associated-objectiv
 
 Then run `/erk:plan-save`.
 
-### Step 8: Verify Objective Link
+### Step 9: Verify Objective Link
 
 After saving, the JSON output includes `objective_issue`. Check that it matches the expected objective number.
 

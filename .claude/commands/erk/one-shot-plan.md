@@ -43,11 +43,11 @@ The plan MUST be self-contained for a separate Claude session to implement. Incl
 
 Follow the planning conventions in `docs/learned/planning/` if available.
 
-## Step 5.5: Generate Plan Summary
+## Step 6: Generate Plan Summary
 
 Generate a 2-3 sentence summary of the plan you wrote in Step 5. Focus on WHAT the plan does and WHY. Plain text, no markdown formatting. Store the result in `PLAN_SUMMARY`.
 
-## Step 6: Save Plan to GitHub
+## Step 7: Save Plan to GitHub
 
 Check the `$PLAN_ISSUE_NUMBER` environment variable:
 
@@ -77,7 +77,7 @@ If the `WORKFLOW_RUN_URL` environment variable is not set, omit the `--created-f
 
 Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, extract `plan_number` and `title` from the output.
 
-## Step 7: Write Plan Result
+## Step 8: Write Plan Result
 
 Write the plan result to `.erk/impl-context/plan-result.json` with the following format:
 
@@ -85,7 +85,7 @@ Write the plan result to `.erk/impl-context/plan-result.json` with the following
 {"plan_number": <num>, "title": "<title>"}
 ```
 
-Use the `plan_number` and `title` extracted from the Step 6 output.
+Use the `plan_number` and `title` extracted from the Step 7 output.
 
 ## Important Notes
 
