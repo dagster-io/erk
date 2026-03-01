@@ -1016,3 +1016,280 @@ class TestRewriteRemoteAsync:
                 "--pr",
                 "456",
             ]
+
+
+class TestCmuxSyncAsync:
+    """Tests for _cmux_sync_async subprocess behavior."""
+
+    @pytest.mark.asyncio
+    async def test_cmux_sync_runs_correct_command(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_cmux_sync_async should run cmux-sync-workspace with correct args."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row(
+                    123, "Test Plan", pr_number=456, pr_head_branch="test-branch"
+                )
+            ],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        captured_popen_calls: list[list[str]] = []
+
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            if args:
+                captured_popen_calls.append(list(args[0]))  # type: ignore[arg-type]
+            return _FakePopen(return_code=0)
+
+        def fake_run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+            return subprocess.CompletedProcess(args=[], returncode=0, stdout="", stderr="")
+
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
+        monkeypatch.setattr(subprocess, "run", fake_run)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            app._cmux_sync_async("test-op", 456, "test-branch")
+            await pilot.pause(0.3)
+
+            assert len(captured_popen_calls) == 1
+            assert captured_popen_calls[0] == [
+                "erk",
+                "exec",
+                "cmux-sync-workspace",
+                "--pr",
+                "456",
+                "--branch",
+                "test-branch",
+            ]
+
+    @pytest.mark.asyncio
+    async def test_cmux_sync_triggers_refresh_on_success(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_cmux_sync_async should trigger refresh after success."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row(
+                    123, "Test Plan", pr_number=456, pr_head_branch="test-branch"
+                )
+            ],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            return _FakePopen(return_code=0)
+
+        def fake_run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+            return subprocess.CompletedProcess(args=[], returncode=0, stdout="", stderr="")
+
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
+        monkeypatch.setattr(subprocess, "run", fake_run)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            count_before = provider.fetch_count
+
+            app._cmux_sync_async("test-op", 456, "test-branch")
+            await pilot.pause(0.3)
+
+            assert provider.fetch_count > count_before
+
+    @pytest.mark.asyncio
+    async def test_cmux_sync_shows_error_on_failure(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """_cmux_sync_async should NOT refresh on failure."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row(
+                    123, "Test Plan", pr_number=456, pr_head_branch="test-branch"
+                )
+            ],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
+            return _FakePopen(lines=("sync failed",), return_code=1)
+
+        monkeypatch.setattr(subprocess, "Popen", fake_popen)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            count_before = provider.fetch_count
+
+            app._cmux_sync_async("test-op", 456, "test-branch")
+            await pilot.pause(0.3)
+
+            assert provider.fetch_count == count_before
+
+
+class TestCmuxFocusWorkspace:
+    """Tests for _cmux_focus_workspace synchronous method."""
+
+    @pytest.mark.asyncio
+    async def test_focus_selects_matching_workspace(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """Should call select-workspace when a matching workspace is found."""
+        import json
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row(
+                    123, "Test Plan", pr_number=456, pr_head_branch="test-branch"
+                )
+            ],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        captured_run_calls: list[list[str]] = []
+
+        def fake_run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+            cmd = list(args[0]) if args else []  # type: ignore[arg-type]
+            captured_run_calls.append(cmd)
+            if "list-workspaces" in cmd:
+                data = json.dumps(
+                    {"workspaces": [{"title": "test-branch", "ref": "ws-42"}]}
+                )
+                return subprocess.CompletedProcess(
+                    args=cmd, returncode=0, stdout=data, stderr=""
+                )
+            return subprocess.CompletedProcess(
+                args=cmd, returncode=0, stdout="", stderr=""
+            )
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            app._cmux_focus_workspace("test-branch")
+
+            assert len(captured_run_calls) == 2
+            assert captured_run_calls[0] == ["cmux", "--json", "list-workspaces"]
+            assert captured_run_calls[1] == [
+                "cmux",
+                "select-workspace",
+                "--workspace",
+                "ws-42",
+            ]
+
+    @pytest.mark.asyncio
+    async def test_focus_no_match_skips_select(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """Should only call list-workspaces when no workspace title matches."""
+        import json
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row(
+                    123, "Test Plan", pr_number=456, pr_head_branch="test-branch"
+                )
+            ],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        captured_run_calls: list[list[str]] = []
+
+        def fake_run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+            cmd = list(args[0]) if args else []  # type: ignore[arg-type]
+            captured_run_calls.append(cmd)
+            data = json.dumps(
+                {"workspaces": [{"title": "other-branch", "ref": "ws-99"}]}
+            )
+            return subprocess.CompletedProcess(
+                args=cmd, returncode=0, stdout=data, stderr=""
+            )
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            app._cmux_focus_workspace("test-branch")
+
+            assert len(captured_run_calls) == 1
+            assert captured_run_calls[0] == ["cmux", "--json", "list-workspaces"]
+
+    @pytest.mark.asyncio
+    async def test_focus_silently_handles_subprocess_error(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """CalledProcessError should not propagate."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        def fake_run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+            raise subprocess.CalledProcessError(1, "cmux")
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Should not raise
+            app._cmux_focus_workspace("test-branch")
+
+    @pytest.mark.asyncio
+    async def test_focus_silently_handles_json_error(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """Invalid JSON stdout should not propagate."""
+        import subprocess
+
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        def fake_run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+            return subprocess.CompletedProcess(
+                args=[], returncode=0, stdout="not valid json", stderr=""
+            )
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Should not raise
+            app._cmux_focus_workspace("test-branch")
