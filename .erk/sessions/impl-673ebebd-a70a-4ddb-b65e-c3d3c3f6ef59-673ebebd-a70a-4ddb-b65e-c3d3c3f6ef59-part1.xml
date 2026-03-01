@@ -1,0 +1,751 @@
+<session>
+  <meta branch="plnd/skip-empty-learn-plans-03-01-1545" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8570&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 12. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8570` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**CRITICAL**: Never delete the impl directory - leave for user review (no auto-commit).
+
+### Step 12: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 13: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #8570.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11188" cache_read_input_tokens="16928" cache_creation="{'ephemeral_5m_input_tokens': 11188, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_0146kUhZYt8CCCTmTDB16YME">
+    <param name="command">erk exec setup-impl --issue 8570</param>
+    <param name="description">Set up implementation for plan #8570</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11188" cache_read_input_tokens="16928" cache_creation="{'ephemeral_5m_input_tokens': 11188, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0146kUhZYt8CCCTmTDB16YME">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--skip-empty-learn-plans-03-01-1545", "plan_number": 8570, "plan_url": "https://github.com/dagster-io/erk/pull/8570", "branch": "plnd/skip-empty-learn-plans-03-01-1545", "plan_title": "[erk-plan] Plan: Skip Learn Plan Creation When No Session Material Found", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8570, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/skip-empty-learn-plans-03-01-1545', syncing with remote...
+  </tool_result>
+  <assistant>Implementation environment is set up. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="346" cache_read_input_tokens="28116" cache_creation="{'ephemeral_5m_input_tokens': 346, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01X5SeEEfr35FEDTDfFz5iii">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--skip-empty-learn-plans-03-01-1545/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="346" cache_read_input_tokens="28116" cache_creation="{'ephemeral_5m_input_tokens': 346, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01X5SeEEfr35FEDTDfFz5iii">
+     1→# Plan: Skip Learn Plan Creation When No Session Material Found
+     2→
+     3→## Context
+     4→
+     5→When `erk land` runs, it creates a learn plan draft PR to capture implementation insights from Claude Code sessions. However, if a plan had zero tracked sessions (as in PR #8566), `_create_learn_pr_impl()` still creates a learn plan draft PR containing only `plan.md` and `ref.json` — no session XML files. This creates an empty/low-value learn plan that the downstream CI (`/erk:learn`) cannot meaningfully analyze.
+     6→
+     7→The fix: if no session XML files were found during preprocessing, skip creating the learn plan entirely and notify the user with a clear message explaining why.
+     8→
+     9→## Fix Location
+    10→
+    11→**File:** `src/erk/cli/commands/land_learn.py`
+    12→
+    13→**Function:** `_create_learn_pr_impl()`, after line 371 where `xml_files` is computed.
+    14→
+    15→## Implementation
+    16→
+    17→After this existing line:
+    18→```python
+    19→xml_files = _log_session_discovery(ctx, sessions=sessions, all_session_ids=all_session_ids)
+    20→```
+    21→
+    22→Add an early-return guard:
+    23→```python
+    24→if not xml_files:
+    25→    user_output(
+    26→        click.style("ℹ", fg="blue")
+    27→        + f" Skipping learn plan for #{plan_id}: no session material found"
+    28→        + (" (no sessions were tracked for this plan)" if not all_session_ids else " (sessions found but no XML could be extracted)")
+    29→    )
+    30→    return
+
+... [26 lines omitted] ...
+
+    35→- `all_session_ids` is non-empty but `xml_files` is empty → sessions exist but preprocessing failed
+    48→4. Confirm `erk land` exits cleanly (no error)
+  </tool_result>
+  <assistant>Now let me read the target file to understand the current code:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="926" cache_read_input_tokens="28462" cache_creation="{'ephemeral_5m_input_tokens': 926, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01WWVfy5n5UAgY7Qx5vqTC5c">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="926" cache_read_input_tokens="28462" cache_creation="{'ephemeral_5m_input_tokens': 926, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WWVfy5n5UAgY7Qx5vqTC5c">
+     1→"""Learn plan creation for the land command.
+     2→
+     3→Handles creating erk-learn plans when a PR is landed.
+     4→Extracted to avoid circular imports between land_cmd and land_pipeline.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from dataclasses import dataclass
+    10→from typing import TYPE_CHECKING
+    11→
+    12→import click
+    13→from rich.console import Console
+    14→from rich.table import Table
+    15→
+    16→from erk.cli.commands.exec.scripts.preprocess_session import (
+    17→    deduplicate_assistant_messages,
+    18→    deduplicate_documentation_blocks,
+    19→    discover_agent_logs,
+    20→    is_empty_session,
+    21→    is_warmup_session,
+    22→    process_log_file,
+    23→    split_entries_to_chunks,
+    24→    truncate_tool_parameters,
+    25→)
+    26→from erk.core.branch_slug_generator import generate_branch_slug
+    27→from erk.core.context import ErkContext
+    28→from erk_shared.learn.extraction.session_schema import (
+    29→    iter_jsonl_entries,
+    30→    parse_session_timestamp,
+
+... [408 lines omitted] ...
+
+   190→    except Exception as exc:
+   191→        user_output(click.style("Warning: ", fg="yellow") + f"Could not create learn plan: {exc}")
+   350→    """Inner implementation for learn plan creation (raises on error)."""
+   429→    elif result.error:
+   431→            click.style("Warning: ", fg="yellow") + f"Learn plan creation failed: {result.error}"
+  </tool_result>
+  <assistant>Good. I can see the code clearly. The plan is straightforward - add an early-return guard after `xml_files` is computed on line 371, before the "Build learn plan body" section. Let me set up the todo list and signal that implementation has started.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6038" cache_read_input_tokens="29388" cache_creation="{'ephemeral_5m_input_tokens': 6038, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01FG8pPmk9XmVLjYJmFKMGw8">
+    <param name="todos">[{'content': 'Add early-return guard when xml_files is empty in _create_learn_pr_impl', 's...[truncated 277 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6038" cache_read_input_tokens="29388" cache_creation="{'ephemeral_5m_input_tokens': 6038, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01EAEjQ1ENZfsPZPWJb2R5mc">
+    <param name="command">erk exec impl-signal started --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6038" cache_read_input_tokens="29388" cache_creation="{'ephemeral_5m_input_tokens': 6038, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FG8pPmk9XmVLjYJmFKMGw8">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_result tool="toolu_01EAEjQ1ENZfsPZPWJb2R5mc">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <assistant>Now let me load the necessary skills and tripwires, then implement the change.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="477" cache_read_input_tokens="35426" cache_creation="{'ephemeral_5m_input_tokens': 477, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_01R1tbeeaYYjbWjKdzW3taNb">
+    <param name="skill">dignified-python</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="477" cache_read_input_tokens="35426" cache_creation="{'ephemeral_5m_input_tokens': 477, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_019AdrGz1owvL4Y7EpDcxjJ7">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="477" cache_read_input_tokens="35426" cache_creation="{'ephemeral_5m_input_tokens': 477, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01R1tbeeaYYjbWjKdzW3taNb">
+Launching skill: dignified-python
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/dignified-python
+
+# Dignified Python Coding Standards
+
+## Core Knowledge (ALWAYS Loaded)
+
+@dignified-python-core.md
+
+## Version Detection
+
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
+
+## Conditional Loading (Load Based on Task Patterns)
+
+Core files above cover 80%+ of Python code patterns. Only load these additional files when you detect specific patterns:
+
+Pattern detection examples:
+
+- If task mentions "click" or "CLI" -&gt; Load `cli-patterns.md`
+- If task mentions "subprocess" -&gt; Load `subprocess.md`
+
+## When to Read Each Reference Document
+
+The `references/` directory contains detailed guidance for specialized topics. Load these on-demand when you encounter relevant patterns:
+
+### `references/exception-handling.md`
+
+**Read when**:
+
+- Writing try/except blocks
+- Wrapping third-party APIs that may raise
+- Seeing or writing `from e` or `from None`
+- Unsure if LBYL alternative exists
+
+### `references/interfaces.md`
+
+**Read when**:
+
+- Creating ABC or Protocol classes
+- Writing @abstractmethod decorators
+- Designing gateway layer interfaces
+- Choosing between ABC and Protocol
+
+### `references/typing-advanced.md`
+
+**Read when**:
+
+- Using typing.cast()
+- Creating Literal type aliases
+- Narrowing types in conditional blocks
+
+### `references/module-design.md`
+
+**Read when**:
+
+- Creating new Python modules
+- Adding module-level code (beyond simple constants)
+- Using @cache decorator at module level
+- Seeing Path() or computation at module level
+- Considering inline imports
+
+### `references/api-design.md`
+
+**Read when**:
+
+- Adding default parameter values to functions
+- Defining functions with 5 or more parameters
+- Using ThreadPoolExecutor.submit()
+- Reviewing function signatures
+
+### `references/checklists.md`
+
+**Read when**:
+
+- Final review before committing Python code
+- Unsure if you've followed all rules
+- Need a quick lookup of requirements
+
+## How to Use This Skill
+
+1. **Core knowledge** is loaded automatically (LBYL, pathlib, basic imports, anti-patterns)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
+3. **Reference documents** are loaded on-demand based on the triggers above
+4. **Additional patterns** may require extra loading (CLI patterns, subprocess)
+5. **Each file is self-contained** with complete guidance for its domain
+</user>
+  <tool_result tool="toolu_019AdrGz1owvL4Y7EpDcxjJ7">
+     1→---
+     2→title: Testing Tripwires
+     3→read_when:
+     4→  - "working on testing code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from testing/*.md frontmatter --&gt;
+    10→
+    11→# Testing Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**Test only success cases for batch commands** → Read [Exec Script Batch Testing](exec-script-batch-testing.md) first. Cover all four categories: success, partial failure, validation errors, and JSON structure. Missing any category leaves a critical gap.
+    16→
+    17→**Use stateful failure injection (\_should_fail_next flags) in fake gateways** → Read [Exec Script Batch Testing](exec-script-batch-testing.md) first. Use set-based constructor injection instead. Stateful flags are order-dependent and brittle. See the set-based pattern below.
+    18→
+    19→**accessing FakeGit properties in tests** → Read [Erk Test Reference](testing.md) first. FakeGit has top-level properties (e.g., `git.staged_files`, `git.deleted_branches`, `git.added_worktrees`). Worktree operations delegate to an internal FakeWorktree sub-gateway.
+    20→
+    21→**adding a test for a new pipeline step without creating a dedicated test file** → Read [Submit Pipeline Test Organization](submit-pipeline-tests.md) first. Each pipeline step gets its own test file in tests/unit/cli/commands/pr/submit_pipeline/. Follow the one-file-per-step convention.
+    22→
+    23→**adding a tracking list without documenting the tuple field order** → Read [FakeGitHub Mutation Tracking](fake-github-mutation-tracking.md) first. Every tracking list must have a property docstring specifying the tuple format (e.g., 'Returns list of (pr_number, label) tuples'). Without it, test authors guess field positions wrong.
+    24→
+    25→**adding monkeypatch or @patch to a test** [pattern: `@patch|monkeypatch\.`] → Read [Monkeypatch Elimination Checklist](monkeypatch-elimination-checklist.md) first. Use gateway fakes instead. If no gateway exists for the operation, create one first. See gateway-abc-implementation.md.
+    26→
+    27→**adding new parameters to gateway methods without truth-table test coverage** → Read [Exec Script Testing Patterns](exec-script-testing.md) first. When adding boolean parameters to gateway methods, the truth-table testing pattern covers all boolean combinations. Bot reviewers enforce this coverage.
+    28→
+    29→**allowing `import X as Y` because it's a common convention (e.g., `import pandas as pd`)** → Read [Import Alias vs Re-Export Detection](alias-verification-pattern.md) first. Erk prohibits ALL gratuitous import aliases. The only exception is resolving genuine name collisions between two modules.
+    30→
+
+... [121 lines omitted] ...
+
+    31→**asking devrun agent to fix errors or make tests pass** → Read [Devrun Agent - Read-Only Design](devrun-agent.md) first. Devrun is READ-ONLY. It runs commands and reports results. The parent agent must handle all fixes.
+    57→**creating a fake gateway without constructor-injected error configuration** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Fakes must accept error variants at construction time (e.g., push_to_remote_error=PushError(...)) to enable failure injection in tests.
+    65→**creating or modifying a hook** → Read [Hook Testing Patterns](hook-testing.md) first. Hooks fail silently (exit 0, no output) — untested hooks are invisible failures. Read docs/learned/testing/hook-testing.md first.
+    67→**debugging 100+ unexpected test failures with no obvious cause** → Read [Environment Variable Isolation in Tests](environment-variable-isolation.md) first. Check ERK_PLAN_BACKEND first. Although the env var is now obsolete (get_plan_backend() was deleted in PR #7971), legacy code paths in context_for_test() may still read it. Use monkeypatch.delenv('ERK_PLAN_BACKEND', raising=False) or env_overrides={} in fixtures as a defensive measure until full cleanup in objective #7911.
+    75→**implementing interactive prompts with ctx.console.confirm()** → Read [Erk Test Reference](testing.md) first. Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. Array length must match prompt count exactly — too few causes IndexError, too many indicates a removed prompt. See tests/commands/submit/test_existing_branch_detection.py for examples.
+    93→**renaming a user-facing string in CLI output and updating related test assertions** → Read [CLI Testing Patterns](cli-testing.md) first. Test assertion lag: after renaming display strings (e.g., 'issue' → 'plan'), grep all test files for the old literal before committing. Tests using old string literals against stale snapshots will silently pass — the failure only surfaces in CI on a clean checkout.
+   103→**testing code that reads ERK_PLAN_BACKEND or other environment variables via CliRunner** → Read [CLI Testing Patterns](cli-testing.md) first. CliRunner env var isolation: ambient env vars from the developer shell leak into CliRunner by default and cause intermittent test failures. Use CliRunner(env={'ERK_PLAN_BACKEND': '...'}) to override, or CliRunner(env={}) to isolate completely. Never rely on ambient env being clean. Note: mix_stderr parameter is broken in Click 8.3.1 — do not use it.
+   113→**tracking mutations before checking error configuration in a fake method** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Decide deliberately: should this operation track even on failure? push_to_remote skips tracking on error (nothing happened), pull_rebase always tracks (the attempt matters). Match the real operation's semantics.
+   125→**using context_for_test() with wrong parameter name for issues** → Read [context_for_test() Dual Implementations](context-builder-signatures.md) first. erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError.
+   127→**using context_for_test() with wrong parameter name for issues** → Read [Erk Test Reference](testing.md) first. erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError.
+   139→**using monkeypatch.chdir() in exec script tests** [pattern: `monkeypatch\.chdir\(`] → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Use obj=ErkContext.for_test(cwd=tmp_path) instead. monkeypatch.chdir() doesn't inject context, causing 'Context not initialized' errors.
+   141→**using output=, should_fail=, or transient_failures= parameters in FakePromptExecutor** → Read [FakePromptExecutor API Migration - Gateway to Core](fake-api-migration-pattern.md) first. These are the deleted gateway API. Use simulated\_\* parameters (tests/fakes/) or prompt_results/streaming_events (erk_shared/core/fakes.py). See migration table.
+  </tool_result>
+  <assistant>Now let me load the core dignified-python standards and detect the Python version:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="6783" cache_read_input_tokens="35903" cache_creation="{'ephemeral_5m_input_tokens': 6783, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01DTwq9977v1D3vmQvw2xCXL">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="6783" cache_read_input_tokens="35903" cache_creation="{'ephemeral_5m_input_tokens': 6783, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01Kcg9v6JqxA9E6uQAHm5xty">
+    <param name="pattern">requires-python</param>
+    <param name="path">/home/runner/work/erk/erk/pyproject.toml</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="6783" cache_read_input_tokens="35903" cache_creation="{'ephemeral_5m_input_tokens': 6783, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DTwq9977v1D3vmQvw2xCXL">
+     1→---
+     2→---
+     3→
+     4→# Dignified Python - Core Standards
+     5→
+     6→This document contains the core Python coding standards that apply to 80%+ of Python code. These principles are loaded with every skill invocation.
+     7→
+     8→For conditional loading of specialized patterns:
+     9→
+    10→- CLI development -&gt; Load `cli-patterns.md`
+    11→- Subprocess operations -&gt; Load `subprocess.md`
+    12→
+    13→For detailed reference material, see the "When to Read Each Reference" section in SKILL.md.
+    14→
+    15→---
+    16→
+    17→## The Cornerstone: LBYL Over EAFP
+    18→
+    19→**Look Before You Leap: Check conditions proactively, NEVER use exceptions for control flow.**
+    20→
+    21→This is the single most important rule in dignified Python. Every pattern below flows from this principle.
+    22→
+    23→```python
+    24→# CORRECT: Check first
+    25→if key in mapping:
+    26→    value = mapping[key]
+    27→    process(value)
+    28→
+    29→# WRONG: Exception as control flow
+    30→try:
+
+... [489 lines omitted] ...
+
+    33→except KeyError:
+    39→## Exception Handling Basics
+    45→LBYL means checking conditions before acting. EAFP (Easier to Ask for Forgiveness than Permission) means trying operations and catching exceptions. In dignified Python, we strongly prefer LBYL.
+    65→# WRONG: KeyError as control flow
+    68→except KeyError:
+    72→### When Exceptions ARE Acceptable
+    74→Exceptions are ONLY acceptable at:
+    76→1. **Error boundaries** (CLI/API level)
+    80→**Default: Let exceptions bubble up**
+    82→For detailed exception handling patterns including B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
+   101→The key distinction: if removing the assert would cause a runtime error, it's control flow (WRONG). If removing it would only lose type information, it's type narrowing (ACCEPTABLE).
+   113→- `.resolve()` raises `OSError` for non-existent paths
+   114→- `.is_relative_to()` raises `ValueError` for invalid comparisons
+   115→- Checking `.exists()` first avoids exceptions entirely (LBYL!)
+   130→# WRONG: Using exceptions for path validation
+   135→except (OSError, ValueError):
+   175→3. **Inline imports only for specific exceptions** (circular deps, TYPE_CHECKING, conditional features)
+   206→**The only acceptable exception:** Resolving genuine name collisions between two different modules that export identically-named symbols.
+   215→# CORRECT (rare exception): Resolving genuine collision
+   467→    log.warning("Non-numeric plan_id")
+   481→- **Raise exception**: When invalid data indicates a programming error or corrupt state
+   508→- **Exception chaining (B904)**: `references/exception-handling.md`
+  </tool_result>
+  <tool_result tool="toolu_01Kcg9v6JqxA9E6uQAHm5xty">
+17:requires-python = "&gt;=3.11"
+  </tool_result>
+  <assistant>Python 3.11. Now let me implement the change. The plan is clear: add an early-return guard after line 371 where `xml_files` is computed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6157" cache_read_input_tokens="42686" cache_creation="{'ephemeral_5m_input_tokens': 6157, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01WAX8GuvNQJqfBoPM1y4TNA">
+    <param name="todos">[{'content': 'Add early-return guard when xml_files is empty in _create_learn_pr_impl', 's...[truncated 281 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6157" cache_read_input_tokens="42686" cache_creation="{'ephemeral_5m_input_tokens': 6157, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WAX8GuvNQJqfBoPM1y4TNA">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Edit" id="toolu_012sfjTbVdkcHGp6E2pbuZ77">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py</param>
+    <param name="old_string">    # Log session discovery summary and collect XML files for embedding
+    xml_files = _log_session_discovery(ctx, sessions=sessions, all_session_ids=all_session_ids)
+
+    # Build learn plan body</param>
+    <param name="new_string">    # Log session discovery summary and collect XML files for embedding
+    xml_files = _l...[truncated 443 chars]... no session material found {reason}"
+        )
+        return
+
+    # Build learn plan body</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="268" cache_read_input_tokens="48843" cache_creation="{'ephemeral_5m_input_tokens': 268, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012sfjTbVdkcHGp6E2pbuZ77">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01YUSpkQJwukNUQWsGVtAhn5">
+    <param name="todos">[{'content': 'Add early-return guard when xml_files is empty in _create_learn_pr_impl', 's...[truncated 283 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="372" cache_read_input_tokens="49111" cache_creation="{'ephemeral_5m_input_tokens': 372, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01YUSpkQJwukNUQWsGVtAhn5">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me find the existing tests for land_learn to understand the test patterns:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="229" cache_read_input_tokens="49483" cache_creation="{'ephemeral_5m_input_tokens': 229, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01KMBvvFQNBAfSCmZtYixVKM">
+    <param name="description">Find land_learn test files</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 371 chars]..._test_context` or `context_for_test` is set up.
+
+Return file paths and key patterns found.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="229" cache_read_input_tokens="49483" cache_creation="{'ephemeral_5m_input_tokens': 229, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KMBvvFQNBAfSCmZtYixVKM">
+Perfect! Now I have all the information I need. Let me provide a comprehensive summary:
+
+## Summary of Test Files Related to `land_learn.py`
+
+Based on my thorough exploration of the erk codebase, here are all the test files related to `land_learn.py` and the testing patterns used:
+
+### Primary Test File
+
+**Main test file:** `/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py`
+
+This is the dedicated test file for the `land_learn` module with comprehensive test coverage for `_create_learn_pr_impl` and related functions.
+
+### Test Structure and Organization
+
+The test file is organized into logical sections testing different functions:
+
+1. **`_should_create_learn_pr`** - Tests config hierarchy (local &gt; global fallback)
+2. **`_create_learn_pr_with_sessions`** - Tests wrapper function behavior and error handling
+3. **`_create_learn_pr_impl`** - Core implementation tests (4 tests covering different paths)
+4. **`_log_session_discovery`** - Session discovery logging (8 tests)
+5. **`_compute_session_stats`** - Session statistics computation (3 tests)
+6. **`_log_learn_pr_files`** - File inventory logging (3 tests)
+
+### Related Test Files
+
+**Integration-level tests:**
+- `/home/runner/work/erk/erk/tests/unit/cli/commands/land/pipeline/test_create_learn_issue.py` - Tests the `create_learn_pr` pipeline step
+- `/home/runner/work/erk/erk/tests/commands/land/test_learn_skip_remote.py` - Regression test for skipping learn prompts on remote PRs
+
+**Other land-related test files:** (35+ files in total)
+
+... [151 lines omitted] ...
+  </tool_result>
+  <assistant>Let me read the existing test file for land_learn:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2279" cache_read_input_tokens="49712" cache_creation="{'ephemeral_5m_input_tokens': 2279, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01BMWvMvYxJq9FCHdL2Unk7o">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2279" cache_read_input_tokens="49712" cache_creation="{'ephemeral_5m_input_tokens': 2279, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BMWvMvYxJq9FCHdL2Unk7o">
+     1→"""Tests for land_learn module: learn plan creation logic."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→
+     7→import pytest
+     8→
+     9→from erk.cli.commands.land_learn import (
+    10→    _compute_session_stats,
+    11→    _create_learn_pr_impl,
+    12→    _create_learn_pr_with_sessions,
+    13→    _log_learn_pr_files,
+    14→    _log_session_discovery,
+    15→    _should_create_learn_pr,
+    16→)
+    17→from erk.cli.commands.land_pipeline import LandState
+    18→from erk.core.context import context_for_test
+    19→from erk_shared.context.types import GlobalConfig, LoadedConfig
+    20→from erk_shared.gateway.claude_installation.fake import (
+    21→    FakeClaudeInstallation,
+    22→    FakeProject,
+    23→    FakeSessionData,
+    24→)
+    25→from erk_shared.gateway.git.fake import FakeGit
+    26→from erk_shared.gateway.github.fake import FakeGitHub
+    27→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    28→from erk_shared.gateway.github.types import PRDetails
+    29→from erk_shared.gateway.time.fake import FakeTime
+    30→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+
+... [652 lines omitted] ...
+
+   157→def test_shows_warning_on_exception(
+   162→    """Exception in _create_learn_pr_impl is caught and shown as warning."""
+   166→        raise RuntimeError("simulated network error")
+   173→    # Should NOT raise — exception is caught
+   177→    assert "Warning" in captured.err
+   178→    assert "simulated network error" in captured.err
+   284→    # Success output (includes session discovery warning since no sessions configured)
+   357→    """Logs warning when no sessions discovered."""
+  </tool_result>
+  <assistant>I can see the existing test structure. Now I need to look at the existing happy-path test `test_creates_pr_and_shows_success` (line 250) more carefully. This test has **no sessions configured** so `xml_files` will be empty — which means with my change, it will now trigger the early return and skip PR creation. I need to:
+
+1. Update the existing happy-path test to actually provide session data so it still tests full PR creation
+2. Add two new tests for the empty xml_files early-return (one with no sessions at all, one with sessions but no extractable XML)
+
+Let me check what the test_creates_pr_and_shows_success test currently expects:
+
+Looking at the test on line 250-292, it expects:
+- `len(fake_github.created_prs) == 1` — PR is created
+- But it also expects `"No sessions discovered" in captured.err` — meaning no sessions are configured
+
+With my change, this test will now get the early return and no PR will be created. I need to update this test to provide real session data, and add new tests for the skip scenarios.
+
+Let me look at how to set up sessions with a readable session file for a proper happy-path test:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="9798" cache_read_input_tokens="51991" cache_creation="{'ephemeral_5m_input_tokens': 9798, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01GLTf3dpD51WgjEKsrMA3VG">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py</param>
+    <param name="old_string">def test_creates_pr_and_shows_success(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixtu...[truncated 1389 chars]...output
+    assert "file(s) committed" in captured.err
+    assert "plan.md" in captured.err</param>
+    <param name="new_string">def test_skips_when_no_sessions_tracked(
+    tmp_path: Path,
+    capsys: pytest.CaptureFix...[truncated 4780 chars]...output
+    assert "file(s) committed" in captured.err
+    assert "plan.md" in captured.err</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9798" cache_read_input_tokens="51991" cache_creation="{'ephemeral_5m_input_tokens': 9798, 'ephemeral_1h_input_tokens': 0}" output_tokens="2597" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GLTf3dpD51WgjEKsrMA3VG">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py has been updated successfully.
+  </tool_result>
+  <assistant>Wait, I need to check something. The `test_skips_when_sessions_exist_but_no_xml_extracted` test uses `MagicMock` which is a monkeypatch/mock anti-pattern per the testing tripwires. Let me reconsider. The sessions exist but produce no XML — that means we need sessions that are in `all_session_ids` but are not readable (i.e., `get_readable_sessions` returns empty). The simplest way is to have sessions exist but the `FakeClaudeInstallation` has no matching project/sessions, so `get_readable_sessions` returns nothing and `xml_files` ends up empty.
+
+Let me check how `find_sessions_for_plan` works with the plan backend:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2822" cache_read_input_tokens="61789" cache_creation="{'ephemeral_5m_input_tokens': 2822, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>

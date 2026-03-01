@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "plan_id": 8570,
+  "sessions": [
+    {
+      "session_id": "673ebebd-a70a-4ddb-b65e-c3d3c3f6ef59",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-01T20:49:48.129968+00:00",
+      "files": [
+        "impl-673ebebd-a70a-4ddb-b65e-c3d3c3f6ef59-673ebebd-a70a-4ddb-b65e-c3d3c3f6ef59-part1.xml",
+        "impl-673ebebd-a70a-4ddb-b65e-c3d3c3f6ef59-673ebebd-a70a-4ddb-b65e-c3d3c3f6ef59-part2.xml"
+      ]
+    }
+  ]
+}

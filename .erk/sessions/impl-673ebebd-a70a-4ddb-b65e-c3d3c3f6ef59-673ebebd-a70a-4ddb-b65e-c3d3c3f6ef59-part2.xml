@@ -1,0 +1,889 @@
+<session>
+  <meta source="agent-a7a954d" />
+  <meta branch="plnd/skip-empty-learn-plans-03-01-1545" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+Find all test files related to `land_learn.py` in the erk project. Look for tests in the `tests/` directory that test the `_create_learn_pr_impl` function or the land_learn module. Also look at test patterns used - specifically how `_create_learn_pr_impl` is tested, what fixtures/fakes are used, and how `build_workspace_test_context` or `context_for_test` is set up.
+
+Return file paths and key patterns found.</user>
+  <assistant>I'll help you find all test files related to `land_learn.py` and analyze the testing patterns used. Let me start by exploring the documentation and then the codebase.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18551" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18551, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015biwiW5rvGqz3WeyAPgSVq">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18551" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18551, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012iLYfwS8ifTZG5Wrr5dvEs">
+    <param name="command">find /home/runner/work/erk/erk -name "land_learn.py" -type f</param>
+    <param name="description">Locate land_learn.py in the codebase</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18551" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18551, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015biwiW5rvGqz3WeyAPgSVq">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_012iLYfwS8ifTZG5Wrr5dvEs">
+/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py
+  </tool_result>
+  <assistant>Now let me check the testing documentation and search for test files related to `land_learn`:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1368" cache_read_input_tokens="18551" cache_creation="{'ephemeral_5m_input_tokens': 1368, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SmJCPfP6QSzdQueBvn1xUz">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/testing.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1368" cache_read_input_tokens="18551" cache_creation="{'ephemeral_5m_input_tokens': 1368, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HnrM2h81t9VEY99sYeqHw2">
+    <param name="command">find /home/runner/work/erk/erk/tests -name "*land_learn*" -o -name "*land*learn*" | head -20</param>
+    <param name="description">Find test files with land_learn in the name</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1368" cache_read_input_tokens="18551" cache_creation="{'ephemeral_5m_input_tokens': 1368, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SmJCPfP6QSzdQueBvn1xUz">
+     1→---
+     2→title: Erk Test Reference
+     3→last_audited: "2026-02-13 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "writing tests for erk"
+     7→  - "using erk fakes"
+     8→  - "running erk test commands"
+     9→tripwires:
+    10→  - action: "modifying business logic in src/ without adding a test"
+    11→    warning: "Bug fixes require regression tests (fails before, passes after). Features require behavior tests."
+    12→  - action: "implementing interactive prompts with ctx.console.confirm()"
+    13→    warning: "Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. Array length must match prompt count exactly — too few causes IndexError, too many indicates a removed prompt. See tests/commands/submit/test_existing_branch_detection.py for examples."
+    14→  - action: "accessing FakeGit properties in tests"
+    15→    warning: "FakeGit has top-level properties (e.g., `git.staged_files`, `git.deleted_branches`, `git.added_worktrees`). Worktree operations delegate to an internal FakeWorktree sub-gateway."
+    16→  - action: "asserting on fake-specific properties in tests using `build_workspace_test_context` with `use_graphite=True`"
+    17→    warning: "Production wrappers (e.g., `GraphiteBranchManager`) do not expose fake tracking properties like `submitted_branches`. Assert on observable behavior (CLI output, return values) instead of accessing fake internals through the wrapper."
+    18→  - action: "asserting on YAML metadata field values with exact string matching"
+    19→    warning: 'Assert on key-only format (''field_name:''), not ''field_name: "value"''. YAML serialization differs from Python repr.'
+    20→  - action: "changing cleanup or deletion behavior without updating test assertions"
+    21→    warning: "When behavior changes from 'delete X' to 'preserve X', update test assertions to verify the new behavior (e.g., assert file persists instead of asserting it was deleted). Stale assertions silently validate the old behavior."
+    22→    score: 4
+    23→  - action: "asserting user_output() content against capsys stdout"
+    24→    warning: "user_output() routes to stderr. When testing code that calls user_output(), assert against capsys.readouterr().err, not .out."
+    25→  - action: "using context_for_test() with wrong parameter name for issues"
+    26→    warning: "erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError."
+    27→---
+    28→
+    29→# Erk Test Reference
+    30→
+
+... [534 lines omitted] ...
+
+   154→**If you see path mismatch errors:** Ensure FakeGit's path resolution methods are being used (they handle symlinks), not direct dict lookups.
+   156→#### FakeWorktree Error Injection
+   158→FakeWorktree (in `packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py`) uses string-based error injection via constructor parameters. Errors raise `RuntimeError`:
+   163→# Inject error for add_worktree
+   165→    add_worktree_error="Worktree already exists",
+   166→    remove_worktree_error="Worktree is locked",
+   170→When `add_worktree_error` or `remove_worktree_error` is set, the corresponding method raises `RuntimeError` with that message. Error injection is checked FIRST in the method body, before any success logic executes.
+   172→You can also inject these errors via the top-level `FakeGit` constructor:
+   176→    add_worktree_error="Worktree already exists",
+   177→    remove_worktree_error="Worktree is locked",
+   199→This fake supports error injection via the `create_branch_error` constructor parameter, which accepts a `BranchAlreadyExists` instance:
+   209→# With error injection
+   210→fake_with_error = FakeGitBranchOps(
+   226→### Common Mistake: Sentinel Path Errors
+   446→fake_console.assert_not_contains("Error")
+   449→### Error Behavior
+   451→If `confirm()` is called but no responses remain, FakeConsole raises `AssertionError` with the prompt text. This catches missing test setup.
+   506→When refactoring gateway methods from exception-based to discriminated unions, update test names to reflect the new pattern.
+   508→### Pattern: Exception -&gt; Union
+   510→| Old Test Name (Exception-Based)       | New Test Name (Discriminated Union)      |
+   512→| `test_merge_pr_failure_returns_false` | `test_merge_pr_returns_merge_error`      |
+   515→| `test_get_issue_raises_api_error`     | `test_get_issue_returns_api_error`       |
+   524→**Error Case:**
+   526→- Old: `test_&lt;method&gt;_raises_&lt;error&gt;` or `test_&lt;method&gt;_returns_false`
+   527→- New: `test_&lt;method&gt;_returns_&lt;error_type&gt;`
+   535→3. [ ] Update docstring to describe return type (not exception)
+   536→4. [ ] Verify fake setup returns type (not raises exception)
+   541→When function signatures change (e.g., adding a column to a table, adding a new parameter), **all test fixtures must be updated comprehensively**. Partial updates cause hard-to-debug failures.
+  </tool_result>
+  <tool_result tool="toolu_01HnrM2h81t9VEY99sYeqHw2">
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py
+  </tool_result>
+  <assistant>Great! Now let me search more broadly for tests that might reference `_create_learn_pr_impl` and examine the test file:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="7993" cache_read_input_tokens="19919" cache_creation="{'ephemeral_5m_input_tokens': 7993, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HTTas4qjec1rapsrvyAx3a">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7993" cache_read_input_tokens="19919" cache_creation="{'ephemeral_5m_input_tokens': 7993, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NpVRgtobwjxyNKATfFjw24">
+    <param name="command">grep -r "_create_learn_pr_impl" /home/runner/work/erk/erk/tests --include="*.py"</param>
+    <param name="description">Search for _create_learn_pr_impl in test files</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7993" cache_read_input_tokens="19919" cache_creation="{'ephemeral_5m_input_tokens': 7993, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019AQKxRhGCkjNVX2ZJLXkdL">
+    <param name="command">grep -r "land_learn" /home/runner/work/erk/erk/tests --include="*.py" | head -20</param>
+    <param name="description">Search for land_learn references in tests</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7993" cache_read_input_tokens="19919" cache_creation="{'ephemeral_5m_input_tokens': 7993, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HTTas4qjec1rapsrvyAx3a">
+     1→"""Tests for land_learn module: learn plan creation logic."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→
+     7→import pytest
+     8→
+     9→from erk.cli.commands.land_learn import (
+    10→    _compute_session_stats,
+    11→    _create_learn_pr_impl,
+    12→    _create_learn_pr_with_sessions,
+    13→    _log_learn_pr_files,
+    14→    _log_session_discovery,
+    15→    _should_create_learn_pr,
+    16→)
+    17→from erk.cli.commands.land_pipeline import LandState
+    18→from erk.core.context import context_for_test
+    19→from erk_shared.context.types import GlobalConfig, LoadedConfig
+    20→from erk_shared.gateway.claude_installation.fake import (
+    21→    FakeClaudeInstallation,
+    22→    FakeProject,
+    23→    FakeSessionData,
+    24→)
+    25→from erk_shared.gateway.git.fake import FakeGit
+    26→from erk_shared.gateway.github.fake import FakeGitHub
+    27→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    28→from erk_shared.gateway.github.types import PRDetails
+    29→from erk_shared.gateway.time.fake import FakeTime
+    30→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+
+... [652 lines omitted] ...
+
+   157→def test_shows_warning_on_exception(
+   162→    """Exception in _create_learn_pr_impl is caught and shown as warning."""
+   166→        raise RuntimeError("simulated network error")
+   173→    # Should NOT raise — exception is caught
+   177→    assert "Warning" in captured.err
+   178→    assert "simulated network error" in captured.err
+   284→    # Success output (includes session discovery warning since no sessions configured)
+   357→    """Logs warning when no sessions discovered."""
+  </tool_result>
+  <tool_result tool="toolu_01NpVRgtobwjxyNKATfFjw24">
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py:    _create_learn_pr_impl,
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py:    """Exception in _create_learn_pr_impl is caught and shown as warning."""
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py:    monkeypatch.setattr(learn_mod, "_create_learn_pr_impl", _raise)
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py:# _create_learn_pr_impl
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py:    _create_learn_pr_impl(ctx, state=state)
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py:    _create_learn_pr_impl(ctx, state=state)
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py:    _create_learn_pr_impl(ctx, state=state)
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py:    _create_learn_pr_impl(ctx, state=state)
+  </tool_result>
+  <tool_result tool="toolu_019AQKxRhGCkjNVX2ZJLXkdL">
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py:"""Tests for land_learn module: learn plan creation logic."""
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py:from erk.cli.commands.land_learn import (
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py:    from erk.cli.commands import land_learn as learn_mod
+  </tool_result>
+  <assistant>Now let me examine the land_learn.py source file and look for related test helpers and context builders:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="14858" cache_read_input_tokens="27912" cache_creation="{'ephemeral_5m_input_tokens': 14858, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011umct3MPtL1K6t1sDbb7uS">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="14858" cache_read_input_tokens="27912" cache_creation="{'ephemeral_5m_input_tokens': 14858, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Hx1ZKNh3aoHMNaQ2aDJA6H">
+    <param name="command">find /home/runner/work/erk/erk/tests -name "conftest.py" -type f | head -10</param>
+    <param name="description">Find conftest files for pytest fixtures</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="14858" cache_read_input_tokens="27912" cache_creation="{'ephemeral_5m_input_tokens': 14858, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017bAK6Qkw9Sc6DyXSmc4S14">
+    <param name="command">grep -r "build_workspace_test_context\|context_for_test" /home/runner/work/erk/erk/tests --include="*.py" | head -15</param>
+    <param name="description">Search for test context builder patterns</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="14858" cache_read_input_tokens="27912" cache_creation="{'ephemeral_5m_input_tokens': 14858, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011umct3MPtL1K6t1sDbb7uS">
+     1→"""Learn plan creation for the land command.
+     2→
+     3→Handles creating erk-learn plans when a PR is landed.
+     4→Extracted to avoid circular imports between land_cmd and land_pipeline.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from dataclasses import dataclass
+    10→from typing import TYPE_CHECKING
+    11→
+    12→import click
+    13→from rich.console import Console
+    14→from rich.table import Table
+    15→
+    16→from erk.cli.commands.exec.scripts.preprocess_session import (
+    17→    deduplicate_assistant_messages,
+    18→    deduplicate_documentation_blocks,
+    19→    discover_agent_logs,
+    20→    is_empty_session,
+    21→    is_warmup_session,
+    22→    process_log_file,
+    23→    split_entries_to_chunks,
+    24→    truncate_tool_parameters,
+    25→)
+    26→from erk.core.branch_slug_generator import generate_branch_slug
+    27→from erk.core.context import ErkContext
+    28→from erk_shared.learn.extraction.session_schema import (
+    29→    iter_jsonl_entries,
+    30→    parse_session_timestamp,
+
+... [421 lines omitted] ...
+
+   190→    except Exception as exc:
+   191→        user_output(click.style("Warning: ", fg="yellow") + f"Could not create learn plan: {exc}")
+   350→    """Inner implementation for learn plan creation (raises on error)."""
+   442→    elif result.error:
+   444→            click.style("Warning: ", fg="yellow") + f"Learn plan creation failed: {result.error}"
+  </tool_result>
+  <tool_result tool="toolu_017bAK6Qkw9Sc6DyXSmc4S14">
+/home/runner/work/erk/erk/tests/unit/context/test_require_context.py:from erk_shared.context.testing import context_for_test
+/home/runner/work/erk/erk/tests/unit/context/test_require_context.py:    erk_ctx = context_for_test()
+/home/runner/work/erk/erk/tests/unit/cli/test_ensure.py:from erk_shared.context.testing import context_for_test
+/home/runner/work/erk/erk/tests/unit/cli/test_ensure.py:        # Default context_for_test provides FakeGraphite (not GraphiteDisabled)
+/home/runner/work/erk/erk/tests/unit/cli/test_ensure.py:        ctx = context_for_test()
+/home/runner/work/erk/erk/tests/unit/cli/test_ensure.py:        ctx = context_for_test(graphite=disabled)
+/home/runner/work/erk/erk/tests/unit/cli/test_ensure.py:        ctx = context_for_test(graphite=disabled)
+/home/runner/work/erk/erk/tests/unit/cli/test_ensure.py:        ctx = context_for_test(graphite=disabled)
+/home/runner/work/erk/erk/tests/unit/cli/test_ensure.py:        ctx = context_for_test(graphite=disabled)
+/home/runner/work/erk/erk/tests/unit/cli/test_ensure.py:        ctx = context_for_test(graphite=disabled)
+/home/runner/work/erk/erk/tests/unit/cli/test_ensure.py:        ctx = context_for_test(git=git, graphite=graphite)
+/home/runner/work/erk/erk/tests/unit/cli/test_ensure.py:        ctx = context_for_test(git=git, graphite=graphite)
+/home/runner/work/erk/erk/tests/unit/cli/test_ensure.py:        ctx = context_for_test(git=git, graphite=graphite)
+/home/runner/work/erk/erk/tests/unit/cli/test_ensure.py:        ctx = context_for_test(git=git, graphite=graphite)
+/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_plan_cmd.py:from erk.core.context import context_for_test
+  </tool_result>
+  <tool_result tool="toolu_01Hx1ZKNh3aoHMNaQ2aDJA6H">
+/home/runner/work/erk/erk/tests/unit/gateways/github/metadata_blocks/conftest.py
+/home/runner/work/erk/erk/tests/conftest.py
+/home/runner/work/erk/erk/tests/commands/dash/conftest.py
+/home/runner/work/erk/erk/tests/commands/workspace/create/conftest.py
+/home/runner/work/erk/erk/tests/commands/dispatch/conftest.py
+/home/runner/work/erk/erk/tests/commands/implement/conftest.py
+/home/runner/work/erk/erk/tests/integration/real_github_issues/conftest.py
+/home/runner/work/erk/erk/tests/integration/conftest.py
+  </tool_result>
+  <assistant>Let me now search for more information about test context and look at test_utils:</assistant>
+  <usage input_tokens="659" cache_creation_input_tokens="6770" cache_read_input_tokens="42770" cache_creation="{'ephemeral_5m_input_tokens': 6770, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HB7fb1f3fUKpeFpfY7v2uB">
+    <param name="command">find /home/runner/work/erk/erk/tests -name "context.py" -o -name "*context*" -type f | grep -v __pycache__ | head -20</param>
+    <param name="description">Find context-related files in tests</param>
+  </tool_use>
+  <usage input_tokens="659" cache_creation_input_tokens="6770" cache_read_input_tokens="42770" cache_creation="{'ephemeral_5m_input_tokens': 6770, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01A2RV6wLJWHeVaMEELnmGfe">
+    <param name="command">grep -r "class.*Context.*:" /home/runner/work/erk/erk/src/erk/core --include="*.py" | head -10</param>
+    <param name="description">Search for Context class definitions</param>
+  </tool_use>
+  <usage input_tokens="659" cache_creation_input_tokens="6770" cache_read_input_tokens="42770" cache_creation="{'ephemeral_5m_input_tokens': 6770, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014qcJow4Rx6YC7HCNpW5Uib">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core</param>
+  </tool_use>
+  <usage input_tokens="659" cache_creation_input_tokens="6770" cache_read_input_tokens="42770" cache_creation="{'ephemeral_5m_input_tokens': 6770, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014qcJow4Rx6YC7HCNpW5Uib">
+EISDIR: illegal operation on a directory, read
+  </tool_result>
+  <tool_result tool="toolu_01A2RV6wLJWHeVaMEELnmGfe">
+/home/runner/work/erk/erk/src/erk/core/plan_context_provider.py:class PlanContext:
+/home/runner/work/erk/erk/src/erk/core/plan_context_provider.py:class PlanContextProvider:
+  </tool_result>
+  <tool_result tool="toolu_01HB7fb1f3fUKpeFpfY7v2uB">
+/home/runner/work/erk/erk/tests/unit/context/test_require_context.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_fetch_plan_context.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_create_impl_context_from_plan.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_pr_context.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_cleanup_impl_context.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py
+/home/runner/work/erk/erk/tests/unit/core/test_context.py
+/home/runner/work/erk/erk/tests/test_utils/context_builders.py
+/home/runner/work/erk/erk/tests/packages/erk_shared/test_impl_context.py
+/home/runner/work/erk/erk/tests/fakes/context.py
+/home/runner/work/erk/erk/tests/core/test_plan_context_provider.py
+/home/runner/work/erk/erk/tests/core/foundation/test_context.py
+  </tool_result>
+  <assistant>Let me read the test context builders and fake context files:</assistant>
+  <usage input_tokens="131" cache_creation_input_tokens="1473" cache_read_input_tokens="49540" cache_creation="{'ephemeral_5m_input_tokens': 1473, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01V7q5SuQ4j7m27jvfHWUohq">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/context.py</param>
+  </tool_use>
+  <usage input_tokens="131" cache_creation_input_tokens="1473" cache_read_input_tokens="49540" cache_creation="{'ephemeral_5m_input_tokens': 1473, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LvWm5JCY6KFwML71eVMdm5">
+    <param name="file_path">/home/runner/work/erk/erk/tests/test_utils/context_builders.py</param>
+  </tool_use>
+  <usage input_tokens="131" cache_creation_input_tokens="1473" cache_read_input_tokens="49540" cache_creation="{'ephemeral_5m_input_tokens': 1473, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01V7q5SuQ4j7m27jvfHWUohq">
+     1→"""Factory functions for creating test contexts."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.core.context import (
+     6→    ErkContext,
+     7→    GlobalConfig,
+     8→    LoadedConfig,
+     9→    NoRepoSentinel,
+    10→    RepoContext,
+    11→    context_for_test,
+    12→)
+    13→from erk.core.prompt_executor import PromptExecutor
+    14→from erk.core.script_writer import ScriptWriter
+    15→from erk_shared.gateway.completion.fake import FakeCompletion
+    16→from erk_shared.gateway.git.fake import FakeGit
+    17→from erk_shared.gateway.github.fake import FakeGitHub
+    18→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    19→from erk_shared.gateway.graphite.fake import FakeGraphite
+    20→from erk_shared.gateway.shell.fake import FakeShell
+    21→
+    22→
+    23→def create_test_context(
+    24→    git: FakeGit | None = None,
+    25→    github: FakeGitHub | None = None,
+    26→    issues: GitHubIssues | None = None,
+    27→    graphite: FakeGraphite | None = None,
+    28→    shell: FakeShell | None = None,
+    29→    prompt_executor: PromptExecutor | None = None,
+    30→    completion: FakeCompletion | None = None,
+
+... [76 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01LvWm5JCY6KFwML71eVMdm5">
+     1→"""Shared context builders for test scenarios.
+     2→
+     3→This module provides reusable context builder functions to eliminate duplication
+     4→across test files. These builders encapsulate common patterns for setting up
+     5→ErkContext with appropriate fake implementations.
+     6→"""
+     7→
+     8→from erk.core.context import ErkContext
+     9→from erk_shared.core.fakes import FakePlanListService
+    10→from erk_shared.core.plan_list_service import PlanListData
+    11→from erk_shared.gateway.git.dry_run import DryRunGit
+    12→from erk_shared.gateway.git.fake import FakeGit
+    13→from erk_shared.gateway.github.fake import FakeGitHub
+    14→from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
+    15→from erk_shared.plan_store.types import Plan
+    16→from tests.fakes.shell import FakeShell
+    17→from tests.test_utils.env_helpers import ErkInMemEnv, ErkIsolatedFsEnv
+    18→
+    19→
+    20→def build_workspace_test_context(
+    21→    env: ErkInMemEnv | ErkIsolatedFsEnv,
+    22→    *,
+    23→    dry_run: bool = False,
+    24→    use_graphite: bool = False,
+    25→    current_branch: str | None = None,
+    26→    **kwargs,
+    27→) -&gt; ErkContext:
+    28→    """Build ErkContext for workspace command tests (create, split, consolidate, delete).
+    29→
+    30→    This builder provides a standard context configuration for workspace manipulation
+
+... [123 lines omitted] ...
+
+   137→    warnings: tuple[str, ...] = (),
+   145→            warnings=warnings,
+  </tool_result>
+  <assistant>Now let me search for other tests that might be related and check for additional patterns:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="4158" cache_read_input_tokens="51013" cache_creation="{'ephemeral_5m_input_tokens': 4158, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Anz1GWpD7rVdfP5TTg1i7j">
+    <param name="command">find /home/runner/work/erk/erk/tests -path "*land*" -name "*.py" -type f | grep -v __pycache__</param>
+    <param name="description">Find all land-related test files</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4158" cache_read_input_tokens="51013" cache_creation="{'ephemeral_5m_input_tokens': 4158, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017dqdJJzJUHWEP1y3SxttKV">
+    <param name="command">find /home/runner/work/erk/erk/tests -path "*commands/land*" -type f | grep -v __pycache__</param>
+    <param name="description">Find test files in land directory</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4158" cache_read_input_tokens="51013" cache_creation="{'ephemeral_5m_input_tokens': 4158, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UTcTUBx6ejPmZT3BvXvdDQ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/land</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4158" cache_read_input_tokens="51013" cache_creation="{'ephemeral_5m_input_tokens': 4158, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UTcTUBx6ejPmZT3BvXvdDQ">
+EISDIR: illegal operation on a directory, read
+  </tool_result>
+  <tool_result tool="toolu_01Anz1GWpD7rVdfP5TTg1i7j">
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_dry_run.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_no_delete_flag.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_find_assignment.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/__init__.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_cleanup_and_navigate.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_validate_pr_for_landing.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_resolvers.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_render_land_script.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/pipeline/test_validate_pr.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/pipeline/__init__.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/pipeline/test_run_execution_pipeline.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/pipeline/test_resolve_plan_id.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/pipeline/test_resolve_target.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/pipeline/test_run_validation_pipeline.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/pipeline/test_create_learn_issue.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/pipeline/test_merge_pr.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_determine_cleanup_type.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_parse_argument.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_land_execute_objective_detection.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_update_after_land.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_land_execute.py
+/home/runner/work/erk/erk/tests/commands/land/test_unresolved_comments.py
+/home/runner/work/erk/erk/tests/commands/land/test_learn_skip_remote.py
+/home/runner/work/erk/erk/tests/commands/land/test_plan_issue_closure.py
+/home/runner/work/erk/erk/tests/commands/land/test_pr_arguments.py
+/home/runner/work/erk/erk/tests/commands/land/test_get_objective_for_branch.py
+/home/runner/work/erk/erk/tests/commands/land/__init__.py
+/home/runner/work/erk/erk/tests/commands/land/test_objective_update.py
+
+... [5 lines omitted] ...
+
+/home/runner/work/erk/erk/tests/commands/land/test_branch_errors.py
+  </tool_result>
+  <tool_result tool="toolu_017dqdJJzJUHWEP1y3SxttKV">
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_dry_run.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_no_delete_flag.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_find_assignment.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/__init__.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_cleanup_and_navigate.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_validate_pr_for_landing.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_resolvers.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_render_land_script.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/pipeline/test_validate_pr.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/pipeline/__init__.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/pipeline/test_run_execution_pipeline.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/pipeline/test_resolve_plan_id.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/pipeline/test_resolve_target.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/pipeline/test_run_validation_pipeline.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/pipeline/test_create_learn_issue.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/pipeline/test_merge_pr.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_determine_cleanup_type.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_parse_argument.py
+/home/runner/work/erk/erk/tests/commands/land/test_unresolved_comments.py
+/home/runner/work/erk/erk/tests/commands/land/test_learn_skip_remote.py
+/home/runner/work/erk/erk/tests/commands/land/test_plan_issue_closure.py
+/home/runner/work/erk/erk/tests/commands/land/test_pr_arguments.py
+/home/runner/work/erk/erk/tests/commands/land/test_get_objective_for_branch.py
+/home/runner/work/erk/erk/tests/commands/land/__init__.py
+/home/runner/work/erk/erk/tests/commands/land/test_objective_update.py
+/home/runner/work/erk/erk/tests/commands/land/test_core.py
+/home/runner/work/erk/erk/tests/commands/land/test_up_flag.py
+/home/runner/work/erk/erk/tests/commands/land/test_confirmation.py
+/home/runner/work/erk/erk/tests/commands/land/test_git_pull.py
+
+... [1 lines omitted] ...
+
+/home/runner/work/erk/erk/tests/commands/land/test_branch_errors.py
+  </tool_result>
+  <assistant>Let me look at a few of these related test files to understand the patterns better:</assistant>
+  <usage input_tokens="41" cache_creation_input_tokens="2503" cache_read_input_tokens="55171" cache_creation="{'ephemeral_5m_input_tokens': 2503, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01B6BFBFHYH7HX4SLF2XrBDB">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/land/pipeline/test_create_learn_issue.py</param>
+  </tool_use>
+  <usage input_tokens="41" cache_creation_input_tokens="2503" cache_read_input_tokens="55171" cache_creation="{'ephemeral_5m_input_tokens': 2503, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018afSyWMxcC3kfJmi1sk3pc">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/land/test_learn_skip_remote.py</param>
+  </tool_use>
+  <usage input_tokens="41" cache_creation_input_tokens="2503" cache_read_input_tokens="55171" cache_creation="{'ephemeral_5m_input_tokens': 2503, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01B6BFBFHYH7HX4SLF2XrBDB">
+     1→"""Tests for create_learn_pr execution pipeline step."""
+     2→
+     3→from datetime import UTC, datetime
+     4→from pathlib import Path
+     5→
+     6→from erk.cli.commands.land_pipeline import (
+     7→    LandError,
+     8→    LandState,
+     9→    create_learn_pr,
+    10→)
+    11→from erk.core.context import context_for_test
+    12→from erk_shared.gateway.git.fake import FakeGit
+    13→from erk_shared.gateway.github.fake import FakeGitHub
+    14→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    15→from erk_shared.gateway.github.types import PRDetails
+    16→from erk_shared.gateway.time.fake import FakeTime
+    17→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    18→
+    19→
+    20→def _execution_state(
+    21→    tmp_path: Path,
+    22→    *,
+    23→    plan_id: str | None = None,
+    24→    merged_pr_number: int | None = None,
+    25→) -&gt; LandState:
+    26→    """Create LandState as if in execution pipeline."""
+    27→    return LandState(
+    28→        cwd=tmp_path,
+    29→        force=True,
+    30→        script=False,
+
+... [99 lines omitted] ...
+
+    61→    assert not isinstance(result, LandError)
+    75→    assert not isinstance(result, LandError)
+   119→    assert not isinstance(result, LandError)
+  </tool_result>
+  <tool_result tool="toolu_018afSyWMxcC3kfJmi1sk3pc">
+     1→"""Tests for skipping learn prompt on remote PRs.
+     2→
+     3→When landing a PR via `erk land &lt;url&gt;` or `erk land &lt;number&gt;` for a branch
+     4→that has NO local worktree, the learn status check should be skipped because
+     5→there are no local Claude sessions to learn from.
+     6→
+     7→Regression test for issue #4871.
+     8→"""
+     9→
+    10→import pytest
+    11→from click.testing import CliRunner
+    12→
+    13→from erk.cli.cli import cli
+    14→from erk.core.repo_discovery import RepoContext
+    15→from erk_shared.gateway.git.fake import FakeGit
+    16→from erk_shared.gateway.github.fake import FakeGitHub
+    17→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    18→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    19→from erk_shared.gateway.graphite.fake import FakeGraphite
+    20→from erk_shared.gateway.graphite.types import BranchMetadata
+    21→from tests.test_utils.env_helpers import erk_inmem_env
+    22→
+    23→
+    24→def test_land_skips_learn_prompt_for_remote_pr(
+    25→    monkeypatch: pytest.MonkeyPatch,
+    26→) -&gt; None:
+    27→    """Test that learn prompt is skipped when landing a PR with no local worktree.
+    28→
+    29→    When running `erk land &lt;url&gt;` for a remote PR (no local worktree), the learn
+    30→    status check should not run because there are no local Claude sessions to
+
+... [259 lines omitted] ...
+
+    34→    incorrectly prompting "Warning: Plan #X has not been learned from."
+   133→            raise AssertionError(
+   155→            catch_exceptions=False,
+   280→            catch_exceptions=False,
+  </tool_result>
+  <assistant>Now let me check the env_helpers to understand the test context building better:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="8158" cache_read_input_tokens="57674" cache_creation="{'ephemeral_5m_input_tokens': 8158, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TrsDXvz8daENQXj7EirYqz">
+    <param name="command">grep -r "def context_for_test\|def build_context" /home/runner/work/erk/erk/src --include="*.py" | head -20</param>
+    <param name="description">Find context_for_test definition</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="8158" cache_read_input_tokens="57674" cache_creation="{'ephemeral_5m_input_tokens': 8158, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XR9jbcjoAFb7CSc52KRReJ">
+    <param name="command">find /home/runner/work/erk/erk/tests/test_utils -name "*.py" -type f | head -10</param>
+    <param name="description">Find test utils files</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="8158" cache_read_input_tokens="57674" cache_creation="{'ephemeral_5m_input_tokens': 8158, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XR9jbcjoAFb7CSc52KRReJ">
+/home/runner/work/erk/erk/tests/test_utils/github_helpers.py
+/home/runner/work/erk/erk/tests/test_utils/graphite_helpers.py
+/home/runner/work/erk/erk/tests/test_utils/builders.py
+/home/runner/work/erk/erk/tests/test_utils/output_helpers.py
+/home/runner/work/erk/erk/tests/test_utils/cli_helpers.py
+/home/runner/work/erk/erk/tests/test_utils/paths.py
+/home/runner/work/erk/erk/tests/test_utils/__init__.py
+/home/runner/work/erk/erk/tests/test_utils/env_helpers.py
+/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py
+/home/runner/work/erk/erk/tests/test_utils/context_builders.py
+  </tool_result>
+  <tool_result tool="toolu_01TrsDXvz8daENQXj7EirYqz">
+/home/runner/work/erk/erk/src/erk/core/context.py:def context_for_test(
+  </tool_result>
+  <assistant>Perfect! Now let me read the env_helpers file to see the complete picture:</assistant>
+  <usage input_tokens="274" cache_creation_input_tokens="424" cache_read_input_tokens="65832" cache_creation="{'ephemeral_5m_input_tokens': 424, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PLpqRsnapVP7HWxy7fnVGS">
+    <param name="file_path">/home/runner/work/erk/erk/tests/test_utils/env_helpers.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="274" cache_creation_input_tokens="424" cache_read_input_tokens="65832" cache_creation="{'ephemeral_5m_input_tokens': 424, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PLpqRsnapVP7HWxy7fnVGS">
+     1→"""Centralized test environment helpers for simulating erk scenarios.
+     2→
+     3→This module provides helpers for setting up realistic erk test environments
+     4→with Click's CliRunner. It provides two patterns:
+     5→
+     6→1. erk_isolated_fs_env(): Filesystem-based (uses isolated_filesystem(),
+     7→   creates real directories)
+     8→2. erk_inmem_env(): In-memory (uses fakes only, no filesystem I/O)
+     9→
+    10→Key Components:
+    11→    - ErkIsolatedFsEnv: Helper class for filesystem-based testing
+    12→    - ErkInMemEnv: Helper class for in-memory testing
+    13→    - erk_isolated_fs_env(): Context manager for filesystem-based tests
+    14→    - erk_inmem_env(): Context manager for in-memory tests
+    15→
+    16→Usage Pattern:
+    17→
+    18→    Before (raw isolated_filesystem pattern - 20-30 lines per test):
+    19→    ```python
+    20→    def test_something() -&gt; None:
+    21→        runner = CliRunner()
+    22→        with runner.isolated_filesystem():
+    23→            cwd = Path.cwd()
+    24→            git_dir = cwd / ".git"
+    25→            git_dir.mkdir()
+    26→            erk_root = cwd / "erks"
+    27→            erk_root.mkdir()
+    28→
+    29→            git = FakeGit(git_common_dirs={cwd: git_dir})
+    30→            global_config = GlobalConfig.test(...)
+
+... [75 lines omitted] ...
+  </tool_result>
+  <assistant>Great! Now let me compile my findings. Let me do one more search to ensure I haven't missed anything related to the test patterns:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="1929" cache_read_input_tokens="66256" cache_creation="{'ephemeral_5m_input_tokens': 1929, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012bsjEC7YVzFsiS3WUohCqq">
+    <param name="command">head -50 /home/runner/work/erk/erk/src/erk/core/context.py | grep -A 20 "def context_for_test"</param>
+    <param name="description">Show context_for_test function signature</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1929" cache_read_input_tokens="66256" cache_creation="{'ephemeral_5m_input_tokens': 1929, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012bsjEC7YVzFsiS3WUohCqq">
+
+  </tool_result>
+  <assistant>Let me search more directly:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="296" cache_read_input_tokens="68185" cache_creation="{'ephemeral_5m_input_tokens': 296, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013HnSNZVnpsho6qi7m2hdnx">
+    <param name="command">grep -A 30 "^def context_for_test" /home/runner/work/erk/erk/src/erk/core/context.py</param>
+    <param name="description">Get context_for_test full signature</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="296" cache_read_input_tokens="68185" cache_creation="{'ephemeral_5m_input_tokens': 296, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013HnSNZVnpsho6qi7m2hdnx">
+def context_for_test(
+    *,
+    git: Git | None = None,
+    github: GitHub | None = None,
+    github_admin: GitHubAdmin | None = None,
+    issues: GitHubIssues | None = None,
+    plan_store: PlanBackend | None = None,
+    graphite: Graphite | None = None,
+    console: Console | None = None,
+    shell: Shell | None = None,
+    codespace: Codespace | None = None,
+    agent_launcher: AgentLauncher | None = None,
+    agent_docs: AgentDocs | None = None,
+    completion: Completion | None = None,
+    time: Time | None = None,
+    erk_installation: ErkInstallation | None = None,
+    script_writer: ScriptWriter | None = None,
+    plan_list_service: PlanListService | None = None,
+    objective_list_service: ObjectiveListService | None = None,
+    codespace_registry: CodespaceRegistry | None = None,
+    claude_installation: ClaudeInstallation | None = None,
+    prompt_executor: PromptExecutor | None = None,
+    cwd: Path | None = None,
+    global_config: GlobalConfig | None = None,
+    local_config: LoadedConfig | None = None,
+    repo: RepoContext | NoRepoSentinel | None = None,
+    repo_info: RepoInfo | None = None,
+    package_info: ErkPackageInfo | None = None,
+    dry_run: bool = False,
+    debug: bool = False,
+
+... [1 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now I have all the information I need. Let me provide a comprehensive summary:
+
+## Summary of Test Files Related to `land_learn.py`
+
+Based on my thorough exploration of the erk codebase, here are all the test files related to `land_learn.py` and the testing patterns used:
+
+### Primary Test File
+
+**Main test file:** `/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py`
+
+This is the dedicated test file for the `land_learn` module with comprehensive test coverage for `_create_learn_pr_impl` and related functions.
+
+### Test Structure and Organization
+
+The test file is organized into logical sections testing different functions:
+
+1. **`_should_create_learn_pr`** - Tests config hierarchy (local &gt; global fallback)
+2. **`_create_learn_pr_with_sessions`** - Tests wrapper function behavior and error handling
+3. **`_create_learn_pr_impl`** - Core implementation tests (4 tests covering different paths)
+4. **`_log_session_discovery`** - Session discovery logging (8 tests)
+5. **`_compute_session_stats`** - Session statistics computation (3 tests)
+6. **`_log_learn_pr_files`** - File inventory logging (3 tests)
+
+### Related Test Files
+
+**Integration-level tests:**
+- `/home/runner/work/erk/erk/tests/unit/cli/commands/land/pipeline/test_create_learn_issue.py` - Tests the `create_learn_pr` pipeline step
+- `/home/runner/work/erk/erk/tests/commands/land/test_learn_skip_remote.py` - Regression test for skipping learn prompts on remote PRs
+
+**Other land-related test files:** (35+ files in total)
+- `/home/runner/work/erk/erk/tests/unit/cli/commands/land/` - Contains ~17 unit test files
+- `/home/runner/work/erk/erk/tests/commands/land/` - Contains ~14 integration-level test files
+
+### Test Patterns and Fixtures Used
+
+#### 1. **Test Context Creation - `context_for_test()`**
+
+Used throughout all tests to create `ErkContext` with injected fakes:
+
+```python
+from erk.core.context import context_for_test
+
+ctx = context_for_test(
+    git=fake_git,
+    github=fake_github,
+    issues=fake_issues,
+    plan_store=plan_store,
+    time=fake_time,
+    cwd=tmp_path,
+)
+```
+
+**Parameters supported:**
+- `git`, `github`, `issues`, `graphite`, `shell`, `console`
+- `plan_store`, `plan_list_service`, `plan_backend`
+- `claude_installation`, `time`, `prompt_executor`
+- `cwd`, `global_config`, `local_config`, `repo`
+- `dry_run`, and many others
+
+#### 2. **Context Builder Helpers** (from `/home/runner/work/erk/erk/tests/test_utils/context_builders.py`)
+
+For command-level tests:
+```python
+from tests.test_utils.context_builders import (
+    build_workspace_test_context,
+    build_graphite_test_context,
+)
+
+ctx = build_workspace_test_context(
+    env,
+    dry_run=False,
+    use_graphite=False,
+    current_branch="feature"
+)
+```
+
+#### 3. **Environment Helpers** (from `/home/runner/work/erk/erk/tests/test_utils/env_helpers.py`)
+
+For isolated filesystem or in-memory environments:
+```python
+from tests.test_utils.env_helpers import erk_isolated_fs_env, erk_inmem_env
+
+with erk_isolated_fs_env(runner) as env:
+    ctx = env.build_context(git=git, use_graphite=True)
+```
+
+#### 4. **Fake Implementations Used in Tests**
+
+Key fakes used in `test_land_learn.py`:
+
+- **`FakeGit`** - Git operations with configurable state
+- **`FakeGitHub`** - PR management and creation tracking (`created_prs` property)
+- **`FakeGitHubIssues`** - Issue operations and label management
+- **`FakeTime`** - Deterministic timestamp control
+- **`FakeClaudeInstallation` / `FakeProject` / `FakeSessionData`** - Claude session tracking
+- **`PlannedPRBackend`** - Plan store implementation using fakes
+
+#### 5. **Key Test Fixtures and Builders**
+
+**Helper functions in `test_land_learn.py`:**
+
+```python
+def _make_pr_details(
+    pr_number: int,
+    branch: str,
+    title: str = "Test PR",
+    labels: tuple[str, ...] = (),
+) -&gt; PRDetails:
+    # Creates realistic PRDetails for testing
+
+def _land_state(
+    tmp_path: Path,
+    plan_id: str | None = None,
+    merged_pr_number: int | None = None,
+) -&gt; LandState:
+    # Creates LandState with test defaults
+
+def _make_session_jsonl(
+    session_id: str,
+    user_turns: int,
+    duration_seconds: int,
+) -&gt; str:
+    # Builds realistic JSONL content for session testing
+```
+
+### Key Testing Patterns Found
+
+#### Pattern 1: Configuration-Based Testing
+```python
+ctx = context_for_test(
+    local_config=LoadedConfig.test(prompt_learn_on_land=True),
+    global_config=GlobalConfig.test(tmp_path, prompt_learn_on_land=False),
+    cwd=tmp_path,
+)
+assert _should_create_learn_pr(ctx) is True
+```
+
+#### Pattern 2: Fake Mutation Tracking
+```python
+fake_github = FakeGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
+_create_learn_pr_impl(ctx, state=state)
+assert len(fake_github.created_prs) == 1  # Verify PR creation
+```
+
+#### Pattern 3: Session Data Simulation
+```python
+jsonl_content = _make_session_jsonl(session_id=session_id, user_turns=5, duration_seconds=600)
+jsonl_file.write_text(jsonl_content, encoding="utf-8")
+fake_session = FakeSessionData(content=jsonl_content, size_bytes=len(jsonl_content), modified_at=0.0)
+```
+
+#### Pattern 4: Output Verification
+```python
+captured = capsys.readouterr()
+assert "Created learn plan" in captured.err
+assert "#100" in captured.err
+assert "file(s) committed" in captured.err
+```
+
+### Test Data Structures
+
+**`LandState`** - Used across all land tests:
+- Contains plan execution state with plan_id, merged_pr_number, branch info
+- Has 19 fields including dry_run, use_graphite, objective tracking
+
+**`SessionsForPlan`** - From `erk_shared.sessions.discovery`:
+- Tracks planning_session_id, implementation_session_ids, learn_session_ids
+- Used for session discovery during learn plan creation
+
+**`SessionStats`** - Local dataclass in land_learn:
+- Tracks user_turns, duration_minutes, raw_size_kb, xml_size_kb, xml_chunks
+
+### File Paths Summary
+
+All test files are located in:
+- **Unit tests:** `/home/runner/work/erk/erk/tests/unit/cli/commands/land/`
+- **Integration tests:** `/home/runner/work/erk/erk/tests/commands/land/`
+- **Context builders:** `/home/runner/work/erk/erk/tests/test_utils/context_builders.py`
+- **Environment helpers:** `/home/runner/work/erk/erk/tests/test_utils/env_helpers.py`
+- **Fake context:** `/home/runner/work/erk/erk/tests/fakes/context.py`</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="568" cache_read_input_tokens="68481" cache_creation="{'ephemeral_5m_input_tokens': 568, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
