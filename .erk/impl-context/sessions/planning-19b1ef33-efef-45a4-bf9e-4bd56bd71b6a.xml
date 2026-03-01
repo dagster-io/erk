@@ -1,0 +1,2922 @@
+<session>
+  <meta branch="plnd/split-health-checks-02-28-2224" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:pr-preview-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-preview-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-preview-address
+
+## Description
+
+Fetches unresolved PR review comments and discussion comments, displays a summary of what `/erk:pr-address` would do. This is a read-only preview command that makes no changes.
+
+## Usage
+
+```bash
+/erk:pr-preview-address
+/erk:pr-preview-address --all               # Include resolved threads
+/erk:pr-preview-address --pr 6631           # Target specific PR
+/erk:pr-preview-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Agent Instructions
+
+&gt; **IMPORTANT: This is a READ-ONLY preview command.**
+&gt;
+&gt; Do NOT make any code changes, resolve any threads, reply to any comments, or create any commits.
+
+### Phase 1: Classify Feedback
+
+Invoke the pr-feedback-classifier skill to fetch and classify all PR feedback:
+
+```
+/pr-feedback-classifier [--pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+```
+
+Parse the JSON response.
+
+### Phase 2: Display Results
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If `actionable_threads` is empty and `discussion_actions` is empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+**Format the results** as a human-readable summary:
+
+```
+## PR #5944: "Feature: Add new API endpoint"
+
+### Actionable Items (N total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | foo.py:42 | actionable | Use LBYL pattern | local |
+| 2 | review | bar.py:15 | actionable | Add type annotation | local |
+| 3 | discussion | - | actionable | Update documentation | cross_cutting |
+
+### Informational Items (N total)
+
+| # | Type | Location | Summary | Complexity |
+|---|------|----------|---------|------------|
+| 4 | review | utils.py:10 | Bot suggestion: extract helper (optional) | local |
+
+### Execution Plan Preview
+
+**Batch 1: Local Fixes** (auto-proceed)
+- Item #1: foo.py:42 - Use LBYL pattern
+- Item #2: bar.py:15 - Add type annotation
+
+**Batch 2: Cross-Cutting** (user confirmation)
+- Item #3: Update documentation
+
+**Batch 3: Informational** (user decides: act or dismiss)
+- Item #4: utils.py:10 - Bot suggestion: extract helper (optional)
+
+### Statistics
+- Actionable items: 3
+- Informational items: 1
+- Informational discussion comments: 12
+- Estimated batches: 3
+- Auto-proceed batches: 1
+- User confirmation batches: 2
+```
+
+**Note:** Items in `actionable_threads` are split into two sections based on their `classification` field: `"actionable"` items appear under "Actionable Items", `"informational"` items appear under "Informational Items". Both sections use the same item numbering (continuous across sections).
+
+Add footer:
+
+```
+To address these comments, run: /erk:pr-address
+```
+
+### Phase 3: Exit (NO ACTIONS)
+
+**CRITICAL**: This is a preview-only command. Do NOT:
+
+- Make any code changes
+- Resolve any threads
+- Reply to any comments
+- Create any commits
+- Push anything to remote
+- Run any CI commands
+
+Simply display the summary and exit.
+
+## Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+</user>
+  <thinking>The user wants me to run the `/erk:pr-preview-address` command. This is a read-only preview that fetches and classifies PR review comments.
+
+Let me start by invoking the pr-feedback-classifier skill as instructed in Phase 1.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="11871" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11871}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll start by classifying the PR feedback. Let me invoke the pr-feedback-classifier skill.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11871" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11871}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_019CsnVGySWHfzYQ4UJ88WPq">
+    <param name="skill">pr-feedback-classifier</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11871" cache_read_input_tokens="19113" output_tokens="152" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11871, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019CsnVGySWHfzYQ4UJ88WPq">
+Skill "pr-feedback-classifier" completed (forked execution).
+
+Result:
+Now I'll classify this feedback using the Comment Classification Model:
+
+**Review Threads Analysis:**
+
+The 27 review threads fall into two main categories:
+
+1. **Re-export violations** (threads on `__init__.py` lines 38, 65, 66): 3 threads, all pointing to the same issue - re-exports and `__all__` in `__init__.py`. These are cross-cutting because fixing them requires updating all consumer call sites.
+
+2. **LBYL violations** (try/except for control flow): 7 threads across 4 files (`anthropic_api_secret.py` lines 34, 48; `erk_queue_pat_secret.py` lines 33, 47; `erk_version.py` line 17; `required_tool_version.py` line 15; `workflow_permissions.py` lines 28, 41, 68). These are single-file changes within each file.
+
+3. **Test coverage** (15 threads, one per untested file): All bot suggestions to add tests. Each is local/single-file per module.
+
+**Discussion Comments Analysis:**
+
+- `schrockn` queue comment - informational (submission metadata)
+- `github-actions[bot]` workflow-started comment - informational
+- `github-actions[bot]` dignified-python-review summary - informational (CI bot)
+- `github-actions[bot]` test-coverage-review summary - informational (CI bot)
+- `github-actions[bot]` tripwires-review summary - informational (CI bot)
+- `github-actions[bot]` dignified-code-simplifier-review summary - informational (CI bot)
+- `schrockn` graphite stack comment - informational
+
+All 7 discussion comments are informational.
+
+**Batch grouping:**
+
+- **Local Fixes**: The LBYL fixes are single-file per file but span multiple files total — grouping same-file LBYL fixes together. `anthropic_api_secret.py` (2 lines), `erk_queue_pat_secret.py` (2 lines), `erk_version.py` (1 line), `required_tool_version.py` (1 line), `workflow_permissions.py` (3 lines) — each file's LBYL fixes are single_file.
+
+... [335 lines omitted] ...
+
+      "action_summary": "Replace try/except ValueError with LBYL check: verify remote exists before calling get_remote_url()",
+      "original_comment": "**Dignified Code Simplifier**: Using try/except ValueError for expected control flow - LBYL pattern preferred. Check if remote exists before calling get_remote_url(). Reference: docs/learned/dignified-python-core.md - LBYL pattern"
+      "action_summary": "Replace try/except ValueError with LBYL check: verify condition before calling function",
+      "original_comment": "**Dignified Code Simplifier**: Using try/except ValueError for expected control flow - LBYL pattern preferred. Check condition before calling function. Reference: docs/learned/dignified-python-core.md - LBYL pattern"
+      "action_summary": "Replace try/except ValueError with LBYL check: verify condition before calling function",
+      "original_comment": "**Dignified Code Simplifier**: Using try/except ValueError for expected control flow - LBYL pattern preferred. Check condition before calling function. Reference: docs/learned/dignified-python-core.md - LBYL pattern"
+      "action_summary": "Replace try/except ValueError with LBYL check: verify condition before calling function",
+      "original_comment": "**Dignified Code Simplifier**: Using try/except ValueError for expected control flow - LBYL pattern preferred. Check condition before calling function. Reference: docs/learned/dignified-python-core.md - LBYL pattern"
+      "action_summary": "Replace try/except Exception with LBYL check: verify erk is installed before calling version()",
+      "original_comment": "**Dignified Code Simplifier**: Using try/except Exception for control flow - LBYL pattern preferred. Check if erk is installed before calling version(). Reference: docs/learned/dignified-python-core.md - LBYL pattern"
+      "action_summary": "Replace try/except Exception with LBYL check: verify package exists before importing",
+      "original_comment": "**Dignified Code Simplifier**: Using try/except Exception for control flow - LBYL pattern preferred. Check if package exists before importing. Reference: docs/learned/dignified-python-core.md - LBYL pattern"
+      "action_summary": "Replace try/except ValueError with LBYL check: verify condition is met before calling function",
+      "original_comment": "**Dignified Code Simplifier**: Using try/except ValueError for expected control flow - LBYL pattern preferred. Check if condition is met before calling function. Reference: docs/learned/dignified-python-core.md - LBYL pattern"
+      "action_summary": "Replace try/except ValueError with LBYL check: verify condition is met before calling function",
+      "original_comment": "**Dignified Code Simplifier**: Using try/except ValueError for expected control flow - LBYL pattern preferred. Check if condition is met before calling function. Reference: docs/learned/dignified-python-core.md - LBYL pattern"
+      "action_summary": "Replace generic Exception catch with specific exception type",
+      "original_comment": "**Dignified Code Simplifier**: Catching generic Exception is too broad - catch specific exception types instead. Reference: docs/learned/dignified-python-core.md - Exception handling"
+      "action_summary": "Add tests for erk_version check covering success and failure paths",
+      "original_comment": "**Test Coverage**: New source file without corresponding tests. This check function requires tests for success/failure paths."
+  "error": null
+  </tool_result>
+  <assistant>## PR #8516: "Split health_checks.py into a Subpackage"
+
+### Actionable Items (27 total)
+
+| # | Type | Location | Summary | Complexity |
+|---|------|----------|---------|------------|
+| 1 | review | `__init__.py:38` | Remove re-export imports; consumers must import from defining submodules | cross_cutting |
+| 2 | review | `__init__.py:65` | Remove `__all__` declaration (re-exports forbidden) | cross_cutting |
+| 3 | review | `__init__.py:66` | Remove `__all__` list and update all call sites to canonical paths | cross_cutting |
+| 4 | review | `anthropic_api_secret.py:34` | Replace try/except ValueError with LBYL check | single_file |
+| 5 | review | `anthropic_api_secret.py:48` | Replace try/except ValueError with LBYL check | single_file |
+| 6 | review | `erk_queue_pat_secret.py:33` | Replace try/except ValueError with LBYL check | single_file |
+| 7 | review | `erk_queue_pat_secret.py:47` | Replace try/except ValueError with LBYL check | single_file |
+| 8 | review | `erk_version.py:17` | Replace try/except Exception with LBYL check | single_file |
+| 9 | review | `required_tool_version.py:15` | Replace try/except Exception with LBYL check | single_file |
+| 10 | review | `workflow_permissions.py:28` | Replace try/except ValueError with LBYL check | single_file |
+| 11 | review | `workflow_permissions.py:41` | Replace try/except ValueError with LBYL check | single_file |
+| 12 | review | `workflow_permissions.py:68` | Replace generic Exception catch with specific type | single_file |
+| 13 | review | `claude_cli.py:7` | Add Layer 4 tests using fake Shell | single_file |
+| 14 | review | `claude_settings.py:1` | Add Layer 4 tests | single_file |
+| 15 | review | `erk_version.py:6` | Add tests for success/failure paths | single_file |
+| 16 | review | `github_auth.py:1` | Add tests | single_file |
+| 17 | review | `github_cli.py:1` | Add Layer 4 tests | single_file |
+| 18 | review | `gitignore_entries.py:1` | Add tests | single_file |
+| 19 | review | `graphite_cli.py:1` | Add Layer 4 tests | single_file |
+| 20 | review | `hooks_disabled.py:1` | Add tests | single_file |
+| 21 | review | `legacy_prompt_hooks.py:1` | Add tests | single_file |
+| 22 | review | `legacy_slot_naming.py:1` | Add tests | single_file |
+| 23 | review | `managed_artifacts.py:1` | Add comprehensive Layer 4 tests (complex logic) | single_file |
+| 24 | review | `post_init_hook.py:1` | Add tests | single_file |
+| 25 | review | `post_plan_implement_ci_hook.py:1` | Add tests | single_file |
+| 26 | review | `repository.py:1` | Add tests | single_file |
+| 27 | review | `uv_version.py:1` | Add Layer 4 tests | single_file |
+
+### Informational Items (0 actionable, 7 discussion)
+
+All 7 discussion comments are informational (bot CI summaries, queue metadata).
+
+### Execution Plan Preview
+
+**Batch 1: Single-File LBYL Fixes** (auto-proceed)
+- Item #4: `anthropic_api_secret.py:34` - Replace try/except with LBYL
+- Item #5: `anthropic_api_secret.py:48` - Replace try/except with LBYL
+- Item #6: `erk_queue_pat_secret.py:33` - Replace try/except with LBYL
+- Item #7: `erk_queue_pat_secret.py:47` - Replace try/except with LBYL
+- Item #8: `erk_version.py:17` - Replace try/except with LBYL
+- Item #9: `required_tool_version.py:15` - Replace try/except with LBYL
+- Item #10: `workflow_permissions.py:28` - Replace try/except with LBYL
+- Item #11: `workflow_permissions.py:41` - Replace try/except with LBYL
+- Item #12: `workflow_permissions.py:68` - Replace generic Exception with specific type
+
+**Batch 2: Cross-Cutting Re-Export Cleanup** (user confirmation)
+- Item #1: `__init__.py:38` - Remove re-export imports
+- Item #2: `__init__.py:65` - Remove `__all__` declaration
+- Item #3: `__init__.py:66` - Update all call sites to canonical import paths
+
+**Batch 3: Single-File Test Coverage** (auto-proceed)
+- Items #13-27: Add tests for 15 new source files
+
+### Statistics
+- Actionable items: 27
+- Informational items: 0 (actionable) / 7 (discussion)
+- Estimated batches: 3
+- Auto-proceed batches: 2
+- User confirmation batches: 1
+
+---
+
+To address these comments, run: `/erk:pr-address`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5796" cache_read_input_tokens="30984" output_tokens="1419" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5796, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>this is just moving around code mostly so only
+
+  ┌─────┬────────┬──────────────────────────────────┬──────────────────────────────────────────────────────────────────────────┬───────────────┐
+  │  #  │  Type  │             Location             │                                 Summary                                  │  Complexity   │
+  ├─────┼────────┼──────────────────────────────────┼──────────────────────────────────────────────────────────────────────────┼───────────────┤
+  │ 1   │ review │ __init__.py:38                   │ Remove re-export imports; consumers must import from defining submodules │ cross_cutting │
+  ├─────┼────────┼──────────────────────────────────┼──────────────────────────────────────────────────────────────────────────┼───────────────┤
+  │ 2   │ review │ __init__.py:65                   │ Remove __all__ declaration (re-exports forbidden)                        │ cross_cutting │
+  ├─────┼────────┼──────────────────────────────────┼──────────────────────────────────────────────────────────────────────────┼───────────────┤
+  │ 3   │ review │ __init__.py:66                   │ Remove __all__ list and update all call sites to canonical paths         │ cross_cutting │
+
+is valid feedback. the rest of the threads should be resolved
+
+</user>
+  <thinking>The user wants me to:
+1. Address items #1-3 (the cross-cutting re-export/`__all__` issues in `__init__.py`)
+2. Resolve all other threads (#4-27) since they're not valid feedback for a code-move PR
+
+Let me start by reading the relevant files to understand the current state.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="536" cache_read_input_tokens="38197" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 536}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Got it. Let me address the re-export/`__all__` issues and resolve the remaining threads. Let me start by reading the relevant files.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="536" cache_read_input_tokens="38197" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 536}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01T41EpjK1g7ifFioMSrRx67">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-56/src/erk/core/health_checks/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="536" cache_read_input_tokens="38197" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 536}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01T41EpjK1g7ifFioMSrRx67">
+     1→"""Health check implementations for erk doctor command.
+     2→
+     3→This module provides diagnostic checks for erk setup, including
+     4→CLI availability, repository configuration, and Claude settings.
+     5→
+     6→Submodules:
+     7→    models                    - CheckResult dataclass
+     8→    erk_version               - check_erk_version
+     9→    required_tool_version     - check_required_tool_version
+    10→    claude_cli                - check_claude_cli
+    11→    graphite_cli              - check_graphite_cli
+    12→    github_cli                - check_github_cli
+    13→    github_auth               - check_github_auth
+    14→    workflow_permissions       - check_workflow_permissions
+    15→    erk_queue_pat_secret      - check_erk_queue_pat_secret
+    16→    anthropic_api_secret      - check_anthropic_api_secret
+    17→    uv_version                - check_uv_version
+    18→    hooks_disabled            - check_hooks_disabled
+    19→    statusline_configured     - check_statusline_configured
+    20→    gitignore_entries         - check_gitignore_entries
+    21→    post_plan_implement_ci_hook - check_post_plan_implement_ci_hook
+    22→    post_init_hook            - check_post_init_hook
+    23→    legacy_prompt_hooks       - check_legacy_prompt_hooks
+    24→    claude_erk_permission     - check_claude_erk_permission
+    25→    plans_repo_labels         - check_plans_repo_labels
+    26→    repository                - check_repository
+    27→    claude_settings           - check_claude_settings
+    28→    user_prompt_hook          - check_user_prompt_hook
+    29→    exit_plan_hook            - check_exit_plan_hook
+    30→    hook_health               - check_hook_health
+
+... [156 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01YXjZ2BHejpr6JLtFDAtj9q">
+    <param name="pattern">from erk\.core\.health_checks import</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="536" cache_read_input_tokens="38197" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 536}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YXjZ2BHejpr6JLtFDAtj9q">
+src/erk/cli/commands/doctor.py:10:from erk.core.health_checks import run_all_checks
+  </tool_result>
+  <tool_use name="Read" id="toolu_01PDNp5TjFCafdC3YLyo4bfx">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-56/docs/learned/architecture/tripwires.md</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="536" cache_read_input_tokens="38197" output_tokens="373" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 536, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PDNp5TjFCafdC3YLyo4bfx">
+     1→---
+     2→title: Architecture Tripwires
+     3→read_when:
+     4→  - "working on architecture code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from architecture/*.md frontmatter --&gt;
+    10→
+    11→# Architecture Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**FakePromptExecutor tracks all calls via properties** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. use .prompt_calls, .interactive_calls, .passthrough_calls for assertions
+    16→
+    17→**accessing ctx.obj directly without a require\_\*() helper** → Read [Click Context Dependency Injection Pattern](click-context-di-pattern.md) first. Use typed require\_\*() helpers (require_issues, require_git, require_cwd, etc.) instead of direct ctx.obj access. Helpers provide type narrowing and clear error messages.
+    18→
+    19→**accessing plan_ref.plan_id as int without checking** → Read [PlanRef Architecture](plan-ref-architecture.md) first. plan_id is a string. Use LBYL: `plan_ref.plan_id.isdigit()` before `int(plan_ref.plan_id)`. Supports future non-numeric providers like 'PROJ-123'.
+    20→
+    21→**accessing properties on a discriminated union result without isinstance() check** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Always check isinstance(result, ErrorType) before accessing success-variant properties. Without type narrowing, you may access .message on a success type or .data on an error type.
+    22→
+    23→**adding HTML, badges, or GitHub-specific markup to commit messages** → Read [PR Body Formatting Pattern](pr-body-formatting.md) first. Use the two-target pattern: plain text pr_body for commits, enhanced pr_body_for_github for the PR. Never put GitHub-specific HTML into git commit messages.
+    24→
+    25→**adding LBYL guards that only check a subset of required fields** → Read [Erk Architecture Patterns](erk-architecture.md) first. Functions with 'skip silently' contracts must validate ALL preconditions with LBYL guards. Checking one field (e.g., schema_version) is insufficient — use set operations to verify all required fields.
+    26→
+    27→**adding LLM-dependent logic inside a Click @command function in exec/scripts/** → Read [Inference Hoisting Pattern](inference-hoisting.md) first. Inference hoisting violation: exec scripts run as subprocesses; they cannot nest LLM calls within a Claude Code session. Move reasoning to the calling skill.
+    28→
+    29→**adding a Claude subprocess call with --print mode** → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Always include --no-session-persistence flag and use env=build_claude_subprocess_env() parameter. Both are required to prevent session persistence and CLAUDECODE context leakage. See the 'Claude Subprocess Environment' section.
+    30→
+  </tool_result>
+  <thinking>Good. The only consumer of `from erk.core.health_checks import ...` is `doctor.py` which only imports `run_all_checks`. The re-exports in `__init__.py` are only used internally by `run_all_checks` itself. So I need to:
+
+1. Move the imports from the top of `__init__.py` into the `run_all_checks` function body (since that's where they're actually used)
+2. Remove `__all__`
+3. Keep `run_all_checks` as the only public API
+
+Actually wait - let me think about this more carefully. The imports at the top of `__init__.py` are used by `run_all_checks`. 
+
+I'm realizing the cleaner approach is to keep those imports at the module level since they're needed by `run_all_checks` anyway, just remove the `__all__` declaration entirely. The convention is that `__init__.py` should only define things directly in it, and since `doctor.py` only imports `run_all_checks` which is defined there, this works fine. import path per symbol" and "No re-exports". But `run_all_checks` IS defined in `__init__.py`, so importing it from `erk.core.health_checks` is its canonical path.
+
+The issue is the imports at lines 38-63 are being re-exported via `__all__`. But they're also used directly in the `run_all_checks` function body. So they're not purely re-exports - they're implementation imports that happen to also be re-exported via `__all__`.
+
+The fix should be:
+1. Remove `__all__` entirely (lines 66-94)
+2. The imports at lines 38-63 should stay because they're used by `run_all_checks` - but they shouldn't be considered re-exports since they're implementation dependencies
+
+Wait, but the convention says "Empty `__init__.py`". Having a function defined in `__init__.py` that imports from submodules is fine - that's the only place `run_all_checks` can live since it aggregates all the checks.
+
+The real issue is the `__all__` which explicitly re-exports all those symbols. Removing `__all__` means consumers would have to import directly from the submodules, but since `doctor.py` only imports `run_all_checks`, that's safe. I should check if any other code depends on importing individual check functions from the package level.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4288" cache_read_input_tokens="38733" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4288}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good. The only external consumer imports `run_all_checks` — which is defined in `__init__.py` itself. The fix is straightforward: remove `__all__` since those symbols shouldn't be re-exported. Let me also check for any other consumers importing individual checks from the package.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4288" cache_read_input_tokens="38733" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4288}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RUq71ByieBnVXuLaMCfaje">
+    <param name="pattern">from erk\.core\.health_checks import (?!__)</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4288" cache_read_input_tokens="38733" output_tokens="800" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4288, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RUq71ByieBnVXuLaMCfaje">
+No matches found
+  </tool_result>
+  <thinking>Hmm, that's odd - let me check with a simpler pattern.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="811" cache_read_input_tokens="43021" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 811}" output_tokens="15" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01HAPWA2ZbqHnbHtBhZyTnYC">
+    <param name="pattern">from erk.core.health_checks</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="811" cache_read_input_tokens="43021" output_tokens="111" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 811, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HAPWA2ZbqHnbHtBhZyTnYC">
+src/erk/core/health_checks/legacy_slot_naming.py:3:from erk.core.health_checks.models import CheckResult
+src/erk/core/health_checks/statusline_configured.py:8:from erk.core.health_checks.models import CheckResult
+src/erk/cli/commands/doctor.py:10:from erk.core.health_checks import run_all_checks
+src/erk/cli/commands/doctor.py:11:from erk.core.health_checks.models import CheckResult
+src/erk/cli/commands/doctor.py:12:from erk.core.health_checks_dogfooder import EARLY_DOGFOODER_CHECK_NAMES
+src/erk/core/health_checks/exit_plan_hook.py:6:from erk.core.health_checks.models import CheckResult
+src/erk/core/health_checks/workflow_permissions.py:6:from erk.core.health_checks.models import CheckResult
+src/erk/core/health_checks/repository.py:4:from erk.core.health_checks.models import CheckResult
+src/erk/core/health_checks/legacy_prompt_hooks.py:5:from erk.core.health_checks.models import CheckResult
+src/erk/core/health_checks/claude_erk_permission.py:11:from erk.core.health_checks.models import CheckResult
+src/erk/core/health_checks/plans_repo_labels.py:5:from erk.core.health_checks.models import CheckResult
+src/erk/core/health_checks/github_cli.py:3:from erk.core.health_checks.models import CheckResult
+src/erk/core/health_checks/gitignore_entries.py:5:from erk.core.health_checks.models import CheckResult
+src/erk/core/health_checks/erk_queue_pat_secret.py:6:from erk.core.health_checks.models import CheckResult
+src/erk/core/health_checks/user_prompt_hook.py:6:from erk.core.health_checks.models import CheckResult
+src/erk/core/health_checks/__init__.py:38:from erk.core.health_checks.anthropic_api_secret import check_anthropic_api_secret
+src/erk/core/health_checks/__init__.py:39:from erk.core.health_checks.claude_cli import check_claude_cli
+src/erk/core/health_checks/__init__.py:40:from erk.core.health_checks.claude_erk_permission import check_claude_erk_permission
+src/erk/core/health_checks/__init__.py:41:from erk.core.health_checks.claude_settings import check_claude_settings
+src/erk/core/health_checks/__init__.py:42:from erk.core.health_checks.erk_queue_pat_secret import check_erk_queue_pat_secret
+src/erk/core/health_checks/__init__.py:43:from erk.core.health_checks.erk_version import check_erk_version
+src/erk/core/health_checks/__init__.py:44:from erk.core.health_checks.exit_plan_hook import check_exit_plan_hook
+src/erk/core/health_checks/__init__.py:45:from erk.core.health_checks.github_auth import check_github_auth
+src/erk/core/health_checks/__init__.py:46:from erk.core.health_checks.github_cli import check_github_cli
+src/erk/core/health_checks/__init__.py:47:from erk.core.health_checks.gitignore_entries import check_gitignore_entries
+src/erk/core/health_checks/__init__.py:48:from erk.core.health_checks.graphite_cli import check_graphite_cli
+src/erk/core/health_checks/__init__.py:49:from erk.core.health_checks.hook_health import check_hook_health
+src/erk/core/health_checks/__init__.py:50:from erk.core.health_checks.hooks_disabled import check_hooks_disabled
+src/erk/core/health_checks/__init__.py:51:from erk.core.health_checks.legacy_prompt_hooks import check_legacy_prompt_hooks
+src/erk/core/health_checks/__init__.py:52:from erk.core.health_checks.legacy_slot_naming import check_legacy_slot_naming
+
+... [77 lines omitted] ...
+  </tool_result>
+  <thinking>All external consumers already import from the canonical submodule paths (e.g., `from erk.core.health_checks.models import CheckResult`). Nobody imports individual check functions from the package `__init__.py` — only `run_all_checks` is imported from there, and that's legitimately defined in `__init__.py`.
+
+So the fix is simple:
+1. Remove `__all__` (lines 66-94) from `__init__.py`
+2. Keep the imports since `run_all_checks` uses them
+
+Then I need to resolve all 24 remaining threads (items #4-27).
+
+
+Now I'm creating the tasks for those remaining items.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4487" cache_read_input_tokens="43832" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4487}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>All consumers already import from canonical submodule paths. The only fix needed is removing `__all__`. Let me do that and then resolve the other threads.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4487" cache_read_input_tokens="43832" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4487}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01JWkLRRhciwQdBo3um8SrGk">
+    <param name="subject">Remove __all__ from health_checks/__init__.py</param>
+    <param name="description">Remove the __all__ declaration (lines 66-94) from __init__.py. The imports stay because run_all_checks uses them - they're implementation deps, not re-exports.</param>
+    <param name="activeForm">Removing __all__ from __init__.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4487" cache_read_input_tokens="43832" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4487}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JWkLRRhciwQdBo3um8SrGk">
+Task #1 created successfully: Remove __all__ from health_checks/__init__.py
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01HjTA1ZDs9qGXzEoy8zDgot">
+    <param name="subject">Resolve 24 inapplicable review threads</param>
+    <param name="description">Resolve threads #4-27 (LBYL and test coverage) since this is a code-move PR and those are pre-existing issues, not introduced by this change.</param>
+    <param name="activeForm">Resolving inapplicable review threads</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4487" cache_read_input_tokens="43832" output_tokens="467" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4487, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HjTA1ZDs9qGXzEoy8zDgot">
+Task #2 created successfully: Resolve 24 inapplicable review threads
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01Twgq3sS1cpbtQavVPTPEe7">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="563" cache_read_input_tokens="48319" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 563, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Twgq3sS1cpbtQavVPTPEe7">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01VkNn6hAznePXt4LxJiP7dH">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-56/src/erk/core/health_checks/__init__.py</param>
+    <param name="old_string">from erk.core.repo_discovery import RepoContext
+
+__all__ = [
+    "CheckResult",
+    "check...[truncated 670 chars]...v_version",
+    "check_workflow_permissions",
+    "run_all_checks",
+]
+
+
+def run_all_checks</param>
+    <param name="new_string">from erk.core.repo_discovery import RepoContext
+
+
+def run_all_checks</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="48882" output_tokens="452" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 90, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VkNn6hAznePXt4LxJiP7dH">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-56/src/erk/core/health_checks/__init__.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_018eaNQLK7exSAPEw6s68ds8">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="530" cache_read_input_tokens="48972" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 530}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018eaNQLK7exSAPEw6s68ds8">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01RcWX5Xug5sRNoDG1uDeFTy">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="530" cache_read_input_tokens="48972" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 530, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RcWX5Xug5sRNoDG1uDeFTy">
+Updated task #2 status
+  </tool_result>
+  <assistant>Now let me read the pr-operations docs to use the correct resolve command.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="49502" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KcfjpkdoEe3We1r5Qj3479">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-56/docs/learned/pr-operations/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="49502" output_tokens="109" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KcfjpkdoEe3We1r5Qj3479">
+     1→---
+     2→title: Pr Operations Tripwires
+     3→read_when:
+     4→  - "working on pr-operations code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from pr-operations/*.md frontmatter --&gt;
+    10→
+    11→# Pr Operations Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**adding git-only PR logic to a new location** → Read [Git-Only PR Submission Path](pr-submission-workflow.md) first. Two git-only paths already exist (command-level and pipeline-level). Understand why both exist before adding a third. See pr-submission-workflow.md.
+    16→
+    17→**adding plan HTML to the pr_body variable instead of pr_body_for_github** → Read [Plan Embedding in PR Body](plan-embedding-in-pr.md) first. Plan embedding uses &lt;details&gt; HTML which must never enter git commit messages. Append only to pr_body_for_github. See pr-body-formatting.md for the two-target pattern.
+    18→
+    19→**calling create_pr without first checking get_pr_for_branch** → Read [PR Creation Decision Logic](pr-creation-patterns.md) first. Always LBYL-check for an existing PR before creating. Duplicate PRs cause confusion and orphaned state. See pr-creation-patterns.md.
+    20→
+    21→**creating a PR without draft=True in automated workflows** → Read [Draft PR Handling](draft-pr-handling.md) first. All automated erk PR creation uses draft mode. This gates CI costs and prevents premature review. See draft-pr-handling.md.
+    22→
+    23→**editing commit-message-prompt.md in either location** → Read [Template Synchronization](template-synchronization.md) first. Update BOTH copies: .claude/skills/erk-diff-analysis/references/commit-message-prompt.md AND packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md. CI enforces byte-equality.
+    24→
+    25→**investigating an automated reviewer complaint** → Read [Automated Review Handling](automated-review-handling.md) first. Determine if the tool is the authority for that concern. For formatting, prettier is the authority — if prettier passes, dismiss the bot. For type errors, ty is the authority.
+    26→
+    27→**passing a flat list of thread IDs to resolve-review-threads** → Read [Resolve Review Threads JSON Format](resolve-review-threads-format.md) first. The input must be a list of objects with thread*id and comment fields, not a flat list of strings. Wrong: ["PRRT*..."] → 'Item at index 0 is not an object'. Correct: [{"thread_id": "PRRT_...", "comment": "..."}]
+    28→
+    29→**silently catching exceptions in PR body updates** → Read [Stub PR Workflow Link](stub-pr-workflow-link.md) first. Use best-effort pattern: try/except with logger.warning(), not silent pass. See one_shot_dispatch.py for the canonical example.
+    30→
+
+... [18 lines omitted] ...
+
+    45→**writing checkout footer with issue number from .erk/impl-context/plan-ref.json** → Read [Checkout Footer Syntax](checkout-footer-syntax.md) first. Use PR number (from create_pr result), NOT issue number. The checkout command requires a PR number. Issue numbers in checkout footers cause erk pr check validation failures.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UV4KCc3PbFuYRhgPh659Dr">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-56/docs/learned/pr-operations/resolve-review-threads-format.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1602" cache_read_input_tokens="49700" output_tokens="96" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1602, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UV4KCc3PbFuYRhgPh659Dr">
+     1→---
+     2→title: Resolve Review Threads JSON Format
+     3→read_when:
+     4→  - "calling erk exec resolve-review-threads"
+     5→  - "automating PR review thread resolution"
+     6→  - "getting 'Item at index 0 is not an object' errors"
+     7→tripwires:
+     8→  - action: "passing a flat list of thread IDs to resolve-review-threads"
+     9→    warning: 'The input must be a list of objects with thread_id and comment fields, not a flat list of strings. Wrong: ["PRRT_..."] → ''Item at index 0 is not an object''. Correct: [{"thread_id": "PRRT_...", "comment": "..."}]'
+    10→---
+    11→
+    12→# Resolve Review Threads JSON Format
+    13→
+    14→The `erk exec resolve-review-threads` script expects a specific JSON input format via stdin. Using the wrong format produces an unhelpful "Item at index 0 is not an object" error.
+    15→
+    16→## Correct Format
+    17→
+    18→&lt;!-- Source: src/erk/cli/commands/exec/scripts/resolve_review_threads.py, ThreadResolutionItem --&gt;
+    19→
+    20→Input is a JSON array of objects matching the `ThreadResolutionItem` TypedDict:
+    21→
+    22→```json
+    23→[
+    24→  { "thread_id": "PRRT_abc123", "comment": "Fixed in latest commit" },
+    25→  { "thread_id": "PRRT_def456", "comment": null }
+    26→]
+    27→```
+    28→
+    29→| Field       | Type          | Description                               |
+    30→| ----------- | ------------- | ----------------------------------------- |
+
+... [21 lines omitted] ...
+  </tool_result>
+  <assistant>Good. Now let me resolve all 24 threads. I need to build the JSON with each thread_id and a comment explaining why it's being dismissed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="834" cache_read_input_tokens="51302" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 834}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016GehqeDgTMXS6gyZQt6pHy">
+    <param name="command">echo '[
+  {"thread_id": "PRRT_kwDOPxC3hc5xXXyo", "comment": "Pre-existing pattern, not int...[truncated 3109 chars]...ot in scope for this code-move PR."}
+]' | uv run erk exec resolve-review-threads --pr 8516</param>
+    <param name="description">Resolve 24 inapplicable review threads on PR #8516</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="834" cache_read_input_tokens="51302" output_tokens="1443" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 834, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016GehqeDgTMXS6gyZQt6pHy">
+Exit code 2
+Usage: erk exec resolve-review-threads [OPTIONS]
+Try 'erk exec resolve-review-threads -h' for help.
+
+Error: No such option: --pr Did you mean --help?
+
+Usage: erk exec resolve-review-threads [OPTIONS]
+Try 'erk exec resolve-review-threads -h' for help.
+
+Error: No such option: --pr Did you mean --help?
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0152K9V3CDw52pXABEjdfoLY">
+    <param name="command">uv run erk exec resolve-review-threads -h</param>
+    <param name="description">Check resolve-review-threads usage</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1532" cache_read_input_tokens="52136" output_tokens="87" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1532, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0152K9V3CDw52pXABEjdfoLY">
+Usage: erk exec resolve-review-threads [OPTIONS]
+
+  Resolve multiple PR review threads from JSON stdin.
+
+  Reads a JSON array from stdin where each item has: - thread_id (required):
+  GraphQL node ID of the thread - comment (optional): Comment to add before
+  resolving
+
+  Processes each thread sequentially and outputs batch results. Top-level
+  success is true only if ALL threads resolved successfully.
+
+Options:
+  -h, --help  Show this message and exit.
+  </tool_result>
+  <thinking>No --pr option needed, it just takes stdin. Let me retry without --pr.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="211" cache_read_input_tokens="53668" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 211}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KZQUP5imkwvyb777un5Q96">
+    <param name="command">echo '[
+  {"thread_id": "PRRT_kwDOPxC3hc5xXXyo", "comment": "Pre-existing pattern, not int...[truncated 3099 chars]...e split. Not in scope for this code-move PR."}
+]' | uv run erk exec resolve-review-threads</param>
+    <param name="description">Resolve 24 inapplicable review threads on PR #8516</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="211" cache_read_input_tokens="53668" output_tokens="1408" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 211, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KZQUP5imkwvyb777un5Q96">
+{
+  "success": true,
+  "results": [
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5xXXyo",
+      "comment_added": true
+    },
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5xXXzb",
+      "comment_added": true
+    },
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5xXX3a",
+      "comment_added": true
+    },
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5xXX5i",
+      "comment_added": true
+    },
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5xXXw6",
+      "comment_added": true
+    },
+    {
+      "success": true,
+
+... [95 lines omitted] ...
+  </tool_result>
+  <assistant>All 24 threads resolved. Now let me also resolve the 3 `__init__.py` threads since I've addressed them by removing `__all__`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2610" cache_read_input_tokens="53879" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2610}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01RDkExrx7PKmxzp6bwJjKZT">
+    <param name="command">echo '[
+  {"thread_id": "PRRT_kwDOPxC3hc5xXX2J", "comment": "Fixed: removed re-export impo...[truncated 361 chars]...re.health_checks.models import CheckResult)."}
+]' | uv run erk exec resolve-review-threads</param>
+    <param name="description">Resolve 3 __init__.py threads (addressed by code change)</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2610" cache_read_input_tokens="53879" output_tokens="329" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2610, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RDkExrx7PKmxzp6bwJjKZT">
+{
+  "success": true,
+  "results": [
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5xXX2J",
+      "comment_added": true
+    },
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5xXX6V",
+      "comment_added": true
+    },
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5xXXcq",
+      "comment_added": true
+    }
+  ]
+}
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01LHpWfPxLH49aiYiQvyBouj">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="505" cache_read_input_tokens="56489" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 505, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LHpWfPxLH49aiYiQvyBouj">
+Updated task #2 status
+  </tool_result>
+  <assistant>All 27 threads resolved. Now let me run CI to verify the `__all__` removal doesn't break anything.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="56994" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01X9fo8nMrtNjDhN4Q8Dt33j">
+    <param name="description">Run fast CI checks</param>
+    <param name="prompt">Run `make fast-ci` and report the results. Do NOT fix any errors — just report what passes and what fails.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="56994" output_tokens="144" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 88, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01X9fo8nMrtNjDhN4Q8Dt33j">
+Perfect! All tests and checks passed. Here's the summary:
+
+## make fast-ci Results: All Passed
+
+**Lint:** All checks passed
+**Format Check:** 1605 files already formatted
+**Prettier Check:** All matched files use Prettier code style
+**Markdown Check:** All CLAUDE.md and AGENTS.md files properly paired (19 files, 0 violations)
+**Exec Reference Check:** .claude/skills/erk-exec/reference.md is up to date
+**Type Checking (ty):** All checks passed
+
+**Unit Tests:**
+- erk: 5423 passed in 11.27s
+- erk-dev: 136 passed in 2.71s
+- erk-statusline: 112 passed in 0.69s
+- erkbot: 114 passed in 0.94s
+
+**Total:** 5785 tests passed across all packages, all linting and formatting checks passing.
+agentId: af5734c01d7831386 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14554
+tool_uses: 1
+duration_ms: 27943&lt;/usage&gt;
+  </tool_result>
+  <assistant>All CI checks pass. Here's a summary of what was done:
+
+**Code change:**
+- Removed `__all__` declaration (lines 66-94) from `src/erk/core/health_checks/__init__.py`. The imports stay because they're implementation dependencies of `run_all_checks()`, not re-exports. All external consumers already use canonical submodule paths.
+
+**Thread resolutions:**
+- 3 threads (items #1-3): Resolved with code fix — removed `__all__` and re-export pattern
+- 9 threads (items #4-12): Resolved as pre-existing LBYL patterns not introduced by this refactor
+- 15 threads (items #13-27): Resolved as pre-existing missing test coverage not in scope for a code-move PR
+
+**CI:** All 5785 tests pass, all lint/format/type checks clean.
+
+Ready to commit and push when you'd like.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="427" cache_read_input_tokens="57082" output_tokens="218" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 427, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;local:quick-submit&lt;/command-message&gt;
+&lt;command-name&gt;/local:quick-submit&lt;/command-name&gt;</user>
+  <user># Quick Submit
+
+Quickly commit all changes with a generic "update" message and submit to Graphite.
+
+## Usage
+
+```bash
+/quick-submit
+```
+
+## What This Command Does
+
+1. Stages all uncommitted changes
+2. Creates a commit with a generic "update" message (if there are changes)
+3. Submits the branch via Graphite (or git push if Graphite is not configured)
+4. Returns the PR URL on success
+
+This is a shortcut for rapid iteration when you don't need a detailed commit message.
+
+## Implementation Steps
+
+### Step 1: Stage and Commit Changes
+
+Run the following command from the repository root:
+
+```bash
+erk exec quick-submit
+```
+
+This command will:
+
+- Stage all changes in the working directory
+- Commit them with the message "update" if there are staged changes
+- Return a JSON response with the result
+
+### Step 2: Parse the Response
+
+The command outputs JSON with the following structure:
+
+```json
+{
+  "success": true,
+  "committed": true,
+  "message": "Changes submitted successfully",
+  "pr_url": "https://github.com/owner/repo/pull/123"
+}
+```
+
+Or on error:
+
+```json
+{
+  "success": false,
+  "error_type": "stage-failed|commit-failed|submit-failed",
+  "message": "Error description"
+}
+```
+
+**Decision logic:**
+
+- If `success` is `true`: Report the success message and PR URL to the user
+- If `success` is `false`: Display the error message and ask the user to fix the issue
+
+### Step 3: Report Results
+
+Display the result based on the response:
+
+**On success:**
+
+```
+Changes submitted successfully
+View PR: {pr_url}
+```
+
+**On failure:**
+
+```
+Error: {error_message}
+```
+
+If the error is `stage-failed` or `commit-failed`, suggest the user check their git state.
+If the error is `submit-failed`, suggest the user try `/erk:git-pr-push` as an alternative.
+
+## Error Handling
+
+- **No changes**: The command will still submit if there are already committed changes on the branch. No error is raised if there are no staged changes.
+- **Graphite not initialized**: Falls back to git push if the repository is not Graphite-managed.
+- **Submit fails**: Display the error and suggest `/erk:git-pr-push` as an alternative.
+
+## Notes
+
+- This is a shortcut for rapid iteration
+- Uses generic "update" commit message
+- For detailed commit messages, use `/erk:pr-submit` instead
+- For git-only workflows (no Graphite), use `/erk:git-pr-push`
+</user>
+  <tool_use name="Bash" id="toolu_01HQAUs9xQz5tpmt4GVYTUGa">
+    <param name="command">uv run erk exec quick-submit</param>
+    <param name="description">Stage, commit, and submit via Graphite</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="816" cache_read_input_tokens="57725" output_tokens="134" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 816, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HQAUs9xQz5tpmt4GVYTUGa">
+  Staging all changes...
+  Checking for staged changes...
+  Committing changes...
+  Submitting to Graphite...
+  Getting PR URL...
+{
+  "success": true,
+  "staged_changes": true,
+  "committed": true,
+  "message": "Changes submitted successfully",
+  "pr_url": "https://github.com/dagster-io/erk/pull/8516"
+}
+  </tool_result>
+  <assistant>Changes submitted successfully.
+View PR: https://github.com/dagster-io/erk/pull/8516</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="218" cache_read_input_tokens="58541" output_tokens="29" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 218, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>can we change pr-address to detect this code move use case and automatically resolve the threads</user>
+  <thinking>The user wants to modify the `pr-address` workflow to automatically detect when a PR is a "code-move" (refactoring/restructuring) and auto-resolve review threads that flag pre-existing issues rather than issues introduced by the change.
+
+Let me explore the codebase to understand:
+1. How pr-address works currently
+2. How pr-feedback-classifier works
+3. What the code-move detection could look like</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="1370" cache_read_input_tokens="58786" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1370}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good idea. Let me explore how `pr-address` and the feedback classifier work today.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1370" cache_read_input_tokens="58786" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1370}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01VrBqLsWrRxre9Wv2yKd5ok">
+    <param name="description">Explore pr-address workflow</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 571 chars]...e
+
+Focus on the classification logic and how the batching/auto-resolve decisions are made.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1370" cache_read_input_tokens="58786" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1370}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01LXQbYJWbrjy5fnQV8pdH1n">
+    <param name="description">Explore PR diff detection</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 579 chars]...ist for determining if a review comment points at pre-existing code vs newly written code.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1370" cache_read_input_tokens="58786" output_tokens="668" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1370, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VrBqLsWrRxre9Wv2yKd5ok">
+Perfect! Now I have all the information I need. Let me compile a comprehensive report.
+
+## Comprehensive Analysis: PR Address Skill and PR Feedback Classifier
+
+Based on my exploration of the erk codebase, here's what I found:
+
+---
+
+### 1. **PR Address Skill Definition**
+
+**Location:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-56/.claude/commands/erk/pr-address.md`
+
+The `/erk:pr-address` command is a multi-phase workflow that:
+- Fetches unresolved PR review comments AND PR discussion comments
+- Groups them by complexity with smart batching
+- Processes batch-by-batch with incremental commits
+- Resolves all threads with optional user confirmation for complex changes
+
+**Key Features:**
+- Includes resolved threads with `--all` flag
+- Targets specific PRs with `--pr &lt;number&gt;`
+- Performs holistic analysis with automatic batching
+
+---
+
+### 2. **PR Feedback Classifier Skill**
+
+**Location:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-56/.claude/skills/pr-feedback-classifier/SKILL.md`
+
+This is a **critical component** that runs as a subagent in "fork" context with the Sonnet model. It:
+
+... [225 lines omitted] ...
+
+  "error": null
+- "Violations to fix" (linting, type errors)
+  </tool_result>
+  <tool_result tool="toolu_01LXQbYJWbrjy5fnQV8pdH1n">
+Perfect! Now I have a comprehensive understanding. Let me write a summary report of all the findings:
+
+## Comprehensive Analysis: PR Change Detection in Erk
+
+Based on my exploration of the erk codebase, here's what I found about how the system detects and handles PR changes:
+
+### **1. Documentation Resources**
+
+**Key Documents:**
+- `/docs/learned/pr-operations/feedback-classification.md` - Describes how PR comments are categorized
+- `/docs/learned/reference/git-diff-syntax.md` - Explains the three-dot vs two-dot git diff syntax
+- `/docs/learned/pr-operations/large-diff-recovery.md` - Covers diff extraction strategies
+
+### **2. Core Diff Fetching Infrastructure**
+
+**File:** `/packages/erk-shared/src/erk_shared/gateway/pr/diff_extraction.py`
+
+Key features:
+- **Filters lock files** (uv.lock, package-lock.json, yarn.lock, etc.) before sending diffs to AI
+- **Uses local git diff** instead of GitHub API to avoid 20k line limit
+- **Truncates large diffs** for AI analysis
+- **Three-dot syntax** (`git diff branch...HEAD`) matches GitHub's PR diff behavior, showing only changes introduced on the branch
+
+**File:** `/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py`
+
+Implements:
+- `get_diff_to_branch(cwd, branch)` - Uses three-dot syntax to get merge-base-relative diff
+- `count_commits_ahead()`, `count_commits_behind()`, `get_merge_base()` - Branch analysis
+
+### **3. PR Review Thread Tracking**
+
+... [109 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a good understanding of the system. Let me think about the approach.
+
+The key insight is: when a PR is primarily a code-move (restructuring/refactoring), bot review comments about LBYL patterns, missing tests, etc. are flagging pre-existing issues, not issues introduced by the PR. These should be auto-resolved.
+
+The question is: where does this detection live?
+
+Options:
+1. **In the classifier skill** - Add a "pre-existing" classification for threads that flag issues in code that wasn't newly written
+2. **In pr-address** - Add a phase that detects code-move PRs and auto-resolves pre-existing threads before processing
+
+
+3. **In an exec script** - Create a new script that analyzes the diff to determine if lines are moved vs new
+
+The simplest approach would be using git diff to identify which lines are truly new versus merely moved, then classifying comments on moved code as pre-existing and auto-resolving them. Even simpler: if a file is renamed or the same code block appears in both removed and added hunks across different files, those comments are definitely about pre-existing code.
+
+But thinking about the user's actual scenario - they're splitting a monolithic file into a subpackage - the bot is flagging issues that existed in the original file. The real signal is that automated reviewers can't distinguish between new and moved code, so for refactoring PRs most bot findings are pre-existing. The practical approach would be checking if the flagged code existed on the base branch and came from a bot reviewer. the classifier**
+- Parse the PR diff to identify "moved" code (lines that appear in both deletions and additions)
+- Mark threads pointing at moved code as "pre-existing"
+- Auto-resolve those threads
+
+**Approach B: Simple heuristic in the classifier** 
+- Detect if the PR is primarily a code-move: high ratio of moved lines (appear in both + and - sections) vs truly new lines
+- If so, mark bot threads on non-new code as pre-existing
+
+**Approach C: Add a new exec script that does code-move analysis**
+- New script: `analyze-pr-diff` that returns a structured analysis of what's new vs moved
+- Feed this into the classifier as additional context
+
+The cleanest path forward is to build a dedicated exec script that handles the mechanical work of detecting moved code, then feed that data into the classifier so it can mark threads appropriately and auto-resolve them. Actually, I'm realizing the classifier is AI-powered, not a script—the real work here is the code analysis itself, which should be deterministic. So I need a new exec script that takes a PR, parses the diff to find added lines, checks if they exist in the base branch, and returns a JSON report showing which files are mostly moves versus new code. I can use git's built-in rename and copy detection with flags like `-M` and `-C` to identify which files are moves versus splits, then mark threads on those files as pre-existing and auto-resolve them. This approach is simpler than manual analysis, though it might still miss edge cases like the health_checks split where one file becomes many.
+
+Alternatively, I could enhance the classifier itself by giving it the PR title and description so it can recognize refactoring PRs and mark bot comments about patterns as pre-existing, but that risks being unreliable without seeing the actual base branch code. The mechanical approach using git's diff analysis seems more robust.
+
+So I'll combine git-based detection with classifier enhancement: create a new script that uses `git diff` with move and copy detection to calculate what percentage of each file's added lines already existed on the base branch, then feed those results to the classifier so it can mark bot-authored threads on high-movement files as pre-existing. The pr-address command would then use this classification to create a separate batch for these pre-existing issues.
+
+But actually, I'm overcomplicating this. The user just wants pr-address to automatically detect and resolve threads on moved code. The simplest approach is to check if each flagged line's content (ignoring whitespace) already exists somewhere on the base branch—if it does, it's pre-existing and can be auto-resolved with a comment. I'm reconsidering whether the user actually needs the full complexity I was planning—they might just want a straightforward way to detect when a PR is restructuring code and auto-resolve bot threads on those moved files. Let me look at the codebase more carefully to understand the architecture better before settling on an approach.
+
+I think the cleanest solution would be to add a dedicated detection script that identifies code moves by comparing added lines against the base branch, then enhance the classifier to mark bot threads on moved content as pre-existing, and finally add an auto-batch in pr-address that resolves those threads automatically.
+
+Now I'm working through the implementation details for the detection script—I need to get the merge base, run a diff with rename detection enabled, then for each added line check if that content already exists somewhere on the base branch to calculate how much of each file is actually moved versus new.
+
+Implementing the line-matching logic... I'm realizing the core issue: I need to distinguish between code that was genuinely moved versus code that's legitimately new or changed. In the user's case with `health_checks.py` being split into a package, the linting issues flagged in the submodules already existed in the original file—only the `__all__` re-export pattern was actually new. So the detection strategy should focus on identifying which issues are artifacts of the refactoring versus which ones represent actual new problems introduced by the code reorganization. the old file and now lives in a new file (unchanged) → pre-existing issues
+- **New code**: code that didn't exist before (like `__all__`, new imports) → real issues
+- **Modified code**: code that was changed during the move → real issues
+
+This is fundamentally about **line-level provenance**: for each line in the PR, where did it come from?
+
+Git actually has a tool for this: `git blame` on the PR branch will show which commits introduced each line. Lines from the PR's own commit(s) are "new/modified", lines from older commits are pre-existing (but those wouldn't show up in the diff anyway).
+
+Wait, actually the issue is different. In a code-move PR, all lines in the new files show as "added" in the diff because the files are new, but many of those "added" lines are really just copies from deleted files that `git diff` doesn't recognize as moves.
+
+The approach is straightforward: parse the diff to extract added and deleted lines, then for each added line, check if its content (ignoring whitespace) appears anywhere in the deleted lines. I can calculate a moved ratio per file by dividing moved lines by total added lines. If a review comment lands on a line that's marked as moved, it's pointing to pre-existing code.
+
+Now I need to look at how the exec script infrastructure works so I can integrate this new check properly.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5200" cache_read_input_tokens="60156" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5200}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good exploration results. Let me look at a few more implementation details before designing the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5200" cache_read_input_tokens="60156" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5200}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01MBfPNbGCRaN2hREdBuKYk9">
+    <param name="description">Explore exec script patterns</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 624 chars]...a new exec script, the exact data structures used, and how the skill invokes exec scripts.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5200" cache_read_input_tokens="60156" output_tokens="3854" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5200, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MBfPNbGCRaN2hREdBuKYk9">
+Perfect! Now I have all the information needed. Let me compile a comprehensive summary of the patterns and structures.
+
+## Summary: How to Add a New Exec Script to Erk
+
+Based on my analysis of the codebase, here's a complete guide:
+
+### 1. **Exec Script Location &amp; File Structure**
+
+All exec scripts live in: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-56/src/erk/cli/commands/exec/scripts/`
+
+Each script is a Python module with:
+- Module docstring with usage examples
+- TypedDict definitions for JSON output types
+- Helper functions for formatting/validation
+- A single `@click.command()` Click function
+
+**Example file:**
+```
+src/erk/cli/commands/exec/scripts/my_new_script.py
+```
+
+### 2. **Registration Pattern**
+
+Exec scripts are **statically registered** (not auto-discovered):
+
+**File:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-56/src/erk/cli/commands/exec/group.py`
+
+**Process:**
+1. Import the command function at the top of `group.py`
+2. Call `exec_group.add_command(my_function, name="kebab-case-name")` to register it
+
+... [249 lines omitted] ...
+
+Define frozen dataclasses for success and error results:
+class MyCommandError:
+    error: str     # Machine-readable code like "invalid_input"
+#### D. **Error Handling Pattern**
+    # If NonIdealStateError is raised, it's caught and converted to JSON
+if isinstance(result, MyCommandError):
+- **0**: Always, even on error (supports `|| true` shell patterns)
+- **1**: Only for "Context not initialized" errors (missing required dependencies)
+Always output JSON to stdout, never raise exceptions.
+  "error": null
+- Simple success/error output
+- Discriminated union error handling
+- [ ] Define frozen dataclasses for success/error results
+- [ ] Exit with `raise SystemExit(0)` (even on error)
+| Exit codes | 0 always (even errors) | Varied by context |
+| Error handling | JSON output with discriminated unions | Exceptions, exit codes |
+  </tool_result>
+  <thinking>Now I have a thorough understanding of the system. Let me design the plan.
+
+The key question is: what's the right level of detection? Let me think about the simplest approach that would be reliable.
+
+**Core Algorithm:**
+1. Parse the PR diff to extract deleted lines and added lines
+2. For each added line, check if its content (stripped) exists in the deleted lines
+3. Lines that exist in both deleted and added are "moved" lines
+4. For each review thread at `path:line`, check if that line is a "moved" line
+5. If moved → pre-existing issue, auto-resolve
+
+This is a pure string-matching approach. It's simple and handles the file-split case well.
+
+
+I'll need to create a dedicated exec script to detect code moves, then enhance the feedback classifier to mark pre-existing issues and update both the address and preview commands to handle auto-resolution and separate display of these items. A separate script keeps things clean with a single responsibility.
+
+The exec script will take a PR number and output JSON showing which lines are moved versus genuinely new, including per-file analysis of the moved ratio and specific line numbers that are actually new code.
+
+Now I'm thinking through how the classifier should use this data—it needs to check whether a given line at a specific path is in the new_line_numbers set to determine if it's pre-existing or moved content. The most efficient approach is to return per-file data with the set of genuinely new line numbers, so the classifier can quickly check if a flagged line falls outside that set, meaning it's pre-existing code.
+
+Let me reconsider the algorithm itself and how to parse the unified diff to identify which lines are actually moved versus added. I need to handle duplicate lines properly using a Counter instead of a set, since the same line could appear multiple times in both files. If the old file has three `return None` statements and the new file has two, I should only mark two as moved and leave one as new.
+
+For the review thread's line references, they point to line numbers in the new file version, so I need to map those back to the diff's added lines. I can build a map of which new-file line numbers correspond to added content, then check each one against the removed-lines multiset to identify moves.
+
+Actually, I could skip parsing diffs entirely and just compare the base and PR branch files line-by-line, but that would require more I/O. The diff approach is more efficient.
+
+Let me consider using `git diff -M -C` to detect renames and copies automatically—the `-C` flag might catch file splits where one file becomes multiple files, though it depends on how similar the content is.
+
+I think a hybrid approach makes more sense: try `git diff -C` first, then fall back to content matching for any files git doesn't recognize as copies. Actually, the content-matching approach is probably simpler and more reliable overall.
+
+Building the detect-code-moves script...
+
+For the algorithm, I need to extract removed lines across all files, then check each added line against that pool to find matches. I can parse the unified diff format myself since the structure is straightforward—just need to identify the removed and added lines with their content.
+
+Now I'm thinking about the architecture: the exec script should handle the mechanical work of identifying moved versus new lines, while the classifier skill uses that output to mark threads as pre-existing or not, and the pr-address command acts on those flags.
+
+Actually, I could skip modifying the classifier entirely and instead add a detection step at the start of pr-address that runs the code-move detection and cross-references it with classified threads to auto-resolve them. But then the preview command also needs this information, which means the classifier's output really should include it—maybe as a separate `pre_existing` boolean field rather than adding a third classification type, since a thread could theoretically be both actionable and pre-existing.
+
+So the approach is: create a new `detect-code-moves` script that analyzes the diff to identify moved versus new lines, then enhance the classifier to call this and tag threads with the `pre_existing` flag when they're from a bot and on moved lines, and finally update `pr-address` to use this information.
+
+I'm thinking through the edge cases now—if a thread points to a modified line, the content won't match the base so it gets treated as new, which is correct. New imports in moved files are genuinely new lines. And the `__all__` case works out too since it didn't exist before. This approach seems to handle the tricky scenarios properly.
+
+Now I'm considering whether we should differentiate based on who authored the comment. Bot reviewers don't distinguish between moved and new code, so their findings on moved code are genuinely pre-existing issues worth auto-resolving. But human reviewers commenting on moved code probably have intentional feedback about the refactoring itself, so those threads should still surface. I think `pre_existing` should only apply to bot-authored threads on moved code.
+
+To identify bot comments, I can check if the author ends with `[bot]` — that's the most reliable approach that covers all current and future bot reviewers. Alternatively, I could use `git blame` on the PR branch to distinguish between lines that are new/modified versus those from older commits, though that's more complex than the content-matching approach I've been considering.
+
+I'm weighing whether code-move detection should run automatically on all PRs or only when explicitly requested, and I'm leaning toward making it always active since it integrates naturally into the existing classifier and processing pipeline.
+
+The performance impact should be minimal—getting the merge base, computing the diff, and parsing it are all fast local git operations that should complete in under a second, so there's no real cost to running it universally. For PRs without code moves, the script simply returns false and nothing changes downstream.
+
+Now I need to clarify the thread structure before writing out the full plan.
+
+The `get-pr-feedback` output gives me review threads with file path, line number, and outdated status, plus separate discussion comments that lack location info. Code-move detection only matters for review threads since they're tied to specific lines. When I map detected moves back, I need to index them by the file path and line number as they appear in the new version of the code—that's what the PR review threads reference.
+
+Now I'm thinking through what the detect-code-moves API should actually return. I could structure it per-file with counts and lists of which new line numbers were moved, or I could flatten it differently. I also want to clarify with the user whether this should just auto-resolve threads or also change how they're displayed in the preview—both seem valuable. Thinking through the simplest interface for the classifier—it needs to know whether each line is moved code, so returning just the set of new lines makes sense since that's the smaller dataset and enables fast O(1) lookups. I'll go with Option A and structure the JSON to include summary stats plus a breakdown by file showing which lines are genuinely new versus moved. The algorithm naturally handles both new and existing files—I just need to collect all removed lines from the diff, then check each added line against those removals to identify what's been moved. Now I'm thinking through how the classifier skill itself needs to change: it'll run the code-move detection command alongside the existing feedback extraction, then cross-reference thread locations with the move data to tag whether content is pre-existing.
+
+The pr-address command will then handle pre-existing threads specially—auto-resolving them in their own batch before processing other feedback—while pr-preview-address displays them in a separate section. I'm debating whether to add move detection as a separate exec script or fold it into the existing get-pr-feedback command, but keeping them separate respects the single responsibility principle: get-pr-feedback handles GitHub data, while code-move detection is purely local git analysis.
+
+Now I'm writing out the actual plan, deciding to go with bot-only auto-resolve for moved code threads since that's the clearest use case, and I want to verify the exact phases of the pr-address command before finalizing everything.
+
+I need to incorporate a new batch type for handling pre-existing threads during the execution phase.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="6722" cache_read_input_tokens="65356" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6722}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a comprehensive understanding. Let me read the actual pr-address command and classifier skill to nail down the exact changes needed.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6722" cache_read_input_tokens="65356" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6722}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GbEXx2Zzx6odTdq5JXpdZZ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-56/.claude/commands/erk/pr-address.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6722" cache_read_input_tokens="65356" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6722}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GbEXx2Zzx6odTdq5JXpdZZ">
+     1→---
+     2→description: Address PR review comments on current branch
+     3→---
+     4→
+     5→# /erk:pr-address
+     6→
+     7→## Description
+     8→
+     9→Fetches unresolved PR review comments AND PR discussion comments from the current branch's PR and addresses them using holistic analysis with smart batching. Comments are grouped by complexity and relationship, then processed batch-by-batch with incremental commits and resolution.
+    10→
+    11→## Usage
+    12→
+    13→```bash
+    14→/erk:pr-address
+    15→/erk:pr-address --all               # Include resolved threads (for reference)
+    16→/erk:pr-address --pr 6631           # Target specific PR
+    17→/erk:pr-address --pr 6631 --all     # Target specific PR with resolved threads
+    18→```
+    19→
+    20→## Prerequisite
+    21→
+    22→**Load the `pr-operations` skill first** for complete command reference and common mistake patterns.
+    23→
+    24→## Agent Instructions
+    25→
+    26→&gt; **Prerequisite**: Load `pr-operations` skill first for command reference.
+    27→
+    28→&gt; **CRITICAL: Use ONLY `erk exec` Commands**
+    29→&gt;
+    30→&gt; See `pr-operations` skill for the complete command reference. Never use raw `gh api` calls for thread operations.
+
+... [263 lines omitted] ...
+
+    56→- `error`: Error message if `success` is false
+    58→**Handle errors**: If `success` is false, display the error and exit.
+   286→### Error Handling
+   288→**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+   290→**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+   292→**CI failure during batch:** Stop, display the failure, and let the user decide whether to fix and continue or abort
+  </tool_result>
+  <tool_use name="Read" id="toolu_01HHXSHb4cdhrmwSAbXFVspd">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-56/.claude/skills/pr-feedback-classifier/SKILL.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6722" cache_read_input_tokens="65356" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6722}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HHXSHb4cdhrmwSAbXFVspd">
+     1→---
+     2→name: pr-feedback-classifier
+     3→description: &gt;
+     4→  Fetches and classifies PR review feedback with context isolation.
+     5→  Returns structured JSON with thread IDs for deterministic resolution.
+     6→  Use when analyzing PR comments before addressing them.
+     7→argument-hint: "[--pr &lt;number&gt;] [--include-resolved]"
+     8→context: fork
+     9→agent: general-purpose
+    10→model: sonnet
+    11→---
+    12→
+    13→# PR Feedback Classifier
+    14→
+    15→Fetch and classify all PR review feedback for the current branch's PR.
+    16→
+    17→## Arguments
+    18→
+    19→- `--pr &lt;number&gt;`: Target a specific PR by number (default: current branch's PR)
+    20→- `--include-resolved`: Include resolved threads (for reference)
+    21→
+    22→Check `$ARGUMENTS` for flags.
+    23→
+    24→## Critical Constraints
+    25→
+    26→**DO NOT write Python scripts or any code files.** Classify the data using direct AI reasoning only. Writing code to process JSON is unnecessary and pollutes the filesystem.
+    27→
+    28→## Steps
+    29→
+    30→1. **Fetch PR info and all comments in a single call:**
+
+... [157 lines omitted] ...
+
+   105→      "action_summary": "Bot suggestion: add unit tests for error handling paths",
+   107→      "original_comment": "Consider adding unit tests for the error handling paths in this endpoint"
+   139→  "error": null
+   152→## Error Case
+   166→  "error": "No PR found for branch feature-xyz"
+   184→  "error": null
+  </tool_result>
+  <tool_use name="Read" id="toolu_011Wz4DidkajX4mt6xyvqKyU">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-56/.claude/commands/erk/pr-preview-address.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6722" cache_read_input_tokens="65356" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6722}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011Wz4DidkajX4mt6xyvqKyU">
+     1→---
+     2→description: Preview PR review feedback and planned actions
+     3→---
+     4→
+     5→# /erk:pr-preview-address
+     6→
+     7→## Description
+     8→
+     9→Fetches unresolved PR review comments and discussion comments, displays a summary of what `/erk:pr-address` would do. This is a read-only preview command that makes no changes.
+    10→
+    11→## Usage
+    12→
+    13→```bash
+    14→/erk:pr-preview-address
+    15→/erk:pr-preview-address --all               # Include resolved threads
+    16→/erk:pr-preview-address --pr 6631           # Target specific PR
+    17→/erk:pr-preview-address --pr 6631 --all     # Target specific PR with resolved threads
+    18→```
+    19→
+    20→## Agent Instructions
+    21→
+    22→&gt; **IMPORTANT: This is a READ-ONLY preview command.**
+    23→&gt;
+    24→&gt; Do NOT make any code changes, resolve any threads, reply to any comments, or create any commits.
+    25→
+    26→### Phase 1: Classify Feedback
+    27→
+    28→Invoke the pr-feedback-classifier skill to fetch and classify all PR feedback:
+    29→
+    30→```
+
+... [78 lines omitted] ...
+
+    38→**Handle errors**: If `success` is false, display the error and exit.
+   103→## Error Handling
+   105→**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+   107→**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+  </tool_result>
+  <thinking>Now I have a complete picture. Let me also look at the existing exec script structure to understand exactly how to implement the new script. Let me read `get_pr_feedback.py` for the exact pattern.
+
+Actually, I have enough from the explore agent's analysis. Let me design the plan.
+
+The key design decisions:
+
+1. **Where does code-move detection happen?** → New exec script `detect-code-moves`
+2. **Where does thread annotation happen?** → In the classifier skill
+3. **Where does auto-resolve happen?** → In pr-address (new batch type)
+4. **Where does preview display happen?** → In pr-preview-address (new section)
+
+
+5. **How does the detection work?** → I'll compare the diff between merge base and HEAD, collect all removed line contents into a multiset, then check each added line against that set to identify which lines are moved versus genuinely new, returning per-file analysis of moved line numbers.
+
+Then the classifier runs the detection script and marks any thread on a moved line from a bot author as pre-existing. After that, pr-address handles the auto-resolve logic.
+
+I'm realizing the classifier itself is an AI agent (using Sonnet), so it can both execute the detection script for mechanical data and do the reasoning to classify threads. The flow becomes: run the existing feedback script, then run the new move-detection script, then classify threads with that context and output the results.
+
+For the detection script, I don't actually need the PR number—I can just use local git operations to find the merge base with main and compute the diff from there. I should handle the edge case where there's no common ancestor by returning an empty analysis, and I need to think through how to handle modified files alongside new ones.
+
+The key insight is to collect all removed lines into a multiset, then for each added line check if it exists in that set and consume matches to avoid double-counting. This approach naturally handles file renames, splits, and even lines that move within the same file during modification.
+
+I should also consider edge cases with common lines like blank lines and repeated imports—blank lines should be skipped entirely, while imports that appear in deleted files and multiple new files would only match once in the multiset, which is the correct behavior since we're tracking actual moves rather than coincidental duplicates.
+
+For noise reduction, I could filter out very short lines, though I'm leaning toward just skipping blank and whitespace-only lines to keep it simple rather than trying to detect punctuation-only patterns.
+
+The exec script needs to return structured data with both summary statistics and per-file, per-line details so the classifier can determine which specific lines were moved.
+
+Now I'm thinking through the scope: should this auto-resolution apply only to bot threads, or should it also affect how human threads on moved code are displayed? I'm leaning toward only auto-resolving bot threads, since human feedback on restructured code might be intentional, though I could mark those threads differently to indicate they're on pre-existing code.
+
+I'll document this decision in the plan and let the user choose. Now I'm mapping out the files that need to be created or modified: a new script to detect code moves, updates to register the command, modifications to the classifier skill and the PR feedback commands to handle pre-existing threads, plus tests for the new functionality.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="12881" cache_read_input_tokens="72078" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12881}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read one more file to understand the exact diff parsing capabilities available.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="12881" cache_read_input_tokens="72078" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12881}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01D386miWaNnWmdPS2Hspof9">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-56/src/erk/cli/commands/exec/scripts/get_pr_feedback.py</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12881" cache_read_input_tokens="72078" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12881}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01D386miWaNnWmdPS2Hspof9">
+     1→"""Fetch all PR feedback (review threads + discussion comments) in a single command.
+     2→
+     3→Combines the functionality of get-pr-review-comments and get-pr-discussion-comments
+     4→into one command, eliminating redundant PR lookups and enabling parallel fetches.
+     5→
+     6→Usage:
+     7→    erk exec get-pr-feedback
+     8→    erk exec get-pr-feedback --pr 123
+     9→    erk exec get-pr-feedback --include-resolved
+    10→
+    11→Output:
+    12→    JSON with pr_info, review_threads, and discussion_comments sections
+    13→
+    14→Exit Codes:
+    15→    0: Success (or graceful error with JSON output)
+    16→    1: Context not initialized
+    17→"""
+    18→
+    19→from __future__ import annotations
+    20→
+    21→import json
+    22→from concurrent.futures import ThreadPoolExecutor
+    23→from typing import TypedDict
+    24→
+    25→import click
+    26→
+    27→from erk.cli.script_output import exit_with_error, handle_non_ideal_exit
+    28→from erk_shared.context.helpers import (
+    29→    get_current_branch,
+    30→    require_github,
+
+... [30 lines omitted] ...
+
+    37→from erk_shared.non_ideal_state import BranchDetectionFailed
+  </tool_result>
+  <tool_use name="Read" id="toolu_01AsETG3fUWbMydQ263UBVTT">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-56/packages/erk-shared/src/erk_shared/gateway/pr/diff_extraction.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12881" cache_read_input_tokens="72078" output_tokens="2142" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12881, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AsETG3fUWbMydQ263UBVTT">
+     1→"""Diff extraction for AI commit message generation.
+     2→
+     3→This module extracts PR diff content from GitHub and prepares it for AI analysis.
+     4→It is part of the two-layer PR submission architecture, called after core_submit
+     5→to get the diff for AI-powered commit message generation.
+     6→"""
+     7→
+     8→import re
+     9→from collections.abc import Generator
+    10→from pathlib import Path
+    11→
+    12→from erk_shared.context.context import ErkContext
+    13→from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+    14→from erk_shared.gateway.gt.prompts import truncate_diff
+    15→from erk_shared.scratch.scratch import write_scratch_file
+    16→
+    17→# Lock files that are auto-generated and add no value to PR descriptions.
+    18→# These are filtered out before sending diffs to AI for analysis.
+    19→EXCLUDED_LOCK_FILES = frozenset(
+    20→    {
+    21→        "uv.lock",
+    22→        "package-lock.json",
+    23→        "yarn.lock",
+    24→        "pnpm-lock.yaml",
+    25→        "Cargo.lock",
+    26→        "poetry.lock",
+    27→        "Pipfile.lock",
+    28→        "composer.lock",
+    29→        "Gemfile.lock",
+    30→    }
+
+... [108 lines omitted] ...
+
+   108→        CompletionEvent with Path to diff file on success, None on failure
+   125→        yield ProgressEvent("Diff truncated for size", style="warning")
+  </tool_result>
+  <thinking>Now let me also look at the git analysis operations to see what's available for getting the merge base and diff.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5378" cache_read_input_tokens="84959" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5378}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_015tkx1kiYuxEBtdh2ccEhSB">
+    <param name="pattern">get_merge_base|get_diff_to_branch</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-56/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5378" cache_read_input_tokens="84959" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5378}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015tkx1kiYuxEBtdh2ccEhSB">
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/printing.py:26:    def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -&gt; str | None:
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/printing.py:28:        return self._wrapped.get_merge_base(repo_root, ref1, ref2)
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/printing.py:30:    def get_diff_to_branch(self, cwd: Path, branch: str) -&gt; str:
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/printing.py:32:        return self._wrapped.get_diff_to_branch(cwd, branch)
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py:34:    def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -&gt; str | None:
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py:66:    def get_diff_to_branch(self, cwd: Path, branch: str) -&gt; str:
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py:49:    def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -&gt; str | None:
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py:62:    def get_diff_to_branch(self, cwd: Path, branch: str) -&gt; str:
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/dry_run.py:30:    def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -&gt; str | None:
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/dry_run.py:32:        return self._wrapped.get_merge_base(repo_root, ref1, ref2)
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/dry_run.py:34:    def get_diff_to_branch(self, cwd: Path, branch: str) -&gt; str:
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/dry_run.py:36:        return self._wrapped.get_diff_to_branch(cwd, branch)
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/fake.py:53:    def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -&gt; str | None:
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/fake.py:64:    def get_diff_to_branch(self, cwd: Path, branch: str) -&gt; str:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01JpwVBtZGKE3BwKCyU1WiJN">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-56/src/erk/cli/commands/exec/group.py</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5378" cache_read_input_tokens="84959" output_tokens="278" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5378, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JpwVBtZGKE3BwKCyU1WiJN">
+     1→"""Static exec group for erk scripts.
+     2→
+     3→This module provides the `erk exec` command group with all scripts
+     4→statically registered.
+     5→"""
+     6→
+     7→import click
+     8→
+     9→# Import and register all scripts
+    10→from erk.cli.commands.exec.scripts.add_plan_label import add_plan_label
+    11→from erk.cli.commands.exec.scripts.add_plan_labels import add_plan_labels
+    12→from erk.cli.commands.exec.scripts.add_remote_execution_note import (
+    13→    add_remote_execution_note,
+    14→)
+    15→from erk.cli.commands.exec.scripts.capture_session_info import (
+    16→    capture_session_info,
+    17→)
+    18→from erk.cli.commands.exec.scripts.ci_fetch_summaries import ci_fetch_summaries
+    19→from erk.cli.commands.exec.scripts.ci_generate_summaries import ci_generate_summaries
+    20→from erk.cli.commands.exec.scripts.ci_update_pr_body import ci_update_pr_body
+    21→from erk.cli.commands.exec.scripts.ci_verify_autofix import ci_verify_autofix
+    22→from erk.cli.commands.exec.scripts.cleanup_impl_context import cleanup_impl_context
+    23→from erk.cli.commands.exec.scripts.close_pr import (
+    24→    close_pr,
+    25→)
+    26→from erk.cli.commands.exec.scripts.close_prs import close_prs
+    27→from erk.cli.commands.exec.scripts.create_impl_context_from_plan import (
+    28→    create_impl_context_from_plan,
+    29→)
+    30→from erk.cli.commands.exec.scripts.create_pr_from_session import (
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01TP8dJ6HDKsJFHRGJAJfkh8">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-56/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py</param>
+    <param name="offset">30</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1759" cache_read_input_tokens="90337" output_tokens="138" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1759, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TP8dJ6HDKsJFHRGJAJfkh8">
+    30→        """
+    31→        ...
+    32→
+    33→    @abstractmethod
+    34→    def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -&gt; str | None:
+    35→        """Get the merge base commit SHA between two refs.
+    36→
+    37→        The merge base is the best common ancestor of two commits, useful
+    38→        for determining how branches have diverged.
+    39→
+    40→        Args:
+    41→            repo_root: Path to the git repository root
+    42→            ref1: First ref (branch name, commit SHA, or remote ref)
+    43→            ref2: Second ref (branch name, commit SHA, or remote ref)
+    44→
+    45→        Returns:
+    46→            Commit SHA of the merge base, or None if refs have no common ancestor
+    47→        """
+    48→        ...
+    49→
+    50→    @abstractmethod
+    51→    def count_commits_behind(self, cwd: Path, target_branch: str) -&gt; int:
+    52→        """Count commits in target_branch that are not in HEAD.
+    53→
+    54→        Uses `git rev-list --count HEAD..{target_branch}`.
+    55→
+    56→        Args:
+    57→            cwd: Working directory
+    58→            target_branch: Branch to compare against
+    59→
+
+... [20 lines omitted] ...
+
+    61→            Number of commits behind, or 0 on error
+  </tool_result>
+  <assistant>Good, I have all the pieces. Now let me design the plan with a Plan agent.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="799" cache_read_input_tokens="92096" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 799}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_012YdLvXzvSD5BBgBiFp36Qj">
+    <param name="description">Design code-move detection plan</param>
+    <param name="prompt">Design an implementation plan for adding code-move detection to the erk pr-address workflo...[truncated 4573 chars]...r skill text
+- Exact changes to pr-address and pr-preview-address commands
+- Test strategy</param>
+    <param name="subagent_type">Plan</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="799" cache_read_input_tokens="92096" output_tokens="1440" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 799, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012YdLvXzvSD5BBgBiFp36Qj">
+Now I have a comprehensive understanding of the codebase. Let me create the detailed implementation plan.
+
+---
+
+## Implementation Plan: Code-Move Detection for `erk pr-address`
+
+### Overview
+
+This plan adds a `detect-code-moves` exec script that analyzes the PR diff to distinguish genuinely new lines from lines that were simply moved from one file to another. The classifier skill and pr-address/pr-preview-address commands are then enhanced to use this information to auto-resolve bot-filed threads that point at pre-existing (moved) code.
+
+---
+
+### Change 1: New exec script `detect_code_moves.py`
+
+**File:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-56/src/erk/cli/commands/exec/scripts/detect_code_moves.py`
+
+This script follows the exact patterns from `detect_trunk_branch.py`: frozen dataclasses for result types, a pure `_impl` function for testability, and a thin Click command wrapper.
+
+#### Result Dataclasses
+
+```python
+from __future__ import annotations
+
+import json
+import re
+from collections import Counter
+from dataclasses import asdict, dataclass
+from pathlib import Path
+
+import click
+
+... [851 lines omitted] ...
+
+class CodeMoveError:
+    """Error result when code move detection fails."""
+    error: str
+) -&gt; CodeMoveResult | CodeMoveError:
+        CodeMoveResult on success, CodeMoveError on failure
+        return CodeMoveError(
+            error="trunk-not-found",
+    if isinstance(result, CodeMoveError):
+def _result_to_dict(result: CodeMoveResult | CodeMoveError) -&gt; dict:
+    if isinstance(result, CodeMoveError):
+**Error case:**
+  "error": "trunk-not-found",
+    """Error when neither main nor master exist on remote."""
+    assert isinstance(result, CodeMoveError)
+    assert result.error == "trunk-not-found"
+def test_cli_error_exit_code(tmp_path: Path) -&gt; None:
+**Classifier fallback:** If `detect-code-moves` fails (error exit, trunk not found), the classifier should proceed normally -- set `pre_existing: false` for all threads. This ensures the feature is additive and never blocks the existing workflow.
+  </tool_result>
+  <thinking>The user doesn't want a new exec script. They think it's overkill. Let me rethink the approach.
+
+Instead of a new exec script, I could do the code-move detection entirely within the classifier skill (which is an AI agent running Sonnet). The classifier already fetches PR feedback - it could also run a simple `git diff` command and reason about which lines are moved vs new.
+
+Or even simpler: the classifier could just run `git diff main...HEAD --stat` or `git diff main...HEAD` and use its AI reasoning to determine which threads point at moved code.
+
+Actually, the simplest approach: just enhance the classifier skill's prompt to tell it to also check if the PR is a code-move/restructure, and if so, mark bot threads as pre-existing. 
+
+The challenge is that the AI model would need to actually see the diff to reliably detect code moves - just looking at the PR title and comments isn't enough. I could have the classifier run a git command to detect renames and copies, which would be much more efficient than loading the full diff into context.
+
+The cleanest solution without adding a new script would be to enhance the existing `pr-feedback-classifier` skill to run a git diff command that detects renames and copies, then combine that signal with the PR title and comment metadata to determine which threads are pre-existing versus newly introduced.
+
+This approach keeps everything at the skill prompt layer without needing new Python code, though it trades some precision for simplicity since the AI might occasionally misclassify compared to a mechanical algorithm.
+
+For this to work, I'd need the classifier to analyze file-level renames and copies from git diff, but that only catches file-level moves—I'm realizing I'd need something more granular to detect code-level restructuring within files.
+
+However, the AI can actually reason through more complex cases: if it sees a PR titled "Split health_checks.py into a Subpackage" with the original file deleted and new submodule files created, plus bot comments flagging patterns in those new files, it can infer that the flagged issues are pre-existing code that was just reorganized. This handles the common scenarios reliably enough, and even occasional misclassifications beat the current state of doing nothing.
+
+So I'm refining my approach: enhance the classifier to run a git diff command with move/copy detection flags, then use the stat output combined with PR title and comment metadata to determine whether issues are pre-existing. I'd add a `pre_existing` boolean field to the classifier output, then update the `pr-address` and `pr-preview-address` commands to handle these threads appropriately.
+
+The main concern is whether running raw git commands from the classifier is feasible—it runs as a Task agent with Bash access, so I need to figure out what commands would actually work in that environment.
+
+Actually, I'm realizing there might be a simpler path: instead of relying on git diff stats, I could just examine the PR title for keywords like "split," "move," "restructure," or "refactor" along with the comment authors and existing metadata to make the determination.
+
+But that feels too heuristic and could easily miss edge cases or create false positives. A better middle ground might be adding code-move detection directly to the existing `get-pr-feedback` script with an optional flag rather than creating something entirely new. That way it leverages the context already available in that tool.
+
+I should probably just ask what level of complexity the user actually wants here before going further down any of these paths.
+
+Actually, the simplest approach would be to enhance the classifier skill prompt itself to run a basic git diff command and use AI reasoning to determine if comments are pre-existing. That's just modifying a few markdown files with no Python changes needed.
+
+Let me go with that and present it. Though there's a reliability question—the classifier runs on haiku in some contexts for cost reasons, but haiku might not be reliable enough for this kind of reasoning. Sonnet would be more dependable, but that's a model choice, not a code architecture issue.
+
+Wait, I'm overcomplicating this. The classifier already evaluates every thread, so I just need to add one more classification dimension: whether the issue is pre-existing in moved code. I can determine this purely through prompt engineering by analyzing the PR title, whether comments come from bots, and whether the feedback is generic code quality versus specific to the restructuring. For health_checks, the comments about LBYL patterns and missing tests are generic quality flags, not tied to the split itself, so they're pre-existing. For the `__all__` case, the re-exports comment is directly tied to the restructuring.
+
+The heuristic is solid: if a bot would have flagged the same pattern in the original code location, it's pre-existing; if it only exists because of the restructuring, it's new. I'll implement this by updating three markdown files—the classifier skill definition, the address handler, and the preview handler—to incorporate this distinction.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="10606" cache_read_input_tokens="92895" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10606}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good point — the exec script approach is overengineered. The classifier is already an AI model reasoning about each thread. We can just enhance its prompt to also reason about whether threads flag pre-existing issues in moved code. Three markdown files, zero Python.
+
+Let me write the simplified plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="10606" cache_read_input_tokens="92895" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10606}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_011ARBV6sEbAK3BCCUFv9SEV">
+    <param name="file_path">/Users/schrockn/.claude/plans/zany-painting-jellyfish.md</param>
+    <param name="content"># Plan: Auto-resolve pre-existing threads in code-move PRs
+
+## Context
+
+When a PR restruct...[truncated 2894 chars]...es
+3. Run on a normal (non-restructuring) PR — confirm no threads are marked pre-existing
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="10606" cache_read_input_tokens="92895" output_tokens="3122" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 10606, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011ARBV6sEbAK3BCCUFv9SEV">
+File created successfully at: /Users/schrockn/.claude/plans/zany-painting-jellyfish.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01YNDbZtzbu8xMgTVGYhbhms">
+    <param name="plan"># Plan: Auto-resolve pre-existing threads in code-move PRs
+
+## Context
+
+When a PR restruct...[truncated 2894 chars]...es
+3. Run on a normal (non-restructuring) PR — confirm no threads are marked pre-existing
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3125" cache_read_input_tokens="103501" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3125, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YNDbZtzbu8xMgTVGYhbhms">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/zany-painting-jellyfish.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Auto-resolve pre-existing threads in code-move PRs
+Current context: (wt:erk-slot-56) (br:plnd/split-health-checks-02-28-2224) (pr:#8516)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/spli"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 19b1ef33-efef-45a4-bf9e-4bd56bd71b6a \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+     (no PR tracking - this is for small PR iterations)
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Plan: Auto-resolve pre-existing threads in code-move PRs
+
+## Context
+
+When a PR restructures code (file splits, renames, package reorganization), automated bot reviewers flag pre-existing issues (LBYL violations, missing tests, etc.) in the "new" files. These are noise — the issues existed before the PR. Currently the user must manually identify and bulk-resolve these threads. This happened with PR #8516 (24 of 27 threads were pre-existing).
+
+## Approach
+
+Enhance the classifier skill's prompt to detect pre-existing issues using AI reasoning. No new exec scripts or Python code — just three markdown file edits.
+
+The classifier already reads every comment and reasons about classification/complexity. We add one more dimension: **is this bot comment about a pattern that existed in the original code, or something introduced by the restructuring?**
+
+## Changes
+
+### 1. Enhance `pr-feedback-classifier` skill
+
+**File:** `.claude/skills/pr-feedback-classifier/SKILL.md`
+
+Add to Step 1 (after fetching feedback): run `git diff --stat -M -C main...HEAD` to get file-level rename/copy/split context. This gives the classifier structural awareness of what files were moved/split.
+
+Add to Classification Model — new "Pre-Existing Detection" section:
+
+- Add `pre_existing: bool` field to each thread in `actionable_threads`
+- A thread is `pre_existing: true` when ALL of:
+  1. Author is a bot (`[bot]` suffix)
+  2. PR involves file restructuring (renames, splits, moves visible in diff stat)
+  3. The flagged pattern would have been equally flaggable in the original file location (generic code quality issue, not specific to the restructuring)
+- A thread is `pre_existing: false` when ANY of:
+  - Author is human
+  - The issue is specifically caused by the restructuring (e.g., `__all__` in a new `__init__.py`, new import paths)
+  - No restructuring detected in the PR
+
+Add to Batch Ordering: new batch 0 "Pre-Existing (Auto-Resolve)" with `auto_proceed: true`, `complexity: "pre_existing"`. Placed before Local Fixes.
+
+Add `pre_existing` to the output JSON schema for `actionable_threads` items.
+
+### 2. Enhance `pr-address` command
+
+**File:** `.claude/commands/erk/pr-address.md`
+
+Add to Phase 3 — special handling for pre-existing batch:
+- No code changes, no CI, no commit
+- Resolve all threads via `erk exec resolve-review-threads` with comment: "Pre-existing issue — this code was moved/restructured, not newly introduced."
+- Report progress, then continue to remaining batches
+
+Add pre-existing count to Phase 4 final summary.
+
+### 3. Enhance `pr-preview-address` command
+
+**File:** `.claude/commands/erk/pr-preview-address.md`
+
+Add "Pre-Existing Items (Auto-Resolve)" section before "Actionable Items" in display. Add pre-existing count to Statistics section.
+
+## Verification
+
+1. Run `/erk:pr-preview-address` on a code-move PR — confirm pre-existing items appear in separate section
+2. Run `/erk:pr-address` on a code-move PR — confirm pre-existing threads are auto-resolved without code changes
+3. Run on a normal (non-restructuring) PR — confirm no threads are marked pre-existing
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="651" cache_read_input_tokens="106626" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 651}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_014E1oEAudib37Jx7GGFbjKN">
+    <param name="questions">[{'question': '📋 Plan: Auto-resolve pre-existing threads in code-move PRs\nCurrent context...[truncated 491 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="651" cache_read_input_tokens="106626" output_tokens="1088" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 651, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014E1oEAudib37Jx7GGFbjKN">
+User has answered your questions: "📋 Plan: Auto-resolve pre-existing threads in code-move PRs
+Current context: (wt:erk-slot-56) (br:plnd/split-health-checks-02-28-2224) (pr:#8516)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01351XFidxG9ET7GpnW25v3J">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1537" cache_read_input_tokens="107277" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1537, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01351XFidxG9ET7GpnW25v3J">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="19b1ef33-efef-45a4-bf9e-4bd56bd71b6a" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "19b1ef33-efef-45a4-bf9e-4bd56bd71b6a" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "19b1ef33-efef-45a4-bf9e-4bd56bd71b6a" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <thinking>The user chose to create a plan PR. I need to follow the plan-save instructions.
+
+Let me:
+1. Parse arguments - no special flags
+2. Generate a branch slug from the plan title
+3. Generate a plan summary
+4. Run the save command
+5. Display results
+
+The plan title is: "Auto-resolve pre-existing threads in code-move PRs"
+
+Branch slug: "auto-resolve-pre-existing-threads" - that's too long (34 chars). Let me shorten: "auto-resolve-moved-code" (23 chars) - good.
+
+Plan summary: Enhances the pr-feedback-classifier skill to detect when bot review threads flag pre-existing issues in moved/restructured code, and adds auto-resolve handling in pr-address and pr-preview-address commands. Three markdown file changes, no Python code.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="2290" cache_read_input_tokens="108814" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2290}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me save the plan as a draft PR.
+
+**Branch slug:** `auto-resolve-moved-code`
+
+**Summary:** Enhances the pr-feedback-classifier skill to detect when bot review threads flag pre-existing issues in moved or restructured code, adding a pre_existing field and auto-resolve batch. Updates pr-address and pr-preview-address commands to handle the new classification. Three markdown file changes, no Python code.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2290" cache_read_input_tokens="108814" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2290}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01EN6vAwbArSXfgsrUn8gCMT">
+    <param name="command">erk exec plan-save --format json --session-id="19b1ef33-efef-45a4-bf9e-4bd56bd71b6a" --bra...[truncated 250 chars]...s commands to handle the new classification. Three markdown file changes, no Python code."</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2290" cache_read_input_tokens="108814" output_tokens="511" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2290, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EN6vAwbArSXfgsrUn8gCMT">
+{"success": true, "plan_number": 8523, "plan_url": "https://github.com/dagster-io/erk/pull/8523", "title": "[erk-plan] Plan: Auto-resolve pre-existing threads in code-move PRs", "branch_name": "plnd/auto-resolve-moved-code-03-01-0603", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-56/.erk/scratch/sessions/19b1ef33-efef-45a4-bf9e-4bd56bd71b6a/plan_snapshots/000001-99b17684"}
+  </tool_result>
+  <assistant>Plan "Auto-resolve pre-existing threads in code-move PRs" saved as draft PR #8523
+URL: https://github.com/dagster-io/erk/pull/8523
+
+Next steps:
+
+View PR: https://github.com/dagster-io/erk/pull/8523
+
+In Claude Code:
+  Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: `erk br co --for-plan 8523`
+    Implement: `source "$(erk br co --for-plan 8523 --script)" &amp;&amp; erk implement --dangerous`
+
+  New slot:
+    Local: `erk br co --new-slot --for-plan 8523`
+    Implement: `source "$(erk br co --new-slot --for-plan 8523 --script)" &amp;&amp; erk implement --dangerous`
+
+  Dispatch to Queue: `erk pr dispatch 8523`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="814" cache_read_input_tokens="111104" output_tokens="251" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 814, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-preview-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-preview-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-preview-address
+
+## Description
+
+Fetches unresolved PR review comments and discussion comments, displays a summary of what `/erk:pr-address` would do. This is a read-only preview command that makes no changes.
+
+## Usage
+
+```bash
+/erk:pr-preview-address
+/erk:pr-preview-address --all               # Include resolved threads
+/erk:pr-preview-address --pr 6631           # Target specific PR
+/erk:pr-preview-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Agent Instructions
+
+&gt; **IMPORTANT: This is a READ-ONLY preview command.**
+&gt;
+&gt; Do NOT make any code changes, resolve any threads, reply to any comments, or create any commits.
+
+### Phase 1: Classify Feedback
+
+Invoke the pr-feedback-classifier skill to fetch and classify all PR feedback:
+
+```
+/pr-feedback-classifier [--pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+```
+
+Parse the JSON response.
+
+### Phase 2: Display Results
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If `actionable_threads` is empty and `discussion_actions` is empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+**Format the results** as a human-readable summary:
+
+```
+## PR #5944: "Feature: Add new API endpoint"
+
+### Actionable Items (N total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | foo.py:42 | actionable | Use LBYL pattern | local |
+| 2 | review | bar.py:15 | actionable | Add type annotation | local |
+| 3 | discussion | - | actionable | Update documentation | cross_cutting |
+
+### Informational Items (N total)
+
+| # | Type | Location | Summary | Complexity |
+|---|------|----------|---------|------------|
+| 4 | review | utils.py:10 | Bot suggestion: extract helper (optional) | local |
+
+### Execution Plan Preview
+
+**Batch 1: Local Fixes** (auto-proceed)
+- Item #1: foo.py:42 - Use LBYL pattern
+- Item #2: bar.py:15 - Add type annotation
+
+**Batch 2: Cross-Cutting** (user confirmation)
+- Item #3: Update documentation
+
+**Batch 3: Informational** (user decides: act or dismiss)
+- Item #4: utils.py:10 - Bot suggestion: extract helper (optional)
+
+### Statistics
+- Actionable items: 3
+- Informational items: 1
+- Informational discussion comments: 12
+- Estimated batches: 3
+- Auto-proceed batches: 1
+- User confirmation batches: 2
+```
+
+**Note:** Items in `actionable_threads` are split into two sections based on their `classification` field: `"actionable"` items appear under "Actionable Items", `"informational"` items appear under "Informational Items". Both sections use the same item numbering (continuous across sections).
+
+Add footer:
+
+```
+To address these comments, run: /erk:pr-address
+```
+
+### Phase 3: Exit (NO ACTIONS)
+
+**CRITICAL**: This is a preview-only command. Do NOT:
+
+- Make any code changes
+- Resolve any threads
+- Reply to any comments
+- Create any commits
+- Push anything to remote
+- Run any CI commands
+
+Simply display the summary and exit.
+
+## Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+</user>
+  <tool_use name="Skill" id="toolu_012pHjTJ3EWk6QqhjgaywrVd">
+    <param name="skill">pr-feedback-classifier</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1428" cache_read_input_tokens="111918" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1428, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012pHjTJ3EWk6QqhjgaywrVd">
+Skill "pr-feedback-classifier" completed (forked execution).
+
+Result:
+Based on the fetched data, here is the classified output:
+
+{
+  "success": true,
+  "pr_number": 8516,
+  "pr_title": "Split health_checks.py into a Subpackage",
+  "pr_url": "https://github.com/dagster-io/erk/pull/8516",
+  "actionable_threads": [
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5xYua8",
+      "type": "review",
+      "path": "src/erk/core/health_checks/__init__.py",
+      "line": 133,
+      "is_outdated": false,
+      "classification": "actionable",
+      "action_summary": "Remove import alias 'load_config as load_repo_config' — use 'load_config' directly at the call site. Aliasing obscures the canonical name and violates the No Import Aliases rule.",
+      "complexity": "local",
+      "original_comment": "**Dignified Code Simplifier**: Import alias 'load_repo_config' obscures canonical name - LBYL over EAFP. Remove the 'as load_repo_config' alias and use 'load_config' directly at the call site."
+    }
+  ],
+  "discussion_actions": [],
+  "informational_count": 6,
+  "batches": [
+    {
+      "name": "Local Fixes",
+      "complexity": "local",
+      "auto_proceed": true,
+
+... [20 lines omitted] ...
+
+  "error": null
+  </tool_result>
+  <assistant>## PR #8516: "Split health_checks.py into a Subpackage"
+
+### Actionable Items (1 total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | `__init__.py:133` | actionable | Remove import alias `load_config as load_repo_config` — use `load_config` directly | local |
+
+### Execution Plan Preview
+
+**Batch 1: Local Fixes** (auto-proceed)
+- Item #1: `__init__.py:133` - Remove import alias, use `load_config` directly at call site
+
+### Statistics
+- Actionable items: 1
+- Informational items: 0
+- Informational discussion comments: 6
+- Estimated batches: 1
+- Auto-proceed batches: 1
+- User confirmation batches: 0
+
+---
+
+To address these comments, run: `/erk:pr-address`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="714" cache_read_input_tokens="113346" output_tokens="235" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 714, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>&lt;command-message&gt;erk:pr-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-address
+
+## Description
+
+Fetches unresolved PR review comments AND PR discussion comments from the current branch's PR and addresses them using holistic analysis with smart batching. Comments are grouped by complexity and relationship, then processed batch-by-batch with incremental commits and resolution.
+
+## Usage
+
+```bash
+/erk:pr-address
+/erk:pr-address --all               # Include resolved threads (for reference)
+/erk:pr-address --pr 6631           # Target specific PR
+/erk:pr-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Prerequisite
+
+**Load the `pr-operations` skill first** for complete command reference and common mistake patterns.
+
+## Agent Instructions
+
+&gt; **Prerequisite**: Load `pr-operations` skill first for command reference.
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands**
+&gt;
+&gt; See `pr-operations` skill for the complete command reference. Never use raw `gh api` calls for thread operations.
+
+### Phase 1: Classify Feedback
+
+Use the Task tool (NOT a `/pr-feedback-classifier` skill invocation) to run the classifier. The skill's `context: fork` metadata does not create true subagent isolation in `--print` mode, so we must use an explicit Task tool call to guarantee the classifier runs in a separate agent context:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Classify PR feedback",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+Parse the JSON response. The skill returns:
+
+- `success`: Whether the operation succeeded
+- `pr_number`, `pr_title`, `pr_url`: PR metadata
+- `actionable_threads`: Array with `thread_id`, `path`, `line`, `classification`, `action_summary`, `complexity`
+  - `classification`: `"actionable"` (code changes needed) or `"informational"` (user decides to act or dismiss)
+- `discussion_actions`: Array with `comment_id`, `action_summary`, `complexity`
+- `batches`: Execution order with `item_indices` referencing the arrays above
+  - Includes an **Informational** batch (last) for `classification: "informational"` threads
+- `error`: Error message if `success` is false
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If both `actionable_threads` and `discussion_actions` are empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+### Phase 2: Display Batched Plan
+
+Show the user the batched execution plan from the classifier output:
+
+```
+## Execution Plan
+
+### Batch 1: Local Fixes (3 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 1 | foo.py:42 | Use LBYL pattern |
+| 2 | bar.py:15 | Add type annotation |
+| 3 | baz.py:99 | Fix typo |
+
+### Batch 2: Single-File Changes (1 comment)
+| # | Location | Summary |
+|---|----------|---------|
+| 4 | impl.py (multiple) | Rename `old_name` to `new_name` throughout |
+
+### Batch 3: Cross-Cutting Changes (2 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 5 | Multiple files | Update all callers of deprecated function |
+| 6 | docs/ | Update documentation per reviewer request |
+
+### Batch 4: Complex Changes (2 comments -&gt; 1 unified change)
+| # | Location | Summary |
+|---|----------|---------|
+| 7 | impl.py:50 | Fold validate into prepare with union types |
+| 8 | cmd.py:100 | (related to #7 - same refactor) |
+```
+
+**User confirmation flow:**
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval before executing
+
+### Phase 3: Execute by Batch
+
+For each batch, execute this workflow using the thread IDs from the classifier JSON:
+
+#### Step 1: Address All Comments in the Batch
+
+For each comment in the batch:
+
+**For Informational Review Threads** (`classification: "informational"`):
+
+Present the user with a choice using AskUserQuestion:
+
+- **Act**: Make the suggested change, then resolve the thread
+- **Dismiss**: Resolve the thread without code changes (reply with a brief message like "Acknowledged, not acting on this suggestion")
+
+If the user chooses **Act**, proceed as a normal review thread (read file, make fix, track change). If the user chooses **Dismiss**, skip to Step 4 to resolve the thread with a dismissal reply.
+
+**For Actionable Review Threads** (`classification: "actionable"`):
+
+1. Read the file to understand context:
+   - If `line` is specified: Read around that line number
+   - If `line` is null (outdated thread): Read the entire file or search for relevant code mentioned in the comment
+2. Make the fix following the reviewer's feedback
+3. Track the change for the batch commit message
+
+**For Discussion Comments:**
+
+1. Determine if action is needed:
+   - If it's a request (e.g., "Please update docs"), take the requested action
+   - If it's a question, provide an answer or make clarifying changes
+   - If it's architectural feedback/suggestion, investigate the codebase to understand implications
+   - If it's just acknowledgment/thanks, note it and move on
+2. **Investigate the codebase** when the comment requires understanding existing code:
+   - Search for relevant patterns, existing implementations, or related code
+   - Note any interesting findings that inform your decision
+   - Record these findings - they become permanent documentation in the reply
+3. Take action if needed
+
+**Handling False Positives from Automated Reviewers:**
+
+Automated review bots (like `dignified-python-review`, linters, or security scanners) can flag false positives. Before making code changes:
+
+1. **Read the flagged code carefully** - understand what the bot is complaining about
+2. **Verify if it's a false positive** by checking:
+   - Is the pattern the bot wants already implemented nearby? (e.g., LBYL check already exists on a preceding line)
+   - Is the bot misunderstanding the code structure?
+   - Is the bot applying a rule that doesn't fit this specific context?
+3. **If it's a false positive**, do NOT make unnecessary code changes. Instead:
+   - Reply to the comment explaining why it's a false positive
+   - Reference specific line numbers where the correct pattern already exists
+   - Resolve the thread
+
+**For Outdated Review Threads** (`is_outdated: true`):
+
+Outdated threads have `line: null` because the code has changed since the comment was made.
+
+1. **Read the file** at the path (ignore line number - search for relevant code)
+2. **Check if the issue is already fixed** in the current code
+3. **Take action:**
+   - If already fixed -&gt; Proceed directly to Step 4 to resolve the thread
+   - If not fixed -&gt; Apply the fix, then proceed to Step 4
+
+**IMPORTANT**: Outdated threads MUST still be resolved via `erk exec resolve-review-thread`.
+Do not skip resolution just because no code change was needed.
+
+#### Step 2: Run CI Checks
+
+After making all changes in the batch:
+
+```bash
+# Run relevant CI checks for changed files
+# (This may vary by project - use project's test commands)
+```
+
+If CI fails, fix the issues before proceeding.
+
+#### Step 3: Commit the Batch
+
+Create a single commit for all changes in the batch:
+
+```bash
+git add &lt;changed files&gt;
+git commit -m "Address PR review comments (batch N/M)
+
+- &lt;summary of comment 1&gt;
+- &lt;summary of comment 2&gt;
+..."
+```
+
+#### Step 4: Resolve All Threads in the Batch (MANDATORY)
+
+**This step is NOT optional.** Every thread must be resolved using the thread IDs from the classifier JSON.
+
+After committing, resolve review threads and mark discussion comments.
+
+**For Review Threads** - use the batch command `erk exec resolve-review-threads` to resolve all review threads in a single call. Pipe a JSON array via stdin:
+
+```bash
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed in commit abc1234"}, {"thread_id": "PRRT_def", "comment": "Applied suggestion"}]' | erk exec resolve-review-threads
+```
+
+Each item has `thread_id` (required) and `comment` (optional). Build the JSON array from the batch's thread IDs and resolution messages, then pipe it in one call.
+
+**For Discussion Comments** - use `erk exec reply-to-discussion-comment` with the `comment_id` from the JSON, with a substantive reply that quotes the original comment and explains what action was taken.
+
+#### Step 5: Report Progress
+
+After completing the batch, report:
+
+```
+## Batch N Complete
+
+Addressed:
+- foo.py:42 - Used LBYL pattern
+- bar.py:15 - Added type annotation
+
+Committed: abc1234 "Address PR review comments (batch 1/3)"
+
+Resolved threads: 2
+Remaining batches: 2
+```
+
+Then proceed to the next batch.
+
+### Phase 4: Final Verification
+
+After all batches complete, re-invoke the classifier to verify all threads are resolved. Use Task tool (NOT skill invocation) for the same `--print` mode isolation reason as Phase 1:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Verify PR feedback resolved",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if originally specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+If `actionable_threads` or `discussion_actions` are non-empty, warn about remaining unresolved items. Both `actionable` and `informational` classified threads should be resolved (either by code changes or by dismissal).
+
+#### Report Final Summary
+
+```
+## All PR Comments Addressed
+
+Total comments: 8
+Batches: 4
+Commits: 4
+
+All review threads resolved.
+All discussion comments marked with reaction.
+
+Next steps:
+1. Push changes:
+   - **Graphite repos**: `gt submit` (or `gt ss`)
+   - **Plain git repos**: `git push`
+   - If push is rejected (non-fast-forward): Run `/erk:reconcile-with-remote` to resolve. Do NOT use `git pull --rebase`.
+2. Wait for CI to pass
+3. Request re-review if needed
+```
+
+#### Handle Any Skipped Comments
+
+If the user explicitly skipped any comments during the process, list them:
+
+```
+## Skipped Comments (user choice)
+- #5: src/legacy.py:100 - "Refactor this module" (user deferred)
+```
+
+### Phase 5: Update PR Title and Body
+
+After all review comments have been addressed, update the PR to reflect the full scope of changes.
+
+Run:
+
+```bash
+erk exec update-pr-description --session-id "19b1ef33-efef-45a4-bf9e-4bd56bd71b6a"
+```
+
+This generates an AI-powered title and body from the full PR diff, preserving existing header and footer metadata.
+
+### Common Mistakes
+
+See `pr-operations` skill for the complete table of common mistakes and correct approaches.
+
+### Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+
+**CI failure during batch:** Stop, display the failure, and let the user decide whether to fix and continue or abort
+</user>
+  <assistant>
+
+I already have the classification from the preview — 1 actionable thread. Let me load the pr-operations skill and then address it.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="3096" cache_read_input_tokens="114293" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3096}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01UjsusVMzyxsW1qttiStNmy">
+    <param name="skill">pr-operations</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3096" cache_read_input_tokens="114293" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3096}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UjsusVMzyxsW1qttiStNmy">
+Launching skill: pr-operations
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-56/.claude/skills/pr-operations
+
+# PR Operations Skill
+
+## Core Rule
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands for PR Thread Operations**
+&gt;
+&gt; - ❌ DO NOT use raw `gh api` calls for thread operations
+&gt; - ❌ DO NOT use `gh pr` commands directly for thread resolution
+&gt; - ✅ ONLY use `erk exec` commands listed below
+&gt;
+&gt; The `erk exec` commands handle thread resolution correctly. Raw API calls only reply without resolving.
+
+## Quick Reference
+
+| Command                       | Purpose                           | Key Point                          |
+| ----------------------------- | --------------------------------- | ---------------------------------- |
+| `get-pr-review-comments`      | Fetch unresolved review threads   | Returns threads with line info     |
+| `get-pr-discussion-comments`  | Fetch PR discussion comments      | Returns top-level comments         |
+| `resolve-review-thread`       | Reply AND resolve a single thread | Does both in one operation         |
+| `resolve-review-threads`      | Batch resolve multiple threads    | JSON stdin, one call for N threads |
+| `reply-to-discussion-comment` | Reply to discussion comment       | For non-code feedback              |
+| `post-pr-inline-comment`      | Post new inline comment           | Creates new review thread          |
+
+## When to Use Each Command
+
+### Fetching Comments
+
+```bash
+# Get all unresolved review threads (code comments)
+erk exec get-pr-review-comments
+
+# Get all discussion comments (top-level PR comments)
+erk exec get-pr-discussion-comments
+
+# Include resolved threads (for reference)
+erk exec get-pr-review-comments --all
+```
+
+### Resolving Review Threads
+
+```bash
+# Resolve a single thread
+erk exec resolve-review-thread --thread-id "PRRT_abc123" --comment "Fixed in commit abc1234"
+
+# Batch resolve multiple threads (preferred for pr-address batches)
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed"}, {"thread_id": "PRRT_def", "comment": "Applied"}]' | erk exec resolve-review-threads
+```
+
+### Replying to Discussion Comments
+
+```bash
+# For PR discussion comments (not code review threads)
+erk exec reply-to-discussion-comment --comment-id 12345 --reply "**Action taken:** Updated the docs as requested."
+```
+
+## Common Mistakes
+
+| Mistake                                        | Why It's Wrong                | Correct Approach                      |
+| ---------------------------------------------- | ----------------------------- | ------------------------------------- |
+| Using `gh api repos/.../comments/{id}/replies` | Only replies, doesn't resolve | Use `erk exec resolve-review-thread`  |
+| Using `gh pr comment`                          | Doesn't resolve threads       | Use `erk exec resolve-review-thread`  |
+| Skipping resolution for outdated threads       | Threads stay open in PR       | Always resolve, even if already fixed |
+| Generic replies like "Noted"                   | Not useful for PR history     | Include investigation findings        |
+
+## Replying vs Resolving
+
+&gt; **IMPORTANT: Replying ≠ Resolving**
+&gt;
+&gt; - **Replying** (via raw `gh api .../replies`): Adds a comment but thread stays OPEN
+&gt; - **Resolving** (via `erk exec resolve-review-thread`): Adds a comment AND marks thread as RESOLVED
+&gt;
+&gt; Always use `erk exec resolve-review-thread` (single) or `erk exec resolve-review-threads` (batch) - they do both in one operation.
+
+## Comment Classification Model
+
+When analyzing PR feedback, classify comments by complexity and group into batches.
+
+### Complexity Categories
+
+- **Local fix**: Single comment → single location change (e.g., "Fix typo", "Add type annotation")
+- **Multi-location**: Single comment → changes in multiple spots in one file
+- **Cross-cutting**: Single comment → changes across multiple files
+- **Related**: Multiple comments that inform a single unified change
+
+### Batch Ordering
+
+Process batches from simplest to most complex:
+
+| Batch | Complexity                 | Description                         | Example                                                   |
+| ----- | -------------------------- | ----------------------------------- | --------------------------------------------------------- |
+| 1     | Local fixes                | One file, one location per comment  | "Use LBYL pattern at line 42"                             |
+| 2     | Single-file multi-location | One file, multiple locations        | "Rename this variable everywhere in this file"            |
+| 3     | Cross-cutting              | Multiple files affected             | "Update all callers of this function"                     |
+| 4     | Complex/Related            | Multiple comments inform one change | "Fold validate into prepare" + "Use union types for this" |
+
+**Note**: Discussion comments requiring doc updates go in Batch 3 (cross-cutting).
+
+### Batch Confirmation Flow
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval
+
+## Inline Comment Deduplication
+
+When posting inline review comments, always deduplicate to prevent re-posting existing comments:
+
+1. **Build dedup key**: `(file_path, line_number, body_prefix)` where prefix is first 80 characters of comment body
+2. **Check proximity**: Match within 2-line tolerance (line 42 matches existing comments at lines 40–44)
+3. **Skip duplicates**: If a matching key exists, do not post the comment
+
+This prevents the same feedback from appearing multiple times across review iterations. See [Inline Comment Deduplication](../../docs/learned/review/inline-comment-deduplication.md) for full algorithm details.
+
+## Detailed Documentation
+
+For complete command documentation including JSON output formats, options, and examples:
+
+@references/commands.md
+</user>
+  <tool_use name="Read" id="toolu_01DpfRCKc5z4j6TzU4X926iX">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-56/src/erk/core/health_checks/__init__.py</param>
+    <param name="offset">125</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3096" cache_read_input_tokens="114293" output_tokens="195" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3096, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DpfRCKc5z4j6TzU4X926iX">
+   125→            check_managed_artifacts(
+   126→                repo_root,
+   127→                package=package,
+   128→                installed_capabilities=managed_capabilities,
+   129→            )
+   130→        )
+   131→
+   132→        # Check plans_repo labels if configured
+   133→        from erk.cli.config import load_config as load_repo_config
+   134→        from erk_shared.gateway.github.issues.real import RealGitHubIssues
+   135→
+   136→        repo_config = load_repo_config(repo_root)
+   137→        if repo_config.plans_repo is not None:
+   138→            from erk_shared.gateway.time.real import RealTime
+   139→
+   140→            github_issues = RealGitHubIssues(target_repo=repo_config.plans_repo, time=RealTime())
+   141→            results.append(
+   142→                check_plans_repo_labels(repo_root, repo_config.plans_repo, github_issues)
+   143→            )
+   144→
+  </tool_result>
+  <assistant>
+
+## Execution Plan
+
+### Batch 1: Local Fixes (1 comment)
+| # | Location | Summary |
+|---|----------|---------|
+| 1 | `__init__.py:133` | Remove import alias `load_config as load_repo_config` — use `load_config` directly |
+
+Auto-proceeding with this batch.
+
+---
+
+The fix is at line 133: `from erk.cli.config import load_config as load_repo_config`. I need to remove the alias and update the usage at line 136.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1960" cache_read_input_tokens="117389" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1960}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01B6EhmQPzQPN2LfQoZqPHHS">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-56/src/erk/core/health_checks/__init__.py</param>
+    <param name="old_string">        from erk.cli.config import load_config as load_repo_config
+        from erk_shared.gateway.github.issues.real import RealGitHubIssues
+
+        repo_config = load_repo_config(repo_root)</param>
+    <param name="new_string">        from erk.cli.config import load_config
+        from erk_shared.gateway.github.issues.real import RealGitHubIssues
+
+        repo_config = load_config(repo_root)</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1960" cache_read_input_tokens="117389" output_tokens="365" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1960, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01B6EhmQPzQPN2LfQoZqPHHS">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-56/src/erk/core/health_checks/__init__.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run CI to verify the change.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="445" cache_read_input_tokens="119349" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 445}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01NbzA6AFfNqffzKKUmyTyav">
+    <param name="description">Run fast CI checks</param>
+    <param name="prompt">Run `make fast-ci` and report the results. Do NOT fix any errors — just report what passes and what fails.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="445" cache_read_input_tokens="119349" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 445}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NbzA6AFfNqffzKKUmyTyav">
+**make fast-ci passed completely.**
+
+All checks and tests passed successfully:
+
+**Linting &amp; Code Quality:**
+- Linting: All checks passed
+- Format check: 1605 files already formatted
+- Prettier: All matched files use correct code style
+- Markdown checks: All CLAUDE.md/AGENTS.md properly paired (19 files, 0 violations)
+- Exec reference: Reference documentation up to date
+- Type checking (ty): All checks passed
+
+**Test Results:**
+- Unit Tests (erk): 5423 passed in 12.32s
+- Tests (erk-dev): 136 passed in 2.79s
+- Tests (erk-statusline): 112 passed in 0.74s
+- Tests (erkbot): 114 passed in 0.94s
+
+**Summary:** 5785 total tests passed, no failures or issues detected.
+agentId: aaf2072bde2630054 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14548
+tool_uses: 1
+duration_ms: 29873&lt;/usage&gt;
+  </tool_result>
+  <assistant>CI passes. Committing and resolving the thread.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="513" cache_read_input_tokens="119794" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 513}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PPpzv8fBXQ23fFBm8mLomE">
+    <param name="command">git add src/erk/core/health_checks/__init__.py &amp;&amp; git commit -m "$(cat &lt;&lt;'EOF'
+Address PR ...[truncated 126 chars]...import-aliases convention.
+
+Co-Authored-By: Claude Opus 4.6 &lt;noreply@anthropic.com&gt;
+EOF
+)"</param>
+    <param name="description">Commit the import alias fix</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="513" cache_read_input_tokens="119794" output_tokens="220" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 513, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PPpzv8fBXQ23fFBm8mLomE">
+[plnd/split-health-checks-02-28-2224 4ad5e6b90] Address PR review: remove import alias in health_checks
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_019JAUTAZWBDgw3sw5ZqLpfD">
+    <param name="command">echo '[{"thread_id": "PRRT_kwDOPxC3hc5xYua8", "comment": "Fixed: removed the `as load_repo_config` alias, now using `load_config` directly."}]' | uv run erk exec resolve-review-threads</param>
+    <param name="description">Resolve the import alias review thread</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="261" cache_read_input_tokens="120307" output_tokens="161" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 261, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019JAUTAZWBDgw3sw5ZqLpfD">
+{
+  "success": true,
+  "results": [
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5xYua8",
+      "comment_added": true
+    }
+  ]
+}
+  </tool_result>
+  <assistant>## Batch 1 Complete
+
+Addressed:
+- `__init__.py:133` - Removed import alias, using `load_config` directly
+
+Committed: `4ad5e6b90` "Address PR review: remove import alias in health_checks"
+
+Resolved threads: 1
+Remaining batches: 0
+
+---
+
+## All PR Comments Addressed
+
+Total comments: 1
+Batches: 1
+Commits: 1
+
+All review threads resolved.
+
+Now updating the PR description.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="238" cache_read_input_tokens="120568" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 238}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XFFXYJEVE1YHVmAdnPmD1c">
+    <param name="command">uv run erk exec update-pr-description --session-id "19b1ef33-efef-45a4-bf9e-4bd56bd71b6a"</param>
+    <param name="description">Update PR title and body from diff</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="238" cache_read_input_tokens="120568" output_tokens="251" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 238, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XFFXYJEVE1YHVmAdnPmD1c">
+
+  </tool_result>
+  <assistant>Done. Next steps:
+
+1. Push changes: `gt submit` (or `gt ss`)
+2. Wait for CI to pass
+3. Request re-review if needed</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="277" cache_read_input_tokens="120806" output_tokens="41" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 277, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;local:quick-submit&lt;/command-message&gt;
+&lt;command-name&gt;/local:quick-submit&lt;/command-name&gt;</user>
+  <user># Quick Submit
+
+Quickly commit all changes with a generic "update" message and submit to Graphite.
+
+## Usage
+
+```bash
+/quick-submit
+```
+
+## What This Command Does
+
+1. Stages all uncommitted changes
+2. Creates a commit with a generic "update" message (if there are changes)
+3. Submits the branch via Graphite (or git push if Graphite is not configured)
+4. Returns the PR URL on success
+
+This is a shortcut for rapid iteration when you don't need a detailed commit message.
+
+## Implementation Steps
+
+### Step 1: Stage and Commit Changes
+
+Run the following command from the repository root:
+
+```bash
+erk exec quick-submit
+```
+
+This command will:
+
+- Stage all changes in the working directory
+- Commit them with the message "update" if there are staged changes
+- Return a JSON response with the result
+
+### Step 2: Parse the Response
+
+The command outputs JSON with the following structure:
+
+```json
+{
+  "success": true,
+  "committed": true,
+  "message": "Changes submitted successfully",
+  "pr_url": "https://github.com/owner/repo/pull/123"
+}
+```
+
+Or on error:
+
+```json
+{
+  "success": false,
+  "error_type": "stage-failed|commit-failed|submit-failed",
+  "message": "Error description"
+}
+```
+
+**Decision logic:**
+
+- If `success` is `true`: Report the success message and PR URL to the user
+- If `success` is `false`: Display the error message and ask the user to fix the issue
+
+### Step 3: Report Results
+
+Display the result based on the response:
+
+**On success:**
+
+```
+Changes submitted successfully
+View PR: {pr_url}
+```
+
+**On failure:**
+
+```
+Error: {error_message}
+```
+
+If the error is `stage-failed` or `commit-failed`, suggest the user check their git state.
+If the error is `submit-failed`, suggest the user try `/erk:git-pr-push` as an alternative.
+
+## Error Handling
+
+- **No changes**: The command will still submit if there are already committed changes on the branch. No error is raised if there are no staged changes.
+- **Graphite not initialized**: Falls back to git push if the repository is not Graphite-managed.
+- **Submit fails**: Display the error and suggest `/erk:git-pr-push` as an alternative.
+
+## Notes
+
+- This is a shortcut for rapid iteration
+- Uses generic "update" commit message
+- For detailed commit messages, use `/erk:pr-submit` instead
+- For git-only workflows (no Graphite), use `/erk:git-pr-push`
+</user>
+  <tool_use name="Bash" id="toolu_01LGtdomjxGVbCnUSTE5Hgia">
+    <param name="command">uv run erk exec quick-submit</param>
+    <param name="description">Stage, commit, and submit via Graphite</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="4373" cache_read_input_tokens="121122" output_tokens="105" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4373, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LGtdomjxGVbCnUSTE5Hgia">
+   Building erk @ file:///Users/schrockn/.erk/repos/erk/worktrees/erk-slot-56
+      Built erk @ file:///Users/schrockn/.erk/repos/erk/worktrees/erk-slot-56
+Uninstalled 1 package in 7ms
+Installed 1 package in 3ms
+  Staging all changes...
+  Checking for staged changes...
+  Submitting to Graphite...
+  Getting PR URL...
+{
+  "success": true,
+  "staged_changes": false,
+  "committed": false,
+  "message": "No new changes, submitted existing commits",
+  "pr_url": "https://github.com/dagster-io/erk/pull/8516"
+}
+  </tool_result>
+  <assistant>Changes submitted successfully.
+View PR: https://github.com/dagster-io/erk/pull/8516</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="307" cache_read_input_tokens="125495" output_tokens="29" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 307, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;See ya!&lt;/local-command-stdout&gt;</user>
+</session>
