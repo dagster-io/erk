@@ -2,7 +2,7 @@
 
 from erk.core.branch_slug_generator import (
     BranchSlugGenerator,
-    generate_slug_or_fallback,
+    generate_branch_slug,
 )
 from tests.fakes.prompt_executor import FakePromptExecutor
 
@@ -89,35 +89,35 @@ def test_rejects_too_long_output() -> None:
     assert "Invalid LLM output" in (result.error_message or "")
 
 
-def test_generate_slug_or_fallback_returns_slug_on_success() -> None:
-    """Test that generate_slug_or_fallback returns slug on success."""
+def test_generate_branch_slug_returns_slug_on_success() -> None:
+    """Test that generate_branch_slug returns slug on success."""
     executor = FakePromptExecutor(
         available=True,
         simulated_prompt_output="fix-auth-bug",
     )
-    result = generate_slug_or_fallback(executor, "Fix Authentication Bug in Login")
+    result = generate_branch_slug(executor, "Fix Authentication Bug in Login")
 
     assert result == "fix-auth-bug"
 
 
-def test_generate_slug_or_fallback_returns_raw_title_on_failure() -> None:
-    """Test that generate_slug_or_fallback returns raw title on failure."""
+def test_generate_branch_slug_returns_raw_title_on_failure() -> None:
+    """Test that generate_branch_slug returns raw title on failure."""
     executor = FakePromptExecutor(
         available=True,
         simulated_prompt_error="LLM unavailable",
     )
-    result = generate_slug_or_fallback(executor, "Fix Authentication Bug")
+    result = generate_branch_slug(executor, "Fix Authentication Bug")
 
     assert result == "Fix Authentication Bug"
 
 
-def test_generate_slug_or_fallback_returns_raw_title_on_invalid_output() -> None:
-    """Test that generate_slug_or_fallback returns raw title when LLM output is invalid."""
+def test_generate_branch_slug_returns_raw_title_on_invalid_output() -> None:
+    """Test that generate_branch_slug returns raw title when LLM output is invalid."""
     executor = FakePromptExecutor(
         available=True,
         simulated_prompt_output="singleword",
     )
-    result = generate_slug_or_fallback(executor, "Fix Authentication Bug")
+    result = generate_branch_slug(executor, "Fix Authentication Bug")
 
     assert result == "Fix Authentication Bug"
 

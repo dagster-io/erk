@@ -1,7 +1,7 @@
 """Extract plan from Claude session and create GitHub draft PR.
 
 Usage:
-    erk exec create-pr-from-session [--session-id SESSION_ID]
+    erk exec create-pr-from-session --branch-slug SLUG [--session-id SESSION_ID]
 
 This command combines plan extraction from Claude session files with GitHub
 draft PR creation. It extracts the latest ExitPlanMode plan, creates a branch,
@@ -31,6 +31,7 @@ from erk_shared.context.helpers import (
     require_repo_root,
     require_time,
 )
+from erk_shared.naming import generate_planned_pr_branch_name
 from erk_shared.plan_store.create_plan_draft_pr import create_plan_draft_pr
 
 
@@ -43,12 +44,31 @@ from erk_shared.plan_store.create_plan_draft_pr import create_plan_draft_pr
     "--summary",
     help="AI-generated summary to display above the collapsed plan in the PR body",
 )
+@click.option(
+    "--branch-slug",
+    default=None,
+    help="Pre-generated branch slug (required). Generate in the calling skill layer.",
+)
 @click.pass_context
-def create_pr_from_session(ctx: click.Context, session_id: str | None, summary: str | None) -> None:
+def create_pr_from_session(
+    ctx: click.Context,
+    session_id: str | None,
+    summary: str | None,
+    branch_slug: str | None,
+) -> None:
     """Extract plan from Claude session and create GitHub draft PR.
 
     Combines plan extraction with draft PR creation in a single operation.
     """
+    if not branch_slug:
+        click.echo(
+            "Error: --branch-slug is required. "
+            "Generate a slug in the calling skill (e.g., plan-save.md Step 1.5) "
+            "and pass it via --branch-slug.",
+            err=True,
+        )
+        raise SystemExit(1)
+
     # Get dependencies from context
     git = require_git(ctx)
     github = require_github(ctx)
@@ -67,6 +87,9 @@ def create_pr_from_session(ctx: click.Context, session_id: str | None, summary: 
         click.echo(json.dumps(result))
         raise SystemExit(1)
 
+    # Generate branch name from pre-computed slug
+    branch_name = generate_planned_pr_branch_name(branch_slug, time.now(), objective_id=None)
+
     # Create plan as a draft PR
     result = create_plan_draft_pr(
         git=git,
@@ -77,6 +100,7 @@ def create_pr_from_session(ctx: click.Context, session_id: str | None, summary: 
         repo_root=repo_root,
         cwd=cwd,
         plan_content=plan_text,
+        branch_name=branch_name,
         title=None,
         labels=["erk-pr", "erk-plan"],
         source_repo=None,

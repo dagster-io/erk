@@ -131,7 +131,7 @@ def _postprocess_slug(raw_output: str) -> str | None:
     return sanitized
 
 
-def generate_slug_or_fallback(executor: PromptExecutor, title: str) -> str:
+def generate_branch_slug(executor: PromptExecutor, title: str) -> str:
     """Generate a slug from title, falling back to raw title on failure.
 
     Convenience function that returns the LLM slug on success,

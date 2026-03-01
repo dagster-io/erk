@@ -23,11 +23,13 @@ from erk.cli.commands.exec.scripts.preprocess_session import (
     split_entries_to_chunks,
     truncate_tool_parameters,
 )
+from erk.core.branch_slug_generator import generate_branch_slug
 from erk.core.context import ErkContext
 from erk_shared.learn.extraction.session_schema import (
     iter_jsonl_entries,
     parse_session_timestamp,
 )
+from erk_shared.naming import generate_planned_pr_branch_name
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.create_plan_draft_pr import create_plan_draft_pr
 from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
@@ -381,6 +383,11 @@ def _create_learn_pr_impl(
         f"## Sessions\n\n{session_section}"
     )
 
+    # Generate branch name with LLM slug
+    learn_title = f"Learn: {plan_result.title}"
+    slug = generate_branch_slug(ctx.prompt_executor, learn_title)
+    branch_name = generate_planned_pr_branch_name(slug, ctx.time.now(), objective_id=None)
+
     # Build deterministic summary (no LLM call needed for learn plans)
     summary = (
         f'Learn plan for "{plan_result.title}" (PR #{state.merged_pr_number}). '
@@ -397,7 +404,8 @@ def _create_learn_pr_impl(
         repo_root=state.main_repo_root,
         cwd=state.cwd,
         plan_content=plan_content,
-        title=f"Learn: {plan_result.title}",
+        branch_name=branch_name,
+        title=learn_title,
         labels=["erk-pr", "erk-learn"],
         source_repo=None,
         objective_id=None,
