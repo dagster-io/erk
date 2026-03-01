@@ -1219,7 +1219,7 @@ Track learn workflow result on a plan.
 | -------------- | ------- | -------- | -------------- | -------------------------------------------------------------------- |
 | `--plan-id`    | TEXT    | Yes      | Sentinel.UNSET | Plan identifier (e.g., issue number)                                 |
 | `--status`     | CHOICE  | Yes      | Sentinel.UNSET | Learn workflow result status                                         |
-| `--plan-issue` | INTEGER | No       | Sentinel.UNSET | Learn plan number (required if status is completed_with_plan)        |
+| `--learn-plan` | INTEGER | No       | Sentinel.UNSET | Learn plan number (required if status is completed_with_plan)        |
 | `--plan-pr`    | INTEGER | No       | Sentinel.UNSET | Learn documentation PR number (required if status is pending_review) |
 
 ### update-issue-body

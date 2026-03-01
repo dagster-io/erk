@@ -188,7 +188,7 @@ def _signal_started(ctx: click.Context, session_id: str | None) -> None:
     # Read plan reference FIRST (doesn't require context)
     plan_ref = read_plan_ref(impl_dir) if impl_dir is not None else None
     if plan_ref is None or impl_dir is None:
-        _output_error(event, "no-issue-reference", "No plan reference found")
+        _output_error(event, "no-plan-reference", "No plan reference found")
         return
 
     # Delete Claude plan file if session_id provided
@@ -301,7 +301,7 @@ def _signal_ended(ctx: click.Context, session_id: str | None) -> None:
     # Read plan reference FIRST (doesn't require context)
     plan_ref = read_plan_ref(impl_dir) if impl_dir is not None else None
     if plan_ref is None or impl_dir is None:
-        _output_error(event, "no-issue-reference", "No plan reference found")
+        _output_error(event, "no-plan-reference", "No plan reference found")
         return
 
     # Now get context dependencies (after confirming we need them)
@@ -380,7 +380,7 @@ def _signal_submitted(ctx: click.Context, session_id: str | None) -> None:
     # Read plan reference
     plan_ref = read_plan_ref(impl_dir) if impl_dir is not None else None
     if plan_ref is None:
-        _output_error(event, "no-issue-reference", "No plan reference found")
+        _output_error(event, "no-plan-reference", "No plan reference found")
         return
 
     # Get repo root
@@ -405,7 +405,7 @@ def _signal_submitted(ctx: click.Context, session_id: str | None) -> None:
     # LBYL: Check plan exists before updating
     plan_result = backend.get_plan(repo_root, plan_ref.plan_id)
     if isinstance(plan_result, PlanNotFound):
-        _output_error(event, "issue-not-found", f"Issue #{plan_ref.plan_id} not found")
+        _output_error(event, "plan-not-found", f"Plan #{plan_ref.plan_id} not found")
         return
 
     # Update metadata via PlanBackend (no comment needed — the PR is already visible)
@@ -437,8 +437,8 @@ def impl_signal(ctx: click.Context, event: str, session_id: str | None) -> None:
 
     EVENT can be 'started', 'ended', or 'submitted'.
 
-    'started' posts a start comment and updates issue metadata.
-    'ended' updates issue metadata with ended event.
+    'started' posts a start comment and updates plan metadata.
+    'ended' updates plan metadata with ended event.
     'submitted' sets lifecycle_stage to "impl" after PR submission.
 
     When --session-id is provided on 'started', also deletes the Claude plan file
