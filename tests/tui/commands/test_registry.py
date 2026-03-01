@@ -817,7 +817,8 @@ def test_commands_available_in_plans_view() -> None:
 def test_get_copy_text_returns_display_name_for_valid_command() -> None:
     """get_copy_text returns display name for a valid, available command."""
     row = make_plan_row(123, "Test", pr_number=456)
-    result = get_copy_text("copy_pr_checkout", row, ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    result = get_copy_text("copy_pr_checkout", ctx)
     expected = 'source "$(erk pr checkout 456 --script --sync)" && gt submit --no-interactive'
     assert result == expected
 
@@ -825,29 +826,33 @@ def test_get_copy_text_returns_display_name_for_valid_command() -> None:
 def test_get_copy_text_returns_none_for_unknown_command() -> None:
     """get_copy_text returns None when command ID does not exist."""
     row = make_plan_row(123, "Test")
-    result = get_copy_text("nonexistent_command", row, ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    result = get_copy_text("nonexistent_command", ctx)
     assert result is None
 
 
 def test_get_copy_text_returns_none_for_unavailable_command() -> None:
     """get_copy_text returns None when command is not available in context."""
     row = make_plan_row(123, "Test")  # No pr_number, so copy_pr_checkout unavailable
-    result = get_copy_text("copy_pr_checkout", row, ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    result = get_copy_text("copy_pr_checkout", ctx)
     assert result is None
 
 
 def test_get_copy_text_returns_none_for_wrong_view_mode() -> None:
     """get_copy_text returns None when command is not available in the view mode."""
     row = make_plan_row(123, "Test")
+    ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
     # close_plan is a plan command, not available in objectives view
-    result = get_copy_text("close_plan", row, ViewMode.OBJECTIVES)
+    result = get_copy_text("close_plan", ctx)
     assert result is None
 
 
 def test_get_copy_text_copy_cmux_sync() -> None:
     """get_copy_text for copy_cmux_sync generates cmux workspace command."""
     row = make_plan_row(123, "Test", pr_number=456, pr_head_branch="my-branch")
-    result = get_copy_text("copy_cmux_sync", row, ViewMode.PLANS, cmux_integration=True)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=True)
+    result = get_copy_text("copy_cmux_sync", ctx)
     assert result is not None
     assert "cmux new-workspace" in result
     assert "cmux rename-workspace" in result
