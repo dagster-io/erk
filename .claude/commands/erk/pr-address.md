@@ -206,6 +206,8 @@ git commit -m "Address PR review comments (batch N/M)
 ..."
 ```
 
+**Note:** If any changed files are in `.erk/impl-context/` (plan-only PRs), use `git add -f` instead — the directory is gitignored.
+
 #### Step 4: Resolve All Threads in the Batch (MANDATORY)
 
 **This step is NOT optional.** Every thread must be resolved using the thread IDs from the classifier JSON.
