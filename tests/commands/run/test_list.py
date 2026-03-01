@@ -110,6 +110,9 @@ def test_list_runs_single_success_run_with_issue_linkage(tmp_path: Path) -> None
     assert "Add user authentication" in result.output
     # Success status indicator
     assert "Success" in result.output or "✅" in result.output
+    # Workflow column should appear
+    assert "workflow" in result.output
+    assert "plan-implement" in result.output
 
 
 def test_list_runs_multiple_runs_different_statuses(tmp_path: Path) -> None:
@@ -848,3 +851,61 @@ def test_list_runs_handles_missing_timestamp(tmp_path: Path) -> None:
     # Should display without error - the "-" placeholder is dimmed
     # Just check it doesn't crash and outputs a table
     assert "submitted" in result.output
+
+
+def test_list_runs_shows_workflow_column(tmp_path: Path) -> None:
+    """Test that runs display the workflow source column."""
+    # Arrange
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    (repo_root / ".git").mkdir()
+    git_ops = FakeGit(
+        worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
+        current_branches={repo_root: "main"},
+        git_common_dirs={repo_root: repo_root / ".git"},
+    )
+
+    now = datetime.now(UTC)
+    workflow_runs = [
+        WorkflowRun(
+            run_id="555666",
+            status="completed",
+            conclusion="success",
+            branch="feat-1",
+            head_sha="abc123",
+            display_title="142:abc456",
+        ),
+    ]
+    github_ops = FakeGitHub(workflow_runs=workflow_runs)
+
+    issues = {
+        142: IssueInfo(
+            number=142,
+            title="Test workflow column",
+            body="",
+            state="OPEN",
+            url="https://github.com/owner/repo/issues/142",
+            labels=["erk-pr", "erk-plan"],
+            assignees=[],
+            created_at=now,
+            updated_at=now,
+            author="test-user",
+        ),
+    }
+    issues_ops = FakeGitHubIssues(issues=issues)
+
+    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    runner = CliRunner()
+
+    # Act
+    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+
+    # Assert
+    assert result.exit_code == 0
+    # Workflow column header should appear
+    assert "workflow" in result.output
+    # First workflow in WORKFLOW_COMMAND_MAP wins after dedup
+    assert "plan-implement" in result.output
+    # Run should still display correctly
+    assert "555666" in result.output
+    assert "#142" in result.output

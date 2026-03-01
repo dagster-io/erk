@@ -1,12 +1,14 @@
 """List workflow runs command."""
 
+from datetime import UTC, datetime
+
 import click
 from rich.console import Console
 from rich.table import Table
 
 from erk.cli.commands.pr.list_cmd import format_pr_cell
 from erk.cli.commands.run.shared import extract_plan_number
-from erk.cli.constants import DISPATCH_WORKFLOW_NAME
+from erk.cli.constants import WORKFLOW_COMMAND_MAP
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
@@ -18,8 +20,11 @@ from erk.core.display_utils import (
 from erk.core.pr_utils import select_display_pr
 from erk_shared.gateway.github.emoji import format_checks_cell
 from erk_shared.gateway.github.parsing import github_repo_location_from_url
-from erk_shared.gateway.github.types import GitHubRepoId
+from erk_shared.gateway.github.types import GitHubRepoId, WorkflowRun
 from erk_shared.output.output import user_output
+
+_MAX_DISPLAY_RUNS = 50
+_PER_WORKFLOW_LIMIT = 20
 
 
 def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
@@ -30,24 +35,48 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
     # Discover repository context
     repo = discover_repo_context(ctx, ctx.cwd)
 
-    # 1. Fetch workflow runs from dispatch workflow
-    runs = ctx.github.list_workflow_runs(repo.root, DISPATCH_WORKFLOW_NAME)
+    # 1. Fetch workflow runs from all registered workflows
+    tagged_runs: list[tuple[WorkflowRun, str]] = []
+    for command_name, workflow_file in WORKFLOW_COMMAND_MAP.items():
+        workflow_runs = ctx.github.list_workflow_runs(repo.root, workflow_file, _PER_WORKFLOW_LIMIT)
+        for run in workflow_runs:
+            tagged_runs.append((run, command_name))
+
+    # Deduplicate by run_id (a run belongs to exactly one workflow)
+    seen_run_ids: set[str] = set()
+    unique_tagged_runs: list[tuple[WorkflowRun, str]] = []
+    for pair in tagged_runs:
+        if pair[0].run_id not in seen_run_ids:
+            seen_run_ids.add(pair[0].run_id)
+            unique_tagged_runs.append(pair)
+    tagged_runs = unique_tagged_runs
+
+    # Sort by created_at descending (newest first), with None timestamps last
+    tagged_runs.sort(
+        key=lambda pair: pair[0].created_at or datetime.min.replace(tzinfo=UTC),
+        reverse=True,
+    )
+
+    # Limit displayed runs
+    tagged_runs = tagged_runs[:_MAX_DISPLAY_RUNS]
 
     # Handle empty state
-    if not runs:
+    if not tagged_runs:
         user_output("No workflow runs found")
         return
 
     # Filter out runs without plans unless --show-legacy flag is set
     if not show_all:
-        runs = [run for run in runs if extract_plan_number(run.display_title) is not None]
-        if not runs:
+        tagged_runs = [
+            pair for pair in tagged_runs if extract_plan_number(pair[0].display_title) is not None
+        ]
+        if not tagged_runs:
             user_output("No runs with plans found. Use --show-legacy to see all runs.")
             return
 
     # 2. Extract issue numbers from display_title (format: "123:abc456")
     plan_numbers: list[int] = []
-    for run in runs:
+    for run, _workflow_name in tagged_runs:
         plan_num = extract_plan_number(run.display_title)
         if plan_num is not None:
             plan_numbers.append(plan_num)
@@ -58,8 +87,8 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
 
     # Second filtering pass - remove runs where we can't display title
     if not show_all:
-        filtered_runs = []
-        for run in runs:
+        filtered_tagged_runs: list[tuple[WorkflowRun, str]] = []
+        for run, workflow_name in tagged_runs:
             plan_num = extract_plan_number(run.display_title)
             if plan_num is None:
                 continue  # Already filtered, but defensive check
@@ -73,12 +102,12 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
             if not issue.title or not issue.title.strip():
                 continue
 
-            filtered_runs.append(run)
+            filtered_tagged_runs.append((run, workflow_name))
 
-        runs = filtered_runs
+        tagged_runs = filtered_tagged_runs
 
         # Show message if ALL runs filtered
-        if not runs:
+        if not tagged_runs:
             user_output("No runs with plans found. Use --show-legacy to see all runs.")
             return
 
@@ -100,12 +129,13 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
     table.add_column("run-id", style="cyan", no_wrap=True)
     table.add_column("status", no_wrap=True, width=14)
     table.add_column("submitted", no_wrap=True, width=11)
+    table.add_column("workflow", no_wrap=True, width=14)
     table.add_column("plan", no_wrap=True)
     table.add_column("title", no_wrap=True)
     table.add_column("pr", no_wrap=True)
     table.add_column("chks", no_wrap=True)
 
-    for run in runs:
+    for run, workflow_name in tagged_runs:
         plan_num = extract_plan_number(run.display_title)
 
         # Format run-id with link
@@ -166,10 +196,13 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
                     )
                     checks_cell = format_checks_cell(selected_pr)
 
+        workflow_cell = f"[dim]{workflow_name}[/dim]"
+
         table.add_row(
             run_id_cell,
             status_cell,
             submitted_cell,
+            workflow_cell,
             plan_cell,
             title_cell,
             pr_cell,
