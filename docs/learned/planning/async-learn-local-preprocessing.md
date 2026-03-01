@@ -3,7 +3,7 @@ title: Async Learn Local Preprocessing
 read_when:
   - modifying trigger-async-learn orchestration
   - debugging why learn materials are missing or malformed in CI
-  - understanding the local-to-gist-to-codespace data flow
+  - understanding the local-to-branch-to-learn data flow
 tripwires:
   - action: "adding subprocess calls to trigger-async-learn"
     warning: "This command uses direct Python function calls, not subprocess invocations. This is intentional — see the direct-call architecture section below."
@@ -42,7 +42,7 @@ During preprocessing, each session is classified as either `"planning"` or `"imp
 
 ## Material Assembly Pipeline
 
-The learn materials directory (`.erk/scratch/learn-{issue_number}`) is a staging area that accumulates three types of files before gist upload:
+The learn materials directory (`.erk/scratch/learn-{issue_number}`) is a staging area that accumulates three types of files before branch push:
 
 1. **Preprocessed session XML** — from local session preprocessing
 2. **PR review comments** — inline code review threads serialized as JSON

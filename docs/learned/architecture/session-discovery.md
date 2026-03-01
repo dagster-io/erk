@@ -102,10 +102,10 @@ Use `find_local_sessions_for_project()` for this fallback path.
 
 The `SessionSource` ABC provides a uniform interface for session metadata:
 
-| Class                 | Use Case                                       |
-| --------------------- | ---------------------------------------------- |
-| `LocalSessionSource`  | Sessions from `~/.claude/projects/` on machine |
-| `RemoteSessionSource` | Sessions downloaded from gists                 |
+| Class                 | Use Case                                                           |
+| --------------------- | ------------------------------------------------------------------ |
+| `LocalSessionSource`  | Sessions from `~/.claude/projects/` on machine                     |
+| `RemoteSessionSource` | Sessions from `async-learn/{plan_id}` branches or legacy artifacts |
 
 Both provide: `source_type`, `session_id`, `run_id` (remote only), and `path`.
 
