@@ -1,0 +1,1867 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>with the learning pipelines, we are back in a situation where we don't capture all the informatoin dependingo on where the sessions occur. we need to collect sessions in impl-context as we proceed through the lifecycle as frequently we plan on one machine, implement in gh actions, and then do final implementation on another machine. we want to collect all the session information for learning. right now that is not happening. how do suggest we do that without introducing more dependencies (e.g. we can't just host a web server)</user>
+  <thinking>The user is asking about a design problem: how to collect session information across different machines/environments (local planning, GitHub Actions implementation, local final implementation) for the learning pipeline, without introducing new infrastructure dependencies like a web server.
+
+Let me explore the codebase to understand the current learning pipeline, impl-context structure, and session collection mechanisms.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="11010" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11010}" output_tokens="14" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the current learning pipeline and session collection to understand the problem space.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="11010" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11010}" output_tokens="14" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01XmxNzHtnssw6rsD1qwdWGL">
+    <param name="description">Explore learning pipeline</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 561 chars]...ll lifecycle: plan → implement → learn, and where session data gets lost between machines.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11010" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11010}" output_tokens="14" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01MJAqXfkVNb5cri2TQh8c6B">
+    <param name="description">Explore impl-context lifecycle</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 627 chars]...l-context
+
+Focus on understanding what data flows through impl-context and what's missing.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11010" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11010}" output_tokens="14" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01KdvKMnBesk129G5kS5jokg">
+    <param name="description">Explore session log structure</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 612 chars]...n file paths
+
+Focus on understanding what session data is available and how it's accessed.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11010" cache_read_input_tokens="19113" output_tokens="867" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11010, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MJAqXfkVNb5cri2TQh8c6B">
+Perfect! Now I have enough information. Let me compile a comprehensive report on the impl-context lifecycle.
+
+## Summary: Impl-Context Folder Lifecycle in Erk
+
+Based on extensive documentation review and codebase analysis, here's the complete lifecycle of `.erk/impl-context/` in erk:
+
+### 1. **What Gets Stored in .erk/impl-context/**
+
+The `.erk/impl-context/` directory is a **temporary staging folder** committed to the plan branch during draft-PR creation. It contains:
+
+```
+.erk/impl-context/
+├── plan.md              # Full plan content from the issue/PR (immutable)
+├── ref.json             # Plan reference metadata (provider, objective_id, node_ids, etc.)
+└── sessions/            # (Optional) Session XML files embedded in PR diff
+```
+
+**Key fields in `ref.json`:**
+- `provider`: "github-draft-pr" (plan backend type)
+- `plan_id`: Numeric plan ID as string
+- `url`: Full plan URL
+- `created_at` / `synced_at`: ISO 8601 UTC timestamps
+- `objective_id`: Optional linked objective issue number
+- `node_ids`: Optional roadmap node IDs this plan targets
+- `labels`: Empty array (maintained for schema compatibility)
+
+### 2. **Creation &amp; Population Across Lifecycle**
+
+**Stage 1: Plan Save (Local or Remote)**
+
+
+... [149 lines omitted] ...
+
+if git ls-files --error-unmatch .erk/impl-context/ &gt;/dev/null 2&gt;&amp;1; then
+  </tool_result>
+  <tool_result tool="toolu_01XmxNzHtnssw6rsD1qwdWGL">
+Perfect! Now I have enough information. Let me create a comprehensive summary document based on my findings:
+
+## Summary: Erk Learning Pipeline End-to-End
+
+I've completed a thorough exploration of erk's learning pipeline. Here's the complete lifecycle from plan → implement → learn:
+
+### **1. SESSION COLLECTION &amp; TRACKING**
+
+#### Local Session Discovery
+- Sessions are stored in `~/.claude/projects/&lt;repo&gt;/sessions/` (JSONL format)
+- The `ClaudeInstallation` gateway provides two discovery methods:
+  - **Global lookup**: `find_session_globally(session_id)` - finds any session by UUID
+  - **Project-scoped**: `find_sessions(project_cwd)` - finds sessions for a specific project
+
+#### Session Metadata Tracking
+- Plans store session IDs in GitHub issue metadata (plan-header blocks):
+  - `created_from_session` - The session that created the plan
+  - `last_local_impl_session` - Most recent implementation session (JSONL file)
+  - `last_session_branch` - Git branch containing uploaded session
+  - `last_session_id` - Session ID of latest uploaded session
+  - `last_session_source` - "local" or "remote"
+  - Legacy: `last_remote_impl_*` fields for GitHub Actions runs
+
+#### Implementation Event Comments
+- Implementation start/end events are posted as GitHub comments with metadata blocks
+- Learn invocation also posts metadata comments
+- `SessionsForPlan` class aggregates all session IDs from multiple sources (header + comments)
+
+### **2. THE PLAN → IMPLEMENT → UPLOAD FLOW**
+
+
+... [123 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01KdvKMnBesk129G5kS5jokg">
+Perfect! Now I have a comprehensive understanding. Let me create a detailed summary document. Since I'm in read-only mode, I'll provide the comprehensive report directly:
+
+## Comprehensive Report: Claude Code Session Logs in Erk
+
+Based on my thorough exploration of the codebase and documentation, here's the complete understanding of how Claude Code session logs work and how erk interacts with them:
+
+### 1. **Session Log Format &amp; Storage**
+
+#### Location Structure
+- **Primary Storage**: `~/.claude/projects/&lt;encoded-path&gt;/`
+- **Path Encoding**: Deterministic replacement (`/` → `-`, `.` → `-`)
+  - Example: `/Users/foo/code/myapp` → `~/.claude/projects/-Users-foo-code-myapp/`
+  - Implementation: `encode_path_to_project_folder()` in session discovery
+
+#### JSONL Format
+Session logs are JSONL (JSON Lines) files with these key fields:
+```
+sessionId       - UUID identifying the session
+type            - "user", "assistant", "tool_result", "summary", "system"
+message         - Content with structure varying by type
+timestamp       - Unix float (in message object)
+gitBranch       - Current git branch (optional metadata)
+slug            - Plan filename when exiting plan mode (on assistant entries)
+parentUuid      - For agent sessions (links to parent session)
+usage           - Token stats (typically stripped during preprocessing)
+```
+
+#### Entry Types
+- `user`: Human input + tool results as content blocks
+- `assistant`: Claude responses with text and tool_use blocks
+
+... [305 lines omitted] ...
+
+- `iter_jsonl_entries()` - Iterate over entries with graceful error handling
+**Anti-pattern**: Never `exit 1` when sessions missing. Missing data narrows scope but never causes failure.
+  </tool_result>
+  <thinking>Now I have a comprehensive understanding of the problem. Let me synthesize what I've learned:
+
+## The Problem
+
+The learning pipeline needs session data from multiple stages of a plan's lifecycle, but sessions are machine-local:
+
+1. **Planning session** - happens on developer's local machine (Machine A)
+2. **Implementation session** - may happen on GitHub Actions (remote) OR on another local machine (Machine B)
+3. **Final implementation/refinement** - may happen on yet another machine
+4. **Learn extraction** - happens either locally or in CI
+
+Currently, session tracking relies on:
+- GitHub issue metadata (plan-header fields like `created_from_session`, `last_local_impl_session`)
+
+
+- Uploading to `async-learn/{plan_id}` branches as a fallback
+- Local session discovery when branches aren't available
+
+The real issue is that sessions from different machines and stages aren't being reliably collected together—the upload mechanism exists but doesn't trigger consistently at each stage transition.
+
+## The Constraint
+No new infrastructure (no web servers, databases, etc.)
+
+## What We Have to Work With
+- Git (branches, commits) - already used for session transport
+- GitHub (issues, PRs, comments) - already used for metadata
+- `.erk/impl-context/` - already committed to branches
+- Plan-header metadata - already tracks some session IDs
+
+## My Design Thinking
+
+The key insight is that we already have all the pieces—I just need to ensure sessions get uploaded and tracked at every critical transition point in the workflow.
+
+The approach is to make `.erk/impl-context/` the central hub by adding a session manifest file that gets updated whenever we move between stages. This manifest would track all sessions across planning, implementation, and other phases, with each session stored as a separate preprocessed file in a sessions subdirectory. The manifest itself would be a JSON structure that records metadata about each session...
+
+Defining the manifest structure... The core issue is that sessions get created across different stages and machines but don't reliably make it into a central location before the learn pipeline runs. I'm realizing the solution is to enforce session uploads as a mandatory checkpoint at each stage transition, using the existing branch structure as the accumulation point rather than adding new infrastructure.
+
+The minimal change would be ensuring that whenever a stage completes—whether it's planning, implementation on GitHub Actions, local refinement, or PR addressing—the session gets pushed to the branch immediately, so by the time learn runs, everything's already there. I'm leaning toward a hybrid approach: store session IDs in the plan-header metadata, preprocess and upload sessions to the learn branch at each stage transition using git as the transport layer, and maintain a manifest file to track what's been collected. Let me think through the implementation details and write this out more carefully, though I should double-check what the user is actually asking for here. The key insight is that sessions are ephemeral and machine-local, but git branches persist across machines—so the `async-learn/{plan_id}` branch should be the central accumulation point. Rather than uploading sessions only when `erk learn` runs, I should recommend an eager approach where sessions get committed to the branch at each transition point: after planning, when remote implementation finishes, after local work, and when PRs are addressed. This shifts from "upload at learn time" to "upload as you go," which means the learn pipeline just reads what's already there instead of discovering sessions locally. I'd need a helper to preprocess and commit sessions, hooks at each transition point to trigger uploads, and modifications to the learn pipeline itself.
+
+I'm realizing I should read through the current upload mechanism to understand how sessions are structured and committed before making a concrete recommendation to the user.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="8841" cache_read_input_tokens="30123" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8841}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me look at a few key implementation files to solidify my understanding of the current upload mechanism and the gaps.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8841" cache_read_input_tokens="30123" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8841}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018pvwChfmZKL8nw2JdjvApp">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/upload_session.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8841" cache_read_input_tokens="30123" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8841}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018pvwChfmZKL8nw2JdjvApp">
+     1→"""Upload a Claude Code session to a git branch and update the plan header.
+     2→
+     3→This exec command creates an `async-learn/{plan_id}` branch, commits the session
+     4→JSONL file to `.erk/session/{session_id}.jsonl`, and optionally updates the
+     5→plan-header metadata in the associated erk-plan.
+     6→
+     7→Usage:
+     8→    # Upload from local session file
+     9→    erk exec upload-session --session-file /path/to/session.jsonl \\
+    10→        --session-id abc-123 --source local --plan-id 2521
+    11→
+    12→    # Upload and update plan
+    13→    erk exec upload-session --session-file /path/to/session.jsonl \\
+    14→        --session-id abc-123 --source remote --plan-id 2521
+    15→
+    16→Output:
+    17→    Structured JSON output with branch info and updated plan header fields
+    18→
+    19→Exit Codes:
+    20→    0: Success (branch created and optionally plan header updated)
+    21→    1: Error (branch creation failed, issue update failed)
+    22→
+    23→Examples:
+    24→    $ erk exec upload-session --session-file session.jsonl \\
+    25→          --session-id abc --source remote --plan-id 123
+    26→    {
+    27→      "success": true,
+    28→      "session_branch": "async-learn/123",
+    29→      "session_id": "abc",
+    30→      "plan_id": 123,
+
+... [125 lines omitted] ...
+
+    89→        error_output = {
+    91→            "error": "--plan-id is required for branch-based session upload",
+    93→        click.echo(json.dumps(error_output))
+   144→        result["issue_update_error"] = f"Plan #{plan_id} not found"
+   149→        except RuntimeError as e:
+   150→            # Plan update failed but branch was created - partial success
+   152→            result["issue_update_error"] = str(e)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WSSbD9yfATVJ5eA3PLC6Xf">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8841" cache_read_input_tokens="30123" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8841}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WSSbD9yfATVJ5eA3PLC6Xf">
+     1→"""Get session information for a plan.
+     2→
+     3→This exec script returns JSON with session data for use by the /erk:learn skill.
+     4→It replaces the `erk learn --json --no-track` workflow, separating data retrieval
+     5→from tracking.
+     6→
+     7→Usage:
+     8→    erk exec get-learn-sessions &lt;issue-number&gt;
+     9→    erk exec get-learn-sessions &lt;issue-url&gt;
+    10→
+    11→Output:
+    12→    JSON object with session information:
+    13→    {
+    14→        "success": true,
+    15→        "plan_id": "123",
+    16→        "planning_session_id": "abc-123" | null,
+    17→        "implementation_session_ids": [...],
+    18→        "learn_session_ids": [...],
+    19→        "readable_session_ids": [...],
+    20→        "session_paths": [...],
+    21→        "local_session_ids": [...],
+    22→        "last_remote_impl_at": "2024-01-01T..." | null,
+    23→        "last_remote_impl_run_id": "12345678" | null,
+    24→        "last_remote_impl_session_id": "abc-def-ghi" | null
+    25→    }
+    26→
+    27→Exit Codes:
+    28→    0: Success
+    29→    1: Error (invalid issue, GitHub failure, etc.)
+    30→"""
+
+... [230 lines omitted] ...
+
+    45→    GetLearnSessionsErrorDict,
+   231→            error = GetLearnSessionsErrorDict(
+   233→                error=f"Invalid issue identifier: {issue}",
+   235→            click.echo(json.dumps(error))
+   242→        error = GetLearnSessionsErrorDict(
+   244→            error="No issue specified and could not infer from branch name",
+   246→        click.echo(json.dumps(error))
+  </tool_result>
+  <tool_use name="Read" id="toolu_011WfPQSzUg54s5FWSPGoGDk">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/sessions/discovery.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8841" cache_read_input_tokens="30123" output_tokens="2455" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8841, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011WfPQSzUg54s5FWSPGoGDk">
+     1→"""Session discovery for plans.
+     2→
+     3→This module provides functions to discover Claude Code sessions
+     4→associated with a plan issue.
+     5→"""
+     6→
+     7→import sys
+     8→from dataclasses import dataclass
+     9→from pathlib import Path
+    10→
+    11→from erk_shared.gateway.claude_installation.abc import (
+    12→    ClaudeInstallation,
+    13→    FoundSession,
+    14→)
+    15→from erk_shared.learn.extraction.session_schema import extract_git_branch
+    16→
+    17→
+    18→@dataclass(frozen=True)
+    19→class SessionsForPlan:
+    20→    """Sessions associated with a plan issue.
+    21→
+    22→    Attributes:
+    23→        planning_session_id: Session that created the plan (from created_from_session)
+    24→        implementation_session_ids: Sessions where plan was implemented
+    25→        learn_session_ids: Sessions where learn was previously invoked
+    26→        last_remote_impl_at: Timestamp of remote implementation (if implemented via GitHub Actions)
+    27→        last_remote_impl_run_id: GitHub Actions run ID for remote implementation
+    28→        last_remote_impl_session_id: Claude Code session ID for remote implementation
+    29→        last_session_branch: Branch containing latest session JSONL
+    30→        last_session_id: Session ID of latest uploaded session
+
+... [127 lines omitted] ...
+  </tool_result>
+  <thinking>Now let me also look at the learn skill to understand how sessions are currently processed during the learn workflow.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="10495" cache_read_input_tokens="38964" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10495}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me also check how the learn skill currently collects and processes sessions, and how sessions flow through the plan-implement workflow.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="10495" cache_read_input_tokens="38964" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10495}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01XoheBCLKPZFZLu4tbUZEut">
+    <param name="pattern">upload.*session|preprocess.*session|session.*upload</param>
+    <param name="path">/Users/schrockn/code/erk/.claude/skills</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10495" cache_read_input_tokens="38964" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10495}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XoheBCLKPZFZLu4tbUZEut">
+Found 5 files
+.claude/skills/erk-exec/reference.md
+.claude/skills/session-inspector/references/tools.md
+.claude/skills/session-inspector/SKILL.md
+.claude/skills/erk-exec/SKILL.md
+.claude/skills/session-inspector/references/learn.md
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01QgY8kNYCx8d6yTa1EJwtvy">
+    <param name="pattern">upload-impl-session|upload-session|preprocess-session</param>
+    <param name="path">/Users/schrockn/code/erk/.github/workflows</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10495" cache_read_input_tokens="38964" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10495}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QgY8kNYCx8d6yTa1EJwtvy">
+.github/workflows/learn.yml:5:# after a PR lands via the upload-impl-session pipeline.
+.github/workflows/plan-implement.yml:274:          erk exec upload-session \
+.github/workflows/pr-address.yml:144:          erk exec upload-session \
+  </tool_result>
+  <tool_use name="Grep" id="toolu_012qtyYNDtAW88BrAHfquyfT">
+    <param name="pattern">session_id|session-id|CLAUDE_SESSION_ID</param>
+    <param name="path">/Users/schrockn/code/erk/.github/workflows/plan-implement.yml</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10495" cache_read_input_tokens="38964" output_tokens="421" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 10495, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012qtyYNDtAW88BrAHfquyfT">
+258:            echo "session_id=$SESSION_ID" &gt;&gt; "$GITHUB_OUTPUT"
+267:        if: always() &amp;&amp; steps.session.outputs.session_id
+271:          SESSION_ID: ${{ steps.session.outputs.session_id }}
+276:            --session-id "$SESSION_ID" \
+281:        if: always() &amp;&amp; steps.session.outputs.session_id
+287:          SESSION_ID: ${{ steps.session.outputs.session_id }}
+294:            "last_remote_impl_session_id=$SESSION_ID" \
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Le1qee6bpbw5w9of14LGQd">
+    <param name="file_path">/Users/schrockn/code/erk/.github/workflows/plan-implement.yml</param>
+    <param name="offset">240</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="892" cache_read_input_tokens="49459" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 892}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Le1qee6bpbw5w9of14LGQd">
+   240→            echo "implementation_success=true" &gt;&gt; $GITHUB_OUTPUT
+   241→          else
+   242→            echo "implementation_success=false" &gt;&gt; $GITHUB_OUTPUT
+   243→          fi
+   244→          exit 0
+   245→        env:
+   246→          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+   247→          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+   248→          GH_TOKEN: ${{ github.token }}
+   249→          PR_NUMBER: ${{ inputs.pr_number }}
+   250→          PLAN_ID: ${{ inputs.plan_id }}
+   251→
+   252→      - name: Capture session ID
+   253→        id: session
+   254→        if: always()
+   255→        run: |
+   256→          if OUTPUT=$(erk exec capture-session-info --path "$GITHUB_WORKSPACE" 2&gt;/dev/null); then
+   257→            eval "$OUTPUT"
+   258→            echo "session_id=$SESSION_ID" &gt;&gt; "$GITHUB_OUTPUT"
+   259→            echo "session_file=$SESSION_FILE" &gt;&gt; "$GITHUB_OUTPUT"
+   260→            echo "Captured session ID: $SESSION_ID"
+   261→            echo "Session file: $SESSION_FILE"
+   262→          else
+   263→            echo "No session found for: $GITHUB_WORKSPACE"
+   264→          fi
+   265→
+   266→      - name: Upload session to gist and update plan header
+   267→        if: always() &amp;&amp; steps.session.outputs.session_id
+   268→        env:
+   269→          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+
+... [30 lines omitted] ...
+
+   282→        continue-on-error: true
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DZqCeXeVCbyUHLkwDmKDmu">
+    <param name="file_path">/Users/schrockn/code/erk/.github/workflows/learn.yml</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="892" cache_read_input_tokens="49459" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 892}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DZqCeXeVCbyUHLkwDmKDmu">
+     1→# Learn Dispatch Workflow
+     2→#
+     3→# Runs /erk:learn on a completed plan to extract insights and patterns
+     4→# from the implementation session. This workflow is triggered asynchronously
+     5→# after a PR lands via the upload-impl-session pipeline.
+     6→#
+     7→# Output: Creates a new learn plan issue containing extracted lessons learned,
+     8→# architectural decisions, and reusable patterns from the implementation.
+     9→
+    10→name: learn
+    11→run-name: "${{ inputs.plan_id }}:${{ inputs.distinct_id }}"
+    12→
+    13→on:
+    14→  workflow_dispatch:
+    15→    inputs:
+    16→      plan_id:
+    17→        description: "Plan identifier to learn from"
+    18→        required: true
+    19→        type: string
+    20→      distinct_id:
+    21→        description: "Unique identifier for run discovery (base36)"
+    22→        required: true
+    23→        type: string
+    24→      learn_branch:
+    25→        description: "Branch containing learn materials in .erk/impl-context/"
+    26→        required: true
+    27→        type: string
+    28→      plan_backend:
+    29→        description: "Plan backend type (github or planned_pr)"
+    30→        required: false
+
+... [30 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_016MN41f9t3yqxNW11C52fQj">
+    <param name="pattern">upload-session|preprocess-session|session</param>
+    <param name="path">/Users/schrockn/code/erk/.claude/skills/erk/learn</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="892" cache_read_input_tokens="49459" output_tokens="298" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 892, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016MN41f9t3yqxNW11C52fQj">
+&lt;tool_use_error&gt;Path does not exist: /Users/schrockn/code/erk/.claude/skills/erk/learn. Note: your current working directory is /Users/schrockn/code/erk.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01S6g39BJbdFfnxXP7jny6UX">
+    <param name="pattern">.claude/skills/**/learn*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2141" cache_read_input_tokens="50351" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2141}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01S6g39BJbdFfnxXP7jny6UX">
+/Users/schrockn/code/erk/.claude/skills/session-inspector/references/learn.md
+/Users/schrockn/code/erk/.claude/skills/learned-docs/learned-docs-core.md
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01HUyChArxcbrgjobyfAyzr6">
+    <param name="pattern">preprocess.*session|upload.*session</param>
+    <param name="path">/Users/schrockn/code/erk/.claude/skills</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="head_limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2141" cache_read_input_tokens="50351" output_tokens="189" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2141, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HUyChArxcbrgjobyfAyzr6">
+.claude/skills/erk-exec/SKILL.md:58:| `preprocess-session`      | Compress session for analysis     |
+.claude/skills/erk-exec/SKILL.md:59:| `upload-session`          | Upload session to gist            |
+.claude/skills/erk-exec/reference.md:83:| `preprocess-session`              | Preprocess session log JSONL to compressed XML format.                      |
+.claude/skills/erk-exec/reference.md:104:| `upload-impl-session`             | Upload current implementation session for async learn.                      |
+.claude/skills/erk-exec/reference.md:105:| `upload-session`                  | Upload a session JSONL to a git branch and update plan header.              |
+.claude/skills/erk-exec/reference.md:951:### preprocess-session
+.claude/skills/erk-exec/reference.md:955:**Usage:** `erk exec preprocess-session` &lt;log_path&gt;
+.claude/skills/erk-exec/reference.md:1246:### upload-impl-session
+.claude/skills/erk-exec/reference.md:1250:**Usage:** `erk exec upload-impl-session`
+.claude/skills/erk-exec/reference.md:1258:### upload-session
+.claude/skills/erk-exec/reference.md:1262:**Usage:** `erk exec upload-session`
+.claude/skills/session-inspector/SKILL.md:46:| `preprocess-session`         | Convert JSONL to compressed XML                  |
+.claude/skills/session-inspector/SKILL.md:81:erk exec preprocess-session &lt;log-path&gt; [OPTIONS]
+.claude/skills/session-inspector/SKILL.md:210:3. Preprocess: `erk exec preprocess-session &lt;file&gt; --stdout | head -500`
+.claude/skills/session-inspector/references/tools.md:53:### preprocess-session
+.claude/skills/session-inspector/references/tools.md:58:erk exec preprocess-session &lt;log-path&gt; [OPTIONS]
+.claude/skills/session-inspector/references/tools.md:390:   erk exec preprocess-session agent-&lt;id&gt;.jsonl --stdout | head -200
+.claude/skills/session-inspector/references/tools.md:420:erk exec preprocess-session /path/to/session.jsonl --stdout &gt; session.xml
+.claude/skills/session-inspector/references/learn.md:16:preprocess_session()
+.claude/skills/session-inspector/references/learn.md:174:### preprocess_session
+.claude/skills/session-inspector/references/learn.md:177:from erk_shared.extraction.session_preprocessing import preprocess_session
+.claude/skills/session-inspector/references/learn.md:179:def preprocess_session(
+.claude/skills/session-inspector/references/learn.md:226:from erk_shared.extraction.session_preprocessing import reduce_session_mechanically
+.claude/skills/session-inspector/references/learn.md:422:from erk_shared.extraction.session_preprocessing import preprocess_session
+.claude/skills/session-inspector/references/learn.md:426:xml_content = preprocess_session(
+
+[Showing results with pagination = limit: 30, offset: 0]
+  </tool_result>
+  <thinking>Now let me look at how learn is triggered and what sessions it can access. Let me also check the learn skill itself and `upload-impl-session`.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1114" cache_read_input_tokens="52492" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1114}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UMRQhUPAnF4XTHsxNme5Nk">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/upload_impl_session.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1114" cache_read_input_tokens="52492" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1114}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UMRQhUPAnF4XTHsxNme5Nk">
+     1→"""Upload current implementation session for async learn.
+     2→
+     3→Replaces the inline bash logic in plan-implement.md Step 10b.
+     4→Reads plan reference from .erk/impl-context/, captures session info, and uploads
+     5→using the same mechanism as upload-session.
+     6→
+     7→Fixes the --issue-number vs --plan-id bug in the original bash.
+     8→
+     9→Usage:
+    10→    erk exec upload-impl-session --session-id &lt;id&gt;
+    11→
+    12→Output:
+    13→    JSON with upload result:
+    14→    {"uploaded": true, "plan_id": 2521}
+    15→    {"uploaded": false, "reason": "no_plan_tracking"}
+    16→    {"uploaded": false, "reason": "no_session_found"}
+    17→
+    18→Exit Codes:
+    19→    0: Always (non-critical operation, graceful degradation)
+    20→
+    21→Examples:
+    22→    $ erk exec upload-impl-session --session-id abc-123
+    23→    {"uploaded": true, "plan_id": 2521}
+    24→"""
+    25→
+    26→import json
+    27→from datetime import UTC
+    28→from pathlib import Path
+    29→
+    30→import click
+
+... [115 lines omitted] ...
+
+   141→        except RuntimeError:
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01NWxi8svDcgoHTg9cwTumcG">
+    <param name="pattern">.claude/commands/erk/learn*.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1114" cache_read_input_tokens="52492" output_tokens="177" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1114, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NWxi8svDcgoHTg9cwTumcG">
+/Users/schrockn/code/erk/.claude/commands/erk/learn.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_019MV3N9gGLKvYLJfPoqBn8o">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/commands/erk/learn.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2124" cache_read_input_tokens="53606" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2124, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019MV3N9gGLKvYLJfPoqBn8o">
+     1→---
+     2→description: Extract insights from plan-associated sessions
+     3→argument-hint: "[plan-number]"
+     4→---
+     5→
+     6→# /erk:learn
+     7→
+     8→Create a documentation plan from Claude Code sessions associated with a plan implementation. The verb "learn" means: analyze what happened, extract insights, and create an actionable plan to document those learnings.
+     9→
+    10→## Usage
+    11→
+    12→```
+    13→/erk:learn                              # Infers plan from current branch
+    14→/erk:learn 4655                          # Explicit plan number
+    15→```
+    16→
+    17→## Purpose
+    18→
+    19→All documentation produced by this command follows the content quality standards in the `learned-docs` skill. Load that skill for the full rules on audience (AI agents), the cornerstone principle (cross-cutting insight), and what belongs in learned docs vs code comments.
+    20→
+    21→## Agent Instructions
+    22→
+    23→**Prerequisite:** Load the `learned-docs` skill for content quality standards before proceeding.
+    24→
+    25→Tell the user (choose the appropriate pipeline display based on whether `.erk/impl-context/` exists):
+    26→
+    27→**When `.erk/impl-context/` exists (CI/async mode):**
+    28→
+    29→```
+    30→Learn pipeline for plan #&lt;plan-number&gt; (using preprocessed materials):
+
+... [784 lines omitted] ...
+
+    55→Parse the JSON output and check the `labels` array. If `erk-learn` is present, stop with this error:
+    58→Error: Plan #&lt;plan-number&gt; is a learn plan (has erk-learn label).
+   143→This returns JSON with PR details (`number`, `title`, `state`, `url`, `head_ref_name`, `base_ref_name`) or an error if no PR exists. Save the PR number for the parallel agents below.
+   401→Confirm you see the expected files (session-\*.md, diff-analysis.md, existing-docs-check.md, pr-comments-analysis.md) before proceeding. If any files are missing, the agent failed to write its output and must be re-launched.
+   532→If agents were not launched or failed, fall back to manual analysis.
+   561→- Error messages and how they were resolved
+   730→Parse the JSON output. If `count` is 0, no comment was added (no candidates found by the extractor). This is normal and not an error.
+   746→**If plan validation failed (no actionable documentation):**
+   812→- `&lt;tool_result&gt;` elements with errors often reveal the most useful insights
+  </tool_result>
+  <thinking>Now I have a thorough understanding of the entire system. Let me synthesize the problem and design a solution.
+
+## The Problem
+
+The learning pipeline needs sessions from all stages of a plan's lifecycle:
+1. **Planning** - local machine A
+2. **Implementation** - may be GitHub Actions, may be local machine B
+3. **PR address/refinement** - may be yet another local machine C
+4. **Learn** - runs in CI or locally
+
+Currently:
+- `upload-session` exists and works - it commits session JSONL to `async-learn/{plan_id}` branch
+- But it's only called in two places:
+  1. `plan-implement.yml` (after remote implementation)
+  2. `pr-address.yml` (after remote PR addressing)
+
+The real issue is that planning sessions never get uploaded, local implementation and PR addressing sessions are skipped entirely, and the force-push behavior means each upload wipes out all previous sessions instead of accumulating them.
+
+Let me trace through the actual upload logic more carefully. The code deletes any existing session branch, creates a fresh one from `origin/master`, commits the session file, and force-pushes it. That's the problem right there—every upload starts from a clean slate, so older sessions get lost.
+
+The implementation file does the exact same thing with its own branch, which means we're only ever keeping the most recent upload. The real issue is twofold: local stages never upload at all, and when uploads do happen, they overwrite everything that came before.
+
+Since we can't add new infrastructure, I need to work with what's already available—git branches and GitHub's metadata. That's the constraint I'm working within.
+
+The key insight is to use the plan-header metadata as a registry while letting sessions accumulate on the learn branch itself. Instead of nuking the branch and starting fresh each time, I should build on top of what's already there. This means uploading at every transition point—planning, local implementation, remote implementation, and both address phases—and tracking all the session IDs in the metadata rather than just the latest one.
+
+For the accumulation fix, I'd modify the upload logic to check if the branch already exists remotely, fetch it if it does, and then add the new session as an additional file rather than replacing the entire branch contents. That way multiple sessions can coexist on the same branch.
+
+The tricky part is tracking all these sessions in plan-header metadata, which is just key-value pairs and doesn't naturally support lists. A cleaner approach would be to maintain a sessions manifest file directly on the learn branch that records each session with its ID and metadata.
+
+Each time we upload, we'd fetch the existing branch, read or create the manifest, append the new session entry, and commit both files together.
+
+At learn time, we just check out that branch and read the manifest to discover which sessions are available in `.erk/session/`.
+
+This approach keeps things simple—Git is our only transport layer, the manifest serves as the single source of truth, and all sessions live together on one branch.
+
+Now I'm thinking through what should trigger these uploads. We already have triggers for remote implementation and addressing steps, but we need to add uploads after the plan is saved as a draft PR, and I'm working through what other workflow steps should kick off uploads. I should check with the user about their preferences here since they mentioned avoiding extra dependencies, and this is really a design decision that needs their input. Let me put together a proposal document outlining the approach and ask for feedback on the direction.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="11147" cache_read_input_tokens="55730" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11147}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a thorough understanding. Let me also check one critical detail - how `upload-session` handles the branch (since I suspect it replaces rather than accumulates).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="11147" cache_read_input_tokens="55730" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11147}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Bk76wJSp8ZkWjBNMDE7DC1">
+    <param name="pattern">commit_files_to_branch</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11147" cache_read_input_tokens="55730" output_tokens="2002" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11147, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Bk76wJSp8ZkWjBNMDE7DC1">
+Found 5 files
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/printing.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01AYep3Ze9RUT1b2jorQpvx1">
+    <param name="pattern">def commit_files_to_branch</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-A">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2220" cache_read_input_tokens="66877" output_tokens="168" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2220, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AYep3Ze9RUT1b2jorQpvx1">
+71:    def commit_files_to_branch(
+72-        self,
+73-        cwd: Path,
+74-        *,
+75-        branch: str,
+76-        files: dict[str, str],
+77-        message: str,
+78-    ) -&gt; None:
+79-        """Create a commit on a branch using git plumbing (no checkout)."""
+80-        # Get parent commit SHA
+81-        parent_sha = run_subprocess_with_context(
+82-            cmd=["git", "rev-parse", branch],
+83-            operation_context=f"resolve branch {branch}",
+84-            cwd=cwd,
+85-        ).stdout.strip()
+86-
+87-        # Create temporary index file to avoid touching the real index
+88-        tmp_fd, tmp_index = tempfile.mkstemp(suffix=".idx", prefix="erk-plan-")
+89-        os.close(tmp_fd)
+90-        try:
+91-            env = os.environ.copy()
+92-            env["GIT_INDEX_FILE"] = tmp_index
+93-
+94-            # Read parent tree into temp index
+95-            run_subprocess_with_context(
+96-                cmd=["git", "read-tree", parent_sha],
+97-                operation_context="read parent tree into temp index",
+98-                cwd=cwd,
+99-                env=env,
+100-            )
+
+... [11 lines omitted] ...
+  </tool_result>
+  <assistant>Good - `commit_files_to_branch` reads the parent tree and adds files on top, so it preserves existing files on the branch. But the issue is that `upload-session` creates a **fresh branch from `origin/master`** every time, discarding the entire previous learn branch.
+
+Now I have a complete picture. Let me write the design proposal.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="661" cache_read_input_tokens="69097" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 661}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01WXdyvFYR67uB2ADUjbSbGj">
+    <param name="file_path">/Users/schrockn/.claude/plans/jolly-marinating-unicorn.md</param>
+    <param name="content"># Session Accumulation for Cross-Machine Learning
+
+## Context
+
+The learning pipeline needs...[truncated 6527 chars]...de the other two
+4. Run learn → verify all three sessions are discovered and preprocessed
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="661" cache_read_input_tokens="69097" output_tokens="2043" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 661, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WXdyvFYR67uB2ADUjbSbGj">
+File created successfully at: /Users/schrockn/.claude/plans/jolly-marinating-unicorn.md
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01BKgw3Xn7DtcXyX4mgMnEzC">
+    <param name="questions">[{'question': 'The core issue is two-fold: (1) local stages never upload sessions, and (2)...[truncated 1229 chars]...explicit but risks sessions being missed when flag is forgotten'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2179" cache_read_input_tokens="69758" output_tokens="382" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2179, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BKgw3Xn7DtcXyX4mgMnEzC">
+User has answered your questions: "The core issue is two-fold: (1) local stages never upload sessions, and (2) each upload destroys previous sessions via force-push from a fresh master branch. The proposed fix uses the same async-learn/{plan_id} branch but accumulates sessions with a manifest file. Does this approach match your intuition, or were you thinking about a different storage mechanism?"="Accumulation branch but i want to dig into the details. propose a few approaches" user notes: Accumulation branch but i want to dig into the details. propose a few approaches, "For triggering uploads from local stages (plan-save, local impl, local address), should these be automatic (built into the commands) or opt-in?"="Automatic (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <thinking>The user wants to explore approaches in more detail for the accumulation branch. Let me think about the different ways we could implement session accumulation on the branch, and present a few concrete approaches with trade-offs.
+
+Let me think about the different implementation approaches:
+
+### Approach A: Manifest + Individual Session Files (as proposed)
+Each upload adds a session JSONL file and updates a manifest. The branch accumulates commits.
+
+### Approach B: Single Accumulated Session Archive
+Instead of individual files per session, concatenate/archive all sessions into a single file that grows.
+
+### Approach C: Preprocessed Upload
+Instead of uploading raw JSONL, preprocess sessions to compressed XML at upload time and upload the preprocessed version. This saves work at learn time and reduces storage.
+
+
+I could also use git notes to attach session data directly to commits on the plan branch, or create separate branches for each session with a manifest on the learn branch pointing to them. The real question is what matters most here—whether we're optimizing for git mechanics, storage efficiency, or simplicity. I should think through what the user actually needs to decide on: how the branch accumulates commits over time, what format makes sense for the stored data, how the manifest should be structured, and whether concurrent uploads could cause issues.
+
+For handling simultaneous uploads, I'm seeing two main strategies. One approach is to fetch the remote, build on top of it locally, and force-push—simple and linear but vulnerable to race conditions if two uploads collide. The other is to create independent branches or refs for each session and merge them together later, which eliminates the race condition entirely since everything happens in parallel.
+
+I could also preprocess the session data into XML at upload time rather than at learn time, shifting the computational load to where the session originates. Or I could refine the force-push approach by reading the entire existing tree from the remote, adding the new session file to it, and pushing that complete tree—this avoids merge conflicts but still has a problem if two uploads happen concurrently.
+
+Actually, the real question here isn't about git mechanics—it's about where the preprocessing should happen. With raw JSONL accumulation, the learn pipeline handles all preprocessing, which is straightforward since it runs in CI with all the necessary tools. But with preprocessed XML accumulation, I'd do the heavy lifting at upload time when the session data is already available, making the learn pipeline simpler and the stored files more compact.
+
+I should probably present a few concrete architectural options and let the user decide based on their constraints. The core tension is between simplicity at upload time versus simplicity in the learn pipeline, and whether to use the learn branch as an accumulating store with a manifest to track what's been collected, or instead use plan issue comments as a registry where each lifecycle stage posts metadata and the actual session data lives elsewhere.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="581" cache_read_input_tokens="71937" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 581}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good — let me dig into the trade-offs across a few concrete approaches for the accumulation mechanism.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="581" cache_read_input_tokens="71937" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 581}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GPo5Zj69SmdFKwztiPUnjk">
+    <param name="file_path">/Users/schrockn/.claude/plans/jolly-marinating-unicorn.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="581" cache_read_input_tokens="71937" output_tokens="1368" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 581, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GPo5Zj69SmdFKwztiPUnjk">
+     1→# Session Accumulation for Cross-Machine Learning
+     2→
+     3→## Context
+     4→
+     5→The learning pipeline needs session data from all stages of a plan's lifecycle, but sessions are machine-local (`~/.claude/projects/`). A typical lifecycle spans multiple environments:
+     6→
+     7→1. **Planning** — local machine A
+     8→2. **Implementation** — GitHub Actions (remote) or local machine B
+     9→3. **PR address/refinement** — possibly local machine C
+    10→4. **Learn** — CI or local
+    11→
+    12→Currently, session uploads happen in only two places (both remote):
+    13→- `plan-implement.yml` → calls `upload-session` after remote implementation
+    14→- `pr-address.yml` → calls `upload-session` after remote PR addressing
+    15→
+    16→**Two problems prevent complete session collection:**
+    17→
+    18→1. **Local stages never upload sessions** — planning sessions, local implementations, and local PR addressing sessions are never captured to the learn branch
+    19→2. **Each upload destroys previous sessions** — `upload-session` creates a fresh branch from `origin/master`, force-pushes, and replaces whatever was there before
+    20→
+    21→The result: the learn pipeline can only analyze whatever single session happened to be uploaded last.
+    22→
+    23→## Design: Session Accumulation Branch
+    24→
+    25→### Core Idea
+    26→
+    27→Use the existing `async-learn/{plan_id}` branch as a **session accumulation point** that grows across the lifecycle, with a manifest file tracking what's been collected.
+    28→
+    29→### Branch Structure
+    30→
+
+... [139 lines omitted] ...
+  </tool_result>
+  <thinking>The user wants me to dig into the details and propose a few approaches for the accumulation mechanism. Let me think about the key design dimensions and present distinct approaches.
+
+Key design dimensions:
+1. **What to store**: Raw JSONL vs preprocessed XML vs both
+2. **How to accumulate**: Single branch with linear commits vs per-session refs vs branch reset with tree merge
+3. **Concurrency handling**: Force-push races vs append-only mechanisms
+4. **Where the manifest lives**: On the branch vs in plan-header metadata vs in issue comments
+
+Let me articulate 3 distinct approaches:
+
+**Approach A: Linear Branch Accumulation (JSONL)**
+
+
+Each upload fetches the existing branch, appends a new commit containing the session JSONL and an updated manifest, then pushes back. It's a straightforward extension of the current system, though it does expose a potential race condition if two uploads happen simultaneously.
+
+**Approach B: Preprocess-at-Source**
+Sessions get converted to XML at upload time before being committed to the branch, so the learn pipeline receives analysis-ready data. This shifts the computational burden earlier but significantly reduces both the branch size and processing overhead downstream.
+
+**Approach C: Tree-Merge (Stateless Upload)**
+Rather than building on linear commits, each upload fetches the remote tree state, merges the new session data into it, and commits the result back, avoiding the need to track sequential history.
+
+The race condition risk is probably minimal in practice since uploads tend to happen sequentially as part of a natural workflow. The real trade-offs come down to where preprocessing happens and how much data lives on the branch.
+
+Approach B preprocesses locally before uploading, keeping files smaller and reducing work at learn time, but locks in the preprocessing logic. Approach C sidesteps branch mechanics entirely by storing session metadata in the plan issue and fetching sessions individually, avoiding race conditions but adding complexity with multiple branches or gists and extra network calls during learning.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3774" cache_read_input_tokens="72518" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3774}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01Lq4xLA8bBibxJeB5MmZ7jn">
+    <param name="file_path">/Users/schrockn/.claude/plans/jolly-marinating-unicorn.md</param>
+    <param name="content"># Session Accumulation for Cross-Machine Learning
+
+## Context
+
+The learning pipeline needs...[truncated 7020 chars]...--stage` flag on `upload-session` to classify sessions (planning/implementation/address).
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3774" cache_read_input_tokens="72518" output_tokens="2688" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3774, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Lq4xLA8bBibxJeB5MmZ7jn">
+The file /Users/schrockn/.claude/plans/jolly-marinating-unicorn.md has been updated successfully.
+  </tool_result>
+  <assistant>Here's the summary of the three approaches:
+
+**Approach A: Raw JSONL Accumulation** — Simplest change. Fix `upload-session` to build on the existing branch instead of replacing it. Upload raw session files. Learn pipeline still preprocesses at runtime. Large files on the branch but you retain the ability to re-preprocess.
+
+**Approach B: Preprocess-at-Source** — Each stage preprocesses sessions to compressed XML locally (~84% smaller), then uploads the XML. Learn pipeline skips preprocessing entirely. "Process where the data lives." Trade-off: can't re-preprocess later with updated logic.
+
+**Approach C: Per-Session Refs** — Avoid branch accumulation entirely. Each session gets its own independent git ref. Plan-header metadata acts as the registry. Zero race conditions but more unusual git usage and cleanup overhead.
+
+My instinct says **B is the strongest** — preprocessing at the source means the learn pipeline gets ready-to-analyze data, the branch stays small, and the preprocessing code already works in all environments. The "can't re-preprocess" downside is minor since preprocessing is mechanical/deterministic and rarely changes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2706" cache_read_input_tokens="76292" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2706}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_017LkbHeWv9Eoso6E7ZADp8G">
+    <param name="questions">[{'question': 'Which accumulation approach do you want to go with?', 'header': 'Approach',...[truncated 396 chars]...n-header as registry. No race conditions but unusual git usage.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2706" cache_read_input_tokens="76292" output_tokens="465" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2706, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017LkbHeWv9Eoso6E7ZADp8G">
+User has answered your questions: "Which accumulation approach do you want to go with?"="B: Preprocess-at-Source (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <thinking>Good, the user chose Approach B: Preprocess-at-Source. Now I need to flesh out the implementation plan in detail. Let me launch a Plan agent to design the detailed implementation, and also read the key files I'll need to understand to make this work.
+
+Let me think about what I still need to understand:
+1. How the plan-save skill/code works (to add the planning session upload trigger)
+2. How the plan-implement skill works (to add the local impl upload trigger)
+3. How the pr-address skill works (to add the local address upload trigger)
+4. The git gateway methods available for branch operations (fetch, create, etc.)
+
+
+5. The preprocess-session command details
+
+I'll launch a Plan agent with all the context I've gathered and read through a few more files to fill in these gaps.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1721" cache_read_input_tokens="78998" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1721}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Approach B it is. Let me now drill into the implementation details — I need to understand the plan-save, plan-implement, and pr-address skills to know exactly where to add the upload triggers.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1721" cache_read_input_tokens="78998" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1721}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01DRGzNfY3GYi5jL563Rpubp">
+    <param name="description">Design preprocess-at-source impl</param>
+    <param name="subagent_type">Plan</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 4325 chars]...s to provide specific, actionable implementation steps with file paths and code locations.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1721" cache_read_input_tokens="78998" output_tokens="1512" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1721, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DRGzNfY3GYi5jL563Rpubp">
+Now I have a thorough understanding of the entire system. Let me compile my design plan.
+
+---
+
+# Preprocess-at-Source Session Accumulation: Implementation Plan
+
+## Problem Summary
+
+Today, each lifecycle stage (plan-save, implement, address) that calls `upload-session` creates a **fresh** `async-learn/{plan_id}` branch from `origin/master`, destroying any previously uploaded session data. The learn pipeline needs sessions from ALL stages, but currently only gets the last-uploaded session.
+
+## Design Overview
+
+The core change: transform `upload-session` from a destructive "create fresh branch" operation into an accumulative "append to existing branch" operation, where each upload preprocesses the session JSONL into compressed XML before committing, and maintains a manifest that tracks all uploaded sessions.
+
+---
+
+## Phase 1: New `upload-preprocessed-session` Exec Command
+
+### Rationale: New Command vs Modifying `upload-session`
+
+I recommend creating a **new** `erk exec upload-preprocessed-session` command rather than modifying `upload-session`. Reasons:
+
+1. `upload-session` currently uploads raw JSONL to `.erk/session/{id}.jsonl`. The new command uploads preprocessed XML to `.erk/sessions/{stage}-{id}.xml` (possibly multiple files due to chunking). These are fundamentally different operations.
+2. The old command's callers (CI workflows, `upload-impl-session`) will need coordinated migration. A new command lets us migrate callers incrementally.
+3. The accumulation logic (fetch-then-commit vs create-fresh) is a significant behavioral change that warrants its own command for safety.
+
+### Command Signature
+
+```
+erk exec upload-preprocessed-session \
+
+... [543 lines omitted] ...
+
+2. It still handles the impl-context discovery (reading plan_ref from `.erk/impl-context/`), session capture, and error handling, but delegates the actual upload to the new command.
+- If preprocessing raises an exception, fall back to uploading raw JSONL (current behavior), with `"preprocessed": false, "fallback": "raw_jsonl"`.
+Network failures during push are handled by the `2&gt;/dev/null || true` pattern in the skill invocations. The upload is non-critical -- implementation/address continues even if upload fails. The next upload from a subsequent stage will re-fetch and accumulate.
+**Mitigation:** This is acceptable for v1. The manifest from the last push includes all sessions that writer knew about. If data loss is a concern, we could add a retry-on-push-failure with re-fetch, but this adds complexity.
+  </tool_result>
+  <thinking>The Plan agent has returned a very detailed implementation plan. Let me now review it, read the critical files it identified, and finalize the plan. Let me check a few things:
+
+1. The plan-save skill to understand where to add the planning session upload
+2. The plan-implement skill to see the current Step 10
+3. The pr-address skill to see where to add the address session upload
+4. The git branch operations available (branch_exists_on_remote, fetch_branch)
+
+The Plan agent raised an important point about plan-save: the planning session is still in progress when plan-save runs, so uploading it there would capture a partial session. 
+
+That's a solid observation. Let me examine the key files and work through the final plan details.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="8516" cache_read_input_tokens="80719" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8516}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good detailed design from the Plan agent. Let me verify a few critical details before finalizing.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="8516" cache_read_input_tokens="80719" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8516}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015qo9Gx2c7Qpk6s1V25VgQL">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/commands/erk/plan-implement.md</param>
+    <param name="offset">1</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="8516" cache_read_input_tokens="80719" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8516}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015qo9Gx2c7Qpk6s1V25VgQL">
+     1→---
+     2→description: Implement a plan from GitHub, file path, current branch, or current .erk/impl-context/ folder
+     3→argument-hint: "[&lt;plan-number-or-url-or-path&gt;]"
+     4→---
+     5→
+     6→# /erk:plan-implement
+     7→
+     8→Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+     9→
+    10→This is the primary implementation workflow - it orchestrates:
+    11→
+    12→1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+    13→2. Executing the implementation
+    14→3. Running CI and submitting the PR
+    15→
+    16→## Prerequisites
+    17→
+    18→- Must be in a git repository managed by erk
+    19→- GitHub CLI (`gh`) must be authenticated
+    20→- One of:
+    21→  - A plan number, URL, or file path argument
+    22→  - An existing impl directory under `.erk/impl-context/`
+    23→  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+    24→  - A plan in `~/.claude/plans/` (from plan mode)
+    25→
+    26→## Usage
+    27→
+    28→```bash
+    29→/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+    30→/erk:plan-implement 2521               # Fetch and implement plan #2521
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01D8bBbkrxiwesDdv4jZXET2">
+    <param name="pattern">upload-impl-session|upload.*session|Step 10</param>
+    <param name="path">/Users/schrockn/code/erk/.claude/commands/erk/plan-implement.md</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="8516" cache_read_input_tokens="80719" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8516}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01D8bBbkrxiwesDdv4jZXET2">
+174-erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+175-```
+176-
+177:### Step 10: Upload Session for Async Learn
+178-
+179-```bash
+180:erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+181-```
+182-
+183-This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01QbQpJNJCg3GsRL45sCExB8">
+    <param name="pattern">upload.*session|session.*upload</param>
+    <param name="path">/Users/schrockn/code/erk/.claude/commands/erk/pr-address.md</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="8516" cache_read_input_tokens="80719" output_tokens="591" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8516, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QbQpJNJCg3GsRL45sCExB8">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01HWQZdzyX3iMJ4kChX916W4">
+    <param name="pattern">branch_exists_on_remote|fetch_branch</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1540" cache_read_input_tokens="89235" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1540}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HWQZdzyX3iMJ4kChX916W4">
+Found 11 files
+packages/erk-shared/src/erk_shared/gateway/git/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/real.py
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/printing.py
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/abc.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_011KoEj73PKPRwso37exveSS">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/commands/erk/pr-address.md</param>
+    <param name="offset">1</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1540" cache_read_input_tokens="89235" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1540}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011KoEj73PKPRwso37exveSS">
+     1→---
+     2→description: Address PR review comments on current branch
+     3→---
+     4→
+     5→# /erk:pr-address
+     6→
+     7→## Description
+     8→
+     9→Fetches unresolved PR review comments AND PR discussion comments from the current branch's PR and addresses them using holistic analysis with smart batching. Comments are grouped by complexity and relationship, then processed batch-by-batch with incremental commits and resolution.
+    10→
+    11→## Usage
+    12→
+    13→```bash
+    14→/erk:pr-address
+    15→/erk:pr-address --all               # Include resolved threads (for reference)
+    16→/erk:pr-address --pr 6631           # Target specific PR
+    17→/erk:pr-address --pr 6631 --all     # Target specific PR with resolved threads
+    18→```
+    19→
+    20→## Prerequisite
+    21→
+    22→**Load the `pr-operations` skill first** for complete command reference and common mistake patterns.
+    23→
+    24→## Agent Instructions
+    25→
+    26→&gt; **Prerequisite**: Load `pr-operations` skill first for command reference.
+    27→
+    28→&gt; **CRITICAL: Use ONLY `erk exec` Commands**
+    29→&gt;
+    30→&gt; See `pr-operations` skill for the complete command reference. Never use raw `gh api` calls for thread operations.
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01RxhQkiUfJrQtgWGLCCh1jM">
+    <param name="pattern">Phase|Step|###.*[Ff]inal|submit|push</param>
+    <param name="path">/Users/schrockn/code/erk/.claude/commands/erk/pr-address.md</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1540" cache_read_input_tokens="89235" output_tokens="353" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1540, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RxhQkiUfJrQtgWGLCCh1jM">
+32:### Phase 1: Classify Feedback
+62:### Phase 2: Display Batched Plan
+99:### Phase 3: Execute by Batch
+103:#### Step 1: Address All Comments in the Batch
+114:If the user chooses **Act**, proceed as a normal review thread (read file, make fix, track change). If the user chooses **Dismiss**, skip to Step 4 to resolve the thread with a dismissal reply.
+158:   - If already fixed -&gt; Proceed directly to Step 4 to resolve the thread
+159:   - If not fixed -&gt; Apply the fix, then proceed to Step 4
+164:#### Step 2: Run CI Checks
+175:#### Step 3: Commit the Batch
+188:#### Step 4: Resolve All Threads in the Batch (MANDATORY)
+204:#### Step 5: Report Progress
+223:### Phase 4: Final Verification
+225:After all batches complete, re-invoke the classifier to verify all threads are resolved. Use Task tool (NOT skill invocation) for the same `--print` mode isolation reason as Phase 1:
+240:#### Report Final Summary
+254:   - **Graphite repos**: `gt submit` (or `gt ss`)
+255:   - **Plain git repos**: `git push`
+256:   - If push is rejected (non-fast-forward): Run `/erk:reconcile-with-remote` to resolve. Do NOT use `git pull --rebase`.
+270:### Phase 5: Update PR Title and Body
+  </tool_result>
+  <tool_use name="Read" id="toolu_019fANbATCtyeDxfQH7eY3nL">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/commands/erk/pr-address.md</param>
+    <param name="offset">250</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1428" cache_read_input_tokens="90775" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1428}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019fANbATCtyeDxfQH7eY3nL">
+   250→All discussion comments marked with reaction.
+   251→
+   252→Next steps:
+   253→1. Push changes:
+   254→   - **Graphite repos**: `gt submit` (or `gt ss`)
+   255→   - **Plain git repos**: `git push`
+   256→   - If push is rejected (non-fast-forward): Run `/erk:reconcile-with-remote` to resolve. Do NOT use `git pull --rebase`.
+   257→2. Wait for CI to pass
+   258→3. Request re-review if needed
+   259→```
+   260→
+   261→#### Handle Any Skipped Comments
+   262→
+   263→If the user explicitly skipped any comments during the process, list them:
+   264→
+   265→```
+   266→## Skipped Comments (user choice)
+   267→- #5: src/legacy.py:100 - "Refactor this module" (user deferred)
+   268→```
+   269→
+   270→### Phase 5: Update PR Title and Body
+   271→
+   272→After all review comments have been addressed, update the PR to reflect the full scope of changes.
+   273→
+   274→Run:
+   275→
+   276→```bash
+   277→erk exec update-pr-description --session-id "${CLAUDE_SESSION_ID}"
+   278→```
+   279→
+
+... [10 lines omitted] ...
+
+   286→### Error Handling
+   288→**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01P3VFWpuZxecNomVzNo62UA">
+    <param name="pattern">def branch_exists_on_remote|def fetch_branch</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1428" cache_read_input_tokens="90775" output_tokens="259" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1428, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01P3VFWpuZxecNomVzNo62UA">
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-81-
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-82-    def validate_trunk_branch(self, repo_root: Path, name: str) -&gt; str:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-83-        """Validate that a configured trunk branch exists."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-84-        return self._wrapped.validate_trunk_branch(repo_root, name)
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-85-
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py:86:    def branch_exists_on_remote(self, repo_root: Path, remote: str, branch: str) -&gt; bool:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-87-        """Check if a branch exists on a remote."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-88-        return self._wrapped.branch_exists_on_remote(repo_root, remote, branch)
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-89-
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-90-    def get_ahead_behind(self, cwd: Path, branch: str) -&gt; tuple[int, int]:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-91-        """Get number of commits ahead and behind tracking branch."""
+--
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py-305-                f"Update your configuration in pyproject.toml or create the branch."
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py-306-            )
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py-307-            raise RuntimeError(error_msg)
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py-308-        return name
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py-309-
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py:310:    def branch_exists_on_remote(self, repo_root: Path, remote: str, branch: str) -&gt; bool:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py-311-        """Check if a branch exists on a remote."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py-312-        remote_branches = self._remote_branches.get(repo_root, [])
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py-313-        remote_ref = f"{remote}/{branch}"
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py-314-        return remote_ref in remote_branches
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py-315-
+--
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-184-            RuntimeError: If the specified branch doesn't exist
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-185-        """
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-186-        ...
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-187-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-188-    @abstractmethod
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py:189:    def branch_exists_on_remote(self, repo_root: Path, remote: str, branch: str) -&gt; bool:
+
+... [89 lines omitted] ...
+
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-240-            f"Error: Configured trunk branch '{name}' does not exist in repository.\n"
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-243-        raise RuntimeError(error_msg)
+  </tool_result>
+  <thinking>Good. I've confirmed:
+
+1. `branch_exists_on_remote()` exists on the BranchOps ABC and all implementations
+2. `fetch_branch()` exists on the RemoteOps ABC and all implementations
+3. `commit_files_to_branch()` preserves existing files on the branch via `read-tree`
+4. The plan-implement skill has a clear Step 10 where `upload-impl-session` is called
+5. The pr-address skill has no upload step currently - it ends at Phase 5
+
+The Plan agent raised a good point about plan-save: the planning session is still in progress, so uploading it there would capture a partial session. 
+
+But I think we should address this anyway—the planning portion is actually complete by the time plan-save runs, since the user exits plan mode before implementation begins. The timing question is whether we upload during plan-save or at the start of implementation, and practically speaking, uploading at the beginning of implementation makes more sense since it captures the full planning context.
+
+Actually, I'm overcomplicating this. The real priorities are fixing the destructive upload behavior to accumulate instead of replace, adding uploads at the end of local implementation and local address operations, and the planning session tracking is already handled through the `created_from_session` metadata. Let me lock in these three concrete improvements and get approval on the plan.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="6355" cache_read_input_tokens="92203" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6355}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have all the details. Let me finalize the plan with the chosen approach.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6355" cache_read_input_tokens="92203" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6355}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01R3wLkkQ3ae5utKQvVbD2iA">
+    <param name="file_path">/Users/schrockn/.claude/plans/jolly-marinating-unicorn.md</param>
+    <param name="content"># Session Accumulation for Cross-Machine Learning
+
+## Context
+
+The learning pipeline needs...[truncated 10180 chars]...r remote implementation → verify remote session is added alongside local planning session
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6355" cache_read_input_tokens="92203" output_tokens="3595" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6355, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01R3wLkkQ3ae5utKQvVbD2iA">
+The file /Users/schrockn/.claude/plans/jolly-marinating-unicorn.md has been updated successfully.
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_0181db5gP7bdwd4FF1Wtgbka">
+    <param name="plan"># Session Accumulation for Cross-Machine Learning
+
+## Context
+
+The learning pipeline needs...[truncated 10180 chars]...r remote implementation → verify remote session is added alongside local planning session
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3735" cache_read_input_tokens="98558" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3735, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0181db5gP7bdwd4FF1Wtgbka">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/jolly-marinating-unicorn.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Session Accumulation for Cross-Machine Learning
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 7ae399b7-3ab0-404f-9ab2-d6a571c1abec \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BFmiAGv4aTy168cnMNZJns">
+    <param name="file_path">/Users/schrockn/.claude/plans/jolly-marinating-unicorn.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="656" cache_read_input_tokens="102293" output_tokens="74" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 656, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BFmiAGv4aTy168cnMNZJns">
+     1→# Session Accumulation for Cross-Machine Learning
+     2→
+     3→## Context
+     4→
+     5→The learning pipeline needs session data from all stages of a plan's lifecycle, but sessions are machine-local (`~/.claude/projects/`). A typical lifecycle spans environments:
+     6→
+     7→1. **Planning** — local machine A
+     8→2. **Implementation** — GitHub Actions or local machine B
+     9→3. **PR address/refinement** — possibly local machine C
+    10→4. **Learn** — CI or local
+    11→
+    12→**Two problems prevent complete session collection:**
+    13→
+    14→1. **Local stages never upload sessions** — only remote workflows (GH Actions) upload sessions
+    15→2. **Each upload destroys previous sessions** — `upload-session` creates a fresh branch from `origin/master`, force-pushes, replacing whatever was there
+    16→
+    17→The result: the learn pipeline can only analyze the single last-uploaded session.
+    18→
+    19→## Approach: Preprocess-at-Source with Branch Accumulation
+    20→
+    21→Each lifecycle stage preprocesses its session JSONL → compressed XML locally (~84% compression), then uploads the XML to `async-learn/{plan_id}`, accumulating across stages. The learn pipeline reads ready-to-analyze XMLs directly — no preprocessing step needed.
+    22→
+    23→---
+    24→
+    25→## Implementation
+    26→
+    27→### 1. New exec command: `upload-preprocessed-session`
+    28→
+    29→**File:** `src/erk/cli/commands/exec/scripts/upload_preprocessed_session.py`
+    30→
+
+... [184 lines omitted] ...
+
+    96→- Preprocessing fails → degrade gracefully, output `{"uploaded": false, "reason": "preprocessing_failed"}`
+  </tool_result>
+  <assistant>Here's the plan:
+
+## Session Accumulation for Cross-Machine Learning
+
+**Problem:** Sessions are machine-local but the learn pipeline needs data from all stages (planning, implementation, PR address) which happen across different machines and GitHub Actions. Currently: (1) only remote workflows upload sessions, and (2) each upload destroys previous sessions by creating a fresh branch from `origin/master`.
+
+**Approach: Preprocess-at-Source with Branch Accumulation**
+
+Each lifecycle stage preprocesses its session JSONL → compressed XML locally (~84% compression), then uploads to `async-learn/{plan_id}`, **accumulating** across stages instead of replacing. The learn pipeline reads ready-to-analyze XMLs directly.
+
+**Key changes:**
+1. **New `upload-preprocessed-session` command** — preprocesses, fetches existing branch (instead of creating fresh), commits XML + manifest, pushes
+2. **DRY up `upload-impl-session`** — delegate to shared logic
+3. **Automatic upload triggers** at plan-save, local impl end, local address end (in addition to existing remote triggers)
+4. **Update CI workflows** to use new command
+5. **Update learn pipeline** — new discovery path reads manifest from branch, downloads XMLs, skips preprocessing
+6. **New `download-preprocessed-sessions` command** for learn pipeline consumption
+
+Current context: (wt:erk) (br:master)</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3851" cache_read_input_tokens="102949" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3851}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01Wc7Nb5PJXZ5qZiYZr9ekKy">
+    <param name="questions">[{'question': 'What would you like to do with this plan?', 'header': 'br:master', 'options...[truncated 339 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3851" cache_read_input_tokens="102949" output_tokens="508" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3851, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Wc7Nb5PJXZ5qZiYZr9ekKy">
+User has answered your questions: "What would you like to do with this plan?"="i don't like the term download and upload because that impies uplaoding to a server and this is different. it should be clear that we are using git as a transport. let's brainstorm names" user notes: i don't like the term download and upload because that impies uplaoding to a server and this is different. it should be clear that we are using git as a transport. let's brainstorm names. You can now continue with the user's answers in mind.
+  </tool_result>
+  <thinking>The user wants to brainstorm naming that makes it clear we're using git as transport, not uploading to a server. Let me think about some good alternatives.
+
+The operations are:
+1. **"Upload"** = preprocess a session and commit it to a git branch, then push
+2. **"Download"** = fetch a branch and read session files from it
+
+Git-native terms:
+- **push/pull** — git push/pull
+- **commit/checkout** — git commit/checkout
+- **stash** — git stash
+- **stage** — git staging area
+
+Domain-specific ideas:
+- **publish** — make available to others (still implies server-ish)
+
+
+- **archive** — store for later retrieval
+- **preserve** — save for future use
+- **capture** — take a snapshot (already used for capture-session-info)
+- **collect** — gather sessions
+- **stow** — put away for safekeeping
+- **bank** — store (session bank)
+- **park** — temporarily store
+- **ship** — send somewhere
+- **sync** — synchronize
+- **transport** — the user specifically mentioned transport
+
+For the "upload" operation, `commit-session` feels very git-native since that's literally what's happening, and `push-session` makes the transport aspect explicit.
+
+Now looking at the "download" operation with options like `fetch-sessions`, `pull-sessions`, `retrieve-sessions`, `checkout-sessions`, `collect-sessions`, and `restore-sessions`. I'm narrowing down to the strongest pairings: push/fetch maps directly to git operations, commit/checkout stays git-native, stash/unstash uses the git metaphor, archive/retrieve is domain-neutral and clear, and preserve/collect captures the learning aspect.
+
+Actually, I'm reconsidering the semantics here. The upload operation isn't just pushing—it's preprocessing the session data, committing it to a separate branch, then pushing that branch. Similarly, download is fetching that branch and extracting the session files. So `push-session` and `fetch-sessions` feel most aligned with the actual git mechanics, though I'm worried `push-session` might get confused with a direct `git push`. Maybe `share-session` and `gather-sessions` better capture what's happening—sharing preprocessed data and gathering it back.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="738" cache_read_input_tokens="106800" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 738}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good point — "upload/download" implies a client-server model when this is really git-as-transport. Let me brainstorm some naming options:
+
+**Git-native verbs:**
+- `push-session` / `fetch-sessions` — maps directly to `git push`/`git fetch`, which is literally what happens
+- `commit-session` / `checkout-sessions` — also git-native, emphasizes the commit-to-branch aspect
+
+**Purpose-oriented verbs:**
+- `stash-session` / `unstash-sessions` — like `git stash`, implies temporary storage for later retrieval
+- `preserve-session` / `collect-sessions` — emphasizes intent: preserve for learning, collect at learn time
+- `archive-session` / `retrieve-sessions` — emphasizes storage/retrieval
+
+**Action-oriented verbs:**
+- `store-session` / `load-sessions` — neutral, clear, no server connotation
+- `bank-session` / `withdraw-sessions` — session bank metaphor
+
+**Transport-explicit:**
+- `ship-session` / `receive-sessions` — makes transport explicit
+- `sync-session` / (no counterpart needed if sync is bidirectional)</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="738" cache_read_input_tokens="106800" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 738}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01CLFbYN29Kgr5AtpSS13zZa">
+    <param name="questions">[{'question': "Which naming direction feels right for the 'preprocess and commit to branch...[truncated 572 chars]...store-session / load-sessions. Clear, no transport connotation.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="738" cache_read_input_tokens="106800" output_tokens="1332" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CLFbYN29Kgr5AtpSS13zZa">
+User has answered your questions: "Which naming direction feels right for the 'preprocess and commit to branch' operation and the 'fetch from branch' operation?"="push / fetch". You can now continue with the user's answers in mind.
+  </tool_result>
+  <thinking>Good, the user chose `push / fetch` naming. Let me update the plan to use:
+- `push-session` instead of `upload-preprocessed-session`
+- `fetch-sessions` instead of `download-preprocessed-sessions`
+
+I should also update the plan to rename `upload-session` references throughout. Let me also think about the existing `upload-session` and `upload-impl-session` commands — those would remain as-is (they're the old commands) but the new commands would use the push/fetch naming.
+
+Let me update the plan file.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1371" cache_read_input_tokens="107538" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1371}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>`push-session` / `fetch-sessions` it is. Let me update the plan with the final naming.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1371" cache_read_input_tokens="107538" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1371}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QfQBf11VngMQ2ea6nTHy4Q">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/jolly-marinating-unicorn.md</param>
+    <param name="old_string">### 1. New exec command: `upload-preprocessed-session`
+
+**File:** `src/erk/cli/commands/ex...[truncated 291 chars]...3 \
+    --stage planning|impl|address \
+    --source local|remote \
+    --plan-id 2521
+```</param>
+    <param name="new_string">### 1. New exec command: `push-session`
+
+**File:** `src/erk/cli/commands/exec/scripts/push...[truncated 309 chars]...3 \
+    --stage planning|impl|address \
+    --source local|remote \
+    --plan-id 2521
+```</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1371" cache_read_input_tokens="107538" output_tokens="577" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1371, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QfQBf11VngMQ2ea6nTHy4Q">
+The file /Users/schrockn/.claude/plans/jolly-marinating-unicorn.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01TTFgcNvN8cZ6rTPSG1qpL5">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/jolly-marinating-unicorn.md</param>
+    <param name="old_string">upload-preprocessed-session</param>
+    <param name="new_string">push-session</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="633" cache_read_input_tokens="108909" output_tokens="138" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 633, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TTFgcNvN8cZ6rTPSG1qpL5">
+The file /Users/schrockn/.claude/plans/jolly-marinating-unicorn.md has been updated. All occurrences of 'upload-preprocessed-session' were successfully replaced with 'push-session'.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016b6ADdEN3145LkYEzQzMsC">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/jolly-marinating-unicorn.md</param>
+    <param name="old_string">download-preprocessed-sessions</param>
+    <param name="new_string">fetch-sessions</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="299" cache_read_input_tokens="109542" output_tokens="138" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 299, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016b6ADdEN3145LkYEzQzMsC">
+The file /Users/schrockn/.claude/plans/jolly-marinating-unicorn.md has been updated. All occurrences of 'download-preprocessed-sessions' were successfully replaced with 'fetch-sessions'.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_013RB792ukUVptjvSEbyYRmx">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/jolly-marinating-unicorn.md</param>
+    <param name="old_string">upload_preprocessed_session.py</param>
+    <param name="new_string">push_session.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="312" cache_read_input_tokens="109841" output_tokens="142" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 312, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013RB792ukUVptjvSEbyYRmx">
+The file /Users/schrockn/.claude/plans/jolly-marinating-unicorn.md has been updated. All occurrences of 'upload_preprocessed_session.py' were successfully replaced with 'push_session.py'.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01DuLxdjeoeRhq7N2JsTgnzR">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/jolly-marinating-unicorn.md</param>
+    <param name="old_string">download_preprocessed_sessions.py</param>
+    <param name="new_string">fetch_sessions.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="210" cache_read_input_tokens="110153" output_tokens="142" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 210, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DuLxdjeoeRhq7N2JsTgnzR">
+The file /Users/schrockn/.claude/plans/jolly-marinating-unicorn.md has been updated. All occurrences of 'download_preprocessed_sessions.py' were successfully replaced with 'fetch_sessions.py'.
+  </tool_result>
+  <assistant>Now let me also update the description references in the files table and elsewhere.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="210" cache_read_input_tokens="110363" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 210}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01NxWA3sRDGmTFPkxFhAoXbQ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/jolly-marinating-unicorn.md</param>
+    <param name="old_string">### 6. New exec command: `fetch-sessions`
+
+**File:** `src/erk/cli/commands/exec/scripts/fe...[truncated 116 chars]...id}` branch, downloads each XML file to the output directory. Returns JSON with file list.</param>
+    <param name="new_string">### 6. New exec command: `fetch-sessions`
+
+**File:** `src/erk/cli/commands/exec/scripts/fe...[truncated 150 chars]... each XML file to the output directory. Returns JSON with file list and manifest metadata.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="210" cache_read_input_tokens="110363" output_tokens="325" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 210, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NxWA3sRDGmTFPkxFhAoXbQ">
+The file /Users/schrockn/.claude/plans/jolly-marinating-unicorn.md has been updated successfully.
+  </tool_result>
+  <assistant>Plan updated with `push-session` / `fetch-sessions` naming throughout. Ready to present for approval.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1584" cache_read_input_tokens="110573" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1584}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_011gP8Q1h8qASU1v1mghmFTa">
+    <param name="questions">[{'question': 'What would you like to do with this plan?', 'header': 'br:master', 'options...[truncated 285 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1584" cache_read_input_tokens="110573" output_tokens="200" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1584, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011gP8Q1h8qASU1v1mghmFTa">
+User has answered your questions: "What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_016QDXWE4niQZZafQGCbGk4a">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="250" cache_read_input_tokens="112157" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 250, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016QDXWE4niQZZafQGCbGk4a">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 1.5: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 1.75: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 2: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="7ae399b7-3ab0-404f-9ab2-d6a571c1abec" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 3.
+
+If the command fails, display the error and stop.
+
+### Step 3: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 2.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 3.5: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "7ae399b7-3ab0-404f-9ab2-d6a571c1abec" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 4: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 3, 3.5 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "7ae399b7-3ab0-404f-9ab2-d6a571c1abec" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <thinking>The user selected "Create a plan PR" and the plan-save skill has been loaded. Let me follow the instructions to save the plan as a draft PR.
+
+Let me follow the steps:
+
+1. Parse arguments - no special flags
+2. Generate branch slug from the plan title
+3. Generate plan summary
+4. Run the save command
+
+The plan title is "Session Accumulation for Cross-Machine Learning"
+
+Branch slug: "session-accumulation-learning" or "push-fetch-session-accumulation" - let me think... "session-accumulation-learn" captures it well. Or "cross-machine-session-capture". Or "push-session-accumulation".
+
+
+I'm settling on "add-session-push-fetch" since it's 23 characters, follows the naming guidelines with action verbs, and clearly describes the new commands being added. Now I need to write the plan summary that explains how these exec commands use git branches for session management.
+
+The plan adds `push-session` and `fetch-sessions` commands that leverage git branches as a transport layer to accumulate preprocessed session XMLs throughout the entire plan lifecycle—from planning through implementation to PR addressing. This solves the current issue where uploading a new session overwrites the previous ones, which prevents the learn pipeline from analyzing the full session history across different machines.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="2298" cache_read_input_tokens="112407" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2298}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me follow the plan-save steps.
+
+**Step 1:** No special flags (no `--plan-type` or `--objective`).
+
+**Step 1.5:** Branch slug from "Session Accumulation for Cross-Machine Learning":
+- `BRANCH_SLUG = "add-session-push-fetch"`
+
+**Step 1.75:** Plan summary:
+
+&gt; Adds push-session and fetch-sessions exec commands that use git branches as transport to accumulate preprocessed session XMLs across the plan lifecycle. Fixes the current behavior where each session upload destroys previous sessions, enabling the learn pipeline to analyze all sessions regardless of which machine they originated on.
+
+**Step 2:** Running the save command.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2298" cache_read_input_tokens="112407" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2298}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Rrw2oiuV3nc1zR4o7jnF81">
+    <param name="command">erk exec plan-save --format json --session-id="7ae399b7-3ab0-404f-9ab2-d6a571c1abec" --bra...[truncated 269 chars]...he learn pipeline to analyze all sessions regardless of which machine they originated on."</param>
+    <param name="description">Save plan as draft PR via erk exec plan-save</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2298" cache_read_input_tokens="112407" output_tokens="756" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2298, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Rrw2oiuV3nc1zR4o7jnF81">
+{"success": true, "plan_number": 8511, "plan_url": "https://github.com/dagster-io/erk/pull/8511", "title": "[erk-plan] Session Accumulation for Cross-Machine Learning", "branch_name": "plnd/add-session-push-fetch-02-28-1911", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/7ae399b7-3ab0-404f-9ab2-d6a571c1abec/plan_snapshots/000001-66444982"}
+  </tool_result>
+  <assistant>**Step 3:** No objective linked — skipping verification.
+
+**Step 4:** Displaying results.
+
+Plan "Session Accumulation for Cross-Machine Learning" saved as draft PR #8511
+URL: https://github.com/dagster-io/erk/pull/8511
+
+Next steps:
+
+View PR: https://github.com/dagster-io/erk/pull/8511
+
+In Claude Code:
+  Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: `erk br co --new-slot --for-plan 8511`
+    Implement: `source "$(erk br co --new-slot --for-plan 8511 --script)" &amp;&amp; erk implement --dangerous`
+
+  Same slot:
+    Local: `erk br co --for-plan 8511`
+    Implement: `source "$(erk br co --for-plan 8511 --script)" &amp;&amp; erk implement --dangerous`
+
+  Dispatch to Queue: `erk pr dispatch 8511`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1004" cache_read_input_tokens="114705" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1004}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-dispatch&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-dispatch&lt;/command-name&gt;</user>
+  <user># /erk:pr-dispatch
+
+## Goal
+
+Find the most recent plan created in this conversation and dispatch it for remote AI implementation via `erk pr dispatch`.
+
+## What This Command Does
+
+1. Search conversation for the last plan reference
+2. Extract the plan number
+3. Run `erk pr dispatch &lt;plan_number&gt;` to trigger remote implementation
+
+## Finding the Plan
+
+Search the conversation from bottom to top for these patterns (in priority order):
+
+1. **Draft PR reference**: `saved as draft PR #&lt;number&gt;` or `draft PR #&lt;number&gt;`
+2. **Pull request URL**: `https://github.com/&lt;owner&gt;/&lt;repo&gt;/pull/&lt;number&gt;`
+3. **Plan URL**: `https://github.com/.../pull/&lt;number&gt;` (legacy: `https://github.com/.../issues/&lt;number&gt;`)
+
+Extract the plan number from the most recent match.
+
+## Execution
+
+Once you have the plan number, run:
+
+```bash
+erk pr dispatch &lt;plan_number&gt;
+```
+
+If the command succeeds, clear the session marker to allow creating new plans in this session:
+
+```bash
+erk exec marker delete --session-id "7ae399b7-3ab0-404f-9ab2-d6a571c1abec" plan-saved-issue
+```
+
+Display the command output to the user. The `erk pr dispatch` command handles all validation (plan existence, labels, state).
+
+## Error Cases
+
+- **No plan found in conversation**: Report "No plan found in conversation. Run /erk:plan-save first to create a plan."
+- **erk pr dispatch fails**: Display the error output from the command (erk pr dispatch validates the plan)
+</user>
+  <assistant>The most recent plan is #8511. Dispatching for remote implementation.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="947" cache_read_input_tokens="115709" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 947}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01F9TWo928q13cypbKLt2kms">
+    <param name="command">erk pr dispatch 8511</param>
+    <param name="description">Dispatch plan #8511 for remote implementation</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="947" cache_read_input_tokens="115709" output_tokens="119" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 947, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01F9TWo928q13cypbKLt2kms">
+Checking GitHub authentication...
+Syncing trunk with remote...
+Resolving GitHub username...
+Validating 1 planned-PR plan(s)...
+
+Validating PR #8511...
+
+✓ All 1 plan(s) validated
+
+  #8511: [erk-plan] Session Accumulation for Cross-Machine Learning
+
+Dispatching PR #8511...
+
+Fetching plan content...
+Checking out existing plan branch: plnd/add-session-push-fetch-02-28-1911
+Cleaning up previous .erk/impl-context/ folder...
+Creating .erk/impl-context/ folder...
+✓ Branch pushed to remote
+
+Triggering workflow: plan-implement.yml
+  Waiting for workflow run... (attempt 1/11)
+  Waiting for workflow run... (attempt 2/11)
+✓ Workflow triggered.
+✓ Dispatch metadata written
+Posting queued event comment...
+✓ Queued event comment posted
+
+
+✓ 1 plan(s) dispatched successfully!
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01SdwWLFwG5RGNpWKwhuNPas">
+    <param name="command">erk exec marker delete --session-id "7ae399b7-3ab0-404f-9ab2-d6a571c1abec" plan-saved-issue</param>
+    <param name="description">Clear plan-saved marker for this session</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="474" cache_read_input_tokens="116656" output_tokens="116" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 474, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SdwWLFwG5RGNpWKwhuNPas">
+{"success": true, "message": "Deleted marker: plan-saved-issue"}
+  </tool_result>
+  <assistant>Plan #8511 dispatched for remote implementation.
+
+- **Plan:** https://github.com/dagster-io/erk/pull/8511
+- **Workflow:** https://github.com/dagster-io/erk/actions/runs/22532045464
+
+The remote agent will implement the session push/fetch accumulation system.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="147" cache_read_input_tokens="117130" output_tokens="80" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 147, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;See ya!&lt;/local-command-stdout&gt;</user>
+</session>
