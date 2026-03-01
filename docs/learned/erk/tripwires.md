@@ -16,6 +16,8 @@ Rules triggered by matching actions in code.
 
 **adding a new step to the bootstrap sequence** → Read [Codespace Remote Execution Pattern](codespace-remote-execution.md) first. This affects ALL remote commands. The bootstrap runs on every SSH invocation, so added steps must be idempotent and fast.
 
+**assuming dispatch_ref is project-level config** → Read [dispatch_ref Configuration](dispatch-ref-config.md) first. dispatch_ref is repo-level config (.erk/config.toml), overridable at local level (.erk/config.local.toml). It is not project-level.
+
 **checking thread count without comparing to dash count** → Read [PR Feedback Classifier Schema](pr-feedback-classifier-schema.md) first. Thread count in classifier output must equal erk dash count. Missing threads are silently dropped.
 
 **constructing a checkout footer string manually** → Read [PR Checkout Footer Validation Pattern](pr-commands.md) first. Use build_pr_body_footer() from the gateway layer. Manual construction risks format drift from the validator regex.

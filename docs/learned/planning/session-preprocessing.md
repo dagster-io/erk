@@ -102,6 +102,41 @@ Chunking splits at entry boundaries (never mid-entry). Each chunk is independent
 
 Sessions originate from two sources (local `~/.claude/projects/` and remote GitHub Actions), but are always processed locally as files on disk. The `SessionSource` ABC tracks _origin_ (for attribution), not _location_. Remote sessions are downloaded before preprocessing, at which point they become local files — the source abstraction remembers they came from remote for proper filtering and deduplication.
 
+## Integration with erk land
+
+<!-- Source: src/erk/cli/commands/land_learn.py -->
+
+`erk land` displays session preprocessing stats alongside each session in its output. This reuses the exec script's filtering pipeline via direct Python imports (no subprocess).
+
+### SessionStats Dataclass
+
+<!-- Source: src/erk/cli/commands/land_learn.py, SessionStats -->
+
+`SessionStats` is a frozen dataclass with four fields:
+
+- `user_turns`: Count of user messages with non-empty text content
+- `duration_minutes`: Computed from min/max entry timestamps, rounded to nearest minute. `None` if fewer than 2 timestamps found.
+- `raw_size_kb`: Total bytes of main JSONL file plus all discovered agent logs, divided by 1024
+- `xml_size_kb`: Total bytes of final compressed XML output after full filtering pipeline, divided by 1024
+
+### \_compute_session_stats()
+
+Reuses the exec script's pipeline via direct imports from `erk.cli.commands.exec.scripts.preprocess_session` (importing `deduplicate_assistant_messages`, `deduplicate_documentation_blocks`, `discover_agent_logs`, `is_empty_session`, `is_warmup_session`, `process_log_file`, `split_entries_to_chunks`, `truncate_tool_parameters`).
+
+Uses `max_tokens=200_000` (not the default 20k) to capture complete statistics without aggressive chunking. Applies the full pipeline: `process_log_file()` -> deduplication filters -> `split_entries_to_chunks()` for each session and its agent logs.
+
+### Output Format
+
+Stats are displayed in Rich markup:
+
+```
+[dim]12 turns · 8 min  (515 KB → 89 KB)[/dim]
+```
+
+- Duration part is omitted when `duration_minutes` is `None`
+- KB values use comma separators for readability (`:,` format)
+- Graceful fallback: if stats computation fails, shows simple file size only
+
 ## Related Documentation
 
 - [Session Preprocessing](../sessions/preprocessing.md) — CLI usage patterns, compression metrics, and file naming conventions

@@ -69,7 +69,7 @@
 - **[globalconfig-field-addition.md](globalconfig-field-addition.md)** — adding a new field to GlobalConfig, extending erk's global configuration, adding a user-configurable setting to ~/.erk/config.toml
 - **[graphite-cache-invalidation.md](graphite-cache-invalidation.md)** — implementing mtime-based cache invalidation, caching Graphite branch metadata, optimizing repeated calls to git or graphite operations
 - **[hook-marker-detection.md](hook-marker-detection.md)** — Adding a new hook managed by erk, Implementing version detection for artifacts, Understanding how hook updates work
-- **[http-accelerated-plan-refresh.md](http-accelerated-plan-refresh.md)** — understanding dual-path architecture for plan data fetching, working with HttpClient ABC extensions, optimizing plan list performance
+- **[http-accelerated-plan-refresh.md](http-accelerated-plan-refresh.md)** — understanding HTTP-only architecture for plan data fetching, working with HttpClient ABC extensions, optimizing plan list performance, adding CLI commands that need http_client
 - **[impl-context-api.md](impl-context-api.md)** — working with .erk/impl-context/ folder, understanding plan submission staging, creating or removing impl-context directories
 - **[impl-folder-discovery.md](impl-folder-discovery.md)** — working with .erk/impl-context/ directory resolution, debugging why a plan wasn't found during implementation setup, writing tests that use branch-scoped impl-context paths, understanding the difference between impl_folder.py and impl_context.py
 - **[impl-folder-lifecycle.md](impl-folder-lifecycle.md)** — working with .erk/impl-context/ folders, understanding remote implementation workflow, debugging plan visibility in PRs

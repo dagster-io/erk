@@ -34,11 +34,13 @@ Planned PRs serve as the backing store for plans when the plan backend is `githu
 
 ### Stage 1: Plan Creation
 
-`plan_save` / `PlannedPRBackend.create_plan()` creates a draft PR with `lifecycle_stage: planned` in the plan-header metadata. The body contains the plan-header metadata block, the plan content collapsed in a `<details>` tag, and a checkout footer.
+`plan_save` / `PlannedPRBackend.create_plan()` creates a draft PR with `lifecycle_stage: planned` in the plan-header metadata. The body contains the plan-header metadata block, the plan content collapsed in a `<details>` tag, an optional AI-generated summary, and a checkout footer.
 
 Body format:
 
 ```
+[optional AI-generated summary]
+
 <details>
 <summary>original-plan</summary>
 
@@ -50,6 +52,8 @@ Body format:
 \n---\n
 [checkout footer]
 ```
+
+The summary is generated during `/erk:plan-save` (Step 1.75) as a 2-3 sentence plain-text overview. When provided, it appears above the collapsed plan details, visible without expanding. When absent, the body starts directly with `<details>`.
 
 ### Stage 2: Implementation
 
@@ -80,12 +84,12 @@ PR is marked ready for review. Standard review/merge flow. No body format change
 
 All in `packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py`:
 
-| Function                                             | Purpose                                                                                                     |
-| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `build_plan_stage_body(metadata_body, plan_content)` | Build Stage 1 body: details-wrapped plan + separator + metadata. Footer NOT included (needs PR number).     |
-| `build_original_plan_section(plan_content)`          | Wrap plan content in `<details><summary>original-plan</summary>` section. Used by both Stage 1 and Stage 2. |
-| `extract_plan_content(pr_body)`                      | Extract plan content from PR body at any lifecycle stage. Handles both details-wrapped and old flat format. |
-| `find_metadata_block(pr_body, "plan-header")`        | Extract metadata block for preservation during stage transitions.                                           |
+| Function                                                         | Purpose                                                                                                                                                  |
+| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `build_plan_stage_body(metadata_body, plan_content, *, summary)` | Build Stage 1 body: details-wrapped plan + metadata. Optional `summary: str \| None` prepends before `<details>`. Footer NOT included (needs PR number). |
+| `build_original_plan_section(plan_content)`                      | Wrap plan content in `<details><summary>original-plan</summary>` section. Used by both Stage 1 and Stage 2.                                              |
+| `extract_plan_content(pr_body)`                                  | Extract plan content from PR body at any lifecycle stage. Handles both details-wrapped and old flat format. Summary is NOT included in output.           |
+| `find_metadata_block(pr_body, "plan-header")`                    | Extract metadata block for preservation during stage transitions.                                                                                        |
 
 ## Separator Semantics
 
