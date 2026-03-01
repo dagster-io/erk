@@ -1,0 +1,1182 @@
+<session>
+  <meta branch="plnd/fix-land-no-sessions-03-01-1543" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8568&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 12. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8568` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**CRITICAL**: Never delete the impl directory - leave for user review (no auto-commit).
+
+### Step 12: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 13: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #8568.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11192" cache_read_input_tokens="16928" cache_creation="{'ephemeral_5m_input_tokens': 11192, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_016AcauHZqxpmnq9oQBExENp">
+    <param name="command">erk exec setup-impl --issue 8568</param>
+    <param name="description">Set up implementation for plan #8568</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11192" cache_read_input_tokens="16928" cache_creation="{'ephemeral_5m_input_tokens': 11192, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016AcauHZqxpmnq9oQBExENp">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--fix-land-no-sessions-03-01-1543", "plan_number": 8568, "plan_url": "https://github.com/dagster-io/erk/pull/8568", "branch": "plnd/fix-land-no-sessions-03-01-1543", "plan_title": "[erk-plan] Context", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8568, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/fix-land-no-sessions-03-01-1543', syncing with remote...
+  </tool_result>
+  <assistant>Good, implementation environment is set up. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="336" cache_read_input_tokens="28120" cache_creation="{'ephemeral_5m_input_tokens': 336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_019t1NSgkFYrHfTcTH949wJT">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--fix-land-no-sessions-03-01-1543/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="336" cache_read_input_tokens="28120" cache_creation="{'ephemeral_5m_input_tokens': 336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019t1NSgkFYrHfTcTH949wJT">
+     1→# Context
+     2→
+     3→When landing a PR with `erk land`, the `_create_learn_pr_impl` function calls `generate_branch_slug` unconditionally — even when no sessions are discovered. `generate_branch_slug` spawns a nested `claude --print` subprocess to generate a branch name slug, which hangs (120s timeout) because it runs Claude-within-Claude.
+     4→
+     5→The output shows "No sessions discovered for this plan" but then the process hangs indefinitely because the code continues to the `generate_branch_slug` LLM call on line 388.
+     6→
+     7→When there are no sessions, a learn plan has minimal value (just PR metadata, no session content). The fix is to early-return after session discovery when no sessions are found.
+     8→
+     9→# Fix
+    10→
+    11→**File:** `src/erk/cli/commands/land_learn.py`
+    12→
+    13→In `_create_learn_pr_impl`, add an early return after `_log_session_discovery` when `all_session_ids` is empty:
+    14→
+    15→```python
+    16→# Log session discovery summary and collect XML files for embedding
+    17→xml_files = _log_session_discovery(ctx, sessions=sessions, all_session_ids=all_session_ids)
+    18→
+    19→# Skip learn plan creation if no sessions were discovered — nothing meaningful to capture
+    20→if not all_session_ids:
+    21→    return
+    22→```
+    23→
+    24→This goes at line ~372, right after the `_log_session_discovery` call and before building the plan body.
+    25→
+    26→# Verification
+    27→
+    28→1. Run `erk land -f -d` on a PR where no sessions are associated — it should complete quickly after "No sessions discovered for this plan" without hanging
+    29→2. Run `erk land -f -d` on a PR with sessions — learn plan should still be created as before
+    30→3. Confirm no test regressions with `make fast-ci`
+
+... [6 lines omitted] ...
+  </tool_result>
+  <assistant>Clear plan. Let me set up the todos and read the file that needs to be modified.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="716" cache_read_input_tokens="28456" cache_creation="{'ephemeral_5m_input_tokens': 716, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01YRzf5qSgEFbsRse3F7zaFP">
+    <param name="todos">[{'content': 'Add early return in _create_learn_pr_impl when no sessions found', 'status':...[truncated 153 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="716" cache_read_input_tokens="28456" cache_creation="{'ephemeral_5m_input_tokens': 716, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01FNieVcBEFfRu5q7k2VUP8J">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="716" cache_read_input_tokens="28456" cache_creation="{'ephemeral_5m_input_tokens': 716, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01WVo6cEMixxZfn3BCLizfnX">
+    <param name="command">erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="716" cache_read_input_tokens="28456" cache_creation="{'ephemeral_5m_input_tokens': 716, 'ephemeral_1h_input_tokens': 0}" output_tokens="317" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01YRzf5qSgEFbsRse3F7zaFP">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_result tool="toolu_01FNieVcBEFfRu5q7k2VUP8J">
+     1→"""Learn plan creation for the land command.
+     2→
+     3→Handles creating erk-learn plans when a PR is landed.
+     4→Extracted to avoid circular imports between land_cmd and land_pipeline.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from dataclasses import dataclass
+    10→from typing import TYPE_CHECKING
+    11→
+    12→import click
+    13→from rich.console import Console
+    14→from rich.table import Table
+    15→
+    16→from erk.cli.commands.exec.scripts.preprocess_session import (
+    17→    deduplicate_assistant_messages,
+    18→    deduplicate_documentation_blocks,
+    19→    discover_agent_logs,
+    20→    is_empty_session,
+    21→    is_warmup_session,
+    22→    process_log_file,
+    23→    split_entries_to_chunks,
+    24→    truncate_tool_parameters,
+    25→)
+    26→from erk.core.branch_slug_generator import generate_branch_slug
+    27→from erk.core.context import ErkContext
+    28→from erk_shared.learn.extraction.session_schema import (
+    29→    iter_jsonl_entries,
+    30→    parse_session_timestamp,
+
+... [408 lines omitted] ...
+
+   190→    except Exception as exc:
+   191→        user_output(click.style("Warning: ", fg="yellow") + f"Could not create learn plan: {exc}")
+   350→    """Inner implementation for learn plan creation (raises on error)."""
+   429→    elif result.error:
+   431→            click.style("Warning: ", fg="yellow") + f"Learn plan creation failed: {result.error}"
+  </tool_result>
+  <tool_result tool="toolu_01WVo6cEMixxZfn3BCLizfnX">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <assistant>I can see the issue clearly. Looking at `_create_learn_pr_impl` at line 371-372: after `_log_session_discovery` returns, the code continues to build the plan body and call `generate_branch_slug` even when `all_session_ids` is empty. The fix is to add an early return after line 371 when there are no sessions.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6421" cache_read_input_tokens="29172" cache_creation="{'ephemeral_5m_input_tokens': 6421, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Ux7Yzeg8YU7fiWRidkesun">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py</param>
+    <param name="old_string">    # Log session discovery summary and collect XML files for embedding
+    xml_files = _log_session_discovery(ctx, sessions=sessions, all_session_ids=all_session_ids)
+
+    # Build learn plan body</param>
+    <param name="new_string">    # Log session discovery summary and collect XML files for embedding
+    xml_files = _l...[truncated 134 chars]...ningful to capture
+    if not all_session_ids:
+        return
+
+    # Build learn plan body</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6421" cache_read_input_tokens="29172" cache_creation="{'ephemeral_5m_input_tokens': 6421, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Ux7Yzeg8YU7fiWRidkesun">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py has been updated successfully.
+  </tool_result>
+  <assistant>The fix is in place. Now let me also clean up the dead code path that handles the empty sessions case (lines 376-377), since we now return early before reaching it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="376" cache_read_input_tokens="35593" cache_creation="{'ephemeral_5m_input_tokens': 376, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01G4ereT5ME1z1SNcubsdSnb">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py</param>
+    <param name="offset">373</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="376" cache_read_input_tokens="35593" cache_creation="{'ephemeral_5m_input_tokens': 376, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01G4ereT5ME1z1SNcubsdSnb">
+   373→    # Skip learn plan creation if no sessions were discovered — nothing meaningful to capture
+   374→    if not all_session_ids:
+   375→        return
+   376→
+   377→    # Build learn plan body
+   378→    if all_session_ids:
+   379→        session_lines = [f"- `{sid}`" for sid in all_session_ids]
+   380→    else:
+   381→        session_lines = ["- (none)"]
+   382→    session_section = "\n".join(session_lines)
+   383→    plan_content = (
+   384→        f"# Learn: {plan_result.title}\n\n"
+   385→        f"Source plan: #{plan_id}\n"
+   386→        f"Merged PR: #{state.merged_pr_number}\n\n"
+   387→        f"## Sessions\n\n{session_section}"
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>The `if all_session_ids:` check on line 378 is now always true (since we return early when it's empty). Let me simplify that dead branch:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="626" cache_read_input_tokens="35969" cache_creation="{'ephemeral_5m_input_tokens': 626, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_016dWtaWjiRJh55cJCqsPSpa">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py</param>
+    <param name="old_string">    # Build learn plan body
+    if all_session_ids:
+        session_lines = [f"- `{sid}`" ...[truncated 11 chars]... else:
+        session_lines = ["- (none)"]
+    session_section = "\n".join(session_lines)</param>
+    <param name="new_string">    # Build learn plan body
+    session_lines = [f"- `{sid}`" for sid in all_session_ids]
+    session_section = "\n".join(session_lines)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="626" cache_read_input_tokens="35969" cache_creation="{'ephemeral_5m_input_tokens': 626, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016dWtaWjiRJh55cJCqsPSpa">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py has been updated successfully.
+  </tool_result>
+  <assistant>Good. Now let me mark the first task complete and run CI.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="312" cache_read_input_tokens="36595" cache_creation="{'ephemeral_5m_input_tokens': 312, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_0114aNGUGWDPy9F1X2P1X1ZU">
+    <param name="todos">[{'content': 'Add early return in _create_learn_pr_impl when no sessions found', 'status':...[truncated 155 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="312" cache_read_input_tokens="36595" cache_creation="{'ephemeral_5m_input_tokens': 312, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01JxEUCjd3vk3yAmxVTMfy4A">
+    <param name="description">Run fast CI checks</param>
+    <param name="prompt">Run `make fast-ci` and report the full results. Do NOT fix any errors - just report what you find.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="312" cache_read_input_tokens="36595" cache_creation="{'ephemeral_5m_input_tokens': 312, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0114aNGUGWDPy9F1X2P1X1ZU">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_result tool="toolu_01JxEUCjd3vk3yAmxVTMfy4A">
+## Summary
+
+`make fast-ci` **FAILED** with 2 test failures. Here are the full results:
+
+### Prettier Check
+- 2 files have code style issues:
+  - `docs/learned/integrations/github-review-decision.md`
+  - `docs/learned/tui/status-indicators.md`
+
+### Linting &amp; Format Checks
+- `ty` (type checking): All checks passed
+- `ruff` (linting): All checks passed
+- Prettier format check: 1625 files already formatted
+
+### Test Results
+
+**erk package**: 2 failures out of 5467 tests
+
+**Failed tests:**
+
+1. **`tests/unit/cli/commands/land/pipeline/test_create_learn_issue.py::test_returns_state_after_creating_pr`**
+   - Location: `/home/runner/work/erk/erk/tests/unit/cli/commands/land/pipeline/test_create_learn_issue.py:123`
+   - Error: `assert 0 == 1` (expected 1 created PR but got 0)
+   - Stderr: `⚠️ No sessions discovered for this plan`
+
+2. **`tests/unit/cli/commands/land/test_land_learn.py::test_creates_pr_and_shows_success`**
+   - Location: `/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py:280`
+   - Error: `assert 0 == 1` (expected 1 created PR but got 0)
+   - Stderr: `⚠️ No sessions discovered for this plan`
+
+
+... [7 lines omitted] ...
+
+Both failures relate to "no sessions discovered for this plan" and are specifically in the `land` command's learn PR creation functionality, where the test expects a PR to be created but none was created.
+  </tool_result>
+  <assistant>Two test failures — both caused by my change. The tests set up scenarios with no sessions but still expect a PR to be created. I need to update these tests so they provide sessions. Let me look at both tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="859" cache_read_input_tokens="36907" cache_creation="{'ephemeral_5m_input_tokens': 859, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_012CXdvhmBST9wTDcCB9zD5D">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/land/pipeline/test_create_learn_issue.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="859" cache_read_input_tokens="36907" cache_creation="{'ephemeral_5m_input_tokens': 859, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01EFbG7Zms9kTctRXApyqKZu">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="859" cache_read_input_tokens="36907" cache_creation="{'ephemeral_5m_input_tokens': 859, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012CXdvhmBST9wTDcCB9zD5D">
+     1→"""Tests for create_learn_pr execution pipeline step."""
+     2→
+     3→from datetime import UTC, datetime
+     4→from pathlib import Path
+     5→
+     6→from erk.cli.commands.land_pipeline import (
+     7→    LandError,
+     8→    LandState,
+     9→    create_learn_pr,
+    10→)
+    11→from erk.core.context import context_for_test
+    12→from erk_shared.gateway.git.fake import FakeGit
+    13→from erk_shared.gateway.github.fake import FakeGitHub
+    14→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    15→from erk_shared.gateway.github.types import PRDetails
+    16→from erk_shared.gateway.time.fake import FakeTime
+    17→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    18→
+    19→
+    20→def _execution_state(
+    21→    tmp_path: Path,
+    22→    *,
+    23→    plan_id: str | None = None,
+    24→    merged_pr_number: int | None = None,
+    25→) -&gt; LandState:
+    26→    """Create LandState as if in execution pipeline."""
+    27→    return LandState(
+    28→        cwd=tmp_path,
+    29→        force=True,
+    30→        script=False,
+
+... [99 lines omitted] ...
+
+    61→    assert not isinstance(result, LandError)
+    75→    assert not isinstance(result, LandError)
+   119→    assert not isinstance(result, LandError)
+  </tool_result>
+  <tool_result tool="toolu_01EFbG7Zms9kTctRXApyqKZu">
+     1→"""Tests for land_learn module: learn plan creation logic."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→
+     7→import pytest
+     8→
+     9→from erk.cli.commands.land_learn import (
+    10→    _compute_session_stats,
+    11→    _create_learn_pr_impl,
+    12→    _create_learn_pr_with_sessions,
+    13→    _log_learn_pr_files,
+    14→    _log_session_discovery,
+    15→    _should_create_learn_pr,
+    16→)
+    17→from erk.cli.commands.land_pipeline import LandState
+    18→from erk.core.context import context_for_test
+    19→from erk_shared.context.types import GlobalConfig, LoadedConfig
+    20→from erk_shared.gateway.claude_installation.fake import (
+    21→    FakeClaudeInstallation,
+    22→    FakeProject,
+    23→    FakeSessionData,
+    24→)
+    25→from erk_shared.gateway.git.fake import FakeGit
+    26→from erk_shared.gateway.github.fake import FakeGitHub
+    27→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    28→from erk_shared.gateway.github.types import PRDetails
+    29→from erk_shared.gateway.time.fake import FakeTime
+    30→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+
+... [652 lines omitted] ...
+
+   157→def test_shows_warning_on_exception(
+   162→    """Exception in _create_learn_pr_impl is caught and shown as warning."""
+   166→        raise RuntimeError("simulated network error")
+   173→    # Should NOT raise — exception is caught
+   177→    assert "Warning" in captured.err
+   178→    assert "simulated network error" in captured.err
+   284→    # Success output (includes session discovery warning since no sessions configured)
+   357→    """Logs warning when no sessions discovered."""
+  </tool_result>
+  <assistant>I see the two failing tests:
+
+1. **`test_returns_state_after_creating_pr`** (line 80 in `test_create_learn_issue.py`): Sets up a plan with no sessions configured in the `plan_backend`, so `find_sessions_for_plan` returns empty sessions, triggering the early return.
+
+2. **`test_creates_pr_and_shows_success`** (line 250 in `test_land_learn.py`): Same issue — no sessions configured, so the new early return fires before creating the PR. The test even asserts `"No sessions discovered" in captured.err` at line 288, showing it expected zero sessions but still expected a PR.
+
+Both tests need sessions added to their setup. Let me check how `find_sessions_for_plan` works in tests to understand how to provide sessions.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="11754" cache_read_input_tokens="37766" cache_creation="{'ephemeral_5m_input_tokens': 11754, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01Kfbs3tvVo3jCa45hqRKwx4">
+    <param name="pattern">find_sessions_for_plan</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11754" cache_read_input_tokens="37766" cache_creation="{'ephemeral_5m_input_tokens': 11754, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_014YkuJRJYfwZTRUwzsMUhQ8">
+    <param name="pattern">plan_backend</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/core/context.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11754" cache_read_input_tokens="37766" cache_creation="{'ephemeral_5m_input_tokens': 11754, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014YkuJRJYfwZTRUwzsMUhQ8">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01Kfbs3tvVo3jCa45hqRKwx4">
+Found 3 files
+src/erk/cli/commands/land_learn.py
+src/erk/cli/commands/learn/learn_cmd.py
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01JkmsQZvC4UBfdfpcT7nm92">
+    <param name="pattern">plan_backend</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/core</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="675" cache_read_input_tokens="49520" cache_creation="{'ephemeral_5m_input_tokens': 675, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JkmsQZvC4UBfdfpcT7nm92">
+src/erk/core/plan_context_provider.py:42:    def __init__(self, *, plan_backend: PlanBackend, github_issues: GitHubIssues) -&gt; None:
+src/erk/core/plan_context_provider.py:43:        self._plan_backend = plan_backend
+src/erk/core/plan_context_provider.py:68:        result = self._plan_backend.get_plan_for_branch(repo_root, branch_name)
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01XuHQStLNy68td9vMW8vMY6">
+    <param name="pattern">class.*PlanBackend</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="290" cache_read_input_tokens="50195" cache_creation="{'ephemeral_5m_input_tokens': 290, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XuHQStLNy68td9vMW8vMY6">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Bj8QxaSw1DPzPCaPrCKTG3">
+    <param name="pattern">find_sessions_for_plan</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="139" cache_read_input_tokens="50485" cache_creation="{'ephemeral_5m_input_tokens': 139, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Bj8QxaSw1DPzPCaPrCKTG3">
+packages/erk-shared/src/erk_shared/plan_store/backend.py:171:    def find_sessions_for_plan(
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:186:    sessions_for_plan = plan_backend.find_sessions_for_plan(
+src/erk/cli/commands/land_learn.py:367:    sessions = ctx.plan_backend.find_sessions_for_plan(state.main_repo_root, plan_id)
+src/erk/cli/commands/learn/learn_cmd.py:152:    sessions_for_plan = ctx.plan_backend.find_sessions_for_plan(
+tests/unit/plan_store/test_plan_backend_interface.py:538:# find_sessions_for_plan tests
+tests/unit/plan_store/test_plan_backend_interface.py:542:def test_find_sessions_for_plan_returns_sessions_for_plan(
+tests/unit/plan_store/test_plan_backend_interface.py:548:    result = backend.find_sessions_for_plan(Path("/repo"), plan_id)
+tests/unit/plan_store/test_plan_backend_interface.py:556:def test_find_sessions_for_plan_reads_header_fields(
+tests/unit/plan_store/test_plan_backend_interface.py:594:    sessions = plan_backend.find_sessions_for_plan(Path("/repo"), plan_id)
+tests/unit/plan_store/test_plan_backend_interface.py:607:def test_find_sessions_for_plan_raises_for_nonexistent_plan(
+tests/unit/plan_store/test_plan_backend_interface.py:612:        plan_backend.find_sessions_for_plan(Path("/repo"), "99999999")
+tests/commands/land/test_learn_skip_remote.py:128:        # Track if find_sessions_for_plan was called (it should NOT be called)
+tests/commands/land/test_learn_skip_remote.py:134:                f"find_sessions_for_plan should NOT be called for remote PRs "
+tests/commands/land/test_learn_skip_remote.py:139:        monkeypatch.setattr(test_ctx.plan_backend, "find_sessions_for_plan", mock_find_sessions)
+tests/commands/land/test_learn_skip_remote.py:163:        # CRITICAL: Verify find_sessions_for_plan was NOT called
+tests/commands/land/test_learn_skip_remote.py:166:            f"find_sessions_for_plan should not be called for remote PRs "
+tests/commands/land/test_learn_skip_remote.py:176:    so find_sessions_for_plan is never called.
+  </tool_result>
+  <tool_use name="Read" id="toolu_015dALyA5jgsHxrNFKVgkdoh">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="offset">160</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="994" cache_read_input_tokens="50624" cache_creation="{'ephemeral_5m_input_tokens': 994, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015dALyA5jgsHxrNFKVgkdoh">
+   160→        Returns:
+   161→            List of comment body strings, ordered oldest to newest.
+   162→            Returns empty list if plan has no comments.
+   163→
+   164→        Raises:
+   165→            RuntimeError: If provider fails or plan not found
+   166→        """
+   167→        ...
+   168→
+   169→    # Session discovery (concrete — uses get_plan + get_comments)
+   170→
+   171→    def find_sessions_for_plan(
+   172→        self,
+   173→        repo_root: Path,
+   174→        plan_id: str,
+   175→    ) -&gt; SessionsForPlan:
+   176→        """Find all Claude Code sessions associated with a plan.
+   177→
+   178→        Extracts session IDs from:
+   179→        1. created_from_session in plan-header (planning session)
+   180→        2. last_local_impl_session in plan-header (most recent impl session)
+   181→        3. impl-started/impl-ended comments (all implementation sessions)
+   182→        4. last_learn_session in plan-header (most recent learn session)
+   183→        5. learn-invoked comments (previous learn sessions)
+   184→
+   185→        This is a concrete method that delegates to the abstract ``get_plan``
+   186→        and ``get_comments`` methods, so every backend gets it for free.
+   187→
+   188→        Args:
+   189→            repo_root: Repository root directory
+
+... [15 lines omitted] ...
+
+   196→            RuntimeError: If plan not found
+  </tool_result>
+  <assistant>I see — `find_sessions_for_plan` extracts session IDs from the plan headers/comments. Let me look at how `context_for_test` and `plan_backend` are wired up, and how the test `test_creates_pr_and_shows_success` provides its context.
+
+The key issue: both tests create a PR with `erk-plan` label but no session markers in the PR body/comments, so `find_sessions_for_plan` returns empty. I need to add session data to the PR body or comments.
+
+Let me check the plan header parsing to understand how session IDs are extracted:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="681" cache_read_input_tokens="51618" cache_creation="{'ephemeral_5m_input_tokens': 681, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01BBFqZsvWSG2xAWmojzuDb9">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="offset">198</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="681" cache_read_input_tokens="51618" cache_creation="{'ephemeral_5m_input_tokens': 681, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BBFqZsvWSG2xAWmojzuDb9">
+   198→        plan = self.get_plan(repo_root, plan_id)
+   199→        if isinstance(plan, PlanNotFound):
+   200→            msg = f"Plan {plan_id} not found"
+   201→            raise RuntimeError(msg)
+   202→
+   203→        planning_session_id = header_str(plan.header_fields, CREATED_FROM_SESSION)
+   204→        metadata_impl_session = header_str(plan.header_fields, LAST_LOCAL_IMPL_SESSION)
+   205→        metadata_learn_session = header_str(plan.header_fields, LAST_LEARN_SESSION)
+   206→
+   207→        comments = self.get_comments(repo_root, plan_id)
+   208→        comment_impl_sessions = extract_implementation_sessions(comments)
+   209→        comment_learn_sessions = extract_learn_sessions(comments)
+   210→
+   211→        # Combine implementation sessions: metadata first, then from comments
+   212→        implementation_session_ids: list[str] = []
+   213→        impl_seen: set[str] = set()
+   214→        if metadata_impl_session is not None:
+   215→            implementation_session_ids.append(metadata_impl_session)
+   216→            impl_seen.add(metadata_impl_session)
+   217→        for session_id in comment_impl_sessions:
+   218→            if session_id not in impl_seen:
+   219→                implementation_session_ids.append(session_id)
+   220→                impl_seen.add(session_id)
+   221→
+   222→        # Combine learn sessions: metadata first, then from comments
+   223→        learn_session_ids: list[str] = []
+   224→        learn_seen: set[str] = set()
+   225→        if metadata_learn_session is not None:
+   226→            learn_session_ids.append(metadata_learn_session)
+   227→            learn_seen.add(metadata_learn_session)
+
+... [35 lines omitted] ...
+  </tool_result>
+  <assistant>Now I understand the full picture. `find_sessions_for_plan` extracts session IDs from `plan.header_fields` (specifically the `CREATED_FROM_SESSION` header). The test PRs have no header fields with session IDs, so they return empty `SessionsForPlan`.
+
+I need to add a `created-from-session` header to the PR body in both tests to provide at least one session. Let me check what the header format looks like:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1526" cache_read_input_tokens="52299" cache_creation="{'ephemeral_5m_input_tokens': 1526, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01GDZaN28EN4Ug59hE1XFtDi">
+    <param name="pattern">CREATED_FROM_SESSION</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1526" cache_read_input_tokens="52299" cache_creation="{'ephemeral_5m_input_tokens': 1526, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GDZaN28EN4Ug59hE1XFtDi">
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:23:    CREATED_FROM_SESSION,
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:297:        created_from_session_raw = metadata.get(CREATED_FROM_SESSION)
+packages/erk-shared/src/erk_shared/plan_store/backend.py:28:    CREATED_FROM_SESSION,
+packages/erk-shared/src/erk_shared/plan_store/backend.py:203:        planning_session_id = header_str(plan.header_fields, CREATED_FROM_SESSION)
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01GurVXrRTZ1rkamsagHSQcd">
+    <param name="pattern">CREATED_FROM_SESSION\s*="</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="419" cache_read_input_tokens="53825" cache_creation="{'ephemeral_5m_input_tokens': 419, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GurVXrRTZ1rkamsagHSQcd">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01RJem7dnA39NzUpWKi1qZZd">
+    <param name="pattern">CREATED_FROM_SESSION"?\s*="</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="311" cache_read_input_tokens="54244" cache_creation="{'ephemeral_5m_input_tokens': 311, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RJem7dnA39NzUpWKi1qZZd">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0183nuNryQD1iz6mjZnafzcQ">
+    <param name="pattern">CREATED_FROM_SESSION</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="149" cache_read_input_tokens="54555" cache_creation="{'ephemeral_5m_input_tokens': 149, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0183nuNryQD1iz6mjZnafzcQ">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-21-)
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-22-from erk_shared.gateway.github.metadata.schemas import (
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:23:    CREATED_FROM_SESSION,
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-24-    CREATED_FROM_WORKFLOW_RUN_URL,
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-25-    LEARNED_FROM_ISSUE,
+--
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-295-        objective_id: int | None = _parse_objective_id(objective_issue_raw)
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-296-
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:297:        created_from_session_raw = metadata.get(CREATED_FROM_SESSION)
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-298-        created_from_session_str: str | None = (
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-299-            str(created_from_session_raw) if created_from_session_raw is not None else None
+--
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py-26-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py-27-from erk_shared.gateway.github.metadata.schemas import (
+packages/erk-shared/src/erk_shared/plan_store/backend.py:28:    CREATED_FROM_SESSION,
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py-29-    LAST_LEARN_SESSION,
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py-30-    LAST_LOCAL_IMPL_SESSION,
+--
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py-201-            raise RuntimeError(msg)
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py-202-
+packages/erk-shared/src/erk_shared/plan_store/backend.py:203:        planning_session_id = header_str(plan.header_fields, CREATED_FROM_SESSION)
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py-204-        metadata_impl_session = header_str(plan.header_fields, LAST_LOCAL_IMPL_SESSION)
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py-205-        metadata_learn_session = header_str(plan.header_fields, LAST_LEARN_SESSION)
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Tk5y3S7FfDPaBijkNsi7Ci">
+    <param name="pattern">CREATED_FROM_SESSION</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1127" cache_read_input_tokens="54704" cache_creation="{'ephemeral_5m_input_tokens': 1127, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Tk5y3S7FfDPaBijkNsi7Ci">
+389-SOURCE_REPO: Literal["source_repo"] = "source_repo"
+390-OBJECTIVE_ISSUE: Literal["objective_issue"] = "objective_issue"
+391:CREATED_FROM_SESSION: Literal["created_from_session"] = "created_from_session"
+392-CREATED_FROM_WORKFLOW_RUN_URL: Literal["created_from_workflow_run_url"] = (
+393-    "created_from_workflow_run_url"
+--
+517-            SOURCE_REPO,
+518-            OBJECTIVE_ISSUE,
+519:            CREATED_FROM_SESSION,
+520-            CREATED_FROM_WORKFLOW_RUN_URL,
+521-            LAST_LEARN_SESSION,
+--
+665-
+666-        # Validate optional created_from_session field
+667:        if CREATED_FROM_SESSION in data and data[CREATED_FROM_SESSION] is not None:
+668:            if not isinstance(data[CREATED_FROM_SESSION], str):
+669-                raise ValueError("created_from_session must be a string or null")
+670:            if len(data[CREATED_FROM_SESSION]) == 0:
+671-                raise ValueError("created_from_session must not be empty when provided")
+672-
+  </tool_result>
+  <assistant>OK, the header field is `created_from_session` embedded in PR body metadata. Now let me look at how `PlannedPRBackend.get_plan` works with `FakeGitHub` to understand how to add header fields to the test PRs. The key is in the PR body — the metadata block is parsed from it.
+
+Let me look at how other tests that successfully create learn PRs with sessions set up their PR body:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="641" cache_read_input_tokens="55831" cache_creation="{'ephemeral_5m_input_tokens': 641, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01FhS6yG5AiGPtExoNBLtKkZ">
+    <param name="pattern">created_from_session</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">3</param>
+    <param name="head_limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="641" cache_read_input_tokens="55831" cache_creation="{'ephemeral_5m_input_tokens': 641, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FhS6yG5AiGPtExoNBLtKkZ">
+/home/runner/work/erk/erk/tests/shared/github/test_plan_header_extraction.py-75-    schema.validate(data)
+/home/runner/work/erk/erk/tests/shared/github/test_plan_header_extraction.py-76-
+/home/runner/work/erk/erk/tests/shared/github/test_plan_header_extraction.py-77-
+tests/shared/github/test_plan_header_extraction.py:78:def test_plan_header_schema_accepts_created_from_session() -&gt; None:
+tests/shared/github/test_plan_header_extraction.py:79:    """Schema accepts created_from_session for learn discovery."""
+/home/runner/work/erk/erk/tests/shared/github/test_plan_header_extraction.py-80-    schema = PlanHeaderSchema()
+/home/runner/work/erk/erk/tests/shared/github/test_plan_header_extraction.py-81-    data = {
+tests/shared/github/test_plan_header_extraction.py-82-        "schema_version": "2",
+tests/shared/github/test_plan_header_extraction.py-83-        "created_at": "2024-01-15T10:30:00Z",
+tests/shared/github/test_plan_header_extraction.py-84-        "created_by": "user123",
+tests/shared/github/test_plan_header_extraction.py:85:        "created_from_session": "abc-123-session-id",
+/home/runner/work/erk/erk/tests/shared/github/test_plan_header_extraction.py-86-    }
+/home/runner/work/erk/erk/tests/shared/github/test_plan_header_extraction.py-87-
+/home/runner/work/erk/erk/tests/shared/github/test_plan_header_extraction.py-88-    # Should not raise
+--
+tests/shared/github/test_plan_header_extraction.py-103-        "last_dispatched_at": "2024-01-15T11:00:00Z",
+tests/shared/github/test_plan_header_extraction.py-104-        "source_repo": "owner/repo",
+tests/shared/github/test_plan_header_extraction.py-105-        "objective_issue": 42,
+tests/shared/github/test_plan_header_extraction.py:106:        "created_from_session": "session-abc",
+/home/runner/work/erk/erk/tests/shared/github/test_plan_header_extraction.py-107-    }
+/home/runner/work/erk/erk/tests/shared/github/test_plan_header_extraction.py-108-
+/home/runner/work/erk/erk/tests/shared/github/test_plan_header_extraction.py-109-    # Should not raise
+--
+/home/runner/work/erk/erk/tests/shared/github/test_plan_header_extraction.py-169-        last_remote_impl_session_id=None,
+/home/runner/work/erk/erk/tests/shared/github/test_plan_header_extraction.py-170-        source_repo=None,
+/home/runner/work/erk/erk/tests/shared/github/test_plan_header_extraction.py-171-        objective_issue=None,
+tests/shared/github/test_plan_header_extraction.py:172:        created_from_session=None,
+/home/runner/work/erk/erk/tests/shared/github/test_plan_header_extraction.py-173-        created_from_workflow_run_url=None,
+/home/runner/work/erk/erk/tests/shared/github/test_plan_header_extraction.py-174-        last_learn_session=None,
+/home/runner/work/erk/erk/tests/shared/github/test_plan_header_extraction.py-175-        last_learn_at=None,
+
+... [12 lines omitted] ...
+  </tool_result>
+  <assistant>Now I need to understand how the PR body with metadata gets parsed. The `PlannedPRBackend.get_plan` will parse the PR body's hidden metadata block. Let me look at how the PR body is structured to include the plan-header:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1625" cache_read_input_tokens="56472" cache_creation="{'ephemeral_5m_input_tokens': 1625, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01MCDvzFkArf34G5KNGgBzmy">
+    <param name="pattern">plan-header|plan_header|PLAN_HEADER</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1625" cache_read_input_tokens="56472" cache_creation="{'ephemeral_5m_input_tokens': 1625, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MCDvzFkArf34G5KNGgBzmy">
+2-
+3-Uses GitHub draft pull requests as the backing store for plans.
+4:PR body contains the plan-header metadata block followed by plan content.
+5-The "erk-plan" label identifies plan PRs vs regular draft PRs.
+6-"""
+--
+17-    replace_metadata_block_in_body,
+18-)
+19:from erk_shared.gateway.github.metadata.plan_header import (
+20:    format_plan_header_body,
+21-)
+22-from erk_shared.gateway.github.metadata.schemas import (
+--
+79-
+80-    PR body format:
+81:        &lt;!-- plan-header metadata block --&gt;
+82-
+83-        ---
+--
+315-
+316-        created_at = self._time.now().replace(tzinfo=UTC).isoformat()
+317:        metadata_body = format_plan_header_body(
+318-            created_at=created_at,
+319-            created_by=username,
+--
+381-        field_name: str,
+382-    ) -&gt; object | PlanNotFound:
+383:        """Get a single metadata field from the plan-header block in the PR body.
+384-
+385-        Args:
+
+... [56 lines omitted] ...
+
+447:            PlanHeaderNotFoundError: If PR body has no plan-header metadata block
+448-            RuntimeError: If PR not found or update fails
+454-            raise RuntimeError(msg)
+458:            raise PlanHeaderNotFoundError("plan-header block not found in PR body")
+  </tool_result>
+  <assistant>Let me look at `format_plan_header_body` to understand how to create a body with the metadata:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1278" cache_read_input_tokens="58097" cache_creation="{'ephemeral_5m_input_tokens': 1278, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01WU7mhjmWiPn3ukpcRZ3pXd">
+    <param name="pattern">def format_plan_header_body</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1278" cache_read_input_tokens="58097" cache_creation="{'ephemeral_5m_input_tokens': 1278, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WU7mhjmWiPn3ukpcRZ3pXd">
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py:205:def format_plan_header_body(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01RprNgTvNHkVAU5mZVXpqqz">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="offset">205</param>
+    <param name="limit">70</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="205" cache_read_input_tokens="59375" cache_creation="{'ephemeral_5m_input_tokens': 205, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RprNgTvNHkVAU5mZVXpqqz">
+   205→def format_plan_header_body(
+   206→    *,
+   207→    created_at: str,
+   208→    created_by: str,
+   209→    worktree_name: str | None,
+   210→    branch_name: str | None,
+   211→    plan_comment_id: int | None,
+   212→    last_dispatched_run_id: str | None,
+   213→    last_dispatched_node_id: str | None,
+   214→    last_dispatched_at: str | None,
+   215→    last_local_impl_at: str | None,
+   216→    last_local_impl_event: str | None,
+   217→    last_local_impl_session: str | None,
+   218→    last_local_impl_user: str | None,
+   219→    last_remote_impl_at: str | None,
+   220→    last_remote_impl_run_id: str | None,
+   221→    last_remote_impl_session_id: str | None,
+   222→    source_repo: str | None,
+   223→    objective_issue: int | None,
+   224→    created_from_session: str | None,
+   225→    created_from_workflow_run_url: str | None,
+   226→    last_learn_session: str | None,
+   227→    last_learn_at: str | None,
+   228→    learn_status: LearnStatusValue | None,
+   229→    learn_plan_issue: int | None,
+   230→    learn_plan_pr: int | None,
+   231→    learned_from_issue: int | None,
+   232→    lifecycle_stage: str | None,
+   233→) -&gt; str:
+   234→    """Format issue body with only metadata (schema version 2).
+
+... [45 lines omitted] ...
+  </tool_result>
+  <assistant>This approach of modifying the PR body to include metadata headers is complex. Let me think about a simpler approach.
+
+Looking at both tests more carefully:
+
+1. **`test_creates_pr_and_shows_success`** — This test was previously the "happy path" that created a learn PR even with zero sessions. The test asserts `"No sessions discovered" in captured.err`. With my fix, zero sessions = early return = no PR. The simplest fix is to **add a session** to the test so it exercises the actual happy path.
+
+2. **`test_returns_state_after_creating_pr`** — Same situation.
+
+The cleanest approach: Instead of modifying the complex PR body metadata, I can monkeypatch `find_sessions_for_plan` to return a `SessionsForPlan` with at least one session ID. But I also need to look at how `_log_session_discovery` handles the session - it tries to read the session file, and when it's not found, it shows "(not found)" which is fine.
+
+Actually, the better approach for `test_land_learn.py` is straightforward since it already imports `SessionsForPlan` and uses a `PlannedPRBackend`. I can add a `created_from_session` header field to the PR body. Let me look at how `PlannedPRBackend.get_plan` parses the body:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1470" cache_read_input_tokens="59580" cache_creation="{'ephemeral_5m_input_tokens': 1470, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_011UkUqgmM4Tqy7tJV2FSLCE">
+    <param name="pattern">def get_plan</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1470" cache_read_input_tokens="59580" cache_creation="{'ephemeral_5m_input_tokens': 1470, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011UkUqgmM4Tqy7tJV2FSLCE">
+130:    def get_plan_for_branch(self, repo_root: Path, branch_name: str) -&gt; Plan | PlanNotFound:
+147:    def get_plan(self, repo_root: Path, plan_id: str) -&gt; Plan | PlanNotFound:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01LoN5b3Y4HgvXrt2FEFrkkE">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="offset">147</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="539" cache_read_input_tokens="61050" cache_creation="{'ephemeral_5m_input_tokens': 539, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LoN5b3Y4HgvXrt2FEFrkkE">
+   147→    def get_plan(self, repo_root: Path, plan_id: str) -&gt; Plan | PlanNotFound:
+   148→        """Fetch plan from a draft PR by PR number.
+   149→
+   150→        Args:
+   151→            repo_root: Repository root directory
+   152→            plan_id: PR number as string (e.g., "42")
+   153→
+   154→        Returns:
+   155→            Plan with converted data, or PlanNotFound if PR does not exist
+   156→        """
+   157→        pr_number = int(plan_id)
+   158→        result = self._github.get_pr(repo_root, pr_number)
+   159→        if isinstance(result, PRNotFound):
+   160→            return PlanNotFound(plan_id=plan_id)
+   161→        return self._convert_to_plan(result)
+   162→
+   163→    def get_comments(self, repo_root: Path, plan_id: str) -&gt; list[str]:
+   164→        """Get all comments on a plan's draft PR.
+   165→
+   166→        On GitHub, PR discussion comments share the same API as issue comments,
+   167→        so we delegate to GitHubIssues.get_issue_comments() with the PR number.
+   168→
+   169→        Args:
+   170→            repo_root: Repository root directory
+   171→            plan_id: PR number as string
+   172→
+   173→        Returns:
+   174→            List of comment body strings, ordered oldest to newest
+   175→        """
+   176→        pr_number = int(plan_id)
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01XevGgFP9xoFeCaRfoA3dt3">
+    <param name="pattern">def _convert_to_plan</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-A">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1022" cache_read_input_tokens="61589" cache_creation="{'ephemeral_5m_input_tokens': 1022, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XevGgFP9xoFeCaRfoA3dt3">
+622:    def _convert_to_plan(self, pr: PRDetails) -&gt; Plan:
+623-        """Convert PRDetails to Plan, extracting plan content from body.
+624-
+625-        Args:
+626-            pr: PRDetails from GitHub API
+627-
+628-        Returns:
+629-            Plan with plan content extracted from body
+630-        """
+631-        plan_body = extract_plan_content(pr.body)
+632-        plan = pr_details_to_plan(pr, plan_body=plan_body)
+633-
+634-        # If labels weren't in PRDetails, check via has_pr_label
+635-        return plan
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01RWBf1BJ9jhUe8DNbwuttvq">
+    <param name="pattern">def pr_details_to_plan</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-A">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="62611" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RWBf1BJ9jhUe8DNbwuttvq">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_019uHEXw9a1ZfrBHuguVY9ms">
+    <param name="pattern">def pr_details_to_plan</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-A">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="181" cache_read_input_tokens="62943" cache_creation="{'ephemeral_5m_input_tokens': 181, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019uHEXw9a1ZfrBHuguVY9ms">
+packages/erk-shared/src/erk_shared/plan_store/conversion.py:60:def pr_details_to_plan(pr: PRDetails, *, plan_body: str | None) -&gt; Plan:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/conversion.py-61-    """Convert PRDetails to Plan with pre-parsed header fields.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/conversion.py-62-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/conversion.py-63-    The PR body contains the plan-header metadata block followed by
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/conversion.py-64-    plan content. If plan_body is provided, it overrides the body
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/conversion.py-65-    content (used when plan content is extracted separately from the
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/conversion.py-66-    metadata block).
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/conversion.py-67-
+packages/erk-shared/src/erk_shared/plan_store/conversion.py-68-    Args:
+packages/erk-shared/src/erk_shared/plan_store/conversion.py-69-        pr: PRDetails from GitHub API
+packages/erk-shared/src/erk_shared/plan_store/conversion.py-70-        plan_body: Extracted plan content, or None to use pr.body
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/conversion.py-71-
+packages/erk-shared/src/erk_shared/plan_store/conversion.py-72-    Returns:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/conversion.py-73-        Plan with header_fields populated from plan-header block
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/conversion.py-74-    """
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/conversion.py-75-    state = PlanState.OPEN if pr.state == "OPEN" else PlanState.CLOSED
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/conversion.py-76-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/conversion.py-77-    # Parse plan-header block from PR body
+packages/erk-shared/src/erk_shared/plan_store/conversion.py-78-    header_fields: dict[str, object] = {}
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/conversion.py-79-    block = find_metadata_block(pr.body, "plan-header")
+packages/erk-shared/src/erk_shared/plan_store/conversion.py-80-    if block is not None:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/conversion.py-81-        header_fields = dict(block.data)
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/conversion.py-82-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/conversion.py-83-    # Extract objective_id from parsed header
+packages/erk-shared/src/erk_shared/plan_store/conversion.py-84-    objective_id: int | None = None
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/conversion.py-85-    raw_objective = header_fields.get(OBJECTIVE_ISSUE)
+packages/erk-shared/src/erk_shared/plan_store/conversion.py-86-    if isinstance(raw_objective, int):
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/conversion.py-87-        objective_id = raw_objective
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/conversion.py-88-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/conversion.py-89-    body = plan_body if plan_body is not None else pr.body
+
+... [11 lines omitted] ...
+  </tool_result>
+  <assistant>I see. The `plan-header` metadata block is parsed from `pr.body`. The test PRs have `body="Test body"` which has no `plan-header` metadata block, so `header_fields` will be empty, meaning `find_sessions_for_plan` returns no sessions.
+
+The simplest approach: I need to include a `plan-header` metadata block in the PR body with `created_from_session` set. Let me check the format of the metadata block:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2125" cache_read_input_tokens="63124" cache_creation="{'ephemeral_5m_input_tokens': 2125, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_015yX97MowM4vNyPhtphndVX">
+    <param name="pattern">def render_metadata_block|def create_plan_header_block</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2125" cache_read_input_tokens="63124" cache_creation="{'ephemeral_5m_input_tokens': 2125, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015yX97MowM4vNyPhtphndVX">
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py:66:def create_plan_header_block(
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py:56:def render_metadata_block(block: MetadataBlock) -&gt; str:
+  </tool_result>
+  <tool_use name="Read" id="toolu_0135w3efCZPfj7NayW3CxcZj">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py</param>
+    <param name="offset">56</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="352" cache_read_input_tokens="65249" cache_creation="{'ephemeral_5m_input_tokens': 352, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0135w3efCZPfj7NayW3CxcZj">
+    56→def render_metadata_block(block: MetadataBlock) -&gt; str:
+    57→    """
+    58→    Render a metadata block as markdown with HTML comment wrappers.
+    59→
+    60→    Returns markdown like:
+    61→    &lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+    62→    &lt;!-- erk:metadata-block:{key} --&gt;
+    63→    &lt;details&gt;
+    64→    &lt;summary&gt;{key}&lt;/summary&gt;
+    65→    ```yaml
+    66→    {yaml_content}
+    67→    ```
+    68→    &lt;/details&gt;
+    69→    &lt;!-- /erk:metadata-block --&gt;
+    70→    """
+    71→    yaml_content = yaml.safe_dump(
+    72→        block.data,
+    73→        default_flow_style=False,
+    74→        allow_unicode=True,
+    75→        sort_keys=False,
+    76→    )
+    77→
+    78→    # Remove trailing newline from YAML dump
+    79→    yaml_content = yaml_content.rstrip("\n")
+    80→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>OK, the simpler approach here is to just use `format_plan_header_body` to generate a proper PR body for the tests. But actually, the even simpler approach is to just monkeypatch `ctx.plan_backend.find_sessions_for_plan` in those tests to return sessions with at least one ID. But the test in `test_land_learn.py` calls `_create_learn_pr_impl` directly which calls `ctx.plan_backend.find_sessions_for_plan`.
+
+Let me take the most pragmatic approach: create a PR body that includes the metadata block. Let me find how existing tests do this:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="648" cache_read_input_tokens="65601" cache_creation="{'ephemeral_5m_input_tokens': 648, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_017RvTDV4bY3xzfJCjMmJ1sQ">
+    <param name="pattern">format_plan_header_body</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">3</param>
+    <param name="head_limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="648" cache_read_input_tokens="65601" cache_creation="{'ephemeral_5m_input_tokens': 648, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>
