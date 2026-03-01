@@ -410,8 +410,7 @@ class WorktreeScenario:
         global_config = GlobalConfig.test(
             self.erk_root,
             use_graphite=self._use_graphite,
-            shell_setup_complete=False,
-        cmux_integration=False)
+            shell_setup_complete=False)
 
         self.shell = FakeShell()
 

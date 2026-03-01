@@ -532,8 +532,7 @@ class ErkIsolatedFsEnv:
             global_config = GlobalConfig.test(
                 self.erk_root,
                 use_graphite=use_graphite,
-                shell_setup_complete=False,
-            cmux_integration=False)
+                shell_setup_complete=False)
 
         # Build and return context
         # Default cwd and script_writer to env values unless overridden in kwargs
@@ -981,8 +980,7 @@ class ErkInMemEnv:
             global_config = GlobalConfig.test(
                 self.erk_root,
                 use_graphite=use_graphite,
-                shell_setup_complete=False,
-            cmux_integration=False)
+                shell_setup_complete=False)
 
         # Build and return context
         # Default cwd and script_writer to env values unless overridden in kwargs

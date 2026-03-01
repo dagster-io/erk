@@ -15,8 +15,7 @@ def test_capability_add_installs_capability() -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(
-            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False, 
-        cmux_integration=False)
+            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False)
 
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -60,8 +59,7 @@ def test_capability_add_idempotent() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(
-            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False, 
-        cmux_integration=False)
+            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False)
 
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -84,8 +82,7 @@ def test_capability_add_unknown_name_fails() -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(
-            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False, 
-        cmux_integration=False)
+            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False)
 
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -108,8 +105,7 @@ def test_capability_add_multiple() -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(
-            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False, 
-        cmux_integration=False)
+            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False)
 
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -134,8 +130,7 @@ def test_capability_add_requires_repo() -> None:
         # FakeGit returns None for git_common_dir when not in a repo
         git_ops = FakeGit(git_common_dirs={})
         global_config = GlobalConfig.test(
-            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False, 
-        cmux_integration=False)
+            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False)
 
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -157,8 +152,7 @@ def test_capability_add_requires_at_least_one_name() -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(
-            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False, 
-        cmux_integration=False)
+            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False)
 
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -181,8 +175,7 @@ def test_capability_add_preflight_failure_blocks_install() -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(
-            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False, 
-        cmux_integration=False)
+            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False)
 
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -208,8 +201,7 @@ def test_capability_add_preflight_success_allows_install() -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(
-            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False, 
-        cmux_integration=False)
+            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False)
 
         erk_installation = FakeErkInstallation(config=global_config)
 

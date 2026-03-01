@@ -48,7 +48,7 @@ def test_launch_screen_builds_key_mapping_for_plan_view() -> None:
         pr_state="OPEN",
         run_url="https://github.com/test/repo/actions/runs/789",
     )
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=False)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     screen = LaunchScreen(ctx=ctx)
 
     # Key mapping is built in __init__, no need to call compose()
@@ -69,7 +69,7 @@ def test_launch_screen_builds_key_mapping_for_objectives_view() -> None:
         "Test Objective",
         plan_url="https://github.com/test/repo/issues/123",
     )
-    ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES, cmux_integration=False)
+    ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
     screen = LaunchScreen(ctx=ctx)
 
     # Should have objective action keys
@@ -90,7 +90,7 @@ def test_launch_screen_excludes_unavailable_commands() -> None:
         "Test Plan",
         plan_url="https://github.com/test/repo/issues/123",
     )
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=False)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     screen = LaunchScreen(ctx=ctx)
 
     # close_plan and dispatch_to_queue should be present (always available / needs plan_url)
@@ -113,7 +113,7 @@ def test_launch_screen_maps_command_ids_correctly() -> None:
         plan_url="https://github.com/test/repo/issues/123",
         pr_number=456,
     )
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=False)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     screen = LaunchScreen(ctx=ctx)
 
     assert screen._key_to_command_id["c"] == "close_plan"

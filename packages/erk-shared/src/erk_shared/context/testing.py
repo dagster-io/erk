@@ -206,7 +206,7 @@ def context_for_test(
         repo_info=repo_info,
         global_config=GlobalConfig.test(
             erk_root=Path("/fake/erk"),
-        cmux_integration=False),
+        ),
         local_config=resolved_local_config,
         package_info=package_info,
         http_client=FakeHttpClient(),

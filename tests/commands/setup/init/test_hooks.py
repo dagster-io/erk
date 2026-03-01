@@ -49,7 +49,6 @@ def test_init_auto_installs_hooks_when_missing() -> None:
             erk_root,
             use_graphite=False,
             shell_setup_complete=True,
-            cmux_integration=False,
         )
 
         erk_installation = FakeErkInstallation(config=global_config)
@@ -120,7 +119,6 @@ def test_init_skips_hooks_when_already_installed() -> None:
             erk_root,
             use_graphite=False,
             shell_setup_complete=True,
-            cmux_integration=False,
         )
 
         erk_installation = FakeErkInstallation(config=global_config)
@@ -150,7 +148,6 @@ def test_init_hooks_flag_removed() -> None:
             erk_root,
             use_graphite=False,
             shell_setup_complete=True,
-            cmux_integration=False,
         )
 
         erk_installation = FakeErkInstallation(config=global_config)
@@ -180,7 +177,6 @@ def test_init_syncs_artifacts_successfully() -> None:
             erk_root,
             use_graphite=False,
             shell_setup_complete=True,
-            cmux_integration=False,
         )
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -221,7 +217,6 @@ def test_init_shows_warning_on_artifact_sync_failure() -> None:
             erk_root,
             use_graphite=False,
             shell_setup_complete=True,
-            cmux_integration=False,
         )
         erk_installation = FakeErkInstallation(config=global_config)
 

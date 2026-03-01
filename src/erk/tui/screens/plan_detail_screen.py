@@ -231,7 +231,7 @@ class PlanDetailScreen(ModalScreen):
         repo_root: Path | None = None,
         auto_open_palette: bool = False,
         view_mode: ViewMode,
-        cmux_integration: bool,
+        cmux_integration: bool = False,
     ) -> None:
         """Initialize with plan row data.
 

@@ -91,17 +91,23 @@ def _display_copy_pr_checkout(ctx: CommandContext) -> str:
     """Display name for copy_pr_checkout command."""
     if ctx.row.pr_number:
         pr = ctx.row.pr_number
-        checkout_cmd = (
+        return (
             f'source "$(erk pr checkout {pr} --script --sync)" && gt submit --no-interactive'
         )
-        if ctx.cmux_integration and ctx.row.pr_head_branch:
-            branch = ctx.row.pr_head_branch
-            return (
-                f"WS=$(cmux new-workspace --command '{checkout_cmd}' | awk '{{print $2}}') && "
-                f'cmux rename-workspace --workspace "$WS" "{branch}"'
-            )
-        return checkout_cmd
     return "checkout"
+
+
+def _display_copy_cmux_sync(ctx: CommandContext) -> str:
+    """Display name for copy_cmux_sync command."""
+    pr = ctx.row.pr_number
+    branch = ctx.row.pr_head_branch
+    checkout_cmd = (
+        f'source "$(erk pr checkout {pr} --script --sync)" && gt submit --no-interactive'
+    )
+    return (
+        f"WS=$(cmux new-workspace --command '{checkout_cmd}' | awk '{{print $2}}') && "
+        f'cmux rename-workspace --workspace "$WS" "{branch}"'
+    )
 
 
 def _display_copy_implement_local(ctx: CommandContext) -> str:
@@ -347,6 +353,20 @@ def get_all_commands() -> list[CommandDefinition]:
             get_display_name=_display_copy_pr_checkout,
         ),
         CommandDefinition(
+            id="copy_cmux_sync",
+            name="cmux sync",
+            description="cmux sync",
+            category=CommandCategory.COPY,
+            shortcut="w",
+            is_available=lambda ctx: (
+                _is_plan_view(ctx)
+                and ctx.row.pr_number is not None
+                and ctx.row.pr_head_branch is not None
+                and ctx.cmux_integration
+            ),
+            get_display_name=_display_copy_cmux_sync,
+        ),
+        CommandDefinition(
             id="copy_implement_local",
             name="checkout && implement",
             description="implement",
@@ -477,7 +497,7 @@ def get_display_name(cmd: CommandDefinition, ctx: CommandContext) -> str:
 
 
 def get_copy_text(
-    command_id: str, row: PlanRowData, view_mode: ViewMode, *, cmux_integration: bool
+    command_id: str, row: PlanRowData, view_mode: ViewMode, *, cmux_integration: bool = False
 ) -> str | None:
     """Get the text to copy to clipboard for a command.
 

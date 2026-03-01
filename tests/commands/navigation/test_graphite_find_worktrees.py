@@ -51,8 +51,7 @@ def test_find_worktrees_containing_branch_no_match(tmp_path: Path) -> None:
     ctx = context_for_test(
         git=git_ops,
         global_config=GlobalConfig.test(
-            Path("/fake/erks"), use_graphite=False, shell_setup_complete=False, 
-        cmux_integration=False),
+            Path("/fake/erks"), use_graphite=False, shell_setup_complete=False),
         github=FakeGitHub(),
         graphite=graphite_ops,
         shell=FakeShell(),

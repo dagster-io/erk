@@ -44,7 +44,6 @@ def test_init_adds_env_to_gitignore() -> None:
             erk_root,
             use_graphite=False,
             shell_setup_complete=False,
-            cmux_integration=False,
         )
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -78,7 +77,6 @@ def test_init_skips_gitignore_entries_if_declined() -> None:
             erk_root,
             use_graphite=False,
             shell_setup_complete=False,
-            cmux_integration=False,
         )
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -113,7 +111,6 @@ def test_init_adds_erk_scratch_to_gitignore() -> None:
             erk_root,
             use_graphite=False,
             shell_setup_complete=True,
-            cmux_integration=False,
         )
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -146,7 +143,6 @@ def test_init_handles_missing_gitignore() -> None:
             erk_root,
             use_graphite=False,
             shell_setup_complete=False,
-            cmux_integration=False,
         )
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -178,7 +174,6 @@ def test_init_preserves_gitignore_formatting() -> None:
             erk_root,
             use_graphite=False,
             shell_setup_complete=True,
-            cmux_integration=False,
         )
         erk_installation = FakeErkInstallation(config=global_config)
 

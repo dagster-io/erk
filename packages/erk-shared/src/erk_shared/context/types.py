@@ -251,7 +251,7 @@ class GlobalConfig:
         show_hidden_commands: bool = False,
         prompt_learn_on_land: bool = True,
         shell_integration: bool = False,
-        cmux_integration: bool,
+        cmux_integration: bool = False,
         interactive_agent: InteractiveAgentConfig | None = None,
     ) -> GlobalConfig:
         """Create a GlobalConfig with sensible test defaults."""

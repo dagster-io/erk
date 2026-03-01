@@ -102,7 +102,6 @@ def test_returns_local_config_when_set(tmp_path: Path) -> None:
         global_config=GlobalConfig.test(
             tmp_path,
             prompt_learn_on_land=False,
-            cmux_integration=False,
         ),
         cwd=tmp_path,
     )
@@ -116,7 +115,6 @@ def test_falls_back_to_global_config_when_local_unset(tmp_path: Path) -> None:
         global_config=GlobalConfig.test(
             tmp_path,
             prompt_learn_on_land=False,
-            cmux_integration=False,
         ),
         cwd=tmp_path,
     )

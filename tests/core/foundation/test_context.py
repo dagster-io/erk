@@ -24,7 +24,6 @@ def test_context_initialization_and_attributes() -> None:
         Path("/tmp"),
         use_graphite=False,
         shell_setup_complete=False,
-        cmux_integration=False,
     )
 
     ctx = context_for_test(
@@ -51,7 +50,6 @@ def test_context_is_frozen() -> None:
         Path("/tmp"),
         use_graphite=False,
         shell_setup_complete=False,
-        cmux_integration=False,
     )
     ctx = context_for_test(
         git=FakeGit(),

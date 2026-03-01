@@ -151,7 +151,7 @@ class ErkDashApp(App):
         filters: PlanFilters,
         refresh_interval: float = 15.0,
         initial_sort: SortState | None = None,
-        cmux_integration: bool,
+        cmux_integration: bool = False,
     ) -> None:
         """Initialize the dashboard app.
 

@@ -161,7 +161,6 @@ def test_current_handles_missing_git_gracefully(tmp_path: Path) -> None:
         erk_root,
         use_graphite=False,
         shell_setup_complete=False,
-        cmux_integration=False,
     )
     global_config_ops = FakeErkInstallation(config=global_config)
 
@@ -214,7 +213,6 @@ def test_current_handles_nested_worktrees(tmp_path: Path) -> None:
         erk_root,
         use_graphite=False,
         shell_setup_complete=False,
-        cmux_integration=False,
     )
     global_config_ops = FakeErkInstallation(config=global_config)
 

@@ -32,7 +32,6 @@ def build_ctx(repo_root: Path | None, erk_root: Path, cwd: Path | None = None) -
         erk_root,
         use_graphite=False,
         shell_setup_complete=False,
-        cmux_integration=False,
     )
     return create_test_context(
         git=git_ops,

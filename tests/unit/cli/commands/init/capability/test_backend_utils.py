@@ -26,8 +26,7 @@ def test_resolve_backend_returns_claude_from_config() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         global_config = GlobalConfig.test(
-            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False, 
-        cmux_integration=False)
+            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False)
         ctx = env.build_context(
             git=FakeGit(git_common_dirs={}),
             erk_installation=FakeErkInstallation(config=global_config),
@@ -52,8 +51,7 @@ def test_resolve_backend_returns_codex_from_config() -> None:
             env.cwd / "fake-erks",
             use_graphite=False,
             shell_setup_complete=False,
-            interactive_agent=agent_config,
-        cmux_integration=False)
+            interactive_agent=agent_config)
         ctx = env.build_context(
             git=FakeGit(git_common_dirs={}),
             erk_installation=FakeErkInstallation(config=global_config),

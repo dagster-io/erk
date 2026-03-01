@@ -103,8 +103,7 @@ def test_create_prompt_executor_selects_codex_when_backend_is_codex() -> None:
             permission_mode="edits",
             dangerous=False,
             allow_dangerous=False,
-        ),
-    cmux_integration=False)
+        ))
 
     executor = create_prompt_executor(global_config=config, console=_test_console())
 
@@ -122,8 +121,7 @@ def test_create_prompt_executor_selects_claude_when_backend_is_claude() -> None:
             permission_mode="edits",
             dangerous=False,
             allow_dangerous=False,
-        ),
-    cmux_integration=False)
+        ))
 
     executor = create_prompt_executor(global_config=config, console=_test_console())
 

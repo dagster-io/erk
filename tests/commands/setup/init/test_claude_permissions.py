@@ -40,7 +40,6 @@ def test_init_offers_claude_permission_when_missing() -> None:
             erk_root,
             use_graphite=False,
             shell_setup_complete=True,
-            cmux_integration=False,
         )
 
         erk_installation = FakeErkInstallation(config=global_config)
@@ -82,7 +81,6 @@ def test_init_skips_claude_permission_when_already_configured() -> None:
             erk_root,
             use_graphite=False,
             shell_setup_complete=True,
-            cmux_integration=False,
         )
 
         erk_installation = FakeErkInstallation(config=global_config)
@@ -113,7 +111,6 @@ def test_init_skips_claude_permission_when_no_settings() -> None:
             erk_root,
             use_graphite=False,
             shell_setup_complete=True,
-            cmux_integration=False,
         )
 
         erk_installation = FakeErkInstallation(config=global_config)
@@ -148,7 +145,6 @@ def test_init_handles_declined_claude_permission() -> None:
             erk_root,
             use_graphite=False,
             shell_setup_complete=True,
-            cmux_integration=False,
         )
 
         erk_installation = FakeErkInstallation(config=global_config)
@@ -186,7 +182,6 @@ def test_init_handles_declined_write_confirmation() -> None:
             erk_root,
             use_graphite=False,
             shell_setup_complete=True,
-            cmux_integration=False,
         )
 
         erk_installation = FakeErkInstallation(config=global_config)
@@ -227,7 +222,6 @@ def test_init_accepts_default_on_empty_input_for_write_confirmation() -> None:
             erk_root,
             use_graphite=False,
             shell_setup_complete=True,
-            cmux_integration=False,
         )
 
         erk_installation = FakeErkInstallation(config=global_config)

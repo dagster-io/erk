@@ -37,7 +37,6 @@ def test_init_creates_config_at_erk_dir() -> None:
             erk_root,
             use_graphite=False,
             shell_setup_complete=False,
-            cmux_integration=False,
         )
 
         erk_installation = FakeErkInstallation(config=global_config)
@@ -78,7 +77,6 @@ def test_init_force_overwrites_existing_config() -> None:
             erk_root,
             use_graphite=False,
             shell_setup_complete=False,
-            cmux_integration=False,
         )
 
         erk_installation = FakeErkInstallation(config=global_config)
@@ -120,7 +118,6 @@ def test_init_skips_silently_when_already_erkified() -> None:
             erk_root,
             use_graphite=False,
             shell_setup_complete=True,
-            cmux_integration=False,
         )
 
         erk_installation = FakeErkInstallation(config=global_config)
@@ -153,8 +150,7 @@ def test_init_not_in_git_repo_fails() -> None:
         # Empty git_ops with cwd existing but no .git (simulating non-git directory)
         git_ops = FakeGit(existing_paths={env.cwd})
         global_config = GlobalConfig.test(
-            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False, 
-        cmux_integration=False)
+            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False)
 
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -181,7 +177,6 @@ def test_init_stepped_flow_shows_three_steps() -> None:
             erk_root,
             use_graphite=False,
             shell_setup_complete=True,
-            cmux_integration=False,
         )
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -218,7 +213,6 @@ def test_init_skips_project_setup_when_already_erkified() -> None:
             erk_root,
             use_graphite=False,
             shell_setup_complete=True,
-            cmux_integration=False,
         )
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -255,7 +249,6 @@ def test_init_force_overwrites_when_already_erkified() -> None:
             erk_root,
             use_graphite=False,
             shell_setup_complete=True,
-            cmux_integration=False,
         )
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -290,7 +283,6 @@ def test_init_upgrade_preserves_config_toml() -> None:
             erk_root,
             use_graphite=False,
             shell_setup_complete=True,
-            cmux_integration=False,
         )
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -330,7 +322,6 @@ def test_init_upgrade_adds_gitignore_entries() -> None:
             erk_root,
             use_graphite=False,
             shell_setup_complete=True,
-            cmux_integration=False,
         )
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -370,7 +361,6 @@ def test_init_upgrade_updates_version_file() -> None:
             erk_root,
             use_graphite=False,
             shell_setup_complete=True,
-            cmux_integration=False,
         )
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -399,7 +389,6 @@ def test_init_upgrade_on_fresh_repo_behaves_like_init() -> None:
             erk_root,
             use_graphite=False,
             shell_setup_complete=True,
-            cmux_integration=False,
         )
         erk_installation = FakeErkInstallation(config=global_config)
 
@@ -430,7 +419,6 @@ def test_init_step1_shows_repo_name() -> None:
             erk_root,
             use_graphite=False,
             shell_setup_complete=True,
-            cmux_integration=False,
         )
         erk_installation = FakeErkInstallation(config=global_config)
 

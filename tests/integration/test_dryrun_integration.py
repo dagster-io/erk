@@ -98,8 +98,7 @@ def test_dryrun_read_operations_still_work(tmp_path: Path) -> None:
     global_config_ops = GlobalConfig.test(
         tmp_path / "erks",
         use_graphite=False,
-        shell_setup_complete=False,
-    cmux_integration=False)
+        shell_setup_complete=False)
 
     # Wrap fakes in dry-run wrappers
     ctx = context_for_test(

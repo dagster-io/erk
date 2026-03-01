@@ -70,8 +70,7 @@ def setup_collector(
     global_config = GlobalConfig.test(
         Path("/fake/erks"),
         use_graphite=False,
-        shell_setup_complete=False,
-    cmux_integration=False)
+        shell_setup_complete=False)
     ctx = create_test_context(
         git=git_ops,
         github=FakeGitHub(),  # No longer provide PRs via GitHub
@@ -272,8 +271,7 @@ def test_github_pr_collector_is_available(
     global_config = GlobalConfig.test(
         Path("/fake/erks"),
         use_graphite=False,
-        shell_setup_complete=False,
-    cmux_integration=False)
+        shell_setup_complete=False)
     ctx = create_test_context(global_config=global_config)
     collector = GitHubPRCollector()
 

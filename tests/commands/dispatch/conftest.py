@@ -119,7 +119,6 @@ def setup_submit_context(
     global_config = GlobalConfig.test(
         erk_root=repo_dir,
         use_graphite=use_graphite,
-        cmux_integration=False,
     )
 
     # Create FakeConsole with confirm responses if provided
