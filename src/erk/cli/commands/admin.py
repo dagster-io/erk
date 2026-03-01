@@ -21,7 +21,7 @@ CLAUDE_CI_WORKFLOWS = (
     "one-shot",
     "plan-implement",
     "pr-address",
-    "pr-fix-conflicts",
+    "pr-rebase",
 )
 
 
@@ -333,7 +333,7 @@ def claude_ci(ctx: ErkContext, action: Literal["enable", "disable"] | None) -> N
       - one-shot
       - plan-implement
       - pr-address
-      - pr-fix-conflicts
+      - pr-rebase
     """
     repo = discover_repo_context(ctx, ctx.cwd)
 

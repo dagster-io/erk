@@ -45,7 +45,7 @@ GitHub Actions runs shell steps in **dash/sh** (POSIX standard), not bash. This 
 
 ## The Solution: File-Based Input Pattern
 
-<!-- Source: .github/workflows/pr-fix-conflicts.yml, Post status comment to PR step -->
+<!-- Source: .github/workflows/pr-rebase.yml, Post status comment to PR step -->
 
 Use `--body-file` with temporary file and `printf "%b"`:
 
@@ -56,7 +56,7 @@ gh pr comment "$PR_NUMBER" --body-file "$TEMP_FILE"
 rm "$TEMP_FILE"
 ```
 
-See the "Post status comment to PR" step in `.github/workflows/pr-fix-conflicts.yml` for production usage.
+See the "Post status comment to PR" step in `.github/workflows/pr-rebase.yml` for production usage.
 
 ### Why This Works
 

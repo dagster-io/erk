@@ -162,7 +162,7 @@ The `eval` + output pattern captures session info from an erk exec command. See 
 ## Real Implementation Examples
 
 <!-- Source: .github/workflows/plan-implement.yml -->
-<!-- Source: .github/workflows/pr-fix-conflicts.yml -->
+<!-- Source: .github/workflows/pr-rebase.yml -->
 
 See `.github/workflows/plan-implement.yml` for canonical patterns:
 
@@ -171,7 +171,7 @@ See `.github/workflows/plan-implement.yml` for canonical patterns:
 - **Exit code capture step**: Conditional boolean output from process results
 - **Session info capture step**: `eval` with environment variable export pattern
 
-See `.github/workflows/pr-fix-conflicts.yml` for heredoc pattern:
+See `.github/workflows/pr-rebase.yml` for heredoc pattern:
 
 - **Rebase output capture step**: Multi-line output using heredoc syntax
 

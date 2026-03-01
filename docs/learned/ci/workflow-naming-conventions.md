@@ -28,13 +28,13 @@ The `erk launch` command uses **identity mapping** between CLI names and workflo
 
 When a workflow is launchable via `erk launch`, three identifiers MUST match:
 
-1. **CLI command name**: `erk launch pr-fix-conflicts`
-2. **Workflow filename**: `.github/workflows/pr-fix-conflicts.yml`
-3. **Workflow YAML `name:` field**: `name: pr-fix-conflicts`
+1. **CLI command name**: `erk launch pr-rebase`
+2. **Workflow filename**: `.github/workflows/pr-rebase.yml`
+3. **Workflow YAML `name:` field**: `name: pr-rebase`
 
 **Why the `name:` field matters**: GitHub Actions uses this field for display in the UI and for workflow reference. Keeping it consistent with the CLI name ensures users see the same identifier everywhere.
 
-**Anti-pattern**: Using descriptive `name:` fields like `name: "PR Conflict Resolution"` breaks discoverability. When users see "pr-fix-conflicts" in the CLI, they expect to find a workflow with that exact name in GitHub's UI.
+**Anti-pattern**: Using descriptive `name:` fields like `name: "PR Conflict Resolution"` breaks discoverability. When users see "pr-rebase" in the CLI, they expect to find a workflow with that exact name in GitHub's UI.
 
 ## Adding New Launchable Workflows
 
@@ -74,7 +74,7 @@ WORKFLOW_COMMAND_MAP: dict[str, str] = {
 
 - Command was `erk workflow launch` (now `erk launch`)
 - Workflow files had different names than CLI commands:
-  - `erk-rebase.yml` (now `pr-fix-conflicts.yml`)
+  - `erk-rebase.yml` (now `pr-rebase.yml`)
   - `learn-dispatch.yml` (now `learn.yml`)
 
 These renames eliminated the translation layer. The map still exists but now only serves as an allowlist.
@@ -90,4 +90,4 @@ These renames eliminated the translation layer. The map still exists but now onl
 <!-- Source: src/erk/cli/commands/launch_cmd.py, launch command -->
 
 - The `erk launch` command implementation shows workflow-specific parameter handling
-- Each launchable workflow has a dedicated trigger function (`_trigger_pr_fix_conflicts`, `_trigger_learn`, etc.)
+- Each launchable workflow has a dedicated trigger function (`_trigger_pr_rebase`, `_trigger_learn`, etc.)

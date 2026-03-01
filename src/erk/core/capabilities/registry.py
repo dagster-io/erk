@@ -23,7 +23,7 @@ from erk.capabilities.workflows.erk_impl import ErkImplWorkflowCapability
 from erk.capabilities.workflows.learn import LearnWorkflowCapability
 from erk.capabilities.workflows.one_shot import OneShotWorkflowCapability
 from erk.capabilities.workflows.pr_address import PrAddressWorkflowCapability
-from erk.capabilities.workflows.pr_fix_conflicts import PrFixConflictsWorkflowCapability
+from erk.capabilities.workflows.pr_rebase import PrRebaseWorkflowCapability
 from erk.core.capabilities.base import Capability
 from erk_shared.context.types import AgentBackend
 
@@ -44,7 +44,7 @@ def _all_capabilities() -> tuple[Capability, ...]:
         LearnWorkflowCapability(),
         OneShotWorkflowCapability(),
         PrAddressWorkflowCapability(),
-        PrFixConflictsWorkflowCapability(),
+        PrRebaseWorkflowCapability(),
         DevrunAgentCapability(),
         ErkBashPermissionsCapability(),
         StatuslineCapability(claude_installation=None),

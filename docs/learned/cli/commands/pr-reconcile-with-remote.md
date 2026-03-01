@@ -45,7 +45,7 @@ This happens when:
 To disable the `--dangerous` flag requirement:
 
 ```bash
-erk config set fix_conflicts_require_dangerous_flag false
+erk config set rebase_require_dangerous_flag false
 ```
 
 This is useful for workflows where you've accepted the risk of Claude executing commands.
@@ -74,7 +74,7 @@ The command uses streaming output to show Claude's progress in real-time:
 
 ## Relationship to Other Commands
 
-- `erk pr fix-conflicts` - Fix conflicts in merge state (not divergence)
+- `erk pr rebase` - Fix conflicts in merge state (not divergence)
 - `gt submit` - What you retry after reconcile-with-remote succeeds
 - `/erk:reconcile-with-remote` - The slash command this wraps
 

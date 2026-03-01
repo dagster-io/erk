@@ -26,13 +26,13 @@ The primary workflow for resolving conflicts locally. Use this when you're in th
 **CLI command** (outside a Claude session):
 
 ```bash
-erk pr fix-conflicts --dangerous
+erk pr rebase --dangerous
 ```
 
 **Slash command** (inside a Claude Code session):
 
 ```
-/erk:fix-conflicts
+/erk:rebase
 ```
 
 Both invoke Claude to resolve conflicts. The `--dangerous` flag acknowledges that Claude will run with elevated permissions.
@@ -76,7 +76,7 @@ This commonly happens when:
 | Situation          | What It Means                             | Command to Use                 |
 | ------------------ | ----------------------------------------- | ------------------------------ |
 | Branch diverged    | Local and remote both have new commits    | `erk pr reconcile-with-remote` |
-| Rebase in progress | Conflict markers in files during a rebase | `erk pr fix-conflicts`         |
+| Rebase in progress | Conflict markers in files during a rebase | `erk pr rebase`                |
 
 ### Reconcile With Remote Command
 
@@ -123,13 +123,13 @@ Resolve conflicts without checking out the branch locally. A GitHub Actions work
 ### Command
 
 ```bash
-erk pr fix-conflicts-remote
+erk launch pr-rebase
 ```
 
 Or for a specific PR without being on the branch:
 
 ```bash
-erk pr fix-conflicts-remote 123
+erk launch pr-rebase 123
 ```
 
 ### What Happens
@@ -152,16 +152,16 @@ The workflow:
 
 ```bash
 # Basic usage - squash and rebase current branch's PR
-erk pr fix-conflicts-remote
+erk launch pr-rebase
 
 # Trigger rebase for a specific PR (without checking out)
-erk pr fix-conflicts-remote 123
+erk launch pr-rebase 123
 
 # Rebase without squashing
-erk pr fix-conflicts-remote --no-squash
+erk launch pr-rebase --no-squash
 
 # Use a specific model
-erk pr fix-conflicts-remote --model claude-sonnet-4-5
+erk launch pr-rebase --model claude-sonnet-4-5
 ```
 
 ### Requirements
@@ -189,7 +189,7 @@ When `master` advances, each branch in the stack may need rebasing. Conflicts re
 After landing a PR in a stack:
 
 1. `gt restack` attempts to rebase remaining branches
-2. If conflicts occur, resolve them with `/erk:fix-conflicts`
+2. If conflicts occur, resolve them with `/erk:rebase`
 3. After resolution, `gt restack` continues automatically
 4. Repeat until the entire stack is rebased
 

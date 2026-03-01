@@ -18,7 +18,7 @@ Claude Code slash commands for in-session use.
 
 ## Iteration Commands
 
-<!-- TODO: /quick-submit, /erk:auto-restack, /erk:fix-conflicts -->
+<!-- TODO: /quick-submit, /erk:auto-restack, /erk:rebase -->
 
 ## Navigation Commands
 

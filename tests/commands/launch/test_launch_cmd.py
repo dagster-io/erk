@@ -77,8 +77,8 @@ def test_workflow_launch_unknown_workflow(tmp_path: Path) -> None:
         assert "Unknown workflow 'unknown-workflow'" in result.output
 
 
-def test_workflow_launch_pr_fix_conflicts_triggers_workflow(tmp_path: Path) -> None:
-    """Test pr-fix-conflicts workflow trigger."""
+def test_workflow_launch_pr_rebase_triggers_workflow(tmp_path: Path) -> None:
+    """Test pr-rebase workflow trigger."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
@@ -103,7 +103,7 @@ def test_workflow_launch_pr_fix_conflicts_triggers_workflow(tmp_path: Path) -> N
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(cli, ["launch", "pr-fix-conflicts"], obj=ctx)
+        result = runner.invoke(cli, ["launch", "pr-rebase"], obj=ctx)
 
         assert result.exit_code == 0
         assert "PR #123" in result.output
@@ -114,15 +114,15 @@ def test_workflow_launch_pr_fix_conflicts_triggers_workflow(tmp_path: Path) -> N
         # Verify workflow was triggered with correct inputs
         assert len(github.triggered_workflows) == 1
         workflow, inputs = github.triggered_workflows[0]
-        assert workflow == WORKFLOW_COMMAND_MAP["pr-fix-conflicts"]
+        assert workflow == WORKFLOW_COMMAND_MAP["pr-rebase"]
         assert inputs["branch_name"] == "feature-branch"
         assert inputs["base_branch"] == "main"
         assert inputs["pr_number"] == "123"
         assert inputs["squash"] == "true"
 
 
-def test_workflow_launch_pr_fix_conflicts_with_pr_option(tmp_path: Path) -> None:
-    """Test pr-fix-conflicts with explicit --pr option."""
+def test_workflow_launch_pr_rebase_with_pr_option(tmp_path: Path) -> None:
+    """Test pr-rebase with explicit --pr option."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
@@ -147,7 +147,7 @@ def test_workflow_launch_pr_fix_conflicts_with_pr_option(tmp_path: Path) -> None
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(cli, ["launch", "pr-fix-conflicts", "--pr", "456"], obj=ctx)
+        result = runner.invoke(cli, ["launch", "pr-rebase", "--pr", "456"], obj=ctx)
 
         assert result.exit_code == 0
         assert "PR #456" in result.output
@@ -158,8 +158,8 @@ def test_workflow_launch_pr_fix_conflicts_with_pr_option(tmp_path: Path) -> None
         assert inputs["branch_name"] == "other-branch"
 
 
-def test_workflow_launch_pr_fix_conflicts_with_no_squash(tmp_path: Path) -> None:
-    """Test pr-fix-conflicts with --no-squash flag."""
+def test_workflow_launch_pr_rebase_with_no_squash(tmp_path: Path) -> None:
+    """Test pr-rebase with --no-squash flag."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
@@ -184,7 +184,7 @@ def test_workflow_launch_pr_fix_conflicts_with_no_squash(tmp_path: Path) -> None
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(cli, ["launch", "pr-fix-conflicts", "--no-squash"], obj=ctx)
+        result = runner.invoke(cli, ["launch", "pr-rebase", "--no-squash"], obj=ctx)
 
         assert result.exit_code == 0
 
@@ -591,7 +591,7 @@ def test_workflow_launch_one_shot_prompt_and_file_exclusive(tmp_path: Path) -> N
         assert "--prompt and --file are mutually exclusive" in result.output
 
 
-def test_workflow_launch_pr_fix_conflicts_closed_pr_fails(tmp_path: Path) -> None:
+def test_workflow_launch_pr_rebase_closed_pr_fails(tmp_path: Path) -> None:
     """Test error when PR is closed."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -617,7 +617,7 @@ def test_workflow_launch_pr_fix_conflicts_closed_pr_fails(tmp_path: Path) -> Non
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(cli, ["launch", "pr-fix-conflicts"], obj=ctx)
+        result = runner.invoke(cli, ["launch", "pr-rebase"], obj=ctx)
 
         assert result.exit_code == 1
         assert "Cannot rebase CLOSED PR" in result.output

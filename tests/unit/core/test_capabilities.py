@@ -22,7 +22,7 @@ from erk.capabilities.workflows.erk_impl import ErkImplWorkflowCapability
 from erk.capabilities.workflows.learn import LearnWorkflowCapability
 from erk.capabilities.workflows.one_shot import OneShotWorkflowCapability
 from erk.capabilities.workflows.pr_address import PrAddressWorkflowCapability
-from erk.capabilities.workflows.pr_fix_conflicts import PrFixConflictsWorkflowCapability
+from erk.capabilities.workflows.pr_rebase import PrRebaseWorkflowCapability
 from erk.core.capabilities.base import (
     Capability,
     CapabilityArtifact,
@@ -646,51 +646,51 @@ def test_pr_address_workflow_managed_artifacts() -> None:
 # =============================================================================
 
 
-def test_pr_fix_conflicts_workflow_capability_properties() -> None:
-    """Test PrFixConflictsWorkflowCapability has correct properties."""
-    cap = PrFixConflictsWorkflowCapability()
-    assert cap.name == "pr-fix-conflicts-workflow"
-    assert "conflict" in cap.description.lower()
-    assert "pr-fix-conflicts.yml" in cap.installation_check_description
+def test_pr_rebase_workflow_capability_properties() -> None:
+    """Test PrRebaseWorkflowCapability has correct properties."""
+    cap = PrRebaseWorkflowCapability()
+    assert cap.name == "pr-rebase-workflow"
+    assert "rebase" in cap.description.lower() or "rebasing" in cap.description.lower()
+    assert "pr-rebase.yml" in cap.installation_check_description
 
 
-def test_pr_fix_conflicts_workflow_artifacts() -> None:
-    """Test PrFixConflictsWorkflowCapability lists correct artifacts."""
-    cap = PrFixConflictsWorkflowCapability()
+def test_pr_rebase_workflow_artifacts() -> None:
+    """Test PrRebaseWorkflowCapability lists correct artifacts."""
+    cap = PrRebaseWorkflowCapability()
     artifacts = cap.artifacts
 
     assert len(artifacts) == 1
     paths = [a.path for a in artifacts]
-    assert ".github/workflows/pr-fix-conflicts.yml" in paths
+    assert ".github/workflows/pr-rebase.yml" in paths
 
 
-def test_pr_fix_conflicts_workflow_is_installed(tmp_path: Path) -> None:
+def test_pr_rebase_workflow_is_installed(tmp_path: Path) -> None:
     """Test workflow is_installed checks for workflow file."""
-    cap = PrFixConflictsWorkflowCapability()
+    cap = PrRebaseWorkflowCapability()
 
     # Not installed when workflow file missing
     assert cap.is_installed(tmp_path, backend="claude") is False
 
     # Installed when workflow file exists
     (tmp_path / ".github" / "workflows").mkdir(parents=True)
-    (tmp_path / ".github" / "workflows" / "pr-fix-conflicts.yml").write_text("", encoding="utf-8")
+    (tmp_path / ".github" / "workflows" / "pr-rebase.yml").write_text("", encoding="utf-8")
     assert cap.is_installed(tmp_path, backend="claude") is True
 
 
-def test_pr_fix_conflicts_workflow_capability_registered() -> None:
-    """Test that pr-fix-conflicts workflow capability is registered."""
-    cap = get_capability("pr-fix-conflicts-workflow")
+def test_pr_rebase_workflow_capability_registered() -> None:
+    """Test that pr-rebase workflow capability is registered."""
+    cap = get_capability("pr-rebase-workflow")
     assert cap is not None
-    assert cap.name == "pr-fix-conflicts-workflow"
+    assert cap.name == "pr-rebase-workflow"
 
 
-def test_pr_fix_conflicts_workflow_managed_artifacts() -> None:
-    """Test that PrFixConflictsWorkflowCapability declares its managed artifacts."""
-    cap = PrFixConflictsWorkflowCapability()
+def test_pr_rebase_workflow_managed_artifacts() -> None:
+    """Test that PrRebaseWorkflowCapability declares its managed artifacts."""
+    cap = PrRebaseWorkflowCapability()
     managed = cap.managed_artifacts
 
     assert len(managed) == 1
-    assert managed[0].name == "pr-fix-conflicts"
+    assert managed[0].name == "pr-rebase"
     assert managed[0].artifact_type == "workflow"
 
 

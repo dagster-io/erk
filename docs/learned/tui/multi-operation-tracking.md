@@ -48,7 +48,7 @@ Examples:
 - `"close-plan-123"` — closing plan #123
 - `"land-pr-456"` — landing PR #456
 - `"dispatch-plan-123"` — dispatching plan #123
-- `"fix-conflicts-pr-456"` — fixing conflicts for PR #456
+- `"rebase-pr-456"` — rebasing PR #456
 - `"address-pr-456"` — addressing PR #456
 
 The op ID uniquely identifies a concurrent operation. Multiple operations can run simultaneously; the status bar displays the most recently updated one.

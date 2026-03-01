@@ -237,15 +237,9 @@ rm "$TEMP_FILE"
 
 ### Real-World Example
 
-From `.github/workflows/pr-fix-conflicts.yml`:
+<!-- Source: .github/workflows/pr-rebase.yml, "Post PR comment" step -->
 
-```yaml
-BODY="## Conflict Resolution Failed\n\nRebase output:\n\`\`\`\n$REBASE_OUTPUT\n\`\`\`"
-TEMP_FILE=$(mktemp)
-printf "%b\n" "$BODY" > "$TEMP_FILE"
-gh pr comment "$PR_NUMBER" --body-file "$TEMP_FILE"
-rm "$TEMP_FILE"
-```
+See the "Post PR comment" step in `.github/workflows/pr-rebase.yml` for a real-world example. It uses `printf "%b"` (no trailing newline) to write a BODY variable to a temp file, then passes it via `--body-file` to `gh pr comment`.
 
 This pattern is especially important in CI where large content is common and shell behavior differs from local development (GitHub Actions uses dash/sh, not bash).
 

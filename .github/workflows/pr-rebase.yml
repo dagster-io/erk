@@ -1,4 +1,4 @@
-name: pr-fix-conflicts
+name: pr-rebase
 run-name: "rebase:${{ inputs.branch_name }}:${{ inputs.distinct_id }}"
 
 on:

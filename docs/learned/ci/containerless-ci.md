@@ -69,7 +69,7 @@ All current erk CI workflows use the containerless pattern:
 - `.github/workflows/code-reviews.yml` -- Uses `setup-claude-code` directly plus inline uv/erk steps (see [convention-based-reviews.md](convention-based-reviews.md))
 - `.github/workflows/plan-implement.yml` -- Uses `erk-remote-setup` composite action
 - `.github/workflows/pr-address.yml` -- Uses `erk-remote-setup` composite action
-- `.github/workflows/pr-fix-conflicts.yml` -- Uses `erk-remote-setup` composite action
+- `.github/workflows/pr-rebase.yml` -- Uses `erk-remote-setup` composite action
 - `.github/workflows/learn.yml` -- Uses `erk-remote-setup` composite action
 
 ## Troubleshooting

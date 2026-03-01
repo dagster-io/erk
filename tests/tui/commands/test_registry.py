@@ -254,7 +254,7 @@ def test_display_name_rebase_remote_shows_cli_command() -> None:
     row = make_plan_row(5831, "Test Plan", pr_number=456)
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     cmd = next(c for c in get_all_commands() if c.id == "rebase_remote")
-    assert get_display_name(cmd, ctx) == "erk launch pr-fix-conflicts --pr 456"
+    assert get_display_name(cmd, ctx) == "erk launch pr-rebase --pr 456"
 
 
 def test_display_name_open_issue_shows_bare_url() -> None:
@@ -470,7 +470,7 @@ def test_display_name_copy_rebase_remote_shows_cli_command() -> None:
     row = make_plan_row(5831, "Test Plan", pr_number=456)
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     cmd = next(c for c in get_all_commands() if c.id == "copy_rebase_remote")
-    assert get_display_name(cmd, ctx) == "erk launch pr-fix-conflicts --pr 456"
+    assert get_display_name(cmd, ctx) == "erk launch pr-rebase --pr 456"
 
 
 def test_display_name_copy_address_remote_shows_cli_command() -> None:

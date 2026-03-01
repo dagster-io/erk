@@ -1,4 +1,4 @@
-"""Tests for erk pr fix-conflicts command."""
+"""Tests for erk pr rebase command."""
 
 from click.testing import CliRunner
 
@@ -10,8 +10,8 @@ from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
-def test_pr_fix_conflicts_success() -> None:
-    """Test successful fix-conflicts when conflicts exist."""
+def test_pr_rebase_success() -> None:
+    """Test successful rebase."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
@@ -20,26 +20,25 @@ def test_pr_fix_conflicts_success() -> None:
             default_branches={env.cwd: "main"},
             trunk_branches={env.cwd: "main"},
             current_branches={env.cwd: "feature-branch"},
-            conflicted_files=["src/file.py"],  # Has conflicts
         )
 
         executor = FakePromptExecutor(available=True)
 
         ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
-        result = runner.invoke(pr_group, ["fix-conflicts", "--dangerous"], obj=ctx)
+        result = runner.invoke(pr_group, ["rebase", "--dangerous"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Conflicts resolved!" in result.output
+        assert "Rebase complete!" in result.output
 
-        # Claude should be invoked for conflict resolution
+        # Claude should be invoked for rebase
         assert len(executor.executed_commands) == 1
         command, _, dangerous_flag, _, _ = executor.executed_commands[0]
-        assert command == "/erk:fix-conflicts"
+        assert command == "/erk:rebase"
         assert dangerous_flag is True
 
 
-def test_pr_fix_conflicts_requires_dangerous_flag() -> None:
+def test_pr_rebase_requires_dangerous_flag() -> None:
     """Test that command fails when --dangerous flag is not provided (default config)."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -49,22 +48,21 @@ def test_pr_fix_conflicts_requires_dangerous_flag() -> None:
             default_branches={env.cwd: "main"},
             trunk_branches={env.cwd: "main"},
             current_branches={env.cwd: "feature-branch"},
-            conflicted_files=["src/file.py"],
         )
 
         executor = FakePromptExecutor(available=True)
 
         ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
-        result = runner.invoke(pr_group, ["fix-conflicts"], obj=ctx)
+        result = runner.invoke(pr_group, ["rebase"], obj=ctx)
 
         assert result.exit_code != 0
         assert "Missing option '--dangerous'" in result.output
         # Verify error message includes config hint
-        assert "fix_conflicts_require_dangerous_flag false" in result.output
+        assert "rebase_require_dangerous_flag false" in result.output
 
 
-def test_pr_fix_conflicts_skip_dangerous_with_config() -> None:
+def test_pr_rebase_skip_dangerous_with_config() -> None:
     """Test that --dangerous flag is not required when config disables requirement."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -74,15 +72,14 @@ def test_pr_fix_conflicts_skip_dangerous_with_config() -> None:
             default_branches={env.cwd: "main"},
             trunk_branches={env.cwd: "main"},
             current_branches={env.cwd: "feature-branch"},
-            conflicted_files=["src/file.py"],  # Has conflicts
         )
 
         executor = FakePromptExecutor(available=True)
 
-        # Create GlobalConfig with fix_conflicts_require_dangerous_flag=False
+        # Create GlobalConfig with rebase_require_dangerous_flag=False
         global_config = GlobalConfig.test(
             env.erk_root,
-            fix_conflicts_require_dangerous_flag=False,  # Disable --dangerous requirement
+            rebase_require_dangerous_flag=False,  # Disable --dangerous requirement
         )
 
         ctx = build_workspace_test_context(
@@ -93,40 +90,14 @@ def test_pr_fix_conflicts_skip_dangerous_with_config() -> None:
         )
 
         # Invoke WITHOUT --dangerous flag
-        result = runner.invoke(pr_group, ["fix-conflicts"], obj=ctx)
+        result = runner.invoke(pr_group, ["rebase"], obj=ctx)
 
         # Should succeed without --dangerous when config disables requirement
         assert result.exit_code == 0
-        assert "Conflicts resolved!" in result.output
+        assert "Rebase complete!" in result.output
 
 
-def test_pr_fix_conflicts_no_conflicts() -> None:
-    """Test early exit when no conflicts detected."""
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature-branch"]},
-            default_branches={env.cwd: "main"},
-            trunk_branches={env.cwd: "main"},
-            current_branches={env.cwd: "feature-branch"},
-            conflicted_files=[],  # No conflicts
-        )
-
-        executor = FakePromptExecutor(available=True)
-
-        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
-
-        result = runner.invoke(pr_group, ["fix-conflicts", "--dangerous"], obj=ctx)
-
-        assert result.exit_code == 0
-        assert "No merge conflicts detected" in result.output
-
-        # Claude should NOT be invoked (no conflicts to resolve)
-        assert len(executor.executed_commands) == 0
-
-
-def test_pr_fix_conflicts_claude_not_available() -> None:
+def test_pr_rebase_claude_not_available() -> None:
     """Test error when Claude is not installed."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -136,14 +107,13 @@ def test_pr_fix_conflicts_claude_not_available() -> None:
             default_branches={env.cwd: "main"},
             trunk_branches={env.cwd: "main"},
             current_branches={env.cwd: "feature-branch"},
-            conflicted_files=["src/file.py"],  # Has conflicts
         )
 
         executor = FakePromptExecutor(available=False)
 
         ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
-        result = runner.invoke(pr_group, ["fix-conflicts", "--dangerous"], obj=ctx)
+        result = runner.invoke(pr_group, ["rebase", "--dangerous"], obj=ctx)
 
         assert result.exit_code != 0
         assert "Claude CLI is required" in result.output
@@ -153,7 +123,7 @@ def test_pr_fix_conflicts_claude_not_available() -> None:
         assert len(executor.executed_commands) == 0
 
 
-def test_pr_fix_conflicts_aborts_on_semantic_conflict() -> None:
+def test_pr_rebase_aborts_on_semantic_conflict() -> None:
     """Test that command aborts when Claude prompts for user input (semantic conflict)."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -163,7 +133,6 @@ def test_pr_fix_conflicts_aborts_on_semantic_conflict() -> None:
             default_branches={env.cwd: "main"},
             trunk_branches={env.cwd: "main"},
             current_branches={env.cwd: "feature-branch"},
-            conflicted_files=["src/file.py"],  # Has conflicts
         )
 
         # Simulate Claude using AskUserQuestion tool (semantic conflict)
@@ -174,16 +143,16 @@ def test_pr_fix_conflicts_aborts_on_semantic_conflict() -> None:
 
         ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
-        result = runner.invoke(pr_group, ["fix-conflicts", "--dangerous"], obj=ctx)
+        result = runner.invoke(pr_group, ["rebase", "--dangerous"], obj=ctx)
 
         # Should fail with semantic conflict message
         assert result.exit_code != 0
         assert "Semantic conflict detected" in result.output
         assert "interactive resolution" in result.output
-        assert "claude /erk:fix-conflicts" in result.output
+        assert "claude /erk:rebase" in result.output
 
 
-def test_pr_fix_conflicts_fails_on_command_error() -> None:
+def test_pr_rebase_fails_on_command_error() -> None:
     """Test that command fails when slash command execution fails."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -193,7 +162,6 @@ def test_pr_fix_conflicts_fails_on_command_error() -> None:
             default_branches={env.cwd: "main"},
             trunk_branches={env.cwd: "main"},
             current_branches={env.cwd: "feature-branch"},
-            conflicted_files=["src/file.py"],  # Has conflicts
         )
 
         executor = FakePromptExecutor(
@@ -203,14 +171,14 @@ def test_pr_fix_conflicts_fails_on_command_error() -> None:
 
         ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
-        result = runner.invoke(pr_group, ["fix-conflicts", "--dangerous"], obj=ctx)
+        result = runner.invoke(pr_group, ["rebase", "--dangerous"], obj=ctx)
 
         assert result.exit_code != 0
         # Error message from FakePromptExecutor
         assert "failed" in result.output.lower()
 
 
-def test_pr_fix_conflicts_fails_when_no_work_events() -> None:
+def test_pr_rebase_fails_when_no_work_events() -> None:
     """Test that command fails when Claude completes but produces no work events."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -220,7 +188,6 @@ def test_pr_fix_conflicts_fails_when_no_work_events() -> None:
             default_branches={env.cwd: "main"},
             trunk_branches={env.cwd: "main"},
             current_branches={env.cwd: "feature-branch"},
-            conflicted_files=["src/file.py"],  # Has conflicts
         )
 
         # Simulate Claude completing but emitting no work events
@@ -231,7 +198,7 @@ def test_pr_fix_conflicts_fails_when_no_work_events() -> None:
 
         ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
-        result = runner.invoke(pr_group, ["fix-conflicts", "--dangerous"], obj=ctx)
+        result = runner.invoke(pr_group, ["rebase", "--dangerous"], obj=ctx)
 
         # Should fail due to no work events
         assert result.exit_code != 0

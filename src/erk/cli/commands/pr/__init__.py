@@ -10,9 +10,9 @@ from erk.cli.commands.pr.close_cmd import pr_close
 from erk.cli.commands.pr.create_cmd import pr_create
 from erk.cli.commands.pr.dispatch_cmd import pr_dispatch
 from erk.cli.commands.pr.duplicate_check_cmd import duplicate_check_plan
-from erk.cli.commands.pr.fix_conflicts_cmd import fix_conflicts
 from erk.cli.commands.pr.list_cmd import pr_list
 from erk.cli.commands.pr.log_cmd import pr_log
+from erk.cli.commands.pr.rebase_cmd import rebase
 from erk.cli.commands.pr.reconcile_with_remote_cmd import pr_reconcile_with_remote
 from erk.cli.commands.pr.replan_cmd import pr_replan
 from erk.cli.commands.pr.rewrite_cmd import pr_rewrite
@@ -33,7 +33,7 @@ pr_group.add_command(pr_close, name="close")
 pr_group.add_command(pr_create, name="create")
 pr_group.add_command(pr_dispatch, name="dispatch")
 pr_group.add_command(duplicate_check_plan, name="duplicate-check")
-pr_group.add_command(fix_conflicts, name="fix-conflicts")
+pr_group.add_command(rebase, name="rebase")
 pr_group.add_command(pr_list, name="list")
 pr_group.add_command(pr_log, name="log")
 pr_group.add_command(pr_replan, name="replan")

@@ -8,9 +8,8 @@ read_when:
 title: Workflow Commands
 tripwires:
   - action: WORKFLOW_COMMAND_MAP maps command names to .yml filenames
-    warning:
-      command names intentionally diverge from filenames (e.g., pr-fix-conflicts
-      → pr-fix-conflicts.yml, but plan-implement → plan-implement.yml via DISPATCH_WORKFLOW_NAME
+    warning: command names intentionally diverge from filenames (e.g., pr-rebase
+      → pr-rebase.yml, but plan-implement → plan-implement.yml via DISPATCH_WORKFLOW_NAME
       constant)
   - action:
       plan-implement exists in WORKFLOW_COMMAND_MAP but erk launch plan-implement
@@ -28,18 +27,18 @@ tripwires:
 
 ### Why a Unified Launcher
 
-`erk launch` consolidates all GitHub Actions workflow triggers behind a single command instead of scattering them across subcommand groups (e.g., `erk pr fix-conflicts-remote`, `erk workflow launch`). This was a deliberate migration away from the old pattern where each remote operation had its own command in the relevant noun group.
+`erk launch` consolidates all GitHub Actions workflow triggers behind a single command instead of scattering them across subcommand groups (e.g., `erk pr rebase-remote`, `erk workflow launch`). This was a deliberate migration away from the old pattern where each remote operation had its own command in the relevant noun group.
 
 The trade-off: the launcher uses a flat option namespace shared across all workflows (`--pr`, `--issue`, `--objective`, `--model`, `--no-squash`, `--dry-run`), with per-workflow validation enforcing which options are required. This avoids Click subcommand proliferation but means invalid option combinations are caught at runtime, not by the CLI framework.
 
 ### Local vs Remote Duality
 
-Two operations have both local and remote variants — `pr fix-conflicts` and `pr address`. The local commands live under `erk pr` and invoke Claude CLI directly (requiring `--dangerous` flag). The remote commands are accessed via `erk launch` and trigger GitHub Actions workflows instead.
+Two operations have both local and remote variants — `pr rebase` and `pr address`. The local commands live under `erk pr` and invoke Claude CLI directly (requiring `--dangerous` flag). The remote commands are accessed via `erk launch` and trigger GitHub Actions workflows instead.
 
-<!-- Source: src/erk/cli/commands/pr/fix_conflicts_cmd.py, fix_conflicts -->
+<!-- Source: src/erk/cli/commands/pr/rebase_cmd.py, rebase -->
 <!-- Source: src/erk/cli/commands/pr/address_cmd.py, address -->
 
-The local variants reference the remote alternatives in their help text, creating discoverability in both directions. See `fix_conflicts()` in `src/erk/cli/commands/pr/fix_conflicts_cmd.py` and `address()` in `src/erk/cli/commands/pr/address_cmd.py`.
+The local variants reference the remote alternatives in their help text, creating discoverability in both directions. See `rebase()` in `src/erk/cli/commands/pr/rebase_cmd.py` and `address()` in `src/erk/cli/commands/pr/address_cmd.py`.
 
 ### Why plan-implement Is Blocked
 
@@ -57,11 +56,11 @@ When adding a workflow to `erk launch`:
 <!-- Source: src/erk/cli/constants.py, WORKFLOW_COMMAND_MAP -->
 <!-- Source: src/erk/cli/commands/launch_cmd.py, launch -->
 
-The handler functions follow a consistent pattern: validate inputs → fetch context from GitHub → build `inputs: dict[str, str]` → call `ctx.github.trigger_workflow()`. See `_trigger_pr_fix_conflicts()` and `_trigger_pr_address()` in `src/erk/cli/commands/launch_cmd.py` for the canonical examples.
+The handler functions follow a consistent pattern: validate inputs → fetch context from GitHub → build `inputs: dict[str, str]` → call `ctx.github.trigger_workflow()`. See `_trigger_pr_rebase()` and `_trigger_pr_address()` in `src/erk/cli/commands/launch_cmd.py` for the canonical examples.
 
 ## Plan Dispatch Metadata Side Effect
 
-PR-related workflows (`pr-fix-conflicts`, `pr-address`) have an automatic side effect: after triggering the workflow, they call `maybe_update_plan_dispatch_metadata()` which checks if the branch name follows the `P{issue_number}-*` pattern. If so, it writes dispatch metadata (run ID, node ID, timestamp) back to the associated plan issue body.
+PR-related workflows (`pr-rebase`, `pr-address`) have an automatic side effect: after triggering the workflow, they call `maybe_update_plan_dispatch_metadata()` which checks if the branch name follows the `P{issue_number}-*` pattern. If so, it writes dispatch metadata (run ID, node ID, timestamp) back to the associated plan issue body.
 
 <!-- Source: src/erk/cli/commands/pr/metadata_helpers.py, maybe_update_plan_dispatch_metadata -->
 
@@ -71,7 +70,7 @@ This is a cross-cutting concern — the launch command doesn't know about plans,
 
 **DON'T trigger plan-implement via `erk launch`** — always use `erk pr submit`, which handles the full branch + PR + metadata setup sequence.
 
-**DON'T add workflow-specific subcommands under noun groups** — use `erk launch <name>` for all remote workflow triggers. The old pattern (`erk pr fix-conflicts-remote`) was migrated away from intentionally.
+**DON'T add workflow-specific subcommands under noun groups** — use `erk launch <name>` for all remote workflow triggers. The old pattern (`erk pr rebase-remote`) was migrated away from intentionally.
 
 **DON'T hardcode workflow filenames in handler functions** — always resolve through `WORKFLOW_COMMAND_MAP` via `_get_workflow_file()`, even inside the handler that "knows" its own workflow name. This keeps the mapping authoritative.
 

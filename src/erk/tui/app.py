@@ -815,7 +815,7 @@ class ErkDashApp(App):
         """Dispatch rebase workflow in background thread with toast."""
         result = self._run_streaming_operation(
             op_id=op_id,
-            command=["erk", "launch", "pr-fix-conflicts", "--pr", str(pr_number)],
+            command=["erk", "launch", "pr-rebase", "--pr", str(pr_number)],
         )
         self.call_from_thread(self._finish_operation, op_id=op_id)
         if result.success:
