@@ -53,7 +53,7 @@ Plan and objective commands safely reuse the same keyboard shortcuts because the
 | -------- | ----------------- | ----------------------- |
 | `s`      | Dispatch to Queue | Implement (One-Shot)    |
 | `5`      | Rebase Remote     | Check Objective         |
-| `i`      | Open Issue        | Open Objective          |
+| `p`      | Open Issue        | Open Objective          |
 | `1`      | Copy Prepare      | Copy Implement          |
 | `3`      | Copy Dispatch     | Copy View               |
 
@@ -70,7 +70,7 @@ Six objective commands are registered, spanning all three categories:
 | `one_shot_plan`   | ACTION   | `s`      | `erk objective plan N --one-shot` |
 | `check_objective` | ACTION   | `5`      | `erk objective check N`           |
 | `close_objective` | ACTION   | —        | `erk objective close N --force`   |
-| `open_objective`  | OPEN     | `i`      | Issue URL or "Objective"          |
+| `open_objective`  | OPEN     | `p`      | Issue URL or "Objective"          |
 | `copy_plan`       | COPY     | `1`      | `erk objective plan N`            |
 | `copy_view`       | COPY     | `3`      | `erk objective view N`            |
 

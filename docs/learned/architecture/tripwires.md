@@ -246,6 +246,8 @@ Rules triggered by matching actions in code.
 
 **querying plans by base label erk-planned-pr instead of type-specific labels** → Read [GitHub GraphQL Label Semantics](github-graphql-label-semantics.md) first. Query by type-specific labels (erk-plan, erk-learn) not base label. AND semantics means querying erk-planned-pr + erk-plan returns only items with both, which may silently exclude items.
 
+**re-exporting symbols from **init**.py after splitting a module** → Read [Monolith-to-Subpackage Refactoring Pattern](monolith-to-subpackage-pattern.md) first. No re-exports. Each submodule has a canonical import path. The **init**.py is an orchestrator, not a facade.
+
 **reading agent output with TaskOutput then writing it to a file with Write** → Read [Context Efficiency Patterns](context-efficiency.md) first. This is the 'content relay' anti-pattern — it causes 2x context duplication. Instead, have agents accept an output_path parameter and write directly. See /erk:learn for the canonical implementation.
 
 **reading from or writing to ~/.claude/ paths using Path.home() directly** [pattern: `Path\.home\(\).*\.claude`] → Read [ClaudeInstallation Gateway](claude-installation-gateway.md) first. Use ClaudeInstallation gateway instead. All ~/.claude/ filesystem operations must go through this gateway for testability and storage abstraction.
@@ -351,6 +353,8 @@ Rules triggered by matching actions in code.
 **using two-dot syntax (branch..HEAD) in git diff** → Read [Git Operation Patterns](git-operation-patterns.md) first. git diff comparisons MUST use three-dot (branch...HEAD) to diff from merge-base. Two-dot is correct for git rev-list but WRONG for git diff.
 
 **using unquoted heredoc delimiters (<<EOF) when the body contains $, \, or backticks** [pattern: `<<\s*EOF\b`] → Read [Heredoc Quoting and Escaping in Agent-Generated Bash](bash-python-integration.md) first. bash silently expands them
+
+**using wildcard imports in the orchestrator **init**.py** → Read [Monolith-to-Subpackage Refactoring Pattern](monolith-to-subpackage-pattern.md) first. Use explicit imports for every submodule function. The import list doubles as a module index.
 
 **validating object fields at every callsite instead of at construction** → Read [Erk Architecture Patterns](erk-architecture.md) first. Validate at the single construction point (factory/reader function). Callers should trust returned objects without re-validation. This is the construction boundary principle.
 

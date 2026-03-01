@@ -38,11 +38,15 @@ Rules triggered by matching actions in code.
 
 **adding a new CI job that invokes Claude without checking CLAUDE_ENABLED** → Read [Claude Kill Switch](claude-kill-switch.md) first. All Claude CI jobs must check vars.CLAUDE_ENABLED != 'false' before invoking Claude. See claude-kill-switch.md.
 
+**adding a new CI job without including fix-formatting in its needs list** → Read [CI Job Ordering Strategy](job-ordering-strategy.md) first. All validation jobs must depend on both check-submission and fix-formatting. Without fix-formatting, the job may run against unformatted code and fail unnecessarily.
+
 **adding a test job to autofix's needs list** → Read [Autofix Job Needs](autofix-job-needs.md) first. Test jobs (unit-tests, integration-tests) must NEVER block autofix. Only jobs whose failures can be auto-resolved (format, lint, prettier, docs-check, ty) should be dependencies. Adding test jobs creates a deadlock: tests fail → autofix blocked → format/lint issues never fixed → developer must manually fix both.
 
 **adding new Claude-dependent exec scripts to workflows** → Read [Exec Script Environment Requirements](exec-script-environment-requirements.md) first. Check workflow environment: ANTHROPIC_API_KEY, GH_TOKEN, CLAUDE_CODE_OAUTH_TOKEN
 
 **adding or modifying exec scripts that use require_prompt_executor()** → Read [Exec Script Environment Requirements](exec-script-environment-requirements.md) first. Ensure workflow step has ANTHROPIC_API_KEY in environment. See exec-script-environment-requirements.md
+
+**adding test jobs to autofix's needs list** → Read [CI Job Ordering Strategy](job-ordering-strategy.md) first. Autofix only depends on auto-fixable jobs (format, lint, docs-check, ty). Adding test jobs creates a deadlock. See autofix-job-needs.md.
 
 **asking devrun agent to fix errors** → Read [CI Iteration Pattern with devrun Agent](ci-iteration.md) first. devrun is READ-ONLY. Never prompt with 'fix errors' or 'make tests pass'. Use pattern: 'Run command and report results', then parent agent fixes based on output.
 

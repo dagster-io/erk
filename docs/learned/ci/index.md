@@ -29,6 +29,7 @@
 - **[github-commit-indexing-timing.md](github-commit-indexing-timing.md)** — working with GitHub commit status API, debugging 422 'No commit found for SHA' errors, implementing CI verification workflows
 - **[github-token-scopes.md](github-token-scopes.md)** — deciding which token to use in GitHub Actions workflows, encountering permission errors with github.token, understanding why gist creation or user API calls fail
 - **[gitignored-directory-commit-patterns.md](gitignored-directory-commit-patterns.md)** — working with .erk/impl-context/ in CI workflows, force-adding gitignored files in GitHub Actions, debugging why .erk/impl-context/ appears in PR diffs
+- **[job-ordering-strategy.md](job-ordering-strategy.md)** — modifying CI job dependencies, adding new CI jobs, understanding fix-formatting gating, debugging why CI restarted after a push
 - **[label-rename-checklist.md](label-rename-checklist.md)** — renaming a GitHub label used in CI automation, updating label references across the codebase, debugging why CI label checks aren't working after a rename
 - **[learn-ci-environment-detection.md](learn-ci-environment-detection.md)** — running /erk:learn in CI, understanding CI vs interactive mode differences, debugging learn workflow in GitHub Actions
 - **[makefile-prettier-ignore-path.md](makefile-prettier-ignore-path.md)** — creating .prettierignore file, adding patterns to exclude files from Prettier, debugging why .prettierignore has no effect
