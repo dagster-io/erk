@@ -4,8 +4,9 @@ from pathlib import Path
 
 import pytest
 
-from erk.tui.app import ErkDashApp, PlanDetailScreen
+from erk.tui.app import ErkDashApp
 from erk.tui.data.types import PlanFilters
+from erk.tui.screens.plan_detail_screen import PlanDetailScreen
 from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
 
 

@@ -3,8 +3,9 @@
 import pytest
 from textual.widgets import Markdown
 
-from erk.tui.app import ErkDashApp, PlanBodyScreen
+from erk.tui.app import ErkDashApp
 from erk.tui.data.types import PlanFilters
+from erk.tui.screens.plan_body_screen import PlanBodyScreen
 from erk.tui.views.types import ViewMode
 from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
 

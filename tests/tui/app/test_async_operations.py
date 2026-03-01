@@ -4,8 +4,10 @@ from pathlib import Path
 
 import pytest
 
-from erk.tui.app import ErkDashApp, _extract_learn_plan_number, _OperationResult
+from erk.tui.app import ErkDashApp
 from erk.tui.data.types import PlanFilters
+from erk.tui.operations.logic import extract_learn_plan_number
+from erk.tui.operations.types import OperationResult
 from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
 
 
@@ -498,34 +500,34 @@ class TestLandPrAsync:
 
 
 class TestExtractLearnPlanNumber:
-    """Tests for _extract_learn_plan_number helper."""
+    """Tests for extract_learn_plan_number helper."""
 
     def test_extracts_number_from_output(self) -> None:
         """Should extract learn plan number when present in output."""
-        result = _OperationResult(
+        result = OperationResult(
             success=True,
             output_lines=("Some output", "Created learn plan #1234", "Done"),
             return_code=0,
         )
-        assert _extract_learn_plan_number(result) == 1234
+        assert extract_learn_plan_number(result) == 1234
 
     def test_returns_none_when_not_present(self) -> None:
         """Should return None when no learn plan line in output."""
-        result = _OperationResult(
+        result = OperationResult(
             success=True,
             output_lines=("Some output", "Done"),
             return_code=0,
         )
-        assert _extract_learn_plan_number(result) is None
+        assert extract_learn_plan_number(result) is None
 
     def test_extracts_from_middle_of_line(self) -> None:
         """Should extract number even when text surrounds the pattern."""
-        result = _OperationResult(
+        result = OperationResult(
             success=True,
             output_lines=("Info: Created learn plan #5678 successfully",),
             return_code=0,
         )
-        assert _extract_learn_plan_number(result) == 5678
+        assert extract_learn_plan_number(result) == 5678
 
 
 class TestDispatchToQueueAsync:
