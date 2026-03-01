@@ -52,7 +52,7 @@ Some files are auto-generated (e.g., `tripwires.md`, `index.md`). For these:
 
 ## Mid-Rebase Recovery with `erk pr rebase`
 
-`erk pr rebase` (and the `/erk:rebase` slash command) can resolve conflicts in a rebase that is already in progress. If you started a `git rebase` manually and hit conflicts you can't resolve, run `erk pr rebase --dangerous` to have Claude pick up where you left off. It will detect the in-progress rebase, resolve the conflicted files, and continue the rebase to completion.
+`erk pr rebase` (and the `/erk:rebase` slash command) can resolve conflicts in a rebase that is already in progress. If you started a `git rebase` manually and hit conflicts you can't resolve, run `erk pr rebase` to have Claude pick up where you left off. It will detect the in-progress rebase, resolve the conflicted files, and continue the rebase to completion.
 
 This makes `erk pr rebase` useful as both a start-from-scratch rebase tool and a mid-rebase recovery tool.
 
