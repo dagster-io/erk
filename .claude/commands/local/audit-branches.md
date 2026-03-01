@@ -79,6 +79,16 @@ Branches that exist locally but have no remote tracking branch.
 - **Duplicate worktrees**: Multiple worktrees at same commit
 - **Branch mismatches**: Worktree directory name doesn't match checked-out branch
 
+**Step 8: Untrack stub branches from Graphite:**
+
+Stub branches (`__erk-slot-*-br-stub__`) are internal erk slot placeholders that should never be tracked by Graphite. They clutter `gt log` output and can interfere with stack operations. This step auto-cleans any that have been accidentally tracked.
+
+```bash
+gt log short --no-interactive 2>&1 | grep -oE '__erk-slot-[0-9]+-br-stub__' | while read stub; do
+  gt branch untrack "$stub" --no-interactive --force
+done
+```
+
 ### Phase 2: Analysis
 
 **IMPORTANT: Staleness is context-based, NOT age-based.**
