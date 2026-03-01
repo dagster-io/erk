@@ -124,7 +124,7 @@ erk exec extract-latest-plan [--session-id SESSION_ID]
 Extract plan from session and create plan PR.
 
 ```bash
-erk exec create-pr-from-session [--session-id SESSION_ID]
+erk exec create-pr-from-session --branch-slug SLUG [--session-id SESSION_ID]
 ```
 
 **Output:**
