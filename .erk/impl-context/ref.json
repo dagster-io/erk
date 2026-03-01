@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Learn: Fix pr-address command to document gitignore handling for plan-only PRs"
+}
