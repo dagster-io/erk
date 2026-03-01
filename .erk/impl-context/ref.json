@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: Dispatch fails when plan branch is already in a worktree slot"
+}
