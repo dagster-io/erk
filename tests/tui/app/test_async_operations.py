@@ -1029,11 +1029,7 @@ class TestCmuxSyncAsync:
         import subprocess
 
         provider = FakePlanDataProvider(
-            plans=[
-                make_plan_row(
-                    123, "Test Plan", pr_number=456, pr_head_branch="test-branch"
-                )
-            ],
+            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
             repo_root=tmp_path,
         )
         filters = PlanFilters.default()
@@ -1078,11 +1074,7 @@ class TestCmuxSyncAsync:
         import subprocess
 
         provider = FakePlanDataProvider(
-            plans=[
-                make_plan_row(
-                    123, "Test Plan", pr_number=456, pr_head_branch="test-branch"
-                )
-            ],
+            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
             repo_root=tmp_path,
         )
         filters = PlanFilters.default()
@@ -1116,11 +1108,7 @@ class TestCmuxSyncAsync:
         import subprocess
 
         provider = FakePlanDataProvider(
-            plans=[
-                make_plan_row(
-                    123, "Test Plan", pr_number=456, pr_head_branch="test-branch"
-                )
-            ],
+            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
             repo_root=tmp_path,
         )
         filters = PlanFilters.default()
@@ -1155,11 +1143,7 @@ class TestCmuxFocusWorkspace:
         import subprocess
 
         provider = FakePlanDataProvider(
-            plans=[
-                make_plan_row(
-                    123, "Test Plan", pr_number=456, pr_head_branch="test-branch"
-                )
-            ],
+            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
             repo_root=tmp_path,
         )
         filters = PlanFilters.default()
@@ -1171,15 +1155,9 @@ class TestCmuxFocusWorkspace:
             cmd = list(args[0]) if args else []  # type: ignore[arg-type]
             captured_run_calls.append(cmd)
             if "list-workspaces" in cmd:
-                data = json.dumps(
-                    {"workspaces": [{"title": "test-branch", "ref": "ws-42"}]}
-                )
-                return subprocess.CompletedProcess(
-                    args=cmd, returncode=0, stdout=data, stderr=""
-                )
-            return subprocess.CompletedProcess(
-                args=cmd, returncode=0, stdout="", stderr=""
-            )
+                data = json.dumps({"workspaces": [{"title": "test-branch", "ref": "ws-42"}]})
+                return subprocess.CompletedProcess(args=cmd, returncode=0, stdout=data, stderr="")
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
 
         monkeypatch.setattr(subprocess, "run", fake_run)
 
@@ -1207,11 +1185,7 @@ class TestCmuxFocusWorkspace:
         import subprocess
 
         provider = FakePlanDataProvider(
-            plans=[
-                make_plan_row(
-                    123, "Test Plan", pr_number=456, pr_head_branch="test-branch"
-                )
-            ],
+            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
             repo_root=tmp_path,
         )
         filters = PlanFilters.default()
@@ -1222,12 +1196,8 @@ class TestCmuxFocusWorkspace:
         def fake_run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
             cmd = list(args[0]) if args else []  # type: ignore[arg-type]
             captured_run_calls.append(cmd)
-            data = json.dumps(
-                {"workspaces": [{"title": "other-branch", "ref": "ws-99"}]}
-            )
-            return subprocess.CompletedProcess(
-                args=cmd, returncode=0, stdout=data, stderr=""
-            )
+            data = json.dumps({"workspaces": [{"title": "other-branch", "ref": "ws-99"}]})
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout=data, stderr="")
 
         monkeypatch.setattr(subprocess, "run", fake_run)
 
