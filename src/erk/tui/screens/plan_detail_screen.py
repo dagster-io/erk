@@ -17,6 +17,7 @@ from textual.widgets import Label
 
 from erk.tui.commands.provider import PlanCommandProvider
 from erk.tui.commands.registry import get_copy_text
+from erk.tui.commands.types import CommandContext
 from erk.tui.data.types import PlanRowData
 from erk.tui.views.types import ViewMode
 from erk.tui.widgets.clickable_link import ClickableLink
@@ -231,6 +232,7 @@ class PlanDetailScreen(ModalScreen):
         repo_root: Path | None = None,
         auto_open_palette: bool = False,
         view_mode: ViewMode,
+        cmux_integration: bool = False,
     ) -> None:
         """Initialize with plan row data.
 
@@ -242,6 +244,7 @@ class PlanDetailScreen(ModalScreen):
             repo_root: Path to repository root for running commands
             auto_open_palette: If True, open command palette on mount
             view_mode: The current view mode (for generating correct copy text)
+            cmux_integration: Whether cmux workspace integration is enabled
         """
         super().__init__()
         self._row = row
@@ -250,6 +253,7 @@ class PlanDetailScreen(ModalScreen):
         self._executor = executor
         self._repo_root = repo_root
         self._view_mode = view_mode
+        self._cmux_integration = cmux_integration
         self._output_panel: CommandOutputPanel | None = None
         self._command_running = False
         self._auto_open_palette = auto_open_palette
@@ -348,7 +352,10 @@ class PlanDetailScreen(ModalScreen):
 
     def action_copy_pr_checkout(self) -> None:
         """Copy PR checkout command to clipboard."""
-        text = get_copy_text("copy_pr_checkout", self._row, self._view_mode)
+        ctx = CommandContext(
+            row=self._row, view_mode=self._view_mode, cmux_integration=self._cmux_integration
+        )
+        text = get_copy_text("copy_pr_checkout", ctx)
         if text is not None:
             self._copy_and_notify(text)
 
@@ -658,7 +665,10 @@ class PlanDetailScreen(ModalScreen):
             executor.notify(f"Copied: {cmd}", severity=None)
 
         elif command_id == "copy_pr_checkout":
-            text = get_copy_text(command_id, row, self._view_mode)
+            ctx = CommandContext(
+                row=row, view_mode=self._view_mode, cmux_integration=self._cmux_integration
+            )
+            text = get_copy_text(command_id, ctx)
             if text is not None:
                 executor.copy_to_clipboard(text)
                 executor.notify(f"Copied: {text}", severity=None)
@@ -677,43 +687,64 @@ class PlanDetailScreen(ModalScreen):
             executor.notify(f"Copied: {cmd}", severity=None)
 
         elif command_id == "copy_implement_local":
-            text = get_copy_text(command_id, row, self._view_mode)
+            ctx = CommandContext(
+                row=row, view_mode=self._view_mode, cmux_integration=self._cmux_integration
+            )
+            text = get_copy_text(command_id, ctx)
             if text is not None:
                 executor.copy_to_clipboard(text)
                 executor.notify(f"Copied: {text}", severity=None)
 
         elif command_id == "copy_dispatch":
-            text = get_copy_text(command_id, row, self._view_mode)
+            ctx = CommandContext(
+                row=row, view_mode=self._view_mode, cmux_integration=self._cmux_integration
+            )
+            text = get_copy_text(command_id, ctx)
             if text is not None:
                 executor.copy_to_clipboard(text)
                 executor.notify(f"Copied: {text}", severity=None)
 
         elif command_id == "copy_replan":
-            text = get_copy_text(command_id, row, self._view_mode)
+            ctx = CommandContext(
+                row=row, view_mode=self._view_mode, cmux_integration=self._cmux_integration
+            )
+            text = get_copy_text(command_id, ctx)
             if text is not None:
                 executor.copy_to_clipboard(text)
                 executor.notify(f"Copied: {text}", severity=None)
 
         elif command_id == "copy_land":
-            text = get_copy_text(command_id, row, self._view_mode)
+            ctx = CommandContext(
+                row=row, view_mode=self._view_mode, cmux_integration=self._cmux_integration
+            )
+            text = get_copy_text(command_id, ctx)
             if text is not None:
                 executor.copy_to_clipboard(text)
                 executor.notify(f"Copied: {text}", severity=None)
 
         elif command_id == "copy_close_plan":
-            text = get_copy_text(command_id, row, self._view_mode)
+            ctx = CommandContext(
+                row=row, view_mode=self._view_mode, cmux_integration=self._cmux_integration
+            )
+            text = get_copy_text(command_id, ctx)
             if text is not None:
                 executor.copy_to_clipboard(text)
                 executor.notify(f"Copied: {text}", severity=None)
 
         elif command_id == "copy_rebase_remote":
-            text = get_copy_text(command_id, row, self._view_mode)
+            ctx = CommandContext(
+                row=row, view_mode=self._view_mode, cmux_integration=self._cmux_integration
+            )
+            text = get_copy_text(command_id, ctx)
             if text is not None:
                 executor.copy_to_clipboard(text)
                 executor.notify(f"Copied: {text}", severity=None)
 
         elif command_id == "copy_address_remote":
-            text = get_copy_text(command_id, row, self._view_mode)
+            ctx = CommandContext(
+                row=row, view_mode=self._view_mode, cmux_integration=self._cmux_integration
+            )
+            text = get_copy_text(command_id, ctx)
             if text is not None:
                 executor.copy_to_clipboard(text)
                 executor.notify(f"Copied: {text}", severity=None)
@@ -723,6 +754,26 @@ class PlanDetailScreen(ModalScreen):
                 cmd = f"erk launch pr-rewrite --pr {row.pr_number}"
                 executor.copy_to_clipboard(cmd)
                 executor.notify(f"Copied: {cmd}", severity=None)
+
+        elif command_id == "copy_cmux_sync":
+            ctx = CommandContext(
+                row=row, view_mode=self._view_mode, cmux_integration=self._cmux_integration
+            )
+            text = get_copy_text(command_id, ctx)
+            if text is not None:
+                executor.copy_to_clipboard(text)
+                executor.notify(f"Copied: {text}", severity=None)
+
+        elif command_id == "cmux_sync":
+            if row.pr_number and row.pr_head_branch:
+                self.dismiss()
+                if isinstance(self.app, ErkDashApp):
+                    op_id = f"cmux-sync-{row.pr_number}"
+                    self.app._start_operation(
+                        op_id=op_id,
+                        label=f"Creating cmux workspace for PR #{row.pr_number}...",
+                    )
+                    self.app._cmux_sync_async(op_id, row.pr_number, row.pr_head_branch)
 
         elif command_id == "rebase_remote":
             if row.pr_number is not None:
@@ -902,7 +953,12 @@ class PlanDetailScreen(ModalScreen):
 
             # PR checkout command (if PR exists)
             if self._row.pr_number is not None:
-                pr_checkout_cmd = get_copy_text("copy_pr_checkout", self._row, self._view_mode)
+                ctx = CommandContext(
+                    row=self._row,
+                    view_mode=self._view_mode,
+                    cmux_integration=self._cmux_integration,
+                )
+                pr_checkout_cmd = get_copy_text("copy_pr_checkout", ctx)
                 if pr_checkout_cmd:
                     with Container(classes="command-row"):
                         yield CopyableLabel(pr_checkout_cmd, pr_checkout_cmd)

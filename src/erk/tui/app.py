@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import re
 import subprocess
 import time
@@ -151,6 +152,7 @@ class ErkDashApp(App):
         filters: PlanFilters,
         refresh_interval: float = 15.0,
         initial_sort: SortState | None = None,
+        cmux_integration: bool = False,
     ) -> None:
         """Initialize the dashboard app.
 
@@ -159,11 +161,13 @@ class ErkDashApp(App):
             filters: Filter options for the plan list
             refresh_interval: Seconds between auto-refresh (0 to disable)
             initial_sort: Initial sort state (defaults to by plan number)
+            cmux_integration: Whether cmux workspace integration is enabled
         """
         super().__init__()
         self._provider = provider
         self._plan_filters = filters
         self._refresh_interval = refresh_interval
+        self._cmux_integration = cmux_integration
         self._table: PlanDataTable | None = None
         self._status_bar: StatusBar | None = None
         self._filter_input: Input | None = None
@@ -461,6 +465,7 @@ class ErkDashApp(App):
         ctx = CommandContext(
             row=row,
             view_mode=self._view_mode,
+            cmux_integration=self._cmux_integration,
         )
         self.push_screen(LaunchScreen(ctx=ctx), self._on_launch_result)
 
@@ -845,6 +850,80 @@ class ErkDashApp(App):
             )
 
     @work(thread=True)
+    def _cmux_sync_async(self, op_id: str, pr_number: int, branch: str) -> None:
+        """Create cmux workspace, sync PR, and focus the workspace.
+
+        Args:
+            op_id: Operation identifier for status bar tracking
+            pr_number: The PR number to checkout and sync
+            branch: The PR head branch name (used to rename and focus the workspace)
+        """
+        result = self._run_streaming_operation(
+            op_id=op_id,
+            command=[
+                "erk",
+                "exec",
+                "cmux-sync-workspace",
+                "--pr",
+                str(pr_number),
+                "--branch",
+                branch,
+            ],
+        )
+        self.call_from_thread(self._finish_operation, op_id=op_id)
+        if result.success:
+            self._cmux_focus_workspace(branch)
+            self.call_from_thread(
+                self.notify,
+                f"Created and focused cmux workspace for PR #{pr_number}",
+                timeout=3,
+            )
+            self.call_from_thread(self.action_refresh)
+        else:
+            error_msg = _last_output_line(result)
+            self.call_from_thread(
+                self.notify,
+                f"Failed to create cmux workspace for PR #{pr_number}: {error_msg}",
+                severity="error",
+                timeout=5,
+            )
+
+    def _cmux_focus_workspace(self, branch: str) -> None:
+        """Focus the cmux workspace matching a branch name.
+
+        Lists cmux workspaces, finds one whose title matches the branch,
+        and selects it. Both cmux calls are fast Unix socket operations.
+        Called from a background thread — does not need @work decorator.
+
+        Args:
+            branch: The branch name to match against workspace titles
+        """
+        try:
+            list_result = subprocess.run(
+                ["cmux", "--json", "list-workspaces"],
+                capture_output=True,
+                text=True,
+                stdin=subprocess.DEVNULL,
+                check=True,
+            )
+            data = json.loads(list_result.stdout)
+            workspaces = data.get("workspaces", [])
+            matching = [ws for ws in workspaces if ws.get("title") == branch]
+            if not matching:
+                return
+
+            ref = matching[0]["ref"]
+            subprocess.run(
+                ["cmux", "select-workspace", "--workspace", ref],
+                capture_output=True,
+                text=True,
+                stdin=subprocess.DEVNULL,
+                check=True,
+            )
+        except (subprocess.CalledProcessError, json.JSONDecodeError, KeyError):
+            pass
+
+    @work(thread=True)
     def _rewrite_remote_async(self, op_id: str, pr_number: int) -> None:
         """Dispatch rewrite workflow in background thread with toast."""
         result = self._run_streaming_operation(
@@ -1057,6 +1136,7 @@ class ErkDashApp(App):
                 executor=executor,
                 repo_root=self._provider.repo_root,
                 view_mode=self._view_mode,
+                cmux_integration=self._cmux_integration,
             )
         )
 
@@ -1323,49 +1403,73 @@ class ErkDashApp(App):
             self._copy_checkout_command(row)
 
         elif command_id == "copy_pr_checkout":
-            text = get_copy_text(command_id, row, self._view_mode)
+            ctx = CommandContext(
+                row=row, view_mode=self._view_mode, cmux_integration=self._cmux_integration
+            )
+            text = get_copy_text(command_id, ctx)
             if text is not None:
                 self._provider.clipboard.copy(text)
                 self.notify(f"Copied: {text}")
 
         elif command_id == "copy_implement_local":
-            text = get_copy_text(command_id, row, self._view_mode)
+            ctx = CommandContext(
+                row=row, view_mode=self._view_mode, cmux_integration=self._cmux_integration
+            )
+            text = get_copy_text(command_id, ctx)
             if text is not None:
                 self._provider.clipboard.copy(text)
                 self.notify(f"Copied: {text}")
 
         elif command_id == "copy_dispatch":
-            text = get_copy_text(command_id, row, self._view_mode)
+            ctx = CommandContext(
+                row=row, view_mode=self._view_mode, cmux_integration=self._cmux_integration
+            )
+            text = get_copy_text(command_id, ctx)
             if text is not None:
                 self._provider.clipboard.copy(text)
                 self.notify(f"Copied: {text}")
 
         elif command_id == "copy_replan":
-            text = get_copy_text(command_id, row, self._view_mode)
+            ctx = CommandContext(
+                row=row, view_mode=self._view_mode, cmux_integration=self._cmux_integration
+            )
+            text = get_copy_text(command_id, ctx)
             if text is not None:
                 self._provider.clipboard.copy(text)
                 self.notify(f"Copied: {text}")
 
         elif command_id == "copy_land":
-            text = get_copy_text(command_id, row, self._view_mode)
+            ctx = CommandContext(
+                row=row, view_mode=self._view_mode, cmux_integration=self._cmux_integration
+            )
+            text = get_copy_text(command_id, ctx)
             if text is not None:
                 self._provider.clipboard.copy(text)
                 self.notify(f"Copied: {text}")
 
         elif command_id == "copy_close_plan":
-            text = get_copy_text(command_id, row, self._view_mode)
+            ctx = CommandContext(
+                row=row, view_mode=self._view_mode, cmux_integration=self._cmux_integration
+            )
+            text = get_copy_text(command_id, ctx)
             if text is not None:
                 self._provider.clipboard.copy(text)
                 self.notify(f"Copied: {text}")
 
         elif command_id == "copy_rebase_remote":
-            text = get_copy_text(command_id, row, self._view_mode)
+            ctx = CommandContext(
+                row=row, view_mode=self._view_mode, cmux_integration=self._cmux_integration
+            )
+            text = get_copy_text(command_id, ctx)
             if text is not None:
                 self._provider.clipboard.copy(text)
                 self.notify(f"Copied: {text}")
 
         elif command_id == "copy_address_remote":
-            text = get_copy_text(command_id, row, self._view_mode)
+            ctx = CommandContext(
+                row=row, view_mode=self._view_mode, cmux_integration=self._cmux_integration
+            )
+            text = get_copy_text(command_id, ctx)
             if text is not None:
                 self._provider.clipboard.copy(text)
                 self.notify(f"Copied: {text}")
@@ -1375,6 +1479,24 @@ class ErkDashApp(App):
                 cmd = f"erk launch pr-rewrite --pr {row.pr_number}"
                 self._provider.clipboard.copy(cmd)
                 self.notify(f"Copied: {cmd}")
+
+        elif command_id == "copy_cmux_sync":
+            ctx = CommandContext(
+                row=row, view_mode=self._view_mode, cmux_integration=self._cmux_integration
+            )
+            text = get_copy_text(command_id, ctx)
+            if text is not None:
+                self._provider.clipboard.copy(text)
+                self.notify(f"Copied: {text}")
+
+        elif command_id == "cmux_sync":
+            if row.pr_number and row.pr_head_branch:
+                op_id = f"cmux-sync-{row.pr_number}"
+                self._start_operation(
+                    op_id=op_id,
+                    label=f"Creating cmux workspace for PR #{row.pr_number}...",
+                )
+                self._cmux_sync_async(op_id, row.pr_number, row.pr_head_branch)
 
         elif command_id == "rebase_remote":
             if row.pr_number:

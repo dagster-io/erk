@@ -36,6 +36,7 @@ def claude_only_skills() -> frozenset[str]:
     """Skills that reference Claude-specific features (hooks, session logs, commands)."""
     return frozenset(
         {
+            "cmux",
             "session-inspector",
             "ci-iteration",
             "command-creator",

@@ -6,7 +6,6 @@ Plan commands appear only in Plans/Learn views; objective commands appear only i
 """
 
 from erk.tui.commands.types import CommandCategory, CommandContext, CommandDefinition
-from erk.tui.data.types import PlanRowData
 from erk.tui.views.types import ViewMode
 
 CATEGORY_EMOJI: dict[CommandCategory, str] = {
@@ -93,6 +92,11 @@ def _display_copy_pr_checkout(ctx: CommandContext) -> str:
         pr = ctx.row.pr_number
         return f'source "$(erk pr checkout {pr} --script --sync)" && gt submit --no-interactive'
     return "checkout"
+
+
+def _display_cmux_sync(ctx: CommandContext) -> str:
+    """Display name for cmux_sync command."""
+    return f"erk exec cmux-sync-workspace --pr {ctx.row.pr_number}"
 
 
 def _display_copy_implement_local(ctx: CommandContext) -> str:
@@ -252,6 +256,20 @@ def get_all_commands() -> list[CommandDefinition]:
             is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_number is not None,
             get_display_name=_display_rewrite_remote,
         ),
+        CommandDefinition(
+            id="cmux_sync",
+            name="cmux sync",
+            description="cmux sync",
+            category=CommandCategory.ACTION,
+            shortcut=None,
+            is_available=lambda ctx: (
+                _is_plan_view(ctx)
+                and ctx.row.pr_number is not None
+                and ctx.row.pr_head_branch is not None
+                and ctx.cmux_integration
+            ),
+            get_display_name=_display_cmux_sync,
+        ),
         # === OBJECTIVE ACTIONS ===
         CommandDefinition(
             id="one_shot_plan",
@@ -336,6 +354,20 @@ def get_all_commands() -> list[CommandDefinition]:
             shortcut="e",
             is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_number is not None,
             get_display_name=_display_copy_pr_checkout,
+        ),
+        CommandDefinition(
+            id="copy_cmux_sync",
+            name="cmux sync",
+            description="cmux sync",
+            category=CommandCategory.COPY,
+            shortcut="w",
+            is_available=lambda ctx: (
+                _is_plan_view(ctx)
+                and ctx.row.pr_number is not None
+                and ctx.row.pr_head_branch is not None
+                and ctx.cmux_integration
+            ),
+            get_display_name=_display_cmux_sync,
         ),
         CommandDefinition(
             id="copy_implement_local",
@@ -467,23 +499,21 @@ def get_display_name(cmd: CommandDefinition, ctx: CommandContext) -> str:
     return cmd.name
 
 
-def get_copy_text(command_id: str, row: PlanRowData, view_mode: ViewMode) -> str | None:
+def get_copy_text(command_id: str, ctx: CommandContext) -> str | None:
     """Get the text to copy to clipboard for a command.
 
-    This function maps (command_id, row, view_mode) to the clipboard text by
+    This function maps (command_id, ctx) to the clipboard text by
     finding the command and using its display name generator. This eliminates
     duplication across app.py and plan_detail_screen.py.
 
     Args:
         command_id: The command ID (e.g., "copy_pr_checkout")
-        row: The plan row data
-        view_mode: The current view mode
+        ctx: The command context (row, view_mode, cmux_integration)
 
     Returns:
         The text to copy, or None if the command is not found, not available,
         or has no display name
     """
-    ctx = CommandContext(row=row, view_mode=view_mode)
     for cmd in get_all_commands():
         if cmd.id == command_id:
             if cmd.is_available(ctx) and cmd.get_display_name is not None:

@@ -318,6 +318,42 @@ def test_display_name_copy_pr_checkout_shows_pr() -> None:
     assert get_display_name(cmd, ctx) == expected
 
 
+def test_display_name_copy_cmux_sync() -> None:
+    """copy_cmux_sync generates erk exec command."""
+    row = make_plan_row(5831, "Test Plan", pr_number=456, pr_head_branch="feature-branch")
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=True)
+    cmd = next(c for c in get_all_commands() if c.id == "copy_cmux_sync")
+    result = get_display_name(cmd, ctx)
+    assert result == "erk exec cmux-sync-workspace --pr 456"
+
+
+def test_display_name_cmux_sync_action() -> None:
+    """cmux_sync ACTION command uses same display name as copy_cmux_sync."""
+    row = make_plan_row(5831, "Test Plan", pr_number=456, pr_head_branch="feature-branch")
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=True)
+    action_cmd = next(c for c in get_all_commands() if c.id == "cmux_sync")
+    copy_cmd = next(c for c in get_all_commands() if c.id == "copy_cmux_sync")
+    assert get_display_name(action_cmd, ctx) == get_display_name(copy_cmd, ctx)
+
+
+def test_copy_cmux_sync_unavailable_without_branch() -> None:
+    """cmux_sync and copy_cmux_sync are unavailable when no head branch exists."""
+    row = make_plan_row(5831, "Test Plan", pr_number=456)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=True)
+    cmd_ids = [cmd.id for cmd in get_available_commands(ctx)]
+    assert "cmux_sync" not in cmd_ids
+    assert "copy_cmux_sync" not in cmd_ids
+
+
+def test_copy_cmux_sync_unavailable_without_cmux_integration() -> None:
+    """cmux_sync and copy_cmux_sync are unavailable when cmux_integration is disabled."""
+    row = make_plan_row(5831, "Test Plan", pr_number=456, pr_head_branch="feature-branch")
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    cmd_ids = [cmd.id for cmd in get_available_commands(ctx)]
+    assert "cmux_sync" not in cmd_ids
+    assert "copy_cmux_sync" not in cmd_ids
+
+
 def test_display_name_copy_dispatch_shows_issue() -> None:
     """copy_dispatch should show the issue number."""
     row = make_plan_row(5831, "Test Plan")
@@ -560,11 +596,13 @@ def test_plan_commands_hidden_in_objectives_view() -> None:
         "rebase_remote",
         "address_remote",
         "rewrite_remote",
+        "cmux_sync",
         "open_issue",
         "open_pr",
         "open_run",
         "copy_checkout",
         "copy_pr_checkout",
+        "copy_cmux_sync",
         "copy_dispatch",
         "copy_replan",
         "copy_land",
@@ -724,12 +762,13 @@ def test_shortcuts_no_conflicts_within_view() -> None:
         pr_number=456,
         pr_url="https://github.com/test/repo/pull/456",
         pr_state="OPEN",
+        pr_head_branch="feature-123",
         worktree_branch="feature-123",
         run_url="https://github.com/test/repo/actions/runs/789",
     )
 
     for view_mode in (ViewMode.PLANS, ViewMode.OBJECTIVES):
-        ctx = CommandContext(row=row, view_mode=view_mode)
+        ctx = CommandContext(row=row, view_mode=view_mode, cmux_integration=True)
         commands = get_available_commands(ctx)
         shortcuts = [cmd.shortcut for cmd in commands if cmd.shortcut is not None]
         assert len(shortcuts) == len(set(shortcuts)), (
@@ -788,7 +827,8 @@ def test_commands_available_in_plans_view() -> None:
 def test_get_copy_text_returns_display_name_for_valid_command() -> None:
     """get_copy_text returns display name for a valid, available command."""
     row = make_plan_row(123, "Test", pr_number=456)
-    result = get_copy_text("copy_pr_checkout", row, ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    result = get_copy_text("copy_pr_checkout", ctx)
     expected = 'source "$(erk pr checkout 456 --script --sync)" && gt submit --no-interactive'
     assert result == expected
 
@@ -796,20 +836,31 @@ def test_get_copy_text_returns_display_name_for_valid_command() -> None:
 def test_get_copy_text_returns_none_for_unknown_command() -> None:
     """get_copy_text returns None when command ID does not exist."""
     row = make_plan_row(123, "Test")
-    result = get_copy_text("nonexistent_command", row, ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    result = get_copy_text("nonexistent_command", ctx)
     assert result is None
 
 
 def test_get_copy_text_returns_none_for_unavailable_command() -> None:
     """get_copy_text returns None when command is not available in context."""
     row = make_plan_row(123, "Test")  # No pr_number, so copy_pr_checkout unavailable
-    result = get_copy_text("copy_pr_checkout", row, ViewMode.PLANS)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    result = get_copy_text("copy_pr_checkout", ctx)
     assert result is None
 
 
 def test_get_copy_text_returns_none_for_wrong_view_mode() -> None:
     """get_copy_text returns None when command is not available in the view mode."""
     row = make_plan_row(123, "Test")
+    ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
     # close_plan is a plan command, not available in objectives view
-    result = get_copy_text("close_plan", row, ViewMode.OBJECTIVES)
+    result = get_copy_text("close_plan", ctx)
     assert result is None
+
+
+def test_get_copy_text_copy_cmux_sync() -> None:
+    """get_copy_text for copy_cmux_sync generates erk exec command."""
+    row = make_plan_row(123, "Test", pr_number=456, pr_head_branch="my-branch")
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=True)
+    result = get_copy_text("copy_cmux_sync", ctx)
+    assert result == "erk exec cmux-sync-workspace --pr 456"
