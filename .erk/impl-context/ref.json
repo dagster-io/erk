@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Learn: Fix: Dispatch uses existing worktree when plan branch is already checked out"
+}
