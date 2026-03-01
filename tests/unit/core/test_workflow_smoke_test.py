@@ -5,6 +5,7 @@ from pathlib import Path
 from tests.fakes.context import create_test_context
 
 from erk.core.workflow_smoke_test import (
+    SMOKE_TEST_BRANCH_PREFIX,
     SmokeTestError,
     SmokeTestResult,
     _extract_branch_name,
@@ -19,13 +20,14 @@ from erk_shared.gateway.github.types import PullRequestInfo, RepoInfo
 
 
 class TestRunSmokeTest:
-    def test_creates_branch_pr_and_triggers_workflow(self) -> None:
-        """Smoke test dispatches branch, PR, and workflow in sequence."""
+    def test_dispatches_through_production_one_shot_path(self) -> None:
+        """Smoke test dispatches through dispatch_one_shot production code path."""
         repo_root = Path("/fake/repo")
         git = FakeGit(
             git_common_dirs={repo_root: repo_root / ".git"},
             remote_urls={(repo_root, "origin"): "https://github.com/test-owner/test-repo.git"},
             default_branches={repo_root: "main"},
+            current_branches={repo_root: "main"},
         )
         github = FakeGitHub(
             authenticated=True,
@@ -42,16 +44,16 @@ class TestRunSmokeTest:
         result = run_smoke_test(ctx)
 
         assert isinstance(result, SmokeTestResult)
-        assert result.branch_name.startswith("smoke-test/")
+        assert result.branch_name.startswith("plnd/smoke-test-")
         assert result.pr_number >= 1
         assert result.run_id  # non-empty
         assert result.run_url is not None
         assert "test-owner" in result.run_url
 
-        # Verify branch was created
+        # Verify branch was created with plnd/ prefix
         assert len(git.branch.created_branches) == 1
         created = git.branch.created_branches[0]
-        assert created[1].startswith("smoke-test/")
+        assert created[1].startswith("plnd/smoke-test-")
 
         # Verify commit was made
         assert len(git.commit.branch_commits) == 1
@@ -60,21 +62,25 @@ class TestRunSmokeTest:
         assert len(git.remote.pushed_branches) == 1
 
         # Verify PR created with draft=True
-        # created_prs is list of (branch, title, body, base, draft)
         assert len(github.created_prs) == 1
         _branch, _title, _body, _base, draft = github.created_prs[0]
         assert draft is True
 
-        # Verify label was added
-        assert len(github.added_labels) == 1
-        assert github.added_labels[0] == (result.pr_number, "erk-plan")
+        # Verify PR body contains plan-header metadata (production path)
+        assert "erk:metadata-block" in _body
+
+        # Verify labels: production path adds both erk-pr and erk-plan
+        pr_labels = [label for (_pr_num, label) in github.added_labels]
+        assert "erk-pr" in pr_labels
+        assert "erk-plan" in pr_labels
 
         # Verify workflow triggered
         assert len(github.triggered_workflows) == 1
         workflow, inputs = github.triggered_workflows[0]
         assert workflow == "one-shot.yml"
-        assert inputs["branch_name"].startswith("smoke-test/")
+        assert inputs["branch_name"].startswith("plnd/smoke-test-")
         assert inputs["submitted_by"] == "testuser"
+        assert inputs["plan_backend"] == "planned_pr"
 
     def test_returns_error_when_not_in_repo(self) -> None:
         """Smoke test returns error for NoRepoSentinel."""
@@ -96,24 +102,24 @@ class TestCleanupSmokeTests:
             remote_branches={
                 repo_root: [
                     "origin/main",
-                    "origin/smoke-test/01-15-1430",
-                    "origin/smoke-test/01-16-0900",
+                    "origin/plnd/smoke-test-01-15-1430",
+                    "origin/plnd/smoke-test-01-16-0900",
                     "origin/feature/unrelated",
                 ],
             },
         )
         github = FakeGitHub(
             prs={
-                "smoke-test/01-15-1430": PullRequestInfo(
+                "plnd/smoke-test-01-15-1430": PullRequestInfo(
                     number=42,
-                    title="Smoke test: 01-15-1430",
+                    title="One-shot: Add a code comment to any file.",
                     state="OPEN",
                     url="https://github.com/test-owner/test-repo/pull/42",
                     is_draft=True,
                     checks_passing=None,
                     owner="test-owner",
                     repo="test-repo",
-                    head_branch="smoke-test/01-15-1430",
+                    head_branch="plnd/smoke-test-01-15-1430",
                 ),
             },
         )
@@ -179,10 +185,19 @@ class TestCleanupSmokeTests:
 
 class TestExtractBranchName:
     def test_strips_origin_prefix(self) -> None:
-        assert _extract_branch_name("origin/smoke-test/01-15-1430") == "smoke-test/01-15-1430"
+        assert (
+            _extract_branch_name("origin/plnd/smoke-test-01-15-1430")
+            == "plnd/smoke-test-01-15-1430"
+        )
 
     def test_strips_only_first_slash_segment(self) -> None:
         assert _extract_branch_name("origin/a/b/c") == "a/b/c"
 
     def test_returns_as_is_when_no_slash(self) -> None:
         assert _extract_branch_name("main") == "main"
+
+
+class TestBranchPrefix:
+    def test_smoke_test_branch_prefix_matches_plnd_pattern(self) -> None:
+        """Branch prefix uses plnd/ production pattern."""
+        assert SMOKE_TEST_BRANCH_PREFIX == "plnd/smoke-test-"
