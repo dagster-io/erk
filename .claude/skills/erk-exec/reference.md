@@ -39,6 +39,7 @@ Quick reference for all `erk exec` subcommands.
 | `download-remote-session`         | Download a session from a git branch.                                       |
 | `exit-plan-mode-hook`             | Prompt user about plan saving when ExitPlanMode is called.                  |
 | `extract-latest-plan`             | Extract the latest plan from Claude session files.                          |
+| `fetch-sessions`                  | Fetch preprocessed sessions from an async-learn branch.                     |
 | `generate-pr-address-summary`     | Generate enhanced PR comment for pr-address workflow.                       |
 | `get-embedded-prompt`             | Get embedded prompt content from bundled prompts.                           |
 | `get-issue-body`                  | Fetch an issue's body using REST API (avoids GraphQL rate limits).          |
@@ -83,6 +84,7 @@ Quick reference for all `erk exec` subcommands.
 | `pre-tool-use-hook`               | PreToolUse hook for dignified-python reminders on .py file edits.           |
 | `preprocess-session`              | Preprocess session log JSONL to compressed XML format.                      |
 | `push-and-create-pr`              | Push branch and create/find PR, outputting JSON.                            |
+| `push-session`                    | Preprocess and push a session to the async-learn branch with accumulation.  |
 | `quick-submit`                    | Quick commit all changes and submit.                                        |
 | `rebase-with-conflict-resolution` | Rebase onto target branch and resolve conflicts with Claude.                |
 | `register-one-shot-plan`          | Register a one-shot plan with issue metadata and comment.                   |
@@ -103,7 +105,6 @@ Quick reference for all `erk exec` subcommands.
 | `update-plan-header`              | Update plan-header metadata fields on a plan.                               |
 | `update-pr-description`           | Update PR title and body with AI-generated description.                     |
 | `upload-impl-session`             | Upload current implementation session for async learn.                      |
-| `upload-session`                  | Upload a session JSONL to a git branch and update plan header.              |
 | `user-prompt-hook`                | UserPromptSubmit hook for session persistence and coding reminders.         |
 | `validate-claude-credentials`     | Validate Claude credentials for CI workflows.                               |
 | `validate-plan-content`           | Validate plan content from file or stdin.                                   |
@@ -354,6 +355,19 @@ Extract the latest plan from Claude session files.
 | Flag           | Type | Required | Default        | Description                                                                   |
 | -------------- | ---- | -------- | -------------- | ----------------------------------------------------------------------------- |
 | `--session-id` | TEXT | No       | Sentinel.UNSET | Session ID to search within (optional, searches all sessions if not provided) |
+
+### fetch-sessions
+
+Fetch preprocessed sessions from an async-learn branch.
+
+**Usage:** `erk exec fetch-sessions`
+
+**Options:**
+
+| Flag           | Type    | Required | Default        | Description                           |
+| -------------- | ------- | -------- | -------------- | ------------------------------------- |
+| `--plan-id`    | INTEGER | Yes      | Sentinel.UNSET | Plan identifier to fetch sessions for |
+| `--output-dir` | PATH    | Yes      | Sentinel.UNSET | Directory to write fetched XML files  |
 
 ### generate-pr-address-summary
 
@@ -1001,6 +1015,22 @@ Push branch and create/find PR, outputting JSON.
 | `--no-graphite` | FLAG | No       | -       | Skip Graphite (use git + gh only) |
 | `--session-id`  | TEXT | No       | -       | Claude session ID for tracing     |
 
+### push-session
+
+Preprocess and push a session to the async-learn branch with accumulation.
+
+**Usage:** `erk exec push-session`
+
+**Options:**
+
+| Flag             | Type    | Required | Default        | Description                                             |
+| ---------------- | ------- | -------- | -------------- | ------------------------------------------------------- |
+| `--session-file` | PATH    | Yes      | Sentinel.UNSET | Path to the session JSONL file to preprocess and upload |
+| `--session-id`   | TEXT    | Yes      | Sentinel.UNSET | Claude Code session ID                                  |
+| `--stage`        | CHOICE  | Yes      | Sentinel.UNSET | Lifecycle stage: planning, impl, or address             |
+| `--source`       | CHOICE  | Yes      | Sentinel.UNSET | Session source: 'local' or 'remote'                     |
+| `--plan-id`      | INTEGER | Yes      | Sentinel.UNSET | Plan identifier for the async-learn branch              |
+
 ### quick-submit
 
 Quick commit all changes and submit.
@@ -1269,21 +1299,6 @@ Upload current implementation session for async learn.
 | Flag           | Type | Required | Default        | Description                 |
 | -------------- | ---- | -------- | -------------- | --------------------------- |
 | `--session-id` | TEXT | Yes      | Sentinel.UNSET | Claude session ID to upload |
-
-### upload-session
-
-Upload a session JSONL to a git branch and update plan header.
-
-**Usage:** `erk exec upload-session`
-
-**Options:**
-
-| Flag             | Type    | Required | Default        | Description                                                     |
-| ---------------- | ------- | -------- | -------------- | --------------------------------------------------------------- |
-| `--session-file` | PATH    | Yes      | Sentinel.UNSET | Path to the session JSONL file to upload                        |
-| `--session-id`   | TEXT    | Yes      | Sentinel.UNSET | Claude Code session ID                                          |
-| `--source`       | CHOICE  | Yes      | Sentinel.UNSET | Session source: 'local' or 'remote'                             |
-| `--plan-id`      | INTEGER | No       | Sentinel.UNSET | Plan identifier to create session branch and update plan header |
 
 ### user-prompt-hook
 

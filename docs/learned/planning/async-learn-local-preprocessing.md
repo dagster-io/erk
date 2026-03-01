@@ -23,8 +23,6 @@ Moving preprocessing to the developer's local machine eliminates this overhead. 
 
 ## Direct-Call Architecture
 
-<!-- Source: src/erk/cli/commands/exec/scripts/upload_session.py, upload_session -->
-
 The `trigger-async-learn` command imports functions directly from sibling exec scripts rather than invoking them as subprocesses. This is a deliberate architectural choice:
 
 | Approach                                                             | Trade-off                                                                                                              |
@@ -37,8 +35,6 @@ The direct-call approach won because `trigger-async-learn` orchestrates 6 tightl
 **Anti-pattern**: Don't add new subprocess invocations to this orchestrator. If you need a new step, add it as a direct function call following the existing pattern.
 
 ## Session Classification: Planning vs Implementation
-
-<!-- Source: src/erk/cli/commands/exec/scripts/upload_session.py, upload_session -->
 
 During preprocessing, each session is classified as either `"planning"` or `"impl"` based on whether its session ID matches the `planning_session_id` from the plan's GitHub metadata. This classification becomes the filename prefix (e.g., `planning-abc123.xml` vs `impl-def456.xml`), which downstream learn agents use to weight insights differently — planning sessions contain design rationale, while implementation sessions contain execution details.
 
@@ -59,8 +55,6 @@ PR comments are fetched via gateway calls, not `gh` CLI. This matters because th
 All files are committed to an `async-learn/{plan_id}` git branch under `.erk/impl-context/`, then the branch name is passed to the `learn.yml` workflow via `workflow_dispatch`.
 
 ## Preprocessing Pipeline Internals
-
-<!-- Source: src/erk/cli/commands/exec/scripts/upload_session.py, _preprocess_session_direct -->
 
 The local preprocessing pipeline (`_preprocess_session_direct`) replicates the same logic as the `preprocess-session` CLI command but as a direct function call. It processes both the main session log and any discovered agent logs (subagent sessions), applying the same filtering chain to each:
 

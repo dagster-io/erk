@@ -144,6 +144,18 @@ class RealGitCommitOps(GitCommitOps):
     # Query Operations
     # ============================================================================
 
+    def read_file_from_ref(self, cwd: Path, *, ref: str, file_path: str) -> bytes | None:
+        """Read file content from a git reference without checkout."""
+        result = subprocess.run(
+            ["git", "show", f"{ref}:{file_path}"],
+            cwd=cwd,
+            capture_output=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            return None
+        return result.stdout
+
     def get_commit_message(self, repo_root: Path, commit_sha: str) -> str | None:
         """Get the first line of commit message for a given commit SHA."""
         result = subprocess.run(

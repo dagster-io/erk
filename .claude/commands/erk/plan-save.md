@@ -228,6 +228,37 @@ On failure, display the error message and suggest:
 - Verifying GitHub CLI authentication (`gh auth status`)
 - Checking network connectivity
 
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "${CLAUDE_SESSION_ID}" 2>/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "<session_file_path>" \
+    --session-id "${CLAUDE_SESSION_ID}" \
+    --stage planning \
+    --source local \
+    --plan-id <plan_number> \
+    2>/dev/null || true
+```
+
+Where `<session_file_path>` is obtained from `erk exec capture-session-info` output
+and `<plan_number>` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2>/dev/null || true` ensures graceful degradation.
+
 ## Session Tracking
 
 After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.

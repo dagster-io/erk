@@ -60,7 +60,7 @@ The async path was designed for the `erk land` flow, where learn runs automatica
 Finds all session logs related to a plan issue by querying GitHub issue metadata for tracked session IDs, then resolving those IDs to local file paths. Three session source types exist:
 
 - **Local sessions** — JSONL files under `~/.claude/projects/<repo>/sessions/`
-- **Remote gist-based sessions** — preprocessed sessions uploaded to GitHub gists (from remote implementation)
+- **Branch-based sessions** — preprocessed sessions accumulated on `async-learn/{plan_id}` branches (from local and remote stages)
 - **Legacy artifact sessions** — sessions from older CI runs stored as workflow artifacts
 
 The discovery function also has a **local fallback**: when GitHub has no tracked sessions for a plan, it scans the 10 most recent local sessions as candidates. This handles cases where session tracking was added after implementation began.
@@ -97,15 +97,11 @@ Both review threads (inline code comments) and discussion comments (top-level co
 
 ### Stage 4: Commit Materials to Learn Branch
 
-<!-- Source: src/erk/cli/commands/exec/scripts/upload_session.py, upload_session -->
-
 Commits all learn materials (session XMLs, PR comment JSONs) to a dedicated git branch `async-learn/{plan_id}`. The branch is created from `origin/master`, files are written to `.erk/impl-context/` using git plumbing (`commit_files_to_branch`), and the branch is force-pushed. Force-push enables idempotent re-learn scenarios.
 
 This replaced the earlier gist-based transport (removed in commit 12f964cb5) which required delimiter-based file packing and custom upload/download scripts. The git-based approach stores individual files at standard paths, making them visible in GitHub's UI and readable by CI without custom parsing.
 
 ### Stage 5: Workflow Trigger
-
-<!-- Source: src/erk/cli/commands/exec/scripts/upload_session.py, upload_session -->
 
 Triggers `learn.yml` via `workflow_dispatch` with the `learn_branch` (containing materials in `.erk/impl-context/`) and plan ID. The workflow uses concurrency groups (`learn-plan-{plan_id}`) with `cancel-in-progress: true`, so re-triggering learn for the same plan cancels any in-progress run.
 

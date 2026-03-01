@@ -142,7 +142,20 @@ erk exec get-pr-for-plan <plan-number>
 
 This returns JSON with PR details (`number`, `title`, `state`, `url`, `head_ref_name`, `base_ref_name`) or an error if no PR exists. Save the PR number for the parallel agents below.
 
-**Note:** If you copied preprocessed materials from `.erk/impl-context/` in Step 2, skip the "Preprocess Sessions" and "Save PR Comments" subsections. The files are already in `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/`. Proceed to "Launch Parallel Analysis Agents".
+**Session discovery priority:**
+
+1. If you copied preprocessed materials from `.erk/impl-context/` in Step 2, skip the "Preprocess Sessions" and "Save PR Comments" subsections. The files are already in `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/`. Proceed to "Launch Parallel Analysis Agents".
+
+2. **NEW: If `get-learn-sessions` returned `preprocessed_manifest` (non-null):** Download the preprocessed XMLs directly from the async-learn branch — skip raw session preprocessing:
+
+```bash
+erk exec fetch-sessions --plan-id <plan-number> \
+    --output-dir .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn
+```
+
+This downloads all accumulated preprocessed XML files (planning, impl, address stages) to the learn directory. The manifest contains metadata about which stages and sessions are included. Proceed to "Launch Parallel Analysis Agents".
+
+3. Else — discover local sessions, preprocess, then analyze (existing local path below).
 
 #### Check Existing Documentation
 

@@ -46,6 +46,7 @@ class FakeGitCommitOps(GitCommitOps):
     - commit_messages_since: Mapping of (cwd, base_branch) -> list of messages
     - head_commit_messages_full: Mapping of cwd -> full HEAD commit message
     - commits_ahead: Mapping of (cwd, base_branch) -> commit count (for updating)
+    - ref_file_contents: Mapping of (ref, file_path) -> bytes content
     - add_all_raises: Exception to raise when add_all() is called
 
     Mutation Tracking:
@@ -64,6 +65,7 @@ class FakeGitCommitOps(GitCommitOps):
         commit_messages_since: dict[tuple[Path, str], list[str]] | None = None,
         head_commit_messages_full: dict[Path, str] | None = None,
         commits_ahead: dict[tuple[Path, str], int] | None = None,
+        ref_file_contents: dict[tuple[str, str], bytes] | None = None,
         add_all_raises: Exception | None = None,
         dirty_worktrees: set[Path] | None = None,
     ) -> None:
@@ -77,6 +79,7 @@ class FakeGitCommitOps(GitCommitOps):
             commit_messages_since: Mapping of (cwd, base_branch) -> list of messages
             head_commit_messages_full: Mapping of cwd -> full HEAD commit message
             commits_ahead: Mapping of (cwd, base_branch) -> commit count
+            ref_file_contents: Mapping of (ref, file_path) -> bytes for read_file_from_ref
             add_all_raises: Exception to raise when add_all() is called
             dirty_worktrees: Set of worktree paths with uncommitted changes
         """
@@ -92,6 +95,7 @@ class FakeGitCommitOps(GitCommitOps):
             head_commit_messages_full if head_commit_messages_full is not None else {}
         )
         self._commits_ahead = commits_ahead if commits_ahead is not None else {}
+        self._ref_file_contents = ref_file_contents if ref_file_contents is not None else {}
         self._add_all_raises = add_all_raises
         self._dirty_worktrees = dirty_worktrees if dirty_worktrees is not None else set()
 
@@ -162,6 +166,10 @@ class FakeGitCommitOps(GitCommitOps):
     # ============================================================================
     # Query Operations
     # ============================================================================
+
+    def read_file_from_ref(self, cwd: Path, *, ref: str, file_path: str) -> bytes | None:
+        """Return file content from pre-configured ref_file_contents, or None."""
+        return self._ref_file_contents.get((ref, file_path))
 
     def get_commit_message(self, repo_root: Path, commit_sha: str) -> str | None:
         """Get the commit message for a given commit SHA."""

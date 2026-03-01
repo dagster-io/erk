@@ -4,7 +4,7 @@ read_when:
   - "finding Claude Code sessions for a plan"
   - "implementing session lookup from GitHub issues"
   - "understanding dual-source discovery patterns"
-  - "working with gist-based session storage"
+  - "working with branch-based session storage"
   - "downloading remote sessions for learn workflow"
 last_audited: "2026-02-16 08:00 PT"
 audit_result: clean
@@ -12,7 +12,7 @@ audit_result: clean
 
 # Session Discovery Architecture
 
-Erk discovers Claude Code sessions associated with plans through a unified gist-based approach, with local filesystem fallback for backwards compatibility.
+Erk discovers Claude Code sessions associated with plans through branch-based storage on `async-learn/{plan_id}` branches, with local filesystem fallback for backwards compatibility.
 
 ## Core Data Structure
 
@@ -21,60 +21,53 @@ The `SessionsForPlan` dataclass represents all sessions associated with a plan:
 - `planning_session_id` - From `created_from_session` field in plan-header metadata
 - `implementation_session_ids` - From `impl-started`/`impl-ended` issue comments
 - `learn_session_ids` - From `learn-invoked` issue comments
-- `last_session_gist_url` - URL of gist containing latest session JSONL
-- `last_session_id` - Session ID of latest uploaded session
+- `last_session_branch` - Branch containing accumulated session XMLs
+- `last_session_id` - Session ID of latest pushed session
 - `last_session_source` - "local" or "remote" indicating session origin
 
 See `packages/erk-shared/src/erk_shared/sessions/discovery.py` for the canonical implementation.
 
-## Unified Gist-Based Session Storage
+## Branch-Based Session Storage
 
-Session JSONL files are stored in GitHub Gists, enabling both local and remote sessions to be accessed uniformly. This replaces the previous artifact-based storage for remote sessions.
+Sessions are preprocessed (JSONL to compressed XML) and accumulated on `async-learn/{plan_id}` branches with manifest-based tracking. Each lifecycle stage (planning, impl, address) appends to the same branch.
 
-### Why Gists?
-
-- **Universal access**: Gists can be created from any context (CLI or CI), unlike artifacts which require workflow context
-- **Unified handling**: Both local and remote sessions use the same storage mechanism
-- **Persistent**: Gists don't expire like workflow artifacts (90-day retention)
-- **Direct download**: Raw gist URLs allow direct HTTP fetches without authentication
-
-### Plan Header Fields for Session Gists
+### Plan Header Fields
 
 The plan-header metadata tracks the latest session:
 
-| Field                   | Description                                |
-| ----------------------- | ------------------------------------------ |
-| `last_session_gist_url` | URL of gist containing session JSONL       |
-| `last_session_gist_id`  | Gist ID for reference                      |
-| `last_session_id`       | Claude Code session ID                     |
-| `last_session_at`       | ISO 8601 timestamp when session was stored |
-| `last_session_source`   | "local" or "remote" indicating origin      |
+| Field                 | Description                                |
+| --------------------- | ------------------------------------------ |
+| `last_session_branch` | Branch containing accumulated session XMLs |
+| `last_session_id`     | Claude Code session ID                     |
+| `last_session_at`     | ISO 8601 timestamp when session was stored |
+| `last_session_source` | "local" or "remote" indicating origin      |
 
-### Upload Flow
+### Push Flow
 
-Sessions are uploaded via `erk exec upload-session`:
+Sessions are pushed via `erk exec push-session`:
 
-1. Read session JSONL file
-2. Create secret gist with descriptive filename (`session-{id}.jsonl`)
-3. Optionally update plan-header metadata with gist info
+1. Preprocess session JSONL to compressed XML
+2. Push to `async-learn/{plan_id}` branch, accumulating with existing sessions
+3. Update plan-header metadata with session info
 
-The CI workflow (`plan-implement.yml`) uploads sessions after implementation:
+The CI workflow (`plan-implement.yml`) pushes sessions after implementation:
 
 ```bash
-erk exec upload-session \
+erk exec push-session \
   --session-file "$SESSION_FILE" \
   --session-id "$SESSION_ID" \
   --source remote \
-  --issue-number "$ISSUE_NUMBER"
+  --plan-id "$PLAN_ID" \
+  --stage impl
 ```
 
 ### Download Flow
 
-Remote sessions are downloaded via `erk exec download-remote-session`:
+Remote sessions are downloaded via `erk exec fetch-sessions`:
 
-1. Fetch session content from gist raw URL
-2. Store in `.erk/scratch/remote-sessions/{session_id}/session.jsonl`
-3. Return path for learn workflow processing
+1. Fetch manifest and preprocessed XMLs from the `async-learn/{plan_id}` branch
+2. Write XML files to the learn output directory
+3. Return JSON with file list and manifest metadata
 
 ## Discovery Sources
 
@@ -82,7 +75,7 @@ Remote sessions are downloaded via `erk exec download-remote-session`:
 
 Sessions are tracked in the plan issue through:
 
-1. **Plan header gist fields** - `last_session_gist_url` stores the most recent session gist
+1. **Plan header branch fields** - `last_session_branch` stores the `async-learn/{plan_id}` branch reference
 2. **Plan header metadata** - `created_from_session` field stores the planning session ID
 3. **Implementation comments** - `impl-started` and `impl-ended` comments track implementation sessions
 4. **Learn comments** - `learn-invoked` comments track previous learn invocations
@@ -116,21 +109,11 @@ The `SessionSource` ABC provides a uniform interface for session metadata:
 
 Both provide: `source_type`, `session_id`, `run_id` (remote only), and `path`.
 
-## Gateway Methods
-
-The GitHub gateway includes gist operations:
-
-| Method        | Purpose                                   |
-| ------------- | ----------------------------------------- |
-| `create_gist` | Create a GitHub gist with session content |
-
-Returns `GistCreated` (with `gist_id`, `gist_url`, `raw_url`) or `GistCreateError`.
-
 ## Pattern: Dual-Source Discovery
 
 This pattern appears throughout erk when data can come from multiple sources:
 
-1. **Check authoritative source first** (GitHub issue metadata with gist info)
+1. **Check authoritative source first** (GitHub issue metadata with branch info)
 2. **Fallback to local scan** when authoritative source lacks data
 3. **Merge results** if both sources provide partial information
 
@@ -144,4 +127,4 @@ This enables:
 
 - [Impl Folder Lifecycle](impl-folder-lifecycle.md) - How .erk/impl-context/ tracks implementation state
 - [Markers](markers.md) - How impl-started/ended comments are created
-- [Gateway ABC Implementation](gateway-abc-implementation.md) - How create_gist is implemented across gateway layers
+- [Session Storage Architecture](session-storage-revert-rationale.md) - Branch-based session storage design and history

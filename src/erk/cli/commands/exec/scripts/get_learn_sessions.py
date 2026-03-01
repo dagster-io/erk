@@ -30,6 +30,7 @@ Exit Codes:
 """
 
 import json
+import subprocess
 from pathlib import Path
 
 import click
@@ -79,6 +80,46 @@ def _extract_plan_number(identifier: str) -> int | None:
     return None
 
 
+def _fetch_preprocessed_manifest(
+    *,
+    repo_root: Path,
+    plan_id: str,
+    git,
+) -> dict | None:
+    """Check for preprocessed session manifest on async-learn branch.
+
+    Args:
+        repo_root: Repository root path.
+        plan_id: Plan identifier.
+        git: Git gateway for branch operations.
+
+    Returns:
+        Parsed manifest dict if found, None otherwise.
+    """
+    session_branch = f"async-learn/{plan_id}"
+    if not git.branch.branch_exists_on_remote(repo_root, "origin", session_branch):
+        return None
+
+    git.remote.fetch_branch(repo_root, "origin", session_branch)
+
+    result = subprocess.run(
+        [
+            "git",
+            "show",
+            f"origin/{session_branch}:.erk/sessions/manifest.json",
+        ],
+        cwd=str(repo_root),
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return None
+    content = result.stdout.strip()
+    if not content:
+        return None
+    return json.loads(content)
+
+
 def _build_result(
     *,
     plan_id: str,
@@ -87,6 +128,7 @@ def _build_result(
     session_paths: list[str],
     local_session_ids: list[str],
     session_sources: list[SessionSource],
+    preprocessed_manifest: dict | None,
 ) -> GetLearnSessionsResultDict:
     """Build the result dict from session data."""
     return GetLearnSessionsResultDict(
@@ -105,6 +147,7 @@ def _build_result(
         last_session_branch=sessions_for_plan.last_session_branch,
         last_session_id=sessions_for_plan.last_session_id,
         last_session_source=sessions_for_plan.last_session_source,
+        preprocessed_manifest=preprocessed_manifest,
     )
 
 
@@ -112,6 +155,7 @@ def _discover_sessions(
     *,
     plan_backend,
     claude_installation,
+    git,
     repo_root: Path,
     cwd: Path,
     plan_id: str,
@@ -122,6 +166,7 @@ def _discover_sessions(
     Args:
         plan_backend: PlanBackend for session discovery
         claude_installation: Claude installation for session lookups
+        git: Git gateway for branch operations
         repo_root: Repository root path
         cwd: Current working directory
         plan_id: Plan identifier
@@ -130,6 +175,13 @@ def _discover_sessions(
     Returns:
         GetLearnSessionsResultDict with all session data
     """
+    # Check for preprocessed manifest on async-learn branch
+    preprocessed_manifest = _fetch_preprocessed_manifest(
+        repo_root=repo_root,
+        plan_id=plan_id,
+        git=git,
+    )
+
     # Find sessions for the plan via PlanBackend
     sessions_for_plan = plan_backend.find_sessions_for_plan(
         repo_root,
@@ -199,6 +251,7 @@ def _discover_sessions(
         session_paths=session_paths,
         local_session_ids=local_session_ids,
         session_sources=session_sources,
+        preprocessed_manifest=preprocessed_manifest,
     )
 
 
@@ -250,6 +303,7 @@ def get_learn_sessions(ctx: click.Context, issue: str | None) -> None:
     result = _discover_sessions(
         plan_backend=plan_backend,
         claude_installation=claude_installation,
+        git=git,
         repo_root=repo_root,
         cwd=cwd,
         plan_id=plan_id,

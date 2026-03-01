@@ -52,12 +52,12 @@ When working with erk-plans:
 
 When working with Claude Code sessions:
 
-| Command                   | Purpose                           |
-| ------------------------- | --------------------------------- |
-| `list-sessions`           | List sessions for current project |
-| `preprocess-session`      | Compress session for analysis     |
-| `upload-session`          | Upload session to gist            |
-| `download-remote-session` | Download session from gist        |
+| Command                   | Purpose                                   |
+| ------------------------- | ----------------------------------------- |
+| `list-sessions`           | List sessions for current project         |
+| `preprocess-session`      | Compress session for analysis             |
+| `push-session`            | Push preprocessed session to learn branch |
+| `download-remote-session` | Download session from gist                |
 
 ### Marker Operations
 

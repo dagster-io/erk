@@ -149,6 +149,20 @@ class GitCommitOps(ABC):
         ...
 
     @abstractmethod
+    def read_file_from_ref(self, cwd: Path, *, ref: str, file_path: str) -> bytes | None:
+        """Read file content from a git reference without checkout.
+
+        Args:
+            cwd: Repository root directory.
+            ref: Git reference (branch, tag, SHA, e.g. "origin/async-learn/42").
+            file_path: Path relative to repository root.
+
+        Returns:
+            File content as bytes, or None if ref or file doesn't exist.
+        """
+        ...
+
+    @abstractmethod
     def get_recent_commits(
         self, cwd: Path, *, limit: int = 5, branch: str | None = None
     ) -> list[dict[str, str]]:

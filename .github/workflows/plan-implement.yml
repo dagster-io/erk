@@ -263,7 +263,7 @@ jobs:
             echo "No session found for: $GITHUB_WORKSPACE"
           fi
 
-      - name: Upload session to gist and update plan header
+      - name: Push preprocessed session to async-learn branch
         if: always() && steps.session.outputs.session_id
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
@@ -271,9 +271,10 @@ jobs:
           SESSION_ID: ${{ steps.session.outputs.session_id }}
           SESSION_FILE: ${{ steps.session.outputs.session_file }}
         run: |
-          erk exec upload-session \
+          erk exec push-session \
             --session-file "$SESSION_FILE" \
             --session-id "$SESSION_ID" \
+            --stage impl \
             --source remote \
             --plan-id "$PLAN_ID"
 

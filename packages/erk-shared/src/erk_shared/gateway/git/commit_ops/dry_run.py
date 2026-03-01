@@ -74,6 +74,10 @@ class DryRunGitCommitOps(GitCommitOps):
     # Query Operations (delegate to wrapped implementation)
     # ============================================================================
 
+    def read_file_from_ref(self, cwd: Path, *, ref: str, file_path: str) -> bytes | None:
+        """Read file from ref (read-only, delegates to wrapped)."""
+        return self._wrapped.read_file_from_ref(cwd, ref=ref, file_path=file_path)
+
     def get_commit_message(self, repo_root: Path, commit_sha: str) -> str | None:
         """Get commit message (read-only, delegates to wrapped)."""
         return self._wrapped.get_commit_message(repo_root, commit_sha)

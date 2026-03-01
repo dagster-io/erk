@@ -132,7 +132,7 @@ jobs:
             echo "No session found for: $GITHUB_WORKSPACE"
           fi
 
-      - name: Upload session to branch
+      - name: Push preprocessed session to async-learn branch
         if: always() && steps.session.outputs.session_id && steps.plan_info.outputs.plan_id
         continue-on-error: true
         env:
@@ -141,9 +141,10 @@ jobs:
           SESSION_ID: ${{ steps.session.outputs.session_id }}
           SESSION_FILE: ${{ steps.session.outputs.session_file }}
         run: |
-          erk exec upload-session \
+          erk exec push-session \
             --session-file "$SESSION_FILE" \
             --session-id "$SESSION_ID" \
+            --stage address \
             --source remote \
             --plan-id "$PLAN_ID"
 
