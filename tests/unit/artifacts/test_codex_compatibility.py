@@ -4,6 +4,7 @@ Layer 3 (Pure Unit Tests): Validates YAML frontmatter in skill files without
 external dependencies. Ensures all skills maintain Codex-compatible format.
 """
 
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -15,11 +16,14 @@ from erk.core.capabilities.codex_portable import (
 )
 
 
+def _get_repo_root() -> Path:
+    """Get the repository root directory."""
+    return Path(__file__).parent.parent.parent.parent
+
+
 def _get_claude_skills_dir() -> Path:
     """Get .claude/skills/ directory from repo root."""
-    test_file = Path(__file__)
-    repo_root = test_file.parent.parent.parent.parent
-    claude_skills_dir = repo_root / ".claude" / "skills"
+    claude_skills_dir = _get_repo_root() / ".claude" / "skills"
     if not claude_skills_dir.exists():
         raise ValueError(f"Skills directory not found: {claude_skills_dir}")
     return claude_skills_dir
@@ -30,6 +34,36 @@ def _get_all_skill_names() -> set[str]:
     claude_skills_dir = _get_claude_skills_dir()
     skill_dirs = [d for d in claude_skills_dir.iterdir() if d.is_dir()]
     return {d.name for d in skill_dirs}
+
+
+def _get_force_included_skill_names() -> set[str]:
+    """Get skill names from pyproject.toml force-include entries."""
+    pyproject_path = _get_repo_root() / "pyproject.toml"
+    if not pyproject_path.exists():
+        raise ValueError(f"pyproject.toml not found: {pyproject_path}")
+
+    with pyproject_path.open("rb") as f:
+        pyproject = tomllib.load(f)
+
+    force_include = (
+        pyproject.get("tool", {})
+        .get("hatch", {})
+        .get("build", {})
+        .get("targets", {})
+        .get("wheel", {})
+        .get("force-include", {})
+    )
+
+    skill_names: set[str] = set()
+    prefix = ".claude/skills/"
+    for source_path in force_include:
+        if source_path.startswith(prefix):
+            # Extract skill name: ".claude/skills/foo" -> "foo"
+            skill_name = source_path[len(prefix) :]
+            if "/" not in skill_name:
+                skill_names.add(skill_name)
+
+    return skill_names
 
 
 def _parse_skill_frontmatter(skill_path: Path) -> dict[str, str]:
@@ -188,3 +222,37 @@ def test_claude_only_skills_exist() -> None:
         pytest.fail(
             f"Skills in claude_only_skills() not found in .claude/skills/: {sorted(missing_skills)}"
         )
+
+
+def test_codex_portable_skills_match_force_include() -> None:
+    """Verify pyproject.toml force-include entries match codex_portable_skills() exactly.
+
+    If someone adds a skill to codex_portable_skills() but forgets the pyproject.toml
+    force-include entry, the wheel won't contain the skill. If someone removes a skill
+    from the portable list but leaves the force-include entry, the wheel will contain
+    a skill that shouldn't be distributed.
+    """
+    portable = codex_portable_skills()
+    force_included = _get_force_included_skill_names()
+
+    missing_from_pyproject = portable - force_included
+    extra_in_pyproject = force_included - portable
+
+    failures = []
+    if missing_from_pyproject:
+        failures.append(
+            f"Skills in codex_portable_skills() missing from pyproject.toml "
+            f"[tool.hatch.build.targets.wheel.force-include]: {sorted(missing_from_pyproject)}\n"
+            f"Add force-include entries for these skills in pyproject.toml"
+        )
+    if extra_in_pyproject:
+        failures.append(
+            f"Skills in pyproject.toml force-include not in codex_portable_skills(): "
+            f"{sorted(extra_in_pyproject)}\n"
+            f"Add these to codex_portable_skills() in "
+            f"src/erk/core/capabilities/codex_portable.py, or remove the "
+            f"force-include entries from pyproject.toml"
+        )
+
+    if failures:
+        pytest.fail("\n".join(failures))
