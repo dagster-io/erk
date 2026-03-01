@@ -8,6 +8,8 @@ one-shot code path.
 from dataclasses import dataclass
 from pathlib import Path
 
+import click
+
 from erk.cli.commands.one_shot_dispatch import (
     OneShotDispatchParams,
     dispatch_one_shot,
@@ -76,7 +78,7 @@ def run_smoke_test(ctx: ErkContext) -> SmokeTestResult | SmokeTestError:
         result = dispatch_one_shot(ctx, params=params, dry_run=False)
     except SystemExit as exc:
         return SmokeTestError(step="dispatch", message=f"Exit code {exc.code}")
-    except Exception as exc:
+    except (click.ClickException, RuntimeError, ValueError, KeyError) as exc:
         return SmokeTestError(step="dispatch", message=str(exc))
 
     if result is None:
