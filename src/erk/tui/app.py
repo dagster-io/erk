@@ -1180,18 +1180,27 @@ class ErkDashApp(App):
             )
 
     def action_open_pr(self) -> None:
-        """Open selected PR in browser."""
+        """Open selected PR in browser, or objective issue in Objectives view."""
         row = self._get_selected_row()
         if row is None:
             return
 
-        if row.pr_url:
-            self._provider.browser.launch(row.pr_url)
-            if self._status_bar is not None:
-                self._status_bar.set_message(f"Opened PR #{row.pr_number}")
+        if self._view_mode == ViewMode.OBJECTIVES:
+            if row.plan_url:
+                self._provider.browser.launch(row.plan_url)
+                if self._status_bar is not None:
+                    self._status_bar.set_message(f"Opened objective #{row.plan_id}")
+            else:
+                if self._status_bar is not None:
+                    self._status_bar.set_message("No URL for this objective")
         else:
-            if self._status_bar is not None:
-                self._status_bar.set_message("No PR linked to this plan")
+            if row.pr_url:
+                self._provider.browser.launch(row.pr_url)
+                if self._status_bar is not None:
+                    self._status_bar.set_message(f"Opened PR #{row.pr_number}")
+            else:
+                if self._status_bar is not None:
+                    self._status_bar.set_message("No PR linked to this plan")
 
     def action_open_run(self) -> None:
         """Open selected workflow run in browser."""
