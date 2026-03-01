@@ -105,9 +105,7 @@ class TestExecuteCommandCopyCommands:
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("copy_pr_checkout")
-        expected_cmd = (
-            'source "$(erk pr checkout 456 --script --sync)" && gt submit --no-interactive'
-        )
+        expected_cmd = 'source "$(erk pr checkout 456 --script --sync)"'
         assert executor.copied_texts == [expected_cmd]
         assert f"Copied: {expected_cmd}" in executor.notifications
 
