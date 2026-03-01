@@ -175,6 +175,7 @@ class RealGraphite(Graphite):
                 timeout=15,
             )
         except subprocess.TimeoutExpired:
+            user_output("Warning: Graphite auth check timed out after 15 seconds")
             return (False, None, None)
 
         # If command failed, not authenticated
@@ -289,5 +290,6 @@ class RealGraphite(Graphite):
                 timeout=15,
             )
         except subprocess.TimeoutExpired:
+            user_output(f"Warning: Graphite branch tracking check timed out for '{branch}'")
             return False
         return result.returncode == 0

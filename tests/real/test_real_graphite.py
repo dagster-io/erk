@@ -81,8 +81,11 @@ def test_submit_stack_invalidates_branches_cache() -> None:
 
 
 def test_real_graphite_check_auth_status_returns_false_on_timeout() -> None:
-    """Test check_auth_status returns (False, None, None) when subprocess times out."""
-    with patch("erk_shared.gateway.graphite.real.subprocess.run") as mock_run:
+    """Test check_auth_status returns (False, None, None) and warns when subprocess times out."""
+    with (
+        patch("erk_shared.gateway.graphite.real.subprocess.run") as mock_run,
+        patch("erk_shared.gateway.graphite.real.user_output") as mock_output,
+    ):
         mock_run.side_effect = subprocess.TimeoutExpired(cmd=["gt", "auth"], timeout=15)
 
         ops = RealGraphite()
@@ -90,11 +93,17 @@ def test_real_graphite_check_auth_status_returns_false_on_timeout() -> None:
 
         assert result == (False, None, None)
         mock_run.assert_called_once()
+        mock_output.assert_called_once_with(
+            "Warning: Graphite auth check timed out after 15 seconds"
+        )
 
 
 def test_real_graphite_is_branch_tracked_returns_false_on_timeout() -> None:
-    """Test is_branch_tracked returns False when subprocess times out."""
-    with patch("erk_shared.gateway.graphite.real.subprocess.run") as mock_run:
+    """Test is_branch_tracked returns False and warns when subprocess times out."""
+    with (
+        patch("erk_shared.gateway.graphite.real.subprocess.run") as mock_run,
+        patch("erk_shared.gateway.graphite.real.user_output") as mock_output,
+    ):
         mock_run.side_effect = subprocess.TimeoutExpired(
             cmd=["gt", "branch", "info", "feature-branch"], timeout=15
         )
@@ -104,3 +113,6 @@ def test_real_graphite_is_branch_tracked_returns_false_on_timeout() -> None:
 
         assert result is False
         mock_run.assert_called_once()
+        mock_output.assert_called_once_with(
+            "Warning: Graphite branch tracking check timed out for 'feature-branch'"
+        )
