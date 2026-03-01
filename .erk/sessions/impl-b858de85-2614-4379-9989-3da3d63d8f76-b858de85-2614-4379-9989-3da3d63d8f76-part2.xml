@@ -193,4 +193,101 @@ Todos have been modified successfully. Ensure that you continue to use the todo 
   "plan_number": 8573
 }
   </tool_result>
+  <tool_result tool="toolu_01PAtMMX3NaZA6BAt4ikEVoi">
+{"uploaded": true, "plan_id": 8573}
+  </tool_result>
+  <assistant>Now submit the PR:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="324" cache_read_input_tokens="98713" cache_creation="{'ephemeral_5m_input_tokens': 324, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01SM1x5Yfhr9d43Cf2tjDmjb">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk pipeline</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="324" cache_read_input_tokens="98713" cache_creation="{'ephemeral_5m_input_tokens': 324, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SM1x5Yfhr9d43Cf2tjDmjb">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #8573 found (already exists)
+
+Phase 2: Getting diff
+
+Phase 3: Fetching plan context
+   Incorporating plan #8573
+
+Phase 4: Generating PR description
+   Reading diff file...
+   Diff loaded (19,824 chars)
+   Analyzing changes with Claude...
+   PR description generated
+
+Phase 5: Graphite enhancement
+
+Phase 6: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+
+✅ PR submitted
+
+  Action:      Updated PR #8573
+  Branch:      plnd/audit-command-copy-03-01-1556 → master
+  Title:       Audit and Standardize Workflow Dispatch Copy
+
+... [2 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01JG5KmWA2MErkKApHXUGDy3">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="377" cache_read_input_tokens="99037" cache_creation="{'ephemeral_5m_input_tokens': 377, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01898XgXNJGoADP4n1izd7Kj">
+    <param name="command">erk pr check --stage=impl 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR completion</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="377" cache_read_input_tokens="99037" cache_creation="{'ephemeral_5m_input_tokens': 377, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JG5KmWA2MErkKApHXUGDy3">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 8573
+}
+  </tool_result>
+  <tool_result tool="toolu_01898XgXNJGoADP4n1izd7Kj">
+
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01FCvRFg1J2gyuA4aGfefBGj">
+    <param name="todos">[{'content': 'Update launch_cmd.py - docstrings, function names, output strings, comments'...[truncated 754 chars]...nd submit PR', 'status': 'completed', 'activeForm': 'Signaling GitHub and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="485" cache_read_input_tokens="99414" cache_creation="{'ephemeral_5m_input_tokens': 485, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FCvRFg1J2gyuA4aGfefBGj">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan execution complete. Here's a summary of what was done:
+
+## Summary
+
+Standardized user-facing CLI copy from "Triggering"/"Triggered" to "Dispatching"/"Dispatched" across 4 source files and 4 test files.
+
+### Source files changed:
+1. **`src/erk/cli/commands/launch_cmd.py`** — Renamed 7 `_trigger_*` functions to `_dispatch_*`, updated module docstring, all user-facing output strings, inline comments, and Click help text
+2. **`src/erk/cli/commands/one_shot_dispatch.py`** — Updated module docstring, `current_step` variable, user-facing output strings, and inline comment
+3. **`src/erk/cli/commands/pr/dispatch_cmd.py`** — Updated "Triggering workflow" output, "Workflow triggered" output, PR comment body, and docstring
+4. **`src/erk/cli/commands/admin.py`** — Updated output strings, `--watch` help text, and docstring step description
+
+### Test files changed:
+5. **`tests/commands/launch/test_launch_cmd.py`** — Updated 6 string assertions
+6. **`tests/commands/pr/test_dispatch.py`** — Updated 1 string assertion
+7. **`tests/commands/admin/test_plan_implement_workflow.py`** — Updated 2 string assertions
+8. **`tests/unit/cli/commands/test_admin_test_workflow.py`** — Updated 1 string assertion
+
+### Verification:
+- ruff: clean
+- pytest: 31 tests passed
+- grep: no remaining "Triggering" or "Workflow triggered" in `src/erk/cli/commands/`
+
+**PR:** https://github.com/dagster-io/erk/pull/8573</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="351" cache_read_input_tokens="99899" cache_creation="{'ephemeral_5m_input_tokens': 351, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
 </session>
