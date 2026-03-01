@@ -6,7 +6,6 @@ Plan commands appear only in Plans/Learn views; objective commands appear only i
 """
 
 from erk.tui.commands.types import CommandCategory, CommandContext, CommandDefinition
-from erk.tui.data.types import PlanRowData
 from erk.tui.views.types import ViewMode
 
 CATEGORY_EMOJI: dict[CommandCategory, str] = {
@@ -91,9 +90,7 @@ def _display_copy_pr_checkout(ctx: CommandContext) -> str:
     """Display name for copy_pr_checkout command."""
     if ctx.row.pr_number:
         pr = ctx.row.pr_number
-        return (
-            f'source "$(erk pr checkout {pr} --script --sync)" && gt submit --no-interactive'
-        )
+        return f'source "$(erk pr checkout {pr} --script --sync)" && gt submit --no-interactive'
     return "checkout"
 
 
@@ -101,9 +98,7 @@ def _display_copy_cmux_sync(ctx: CommandContext) -> str:
     """Display name for copy_cmux_sync command."""
     pr = ctx.row.pr_number
     branch = ctx.row.pr_head_branch
-    checkout_cmd = (
-        f'source "$(erk pr checkout {pr} --script --sync)" && gt submit --no-interactive'
-    )
+    checkout_cmd = f'source "$(erk pr checkout {pr} --script --sync)" && gt submit --no-interactive'
     return (
         f"WS=$(cmux new-workspace --command '{checkout_cmd}' | awk '{{print $2}}') && "
         f'cmux rename-workspace --workspace "$WS" "{branch}"'
