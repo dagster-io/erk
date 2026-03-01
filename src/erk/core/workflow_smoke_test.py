@@ -10,7 +10,6 @@ from pathlib import Path
 
 import click
 
-
 from erk.cli.commands.one_shot_dispatch import (
     OneShotDispatchParams,
     dispatch_one_shot,
