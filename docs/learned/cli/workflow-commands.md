@@ -8,8 +8,7 @@ read_when:
 title: Workflow Commands
 tripwires:
   - action: WORKFLOW_COMMAND_MAP maps command names to .yml filenames
-    warning:
-      command names intentionally diverge from filenames (e.g., pr-rebase
+    warning: command names intentionally diverge from filenames (e.g., pr-rebase
       → pr-rebase.yml, but plan-implement → plan-implement.yml via DISPATCH_WORKFLOW_NAME
       constant)
   - action:

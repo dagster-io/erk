@@ -47,13 +47,13 @@ The key insight is within ACTION: some actions (close, dispatch) are fast in-pro
 
 Commands fall into four availability tiers:
 
-| Tier               | Predicate                     | Commands                                                        | Rationale                                                     |
-| ------------------ | ----------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------- |
-| Always available   | `lambda _: True`              | close_plan, copy_prepare, copy_prepare_activate, copy_dispatch  | Only need `plan_id`, which is always present                  |
-| Needs plan URL     | `plan_url is not None`        | dispatch_to_queue, copy_replan, open_issue                      | Requires the plan to exist on GitHub (not just locally)       |
-| Needs local branch | `worktree_branch is not None` | copy_checkout                                                   | Local worktree branch must exist to generate checkout command |
-| Needs PR           | `pr_number is not None`       | rebase_remote, address_remote, open_pr, copy_pr_checkout        | PR must be linked to the plan                                 |
-| Compound condition | Multiple fields non-null      | land_pr (needs PR + OPEN state + run URL)                       | Landing requires all CI infrastructure to be present          |
+| Tier               | Predicate                     | Commands                                                       | Rationale                                                     |
+| ------------------ | ----------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------- |
+| Always available   | `lambda _: True`              | close_plan, copy_prepare, copy_prepare_activate, copy_dispatch | Only need `plan_id`, which is always present                  |
+| Needs plan URL     | `plan_url is not None`        | dispatch_to_queue, copy_replan, open_issue                     | Requires the plan to exist on GitHub (not just locally)       |
+| Needs local branch | `worktree_branch is not None` | copy_checkout                                                  | Local worktree branch must exist to generate checkout command |
+| Needs PR           | `pr_number is not None`       | rebase_remote, address_remote, open_pr, copy_pr_checkout       | PR must be linked to the plan                                 |
+| Compound condition | Multiple fields non-null      | land_pr (needs PR + OPEN state + run URL)                      | Landing requires all CI infrastructure to be present          |
 
 **Anti-pattern**: Writing `is_available=lambda ctx: True` for a command that uses `ctx.row.pr_number`. The predicate will allow execution when `pr_number` is None, causing a runtime error. This is why the [three-layer null validation](adding-commands.md) pattern exists — the predicate is necessary but not sufficient.
 

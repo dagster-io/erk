@@ -17,11 +17,11 @@ All erk GitHub Actions workflows that invoke Claude MUST default to `claude-opus
 
 ## Affected Workflows
 
-| Workflow               | Model Parameter           | Default           |
-| ---------------------- | ------------------------- | ----------------- |
-| `ci.yml`               | Direct reference          | `claude-opus-4-6` |
-| `learn.yml`            | Direct reference          | `claude-opus-4-6` |
-| `one-shot.yml`      | `model_name` input        | `claude-opus-4-6` |
+| Workflow             | Model Parameter           | Default           |
+| -------------------- | ------------------------- | ----------------- |
+| `ci.yml`             | Direct reference          | `claude-opus-4-6` |
+| `learn.yml`          | Direct reference          | `claude-opus-4-6` |
+| `one-shot.yml`       | `model_name` input        | `claude-opus-4-6` |
 | `plan-implement.yml` | `model_name` input (dual) | `claude-opus-4-6` |
 | `pr-address.yml`     | `model_name` input        | `claude-opus-4-6` |
 | `pr-rebase.yml`      | `model_name` input        | `claude-opus-4-6` |
