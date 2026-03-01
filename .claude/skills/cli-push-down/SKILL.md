@@ -141,6 +141,7 @@ The 15 lines of bash parsing and jq pipelines became a tested Python command. Th
 Run: `mytool config validate --file config/settings.yaml --json`
 
 The command returns:
+
 - On success: `{"success": true, "config": {<resolved config with defaults>}}`
 - On failure: `{"success": false, "errors": [{"field": "database.port", "message": "..."}]}`
 
