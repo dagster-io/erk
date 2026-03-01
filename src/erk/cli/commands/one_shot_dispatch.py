@@ -14,7 +14,7 @@ import click
 
 from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
 from erk.cli.ensure import Ensure
-from erk.core.branch_slug_generator import generate_slug_or_fallback
+from erk.core.branch_slug_generator import generate_branch_slug
 from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
 from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.gateway.git.remote_ops.types import PushError
@@ -86,7 +86,7 @@ def generate_branch_name(
     if slug is not None:
         title = slug
     elif prompt_executor is not None:
-        title = generate_slug_or_fallback(prompt_executor, prompt)
+        title = generate_branch_slug(prompt_executor, prompt)
     else:
         title = prompt
 
@@ -197,7 +197,7 @@ def dispatch_one_shot(
         else:
             user_output(click.style("  (calling haiku for slug generation...)", dim=True))
             slug_start = time.monotonic()
-            slug = generate_slug_or_fallback(ctx.prompt_executor, params.prompt)
+            slug = generate_branch_slug(ctx.prompt_executor, params.prompt)
             slug_elapsed = time.monotonic() - slug_start
             slug_msg = f"  \u2713 Slug: {slug} ({format_duration(slug_elapsed)})"
             user_output(click.style(slug_msg, dim=True))

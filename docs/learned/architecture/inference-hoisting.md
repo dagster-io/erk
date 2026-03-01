@@ -5,14 +5,14 @@ audit_result: clean
 read_when:
   - adding LLM calls to an exec script
   - calling PromptExecutor from a CLI command or exec script
-  - working with BranchSlugGenerator or generate_slug_or_fallback
+  - working with BranchSlugGenerator or generate_branch_slug
   - adding --branch-slug or similar pre-computed value flags to exec commands
   - understanding why exec scripts must be deterministic
   - refactoring nested LLM calls out of exec scripts
 tripwires:
-  - action: "calling PromptExecutor, generate_slug_or_fallback, or BranchSlugGenerator from an exec script"
+  - action: "calling PromptExecutor, generate_branch_slug, or BranchSlugGenerator from an exec script"
     warning: "Exec scripts must be deterministic. LLM calls belong in the skill layer (.claude/commands/*.md). Hoist: generate the value in the skill, pass it via --flag to the exec script. Read inference-hoisting.md."
-    pattern: "PromptExecutor|generate_slug_or_fallback|BranchSlugGenerator"
+    pattern: "PromptExecutor|generate_branch_slug|BranchSlugGenerator"
     score: 9
   - action: "adding LLM-dependent logic inside a Click @command function in exec/scripts/"
     warning: "Inference hoisting violation: exec scripts run as subprocesses; they cannot nest LLM calls within a Claude Code session. Move reasoning to the calling skill."
@@ -26,7 +26,7 @@ Exec scripts are Python subprocesses that run to completion without Claude Code 
 
 The skill layer (`.claude/commands/*.md`) is the orchestration boundary. Skills run inside Claude Code with full reasoning capability. They can generate values through LLM inference before invoking exec scripts.
 
-**The original bug**: `plan_save.py` and `setup_impl_from_pr.py` called `generate_slug_or_fallback(executor, title)`, which invoked `PromptExecutor.execute_prompt()` to ask Claude for a branch slug. When these scripts ran inside a Claude Code session (via `/erk:plan-save`), the nested Claude subprocess locked up. The fix moved slug generation into the skill layer, passing the pre-generated slug via `--branch-slug`.
+**The original bug**: `plan_save.py` and `setup_impl_from_pr.py` called `generate_branch_slug(executor, title)`, which invoked `PromptExecutor.execute_prompt()` to ask Claude for a branch slug. When these scripts ran inside a Claude Code session (via `/erk:plan-save`), the nested Claude subprocess locked up. The fix moved slug generation into the skill layer, passing the pre-generated slug via `--branch-slug`.
 
 ## The Rule
 
@@ -55,13 +55,13 @@ Two scripts were updated to follow this pattern:
 ### Before (broken): LLM call inside exec script
 
 ```python
-# BROKEN: generate_slug_or_fallback calls PromptExecutor.execute_prompt()
+# BROKEN: generate_branch_slug calls PromptExecutor.execute_prompt()
 # This creates a nested LLM call when run inside Claude Code — deadlocks.
-slug = generate_slug_or_fallback(executor, title)
+slug = generate_branch_slug(executor, title)
 branch_name = generate_planned_pr_branch_name(slug, now)
 ```
 
-The `generate_slug_or_fallback` function accepted a `PromptExecutor` and invoked it to ask Claude for a short, descriptive slug. This worked when running `erk exec plan-save` from a terminal, but locked up when called from a skill inside Claude Code.
+The `generate_branch_slug` function accepted a `PromptExecutor` and invoked it to ask Claude for a short, descriptive slug. This worked when running `erk exec plan-save` from a terminal, but locked up when called from a skill inside Claude Code.
 
 ### After (fixed): Pre-computed value via --flag
 

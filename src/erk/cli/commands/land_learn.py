@@ -23,7 +23,7 @@ from erk.cli.commands.exec.scripts.preprocess_session import (
     split_entries_to_chunks,
     truncate_tool_parameters,
 )
-from erk.core.branch_slug_generator import generate_slug_or_fallback
+from erk.core.branch_slug_generator import generate_branch_slug
 from erk.core.context import ErkContext
 from erk_shared.learn.extraction.session_schema import (
     iter_jsonl_entries,
@@ -385,7 +385,7 @@ def _create_learn_pr_impl(
 
     # Generate branch name with LLM slug
     learn_title = f"Learn: {plan_result.title}"
-    slug = generate_slug_or_fallback(ctx.prompt_executor, learn_title)
+    slug = generate_branch_slug(ctx.prompt_executor, learn_title)
     branch_name = generate_planned_pr_branch_name(slug, ctx.time.now(), objective_id=None)
 
     # Build deterministic summary (no LLM call needed for learn plans)

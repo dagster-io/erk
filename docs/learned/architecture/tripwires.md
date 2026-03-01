@@ -88,7 +88,7 @@ Rules triggered by matching actions in code.
 
 **calling GraphiteBranchManager.create_branch() without explicit checkout** → Read [Erk Architecture Patterns](erk-architecture.md) first. GraphiteBranchManager.create_branch() restores the original branch after tracking. Always call branch_manager.checkout_branch() afterward if you need to be on the new branch.
 
-**calling PromptExecutor, generate_slug_or_fallback, or BranchSlugGenerator from an exec script** [pattern: `PromptExecutor|generate_slug_or_fallback|BranchSlugGenerator`] → Read [Inference Hoisting Pattern](inference-hoisting.md) first. Exec scripts must be deterministic. LLM calls belong in the skill layer (.claude/commands/\*.md). Hoist: generate the value in the skill, pass it via --flag to the exec script. Read inference-hoisting.md.
+**calling PromptExecutor, generate_branch_slug, or BranchSlugGenerator from an exec script** [pattern: `PromptExecutor|generate_branch_slug|BranchSlugGenerator`] → Read [Inference Hoisting Pattern](inference-hoisting.md) first. Exec scripts must be deterministic. LLM calls belong in the skill layer (.claude/commands/\*.md). Hoist: generate the value in the skill, pass it via --flag to the exec script. Read inference-hoisting.md.
 
 **calling allocate_slot_for_branch without sync_pool_assignments running first** → Read [Slot Pool State Sync](slot-pool-state-sync.md) first. Pool sync must run BEFORE find_branch_assignment call. Without it, stale pool.json entries cause silent misassignment — a slot may appear free when it's actually occupied by a different branch.
 

@@ -7,7 +7,7 @@ import click
 
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
-from erk.core.branch_slug_generator import generate_slug_or_fallback
+from erk.core.branch_slug_generator import generate_branch_slug
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk_shared.naming import generate_planned_pr_branch_name
@@ -91,7 +91,7 @@ def pr_create(
         source_repo = f"{repo.github.owner}/{repo.github.repo}"
 
     # Generate branch name with LLM slug
-    slug = generate_slug_or_fallback(
+    slug = generate_branch_slug(
         ctx.prompt_executor,
         title if title is not None else extract_title_from_plan(content),
     )
