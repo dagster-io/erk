@@ -25,7 +25,6 @@ Examples:
 
 import json
 import shutil
-import subprocess
 from pathlib import Path
 
 import click
@@ -75,15 +74,15 @@ def _download_from_branch(
     git.remote.fetch_branch(repo_root, "origin", session_branch)
 
     session_file = session_dir / "session.jsonl"
-    result = subprocess.run(
-        ["git", "show", f"origin/{session_branch}:.erk/session/{session_id}.jsonl"],
-        cwd=str(repo_root),
-        capture_output=True,
+    content = git.commit.read_file_from_ref(
+        repo_root,
+        ref=f"origin/{session_branch}",
+        file_path=f".erk/session/{session_id}.jsonl",
     )
-    if result.returncode != 0:
-        return f"Failed to extract session from branch: {result.stderr.decode().strip()}"
+    if content is None:
+        return "Failed to extract session from branch: file not found at ref"
 
-    session_file.write_bytes(result.stdout)
+    session_file.write_bytes(content)
     return session_file
 
 
