@@ -1,0 +1,1696 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>i want to add to sync command in the erk dash tui. in addition to syncing the remote PR to local branch, i also want to use cmux to open up a new workspace that is started up at that branch and with the name of the branch as the title of workspace. you'll have to do some research on the cmux cli probably.
+
+I have the code here: /Users/schrockn/code/githubs/cmux</user>
+  <thinking>The user wants to modify the "sync" command in the erk dash TUI to also open a cmux workspace. Let me research both the current sync command implementation and the cmux CLI.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="9892" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9892}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me research both the current sync command in erk dash and the cmux CLI in parallel.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="9892" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9892}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01WGdKrhBb2D8JaB2k7kjLei">
+    <param name="description">Research erk dash sync command</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 397 chars]... at the action handlers, keybinding definitions, and the sync implementation specifically.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="9892" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9892}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01To19wU2mzu8imF6s4QYiDC">
+    <param name="description">Research cmux CLI tool</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">I need to understand the cmux CLI tool located at /Users/schrockn/code/githubs/cmux. Resea...[truncated 334 chars]...nd how to use cmux to open a workspace with a specific name and starting directory/branch.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="9892" cache_read_input_tokens="19113" output_tokens="527" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9892, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WGdKrhBb2D8JaB2k7kjLei">
+Perfect! Now I have enough information. Let me compile a comprehensive report of my findings.
+
+## Summary of Findings
+
+Based on my thorough exploration of the erk dash TUI codebase, here's what I found about the "sync" command:
+
+### 1. **Where the Sync Action is Defined**
+
+The "sync" action is defined as the **`copy_pr_checkout` command** in `/Users/schrockn/code/erk/src/erk/tui/commands/registry.py`:
+
+**Command Definition (lines 331-339):**
+```python
+CommandDefinition(
+    id="copy_pr_checkout",
+    name="checkout &amp;&amp; sync",
+    description="sync",
+    category=CommandCategory.COPY,
+    shortcut="e",
+    is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_number is not None,
+    get_display_name=_display_copy_pr_checkout,
+),
+```
+
+**Display Name Generator (lines 90-95):**
+```python
+def _display_copy_pr_checkout(ctx: CommandContext) -&gt; str:
+    """Display name for copy_pr_checkout command."""
+    if ctx.row.pr_number:
+        pr = ctx.row.pr_number
+        return f'source "$(erk pr checkout {pr} --script --sync)" &amp;&amp; gt submit --no-interactive'
+
+... [118 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01To19wU2mzu8imF6s4QYiDC">
+Perfect! Now I have enough information. Let me create a comprehensive summary based on my research:
+
+## cmux CLI Tool Research Summary
+
+Based on my research of the cmux codebase and documentation, here's what I found:
+
+### 1. What is cmux
+
+**cmux** is a native macOS terminal application built with Swift/AppKit that provides:
+- A Ghostty-based terminal with vertical tabs and horizontal splits
+- Workspaces and surfaces (panes) for managing multiple projects
+- Notification system for AI coding agents (integrates with Claude Code, Codex, etc.)
+- Built-in browser with scriptable API
+- GPU-accelerated rendering via libghostty
+- Both v1 (line protocol) and v2 (JSON) socket APIs for CLI control
+
+### 2. Creating/Opening a New Workspace
+
+To create a new workspace, use the CLI command:
+
+```bash
+cmux new-workspace [--command &lt;text&gt;]
+```
+
+**Examples:**
+```bash
+# Simple new workspace
+cmux new-workspace
+
+# Create workspace and send a command
+
+... [142 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a good understanding of both sides. Let me plan the implementation:
+
+1. The current "sync" command (`copy_pr_checkout`, shortcut `e`) generates a command that:
+   - Runs `source "$(erk pr checkout {pr_number} --script --sync)"` to checkout the PR branch
+   - Then runs `gt submit --no-interactive` to sync with Graphite
+
+2. The user wants to add cmux workspace creation when syncing. The cmux CLI can:
+   - Create a workspace: `cmux new-workspace --command "cd /path"`
+   - Rename it: `cmux rename-workspace "branch-name"`
+   
+The user wants to enhance the existing sync command to also create and open a cmux workspace for the PR branch, so I should modify the generated shell command to include both the checkout/sync steps and the cmux workspace creation in sequence. I need to check the data model in the relevant files to see what information's available about the branch name when a PR is being checked out, so I can figure out whether I can get that name before creating the workspace or if I need a different approach.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4103" cache_read_input_tokens="29005" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4103}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, I have a solid understanding of both sides. Let me read the key files to plan the implementation.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4103" cache_read_input_tokens="29005" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4103}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LeosoxhYAy5yCrHXyVejHq">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/commands/registry.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4103" cache_read_input_tokens="29005" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4103}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LeosoxhYAy5yCrHXyVejHq">
+     1→"""Command registry for command palette.
+     2→
+     3→This module defines all available commands and their availability predicates.
+     4→Commands are organized by category: Actions, Opens, Copies.
+     5→Plan commands appear only in Plans/Learn views; objective commands appear only in Objectives view.
+     6→"""
+     7→
+     8→from erk.tui.commands.types import CommandCategory, CommandContext, CommandDefinition
+     9→from erk.tui.data.types import PlanRowData
+    10→from erk.tui.views.types import ViewMode
+    11→
+    12→CATEGORY_EMOJI: dict[CommandCategory, str] = {
+    13→    CommandCategory.ACTION: "⚡",
+    14→    CommandCategory.OPEN: "🔗",
+    15→    CommandCategory.COPY: "📋",
+    16→}
+    17→
+    18→
+    19→# === View Mode Predicates ===
+    20→
+    21→
+    22→def _is_plan_view(ctx: CommandContext) -&gt; bool:
+    23→    """True when not in Objectives view (i.e., Plans or Learn)."""
+    24→    return ctx.view_mode != ViewMode.OBJECTIVES
+    25→
+    26→
+    27→def _is_objectives_view(ctx: CommandContext) -&gt; bool:
+    28→    """True when in Objectives view."""
+    29→    return ctx.view_mode == ViewMode.OBJECTIVES
+    30→
+
+... [463 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MasK589Zgxy9U1QevaVhJw">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/commands/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4103" cache_read_input_tokens="29005" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4103}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MasK589Zgxy9U1QevaVhJw">
+     1→"""Data types for command palette."""
+     2→
+     3→from collections.abc import Callable
+     4→from dataclasses import dataclass
+     5→from enum import Enum, auto
+     6→
+     7→from erk.tui.data.types import PlanRowData
+     8→from erk.tui.views.types import ViewMode
+     9→
+    10→
+    11→class CommandCategory(Enum):
+    12→    """Category of a command in the command palette.
+    13→
+    14→    Used to determine the emoji prefix displayed in the palette.
+    15→    """
+    16→
+    17→    ACTION = auto()  # ⚡ Mutative operations
+    18→    OPEN = auto()  # 🔗 Browser navigation
+    19→    COPY = auto()  # 📋 Clipboard operations
+    20→
+    21→
+    22→@dataclass(frozen=True)
+    23→class CommandContext:
+    24→    """Context available to commands.
+    25→
+    26→    Attributes:
+    27→        row: The plan row data for the selected plan
+    28→        view_mode: The active view mode (plans, learn, objectives)
+    29→    """
+    30→
+
+... [29 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01U8RD9vnrJghNUrNKAtxZnz">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/data/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4103" cache_read_input_tokens="29005" output_tokens="750" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4103, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01U8RD9vnrJghNUrNKAtxZnz">
+     1→"""Data types for TUI components."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from dataclasses import dataclass
+     6→from datetime import datetime
+     7→
+     8→from erk_shared.gateway.github.types import IssueFilterState
+     9→
+    10→
+    11→@dataclass(frozen=True)
+    12→class PlanRowData:
+    13→    """Row data for displaying a plan in the TUI table.
+    14→
+    15→    Contains pre-formatted display strings and raw data needed for actions.
+    16→    Immutable to ensure table state consistency.
+    17→
+    18→    **Display vs Raw convention:** Many data points have both a raw field (for
+    19→    logic/predicates) and a display field (for table rendering). Raw fields are
+    20→    often nullable (None when absent), while display fields are always strings
+    21→    (dash "-" or empty when absent). Use raw fields in availability predicates
+    22→    (``ctx.row.pr_number is not None``), display fields for rendering.
+    23→
+    24→    Attributes:
+    25→
+    26→        plan_id: GitHub issue number (e.g., 123). Never None.
+    27→        plan_url: Full URL to the GitHub issue. None when unavailable.
+    28→        full_title: Complete untruncated plan title. Empty string possible.
+    29→        plan_body: Raw issue body text (markdown). Empty string possible.
+    30→
+
+... [196 lines omitted] ...
+
+    56→        run_conclusion: Run conclusion ("success", "failure", "cancelled").
+   168→    warnings: tuple[str, ...] = ()
+  </tool_result>
+  <thinking>Now I have a thorough understanding of both sides. Let me now look at how the `copy_pr_checkout` action is executed in app.py to understand the full flow, and also understand what branch name information is available.
+
+The key insight from the data types:
+- `pr_head_branch` - the branch name from the PR metadata
+- `worktree_branch` - the branch name in the local worktree
+
+For the sync command, we need to modify the `copy_pr_checkout` command to also include `cmux new-workspace` and `cmux rename-workspace` commands.
+
+The current command that gets copied to clipboard is:
+
+
+```
+source "$(erk pr checkout {pr} --script --sync)" &amp;&amp; gt submit --no-interactive
+```
+
+I need to integrate cmux workspace creation into this flow. The `cmux new-workspace` command can create a workspace and send it a command, while `cmux rename-workspace` can set the title to the branch name. Since `pr_head_branch` is available, I can chain these commands together in the clipboard command, or create a separate command entirely—I'm leaning toward chaining them since the branch name is already accessible.
+
+The tricky part is that `cmux new-workspace` returns a workspace ID, but I need to figure out how to pass that to the rename command. Let me reconsider the cmux API to see if there's a cleaner way to handle the workspace creation and renaming in sequence. I can see the next thinking is continuing to explore the bash command approach and then reconsidering the strategy around how to handle the workspace renaming. Since my current rewritten thinking already describes the code approach with capturing the workspace ID and chaining commands, I should write a short phrase indicating the continuation:
+
+Still refining the command... I'm realizing the branch name should come from the PR metadata that's available when generating the command, so I can interpolate it directly in Python. The user said they want to "add to sync command," which suggests modifying the existing one rather than creating something separate, though there's a tension between whether syncing without opening a workspace should still be an option.
+
+Looking at what `erk pr checkout` does, the `pr_head_branch` field from the PR metadata is exactly the source branch that gets checked out, so that's what I should use. The new flow would involve creating a cmux workspace that runs the checkout and sync commands, then renames itself to the branch name...
+
+Building the command structure... I need to figure out the right syntax for passing the newline character. Single quotes treat `\n` literally, so I should use double quotes or the `$'...'` bash syntax instead. Let me reconsider the structure—maybe it's cleaner to build this as a proper shell script rather than trying to cram everything into a single command string. Refining the command structure...
+
+I'm working through the quoting complexity with the embedded variable substitution and newline characters. The approach of capturing the workspace ID, renaming it, then sending the commands to it remotely from the user's current terminal seems cleaner than trying to nest everything in one command. But I need to figure out how to handle the `$'...'` syntax with the nested `$(...)` command substitution without creating escaping nightmares.
+
+Actually, `cmux send` just passes text literally to the terminal, so the shell running inside that workspace will interpret any command substitutions when it executes the text. That means I can send the raw command string and let the remote shell handle the expansion—this approach should work well.
+
+Defining the function to handle the PR checkout display... I'm reconsidering the approach—using separate cmux calls might be simpler, but I realize we need the workspace ID to rename it, which means capturing the output from the initial creation. The cleanest solution is to create the workspace, capture its ID, rename it to the branch name, then send the checkout command to execute it.
+
+Building the Python function... I'm exploring whether using `--command` with `new-workspace` could simplify this, and it looks like it outputs `OK &lt;workspace-id&gt;` so I can still pipe it through `awk` to extract the ID and chain the rename operation. Now I'm converting this approach to Python...
+
+Defining the function that generates the shell command... I'm working through the quoting mechanics here—the `$'...'` syntax handles escape sequences like `\n` but leaves `$(...)` as literal text, which then gets interpreted by the shell in the new workspace terminal where it's actually executed.
+
+Now I'm reconsidering whether this should modify the existing sync command or be a separate one, since changing the current behavior to always wrap in cmux would affect non-cmux users, but the user's request to "add to sync command" is a bit ambiguous about which direction to go.
+
+Actually, since this is the user's personal tool and they explicitly said to add it to the sync command, I'll just modify the existing one. I should also handle the case where `pr_head_branch` might be None by falling back to a generic workspace name, and then check how command execution works in app.py to see if anything else needs updating.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="13046" cache_read_input_tokens="33108" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13046}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me look at the execution path in app.py to understand how the sync command is wired up.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="13046" cache_read_input_tokens="33108" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13046}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01EUojZG22p7zEmZhgMUGwnJ">
+    <param name="pattern">copy_pr_checkout</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/tui</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="13046" cache_read_input_tokens="33108" output_tokens="4699" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 13046, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EUojZG22p7zEmZhgMUGwnJ">
+src/erk/tui/app.py:1296:        elif command_id == "copy_pr_checkout":
+src/erk/tui/screens/plan_detail_screen.py:59:        Binding("e", "copy_pr_checkout", "PR Checkout"),
+src/erk/tui/screens/plan_detail_screen.py:349:    def action_copy_pr_checkout(self) -&gt; None:
+src/erk/tui/screens/plan_detail_screen.py:351:        text = get_copy_text("copy_pr_checkout", self._row, self._view_mode)
+src/erk/tui/screens/plan_detail_screen.py:655:        elif command_id == "copy_pr_checkout":
+src/erk/tui/screens/plan_detail_screen.py:895:                pr_checkout_cmd = get_copy_text("copy_pr_checkout", self._row, self._view_mode)
+src/erk/tui/commands/registry.py:90:def _display_copy_pr_checkout(ctx: CommandContext) -&gt; str:
+src/erk/tui/commands/registry.py:91:    """Display name for copy_pr_checkout command."""
+src/erk/tui/commands/registry.py:332:            id="copy_pr_checkout",
+src/erk/tui/commands/registry.py:338:            get_display_name=_display_copy_pr_checkout,
+src/erk/tui/commands/registry.py:478:        command_id: The command ID (e.g., "copy_pr_checkout")
+  </tool_result>
+  <thinking>Let me also check how the `--command` flag works in cmux more carefully. Let me look at the cmux CLI source to understand the exact behavior.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5042" cache_read_input_tokens="46154" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5042}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me verify the cmux `new-workspace` command behavior by checking its source.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5042" cache_read_input_tokens="46154" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5042}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Key9KqFcZenvquoxJoKpfn">
+    <param name="pattern">new-workspace|new_workspace|newWorkspace</param>
+    <param name="path">/Users/schrockn/code/githubs/cmux/CLI</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="context">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5042" cache_read_input_tokens="46154" output_tokens="216" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5042, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Key9KqFcZenvquoxJoKpfn">
+/Users/schrockn/code/githubs/cmux/CLI/cmux.swift-872-                        print("\(prefix)\(handle)\(titlePart)\(selTag)")
+/Users/schrockn/code/githubs/cmux/CLI/cmux.swift-873-                    }
+/Users/schrockn/code/githubs/cmux/CLI/cmux.swift-874-                }
+/Users/schrockn/code/githubs/cmux/CLI/cmux.swift-875-            }
+/Users/schrockn/code/githubs/cmux/CLI/cmux.swift-876-
+/Users/schrockn/code/githubs/cmux/CLI/cmux.swift:877:        case "new-workspace":
+/Users/schrockn/code/githubs/cmux/CLI/cmux.swift-878-            let (commandOpt, remaining) = parseOption(commandArgs, name: "--command")
+/Users/schrockn/code/githubs/cmux/CLI/cmux.swift-879-            if let unknown = remaining.first(where: { $0.hasPrefix("--") }) {
+/Users/schrockn/code/githubs/cmux/CLI/cmux.swift:880:                throw CLIError(message: "new-workspace: unknown flag '\(unknown)'. Known flags: --command &lt;text&gt;")
+/Users/schrockn/code/githubs/cmux/CLI/cmux.swift-881-            }
+/Users/schrockn/code/githubs/cmux/CLI/cmux.swift:882:            let response = try sendV1Command("new_workspace", client: client)
+/Users/schrockn/code/githubs/cmux/CLI/cmux.swift-883-            print(response)
+/Users/schrockn/code/githubs/cmux/CLI/cmux.swift-884-            if let commandText = commandOpt {
+/Users/schrockn/code/githubs/cmux/CLI/cmux.swift-885-                guard response.hasPrefix("OK ") else {
+/Users/schrockn/code/githubs/cmux/CLI/cmux.swift:886:                    throw CLIError(message: "new-workspace failed, cannot run --command")
+/Users/schrockn/code/githubs/cmux/CLI/cmux.swift-887-                }
+/Users/schrockn/code/githubs/cmux/CLI/cmux.swift-888-                let wsId = String(response.dropFirst(3)).trimmingCharacters(in: .whitespacesAndNewlines)
+/Users/schrockn/code/githubs/cmux/CLI/cmux.swift-889-                // Wait for shell to initialize
+/Users/schrockn/code/githubs/cmux/CLI/cmux.swift-890-                Thread.sleep(forTimeInterval: 0.5)
+/Users/schrockn/code/githubs/cmux/CLI/cmux.swift-891-                let text = unescapeSendText(commandText + "\\n")
+--
+/Users/schrockn/code/githubs/cmux/CLI/cmux.swift-3622-            Example:
+/Users/schrockn/code/githubs/cmux/CLI/cmux.swift-3623-              cmux rename-tab "build logs"
+/Users/schrockn/code/githubs/cmux/CLI/cmux.swift-3624-              cmux rename-tab --tab tab:3 "staging server"
+/Users/schrockn/code/githubs/cmux/CLI/cmux.swift-3625-              cmux rename-tab --workspace workspace:2 --surface surface:5 --title "agent run"
+/Users/schrockn/code/githubs/cmux/CLI/cmux.swift-3626-            """
+/Users/schrockn/code/githubs/cmux/CLI/cmux.swift:3627:        case "new-workspace":
+/Users/schrockn/code/githubs/cmux/CLI/cmux.swift-3628-            return """
+/Users/schrockn/code/githubs/cmux/CLI/cmux.swift:3629:            Usage: cmux new-workspace [--command &lt;text&gt;]
+/Users/schrockn/code/githubs/cmux/CLI/cmux.swift-3630-
+
+... [25 lines omitted] ...
+  </tool_result>
+  <thinking>Key insight from the cmux source (line 891):
+```swift
+let text = unescapeSendText(commandText + "\\n")
+```
+
+So `--command` automatically appends `\n` (Enter). This means `cmux new-workspace --command "..."` will automatically press Enter after sending the text. 
+
+Now let me also check the `rename-workspace` command:</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2396" cache_read_input_tokens="51196" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2396}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Important finding: cmux's `--command` flag automatically appends `\n` (Enter) to the text. Let me verify the rename-workspace command.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2396" cache_read_input_tokens="51196" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2396}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01EahzgruJhbGFfWNfCAGyoL">
+    <param name="pattern">rename-workspace|rename_workspace|renameWorkspace</param>
+    <param name="path">/Users/schrockn/code/githubs/cmux/CLI/cmux.swift</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="context">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2396" cache_read_input_tokens="51196" output_tokens="293" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2396, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EahzgruJhbGFfWNfCAGyoL">
+1126-        case "select-workspace":
+1127-            guard let workspaceRaw = optionValue(commandArgs, name: "--workspace") else {
+1128-                throw CLIError(message: "select-workspace requires --workspace")
+1129-            }
+1130-            var params: [String: Any] = [:]
+1131-            let wsId = try normalizeWorkspaceHandle(workspaceRaw, client: client)
+1132-            if let wsId { params["workspace_id"] = wsId }
+1133-            let payload = try client.sendV2(method: "workspace.select", params: params)
+1134-            printV2Payload(payload, jsonOutput: jsonOutput, idFormat: idFormat, fallbackText: v2OKSummary(payload, idFormat: idFormat, kinds: ["workspace"]))
+1135-
+1136:        case "rename-workspace", "rename-window":
+1137-            let (wsArg, rem0) = parseOption(commandArgs, name: "--workspace")
+1138-            let workspaceArg = wsArg ?? (windowId == nil ? ProcessInfo.processInfo.environment["CMUX_WORKSPACE_ID"] : nil)
+1139-            let titleArgs = rem0.dropFirst(rem0.first == "--" ? 1 : 0)
+1140-            let title = titleArgs.joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines)
+1141-            guard !title.isEmpty else {
+1142-                throw CLIError(message: "\(command) requires a title")
+1143-            }
+1144-            let wsId = try resolveWorkspaceId(workspaceArg, client: client)
+1145-            let params: [String: Any] = ["title": title, "workspace_id": wsId]
+1146-            let payload = try client.sendV2(method: "workspace.rename", params: params)
+--
+3869-
+3870-            Select (switch to) the specified workspace.
+3871-
+3872-            Flags:
+3873-              --workspace &lt;id|ref|index&gt;   Workspace to select (required)
+3874-
+3875-            Example:
+3876-              cmux select-workspace --workspace workspace:2
+
+... [46 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have all the information I need. Let me summarize the approach:
+
+1. `cmux new-workspace --command "..."` creates a workspace, sends the command text + Enter, and returns `OK &lt;workspace-id&gt;`
+2. `cmux rename-workspace --workspace &lt;id&gt; &lt;title&gt;` renames a workspace by ID
+
+The plan for the modified `_display_copy_pr_checkout`:
+
+```python
+def _display_copy_pr_checkout(ctx: CommandContext) -&gt; str:
+    """Display name for copy_pr_checkout command."""
+    if ctx.row.pr_number:
+        pr = ctx.row.pr_number
+        branch = ctx.row.pr_head_branch or f"pr-{pr}"
+        checkout_cmd = f'source "$(erk pr checkout {pr} --script --sync)" &amp;&amp; gt submit --no-interactive'
+        return (
+            f"WS=$(cmux new-workspace --command '{checkout_cmd}' | awk '{{print $2}}') &amp;&amp; "
+            f'cmux rename-workspace --workspace "$WS" "{branch}"'
+        )
+    return "checkout"
+```
+
+I need to be careful with the quoting here. The checkout command has double quotes and command substitution, so wrapping it in single quotes for the `--command` flag should preserve everything literally, which is what I want.
+
+Actually, let me trace through how cmux handles this. Looking at the source code, the `--command` text gets processed to unescape sequences like `\n` and `\t`, then sent as input to the terminal. So the shell in the new workspace will receive and interpret the command string, which means the `$()` substitution will happen at that point, not in the outer shell.
+
+The single quotes around the command prevent the outer shell from expanding `$()`, so it gets passed literally to cmux, which then sends it to the inner shell where it's finally evaluated. That's the correct behavior.
+
+Now I'm checking whether there are any quoting conflicts—the command itself only has double quotes and `$()`, no single quotes, so wrapping the whole thing in single quotes works fine. And `awk '{print $2}'` is a separate argument entirely, so there's no nesting issue there either.
+
+Let me trace through the full command to verify the shell parsing works as expected: the command substitution captures cmux's output, pipes it through awk to extract the UUID, and then that gets used in the rename-workspace call.
+
+Now I need to handle the Python f-string carefully—the awk pattern with curly braces needs to be escaped by doubling them, and the branch name should be safely quoted even if it contains special characters like slashes.
+
+Writing the implementation...
+
+The command chains together creating a new workspace with the checkout logic, extracting its ID, and then renaming it to match the branch name. I should also update the `name` field in the CommandDefinition to reflect this new behavior, and I'm wondering if there's a desktop component I need to check.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1637" cache_read_input_tokens="53592" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1637}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a clear picture. Let me also quickly check the desktop dash to see if it references this command.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1637" cache_read_input_tokens="53592" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1637}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_015dp1RJ2bfoUvEtHY2wSBvd">
+    <param name="pattern">copy_pr_checkout</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1637" cache_read_input_tokens="53592" output_tokens="1464" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1637, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015dp1RJ2bfoUvEtHY2wSBvd">
+Found 8 files
+src/erk/tui/app.py
+docs/learned/tui/clipboard-text-generation.md
+tests/tui/commands/test_registry.py
+tests/tui/app/test_plan_detail_screen.py
+tests/tui/commands/test_execute_command.py
+src/erk/tui/screens/plan_detail_screen.py
+src/erk/tui/commands/registry.py
+docs/learned/tui/action-inventory.md
+  </tool_result>
+  <tool_use name="EnterPlanMode" id="toolu_01JBijZPdR69RbmuToVQeBU2">
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1576" cache_read_input_tokens="55229" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1576, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JBijZPdR69RbmuToVQeBU2">
+Entered plan mode. You should now focus on exploring the codebase and designing an implementation approach.
+
+In plan mode, you should:
+1. Thoroughly explore the codebase to understand existing patterns
+2. Identify similar features and architectural approaches
+3. Consider multiple approaches and their trade-offs
+4. Use AskUserQuestion if you need to clarify the approach
+5. Design a concrete implementation strategy
+6. When ready, use ExitPlanMode to present your plan for approval
+
+Remember: DO NOT write or edit any files yet. This is a read-only exploration and planning phase.
+  </tool_result>
+  <thinking>I've already done Phase 1 exploration. I have a good understanding of:
+
+1. The current sync command (`copy_pr_checkout`) - how it works, where it's defined, and the full execution flow
+2. The cmux CLI - `new-workspace`, `rename-workspace`, and how commands work
+
+Let me now design the implementation. The changes are fairly straightforward - mainly modifying `_display_copy_pr_checkout` in the registry. But I should also check the tests to understand what needs to be updated.
+
+Let me read the test files to understand the test patterns, then write the plan.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1371" cache_read_input_tokens="56805" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1371}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the tests to understand what needs updating.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1371" cache_read_input_tokens="56805" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1371}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01R3oTNcEsKBumXfRxJLhsmb">
+    <param name="file_path">/Users/schrockn/code/erk/tests/tui/commands/test_registry.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1371" cache_read_input_tokens="56805" output_tokens="237" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1371, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01R3oTNcEsKBumXfRxJLhsmb">
+     1→"""Tests for command palette registry."""
+     2→
+     3→from erk.tui.commands.registry import (
+     4→    get_all_commands,
+     5→    get_available_commands,
+     6→    get_copy_text,
+     7→    get_display_name,
+     8→)
+     9→from erk.tui.commands.types import CommandCategory, CommandContext
+    10→from erk.tui.views.types import ViewMode
+    11→from erk_shared.gateway.plan_data_provider.fake import make_plan_row
+    12→
+    13→
+    14→def test_all_commands_have_unique_ids() -&gt; None:
+    15→    """All commands should have unique IDs."""
+    16→    commands = get_all_commands()
+    17→    ids = [cmd.id for cmd in commands]
+    18→    assert len(ids) == len(set(ids)), "Command IDs must be unique"
+    19→
+    20→
+    21→def test_all_commands_have_required_fields() -&gt; None:
+    22→    """All commands should have required fields populated."""
+    23→    commands = get_all_commands()
+    24→    for cmd in commands:
+    25→        assert cmd.id, f"Command missing id: {cmd}"
+    26→        assert cmd.name, f"Command {cmd.id} missing name"
+    27→        assert cmd.description, f"Command {cmd.id} missing description"
+    28→        assert isinstance(cmd.category, CommandCategory), f"Command {cmd.id} missing valid category"
+    29→        assert callable(cmd.is_available), f"Command {cmd.id} missing is_available"
+    30→
+
+... [786 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a comprehensive understanding. Let me also check the `make_plan_row` helper to see what fields it supports for `pr_head_branch`.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="15928" cache_read_input_tokens="58176" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15928}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check `make_plan_row` to see if it supports `pr_head_branch`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="15928" cache_read_input_tokens="58176" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15928}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01PHoEfQ3WL5r8KQ9ATHXAVv">
+    <param name="pattern">def make_plan_row</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="15928" cache_read_input_tokens="58176" output_tokens="180" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15928, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PHoEfQ3WL5r8KQ9ATHXAVv">
+Found 1 file
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01FK9RzhKvhstNVTnDqZAUGp">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="223" cache_read_input_tokens="74104" output_tokens="90" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 223, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FK9RzhKvhstNVTnDqZAUGp">
+     1→"""Fake plan data provider for testing TUI components."""
+     2→
+     3→from datetime import UTC, datetime
+     4→from pathlib import Path
+     5→
+     6→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+     7→from erk.tui.sorting.types import BranchActivity
+     8→from erk_shared.gateway.browser.abc import BrowserLauncher
+     9→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+    10→from erk_shared.gateway.clipboard.abc import Clipboard
+    11→from erk_shared.gateway.clipboard.fake import FakeClipboard
+    12→from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread
+    13→from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
+    14→
+    15→
+    16→class FakePlanDataProvider(PlanDataProvider):
+    17→    """Fake implementation of PlanDataProvider for testing.
+    18→
+    19→    Returns canned data without making any API calls.
+    20→    """
+    21→
+    22→    def __init__(
+    23→        self,
+    24→        *,
+    25→        plans: list[PlanRowData] | None = None,
+    26→        plans_by_labels: dict[tuple[str, ...], list[PlanRowData]] | None = None,
+    27→        clipboard: Clipboard | None = None,
+    28→        browser: BrowserLauncher | None = None,
+    29→        repo_root: Path | None = None,
+    30→        fetch_error: str | None = None,
+
+... [482 lines omitted] ...
+
+    41→            fetch_error: If set, fetch_plans() raises RuntimeError with this message.
+    42→                Use to simulate API failures.
+    50→        self._fetch_error = fetch_error
+    84→            RuntimeError: If fetch_error is set
+    87→        if self._fetch_error is not None:
+    88→            raise RuntimeError(self._fetch_error)
+  </tool_result>
+  <thinking>Now I have everything I need. Let me also check one thing in the cmux source - what happens when `--command` sends text, does it also auto-append `\n`?
+
+From line 891:
+```swift
+let text = unescapeSendText(commandText + "\\n")
+```
+
+Yes, `--command` automatically appends `\n` (newline/Enter). So we don't need to add `\n` ourselves.
+
+Now I need to decide on the approach. Let me think carefully:
+
+**Current behavior:** The `copy_pr_checkout` command (shortcut `e`) copies a shell command to clipboard:
+
+
+```bash
+source "$(erk pr checkout 456 --script --sync)" &amp;&amp; gt submit --no-interactive
+```
+
+**Desired new behavior:** When triggered, also open a cmux workspace with that branch name.
+
+**Approach:**
+1. Modify `_display_copy_pr_checkout` to generate a command that:
+   a. Creates a new cmux workspace
+   b. Sends the checkout+sync command to it
+   c. Renames the workspace to the branch name
+
+Building the cmux command...
+
+The quoting strategy works because the command text stays in single quotes when passed to `--command`, so the shell variable expansion happens inside the workspace's terminal rather than the outer shell. The `pr_head_branch` field is already available on `PlanRowData` through `make_plan_row`, so I can use that for the workspace name.
+
+Now I need to update `src/erk/tui/commands/registry.py` to modify `_display_copy_pr_checkout` and handle the workspace creation logic.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="7284" cache_read_input_tokens="74327" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7284}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I now have a complete understanding. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7284" cache_read_input_tokens="74327" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7284}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01NF2WsX8p6ByBSSZEzpRsDM">
+    <param name="file_path">/Users/schrockn/.claude/plans/cosmic-juggling-pearl.md</param>
+    <param name="content"># Add cmux workspace creation to erk dash sync command
+
+## Context
+
+The `copy_pr_checkout`...[truncated 2627 chars]... `e`, verify the copied command includes `cmux new-workspace` and `cmux rename-workspace`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7284" cache_read_input_tokens="74327" output_tokens="1513" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7284, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NF2WsX8p6ByBSSZEzpRsDM">
+File created successfully at: /Users/schrockn/.claude/plans/cosmic-juggling-pearl.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01SVYWBJmU9jxENLPVQRduDR">
+    <param name="plan"># Add cmux workspace creation to erk dash sync command
+
+## Context
+
+The `copy_pr_checkout`...[truncated 2627 chars]... `e`, verify the copied command includes `cmux new-workspace` and `cmux rename-workspace`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1537" cache_read_input_tokens="81611" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1537, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SVYWBJmU9jxENLPVQRduDR">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/cosmic-juggling-pearl.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Add cmux workspace creation to erk dash sync command
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 79e0ee40-3b1a-4793-8197-8c8f2051fc52 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+## Add cmux workspace creation to erk dash sync command
+
+### Context
+
+The `copy_pr_checkout` command (shortcut `e`, description "sync") in the erk dash TUI currently copies a shell command to clipboard that checks out and syncs a PR branch:
+```
+source "$(erk pr checkout 456 --script --sync)" &amp;&amp; gt submit --no-interactive
+```
+
+The user wants the sync command to also open a new cmux workspace with the branch as the workspace title.
+
+### Approach
+
+Modify `_display_copy_pr_checkout` to produce a command that:
+1. Creates a new cmux workspace with the checkout+sync command sent to it
+2. Captures the workspace ID from cmux's `OK &lt;uuid&gt;` output
+3. Renames the workspace to the PR's head branch name
+
+Generated command:
+```bash
+WS=$(cmux new-workspace --command 'source "$(erk pr checkout 456 --script --sync)" &amp;&amp; gt submit --no-interactive' | awk '{print $2}') &amp;&amp; cmux rename-workspace --workspace "$WS" "sc/branch-name"
+```
+
+### Changes
+
+1. **`src/erk/tui/commands/registry.py`** - Modify `_display_copy_pr_checkout` and update CommandDefinition name to `"cmux sync"`
+2. **`tests/tui/commands/test_registry.py`** - Update two tests matching the old command format, add test for `pr_head_branch` usage
+
+### Verification
+
+Run `uv run pytest tests/tui/commands/test_registry.py -v`
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="655" cache_read_input_tokens="83148" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 655}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_018yxnseDQuxsGyuvhSR7kJC">
+    <param name="questions">[{'question': '📋 Add cmux workspace creation to erk dash sync command\nCurrent context: (w...[truncated 436 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="655" cache_read_input_tokens="83148" output_tokens="610" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 655, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018yxnseDQuxsGyuvhSR7kJC">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+  <user>print out an example of the cmux command you would run so a i can test locally</user>
+  <assistant>
+
+Based on the plan, here's the command with a concrete example. Assuming PR #456 with branch `sc/my-feature`:
+
+```bash
+WS=$(cmux new-workspace --command 'source "$(erk pr checkout 456 --script --sync)" &amp;&amp; gt submit --no-interactive' | awk '{print $2}') &amp;&amp; cmux rename-workspace --workspace "$WS" "sc/my-feature"
+```
+
+To test just the cmux parts without the erk checkout, you could try:
+
+```bash
+WS=$(cmux new-workspace --command 'echo hello world' | awk '{print $2}') &amp;&amp; cmux rename-workspace --workspace "$WS" "test-workspace"
+```
+
+That should create a new workspace that runs `echo hello world`, then rename it to "test-workspace".</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1208" cache_read_input_tokens="83803" output_tokens="191" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1208, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>that worked. can we run commands in that workspace once it is created?</user>
+  <assistant>
+
+Yes! Once you have the workspace ID in `$WS`, you can send commands to it with `cmux send`:
+
+```bash
+cmux send --workspace "$WS" $'cd /some/path\n'
+```
+
+The `$'...\n'` syntax ensures a newline (Enter) is sent so the command executes. Without it, the text just gets typed but not submitted.
+
+So for the sync use case, we could also do a two-step approach - create the workspace first, then send the checkout command separately:
+
+```bash
+WS=$(cmux new-workspace | awk '{print $2}') &amp;&amp; cmux rename-workspace --workspace "$WS" "sc/my-feature" &amp;&amp; cmux send --workspace "$WS" $'source "$(erk pr checkout 456 --script --sync)" &amp;&amp; gt submit --no-interactive\n'
+```
+
+This is functionally equivalent but separates workspace creation from the command. Either approach works - do you have a preference, or should we stick with the `--command` flag version from the plan?</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="366" cache_read_input_tokens="85011" output_tokens="243" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 366, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>great let's add it, but only conditionally add it if there is a config set to enable a cmux integration, and it should default to flase</user>
+  <thinking>The user wants to implement the cmux workspace creation in the sync command, but gated behind a config setting that defaults to false. Let me find where the erk dash config lives to understand how to add this setting.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="435" cache_read_input_tokens="85377" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 435}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me find where the dash/TUI config is managed.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="435" cache_read_input_tokens="85377" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 435}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01X8qBsBZbRaNiWkda8ZLHM9">
+    <param name="description">Find erk dash config system</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 453 chars]...default to false
+
+Search in src/erk/config/, src/erk/tui/, and related files. Be thorough.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="435" cache_read_input_tokens="85377" output_tokens="330" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 435, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01X8qBsBZbRaNiWkda8ZLHM9">
+Perfect! Now I have enough information. Let me compile a comprehensive summary of the configuration system.
+
+## Summary: Erk Configuration System
+
+Based on my thorough exploration of the codebase, here's a complete understanding of how erk manages configuration, specifically for the dash/TUI:
+
+### 1. **Where Configuration is Defined**
+
+**Two-tier config system:**
+
+- **Global Config** (`GlobalConfig` dataclass in `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/context/types.py`, lines 224-270):
+  - Located at `~/.erk/config.toml`
+  - Frozen dataclass with boolean fields like `use_graphite`, `show_hidden_commands`, `shell_setup_complete`, `github_planning`, `prompt_learn_on_land`, `shell_integration`, etc.
+  - Loaded by `RealErkInstallation.load_config()` at CLI startup
+  - Stored in `ErkContext.global_config` (nullable)
+
+- **Loaded Config** (`LoadedConfig` dataclass in same file, lines 273-314):
+  - Located at `&lt;repo-root&gt;/.erk/config.toml` and `&lt;repo-root&gt;/.erk/config.local.toml`
+  - Per-repo configuration loaded at context creation time
+  - Fields: `env`, `post_create_commands`, `post_create_shell`, `plans_repo`, `pool_size`, `pool_checkout_commands`, `pool_checkout_shell`, `prompt_learn_on_land`, `dispatch_ref`
+  - Stored in `ErkContext.local_config` (never None, defaults to empty values)
+
+### 2. **How Config Values are Loaded and Accessed**
+
+**Loading Flow** (in `/Users/schrockn/code/erk/src/erk/core/context.py`, lines 542-611):
+
+1. **Global Config** loaded at line 545 via `erk_installation.load_config()` (None if not exists)
+2. **Local Config** loaded at line 605-607:
+   - `load_config(main_root)` → Parse `.erk/config.toml`
+   - `load_local_config(main_root)` → Parse `.erk/config.local.toml`
+
+... [120 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a clear understanding of the config system. The approach is:
+
+1. Add `cmux_integration: bool` to `GlobalConfig` with default `False`
+2. Update `RealErkInstallation.load_config()` and `save_config()` 
+3. Update `GlobalConfig.test()` factory method
+4. Pass the config flag to the display name generator somehow
+
+But wait - the `_display_copy_pr_checkout` function only has access to `CommandContext` which contains `row: PlanRowData` and `view_mode: ViewMode`. It doesn't have access to config. I need to think about how to thread the config through.
+
+
+The cleanest solution is to add a config field directly to `CommandContext`. I could add the flag to `PlanRowData` instead, but that mixes display data with configuration. Rather than adding a specific boolean, I'll add `cmux_integration: bool = False` to keep it explicit and aligned with the project's style.
+
+Now I need to trace where `CommandContext` gets instantiated. It's created in a few places—`registry.py` constructs it with just `row` and `view_mode`, and `get_copy_text` does the same. Since callers are responsible for constructing the context, I'll need to update those call sites to pass the new config parameter. I need to pass the config parameter to `get_copy_text` as well, since it constructs `CommandContext` internally. Let me reconsider the approach—maybe I should make `cmux_integration` a default parameter on `CommandContext` itself, so callers can override it when they have the config value available, and I'll need to check all the places where `CommandContext` gets instantiated and where `get_copy_text` is called.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2562" cache_read_input_tokens="85812" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2562}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check how the config flows through to the command execution in app.py.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2562" cache_read_input_tokens="85812" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2562}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FNw8NQyU1sjV7emN6apqTD">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/app.py</param>
+    <param name="offset">1280</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2562" cache_read_input_tokens="85812" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2562}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FNw8NQyU1sjV7emN6apqTD">
+  1280→                self._provider.browser.launch(row.plan_url)
+  1281→                self.notify(f"Opened plan #{row.plan_id}")
+  1282→
+  1283→        elif command_id == "open_pr":
+  1284→            if row.pr_url:
+  1285→                self._provider.browser.launch(row.pr_url)
+  1286→                self.notify(f"Opened PR #{row.pr_number}")
+  1287→
+  1288→        elif command_id == "open_run":
+  1289→            if row.run_url:
+  1290→                self._provider.browser.launch(row.run_url)
+  1291→                self.notify(f"Opened run {row.run_id_display}")
+  1292→
+  1293→        elif command_id == "copy_checkout":
+  1294→            self._copy_checkout_command(row)
+  1295→
+  1296→        elif command_id == "copy_pr_checkout":
+  1297→            text = get_copy_text(command_id, row, self._view_mode)
+  1298→            if text is not None:
+  1299→                self._provider.clipboard.copy(text)
+  1300→                self.notify(f"Copied: {text}")
+  1301→
+  1302→        elif command_id == "copy_implement_local":
+  1303→            text = get_copy_text(command_id, row, self._view_mode)
+  1304→            if text is not None:
+  1305→                self._provider.clipboard.copy(text)
+  1306→                self.notify(f"Copied: {text}")
+  1307→
+  1308→        elif command_id == "copy_dispatch":
+  1309→            text = get_copy_text(command_id, row, self._view_mode)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WwVnUszYm6ewbuoorWK5WL">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/context/types.py</param>
+    <param name="offset">224</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2562" cache_read_input_tokens="85812" output_tokens="1097" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2562, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WwVnUszYm6ewbuoorWK5WL">
+   224→@dataclass(frozen=True)
+   225→class GlobalConfig:
+   226→    """Immutable global configuration data.
+   227→
+   228→    Loaded once at CLI entry point and stored in ErkContext.
+   229→    All fields are read-only after construction.
+   230→    """
+   231→
+   232→    erk_root: Path
+   233→    use_graphite: bool
+   234→    shell_setup_complete: bool
+   235→    github_planning: bool
+   236→    fix_conflicts_require_dangerous_flag: bool = True
+   237→    show_hidden_commands: bool = False
+   238→    prompt_learn_on_land: bool = True
+   239→    shell_integration: bool = False
+   240→    interactive_agent: InteractiveAgentConfig = InteractiveAgentConfig.default()
+   241→
+   242→    @staticmethod
+   243→    def test(
+   244→        erk_root: Path,
+   245→        *,
+   246→        use_graphite: bool = True,
+   247→        shell_setup_complete: bool = True,
+   248→        github_planning: bool = True,
+   249→        fix_conflicts_require_dangerous_flag: bool = True,
+   250→        show_hidden_commands: bool = False,
+   251→        prompt_learn_on_land: bool = True,
+   252→        shell_integration: bool = False,
+   253→        interactive_agent: InteractiveAgentConfig | None = None,
+
+... [62 lines omitted] ...
+  </tool_result>
+  <thinking>Now let me check how `get_copy_text` is called and also find where the `CommandContext` objects are constructed. I need to understand the full chain to thread the config through.
+
+Let me also look at how the `ErkDashApp` is constructed and what it has access to.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3061" cache_read_input_tokens="88374" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3061}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check how `ErkDashApp` is constructed and what config it has access to.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3061" cache_read_input_tokens="88374" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3061}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01R5FFfe3bmSCf52HqhLZKS8">
+    <param name="pattern">class ErkDashApp</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/tui/app.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="context">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3061" cache_read_input_tokens="88374" output_tokens="252" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3061, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01R5FFfe3bmSCf52HqhLZKS8">
+52-
+53-    success: bool
+54-    output_lines: tuple[str, ...]
+55-    return_code: int
+56-
+57-
+58-def _last_output_line(result: _OperationResult) -&gt; str:
+59-    """Return the last non-empty output line, or 'Unknown error'."""
+60-    return next((ln for ln in reversed(result.output_lines) if ln), "Unknown error")
+61-
+62-
+63-def _build_github_url(plan_url: str, resource_type: str, number: int) -&gt; str:
+64-    """Build a GitHub URL for a PR or issue from an existing plan URL.
+65-
+66-    Args:
+67-        plan_url: Base plan URL (e.g., https://github.com/owner/repo/pull/123)
+68-        resource_type: Either "pull" or "issues"
+69-        number: The PR or issue number
+70-
+71-    Returns:
+72-        Full URL (e.g., https://github.com/owner/repo/pull/456)
+73-    """
+74-    # Try /pull/ first (new plan-as-PR format), fall back to /issues/ (legacy)
+75-    if "/pull/" in plan_url:
+76-        base_url = plan_url.rsplit("/pull/", 1)[0]
+77-    else:
+78-        base_url = plan_url.rsplit("/issues/", 1)[0]
+79-    return f"{base_url}/{resource_type}/{number}"
+80-
+81-
+
+... [31 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01EU5Vtrbo1cXaVvo9uRYY4U">
+    <param name="pattern">def __init__</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/tui/app.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="context">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1159" cache_read_input_tokens="91435" output_tokens="149" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1159, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EU5Vtrbo1cXaVvo9uRYY4U">
+104-        Binding("h", "view_checks", "Checks", show=False),
+105-        Binding("i", "show_implement", "Implement"),
+106-        Binding("v", "view_plan_body", "View", show=False),
+107-        Binding("l", "launch", "Launch"),
+108-        Binding("slash", "start_filter", "Filter", key_display="/"),
+109-        Binding("s", "toggle_sort", "Sort"),
+110-        Binding("ctrl+p", "command_palette", "Commands"),
+111-        Binding("1", "switch_view_plans", "Plans", show=False),
+112-        Binding("2", "switch_view_learn", "Learn", show=False),
+113-        Binding("3", "switch_view_objectives", "Objectives", show=False),
+114-        Binding("t", "toggle_stack_filter", "Stack", show=False),
+115-        Binding("x", "one_shot_prompt", "One-Shot"),
+116-        Binding("right", "next_view", "Next View", show=False, priority=True),
+117-        Binding("left", "previous_view", "Previous View", show=False, priority=True),
+118-    ]
+119-
+120-    def get_system_commands(self, screen: Screen) -&gt; Iterator[SystemCommand]:
+121-        """Return system commands, hiding them when plan commands are available.
+122-
+123-        Hides Keys, Quit, Screenshot, Theme from command palette when on
+124-        PlanDetailScreen or when main list has a selected row, so only
+125-        plan-specific commands appear.
+126-        """
+127-        if isinstance(screen, PlanDetailScreen):
+128-            return iter(())
+129-        # Hide system commands on main list when a row is selected
+130-        if self._get_selected_row() is not None:
+131-            return iter(())
+132-        yield from super().get_system_commands(screen)
+133-
+
+... [31 lines omitted] ...
+  </tool_result>
+  <thinking>Now I see the full picture. The `ErkDashApp.__init__` takes a `provider: PlanDataProvider` but doesn't directly take config. Let me look at how it's constructed in the list_cmd.py to see where `GlobalConfig` is available.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1056" cache_read_input_tokens="92594" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1056}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017TkxKQK3vN45May5k84Baa">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+    <param name="offset">395</param>
+    <param name="limit">45</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1056" cache_read_input_tokens="92594" output_tokens="190" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1056, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017TkxKQK3vN45May5k84Baa">
+   395→
+   396→    http_client = ctx.http_client
+   397→    if http_client is None:
+   398→        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+   399→        raise SystemExit(1)
+   400→
+   401→    provider = RealPlanDataProvider(
+   402→        ctx,
+   403→        location=location,
+   404→        clipboard=clipboard,
+   405→        browser=browser,
+   406→        http_client=http_client,
+   407→    )
+   408→    effective_state: IssueFilterState = "closed" if state == "closed" else "open"
+   409→
+   410→    filters = PlanFilters(
+   411→        labels=labels,
+   412→        state=effective_state,
+   413→        run_state=run_state,
+   414→        limit=limit,
+   415→        show_prs=prs,
+   416→        show_runs=runs,
+   417→        exclude_labels=(),
+   418→        creator=creator,
+   419→        show_pr_column=False,
+   420→        lifecycle_stage=stage,
+   421→    )
+   422→
+   423→    # Convert sort string to SortState
+   424→    initial_sort = SortState(key=SortKey.BRANCH_ACTIVITY if sort == "activity" else SortKey.PLAN_ID)
+
+... [15 lines omitted] ...
+  </tool_result>
+  <thinking>I see. The `ErkDashApp` gets `provider` (which wraps `ctx`), but doesn't directly get `GlobalConfig`. The `ctx` (ErkContext) is available in `list_cmd.py` where the app is constructed. 
+
+For threading the config, the simplest approach is:
+1. Add `cmux_integration: bool` to `GlobalConfig`
+2. Add `cmux_integration: bool = False` to `ErkDashApp.__init__`
+3. Pass it from `list_cmd.py` where `ctx.global_config` is available
+4. Add `cmux_integration: bool = False` to `CommandContext`
+
+
+5. Thread it through `get_copy_text` and the display name generator
+
+Actually, I'm realizing this is a lot of plumbing for one flag. The `_display_copy_pr_checkout` function already receives `CommandContext` with `row` and `view_mode`, so I could just add the config there. The main work would be updating the `CommandContext` dataclass and all its callers in registry.py, app.py, and plan_detail_screen.py.
+
+I could also check an environment variable or add a broader config field, but given how the project structures things, adding an explicit `cmux_integration` field to `CommandContext` feels right. Let me trace through where `get_copy_text` constructs the context internally and add the parameter there.
+
+Now I'm mapping out all the places that need updating: `GlobalConfig` gets the new flag, the test helper gets it, the config loading and saving logic handles it, `CommandContext` carries it, and `get_copy_text` accepts and passes it through to the context it builds.
+
+Then I need to thread it through the UI layer—`ErkDashApp` takes the flag and passes it when constructing contexts, `list_cmd.py` reads it from config and passes it to the app, and `plan_detail_screen.py` propagates it as needed. But looking at this more carefully, `get_copy_text` already constructs `CommandContext` internally, so I'd just be adding a parameter there rather than having callers build the context themselves. The default value on `CommandContext` means backward compatibility is preserved for any code that constructs it without the new parameter. Now I need to trace through where `get_copy_text` is actually called to understand the full scope of changes needed.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="690" cache_read_input_tokens="93650" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 690}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Bniph7qLcKNYpHZ4Lr2gk9">
+    <param name="pattern">get_copy_text\(</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/tui</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="690" cache_read_input_tokens="93650" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 690}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Bniph7qLcKNYpHZ4Lr2gk9">
+src/erk/tui/commands/registry.py:470:def get_copy_text(command_id: str, row: PlanRowData, view_mode: ViewMode) -&gt; str | None:
+src/erk/tui/app.py:1297:            text = get_copy_text(command_id, row, self._view_mode)
+src/erk/tui/app.py:1303:            text = get_copy_text(command_id, row, self._view_mode)
+src/erk/tui/app.py:1309:            text = get_copy_text(command_id, row, self._view_mode)
+src/erk/tui/app.py:1315:            text = get_copy_text(command_id, row, self._view_mode)
+src/erk/tui/app.py:1321:            text = get_copy_text(command_id, row, self._view_mode)
+src/erk/tui/app.py:1327:            text = get_copy_text(command_id, row, self._view_mode)
+src/erk/tui/app.py:1333:            text = get_copy_text(command_id, row, self._view_mode)
+src/erk/tui/app.py:1339:            text = get_copy_text(command_id, row, self._view_mode)
+src/erk/tui/screens/plan_detail_screen.py:351:        text = get_copy_text("copy_pr_checkout", self._row, self._view_mode)
+src/erk/tui/screens/plan_detail_screen.py:656:            text = get_copy_text(command_id, row, self._view_mode)
+src/erk/tui/screens/plan_detail_screen.py:675:            text = get_copy_text(command_id, row, self._view_mode)
+src/erk/tui/screens/plan_detail_screen.py:681:            text = get_copy_text(command_id, row, self._view_mode)
+src/erk/tui/screens/plan_detail_screen.py:687:            text = get_copy_text(command_id, row, self._view_mode)
+src/erk/tui/screens/plan_detail_screen.py:693:            text = get_copy_text(command_id, row, self._view_mode)
+src/erk/tui/screens/plan_detail_screen.py:699:            text = get_copy_text(command_id, row, self._view_mode)
+src/erk/tui/screens/plan_detail_screen.py:705:            text = get_copy_text(command_id, row, self._view_mode)
+src/erk/tui/screens/plan_detail_screen.py:711:            text = get_copy_text(command_id, row, self._view_mode)
+src/erk/tui/screens/plan_detail_screen.py:895:                pr_checkout_cmd = get_copy_text("copy_pr_checkout", self._row, self._view_mode)
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01RXPsdXfAWoy3SHPyeDvXAn">
+    <param name="pattern">CommandContext\(</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/tui</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="690" cache_read_input_tokens="93650" output_tokens="1463" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 690, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RXPsdXfAWoy3SHPyeDvXAn">
+src/erk/tui/commands/registry.py:486:    ctx = CommandContext(row=row, view_mode=view_mode)
+src/erk/tui/commands/provider.py:94:        return CommandContext(
+src/erk/tui/commands/provider.py:202:        return CommandContext(
+src/erk/tui/app.py:448:        ctx = CommandContext(
+  </tool_result>
+  <thinking>There are many callers of `get_copy_text`. The good news is that if I add `cmux_integration: bool = False` as a default parameter, all existing callers work without modification. Only the callers that need to pass `True` need changing.
+
+Let me now look at where `CommandContext` is constructed to see if the provider has access to anything useful.
+
+Looking at the provider:
+- `provider.py:94` and `provider.py:202` - command palette provider
+- `app.py:448` - in the app
+
+These construct CommandContext for availability checks. They don't need cmux_integration since it doesn't affect availability.
+
+
+Now I'm identifying the specific call sites for `copy_pr_checkout` that need the cmux_integration flag: the main app execution, the action handler in the plan detail screen, and the toolbar display. The cleanest approach is to have `ErkDashApp` store the cmux_integration setting and pass it through to these callers.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2467" cache_read_input_tokens="94340" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2467}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_012Tev64VtSPVqVp8mzKsP7y">
+    <param name="pattern">PlanDetailScreen\(</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/tui</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="context">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2467" cache_read_input_tokens="94340" output_tokens="480" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2467, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012Tev64VtSPVqVp8mzKsP7y">
+/Users/schrockn/code/erk/src/erk/tui/app.py-1030-        )
+/Users/schrockn/code/erk/src/erk/tui/app.py-1031-
+/Users/schrockn/code/erk/src/erk/tui/app.py-1032-        self.push_screen(
+src/erk/tui/app.py:1033:            PlanDetailScreen(
+/Users/schrockn/code/erk/src/erk/tui/app.py-1034-                row=row,
+/Users/schrockn/code/erk/src/erk/tui/app.py-1035-                clipboard=self._provider.clipboard,
+/Users/schrockn/code/erk/src/erk/tui/app.py-1036-                browser=self._provider.browser,
+--
+/Users/schrockn/code/erk/src/erk/tui/screens/plan_detail_screen.py-39-    return plan_url.rsplit("/issues/", 1)[0]
+/Users/schrockn/code/erk/src/erk/tui/screens/plan_detail_screen.py-40-
+/Users/schrockn/code/erk/src/erk/tui/screens/plan_detail_screen.py-41-
+src/erk/tui/screens/plan_detail_screen.py:42:class PlanDetailScreen(ModalScreen):
+/Users/schrockn/code/erk/src/erk/tui/screens/plan_detail_screen.py-43-    """Modal screen showing detailed plan information as an Action Hub."""
+/Users/schrockn/code/erk/src/erk/tui/screens/plan_detail_screen.py-44-
+/Users/schrockn/code/erk/src/erk/tui/screens/plan_detail_screen.py-45-    COMMANDS = {PlanCommandProvider}  # Register command provider for palette
+  </tool_result>
+  <tool_use name="Read" id="toolu_01PDCdDN2JmZMbRqapn82Hc8">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/screens/plan_detail_screen.py</param>
+    <param name="offset">42</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="993" cache_read_input_tokens="96807" output_tokens="116" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 993, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PDCdDN2JmZMbRqapn82Hc8">
+    42→class PlanDetailScreen(ModalScreen):
+    43→    """Modal screen showing detailed plan information as an Action Hub."""
+    44→
+    45→    COMMANDS = {PlanCommandProvider}  # Register command provider for palette
+    46→
+    47→    BINDINGS = [
+    48→        # Navigation
+    49→        Binding("escape", "dismiss", "Close"),
+    50→        Binding("q", "dismiss", "Close"),
+    51→        Binding("space", "dismiss", "Close"),
+    52→        # Links section
+    53→        Binding("o", "open_browser", "Open"),
+    54→        Binding("i", "open_issue", "Issue"),
+    55→        Binding("p", "open_pr", "PR"),
+    56→        Binding("r", "open_run", "Run"),
+    57→        # Copy section
+    58→        Binding("c", "copy_checkout", "Checkout"),
+    59→        Binding("e", "copy_pr_checkout", "PR Checkout"),
+    60→        Binding("y", "copy_output_logs", "Copy Logs"),
+    61→        Binding("1", "copy_prepare", "Prepare"),
+    62→        Binding("4", "copy_prepare_activate", "Activate"),
+    63→        Binding("2", "copy_implement_local", "Implement Local"),
+    64→        Binding("3", "copy_dispatch", "Dispatch"),
+    65→        Binding("5", "fix_conflicts_remote", "Fix Conflicts"),
+    66→    ]
+    67→
+    68→    DEFAULT_CSS = """
+    69→    PlanDetailScreen {
+    70→        align: center middle;
+    71→    }
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_015Jb45jMb8fqYpUVR9sSswA">
+    <param name="pattern">def __init__</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/tui/screens/plan_detail_screen.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="context">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="724" cache_read_input_tokens="97800" output_tokens="155" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 724, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015Jb45jMb8fqYpUVR9sSswA">
+199-        color: $text-muted;
+200-        text-style: bold italic;
+201-        margin-top: 1;
+202-    }
+203-
+204-    .command-row {
+205-        layout: horizontal;
+206-        height: 1;
+207-    }
+208-
+209-    .command-key {
+210-        color: $accent;
+211-        width: 4;
+212-    }
+213-
+214-    .command-text {
+215-        color: $text;
+216-    }
+217-
+218-    .legend-text {
+219-        color: $text-muted;
+220-        margin-left: 1;
+221-    }
+222-    """
+223-
+224:    def __init__(
+225-        self,
+226-        *,
+227-        row: PlanRowData,
+228-        clipboard: Clipboard | None = None,
+
+... [21 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have the full picture. Let me check `RealErkInstallation` for the save_config method and load_config.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="634" cache_read_input_tokens="98524" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 634}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SJv8evb57xBdDNJnWHCDEv">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py</param>
+    <param name="offset">42</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="634" cache_read_input_tokens="98524" output_tokens="168" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 634, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SJv8evb57xBdDNJnWHCDEv">
+    42→    def load_config(self) -&gt; GlobalConfig:
+    43→        """Load global config from ~/.erk/config.toml.
+    44→
+    45→        Returns:
+    46→            GlobalConfig instance with loaded values
+    47→
+    48→        Raises:
+    49→            FileNotFoundError: If config file doesn't exist
+    50→            ValueError: If config is missing required fields or malformed
+    51→        """
+    52→        config_path = self.config_path()
+    53→
+    54→        if not config_path.exists():
+    55→            raise FileNotFoundError(f"Global config not found at {config_path}")
+    56→
+    57→        data = tomllib.loads(config_path.read_text(encoding="utf-8"))
+    58→        root = data.get("erk_root")
+    59→        if not root:
+    60→            raise ValueError(f"Missing 'erk_root' in {config_path}")
+    61→
+    62→        # Parse optional [interactive-agent] section (with backward compat for [interactive-claude])
+    63→        ia_data = data.get("interactive-agent", data.get("interactive-claude", {}))
+    64→        interactive_agent = InteractiveAgentConfig(
+    65→            backend=ia_data.get("backend", "claude"),
+    66→            model=ia_data.get("model"),
+    67→            verbose=bool(ia_data.get("verbose", False)),
+    68→            permission_mode=ia_data.get("permission_mode", ia_data.get("sandbox_mode", "edits")),
+    69→            dangerous=bool(ia_data.get("dangerous", False)),
+    70→            allow_dangerous=bool(ia_data.get("allow_dangerous", False)),
+    71→        )
+
+... [30 lines omitted] ...
+
+    94→            PermissionError: If directory or file cannot be written
+   101→            raise PermissionError(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01V8Jedmsrq5KdKabtnjMFRC">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py</param>
+    <param name="offset">100</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1155" cache_read_input_tokens="99158" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1155, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01V8Jedmsrq5KdKabtnjMFRC">
+   100→        if parent.exists() and not os.access(parent, os.W_OK):
+   101→            raise PermissionError(
+   102→                f"Cannot write to directory: {parent}\n"
+   103→                f"The directory exists but is not writable.\n\n"
+   104→                f"To fix this manually:\n"
+   105→                f"  1. Create the config file: touch {config_path}\n"
+   106→                f"  2. Edit it with your preferred editor\n"
+   107→                f"  3. Add: shell_setup_complete = true"
+   108→            )
+   109→
+   110→        # Try to create directory structure
+   111→        try:
+   112→            parent.mkdir(parents=True, exist_ok=True)
+   113→        except PermissionError:
+   114→            raise PermissionError(
+   115→                f"Cannot create directory: {parent}\n"
+   116→                f"Check permissions on your home directory.\n\n"
+   117→                f"To fix this manually:\n"
+   118→                f"  1. Create the directory: mkdir -p {parent}\n"
+   119→                f"  2. Ensure it's writable: chmod 755 {parent}"
+   120→            ) from None
+   121→
+   122→        # Check file writability BEFORE attempting write
+   123→        if config_path.exists() and not os.access(config_path, os.W_OK):
+   124→            raise PermissionError(
+   125→                f"Cannot write to file: {config_path}\n"
+   126→                f"The file exists but is not writable.\n\n"
+   127→                f"To fix this manually:\n"
+   128→                f"  1. Make it writable: chmod 644 {config_path}\n"
+   129→                f"  Or edit the file directly to add: shell_setup_complete = true"
+
+... [30 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have all the information I need. Let me update the plan with the config-gated approach. Let me also check if there are tests for the load/save config methods.
+
+I have enough context now. Let me write the updated plan. The changes are:
+
+1. **`GlobalConfig`** - add `cmux_integration: bool = False`
+2. **`GlobalConfig.test()`** - add parameter
+3. **`RealErkInstallation.load_config()`** - parse from TOML with default `False`
+4. **`RealErkInstallation.save_config()`** - save to TOML
+
+
+5. **`CommandContext`** - add `cmux_integration: bool = False`
+6. **`get_copy_text()`** - add `cmux_integration: bool = False` parameter
+7. **`_display_copy_pr_checkout()`** - conditional cmux command generation
+8. **`ErkDashApp.__init__()`** - add `cmux_integration: bool = False`
+9. **`ErkDashApp.execute_palette_command()`** - pass flag to `get_copy_text`
+10. **`list_cmd.py`** - read from `ctx.global_config` and pass through the chain
+11. **`PlanDetailScreen.__init__()`** - add `cmux_integration: bool = False`
+12. **`PlanDetailScreen` callers** - pass from `ErkDashApp`
+13. **Tests** - update
+
+Actually, I'm overcomplicating this. Since `get_copy_text` is called in ~18 places but only `copy_pr_checkout` actually needs the cmux flag, I should add it directly to `CommandContext` instead. That way I can avoid updating all those call sites—I just need to set it when constructing the context, and `get_copy_text` can read it from there without needing a new parameter.
+
+The key is that `CommandContext` already has a default value for `cmux_integration`, so adding it as an optional parameter to `get_copy_text` would be backward-compatible. I'd only need to update the specific callers where the flag is actually available.
+
+Looking at how commands flow through the dispatcher, though, every `get_copy_text` call goes through the same generic path regardless of which command is being executed. So rather than threading the parameter through all those generic dispatchers, it's cleaner to just add `cmux_integration` as a defaulted parameter throughout the chain—starting from where the config is loaded in `list_cmd.py`, passing it to `ErkDashApp`, and then using it in `execute_palette_command` when calling `get_copy_text`.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2273" cache_read_input_tokens="100313" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2273}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I now have the full picture of the config + command threading. Let me update the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2273" cache_read_input_tokens="100313" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2273}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01CLEnEpAxpMgEZUuzzRL4N9">
+    <param name="file_path">/Users/schrockn/.claude/plans/cosmic-juggling-pearl.md</param>
+    <param name="content"># Add cmux workspace creation to erk dash sync command
+
+## Context
+
+The `copy_pr_checkout`...[truncated 3501 chars]...ig.toml`, run `erk dash -i`, press `e` on a plan with a PR, verify cmux command is copied
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2273" cache_read_input_tokens="100313" output_tokens="2301" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2273, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CLEnEpAxpMgEZUuzzRL4N9">
+The file /Users/schrockn/.claude/plans/cosmic-juggling-pearl.md has been updated successfully.
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01FceTkNZYWAaiNiiyhVKjNt">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests'}]</param>
+    <param name="plan"># Add cmux workspace creation to erk dash sync command
+
+## Context
+
+The `copy_pr_checkout`...[truncated 3501 chars]...ig.toml`, run `erk dash -i`, press `e` on a plan with a PR, verify cmux command is copied
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2323" cache_read_input_tokens="102586" output_tokens="73" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2323, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FceTkNZYWAaiNiiyhVKjNt">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/cosmic-juggling-pearl.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Add cmux workspace creation to erk dash sync command
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 79e0ee40-3b1a-4793-8197-8c8f2051fc52 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the updated plan:
+
+## Add cmux workspace creation to erk dash sync command
+
+### Context
+The `copy_pr_checkout` command (shortcut `e`) currently copies a checkout+sync shell command. The user wants it to also open a cmux workspace with the branch name as title, gated behind a `cmux_integration` config flag (default `false`).
+
+### Changes
+
+1. **GlobalConfig** (`erk-shared/context/types.py`) — Add `cmux_integration: bool = False`
+2. **RealErkInstallation** (`erk-shared/gateway/erk_installation/real.py`) — Parse/save the field
+3. **CommandContext** (`tui/commands/types.py`) — Add `cmux_integration: bool = False`
+4. **Registry** (`tui/commands/registry.py`) — Conditionally generate cmux command in `_display_copy_pr_checkout`, add param to `get_copy_text`
+5. **ErkDashApp** (`tui/app.py`) — Thread the flag to `get_copy_text` and `PlanDetailScreen`
+6. **PlanDetailScreen** — Thread the flag to `get_copy_text` calls
+7. **CLI** (`list_cmd.py`) — Read from `ctx.global_config` and pass to `ErkDashApp`
+8. **Tests** — Add cmux-specific tests, existing tests unchanged (default is `False`)
+
+When `cmux_integration = true` in `~/.erk/config.toml`, the sync command generates:
+```bash
+WS=$(cmux new-workspace --command '..checkout+sync..' | awk '{print $2}') &amp;&amp; cmux rename-workspace --workspace "$WS" "branch-name"
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="690" cache_read_input_tokens="104909" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 690}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01FbpqYtK65bjNdDoFSNUcTY">
+    <param name="questions">[{'question': '📋 Add cmux workspace creation to erk dash sync command\nCurrent context: (w...[truncated 436 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="690" cache_read_input_tokens="104909" output_tokens="645" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 690, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FbpqYtK65bjNdDoFSNUcTY">
+User has answered your questions: "📋 Add cmux workspace creation to erk dash sync command
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01Rgx8qeFjATMAXDp8jG6PHy">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="822" cache_read_input_tokens="105599" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 822, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Rgx8qeFjATMAXDp8jG6PHy">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 1.5: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 1.75: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 2: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="79e0ee40-3b1a-4793-8197-8c8f2051fc52" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 3.
+
+If the command fails, display the error and stop.
+
+### Step 3: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 2.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 3.5: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "79e0ee40-3b1a-4793-8197-8c8f2051fc52" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 4: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 3, 3.5 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "79e0ee40-3b1a-4793-8197-8c8f2051fc52" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Let me execute the plan save steps.
+
+**Branch slug:** `add-cmux-sync-workspace`
+
+**Plan summary:** Adds cmux workspace creation to the erk dash sync command, gated behind a cmux_integration config flag in GlobalConfig that defaults to false. When enabled, the sync command creates a new cmux workspace, sends the checkout and sync command to it, and renames the workspace to the PR branch name.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2298" cache_read_input_tokens="106421" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2298}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LTooPTu7rSQafmE4b6Eqxe">
+    <param name="command">erk exec plan-save --format json --session-id="79e0ee40-3b1a-4793-8197-8c8f2051fc52" --bra...[truncated 232 chars]...nds the checkout and sync command to it, and renames the workspace to the PR branch name."</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2298" cache_read_input_tokens="106421" output_tokens="307" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2298, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LTooPTu7rSQafmE4b6Eqxe">
+{"success": true, "plan_number": 8503, "plan_url": "https://github.com/dagster-io/erk/pull/8503", "title": "[erk-plan] Add cmux workspace creation to erk dash sync command", "branch_name": "plnd/add-cmux-sync-workspace-02-28-1734", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/79e0ee40-3b1a-4793-8197-8c8f2051fc52/plan_snapshots/000001-4063ce42"}
+  </tool_result>
+  <assistant>No objective linked, skipping verification and roadmap steps.
+
+Let me check if we're on trunk:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="487" cache_read_input_tokens="108719" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 487}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CrNfxrTJuLon8jjAHeTm6k">
+    <param name="command">git branch --show-current</param>
+    <param name="description">Check current branch</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="487" cache_read_input_tokens="108719" output_tokens="99" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 487, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CrNfxrTJuLon8jjAHeTm6k">
+master
+  </tool_result>
+  <assistant>Plan "Add cmux workspace creation to erk dash sync command" saved as draft PR #8503
+URL: https://github.com/dagster-io/erk/pull/8503
+
+Next steps:
+
+View PR: https://github.com/dagster-io/erk/pull/8503
+
+In Claude Code:
+  Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: `erk br co --new-slot --for-plan 8503`
+    Implement: `source "$(erk br co --new-slot --for-plan 8503 --script)" &amp;&amp; erk implement --dangerous`
+
+  Same slot:
+    Local: `erk br co --for-plan 8503`
+    Implement: `source "$(erk br co --for-plan 8503 --script)" &amp;&amp; erk implement --dangerous`
+
+  Dispatch to Queue: `erk pr dispatch 8503`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="318" cache_read_input_tokens="109206" output_tokens="248" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 318, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;See ya!&lt;/local-command-stdout&gt;</user>
+</session>
