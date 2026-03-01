@@ -306,6 +306,7 @@ class FakeGit(Git):
         self._rebase_abort_calls: list[Path] = []
         self._pull_rebase_calls: list[tuple[Path, str, str]] = []  # (cwd, remote, branch)
         self._config_sets_records: list[ConfigSetRecord] = []
+        self._updated_refs: list[tuple[Path, str, str]] = []  # (repo_root, branch, target_sha)
 
         # Repo operations subgateway
         self._repo_gateway = FakeGitRepoOps()
@@ -370,6 +371,7 @@ class FakeGit(Git):
             checked_out_branches=self._checked_out_branches,
             detached_checkouts=self._detached_checkouts,
             created_tracking_branches=self._created_tracking_branches,
+            updated_refs=self._updated_refs,
         )
 
         # Remote operations subgateway - linked to FakeGit's state
@@ -592,6 +594,15 @@ class FakeGit(Git):
         This property is for test assertions only.
         """
         return self._created_tracking_branches.copy()
+
+    @property
+    def updated_refs(self) -> list[tuple[Path, str, str]]:
+        """Get list of ref updates during test.
+
+        Returns list of (repo_root, branch, target_sha) tuples.
+        This property is for test assertions only.
+        """
+        return self._updated_refs.copy()
 
     def read_file(self, path: Path) -> str:
         """Read file content from in-memory store.

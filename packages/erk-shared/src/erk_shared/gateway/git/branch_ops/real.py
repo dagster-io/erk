@@ -416,6 +416,14 @@ class RealGitBranchOps(GitBranchOps):
         timestamp = result.stdout.strip()
         return timestamp if timestamp else None
 
+    def update_local_ref(self, repo_root: Path, branch: str, target_sha: str) -> None:
+        """Update a local branch ref to point at a new commit without checkout."""
+        run_subprocess_with_context(
+            cmd=["git", "update-ref", f"refs/heads/{branch}", target_sha],
+            operation_context=f"update local ref '{branch}' to '{target_sha[:8]}'",
+            cwd=repo_root,
+        )
+
     def get_branch_commits_with_authors(
         self, repo_root: Path, branch: str, trunk: str, *, limit: int
     ) -> list[dict[str, str]]:

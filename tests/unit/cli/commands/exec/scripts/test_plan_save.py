@@ -229,7 +229,10 @@ def test_planned_pr_does_not_checkout_branch(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """plan-save uses git plumbing to commit without checking out the plan branch."""
-    fake_git = FakeGit(current_branches={tmp_path: "feature-branch"})
+    fake_git = FakeGit(
+        current_branches={tmp_path: "feature-branch"},
+        remote_branches={tmp_path: ["origin/feature-branch"]},
+    )
     ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
     runner = CliRunner()
 
@@ -323,10 +326,11 @@ def test_planned_pr_branch_stacked_on_current_feature_branch(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Plan branch is stacked on current feature branch, not trunk."""
-    # Current branch is a feature branch, NOT trunk
+    # Current branch is a feature branch, NOT trunk — and pushed to remote
     fake_git = FakeGit(
         current_branches={tmp_path: "feature/my-work"},
         trunk_branches={tmp_path: "master"},
+        remote_branches={tmp_path: ["origin/feature/my-work"]},
     )
     fake_graphite = FakeGraphite()
     monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
@@ -355,10 +359,11 @@ def test_planned_pr_branch_stacked_on_current_feature_branch(
 def test_planned_pr_feature_branch_creates_correct_pr_base(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """When on a feature branch, the PR base is the feature branch (not trunk)."""
+    """When on a feature branch pushed to remote, the PR base is the feature branch."""
     fake_git = FakeGit(
         current_branches={tmp_path: "feature/my-work"},
         trunk_branches={tmp_path: "master"},
+        remote_branches={tmp_path: ["origin/feature/my-work"]},
     )
     fake_github = FakeGitHub()
     monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
@@ -377,6 +382,43 @@ def test_planned_pr_feature_branch_creates_correct_pr_base(
     # PR base should be the feature branch, not trunk
     assert len(fake_github.created_prs) == 1
     assert fake_github.created_prs[0][3] == "feature/my-work"
+
+
+def test_planned_pr_unpushed_feature_branch_falls_back_to_trunk(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """When on a feature branch NOT pushed to remote, falls back to trunk as base."""
+    fake_git = FakeGit(
+        current_branches={tmp_path: "feature/unpushed"},
+        trunk_branches={tmp_path: "master"},
+        # No remote_branches — branch is not on remote
+    )
+    fake_github = FakeGitHub()
+    monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
+    ctx = context_for_test(
+        git=fake_git,
+        github=fake_github,
+        claude_installation=FakeClaudeInstallation.for_test(plans={"plan": VALID_PLAN_CONTENT}),
+        cwd=tmp_path,
+        repo_root=tmp_path,
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(plan_save, ["--format", "json", "--branch-slug", "test-slug"], obj=ctx)
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    # PR base should be trunk (master), not the unpushed feature branch
+    assert len(fake_github.created_prs) == 1
+    assert fake_github.created_prs[0][3] == "master"
+    # Plan branch should be created from origin/trunk
+    plan_branch_creates = [
+        (cwd, name, sp, f)
+        for cwd, name, sp, f in fake_git.created_branches
+        if name.startswith("plnd/")
+    ]
+    assert len(plan_branch_creates) == 1
+    _, _, start_point, _ = plan_branch_creates[0]
+    assert start_point == "origin/master"
 
 
 def test_planned_pr_learn_branch_uses_trunk_as_base(
