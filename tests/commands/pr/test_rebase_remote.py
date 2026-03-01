@@ -1,7 +1,7 @@
-"""Tests for erk launch pr-fix-conflicts command.
+"""Tests for erk launch pr-rebase command.
 
 Note: The old `erk pr fix-conflicts remote` command has been replaced by
-`erk launch pr-fix-conflicts`. See tests/commands/launch/test_launch_cmd.py
+`erk launch pr-rebase`. See tests/commands/launch/test_launch_cmd.py
 for the new workflow tests.
 """
 
@@ -9,4 +9,4 @@ for the new workflow tests.
 # - tests/commands/launch/test_launch_cmd.py
 #
 # The `erk pr fix-conflicts remote` subcommand has been removed.
-# Use `erk launch pr-fix-conflicts` instead.
+# Use `erk launch pr-rebase` instead.

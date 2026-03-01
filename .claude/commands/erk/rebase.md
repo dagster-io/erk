@@ -1,10 +1,10 @@
 ---
-description: Fix all merge conflicts and continue the git rebase
+description: Rebase the current branch, resolve any merge conflicts, and continue the git rebase
 ---
 
-# Fix Merge Conflicts
+# Rebase with Conflict Resolution
 
-Fix all merge conflicts and continue the git rebase.
+Rebase the current branch and resolve any merge conflicts.
 
 ## Steps
 

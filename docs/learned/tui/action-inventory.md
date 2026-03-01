@@ -39,7 +39,7 @@ Categories are not just cosmetic labels — they correlate strongly with executi
 | OPEN     | Browser launch                          | Instant    | None (navigates browser)                   |
 | COPY     | Clipboard write                         | Instant    | None (copies to clipboard)                 |
 
-The key insight is within ACTION: some actions (close, dispatch) are fast in-process HTTP calls to the GitHub API, while others (land, fix-conflicts, address) are long-running subprocess commands with streaming output. The distinction matters because streaming commands need the `repo_root` capability marker and the full cross-thread UI update pipeline described in [streaming-output.md](streaming-output.md).
+The key insight is within ACTION: some actions (close, dispatch) are fast in-process HTTP calls to the GitHub API, while others (land, rebase, address) are long-running subprocess commands with streaming output. The distinction matters because streaming commands need the `repo_root` capability marker and the full cross-thread UI update pipeline described in [streaming-output.md](streaming-output.md).
 
 ## Availability Predicate Patterns
 
@@ -52,7 +52,7 @@ Commands fall into four availability tiers:
 | Always available   | `lambda _: True`              | close_plan, copy_prepare, copy_prepare_activate, copy_dispatch  | Only need `plan_id`, which is always present                  |
 | Needs plan URL     | `plan_url is not None`        | dispatch_to_queue, copy_replan, open_issue                      | Requires the plan to exist on GitHub (not just locally)       |
 | Needs local branch | `worktree_branch is not None` | copy_checkout                                                   | Local worktree branch must exist to generate checkout command |
-| Needs PR           | `pr_number is not None`       | fix_conflicts_remote, address_remote, open_pr, copy_pr_checkout | PR must be linked to the plan                                 |
+| Needs PR           | `pr_number is not None`       | rebase_remote, address_remote, open_pr, copy_pr_checkout        | PR must be linked to the plan                                 |
 | Compound condition | Multiple fields non-null      | land_pr (needs PR + OPEN state + run URL)                       | Landing requires all CI infrastructure to be present          |
 
 **Anti-pattern**: Writing `is_available=lambda ctx: True` for a command that uses `ctx.row.pr_number`. The predicate will allow execution when `pr_number` is None, causing a runtime error. This is why the [three-layer null validation](adding-commands.md) pattern exists — the predicate is necessary but not sufficient.

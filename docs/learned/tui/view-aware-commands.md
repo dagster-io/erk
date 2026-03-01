@@ -49,13 +49,13 @@ This keeps command definitions in one place. Adding a command to the wrong view 
 
 Plan and objective commands safely reuse the same keyboard shortcuts because the view predicates guarantee mutual exclusivity:
 
-| Shortcut | Plan View Command    | Objectives View Command |
-| -------- | -------------------- | ----------------------- |
-| `s`      | Dispatch to Queue    | Implement (One-Shot)    |
-| `5`      | Fix Conflicts Remote | Check Objective         |
-| `i`      | Open Issue           | Open Objective          |
-| `1`      | Copy Prepare         | Copy Implement          |
-| `3`      | Copy Dispatch        | Copy View               |
+| Shortcut | Plan View Command | Objectives View Command |
+| -------- | ----------------- | ----------------------- |
+| `s`      | Dispatch to Queue | Implement (One-Shot)    |
+| `5`      | Rebase Remote     | Check Objective         |
+| `i`      | Open Issue        | Open Objective          |
+| `1`      | Copy Prepare      | Copy Implement          |
+| `3`      | Copy Dispatch     | Copy View               |
 
 A shortcut collision would only occur if both a plan and objective command with the same shortcut had overlapping view predicates. The `_is_plan_view` / `_is_objectives_view` split prevents this.
 
@@ -88,7 +88,7 @@ The two command providers resolve `CommandContext` differently:
 
 ## Streaming ACTION Commands
 
-ACTION commands that run long-running subprocess operations (land, fix-conflicts, address) use status-bar-based streaming. The pattern is: register in the status bar, stream subprocess output with line buffering, then clean up the status bar entry. Results are shown via toast notifications.
+ACTION commands that run long-running subprocess operations (land, rebase, address) use status-bar-based streaming. The pattern is: register in the status bar, stream subprocess output with line buffering, then clean up the status bar entry. Results are shown via toast notifications.
 
 For the full streaming pattern reference, see [TUI Streaming Output](streaming-output.md).
 

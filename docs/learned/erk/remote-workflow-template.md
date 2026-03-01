@@ -94,10 +94,10 @@ Inputs are typed as `dict[str, str]` matching GitHub Actions workflow_dispatch i
 
 ## Existing Commands
 
-| Command                       | Workflow               | Purpose                         |
-| ----------------------------- | ---------------------- | ------------------------------- |
-| `erk launch pr-address`       | `pr-address.yml`       | Address PR review comments      |
-| `erk launch pr-fix-conflicts` | `pr-fix-conflicts.yml` | Rebase with conflict resolution |
+| Command                  | Workflow          | Purpose                         |
+| ------------------------ | ----------------- | ------------------------------- |
+| `erk launch pr-address`  | `pr-address.yml`  | Address PR review comments      |
+| `erk launch pr-rebase`   | `pr-rebase.yml`   | Rebase with conflict resolution |
 
 ## Related Documentation
 

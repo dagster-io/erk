@@ -17,7 +17,7 @@ hash = "a0f0a1e27f928a90"
 version = "0.5.5"
 hash = "6fa73099724d9ff1"
 
-[artifacts.files."commands/erk/fix-conflicts.md"]
+[artifacts.files."commands/erk/rebase.md"]
 version = "0.5.5"
 hash = "ef528fc55f9fe7ea"
 

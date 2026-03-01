@@ -34,7 +34,7 @@ Click's `invoke_without_command=True` allows a group to execute when called dire
 ## Current Architecture: Separate Commands + Unified Launch
 
 <!-- Source: src/erk/cli/commands/pr/address_cmd.py, address() -->
-<!-- Source: src/erk/cli/commands/pr/fix_conflicts_cmd.py, fix_conflicts() -->
+<!-- Source: src/erk/cli/commands/pr/rebase_cmd.py, rebase() -->
 <!-- Source: src/erk/cli/commands/launch_cmd.py, launch() -->
 
 Erk now uses **separate commands** for clearer separation of concerns:

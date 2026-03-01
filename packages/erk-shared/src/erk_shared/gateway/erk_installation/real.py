@@ -75,9 +75,7 @@ class RealErkInstallation(ErkInstallation):
             use_graphite=bool(data.get("use_graphite", False)),
             shell_setup_complete=bool(data.get("shell_setup_complete", False)),
             github_planning=bool(data.get("github_planning", True)),
-            fix_conflicts_require_dangerous_flag=bool(
-                data.get("fix_conflicts_require_dangerous_flag", True)
-            ),
+            rebase_require_dangerous_flag=bool(data.get("rebase_require_dangerous_flag", True)),
             show_hidden_commands=bool(data.get("show_hidden_commands", False)),
             prompt_learn_on_land=bool(data.get("prompt_learn_on_land", True)),
             shell_integration=bool(data.get("shell_integration", False)),
@@ -136,7 +134,7 @@ class RealErkInstallation(ErkInstallation):
         doc["use_graphite"] = config.use_graphite
         doc["shell_setup_complete"] = config.shell_setup_complete
         doc["github_planning"] = config.github_planning
-        doc["fix_conflicts_require_dangerous_flag"] = config.fix_conflicts_require_dangerous_flag
+        doc["rebase_require_dangerous_flag"] = config.rebase_require_dangerous_flag
         doc["show_hidden_commands"] = config.show_hidden_commands
         doc["prompt_learn_on_land"] = config.prompt_learn_on_land
         doc["shell_integration"] = config.shell_integration

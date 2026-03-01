@@ -49,7 +49,7 @@ def _display_land_pr(ctx: CommandContext) -> str:
 
 def _display_rebase_remote(ctx: CommandContext) -> str:
     """Display name for rebase_remote command."""
-    return f"erk launch pr-fix-conflicts --pr {ctx.row.pr_number}"
+    return f"erk launch pr-rebase --pr {ctx.row.pr_number}"
 
 
 def _display_address_remote(ctx: CommandContext) -> str:
@@ -122,7 +122,7 @@ def _display_copy_close_plan(ctx: CommandContext) -> str:
 
 def _display_copy_rebase_remote(ctx: CommandContext) -> str:
     """Display name for copy_rebase_remote command."""
-    return f"erk launch pr-fix-conflicts --pr {ctx.row.pr_number}"
+    return f"erk launch pr-rebase --pr {ctx.row.pr_number}"
 
 
 def _display_copy_address_remote(ctx: CommandContext) -> str:
@@ -384,7 +384,7 @@ def get_all_commands() -> list[CommandDefinition]:
         ),
         CommandDefinition(
             id="copy_rebase_remote",
-            name="erk launch pr-fix-conflicts",
+            name="erk launch pr-rebase",
             description="rebase",
             category=CommandCategory.COPY,
             shortcut=None,

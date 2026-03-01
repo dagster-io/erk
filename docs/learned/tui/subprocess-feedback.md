@@ -38,7 +38,7 @@ All TUI subprocess methods follow this structure:
 3. On failure (`return_code != 0`): extract the last non-empty output line as the error message, notify with `severity="error"` (5s timeout)
 4. Trigger `self.action_refresh()` to update the display after state changes
 
-This pattern is used across multiple async subprocess methods in the TUI app, including the address-remote, fix-conflicts-remote, and land-PR handlers.
+This pattern is used across multiple async subprocess methods in the TUI app, including the address-remote, rebase-remote, and land-PR handlers.
 
 ## Known Gap: CLI-Side Diagnostic Output
 

@@ -264,21 +264,21 @@ def stream_command_with_feedback(
 
 
 @dataclass(frozen=True)
-class FixConflictsResult:
-    """Result from fix-conflicts streaming execution."""
+class RebaseResult:
+    """Result from rebase streaming execution."""
 
     success: bool
     error_message: str | None = None
     requires_interactive: bool = False
 
 
-def stream_fix_conflicts(
+def stream_rebase(
     executor: PromptExecutor,
     worktree_path: Path,
-) -> FixConflictsResult:
-    """Stream fix-conflicts command via Claude executor with live feedback.
+) -> RebaseResult:
+    """Stream rebase command via Claude executor with live feedback.
 
-    Handles the /erk:fix-conflicts command execution with:
+    Handles the /erk:rebase command execution with:
     - Live output streaming with visual feedback
     - Semantic conflict detection (AskUserQuestion)
     - Deduped spinner updates
@@ -286,10 +286,10 @@ def stream_fix_conflicts(
 
     Args:
         executor: Prompt executor
-        worktree_path: Path to run the conflict resolution in
+        worktree_path: Path to run the rebase in
 
     Returns:
-        FixConflictsResult with success status and error details
+        RebaseResult with success status and error details
     """
     error_message: str | None = None
     success = True
@@ -298,13 +298,13 @@ def stream_fix_conflicts(
     start_time = time.time()
 
     # Print start marker with bold styling
-    click.echo(click.style("--- /erk:fix-conflicts ---", bold=True))
+    click.echo(click.style("--- /erk:rebase ---", bold=True))
     click.echo("")
 
     for event in executor.execute_command_streaming(
-        command="/erk:fix-conflicts",
+        command="/erk:rebase",
         worktree_path=worktree_path,
-        dangerous=True,  # Conflict resolution modifies git state
+        dangerous=True,  # Rebase modifies git state
         permission_mode="edits",
     ):
         match event:
@@ -318,54 +318,54 @@ def stream_fix_conflicts(
                     click.echo("")
                     click.echo(
                         click.style(
-                            "⚠️  Semantic conflict detected - requires interactive resolution",
+                            "Semantic conflict detected - requires interactive resolution",
                             fg="yellow",
                             bold=True,
                         )
                     )
                     click.echo("")
                     click.echo("Claude needs your input to resolve this conflict.")
-                    click.echo("Run conflict resolution interactively:")
+                    click.echo("Run rebase interactively:")
                     click.echo("")
-                    click.echo(click.style("    claude /erk:fix-conflicts", fg="cyan"))
+                    click.echo(click.style("    claude /erk:rebase", fg="cyan"))
                     click.echo("")
-                    return FixConflictsResult(
+                    return RebaseResult(
                         success=False,
                         requires_interactive=True,
                     )
                 # Tool summaries with icon
-                click.echo(click.style(f"   ⚙️  {summary}", fg="cyan", dim=True))
+                click.echo(click.style(f"   {summary}", fg="cyan", dim=True))
             case SpinnerUpdateEvent(status=status):
                 if status != last_spinner:
-                    click.echo(click.style(f"   ⏳ {status}", dim=True))
+                    click.echo(click.style(f"   {status}", dim=True))
                     last_spinner = status
             case ErrorEvent(message=msg):
-                click.echo(click.style(f"   ❌ {msg}", fg="red"))
+                click.echo(click.style(f"   {msg}", fg="red"))
                 error_message = msg
                 success = False
             case NoOutputEvent(diagnostic=diag):
-                click.echo(click.style(f"   ⚠️  {diag}", fg="yellow"))
+                click.echo(click.style(f"   {diag}", fg="yellow"))
                 error_message = diag
                 success = False
             case NoTurnsEvent(diagnostic=diag):
-                click.echo(click.style(f"   ⚠️  {diag}", fg="yellow"))
+                click.echo(click.style(f"   {diag}", fg="yellow"))
                 error_message = diag
                 success = False
             case ProcessErrorEvent(message=msg):
-                click.echo(click.style(f"   ❌ {msg}", fg="red"))
+                click.echo(click.style(f"   {msg}", fg="red"))
                 error_message = msg
                 success = False
             case PrUrlEvent() | PrNumberEvent() | PrTitleEvent() | IssueNumberEvent():
-                pass  # PR metadata not relevant for fix-conflicts
+                pass  # PR metadata not relevant for rebase
 
     # Check for no-work-events failure mode
     if success and not has_work_events:
         success = False
         error_message = (
             "Claude completed without producing any output - "
-            "check hooks or run 'claude /erk:fix-conflicts' directly to debug"
+            "check hooks or run 'claude /erk:rebase' directly to debug"
         )
-        click.echo(click.style(f"   ⚠️  {error_message}", fg="yellow"))
+        click.echo(click.style(f"   {error_message}", fg="yellow"))
 
     # Calculate duration and print end marker
     duration = time.time() - start_time
@@ -377,7 +377,7 @@ def stream_fix_conflicts(
     else:
         click.echo(click.style(f"--- Failed ({duration_str}) ---", fg="red", bold=True))
 
-    return FixConflictsResult(success=success, error_message=error_message)
+    return RebaseResult(success=success, error_message=error_message)
 
 
 @dataclass(frozen=True)

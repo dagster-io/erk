@@ -1,0 +1,78 @@
+"""Rebase PR onto base branch with AI-powered conflict resolution.
+
+This command rebases the current branch locally using Claude CLI.
+For remote rebase via GitHub Actions, use `erk launch pr-rebase`.
+"""
+
+import click
+
+from erk.cli.ensure import Ensure
+from erk.cli.output import stream_rebase
+from erk.core.context import ErkContext
+
+
+@click.command("rebase")
+@click.option(
+    "-d",
+    "--dangerous",
+    is_flag=True,
+    help="Acknowledge that this command invokes Claude with --dangerously-skip-permissions.",
+)
+@click.pass_obj
+def rebase(ctx: ErkContext, *, dangerous: bool) -> None:
+    """Rebase PR onto base branch with AI-powered conflict resolution.
+
+    Rebases the current branch and resolves any merge conflicts using Claude.
+    Does not require or interact with Graphite stacks.
+
+    For remote rebase via GitHub Actions workflow, use:
+
+    \b
+      erk launch pr-rebase [--pr <number>]
+
+    Examples:
+
+    \b
+      # Rebase locally with Claude
+      erk pr rebase --dangerous
+
+    To disable the --dangerous flag requirement:
+
+    \b
+      erk config set rebase_require_dangerous_flag false
+    """
+    # Runtime validation: require --dangerous unless config disables requirement
+    if not dangerous:
+        require_flag = ctx.global_config is None or ctx.global_config.rebase_require_dangerous_flag
+        if require_flag:
+            raise click.UsageError(
+                "Missing option '--dangerous'.\n"
+                "To disable: erk config set rebase_require_dangerous_flag false"
+            )
+
+    cwd = ctx.cwd
+
+    # Check Claude availability
+    executor = ctx.prompt_executor
+    Ensure.invariant(
+        executor.is_available(),
+        "Claude CLI is required for rebase with conflict resolution.\n\n"
+        "Install from: https://claude.com/download",
+    )
+
+    click.echo(
+        click.style(
+            "Rebasing with AI-powered conflict resolution...",
+            fg="yellow",
+        )
+    )
+
+    # Execute rebase with conflict resolution
+    result = stream_rebase(executor, cwd)
+
+    if result.requires_interactive:
+        raise click.ClickException("Semantic conflict requires interactive resolution")
+    if not result.success:
+        raise click.ClickException(result.error_message or "Rebase failed")
+
+    click.echo(click.style("\n\u2705 Rebase complete!", fg="green", bold=True))

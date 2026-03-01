@@ -1,4 +1,4 @@
-"""Tests for async operations (address remote, fix conflicts, land PR, dispatch, etc.)."""
+"""Tests for async operations (address remote, rebase, land PR, dispatch, etc.)."""
 
 from pathlib import Path
 
@@ -123,7 +123,7 @@ class TestRebaseRemoteAsync:
             assert captured_args == [
                 "erk",
                 "launch",
-                "pr-fix-conflicts",
+                "pr-rebase",
                 "--pr",
                 "456",
             ]

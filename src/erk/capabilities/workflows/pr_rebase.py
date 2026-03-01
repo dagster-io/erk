@@ -1,4 +1,4 @@
-"""PrFixConflictsWorkflowCapability - GitHub Action for PR fix-conflicts workflow."""
+"""PrRebaseWorkflowCapability - GitHub Action for PR rebase workflow."""
 
 import shutil
 from pathlib import Path
@@ -15,20 +15,20 @@ from erk.core.capabilities.base import (
 from erk_shared.context.types import AgentBackend
 
 
-class PrFixConflictsWorkflowCapability(Capability):
-    """GitHub Action for PR fix-conflicts workflow.
+class PrRebaseWorkflowCapability(Capability):
+    """GitHub Action for PR rebase workflow.
 
     Installs:
-    - .github/workflows/pr-fix-conflicts.yml
+    - .github/workflows/pr-rebase.yml
     """
 
     @property
     def name(self) -> str:
-        return "pr-fix-conflicts-workflow"
+        return "pr-rebase-workflow"
 
     @property
     def description(self) -> str:
-        return "GitHub Action for fixing PR merge conflicts"
+        return "GitHub Action for rebasing PRs"
 
     @property
     def scope(self) -> CapabilityScope:
@@ -36,30 +36,30 @@ class PrFixConflictsWorkflowCapability(Capability):
 
     @property
     def installation_check_description(self) -> str:
-        return ".github/workflows/pr-fix-conflicts.yml exists"
+        return ".github/workflows/pr-rebase.yml exists"
 
     @property
     def artifacts(self) -> list[CapabilityArtifact]:
         return [
             CapabilityArtifact(
-                path=".github/workflows/pr-fix-conflicts.yml",
+                path=".github/workflows/pr-rebase.yml",
                 artifact_type="file",
             ),
         ]
 
     @property
     def managed_artifacts(self) -> list[ManagedArtifact]:
-        """Declare pr-fix-conflicts workflow as managed artifact."""
-        return [ManagedArtifact(name="pr-fix-conflicts", artifact_type="workflow")]
+        """Declare pr-rebase workflow as managed artifact."""
+        return [ManagedArtifact(name="pr-rebase", artifact_type="workflow")]
 
     def is_installed(self, repo_root: Path | None, *, backend: AgentBackend) -> bool:
         if repo_root is None:
-            raise ValueError("PrFixConflictsWorkflowCapability requires repo_root")
-        return (repo_root / ".github" / "workflows" / "pr-fix-conflicts.yml").exists()
+            raise ValueError("PrRebaseWorkflowCapability requires repo_root")
+        return (repo_root / ".github" / "workflows" / "pr-rebase.yml").exists()
 
     def install(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
         if repo_root is None:
-            raise ValueError("PrFixConflictsWorkflowCapability requires repo_root")
+            raise ValueError("PrRebaseWorkflowCapability requires repo_root")
 
         bundled_github_dir = get_bundled_github_dir()
         if not bundled_github_dir.exists():
@@ -68,14 +68,14 @@ class PrFixConflictsWorkflowCapability(Capability):
                 message="Bundled .github/ not found in erk package",
             )
 
-        workflow_src = bundled_github_dir / "workflows" / "pr-fix-conflicts.yml"
+        workflow_src = bundled_github_dir / "workflows" / "pr-rebase.yml"
         if not workflow_src.exists():
             return CapabilityResult(
                 success=False,
-                message="pr-fix-conflicts.yml not found in erk package",
+                message="pr-rebase.yml not found in erk package",
             )
 
-        workflow_dst = repo_root / ".github" / "workflows" / "pr-fix-conflicts.yml"
+        workflow_dst = repo_root / ".github" / "workflows" / "pr-rebase.yml"
         workflow_dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(workflow_src, workflow_dst)
 
@@ -84,15 +84,15 @@ class PrFixConflictsWorkflowCapability(Capability):
 
         return CapabilityResult(
             success=True,
-            message="Installed pr-fix-conflicts workflow",
+            message="Installed pr-rebase workflow",
         )
 
     def uninstall(self, repo_root: Path | None, *, backend: AgentBackend) -> CapabilityResult:
-        """Remove the pr-fix-conflicts workflow."""
+        """Remove the pr-rebase workflow."""
         if repo_root is None:
-            raise ValueError("PrFixConflictsWorkflowCapability requires repo_root")
+            raise ValueError("PrRebaseWorkflowCapability requires repo_root")
 
-        workflow_file = repo_root / ".github" / "workflows" / "pr-fix-conflicts.yml"
+        workflow_file = repo_root / ".github" / "workflows" / "pr-rebase.yml"
 
         # Remove from installed capabilities
         remove_installed_capability(repo_root, self.name)
@@ -100,11 +100,11 @@ class PrFixConflictsWorkflowCapability(Capability):
         if not workflow_file.exists():
             return CapabilityResult(
                 success=True,
-                message="pr-fix-conflicts-workflow not installed",
+                message="pr-rebase-workflow not installed",
             )
 
         workflow_file.unlink()
         return CapabilityResult(
             success=True,
-            message="Removed .github/workflows/pr-fix-conflicts.yml",
+            message="Removed .github/workflows/pr-rebase.yml",
         )

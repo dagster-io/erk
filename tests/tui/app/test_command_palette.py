@@ -156,7 +156,7 @@ class TestCommandPaletteFromMainCopyVariants:
 
             app.execute_palette_command("copy_rebase_remote")
 
-            assert clipboard.last_copied == "erk launch pr-fix-conflicts --pr 456"
+            assert clipboard.last_copied == "erk launch pr-rebase --pr 456"
 
     @pytest.mark.asyncio
     async def test_execute_palette_command_copy_address_remote(self) -> None:

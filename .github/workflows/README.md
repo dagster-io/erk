@@ -41,7 +41,7 @@ The built-in `GITHUB_TOKEN` has two limitations that require using a PAT:
 | `ci.yml`                      | push, PR              | Run tests, linting, type checking                           |
 | `learn.yml`                   | issue labeled, manual | Create branch and dispatch to plan-implement for extraction |
 | `plan-implement.yml`          | workflow_dispatch     | Execute Claude Code to implement plans                      |
-| `pr-fix-conflicts.yml`        | workflow_dispatch     | Rebase PR with AI-powered conflict resolution               |
+| `pr-rebase.yml`               | workflow_dispatch     | Rebase PR with AI-powered conflict resolution               |
 | `dignified-python-review.yml` | PR                    | Automated Python code review                                |
 | `tripwires-review.yml`        | PR                    | Automated tripwire violation detection                      |
 | `docs.yml`                    | push to master        | Build and deploy documentation                              |

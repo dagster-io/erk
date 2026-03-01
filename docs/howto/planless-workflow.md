@@ -106,7 +106,7 @@ This streamlined command:
 
 If rebasing fails during landing:
 
-1. **Use `/erk:fix-conflicts`** - Claude helps resolve conflicts
+1. **Use `/erk:rebase`** - Claude helps resolve conflicts
 2. **Or manually resolve** - Edit conflicting files, then `git rebase --continue`
 3. **Re-run landing** - Continue the `erk pr land` process
 

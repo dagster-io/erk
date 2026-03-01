@@ -237,7 +237,7 @@ rm "$TEMP_FILE"
 
 ### Real-World Example
 
-From `.github/workflows/pr-fix-conflicts.yml`:
+From `.github/workflows/pr-rebase.yml`:
 
 ```yaml
 BODY="## Conflict Resolution Failed\n\nRebase output:\n\`\`\`\n$REBASE_OUTPUT\n\`\`\`"

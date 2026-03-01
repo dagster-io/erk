@@ -71,7 +71,7 @@ Plan and PR operations are under the `erk pr` group:
 | `address`               | Address PR review comments with AI resolution       |
 | `check`                 | Validate PR rules for the current branch            |
 | `checkout` (`co`)       | Checkout PR into a worktree for review              |
-| `fix-conflicts`         | Fix merge conflicts with AI resolution              |
+| `rebase`                | Fix merge conflicts with AI resolution              |
 | `rewrite`               | Squash, regenerate commit message, push             |
 | `sync`                  | Synchronize current PR branch with remote base      |
 | `reconcile-with-remote` | Reconcile branch with remote and resolve divergence |

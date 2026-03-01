@@ -2,8 +2,8 @@
 
 Usage examples:
     erk launch pr-address --pr 456
-    erk launch pr-fix-conflicts --pr 456
-    erk launch pr-fix-conflicts --pr 456 --no-squash
+    erk launch pr-rebase --pr 456
+    erk launch pr-rebase --pr 456 --no-squash
     erk launch plan-implement --issue 789
     erk launch learn --issue 789
     erk launch one-shot --pr 456 --prompt "fix the auth bug"
@@ -54,7 +54,7 @@ def _get_workflow_file(workflow_name: str) -> str:
     """Get the actual workflow filename for a command name.
 
     Args:
-        workflow_name: Command-friendly workflow name (e.g., "pr-fix-conflicts")
+        workflow_name: Command-friendly workflow name (e.g., "pr-rebase")
 
     Returns:
         Actual workflow filename (e.g., "erk-rebase.yml")
@@ -70,7 +70,7 @@ def _get_workflow_file(workflow_name: str) -> str:
     return WORKFLOW_COMMAND_MAP[workflow_name]
 
 
-def _trigger_pr_fix_conflicts(
+def _trigger_pr_rebase(
     ctx: ErkContext,
     repo: RepoContext,
     *,
@@ -78,7 +78,7 @@ def _trigger_pr_fix_conflicts(
     no_squash: bool,
     model: str | None,
 ) -> None:
-    """Trigger pr-fix-conflicts workflow."""
+    """Trigger pr-rebase workflow."""
     # Get PR details - either from explicit PR number or current branch
     user_output("Checking PR status...")
     if pr_number is not None:
@@ -125,11 +125,11 @@ def _trigger_pr_fix_conflicts(
         inputs["model_name"] = model
 
     # Trigger workflow
-    user_output("Triggering pr-fix-conflicts workflow...")
+    user_output("Triggering pr-rebase workflow...")
     _trigger_workflow(
         ctx,
         repo,
-        workflow_name="pr-fix-conflicts",
+        workflow_name="pr-rebase",
         inputs=inputs,
         branch_name=branch_name,
         pr_owner=pr.owner,
@@ -345,7 +345,7 @@ def _trigger_one_shot(
     "--pr",
     "pr_number",
     type=int,
-    help="PR number (required for pr-fix-conflicts and pr-address)",
+    help="PR number (required for pr-rebase and pr-address)",
 )
 @click.option(
     "--plan",
@@ -356,7 +356,7 @@ def _trigger_one_shot(
 @click.option(
     "--no-squash",
     is_flag=True,
-    help="Skip squashing commits before rebase (pr-fix-conflicts only)",
+    help="Skip squashing commits before rebase (pr-rebase only)",
 )
 @click.option(
     "--model",
@@ -394,7 +394,7 @@ def launch(
     WORKFLOW_NAME is the workflow to trigger. Available workflows:
 
     \b
-      pr-fix-conflicts    - Rebase PR with AI-powered conflict resolution
+      pr-rebase           - Rebase PR with AI-powered conflict resolution
       pr-address          - Address PR review comments remotely
       pr-rewrite          - Rebase PR and regenerate AI PR summary
       learn               - Extract insights from a plan issue
@@ -403,12 +403,12 @@ def launch(
     Examples:
 
     \b
-      # Fix conflicts on current branch's PR
-      erk launch pr-fix-conflicts
+      # Rebase current branch's PR
+      erk launch pr-rebase
 
     \b
-      # Fix conflicts on specific PR
-      erk launch pr-fix-conflicts --pr 123
+      # Rebase specific PR
+      erk launch pr-rebase --pr 123
 
     \b
       # Address PR review comments
@@ -445,8 +445,8 @@ def launch(
     _ = _get_workflow_file(workflow_name)  # Raises UsageError if invalid
 
     # Dispatch to workflow-specific handler
-    if workflow_name == "pr-fix-conflicts":
-        _trigger_pr_fix_conflicts(
+    if workflow_name == "pr-rebase":
+        _trigger_pr_rebase(
             ctx,
             repo,
             pr_number=pr_number,

@@ -335,8 +335,8 @@ class TestExecuteCommandCopyRebaseRemote:
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("copy_rebase_remote")
-        assert executor.copied_texts == ["erk launch pr-fix-conflicts --pr 456"]
-        assert "Copied: erk launch pr-fix-conflicts --pr 456" in executor.notifications
+        assert executor.copied_texts == ["erk launch pr-rebase --pr 456"]
+        assert "Copied: erk launch pr-rebase --pr 456" in executor.notifications
 
     def test_copy_rebase_remote_does_nothing_without_pr(self) -> None:
         """copy_rebase_remote does nothing when no PR number."""
