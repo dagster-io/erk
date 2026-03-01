@@ -11,16 +11,18 @@ description: This skill should be used when working with cmux, the terminal mult
 
 Think of cmux as "tmux reimagined as a native macOS app" -- it has workspaces (like tmux windows), panes (like tmux panes), and surfaces (individual terminal or browser instances within panes), all controllable via a rich CLI.
 
-## When to Use This Skill
+## When to Load the Reference
 
-Invoke this skill when users:
+This skill covers the mental model, common commands, gotchas, and erk integration. Load `references/cmux-reference.md` when you need:
 
-- Mention cmux commands or workspace management
-- Need to script workspace creation or manipulation
-- Ask about cmux integration with erk (the `cmux_integration` config flag)
-- Want to automate terminal layouts or send commands to terminals
-- Need to understand cmux's object model (windows > workspaces > panes > surfaces)
-- Ask about the `erk exec cmux-sync-workspace` command
+- **Browser automation** syntax (40+ subcommands: navigation, forms, cookies, storage, console, waiting, dialogs, downloads, state)
+- **Window management** (`list-windows`, `new-window`, `focus-window`, `close-window`, `move-workspace-to-window`)
+- **Surface management** (`move-surface`, `reorder-surface`, `drag-surface-to-split`, `surface-health`)
+- **Panel/Tab** commands (`list-panels`, `focus-panel`, `tab-action`, `rename-tab`)
+- **Sidebar metadata** (`clear-status`, `list-status`, `clear-progress`, `clear-log`, `list-log`, `sidebar-state`)
+- **Full tmux compat** (20+ commands: `pipe-pane`, `wait-for`, `copy-mode`, `set-hook`, `bind-key`, `popup`, etc.)
+- **Utility/diagnostic** (`ping`, `capabilities`, `claude-hook`, `set-app-focus`)
+- **Workflow recipes** (browser automation, layout scripting, notification workflows)
 
 ## Core Concepts
 
@@ -28,9 +30,9 @@ Invoke this skill when users:
 
 ```
 Window (top-level OS window)
-  └── Workspace (vertical tab, like a tmux window)
-        └── Pane (a split region)
-              └── Surface (terminal or browser instance)
+  +-- Workspace (vertical tab, like a tmux window)
+        +-- Pane (a split region)
+              +-- Surface (terminal or browser instance)
 ```
 
 - **Window**: macOS application window. Multiple windows supported.
@@ -40,34 +42,17 @@ Window (top-level OS window)
 
 ### Addressing / Refs
 
-Objects can be referenced by:
-
-| Format    | Example                              | Description   |
-| --------- | ------------------------------------ | ------------- |
-| UUID      | `A1B2C3D4-...`                       | Full UUID     |
-| Short ref | `workspace:1`, `pane:2`, `surface:3` | Type + index  |
-| Index     | `0`, `1`, `2`                        | Numeric index |
-
-Use `--id-format refs|uuids|both` to control output format.
+Objects are referenced by UUID (`A1B2C3D4-...`), short ref (`workspace:1`, `pane:2`, `surface:3`), or numeric index (`0`, `1`). Use `--id-format refs|uuids|both` to control output format.
 
 ### Environment Variables
 
-cmux automatically sets these inside terminals it manages:
-
-| Variable            | Description                                                |
-| ------------------- | ---------------------------------------------------------- |
-| `CMUX_WORKSPACE_ID` | Current workspace UUID (used as default for `--workspace`) |
-| `CMUX_SURFACE_ID`   | Current surface UUID                                       |
-| `CMUX_TAB_ID`       | Current tab identifier                                     |
-| `CMUX_SOCKET_PATH`  | Override socket path (default: `/tmp/cmux.sock`)           |
+cmux sets these inside managed terminals: `CMUX_WORKSPACE_ID` (current workspace UUID, used as default for `--workspace`), `CMUX_SURFACE_ID`, `CMUX_TAB_ID`, `CMUX_SOCKET_PATH` (default: `/tmp/cmux.sock`).
 
 ### Socket Communication
 
-- Unix domain socket at `/tmp/cmux.sock`
-- V2 API uses newline-delimited JSON
-- CLI wraps socket calls into user-friendly commands
+Unix domain socket at `/tmp/cmux.sock`. V2 API uses newline-delimited JSON. CLI wraps socket calls into user-friendly commands.
 
-## Command Reference
+## Quick Command Reference
 
 ### Global Flags
 
@@ -83,62 +68,58 @@ cmux automatically sets these inside terminals it manages:
 
 ### Workspace Commands
 
-| Command             | Syntax                                              | Description                                                          |
-| ------------------- | --------------------------------------------------- | -------------------------------------------------------------------- |
-| `new-workspace`     | `cmux new-workspace [--command <text>]`             | Create workspace. `--command` auto-appends `\n`. Returns `OK <uuid>` |
-| `list-workspaces`   | `cmux list-workspaces`                              | List all workspaces                                                  |
-| `select-workspace`  | `cmux select-workspace --workspace <ref>`           | Switch to workspace                                                  |
-| `rename-workspace`  | `cmux rename-workspace [--workspace <ref>] <title>` | Rename workspace                                                     |
-| `close-workspace`   | `cmux close-workspace --workspace <ref>`            | Close workspace                                                      |
-| `current-workspace` | `cmux current-workspace`                            | Print current workspace ID                                           |
+| Command                                        | Description                                               |
+| ---------------------------------------------- | --------------------------------------------------------- |
+| `new-workspace [--command <text>]`             | Create workspace (auto-appends `\n`). Returns `OK <uuid>` |
+| `list-workspaces`                              | List all workspaces                                       |
+| `select-workspace --workspace <ref>`           | Switch to workspace                                       |
+| `rename-workspace [--workspace <ref>] <title>` | Rename workspace                                          |
+| `close-workspace --workspace <ref>`            | Close workspace                                           |
+| `current-workspace`                            | Print current workspace ID                                |
 
-### Pane/Surface Commands
+### Pane and Input Commands
 
-| Command         | Syntax                                                         | Description         |
-| --------------- | -------------------------------------------------------------- | ------------------- |
-| `new-split`     | `cmux new-split <left\|right\|up\|down> [--workspace <ref>]`   | Split pane          |
-| `new-surface`   | `cmux new-surface [--type <terminal\|browser>] [--pane <ref>]` | Add surface         |
-| `list-panes`    | `cmux list-panes [--workspace <ref>]`                          | List panes          |
-| `focus-pane`    | `cmux focus-pane --pane <ref>`                                 | Focus pane          |
-| `close-surface` | `cmux close-surface [--surface <ref>]`                         | Close surface       |
-| `tree`          | `cmux tree [--all] [--workspace <ref>]`                        | Show hierarchy tree |
+| Command                                                                          | Description                   |
+| -------------------------------------------------------------------------------- | ----------------------------- |
+| `new-split <left\|right\|up\|down> [--workspace <ref>]`                          | Split pane                    |
+| `new-surface [--type <terminal\|browser>] [--pane <ref>]`                        | Add surface                   |
+| `list-panes [--workspace <ref>]`                                                 | List panes                    |
+| `focus-pane --pane <ref>`                                                        | Focus pane                    |
+| `close-surface [--surface <ref>]`                                                | Close surface                 |
+| `send [--workspace <ref>] [--surface <ref>] <text>`                              | Send text (must include `\n`) |
+| `send-key [--workspace <ref>] [--surface <ref>] <key>`                           | Send keystroke                |
+| `read-screen [--workspace <ref>] [--surface <ref>] [--scrollback] [--lines <n>]` | Read terminal content         |
 
-### Input Commands
+### Notification / Status Commands
 
-| Command       | Syntax                                                                                | Description                              |
-| ------------- | ------------------------------------------------------------------------------------- | ---------------------------------------- |
-| `send`        | `cmux send [--workspace <ref>] [--surface <ref>] <text>`                              | Send text (must include `\n` to execute) |
-| `send-key`    | `cmux send-key [--workspace <ref>] [--surface <ref>] <key>`                           | Send keystroke                           |
-| `read-screen` | `cmux read-screen [--workspace <ref>] [--surface <ref>] [--scrollback] [--lines <n>]` | Read terminal content                    |
+| Command                                                     | Description        |
+| ----------------------------------------------------------- | ------------------ |
+| `notify --title <text> [--subtitle <text>] [--body <text>]` | Send notification  |
+| `set-status <key> <value> [--icon <name>] [--color <hex>]`  | Set sidebar status |
+| `set-progress <0.0-1.0> [--label <text>]`                   | Set progress bar   |
+| `log [--level <level>] [--source <name>] <message>`         | Add log entry      |
 
-### Notification/Status Commands
+### Browser Subsystem (Summary)
 
-| Command        | Syntax                                                           | Description        |
-| -------------- | ---------------------------------------------------------------- | ------------------ |
-| `notify`       | `cmux notify --title <text> [--subtitle <text>] [--body <text>]` | Send notification  |
-| `set-status`   | `cmux set-status <key> <value> [--icon <name>] [--color <hex>]`  | Set sidebar status |
-| `set-progress` | `cmux set-progress <0.0-1.0> [--label <text>]`                   | Set progress bar   |
-| `log`          | `cmux log [--level <level>] [--source <name>] <message>`         | Add log entry      |
+The browser subsystem has 40+ commands for full web automation. Key categories:
 
-### Browser Commands
+- **Navigation**: `browser open`, `browser navigate`/`goto`, `browser back`/`forward`/`reload`
+- **Interaction**: `browser click`, `browser fill`, `browser type`, `browser select`, `browser press`
+- **Inspection**: `browser snapshot [--interactive]`, `browser eval <js>`, `browser get`, `browser is`
+- **Waiting**: `browser wait --selector|--text|--url-contains|--function [--timeout-ms]`
+- **`--snapshot-after` flag**: Most interaction commands accept this flag to automatically capture a snapshot after the action
 
-| Command            | Syntax                                  | Description        |
-| ------------------ | --------------------------------------- | ------------------ |
-| `browser open`     | `cmux browser open [url]`               | Open browser split |
-| `browser navigate` | `cmux browser navigate <url>`           | Navigate to URL    |
-| `browser click`    | `cmux browser click <selector>`         | Click element      |
-| `browser snapshot` | `cmux browser snapshot [--interactive]` | Take snapshot      |
+Load `references/cmux-reference.md` for full browser command syntax.
 
-### tmux Compatibility
+### Key Commands Not in Quick Reference
 
-| Command         | Syntax                                                          | Description                  |
-| --------------- | --------------------------------------------------------------- | ---------------------------- |
-| `capture-pane`  | `cmux capture-pane [options]`                                   | Alias for `read-screen`      |
-| `rename-window` | `cmux rename-window [--workspace <ref>] <title>`                | Alias for `rename-workspace` |
-| `resize-pane`   | `cmux resize-pane --pane <ref> (-L\|-R\|-U\|-D) [--amount <n>]` | Resize pane                  |
-| `swap-pane`     | `cmux swap-pane --pane <ref> --target-pane <ref>`               | Swap panes                   |
-| `break-pane`    | `cmux break-pane [--workspace <ref>] [--pane <ref>]`            | Break pane to workspace      |
-| `join-pane`     | `cmux join-pane --target-pane <ref>`                            | Join pane                    |
+These are documented in the reference file:
+
+- **`wait-for <channel>`** -- Inter-process synchronization (tmux compat)
+- **`claude-hook <event>`** -- Claude Code integration hook
+- **`pipe-pane`** -- Pipe pane output to external command
+- **`popup`** -- Show popup overlay
+- **`set-hook`** / **`bind-key`** / **`unbind-key`** -- Hook and key binding management
 
 ## Critical Gotchas
 
@@ -237,61 +218,28 @@ When `cmux_integration` is enabled, the erk dash TUI command palette exposes:
 
 Both require a plan with `pr_number` and `pr_head_branch`.
 
-### Finding and Focusing Workspaces
-
-To find a workspace by branch name and switch to it:
-
-```bash
-# List workspaces as JSON
-cmux --json list-workspaces
-
-# Find workspace by title matching branch name, then select it
-cmux select-workspace --workspace <ref>
-```
-
 ## Common Scripting Patterns
 
-### Create workspace and run command
-
 ```bash
+# Create workspace and run command
 WS=$(cmux new-workspace --command 'cd ~/code/myproject && make build' | awk '{print $2}')
 cmux rename-workspace --workspace "$WS" "build"
-```
 
-### Create workspace, then send commands
-
-```bash
+# Create workspace, then send commands separately
 WS=$(cmux new-workspace | awk '{print $2}')
 cmux send --workspace "$WS" $'cd ~/code/myproject\n'
 cmux send --workspace "$WS" $'make test\n'
-cmux rename-workspace --workspace "$WS" "tests"
-```
 
-### Read terminal output
-
-```bash
+# Read terminal output
 cmux read-screen --workspace "$WS" --lines 50
-cmux read-screen --workspace "$WS" --scrollback  # include scrollback buffer
-```
+cmux read-screen --workspace "$WS" --scrollback
 
-### Split workspace and set up layout
-
-```bash
+# Split workspace layout
 WS=$(cmux new-workspace --command 'cd ~/code/project' | awk '{print $2}')
 cmux new-split right --workspace "$WS"
-# Now workspace has two panes side by side
-```
 
-### List and select workspaces
-
-```bash
-# Plain text
-cmux list-workspaces
-
-# JSON for scripting
+# JSON output for scripting
 cmux --json list-workspaces
-
-# Switch to workspace
 cmux select-workspace --workspace workspace:0
 ```
 
