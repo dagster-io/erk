@@ -13,7 +13,7 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 
 | Category                                    | Tripwires | Load When Working In                     |
 | ------------------------------------------- | --------- | ---------------------------------------- |
-| [architecture](architecture/tripwires.md)   | 178       | `src/erk/gateway/`, gateways, subprocess |
+| [architecture](architecture/tripwires.md)   | 177       | `src/erk/gateway/`, gateways, subprocess |
 | [capabilities](capabilities/tripwires.md)   | 13        | Claude Code capabilities, tool use       |
 | [changelog](changelog/tripwires.md)         | 3         | `changelog/` code                        |
 | [checklists](checklists/tripwires.md)       | 1         | `checklists/` code                       |
@@ -23,8 +23,7 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 | [commands](commands/tripwires.md)           | 7         | `.claude/commands/`, slash commands      |
 | [config](config/tripwires.md)               | 2         | `config/` code                           |
 | [configuration](configuration/tripwires.md) | 1         | `configuration/` code                    |
-| [desktop-dash](desktop-dash/tripwires.md)   | 59        | `desktop-dash/` code                     |
-| [documentation](documentation/tripwires.md) | 32        | `documentation/` code                    |
+| [documentation](documentation/tripwires.md) | 30        | `documentation/` code                    |
 | [erk](erk/tripwires.md)                     | 22        | `erk/` code                              |
 | [gateway](gateway/tripwires.md)             | 5         | `gateway/` code                          |
 | [hooks](hooks/tripwires.md)                 | 4         | `.claude/hooks/`, hook development       |
