@@ -493,4 +493,84 @@ Todos have been modified successfully. Ensure that you continue to use the todo 
   "plan_number": 8546
 }
   </tool_result>
+  <tool_result tool="toolu_01DkG39bDScxoAye3yMU3dfU">
+{"uploaded": true, "plan_id": 8546}
+  </tool_result>
+  <assistant>No CI needed — this is a documentation-only change to a markdown command file. Let me submit the PR:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="333" cache_read_input_tokens="37222" cache_creation="{'ephemeral_5m_input_tokens': 333, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01EGpoY83DWtoWuuwWA9vn6B">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR for plan #8546</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="333" cache_read_input_tokens="37222" cache_creation="{'ephemeral_5m_input_tokens': 333, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EGpoY83DWtoWuuwWA9vn6B">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #8546 found (already exists)
+
+Phase 2: Getting diff
+
+Phase 3: Fetching plan context
+   Incorporating plan #8546
+
+Phase 4: Generating PR description
+   Reading diff file...
+   Diff loaded (593 chars)
+   Analyzing changes with Claude...
+   PR description generated
+
+Phase 5: Graphite enhancement
+
+Phase 6: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+
+✅ PR submitted
+
+  Action:      Updated PR #8546
+  Branch:      plnd/fix-pr-address-gitignore-n-03-01-1357 → master
+  Title:       Fix pr-address command to document gitignore handling for plan-only PRs
+
+... [2 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01NHvu6depLHtqgBomV8qLNy">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="406" cache_read_input_tokens="37555" cache_creation="{'ephemeral_5m_input_tokens': 406, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_015g8ZG9zvoDPTnVzV9JLnDE">
+    <param name="command">erk pr check --stage=impl 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR completion</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="406" cache_read_input_tokens="37555" cache_creation="{'ephemeral_5m_input_tokens': 406, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NHvu6depLHtqgBomV8qLNy">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 8546
+}
+  </tool_result>
+  <tool_result tool="toolu_015g8ZG9zvoDPTnVzV9JLnDE">
+
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01WCmut6HthjcbFmbr4tQBwa">
+    <param name="todos">[{'content': 'Read pr-address.md and locate Step 3 commit section', 'status': 'completed',...[truncated 404 chars]...ubmit PR', 'status': 'completed', 'activeForm': 'Signaling completion and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="437" cache_read_input_tokens="37961" cache_creation="{'ephemeral_5m_input_tokens': 437, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WCmut6HthjcbFmbr4tQBwa">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan execution complete.
+
+**Summary:** Added a one-line note to `.claude/commands/erk/pr-address.md` Step 3 (line 209) reminding agents to use `git add -f` when changed files are in `.erk/impl-context/`, since that directory is gitignored. This prevents the silent failure where `git add` skips gitignored files, which previously cost agents 2 extra turns to recover from.
+
+**Consistency check:** No other commands/skills need similar changes — `plan-implement.md` delegates to `erk exec setup-impl` which handles the force-add automatically, and `learn.md` only reads from `.erk/impl-context/`.
+
+**PR:** https://github.com/dagster-io/erk/pull/8546</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="258" cache_read_input_tokens="38398" cache_creation="{'ephemeral_5m_input_tokens': 258, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
 </session>
