@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: Double activation when `erk pr checkout --script --sync` triggers direnv"
+}
