@@ -1,0 +1,593 @@
+<session>
+  <meta source="agent-aa65141" />
+  <meta branch="plnd/improve-cmux-skill-03-01-1402" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Search the codebase for any cached cmux help output, cmux command reference, or cmux-related documentation files. Look in:
+1. docs/learned/ for any cmux docs
+2. .erk/ for any scratch files related to cmux
+3. Any markdown files mentioning cmux commands comprehensively
+4. Check if there's a cmux help text or command list stored anywhere
+
+FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+Report back what you find - particularly any comprehensive list of cmux commands/subcommands.</user>
+  <assistant>I'll help you search for cached cmux help output and documentation. Let me start by checking the documentation index and then systematically explore the codebase.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18431" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18431, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JLX56aRS3kZdHbkLm5catS">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18431" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18431, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_011EyeseBdnWmpLzZdMUGw9u">
+    <param name="pattern">docs/learned/**/*cmux*</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18431" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18431, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01HXxE1qgGg8J3MexJcsdNYV">
+    <param name="pattern">.erk/**/*cmux*</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18431" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18431, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JLX56aRS3kZdHbkLm5catS">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_011EyeseBdnWmpLzZdMUGw9u">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01HXxE1qgGg8J3MexJcsdNYV">
+No files found
+  </tool_result>
+  <assistant>No cmux-specific docs found yet. Let me search more broadly for cmux references in the codebase:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1363" cache_read_input_tokens="18431" cache_creation="{'ephemeral_5m_input_tokens': 1363, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01PZGDLka9aY4vxh7iScJiFE">
+    <param name="pattern">cmux</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1363" cache_read_input_tokens="18431" cache_creation="{'ephemeral_5m_input_tokens': 1363, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01RwkyLLpdP22pXD9zUNfPuG">
+    <param name="pattern">**/*.md</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1363" cache_read_input_tokens="18431" cache_creation="{'ephemeral_5m_input_tokens': 1363, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RwkyLLpdP22pXD9zUNfPuG">
+/home/runner/work/erk/erk/docs/learned/architecture/abc-convenience-methods.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-execution-modes.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-error-reporting.md
+/home/runner/work/erk/erk/docs/learned/architecture/bash-python-integration.md
+/home/runner/work/erk/erk/docs/learned/architecture/at-reference-resolution.md
+/home/runner/work/erk/erk/docs/learned/architecture/agent-schema-enforcement.md
+/home/runner/work/erk/erk/docs/learned/architecture/bundled-artifacts.md
+/home/runner/work/erk/erk/docs/learned/architecture/agent-backpressure-gates.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-integration.md
+/home/runner/work/erk/erk/docs/learned/architecture/capability-system.md
+/home/runner/work/erk/erk/docs/learned/architecture/callback-progress-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/branch-manager-abstraction.md
+/home/runner/work/erk/erk/docs/learned/architecture/branch-manager-decision-tree.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-progress.md
+/home/runner/work/erk/erk/docs/learned/architecture/defense-in-depth-enforcement.md
+/home/runner/work/erk/erk/docs/learned/architecture/discriminated-union-error-handling.md
+/home/runner/work/erk/erk/docs/learned/architecture/cli-binary-ops-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/click-context-di-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-installation-gateway.md
+/home/runner/work/erk/erk/docs/learned/architecture/derived-flags.md
+/home/runner/work/erk/erk/docs/learned/architecture/composable-remote-commands.md
+/home/runner/work/erk/erk/docs/learned/architecture/command-boundaries.md
+/home/runner/work/erk/erk/docs/learned/architecture/convergence-points.md
+/home/runner/work/erk/erk/docs/learned/architecture/direct-condition-vs-derived-output.md
+/home/runner/work/erk/erk/docs/learned/architecture/context-injection-tiers.md
+/home/runner/work/erk/erk/docs/learned/architecture/command-composition.md
+/home/runner/work/erk/erk/docs/learned/architecture/context-efficiency.md
+/home/runner/work/erk/erk/docs/learned/architecture/commandresult-extension-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/cli-to-pipeline-boundary.md
+/home/runner/work/erk/erk/docs/learned/architecture/erk-architecture.md
+
+... [71 lines omitted] ...
+
+/home/runner/work/erk/erk/docs/learned/architecture/exception-logging-patterns.md
+/home/runner/work/erk/erk/docs/learned/architecture/gateway-error-boundaries.md
+/home/runner/work/erk/erk/docs/learned/architecture/error-handling-patterns.md
+  </tool_result>
+  <tool_result tool="toolu_01PZGDLka9aY4vxh7iScJiFE">
+Found 21 files
+tests/unit/cli/commands/exec/scripts/test_cmux_sync_workspace.py
+tests/tui/commands/test_registry.py
+tests/tui/app/test_async_operations.py
+src/erk/tui/operations/workers.py
+src/erk/tui/screens/plan_detail_screen.py
+src/erk/tui/commands/provider.py
+src/erk/tui/commands/registry.py
+src/erk/tui/commands/types.py
+src/erk/tui/actions/navigation.py
+src/erk/tui/actions/palette.py
+src/erk/tui/app.py
+src/erk/core/capabilities/codex_portable.py
+src/erk/cli/commands/pr/list_cmd.py
+src/erk/cli/commands/exec/group.py
+src/erk/cli/commands/exec/scripts/cmux_sync_workspace.py
+packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py
+packages/erk-shared/src/erk_shared/config/schema.py
+packages/erk-shared/src/erk_shared/context/types.py
+CHANGELOG.md
+.claude/skills/erk-exec/reference.md
+.claude/skills/cmux/SKILL.md
+  </tool_result>
+  <assistant>Great! I found a cmux skill file. Let me read that and check for comprehensive cmux documentation:</assistant>
+  <usage input_tokens="2775" cache_creation_input_tokens="711" cache_read_input_tokens="19794" cache_creation="{'ephemeral_5m_input_tokens': 711, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Du1RyaBiw3PzguNa3vWxPk">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/cmux/SKILL.md</param>
+  </tool_use>
+  <usage input_tokens="2775" cache_creation_input_tokens="711" cache_read_input_tokens="19794" cache_creation="{'ephemeral_5m_input_tokens': 711, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Y8wwUTypgHT5LYZT2tWbc5">
+    <param name="pattern">cmux.*help|cmux.*command|cmux.*subcommand</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="2775" cache_creation_input_tokens="711" cache_read_input_tokens="19794" cache_creation="{'ephemeral_5m_input_tokens': 711, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Du1RyaBiw3PzguNa3vWxPk">
+     1→---
+     2→name: cmux
+     3→description: This skill should be used when working with cmux, the terminal multiplexer application. Use when users mention cmux commands, workspace management, terminal pane operations, or cmux integration with erk. Essential for understanding cmux's workspace model, CLI commands, and scripting patterns.
+     4→---
+     5→
+     6→# cmux - Terminal Multiplexer
+     7→
+     8→## Overview
+     9→
+    10→**cmux** is a native macOS terminal application (Swift/AppKit) that provides terminal multiplexing with workspaces, panes, and splits. It uses Ghostty's rendering engine (libghostty) for GPU-accelerated terminal output. The CLI communicates with the running app via a Unix domain socket at `/tmp/cmux.sock`.
+    11→
+    12→Think of cmux as "tmux reimagined as a native macOS app" -- it has workspaces (like tmux windows), panes (like tmux panes), and surfaces (individual terminal or browser instances within panes), all controllable via a rich CLI.
+    13→
+    14→## When to Use This Skill
+    15→
+    16→Invoke this skill when users:
+    17→
+    18→- Mention cmux commands or workspace management
+    19→- Need to script workspace creation or manipulation
+    20→- Ask about cmux integration with erk (the `cmux_integration` config flag)
+    21→- Want to automate terminal layouts or send commands to terminals
+    22→- Need to understand cmux's object model (windows &gt; workspaces &gt; panes &gt; surfaces)
+    23→- Ask about the `erk exec cmux-sync-workspace` command
+    24→
+    25→## Core Concepts
+    26→
+    27→### Object Hierarchy
+    28→
+    29→```
+    30→Window (top-level OS window)
+
+... [282 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Y8wwUTypgHT5LYZT2tWbc5">
+.claude/skills/cmux/SKILL.md:3:description: This skill should be used when working with cmux, the terminal multiplexer application. Use when users mention cmux commands, workspace management, terminal pane operations, or cmux integration with erk. Essential for understanding cmux's workspace model, CLI commands, and scripting patterns.
+.claude/skills/cmux/SKILL.md:18:- Mention cmux commands or workspace management
+.claude/skills/cmux/SKILL.md:23:- Ask about the `erk exec cmux-sync-workspace` command
+.claude/skills/cmux/SKILL.md:88:| `new-workspace`     | `cmux new-workspace [--command &lt;text&gt;]`             | Create workspace. `--command` auto-appends `\n`. Returns `OK &lt;uuid&gt;` |
+.claude/skills/cmux/SKILL.md:147:`cmux new-workspace --command 'echo hello'` automatically appends `\n`, so the command executes immediately. Do NOT add your own `\n`.
+.claude/skills/cmux/SKILL.md:175:cmux new-workspace --command 'source "$(erk pr checkout 456 --script --sync)"'
+.claude/skills/cmux/SKILL.md:178:cmux new-workspace --command "source \"$(erk pr checkout 456 --script --sync)\""
+.claude/skills/cmux/SKILL.md:186:cmux new-workspace --command 'cd /path/to/project'
+.claude/skills/cmux/SKILL.md:233:When `cmux_integration` is enabled, the erk dash TUI command palette exposes:
+.claude/skills/cmux/SKILL.md:236:- **copy cmux sync** (copy) -- Copies the cmux sync command to clipboard
+.claude/skills/cmux/SKILL.md:257:WS=$(cmux new-workspace --command 'cd ~/code/myproject &amp;&amp; make build' | awk '{print $2}')
+.claude/skills/cmux/SKILL.md:280:WS=$(cmux new-workspace --command 'cd ~/code/project' | awk '{print $2}')
+src/erk/tui/commands/registry.py:98:    """Display name for cmux_sync command."""
+tests/tui/app/test_async_operations.py:1027:    async def test_cmux_sync_runs_correct_command(
+tests/tui/commands/test_registry.py:322:    """copy_cmux_sync generates erk exec command."""
+tests/tui/commands/test_registry.py:331:    """cmux_sync ACTION command uses same display name as copy_cmux_sync."""
+tests/tui/commands/test_registry.py:862:    """get_copy_text for copy_cmux_sync generates erk exec command."""
+src/erk/cli/commands/exec/scripts/cmux_sync_workspace.py:28:    """Success response for cmux-sync-workspace command."""
+src/erk/cli/commands/exec/scripts/cmux_sync_workspace.py:38:    """Error response for cmux-sync-workspace command."""
+src/erk/cli/commands/exec/scripts/cmux_sync_workspace.py:132:        f"WS=$(cmux new-workspace --command '{checkout_cmd}' | awk '{{print $2}}') &amp;&amp; "
+tests/unit/cli/commands/exec/scripts/test_cmux_sync_workspace.py:89:def test_cmux_sync_workspace_fails_cmux_command() -&gt; None:
+  </tool_result>
+  <assistant>Perfect! I found comprehensive cmux documentation. Now let me check if there are any other cached help files or reference materials:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="8556" cache_read_input_tokens="20505" cache_creation="{'ephemeral_5m_input_tokens': 8556, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HLBWyZgAwh51L4emWPZTHV">
+    <param name="command">find /home/runner/work/erk/erk -type f -name "*cmux*" | head -20</param>
+    <param name="description">Find all cmux-related files in codebase</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="8556" cache_read_input_tokens="20505" cache_creation="{'ephemeral_5m_input_tokens': 8556, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UsqsmbqeJsAYssB7SS4a1j">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/cmux_sync_workspace.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="8556" cache_read_input_tokens="20505" cache_creation="{'ephemeral_5m_input_tokens': 8556, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PUcWFEgfk59HkCZ62ZhKcx">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/cmux</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="8556" cache_read_input_tokens="20505" cache_creation="{'ephemeral_5m_input_tokens': 8556, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PUcWFEgfk59HkCZ62ZhKcx">
+EISDIR: illegal operation on a directory, read
+  </tool_result>
+  <tool_result tool="toolu_01UsqsmbqeJsAYssB7SS4a1j">
+     1→"""Create a cmux workspace with PR checkout and sync.
+     2→
+     3→This script creates a cmux workspace that automatically checks out a PR,
+     4→syncs it with the trunk, and renames the workspace to the PR's head branch.
+     5→
+     6→Usage:
+     7→    erk exec cmux-sync-workspace --pr 8152
+     8→    erk exec cmux-sync-workspace --pr 8152 --branch "my-branch"
+     9→
+    10→Output:
+    11→    JSON with {success, pr_number, branch, workspace_name} on success
+    12→    JSON with {success, error} on failure
+    13→
+    14→Exit Codes:
+    15→    0: Success - workspace created
+    16→    1: Error - cmux/checkout/sync failed or branch lookup failed
+    17→"""
+    18→
+    19→import json
+    20→import subprocess
+    21→from dataclasses import asdict, dataclass
+    22→
+    23→import click
+    24→
+    25→
+    26→@dataclass(frozen=True)
+    27→class CmuxSyncSuccess:
+    28→    """Success response for cmux-sync-workspace command."""
+    29→
+    30→    success: bool
+
+... [147 lines omitted] ...
+
+    37→class CmuxSyncError:
+    38→    """Error response for cmux-sync-workspace command."""
+    41→    error: str
+    64→    except subprocess.CalledProcessError:
+   114→                        CmuxSyncError(
+   116→                            error=f"Failed to detect head branch for PR #{pr}. "
+   159→    except subprocess.CalledProcessError as e:
+   160→        error_output = e.stderr.strip() if e.stderr else e.stdout.strip()
+   164→                    CmuxSyncError(
+   166→                        error=f"Failed to create cmux workspace: {error_output}",
+  </tool_result>
+  <tool_result tool="toolu_01HLBWyZgAwh51L4emWPZTHV">
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_cmux_sync_workspace.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/__pycache__/cmux_sync_workspace.cpython-313.pyc
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/cmux_sync_workspace.py
+/home/runner/work/erk/erk/.git/logs/refs/remotes/origin/plnd/improve-cmux-skill-03-01-1402
+/home/runner/work/erk/erk/.git/logs/refs/remotes/origin/plnd/learn-add-cmux-workspace-i-03-01-0555
+/home/runner/work/erk/erk/.git/logs/refs/remotes/origin/plnd/add-cmux-sync-exec-02-28-2216
+/home/runner/work/erk/erk/.git/logs/refs/heads/plnd/improve-cmux-skill-03-01-1402
+/home/runner/work/erk/erk/.git/refs/remotes/origin/plnd/improve-cmux-skill-03-01-1402
+/home/runner/work/erk/erk/.git/refs/remotes/origin/plnd/learn-add-cmux-workspace-i-03-01-0555
+/home/runner/work/erk/erk/.git/refs/remotes/origin/plnd/add-cmux-sync-exec-02-28-2216
+/home/runner/work/erk/erk/.git/refs/heads/plnd/improve-cmux-skill-03-01-1402
+  </tool_result>
+  <assistant>Let me check what's in the cmux skill directory:</assistant>
+  <usage input_tokens="2004" cache_creation_input_tokens="1629" cache_read_input_tokens="29061" cache_creation="{'ephemeral_5m_input_tokens': 1629, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013sg7ZhYtqGe3zbn4iqkPmw">
+    <param name="command">ls -la /home/runner/work/erk/erk/.claude/skills/cmux/</param>
+    <param name="description">List files in cmux skill directory</param>
+  </tool_use>
+  <usage input_tokens="2004" cache_creation_input_tokens="1629" cache_read_input_tokens="29061" cache_creation="{'ephemeral_5m_input_tokens': 1629, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013sg7ZhYtqGe3zbn4iqkPmw">
+total 24
+drwxr-xr-x  2 runner runner  4096 Mar  1 19:03 .
+drwxr-xr-x 20 runner runner  4096 Mar  1 19:03 ..
+-rw-r--r--  1 runner runner 13289 Mar  1 19:03 SKILL.md
+  </tool_result>
+  <assistant>Perfect! Let me also check if there's any reference material in the erk-exec skill:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="2245" cache_read_input_tokens="30690" cache_creation="{'ephemeral_5m_input_tokens': 2245, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SZ8XS9C8Lhgp96DHDs2E8H">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/erk-exec/reference.md</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2245" cache_read_input_tokens="30690" cache_creation="{'ephemeral_5m_input_tokens': 2245, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01S5vfdQzSy9kaZL4r2XK1q9">
+    <param name="command">grep -r "cmux" /home/runner/work/erk/erk/.claude/skills/ --include="*.md" -l</param>
+    <param name="description">Find all markdown files mentioning cmux in skills</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2245" cache_read_input_tokens="30690" cache_creation="{'ephemeral_5m_input_tokens': 2245, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SZ8XS9C8Lhgp96DHDs2E8H">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!--
+     3→  Regenerate: erk-dev gen-exec-reference-docs
+     4→  CI check:   erk-dev gen-exec-reference-docs --check (included in make fast-ci)
+     5→
+     6→  Source of truth: Live Click command tree in src/erk/cli/commands/exec/group.py
+     7→  Generator code: packages/erk-dev/src/erk_dev/exec_reference/generate.py
+     8→  Generator docs: docs/learned/cli/auto-generated-reference-docs.md
+     9→
+    10→  Regenerate after: adding/modifying/removing exec commands or changing help text
+    11→--&gt;
+    12→
+    13→# erk exec Commands Reference
+    14→
+    15→Quick reference for all `erk exec` subcommands.
+    16→
+    17→## Summary
+    18→
+    19→| Command                           | Description                                                                 |
+    20→| --------------------------------- | --------------------------------------------------------------------------- |
+    21→| `add-plan-label`                  | Add a label to a plan via the appropriate backend.                          |
+    22→| `add-plan-labels`                 | Batch add labels to multiple plans from JSON stdin.                         |
+    23→| `add-remote-execution-note`       | Add remote execution tracking note to PR body.                              |
+    24→| `capture-session-info`            | Capture Claude Code session info for CI workflows.                          |
+    25→| `ci-fetch-summaries`              | Fetch CI failure summaries for a PR.                                        |
+    26→| `ci-generate-summaries`           | Generate CI failure summaries using Haiku.                                  |
+    27→| `ci-update-pr-body`               | Update PR body with AI-generated summary and footer.                        |
+    28→| `ci-verify-autofix`               | Run full CI verification after autofix push.                                |
+    29→| `cleanup-impl-context`            | Clean up .erk/impl-context/ staging directory.                              |
+    30→| `close-pr`                        | Close a plan with a comment.                                                |
+
+... [1301 lines omitted] ...
+
+   166→Fetch CI failure summaries for a PR.
+   178→Generate CI failure summaries using Haiku.
+   386→| `--job-status` | CHOICE  | Yes      | Sentinel.UNSET      | Job status (success or failure) |
+  </tool_result>
+  <tool_result tool="toolu_01S5vfdQzSy9kaZL4r2XK1q9">
+/home/runner/work/erk/erk/.claude/skills/erk-exec/reference.md
+/home/runner/work/erk/erk/.claude/skills/cmux/SKILL.md
+  </tool_result>
+  <assistant>Perfect! Let me also check for any additional cmux documentation or scratch files:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="20203" cache_read_input_tokens="32935" cache_creation="{'ephemeral_5m_input_tokens': 20203, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01QXkyMa9nkAT86BAGd4HYwv">
+    <param name="command">find /home/runner/work/erk/erk -type f \( -name "*.md" -o -name "*.txt" \) -exec grep -l "cmux" {} \; 2&gt;/dev/null | head -20</param>
+    <param name="description">Find all markdown and text files mentioning cmux</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="20203" cache_read_input_tokens="32935" cache_creation="{'ephemeral_5m_input_tokens': 20203, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Hi4qCvAdraKGSCGjRKb2WH">
+    <param name="file_path">/home/runner/work/erk/erk/CHANGELOG.md</param>
+    <param name="offset">1</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="20203" cache_read_input_tokens="32935" cache_creation="{'ephemeral_5m_input_tokens': 20203, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QXkyMa9nkAT86BAGd4HYwv">
+/home/runner/work/erk/erk/.erk/impl-context/plan.md
+/home/runner/work/erk/erk/.erk/impl-context/plnd--improve-cmux-skill-03-01-1402/plan.md
+/home/runner/work/erk/erk/CHANGELOG.md
+/home/runner/work/erk/erk/.claude/skills/erk-exec/reference.md
+/home/runner/work/erk/erk/.claude/skills/cmux/SKILL.md
+  </tool_result>
+  <tool_result tool="toolu_01Hi4qCvAdraKGSCGjRKb2WH">
+     1→# Changelog
+     2→
+     3→All notable changes to erk will be documented in this file.
+     4→
+     5→The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+     6→and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+     7→
+     8→## [Unreleased]
+     9→
+    10→&lt;!-- As of: c261c6d98 --&gt;
+    11→
+    12→### Added
+    13→
+    14→- Support external learned docs repository via `[docs] path` config in `.erk/config.local.toml` (c261c6d98)
+    15→- Add cmux workspace integration to dashboard and CLI, enabled via `cmux_integration = true` config (b74658edc)
+    16→- Add auto-resolution of pre-existing bot threads in code-move PRs via `pr-address` and `pr-preview-address` commands (56dd99df3)
+    17→- Add "p" keybinding to open objective issue page in Objectives view (18ab7408e)
+    18→- Add "rewrite" command to TUI command palette for remote PR rebase and AI summary regeneration (704bbe6ad)
+    19→- Add `gt submit` to TUI sync checkout command for streamlined branch submission (6240893fa)
+    20→- Add `erk init --upgrade` flag for self-service upgrades after version changes (a59de3ee3)
+    21→- Add `dispatch_ref` config to override workflow dispatch branch for testing workflow changes on feature branches (064737c47)
+    22→- Add `launch one-shot` command for triggering one-shot workflows with `--prompt`/`-f` options (e86efb1e4)
+    23→- Display learn plan PR link in `erk land` output (90bfd7870)
+    24→- Add session preprocessing stats to `erk land` discovery output (2ed31d082)
+    25→- Add one-shot prompt modal to `erk dash` (`x` keybinding) for quick dispatch without leaving the TUI (a87c69bab)
+    26→- Add visible AI-generated summary to plan PRs, displayed above collapsed plan details for quick overview (bd69797ac)
+    27→- Show toast notification when learn plan is created during TUI landing (682827afc)
+    28→
+    29→### Changed
+    30→
+
+... [75 lines omitted] ...
+
+    45→- Fix misleading data when GraphQL enrichment fails in `erk pr list` -- unenriched PRs now excluded from linkages with explicit degradation warnings (04dc3d38a)
+    46→- Make `--script` mode resilient to errors in `erk br co` -- failures now produce a valid error script instead of empty stdout (04c46a7bb)
+    47→- Fix workflow-started metadata block rendering to prevent parse failures during `erk land` (ffd28b870)
+  </tool_result>
+  <assistant>Excellent! Now let me check the impl-context plan file to see what work is currently being planned:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="2727" cache_read_input_tokens="53138" cache_creation="{'ephemeral_5m_input_tokens': 2727, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ELS4rJDTxoGXRDBeoUCCFw">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--improve-cmux-skill-03-01-1402/plan.md</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="2727" cache_read_input_tokens="53138" cache_creation="{'ephemeral_5m_input_tokens': 2727, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ELS4rJDTxoGXRDBeoUCCFw">
+     1→# Plan: Improve cmux Skill
+     2→
+     3→## Context
+     4→
+     5→The existing cmux skill at `.claude/skills/cmux/SKILL.md` covers core concepts and common operations well, but has significant gaps when compared against the full `cmux --help` output. The browser subsystem alone has 40+ subcommands but only 4 are documented. Several entire command categories (window management, panels, sidebar state queries) are missing entirely. Additionally, the `tree` command is listed in the skill but doesn't appear in the help text (possibly removed).
+     6→
+     7→The skill is already 307 lines. Adding comprehensive coverage of all missing commands inline would bloat it beyond usefulness. The fix: move the complete command reference into a `references/` file, keeping `SKILL.md` focused on mental model, common operations, and when-to-load-references guidance.
+     8→
+     9→## Changes
+    10→
+    11→### 1. Create `references/cmux-reference.md` — Complete command reference
+    12→
+    13→Move the detailed command tables out of SKILL.md and into a comprehensive reference file covering **all** commands from `cmux --help`. Organize by category:
+    14→
+    15→**New/missing sections to add:**
+    16→
+    17→- **Window Management**: `list-windows`, `current-window`, `new-window`, `focus-window`, `close-window`, `move-workspace-to-window`
+    18→- **Surface Management**: `move-surface`, `reorder-surface`, `drag-surface-to-split`, `refresh-surfaces`, `surface-health`, `trigger-flash`, `list-pane-surfaces`
+    19→- **Panel Commands**: `list-panels`, `focus-panel`, `send-panel`, `send-key-panel`
+    20→- **Tab Commands**: `tab-action`, `rename-tab`, `reorder-workspace`
+    21→- **Sidebar Metadata** (complete): Add `clear-status`, `list-status`, `clear-progress`, `clear-log`, `list-log`, `sidebar-state`
+    22→- **Browser Commands** (comprehensive): All 40+ subcommands organized into subcategories:
+    23→  - Navigation (open, open-split, navigate/goto, back/forward/reload)
+    24→  - Snapshots &amp; Inspection (snapshot, get, is, identify)
+    25→  - Element Interaction (click, dblclick, hover, focus, check/uncheck, scroll-into-view)
+    26→  - Form Input (type, fill, select, press/keydown/keyup)
+    27→  - Element Finding (find by role/text/label/placeholder/testid/first/last/nth)
+    28→  - JavaScript (eval)
+    29→  - Waiting (wait with --selector/--text/--url-contains/--function/--timeout-ms)
+    30→  - Frames (frame)
+
+... [54 lines omitted] ...
+
+    35→  - Console &amp; Errors (console list/clear, errors list/clear)
+    70→| `.claude/skills/cmux/SKILL.md` | Edit: streamline, fix errors, add reference pointers |
+  </tool_result>
+  <assistant>Perfect! Now let me compile a comprehensive report of my findings. Let me create a final summary by checking if there's a Git history showing recent cmux work:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="1815" cache_read_input_tokens="55865" cache_creation="{'ephemeral_5m_input_tokens': 1815, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NVeGwUayVVPtsZtHkTv9oZ">
+    <param name="command">git log --oneline --all --grep="cmux" | head -20</param>
+    <param name="description">Show git commits related to cmux</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="1815" cache_read_input_tokens="55865" cache_creation="{'ephemeral_5m_input_tokens': 1815, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NVeGwUayVVPtsZtHkTv9oZ">
+04643d01a Add plan: Plan: Improve cmux Skill
+b1c82a090 Sync CHANGELOG with recently-landed features and fixes (#8541)
+75909b5d8 Add plan: Learn: Fix duplicate `gt submit` in cmux sync workflow
+ca6e79f3a Fix duplicate `gt submit` in cmux sync workflow (#8531)
+aa438395f Break up src/erk/tui/app.py into organized subpackage (#8528)
+303f45323 Apply LBYL pattern to _cmux_focus_workspace
+50df7b853 Add plan: Fix: Remove duplicate `gt submit` in cmux sync workflow
+d7d6b1a16 Add plan: Learn: Add cmux workspace integration to dashboard and CLI
+b74658edc Add cmux workspace integration to dashboard and CLI (#8503)
+f2a7ddf1a Add plan: Plan: Create `erk exec cmux-sync-workspace` and Fix TUI Command Palette
+1af332e34 Add cmux workspace integration to dashboard sync command
+  </tool_result>
+  <assistant>Perfect! Now I have a complete picture. Let me provide a comprehensive report.
+
+## Summary of Findings
+
+I've found extensive cached cmux documentation and command references in the codebase. Here's what exists:
+
+### Primary Documentation
+
+**1. Comprehensive cmux Skill** 
+- **Location**: `/home/runner/work/erk/erk/.claude/skills/cmux/SKILL.md`
+- **Size**: 307 lines
+- **Status**: Complete skill with full mental model and common patterns
+
+This is the main skill file containing:
+- Core concepts (object hierarchy: Window &gt; Workspace &gt; Pane &gt; Surface)
+- Addressing/refs formats (UUID, short refs, indexes)
+- Environment variables (`CMUX_WORKSPACE_ID`, `CMUX_SURFACE_ID`, `CMUX_TAB_ID`, `CMUX_SOCKET_PATH`)
+- **Global Flags**: socket, window, password, json, id-format, version, help
+- **Workspace Commands**: new-workspace, list-workspaces, select-workspace, rename-workspace, close-workspace, current-workspace
+- **Pane/Surface Commands**: new-split, new-surface, list-panes, focus-pane, close-surface, tree
+- **Input Commands**: send, send-key, read-screen
+- **Notification/Status Commands**: notify, set-status, set-progress, log
+- **Browser Commands**: browser open, browser navigate, browser click, browser snapshot
+- **tmux Compatibility Commands**: capture-pane, rename-window, resize-pane, swap-pane, break-pane, join-pane
+- Critical gotchas section (auto-newline behavior, quoting patterns, socket delays)
+- Erk integration section with `cmux_integration` config and `erk exec cmux-sync-workspace` details
+- TUI dashboard commands (cmux sync action and copy)
+- Comprehensive scripting patterns with bash examples
+- Troubleshooting table
+
+### Implementation Reference
+
+**2. erk exec Commands Reference**
+- **Location**: `/home/runner/work/erk/erk/.claude/skills/erk-exec/reference.md`
+- **Contains cmux entry**: Line 32 and 246-257
+- Command: `cmux-sync-workspace` with full usage details
+- Options: `--pr` (required), `--branch` (optional)
+
+### CLI Implementation
+
+**3. cmux-sync-workspace Script**
+- **Location**: `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/cmux_sync_workspace.py`
+- Creates a cmux workspace that:
+  1. Checks out a PR
+  2. Syncs it with trunk
+  3. Submits changes via Graphite
+  4. Renames workspace to PR's head branch
+- Returns JSON: `{success, pr_number, branch, workspace_name}`
+
+### Active Development Plan
+
+**4. Current Improvement Plan**
+- **Location**: `/home/runner/work/erk/erk/.erk/impl-context/plnd--improve-cmux-skill-03-01-1402/plan.md`
+- **Branch**: `plnd/improve-cmux-skill-03-01-1402`
+- **Status**: In-progress plan to expand documentation
+
+The plan identifies that the current skill covers core operations but has significant gaps:
+- Missing 40+ browser subcommands
+- Missing window management commands (list-windows, current-window, new-window, focus-window, close-window, move-workspace-to-window)
+- Missing surface management commands
+- Missing panel commands and tab commands
+- Missing comprehensive sidebar metadata commands
+- Missing tmux compatibility commands
+
+**Proposed solution**: Create `references/cmux-reference.md` with comprehensive command reference, keeping SKILL.md focused on mental model and common operations.
+
+### CHANGELOG References
+
+**5. Recent Changes** (lines 15, 44 in CHANGELOG.md)
+- "Add cmux workspace integration to dashboard and CLI, enabled via `cmux_integration = true` config" (commit b74658edc)
+- "Fix duplicate `gt submit` execution in cmux sync workflow" (commit ca6e79f3a)
+
+### Test Coverage
+
+**6. Test Files**
+- `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_cmux_sync_workspace.py`
+- `/home/runner/work/erk/erk/tests/tui/commands/test_registry.py`
+- `/home/runner/work/erk/erk/tests/tui/app/test_async_operations.py`
+
+### Key Files with cmux References
+
+- `/home/runner/work/erk/erk/src/erk/tui/operations/workers.py`
+- `/home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py`
+- `/home/runner/work/erk/erk/src/erk/tui/commands/provider.py`
+- `/home/runner/work/erk/erk/src/erk/tui/commands/registry.py`
+- `/home/runner/work/erk/erk/src/erk/tui/actions/navigation.py`
+- `/home/runner/work/erk/erk/src/erk/tui/actions/palette.py`
+- `/home/runner/work/erk/erk/src/erk/tui/app.py`
+- `/home/runner/work/erk/erk/src/erk/core/capabilities/codex_portable.py`
+- `/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py`
+
+---
+
+## Comprehensive cmux Command Reference (from skill)
+
+The skill documents these command categories:
+
+**Workspace Management**:
+- `new-workspace`, `list-workspaces`, `select-workspace`, `rename-workspace`, `close-workspace`, `current-workspace`
+
+**Pane &amp; Surface Management**:
+- `new-split`, `new-surface`, `list-panes`, `focus-pane`, `close-surface`, `tree`
+
+**Input/Interaction**:
+- `send`, `send-key`, `read-screen`
+
+**Status &amp; Notifications**:
+- `notify`, `set-status`, `set-progress`, `log`
+
+**Browser Subsystem** (4 documented, 40+ total):
+- `browser open`, `browser navigate`, `browser click`, `browser snapshot`
+
+**tmux Compatibility Layer** (6 documented):
+- `capture-pane`, `rename-window`, `resize-pane`, `swap-pane`, `break-pane`, `join-pane`
+
+All documentation with usage examples, syntax, and critical gotchas is available in the skill file at `/home/runner/work/erk/erk/.claude/skills/cmux/SKILL.md`.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="525" cache_read_input_tokens="57680" cache_creation="{'ephemeral_5m_input_tokens': 525, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
