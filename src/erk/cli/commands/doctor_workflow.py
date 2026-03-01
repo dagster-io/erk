@@ -12,6 +12,7 @@ from erk.artifacts.models import ArtifactFileState
 from erk.artifacts.paths import ErkPackageInfo
 from erk.artifacts.state import load_artifact_state, load_installed_capabilities
 from erk.cli.commands.doctor import _format_check_result
+from erk.cli.commands.run import run_group
 from erk.core.context import ErkContext, NoRepoSentinel
 from erk.core.health_checks import (
     CheckResult,
@@ -247,6 +248,9 @@ def workflow_smoke_test_cmd(ctx: ErkContext, wait: bool, verbose: bool) -> None:
 def workflow_cleanup_cmd(ctx: ErkContext) -> None:
     """Clean up old smoke test branches and PRs."""
     _handle_cleanup(ctx)
+
+
+workflow_group.add_command(run_group)
 
 
 @workflow_group.command("list")
