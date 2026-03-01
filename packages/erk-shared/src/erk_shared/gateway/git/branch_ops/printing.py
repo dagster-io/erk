@@ -53,9 +53,7 @@ class PrintingGitBranchOps(PrintingBase, GitBranchOps):
 
     def update_local_ref(self, repo_root: Path, branch: str, target_sha: str) -> None:
         """Update local ref with printed output."""
-        self._emit(
-            self._format_command(f"git update-ref refs/heads/{branch} {target_sha[:8]}")
-        )
+        self._emit(self._format_command(f"git update-ref refs/heads/{branch} {target_sha[:8]}"))
         self._wrapped.update_local_ref(repo_root, branch, target_sha)
 
     # ============================================================================
