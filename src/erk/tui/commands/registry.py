@@ -314,7 +314,7 @@ def get_all_commands() -> list[CommandDefinition]:
             name="Objective",
             description="objective",
             category=CommandCategory.OPEN,
-            shortcut="i",
+            shortcut="p",
             is_available=lambda ctx: _is_objectives_view(ctx) and ctx.row.plan_url is not None,
             get_display_name=_display_open_objective,
         ),
