@@ -1,0 +1,615 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>
+
+fix formatting should run *before* everything else</user>
+  <thinking>The user wants the "fix-formatting" CI job to run before everything else in their CI workflow. Looking at the screenshot, I can see CI checks including "ci / format", "ci / fix-formatting", "ci / unit-tests", etc. The user wants "fix-formatting" to run before the other jobs so that formatting fixes are applied before tests run.
+
+Let me explore the CI workflow configuration to understand the current setup.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="11277" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11277}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01EuY5acZ5boTJjX3WnaV5zn">
+    <param name="description">Explore CI workflow config</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 430 chars]...it-tests" jobs
+
+Be very thorough - read the full workflow file(s) that contain these jobs.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11277" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11277}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RRDCynd6rqGk1hex79MFc2">
+    <param name="pattern">fix-formatting</param>
+    <param name="path">/Users/schrockn/code/erk/docs/learned/</param>
+    <param name="glob">*.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11277" cache_read_input_tokens="19113" output_tokens="437" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11277, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RRDCynd6rqGk1hex79MFc2">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01EuY5acZ5boTJjX3WnaV5zn">
+Perfect! I now have comprehensive documentation and the full CI workflow file. Let me create a detailed summary of the CI workflow structure for you.
+
+## CI Workflow Configuration Summary
+
+Based on my thorough analysis of the documentation and `.github/workflows/ci.yml`, here's the complete CI workflow structure:
+
+### **Overall Architecture: Fan-Out → Fan-In Pattern**
+
+The workflow uses a gate job followed by parallel jobs, then a fan-in autofix job:
+
+```
+check-submission (gate)
+    ↓
+[parallel jobs] → autofix (fan-in)
+```
+
+---
+
+### **1. Gate Job: `check-submission`**
+
+**Purpose:** Guard against running CI on draft PRs and plan-review PRs, plus check for implementation context
+
+**Condition:**
+```yaml
+if: github.event.pull_request.draft != true &amp;&amp; !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
+```
+
+**Output:**
+- `skip`: Determines whether parallel jobs should run
+
+
+... [154 lines omitted] ...
+
+   - Status: Failures block autofix
+   - Status: Failures block autofix
+   - **Status:** Failures block the `autofix` job
+   - Status: Failures block autofix
+   - Status: Failures block autofix
+   - Status: Failures do NOT block autofix (per `autofix` condition)
+   - Status: Failures do NOT block autofix
+   - Status: Failures do NOT block autofix
+  (needs.format.result == 'failure' ||
+   needs.lint.result == 'failure' ||
+   needs.fix-formatting.result == 'failure' ||
+   needs.docs-check.result == 'failure' ||
+   needs.ty.result == 'failure')
+- Only runs on PR failures, NOT on test failures
+- Gets Claude to fix format, lint, markdown, docs, and type errors
+**Purpose:** Generate failure summaries when any job fails (currently Haiku only)
+**Runs on:** Any style/lint/type/test failure in PR
+    ci-summarize                ← Runs if ANY job failed
+4. Failures in `fix-formatting` trigger the Claude autofix job to investigate
+  </tool_result>
+  <thinking>Now I understand the structure. The user wants `fix-formatting` to run before everything else. Currently, all jobs (format, lint, fix-formatting, unit-tests, etc.) run in parallel after `check-submission`. 
+
+The idea is that `fix-formatting` auto-fixes formatting issues (ruff format, prettier, docs-fix), so if it runs first and pushes a commit, the other jobs would run on the already-formatted code. This would prevent the `format` job from failing due to formatting issues that `fix-formatting` would have fixed.
+
+Let me read the actual workflow file to plan the changes.</thinking>
+  <usage input_tokens="34" cache_creation_input_tokens="2450" cache_read_input_tokens="30390" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2450}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the actual workflow file to understand the exact structure.</assistant>
+  <usage input_tokens="34" cache_creation_input_tokens="2450" cache_read_input_tokens="30390" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2450}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Mowbv7G5RW5zVHf6kBysq2">
+    <param name="file_path">/Users/schrockn/code/erk/.github/workflows/ci.yml</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="2450" cache_read_input_tokens="30390" output_tokens="236" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2450, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Mowbv7G5RW5zVHf6kBysq2">
+     1→name: ci
+     2→
+     3→on:
+     4→  push:
+     5→    branches: [master]
+     6→  pull_request:
+     7→    types: [opened, synchronize, reopened, ready_for_review]
+     8→  workflow_dispatch:
+     9→
+    10→permissions:
+    11→  contents: write # Needed for autofix to push
+    12→  actions: write # Needed to re-trigger workflow after autofix push
+    13→  statuses: write # Needed for autofix to update commit status
+    14→
+    15→concurrency:
+    16→  group: ci-${{ github.head_ref || github.ref }}
+    17→  cancel-in-progress: true
+    18→
+    19→jobs:
+    20→  check-submission:
+    21→    if: github.event.pull_request.draft != true &amp;&amp; !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
+    22→    runs-on: ubuntu-latest
+    23→    timeout-minutes: 5
+    24→    outputs:
+    25→      skip: ${{ steps.check.outputs.skip }}
+    26→    steps:
+    27→      - uses: actions/checkout@v4
+    28→      - name: Check for submission folder
+    29→        id: check
+    30→        uses: ./.github/actions/check-impl-context
+
+... [452 lines omitted] ...
+
+    84→            echo "::error::Files need formatting or docs are out of sync"
+    93→            echo "::error::Formatting issues found (cannot auto-fix fork PRs)"
+   196→      (needs.format.result == 'failure' ||
+   197→       needs.lint.result == 'failure' ||
+   198→       needs.fix-formatting.result == 'failure' ||
+   199→       needs.docs-check.result == 'failure' ||
+   200→       needs.ty.result == 'failure')
+   313→      # Inlined from .github/actions/setup-claude-erk to avoid CodeQL warning
+   340→      - name: Collect failure context
+   342→        id: failures
+   353→      - name: Collect actual errors
+   355→        id: errors
+   357→          errors=""
+   359→          if [ "${{ needs.format.result }}" = "failure" ]; then
+   360→            errors+="=== RUFF FORMAT ERRORS ===\n"
+   361→            errors+="$(uv run ruff format --check . 2&gt;&amp;1 || true)\n\n"
+   364→          if [ "${{ needs.lint.result }}" = "failure" ]; then
+   365→            errors+="=== RUFF LINT ERRORS ===\n"
+   366→            errors+="$(uv run ruff check . 2&gt;&amp;1 || true)\n\n"
+   369→          if [ "${{ needs.fix-formatting.result }}" = "failure" ]; then
+   370→            errors+="=== MARKDOWN-FIX ERRORS ===\n"
+   371→            errors+="$(prettier --check '**/*.md' --ignore-path .gitignore 2&gt;&amp;1 || true)\n\n"
+   374→          if [ "${{ needs.docs-check.result }}" = "failure" ]; then
+   375→            errors+="=== DOCS CHECK ERRORS ===\n"
+   376→            errors+="$(make md-check 2&gt;&amp;1 || true)\n"
+   377→            errors+="$(make docs-check 2&gt;&amp;1 || true)\n\n"
+   380→          if [ "${{ needs.ty.result }}" = "failure" ]; then
+   381→            errors+="=== TY TYPE ERRORS ===\n"
+   382→            errors+="$(uv run ty check 2&gt;&amp;1 || true)\n\n"
+   386→          echo -e "$errors" &gt; /tmp/errors.txt
+   397→          echo "Debug: erk version: $(erk --version 2&gt;&amp;1 || echo 'version failed')"
+   407→            --var-file "ERRORS=/tmp/errors.txt" 2&gt;&amp;1); then
+   408→            echo "Error: Failed to get ci-autofix prompt"
+   415→            echo "Error: ci-autofix prompt is empty (command succeeded but no output)"
+   437→  # === CI Failure Summarization (Haiku) ===
+   456→      (needs.format.result == 'failure' ||
+   457→       needs.lint.result == 'failure' ||
+   458→       needs.fix-formatting.result == 'failure' ||
+   459→       needs.docs-check.result == 'failure' ||
+   460→       needs.ty.result == 'failure' ||
+   461→       needs.unit-tests.result == 'failure' ||
+   462→       needs.integration-tests.result == 'failure' ||
+   463→       needs.erkbot-tests.result == 'failure')
+   477→      - name: Summarize failures
+  </tool_result>
+  <thinking>Now I understand the full picture. Currently all jobs (`format`, `lint`, `fix-formatting`, `docs-check`, `ty`, `unit-tests`, `integration-tests`, `erkbot-tests`) run in parallel after `check-submission`. 
+
+The user wants `fix-formatting` to run first, before all other jobs. The logic is:
+1. `fix-formatting` auto-fixes formatting (ruff format, prettier, docs-sync) and pushes a commit if needed
+2. If it pushes, a new CI run is triggered (since it uses a PAT token), which will cancel the current run (due to `cancel-in-progress: true`)
+
+
+3. The other jobs should only run after `fix-formatting` completes, so they operate on already-formatted code
+
+So I need to make all other jobs depend on `fix-formatting` in addition to `check-submission`, while `fix-formatting` only depends on `check-submission`. There's a subtlety though—if `fix-formatting` pushes a commit, the workflow gets cancelled, so those dependent jobs wouldn't actually run in that original workflow instance.
+
+But right now they run in parallel, which means `format` might fail before the formatting commit is pushed, leaving a red X visible to the user. By adding the dependency, those jobs would wait for `fix-formatting` to complete first. If it pushes a commit, the workflow cancels cleanly without wasting compute or showing confusing failures. If the code is already formatted, the other jobs proceed normally.
+
+I need to add `fix-formatting` to the `needs` list for all the parallel jobs—format, lint, docs-check, type-checking, unit-tests, integration-tests, and erkbot-tests—while keeping `fix-formatting` dependent only on `check-submission`.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="7314" cache_read_input_tokens="32840" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7314}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a clear picture. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7314" cache_read_input_tokens="32840" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7314}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01DFW5vo7AeVU9PyEnEFfoxN">
+    <param name="file_path">/Users/schrockn/.claude/plans/humming-yawning-gray.md</param>
+    <param name="content"># Plan: Run fix-formatting before all other CI jobs
+
+## Context
+
+Currently all CI jobs (`f...[truncated 1794 chars]...n code: `fix-formatting` completes quickly, then all other jobs run in parallel as before
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7314" cache_read_input_tokens="32840" output_tokens="1177" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7314, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DFW5vo7AeVU9PyEnEFfoxN">
+File created successfully at: /Users/schrockn/.claude/plans/humming-yawning-gray.md
+  </tool_result>
+  <assistant>Simple change — add `fix-formatting` as a dependency for all the other parallel jobs so they wait for it to complete. If it pushes a formatting fix, `cancel-in-progress` kills the run before the other jobs waste time. If code is already clean, they proceed right after.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1303" cache_read_input_tokens="40154" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1303}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01HrLCRGkstFTfV5WbhM5mgy">
+    <param name="plan"># Plan: Run fix-formatting before all other CI jobs
+
+## Context
+
+Currently all CI jobs (`f...[truncated 1794 chars]...n code: `fix-formatting` completes quickly, then all other jobs run in parallel as before
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1303" cache_read_input_tokens="40154" output_tokens="101" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1303, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HrLCRGkstFTfV5WbhM5mgy">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/humming-yawning-gray.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Run fix-formatting before all other CI jobs
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 0be2f732-9b77-4725-aa74-6a8c6db1e94b \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Plan: Run fix-formatting before all other CI jobs
+
+## Context
+
+Currently all CI jobs (`format`, `lint`, `fix-formatting`, `docs-check`, `ty`, `unit-tests`, `integration-tests`, `erkbot-tests`) run in parallel after `check-submission`. This means when code needs formatting fixes, the `format` job fails immediately while `fix-formatting` is simultaneously auto-fixing and pushing. The user sees a confusing red X that gets superseded when the new CI run triggers.
+
+By making `fix-formatting` run first, we get:
+- If formatting fixes are needed: `fix-formatting` pushes a commit, the workflow is cancelled (`cancel-in-progress: true`), and a clean CI run starts on the fixed code — no wasted compute on doomed jobs
+- If no fixes needed: other jobs proceed immediately after `fix-formatting` completes
+
+## Changes
+
+**File:** `.github/workflows/ci.yml`
+
+Add `fix-formatting` to the `needs` list of every parallel job so they wait for it:
+
+| Job | Current `needs` | New `needs` |
+|-----|----------------|-------------|
+| `format` | `check-submission` | `[check-submission, fix-formatting]` |
+| `lint` | `check-submission` | `[check-submission, fix-formatting]` |
+| `docs-check` | `check-submission` | `[check-submission, fix-formatting]` |
+| `ty` | `check-submission` | `[check-submission, fix-formatting]` |
+| `unit-tests` | `check-submission` | `[check-submission, fix-formatting]` |
+| `integration-tests` | `check-submission` | `[check-submission, fix-formatting]` |
+| `erkbot-tests` | `check-submission` | `[check-submission, fix-formatting]` |
+
+`fix-formatting` itself keeps `needs: check-submission` only (no change).
+
+## Verification
+
+- Push a PR with unformatted code: `fix-formatting` should run first, push a fix, and cancel the run before other jobs start
+- Push a PR with clean code: `fix-formatting` completes quickly, then all other jobs run in parallel as before
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="722" cache_read_input_tokens="41457" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 722}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01HbgLq1sY7wMgiWBUzwqXjJ">
+    <param name="questions">[{'question': 'What would you like to do with this plan?', 'header': 'br:master', 'options...[truncated 339 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="722" cache_read_input_tokens="41457" output_tokens="717" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 722, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HbgLq1sY7wMgiWBUzwqXjJ">
+User has answered your questions: "What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01LeLztpp5Tu3kkfpHgLipj1">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="878" cache_read_input_tokens="42179" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 878, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LeLztpp5Tu3kkfpHgLipj1">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 1.5: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 1.75: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 2: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="0be2f732-9b77-4725-aa74-6a8c6db1e94b" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 3.
+
+If the command fails, display the error and stop.
+
+### Step 3: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 2.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 3.5: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "0be2f732-9b77-4725-aa74-6a8c6db1e94b" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 4: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 3, 3.5 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "0be2f732-9b77-4725-aa74-6a8c6db1e94b" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <thinking>Let me follow the plan-save skill instructions step by step.
+
+### Step 1: Parse Arguments
+No `--plan-type` or `--objective` flags provided, so both are empty.
+
+### Step 1.5: Generate Branch Slug
+The plan title is "Run fix-formatting before all other CI jobs". Let me generate a slug:
+- Drop filler: "run", "before", "all", "other"
+- Key words: fix-formatting, CI, jobs
+- Action: reorder-ci-fix-formatting → too long
+- "fix-formatting-ci-order" → good, 23 chars
+
+### Step 1.75: Generate Plan Summary
+
+
+Now I need to write a brief 2-3 sentence summary capturing the essence of this plan.
+
+### Step 2: Run Save Command
+Let me execute the save command.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="2398" cache_read_input_tokens="43057" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2398}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me follow the plan-save steps.
+
+**Step 1:** No `--plan-type` or `--objective` flags.
+
+**Step 1.5:** Branch slug from title "Run fix-formatting before all other CI jobs":
+- `BRANCH_SLUG`: `ci-fix-formatting-first`
+
+**Step 1.75:** Plan summary:
+- Makes the fix-formatting CI job run before all other parallel jobs by adding it to their `needs` lists. When formatting fixes are needed, the push-and-cancel cycle completes before other jobs waste compute on doomed runs.
+
+**Step 2:** Running save command.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2398" cache_read_input_tokens="43057" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2398}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01E6PtUZTXeWFJhZP1wKvRNP">
+    <param name="command">erk exec plan-save --format json --session-id="0be2f732-9b77-4725-aa74-6a8c6db1e94b" --bra...[truncated 161 chars]... the push-and-cancel cycle completes before other jobs waste compute on doomed runs." 2&gt;&amp;1</param>
+    <param name="description">Save plan as draft PR via erk</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2398" cache_read_input_tokens="43057" output_tokens="532" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2398, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01E6PtUZTXeWFJhZP1wKvRNP">
+{"success": true, "plan_number": 8508, "plan_url": "https://github.com/dagster-io/erk/pull/8508", "title": "[erk-plan] Plan: Run fix-formatting before all other CI jobs", "branch_name": "plnd/ci-fix-formatting-first-02-28-1844", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/0be2f732-9b77-4725-aa74-6a8c6db1e94b/plan_snapshots/000001-fddaedae"}
+  </tool_result>
+  <thinking>No objective linked, so skip Steps 3 and 3.5. Let me check if we're on trunk to determine slot recommendation.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="692" cache_read_input_tokens="45455" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 692}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>**Steps 3 &amp; 3.5:** No objective linked — skipping.
+
+**Step 4:** Results:
+
+Plan "Run fix-formatting before all other CI jobs" saved as draft PR #8508
+URL: https://github.com/dagster-io/erk/pull/8508
+
+---
+
+**Next steps:**
+
+View PR: https://github.com/dagster-io/erk/pull/8508
+
+In Claude Code:
+  Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: `erk br co --new-slot --for-plan 8508`
+    Implement: `source "$(erk br co --new-slot --for-plan 8508 --script)" &amp;&amp; erk implement --dangerous`
+
+  Same slot:
+    Local: `erk br co --for-plan 8508`
+    Implement: `source "$(erk br co --for-plan 8508 --script)" &amp;&amp; erk implement --dangerous`
+
+  Dispatch to Queue: `erk pr dispatch 8508`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="692" cache_read_input_tokens="45455" output_tokens="320" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 692, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;See ya!&lt;/local-command-stdout&gt;</user>
+</session>
