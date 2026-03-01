@@ -12,12 +12,15 @@ The integration layer (list_workflow_runs) is tested in:
 This file trusts that unit layer and only tests CLI integration.
 """
 
+from __future__ import annotations
+
 from datetime import UTC, datetime
 from pathlib import Path
 
 from click.testing import CliRunner
 
 from erk.cli.commands.run.list_cmd import list_runs
+from erk.core.context import ErkContext
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
@@ -60,11 +63,37 @@ def _make_issue(number: int, title: str) -> IssueInfo:
     )
 
 
+def _make_ctx(
+    tmp_path: Path,
+    *,
+    workflow_runs: list[WorkflowRun],
+    issues: dict[int, IssueInfo] | None = None,
+    github: FakeGitHub | None = None,
+) -> ErkContext:
+    """Create a test context with standard setup."""
+    git_ops = _make_git(tmp_path)
+    if issues is None:
+        issues = {1: _make_issue(1, "Dummy")}
+    issues_ops = FakeGitHubIssues(issues=issues)
+    if github is None:
+        github = FakeGitHub(workflow_runs=workflow_runs)
+    return create_test_context(
+        git=git_ops,
+        github=github,
+        issues=issues_ops,
+        cwd=_repo_root(tmp_path),
+    )
+
+
 def test_list_runs_empty_state(tmp_path: Path) -> None:
     """Test list command displays message when no runs found."""
     git_ops = _make_git(tmp_path)
     github_ops = FakeGitHub(workflow_runs=[])
-    ctx = create_test_context(git=git_ops, github=github_ops, cwd=_repo_root(tmp_path))
+    ctx = create_test_context(
+        git=git_ops,
+        github=github_ops,
+        cwd=_repo_root(tmp_path),
+    )
 
     runner = CliRunner()
     result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
@@ -75,7 +104,6 @@ def test_list_runs_empty_state(tmp_path: Path) -> None:
 
 def test_list_runs_pr_address_format_shows_pr(tmp_path: Path) -> None:
     """PR-address runs with #NNN in display_title show the PR number."""
-    git_ops = _make_git(tmp_path)
     workflow_runs = [
         WorkflowRun(
             run_id="1234567890",
@@ -86,24 +114,20 @@ def test_list_runs_pr_address_format_shows_pr(tmp_path: Path) -> None:
             display_title="pr-address:#456:abc123",
         ),
     ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-    issues_ops = FakeGitHubIssues(issues={
-        1: _make_issue(1, "Dummy issue for location"),
-    })
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=_repo_root(tmp_path))
+    ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
 
     runner = CliRunner()
     result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
 
     assert result.exit_code == 0
     assert "1234567890" in result.output
-    # PR number extracted from display_title #NNN format
     assert "#456" in result.output
 
 
-def test_list_runs_new_plan_implement_format_shows_pr(tmp_path: Path) -> None:
-    """New plan-implement format with #pr_number shows the PR directly."""
-    git_ops = _make_git(tmp_path)
+def test_list_runs_new_plan_implement_format_shows_pr(
+    tmp_path: Path,
+) -> None:
+    """New plan-implement format with #pr_number shows PR directly."""
     workflow_runs = [
         WorkflowRun(
             run_id="555666",
@@ -111,14 +135,10 @@ def test_list_runs_new_plan_implement_format_shows_pr(tmp_path: Path) -> None:
             conclusion="success",
             branch="feat-1",
             head_sha="abc123",
-            display_title="142:#460:abc456",  # New format: plan_id:#pr_number:distinct_id
+            display_title="142:#460:abc456",
         ),
     ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-    issues_ops = FakeGitHubIssues(issues={
-        1: _make_issue(1, "Dummy issue for location"),
-    })
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=_repo_root(tmp_path))
+    ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
 
     runner = CliRunner()
     result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
@@ -128,9 +148,10 @@ def test_list_runs_new_plan_implement_format_shows_pr(tmp_path: Path) -> None:
     assert "plan-implement" in result.output
 
 
-def test_list_runs_old_plan_format_falls_back_to_plan_pr_linkage(tmp_path: Path) -> None:
+def test_list_runs_old_plan_format_falls_back_to_plan_pr_linkage(
+    tmp_path: Path,
+) -> None:
     """Old plan-implement format (no #pr) falls back to plan→PR linkage."""
-    git_ops = _make_git(tmp_path)
     workflow_runs = [
         WorkflowRun(
             run_id="111222",
@@ -138,7 +159,7 @@ def test_list_runs_old_plan_format_falls_back_to_plan_pr_linkage(tmp_path: Path)
             conclusion="success",
             branch="feat-1",
             head_sha="abc123",
-            display_title="142:abc456",  # Old format: plan_id:distinct_id (no #pr)
+            display_title="142:abc456",
         ),
     ]
 
@@ -154,30 +175,28 @@ def test_list_runs_old_plan_format_falls_back_to_plan_pr_linkage(tmp_path: Path)
         has_conflicts=False,
     )
 
-    github_ops = FakeGitHub(
+    github = FakeGitHub(
         workflow_runs=workflow_runs,
         pr_plan_linkages={142: [pr_info]},
     )
-    issues_ops = FakeGitHubIssues(issues={
-        142: _make_issue(142, "Add user authentication"),
-    })
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=_repo_root(tmp_path))
+    ctx = _make_ctx(
+        tmp_path,
+        workflow_runs=workflow_runs,
+        issues={142: _make_issue(142, "Add user authentication")},
+        github=github,
+    )
 
     runner = CliRunner()
     result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
 
     assert result.exit_code == 0
-    # PR number from linkage should appear
     assert "#201" in result.output
-    # PR title should appear
     assert "Add user auth" in result.output
-    # Checks should show passing
     assert "✅" in result.output
 
 
 def test_list_runs_no_pr_shows_dash(tmp_path: Path) -> None:
     """Runs with no extractable PR number show '-' for pr/title/chks."""
-    git_ops = _make_git(tmp_path)
     workflow_runs = [
         WorkflowRun(
             run_id="999888",
@@ -185,28 +204,21 @@ def test_list_runs_no_pr_shows_dash(tmp_path: Path) -> None:
             conclusion="success",
             branch="feat-1",
             head_sha="abc123",
-            display_title="Some legacy title [abc123]",  # No plan or PR number
+            display_title="Some legacy title [abc123]",
         ),
     ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-    issues_ops = FakeGitHubIssues(issues={
-        1: _make_issue(1, "Dummy issue for location"),
-    })
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=_repo_root(tmp_path))
+    ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
 
     runner = CliRunner()
     result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
 
     assert result.exit_code == 0
-    # Run should still appear (no filtering)
     assert "999888" in result.output
-    # Should NOT show "X"
     assert "X" not in result.output
 
 
 def test_list_runs_all_workflow_types_shown(tmp_path: Path) -> None:
     """All workflow types are shown without needing --show-legacy."""
-    git_ops = _make_git(tmp_path)
     workflow_runs = [
         WorkflowRun(
             run_id="111111",
@@ -214,7 +226,7 @@ def test_list_runs_all_workflow_types_shown(tmp_path: Path) -> None:
             conclusion="success",
             branch="feat-1",
             head_sha="abc123",
-            display_title="142:#460:abc456",  # plan-implement with PR
+            display_title="142:#460:abc456",
         ),
         WorkflowRun(
             run_id="222222",
@@ -222,7 +234,7 @@ def test_list_runs_all_workflow_types_shown(tmp_path: Path) -> None:
             conclusion="success",
             branch="feat-2",
             head_sha="def456",
-            display_title="pr-address:#460:def456",  # pr-address
+            display_title="pr-address:#460:def456",
         ),
         WorkflowRun(
             run_id="333333",
@@ -230,14 +242,10 @@ def test_list_runs_all_workflow_types_shown(tmp_path: Path) -> None:
             conclusion="success",
             branch="feat-3",
             head_sha="ghi789",
-            display_title="one-shot:#461:ghi789",  # one-shot
+            display_title="one-shot:#461:ghi789",
         ),
     ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-    issues_ops = FakeGitHubIssues(issues={
-        1: _make_issue(1, "Dummy issue for location"),
-    })
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=_repo_root(tmp_path))
+    ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
 
     runner = CliRunner()
     result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
@@ -252,8 +260,6 @@ def test_list_runs_all_workflow_types_shown(tmp_path: Path) -> None:
 
 def test_list_runs_multiple_statuses(tmp_path: Path) -> None:
     """Test list command displays multiple runs with different statuses."""
-    git_ops = _make_git(tmp_path)
-    now = datetime.now(UTC)
     workflow_runs = [
         WorkflowRun(
             run_id="123",
@@ -280,11 +286,7 @@ def test_list_runs_multiple_statuses(tmp_path: Path) -> None:
             display_title="144:#203:ghi",
         ),
     ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-    issues_ops = FakeGitHubIssues(issues={
-        1: _make_issue(1, "Dummy"),
-    })
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=_repo_root(tmp_path))
+    ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
 
     runner = CliRunner()
     result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
@@ -300,7 +302,6 @@ def test_list_runs_multiple_statuses(tmp_path: Path) -> None:
 
 def test_list_runs_truncates_long_titles(tmp_path: Path) -> None:
     """Test list command truncates PR titles longer than 50 characters."""
-    git_ops = _make_git(tmp_path)
     long_title = (
         "This is a very long title that exceeds fifty characters "
         "and should be truncated with ellipsis"
@@ -312,7 +313,7 @@ def test_list_runs_truncates_long_titles(tmp_path: Path) -> None:
             conclusion="success",
             branch="feat-1",
             head_sha="abc123",
-            display_title="142:abc",  # Old format, will use plan→PR linkage
+            display_title="142:abc",
         ),
     ]
 
@@ -328,29 +329,28 @@ def test_list_runs_truncates_long_titles(tmp_path: Path) -> None:
         has_conflicts=False,
     )
 
-    github_ops = FakeGitHub(
+    github = FakeGitHub(
         workflow_runs=workflow_runs,
         pr_plan_linkages={142: [pr_info]},
     )
-    issues_ops = FakeGitHubIssues(issues={
-        142: _make_issue(142, "Plan title"),
-    })
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=_repo_root(tmp_path))
+    ctx = _make_ctx(
+        tmp_path,
+        workflow_runs=workflow_runs,
+        issues={142: _make_issue(142, "Plan title")},
+        github=github,
+    )
 
     runner = CliRunner()
     result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
 
     assert result.exit_code == 0
-    # Full title should NOT appear
     assert long_title not in result.output
-    # Truncated version should appear with ellipsis
     assert "..." in result.output
     assert "This is a very long" in result.output
 
 
 def test_list_runs_displays_submission_time(tmp_path: Path) -> None:
     """Test list command displays submission time in local timezone."""
-    git_ops = _make_git(tmp_path)
     timestamp = datetime(2024, 11, 26, 14, 30, 45, tzinfo=UTC)
     workflow_runs = [
         WorkflowRun(
@@ -363,11 +363,7 @@ def test_list_runs_displays_submission_time(tmp_path: Path) -> None:
             created_at=timestamp,
         ),
     ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-    issues_ops = FakeGitHubIssues(issues={
-        1: _make_issue(1, "Dummy"),
-    })
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=_repo_root(tmp_path))
+    ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
 
     runner = CliRunner()
     result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
@@ -379,7 +375,6 @@ def test_list_runs_displays_submission_time(tmp_path: Path) -> None:
 
 def test_list_runs_handles_missing_timestamp(tmp_path: Path) -> None:
     """Test list command handles missing created_at gracefully."""
-    git_ops = _make_git(tmp_path)
     workflow_runs = [
         WorkflowRun(
             run_id="1234567890",
@@ -391,11 +386,7 @@ def test_list_runs_handles_missing_timestamp(tmp_path: Path) -> None:
             created_at=None,
         ),
     ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-    issues_ops = FakeGitHubIssues(issues={
-        1: _make_issue(1, "Dummy"),
-    })
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=_repo_root(tmp_path))
+    ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
 
     runner = CliRunner()
     result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
@@ -406,7 +397,6 @@ def test_list_runs_handles_missing_timestamp(tmp_path: Path) -> None:
 
 def test_list_runs_shows_workflow_column(tmp_path: Path) -> None:
     """Test that runs display the workflow source column."""
-    git_ops = _make_git(tmp_path)
     workflow_runs = [
         WorkflowRun(
             run_id="555666",
@@ -417,11 +407,7 @@ def test_list_runs_shows_workflow_column(tmp_path: Path) -> None:
             display_title="142:#460:abc456",
         ),
     ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-    issues_ops = FakeGitHubIssues(issues={
-        1: _make_issue(1, "Dummy"),
-    })
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=_repo_root(tmp_path))
+    ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
 
     runner = CliRunner()
     result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
@@ -435,7 +421,6 @@ def test_list_runs_shows_workflow_column(tmp_path: Path) -> None:
 
 def test_list_runs_handles_queued_status(tmp_path: Path) -> None:
     """Test list command displays queued status correctly."""
-    git_ops = _make_git(tmp_path)
     workflow_runs = [
         WorkflowRun(
             run_id="123",
@@ -446,11 +431,7 @@ def test_list_runs_handles_queued_status(tmp_path: Path) -> None:
             display_title="pr-address:#456:abc",
         ),
     ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-    issues_ops = FakeGitHubIssues(issues={
-        1: _make_issue(1, "Dummy"),
-    })
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=_repo_root(tmp_path))
+    ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
 
     runner = CliRunner()
     result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
@@ -461,7 +442,6 @@ def test_list_runs_handles_queued_status(tmp_path: Path) -> None:
 
 def test_list_runs_handles_cancelled_status(tmp_path: Path) -> None:
     """Test list command displays cancelled status correctly."""
-    git_ops = _make_git(tmp_path)
     workflow_runs = [
         WorkflowRun(
             run_id="123",
@@ -472,11 +452,7 @@ def test_list_runs_handles_cancelled_status(tmp_path: Path) -> None:
             display_title="pr-address:#456:abc",
         ),
     ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-    issues_ops = FakeGitHubIssues(issues={
-        1: _make_issue(1, "Dummy"),
-    })
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=_repo_root(tmp_path))
+    ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
 
     runner = CliRunner()
     result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
@@ -487,7 +463,6 @@ def test_list_runs_handles_cancelled_status(tmp_path: Path) -> None:
 
 def test_list_runs_pr_column_header(tmp_path: Path) -> None:
     """Table uses 'pr' column header instead of 'plan'."""
-    git_ops = _make_git(tmp_path)
     workflow_runs = [
         WorkflowRun(
             run_id="123",
@@ -498,17 +473,11 @@ def test_list_runs_pr_column_header(tmp_path: Path) -> None:
             display_title="pr-address:#456:abc",
         ),
     ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-    issues_ops = FakeGitHubIssues(issues={
-        1: _make_issue(1, "Dummy"),
-    })
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=_repo_root(tmp_path))
+    ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
 
     runner = CliRunner()
     result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
 
     assert result.exit_code == 0
-    # Should have "pr" column header, not "plan"
-    assert "plan" not in result.output.lower().split("\n")[0] if result.output else True
-    # The "pr" header appears in the table (Rich renders headers in bold)
+    # The "pr" header appears in the table
     assert "pr" in result.output
