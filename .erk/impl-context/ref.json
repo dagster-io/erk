@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: Remove duplicate `gt submit` in cmux sync workflow"
+}
