@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of: b372dfbcc -->
+<!-- As of: f5b9b5c50 -->
 
 ### Added
 
@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `launch one-shot` command for triggering one-shot workflows with `--prompt`/`-f` options (e86efb1e4)
 - Display learn plan PR link in `erk land` output (90bfd7870)
 - Add session preprocessing stats to `erk land` discovery output (2ed31d082)
+- Add one-shot prompt modal to `erk dash` (`x` keybinding) for quick dispatch without leaving the TUI (a87c69bab)
+- Add visible AI-generated summary to plan PRs, displayed above collapsed plan details for quick overview (bd69797ac)
+- Show toast notification when learn plan is created during TUI landing (682827afc)
 
 ### Changed
 
@@ -25,6 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix sync command clipboard text to include full command in TUI command palette (add2748d2)
 - Delay impl-context cleanup until submit phase to preserve plan tracking during implementation (a14a62273)
 - Rebase slot worktree placeholder branch onto master after `erk land` to keep slots fresh (92f5f2e7f)
+- Rename "Fix Conflicts Remote" to "Rebase Remote" in TUI and always perform rebase (fe5c1231c)
+- Require `--summary` flag on `erk pr create` instead of auto-generating summaries (b9fc51011)
+- Use LLM-generated branch name slugs for plan PRs, producing more descriptive branch names (f5b9b5c50)
 
 ### Fixed
 
@@ -35,6 +41,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix CI check counts where skipped checks were counted as passing — planned PRs now show "0/0" instead of "13/13" (02cd44a1f)
 - Fix stacked plan branch checkout by rebasing onto parent before `gt track` (6b0978292)
 - Consolidate all plan creation paths to use draft PR workflow, completing migration away from issue-based plans (c638d7272)
+- Fix stale stack indicator showing incorrectly when parent PR is already merged (d04377e0d)
+
+### Removed
+
+- Remove erkdesk Electron desktop app and all references (0d58bd0b7)
 
 ## [0.9.0] - 2026-02-27 14:23 PT
 

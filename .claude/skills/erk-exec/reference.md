@@ -279,7 +279,7 @@ Extract plan from Claude session and create GitHub draft PR.
 | --------------- | ---- | -------- | -------------- | ----------------------------------------------------------------------------- |
 | `--session-id`  | TEXT | No       | Sentinel.UNSET | Session ID to search within (optional, searches all sessions if not provided) |
 | `--summary`     | TEXT | No       | Sentinel.UNSET | AI-generated summary to display above the collapsed plan in the PR body       |
-| `--branch-slug` | TEXT | Yes      | -              | Pre-generated branch slug. Generate in the calling skill layer.               |
+| `--branch-slug` | TEXT | No       | -              | Pre-generated branch slug (required). Generate in the calling skill layer.    |
 
 ### dash-data
 
