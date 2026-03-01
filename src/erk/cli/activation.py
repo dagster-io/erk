@@ -193,7 +193,8 @@ cd {wt}"""
     return f"""# {comment}
 {logging_helper}
 {cd_command}
-# Guard against double activation: if VIRTUAL_ENV already points to this worktree's venv, skip activation
+# Skip activation if VIRTUAL_ENV already points to this worktree's .venv
+# (guards against double activation when direnv triggers on cd)
 if [ "$VIRTUAL_ENV" != "{worktree_path}/.venv" ]; then
   # Unset VIRTUAL_ENV to avoid conflicts with previous activations
   unset VIRTUAL_ENV
