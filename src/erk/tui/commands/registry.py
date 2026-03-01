@@ -238,7 +238,7 @@ def get_all_commands() -> list[CommandDefinition]:
             description="rebase",
             category=CommandCategory.ACTION,
             shortcut="5",
-            launch_key="f",
+            launch_key="r",
             is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_number is not None,
             get_display_name=_display_rebase_remote,
         ),
