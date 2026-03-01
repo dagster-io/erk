@@ -17,7 +17,7 @@ When a single module exceeds ~500 lines with distinct responsibilities, split it
 
 ## Exemplar: health_checks
 
-`src/erk/core/health_checks.py` (1640 lines) was split into `src/erk/core/health_checks/` with 26 focused check modules, a shared model, and an orchestrator.
+`src/erk/core/health_checks.py` (1640 lines) was split into `src/erk/core/health_checks/` with 25 focused check modules, a shared model, and an orchestrator.
 
 ### Structure
 
@@ -30,7 +30,7 @@ health_checks/
 ├── erk_version.py
 ├── github_cli.py
 ├── managed_artifacts.py
-└── ... (26 check modules total)
+└── ... (25 check modules total)
 ```
 
 ## Key Principles
@@ -57,7 +57,7 @@ The `__init__.py` imports all submodule functions explicitly and coordinates exe
 
 <!-- Source: src/erk/core/health_checks/__init__.py -->
 
-The orchestrator's module docstring lists every submodule and its check function, serving as a human-readable index. Below the docstring, explicit imports pull in all 26 check functions — this import list doubles as a dependency declaration and module index. The `run_all_checks(ctx, *, check_hooks)` function appends each check result to a list, with conditional execution based on context flags.
+The orchestrator's module docstring lists every submodule and its check function, serving as a human-readable index. Below the docstring, explicit imports pull in all 25 check functions — this import list doubles as a dependency declaration and module index. The `run_all_checks(ctx, *, check_hooks)` function appends each check result to a list, with conditional execution based on context flags.
 
 ### 4. Lazy Imports for Heavy Dependencies
 
