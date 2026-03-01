@@ -1,0 +1,66 @@
+<session>
+  <meta source="agent-a51654f" />
+  <meta branch="plnd/consolidate-mar1-learn-b2-03-01-2043" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Run `make fast-ci` from the repository root /home/runner/work/erk/erk and report all results. Do not fix anything, just report.</user>
+  <assistant>I'll run `make fast-ci` from the repository root and report the results.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="0" cache_read_input_tokens="12294" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01ASEjZ16BmaAsVkGinw3xNq">
+    <param name="command">make fast-ci</param>
+    <param name="description">Run fast-ci make target and report results</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="0" cache_read_input_tokens="12294" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ASEjZ16BmaAsVkGinw3xNq">
+=== Fast CI ===
+
+--- Lint ---
+All checks passed!
+
+--- Format Check ---
+1625 files already formatted
+
+--- Prettier Check ---
+Checking formatting...
+All matched files use Prettier code style!
+
+--- Markdown Check ---
+
+--- Exec Reference Check ---
+OK: .claude/skills/erk-exec/reference.md is up to date
+
+--- ty ---
+All checks passed!
+
+--- Unit Tests (erk) ---
+bringing up nodes...
+bringing up nodes...
+
+........................................................................ [  1%]
+........................................................................ [  2%]
+........................................................................ [  3%]
+........................................................................ [  5%]
+........................................................................ [  6%]
+........................................................................ [  7%]
+
+... [98 lines omitted] ...
+  </tool_result>
+  <assistant>## Fast CI Results - All Passed
+
+**Summary:** make fast-ci completed successfully with no failures.
+
+**Breakdown:**
+
+- **Lint**: All checks passed!
+- **Format Check**: 1625 files already formatted
+- **Prettier Check**: All matched files use Prettier code style!
+- **Markdown Check**: OK (no issues reported)
+- **Exec Reference Check**: .claude/skills/erk-exec/reference.md is up to date
+- **Type Check (ty)**: All checks passed!
+- **Unit Tests (erk)**: 5467 passed in 11.33s
+- **Tests (erk-dev)**: 136 passed in 4.28s
+- **Tests (erk-statusline)**: 112 passed in 0.78s
+- **Tests (erkbot)**: 114 passed in 1.53s
+- **AGENTS.md Standard**: PASSED
+- **CLAUDE.md/AGENTS.md Pairing**: All 19 CLAUDE.md files checked with 0 violations</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="1086" cache_read_input_tokens="12294" cache_creation="{'ephemeral_5m_input_tokens': 1086, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

@@ -146,4 +146,424 @@ Todos have been modified successfully. Ensure that you continue to use the todo 
   "plan_number": 8567
 }
   </tool_result>
+  <tool_result tool="toolu_01GTSpvzFLJ236WFsMXoRT6P">
+{"uploaded": true, "plan_id": 8567}
+  </tool_result>
+  <assistant>Now let me check for a post-plan-implement-ci hook and run CI:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="319" cache_read_input_tokens="70577" cache_creation="{'ephemeral_5m_input_tokens': 319, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_01GmW8Gt4nc7zcbiv4yVoJon">
+    <param name="pattern">.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="319" cache_read_input_tokens="70577" cache_creation="{'ephemeral_5m_input_tokens': 319, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GmW8Gt4nc7zcbiv4yVoJon">
+/home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_01ToSNJNN71ep7YMeDrxaYcr">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="127" cache_read_input_tokens="70896" cache_creation="{'ephemeral_5m_input_tokens': 127, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01ToSNJNN71ep7YMeDrxaYcr">
+     1→# Post-Implementation CI
+     2→
+     3→Run CI validation after plan implementation using `make fast-ci`.
+     4→
+     5→Load the `ci-iteration` skill for the iterative fix workflow.
+     6→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01PD3VS2xBPEJtwTjYU3sshj">
+    <param name="skill">ci-iteration</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="229" cache_read_input_tokens="71023" cache_creation="{'ephemeral_5m_input_tokens': 229, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PD3VS2xBPEJtwTjYU3sshj">
+Launching skill: ci-iteration
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/ci-iteration
+
+# CI Iteration
+
+## Overview
+
+Run the specified CI target and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**IMPORTANT**: All `make` commands must be run from the repository root directory. The Makefile is located at the root of the repository, not in subdirectories.
+
+## Sub-Agent Policy
+
+**CRITICAL**: When spawning sub-agents to run `make`, `pytest`, `ty`, `ruff`, `prettier`, or `gt` commands, you MUST use `devrun`:
+
+```
+Task tool with:
+- subagent_type: devrun  &lt;- MUST be devrun, NEVER general-purpose
+```
+
+**Why**: devrun has hard tool constraints (no Edit/Write) preventing destructive changes. The parent agent (you) processes reports and applies fixes - sub-agents only report.
+
+**FORBIDDEN**:
+
+- Spawning general-purpose or other sub-agents for make/pytest/ty/ruff/prettier/gt
+- Giving sub-agents prompts like "fix issues" or "iterate until passing"
+
+**REQUIRED**:
+
+- Sub-agents run ONE command and report results
+- Parent agent decides what to fix based on reports
+
+## Core Workflow
+
+### 1. Initial Run
+
+Use the devrun agent to run the specified make target from the repository root:
+
+```
+Task tool with:
+- subagent_type: devrun
+- description: "Run [make target] from repo root"
+- prompt: "Change to repository root and execute: [make target]"
+```
+
+### 2. Parse Failures
+
+Analyze the output to identify which check(s) failed:
+
+- **Ruff lint failures**: "ruff check" errors
+- **Format failures**: "ruff format --check" or files needing reformatting
+- **Prettier failures**: Markdown files needing formatting
+- **MD-check failures**: CLAUDE.md files not properly referencing AGENTS.md
+- **ty failures**: Type errors with file paths and line numbers
+- **Test failures**: pytest failures with test names and assertion errors
+
+### 3. Apply Targeted Fixes
+
+Based on failure type, apply appropriate fixes:
+
+| Failure Type | Fix Command                                 |
+| ------------ | ------------------------------------------- |
+| Ruff lint    | `make fix` via devrun                       |
+| Ruff format  | `make format` via devrun                    |
+| Prettier     | `make prettier` via devrun                  |
+| Sync-Kit     | `erk sync` directly                         |
+| MD-check     | Edit CLAUDE.md to contain only `@AGENTS.md` |
+| ty           | Edit files to fix type annotations          |
+| Tests        | Read and edit source/test files             |
+
+### 4. Verify and Repeat
+
+After applying fixes, run the make target again via devrun. Continue the cycle: run -&gt; identify failures -&gt; fix -&gt; verify.
+
+## Iteration Control
+
+**Safety Limits:**
+
+- **Maximum iterations**: 10 attempts
+- **Stuck detection**: If the same error appears 3 times in a row, stop
+- **Progress tracking**: Use TodoWrite to show iteration progress
+
+## Progress Reporting
+
+Use TodoWrite to track progress:
+
+```
+Iteration 1: Fixing lint errors
+Iteration 2: Fixing format errors
+Iteration 3: Fixing type errors in src/erk/cli/commands/switch.py
+Iteration 4: All checks passed
+```
+
+## When to Stop
+
+**SUCCESS**: Stop when the make target exits with code 0 (all checks passed)
+
+**STUCK**: Stop and report to user if:
+
+1. You've completed 10 iterations without success
+2. The same error persists after 3 fix attempts
+3. You encounter an error you cannot automatically fix
+
+## Reporting Formats
+
+### Success Format
+
+```markdown
+## Finalization Status: SUCCESS
+
+All CI checks passed after N iteration(s):
+
+(check) **Lint (ruff check)**: PASSED
+
+(check) **Format (ruff format --check)**: PASSED
+
+(check) **Prettier**: PASSED
+
+(check) **AGENTS.md Standard (md-check)**: PASSED
+
+(check) **ty**: PASSED
+
+(check) **Tests**: PASSED
+
+(check) **Sync-Kit (erk check)**: PASSED
+
+The code is ready for commit/PR.
+```
+
+**IMPORTANT**: Each check line MUST be separated by a blank line in the markdown output to render properly in the CLI.
+
+### Stuck Format
+
+```markdown
+## Finalization Status: STUCK
+
+I was unable to resolve the following issue after N attempts:
+
+**Check**: [lint/format/prettier/md-check/ty/test]
+
+**Error**:
+[Exact error message]
+
+**File**: [file path if applicable]
+
+**Attempted Fixes**:
+
+1. [What you tried first]
+2. [What you tried second]
+3. [What you tried third]
+
+**Next Steps**:
+[Suggest what needs to be done manually]
+```
+
+## Guidelines
+
+1. **Be systematic**: Fix one type of error at a time
+2. **Run full CI**: Always run the full make target, not individual checks
+3. **Use devrun agent**: Always use the Task tool with devrun agent for ALL make commands
+4. **Run from repo root**: Always ensure make commands execute from repository root
+5. **Track progress**: Use TodoWrite for every iteration
+6. **Don't guess**: Read files before making changes
+7. **Follow standards**: Adhere to AGENTS.md coding standards
+8. **Fail gracefully**: Report clearly when stuck
+9. **Be efficient**: Use targeted fixes (don't reformat everything for one lint error)
+
+## Example Flow
+
+```
+Iteration 1:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 5 lint errors, 2 files need formatting
+- Fix: Use Task tool with devrun agent to run make fix, then make format from repo root
+- Result: 3 lint errors remain
+
+Iteration 2:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 3 lint errors (imports)
+- Fix: Edit files to fix import issues
+- Result: All lint/format pass, 2 type errors
+
+Iteration 3:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 2 ty errors in switch.py:45 and switch.py:67
+- Fix: Add type annotations
+- Result: All checks pass
+
+SUCCESS
+```
+
+## Important Reminders
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <assistant>
+
+Let me run CI using the devrun agent:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2060" cache_read_input_tokens="71252" cache_creation="{'ephemeral_5m_input_tokens': 2060, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01MbgQqUBztvK5jyMMJSrQha">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run make fast-ci</param>
+    <param name="prompt">Run `make fast-ci` from the repository root /home/runner/work/erk/erk and report all results. Do not fix anything, just report.</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2060" cache_read_input_tokens="71252" cache_creation="{'ephemeral_5m_input_tokens': 2060, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MbgQqUBztvK5jyMMJSrQha">
+**make fast-ci failed: Prettier formatting issue**
+
+Exit code: 2
+
+**Summary:**
+- Lint: PASSED
+- Format Check: PASSED (1625 files already formatted)
+- Prettier Check: FAILED (Code style issues found in 5 files)
+- Markdown Check: PASSED
+- Exec Reference Check: PASSED
+- ty (Type Checking): PASSED
+- Unit Tests (erk): PASSED (5467 passed in 20.67s)
+- Tests (erk-dev): PASSED (136 passed in 4.21s)
+- Tests (erk-statusline): PASSED (112 passed in 0.81s)
+- Tests (erkbot): PASSED (114 passed in 2.16s)
+
+**Files with Prettier formatting issues (5 files):**
+1. docs/learned/cli/activation-scripts.md
+2. docs/learned/cli/doctor-workflow.md
+3. docs/learned/integrations/github-review-decision.md
+4. docs/learned/sessions/session-accumulation.md
+5. docs/learned/tui/status-indicators.md
+
+The CI pipeline failed at the Prettier formatting check stage. All other checks (linting, type checking, and all test suites totaling 5829 tests) passed successfully.
+agentId: ac08a8a (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Prettier formatting issues in the docs I created/modified. Let me fix them:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="480" cache_read_input_tokens="73312" cache_creation="{'ephemeral_5m_input_tokens': 480, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_015LowbBUTJhZDLGH4nwijhy">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run make prettier to fix</param>
+    <param name="prompt">Run `make prettier` from the repository root /home/runner/work/erk/erk and report the results. Do not fix anything, just report.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="480" cache_read_input_tokens="73312" cache_creation="{'ephemeral_5m_input_tokens': 480, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015LowbBUTJhZDLGH4nwijhy">
+## Report
+
+**prettier passed: All markdown files checked and formatted (2 files needed formatting)**
+
+The prettier check scanned all markdown files in the repository with the `.gitignore` exclusions applied. Out of the many markdown files checked:
+
+- Two files required formatting:
+  - `/home/runner/work/erk/erk/docs/learned/cli/activation-scripts.md` (8ms)
+  - `/home/runner/work/erk/erk/docs/learned/cli/doctor-workflow.md` (4ms)
+
+- The remaining files were already properly formatted (marked as "unchanged")
+
+The command completed successfully with exit code 0, indicating that prettier ran without errors. The files that need formatting have been identified but not modified, as requested.
+agentId: a05f7d2 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>
+
+Prettier already fixed the formatting automatically. Let me also check if `activation-scripts.md` needs fixing — the prettier run said it formatted that file too. Let me re-run CI to verify everything passes:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1465" cache_read_input_tokens="73792" cache_creation="{'ephemeral_5m_input_tokens': 1465, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01RSJNF6jKgMzK81adLuFcZ7">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Re-run make fast-ci</param>
+    <param name="prompt">Run `make fast-ci` from the repository root /home/runner/work/erk/erk and report all results. Do not fix anything, just report.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1465" cache_read_input_tokens="73792" cache_creation="{'ephemeral_5m_input_tokens': 1465, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RSJNF6jKgMzK81adLuFcZ7">
+## Fast CI Results - All Passed
+
+**Summary:** make fast-ci completed successfully with no failures.
+
+**Breakdown:**
+
+- **Lint**: All checks passed!
+- **Format Check**: 1625 files already formatted
+- **Prettier Check**: All matched files use Prettier code style!
+- **Markdown Check**: OK (no issues reported)
+- **Exec Reference Check**: .claude/skills/erk-exec/reference.md is up to date
+- **Type Check (ty)**: All checks passed!
+- **Unit Tests (erk)**: 5467 passed in 11.33s
+- **Tests (erk-dev)**: 136 passed in 4.28s
+- **Tests (erk-statusline)**: 112 passed in 0.78s
+- **Tests (erkbot)**: 114 passed in 1.53s
+- **AGENTS.md Standard**: PASSED
+- **CLAUDE.md/AGENTS.md Pairing**: All 19 CLAUDE.md files checked with 0 violations
+agentId: a51654f (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All CI checks pass. Now let me submit the PR:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="454" cache_read_input_tokens="75257" cache_creation="{'ephemeral_5m_input_tokens': 454, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01RXD7WDwz1o6b4c87K8iYQM">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk pipeline</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="454" cache_read_input_tokens="75257" cache_creation="{'ephemeral_5m_input_tokens': 454, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RXD7WDwz1o6b4c87K8iYQM">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #8567 found (already exists)
+
+Phase 2: Getting diff
+
+Phase 3: Fetching plan context
+   Incorporating plan #8567
+
+Phase 4: Generating PR description
+   Reading diff file...
+   Diff loaded (42,438 chars)
+   Analyzing changes with Claude...
+   PR description generated
+
+Phase 5: Graphite enhancement
+
+Phase 6: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+
+✅ PR submitted
+
+  Action:      Updated PR #8567
+  Branch:      plnd/consolidate-mar1-learn-b2-03-01-2043 → master
+  Title:       Consolidate documentation from Mar 1 learn sessions (batch 2)
+
+... [2 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_019Qf7mLev6cwiCqhbb9W4uM">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="769" cache_read_input_tokens="75711" cache_creation="{'ephemeral_5m_input_tokens': 769, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_0115X8keXPrh8FjQRGpvsxFF">
+    <param name="command">erk pr check --stage=impl 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR completion</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="769" cache_read_input_tokens="75711" cache_creation="{'ephemeral_5m_input_tokens': 769, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019Qf7mLev6cwiCqhbb9W4uM">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 8567
+}
+  </tool_result>
+  <tool_result tool="toolu_0115X8keXPrh8FjQRGpvsxFF">
+
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01BY9nhkLUFcrYyURYGowcCe">
+    <param name="todos">[{'content': 'Step 1: Update activation-scripts.md with VIRTUAL_ENV idempotency guard (#85...[truncated 1551 chars]...n CI and submit PR', 'status': 'completed', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="248" cache_read_input_tokens="76480" cache_creation="{'ephemeral_5m_input_tokens': 248, 'ephemeral_1h_input_tokens': 0}" output_tokens="560" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BY9nhkLUFcrYyURYGowcCe">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan execution complete. Here's a summary:
+
+## Summary
+
+**PR:** https://github.com/dagster-io/erk/pull/8567
+
+Consolidated documentation from 14 Mar 1 learn sessions into 9 documentation items:
+
+### Updated (3 existing docs)
+1. `docs/learned/cli/activation-scripts.md` — Added VIRTUAL_ENV idempotency guard section and tripwire
+2. `docs/learned/tui/architecture.md` — Added mixin architecture section, updated directory structure, added event handler tripwire
+3. `docs/learned/ci/gitignored-directory-commit-patterns.md` — Added agent instruction cross-references section
+
+### Created (6 new docs)
+4. `docs/learned/architecture/worktree-dispatch-detection.md` — LBYL pattern for dispatch worktree detection
+5. `docs/learned/sessions/session-accumulation.md` — Session accumulation architecture on git branches
+6. `docs/learned/cli/doctor-workflow.md` — Doctor workflow subcommand documentation
+7. `docs/learned/cli/piped-output-flushing.md` — Stdout flushing pattern for piped environments
+8. `docs/learned/config/external-docs-path.md` — External docs path configuration
+9. `docs/learned/erk/stub-branch-lifecycle.md` — Stub branch lifecycle and Graphite cleanup
+
+### Skipped (5 plans, already documented)
+- #8561 (cli-push-down skill), #8554 (review prompt), #8552 (cmux skill), #8543 (changelog sync), #8535 (duplicate gt submit)
+
+All CI checks pass (5,829 tests, lint, format, type checks).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="602" cache_read_input_tokens="76728" cache_creation="{'ephemeral_5m_input_tokens': 602, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
 </session>
