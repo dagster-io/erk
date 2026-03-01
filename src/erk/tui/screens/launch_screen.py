@@ -12,23 +12,6 @@ from textual.widgets import Label
 from erk.tui.commands.registry import CATEGORY_EMOJI, get_available_commands
 from erk.tui.commands.types import CommandCategory, CommandContext, CommandDefinition
 
-# Single-key mappings for ACTION commands, grouped by view context.
-# Plan keys and objective keys can reuse letters because get_available_commands
-# already filters by view mode—plan commands only appear in Plans/Learn views,
-# objective commands only in Objectives view.
-LAUNCH_KEYS: dict[str, str] = {
-    # Plan actions
-    "close_plan": "c",
-    "dispatch_to_queue": "d",
-    "land_pr": "l",
-    "rebase_remote": "f",
-    "address_remote": "a",
-    # Objective actions
-    "close_objective": "c",
-    "one_shot_plan": "s",
-    "check_objective": "k",
-}
-
 
 class LaunchScreen(ModalScreen[str | None]):
     """Compact modal for two-keystroke ACTION command execution.
@@ -93,10 +76,9 @@ class LaunchScreen(ModalScreen[str | None]):
         self._key_to_command_id: dict[str, str] = {}
         self._launch_rows: list[tuple[str, CommandDefinition]] = []
         for cmd in action_commands:
-            key = LAUNCH_KEYS.get(cmd.id)
-            if key is not None:
-                self._key_to_command_id[key] = cmd.id
-                self._launch_rows.append((key, cmd))
+            if cmd.launch_key is not None:
+                self._key_to_command_id[cmd.launch_key] = cmd.id
+                self._launch_rows.append((cmd.launch_key, cmd))
 
     def compose(self) -> ComposeResult:
         """Build the launch menu from precomputed ACTION command rows."""
