@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 
 import click
 from rich.console import Console
+from rich.markup import escape as escape_markup
 from rich.table import Table
 
 from erk.cli.commands.pr.list_cmd import format_pr_cell
@@ -151,7 +152,7 @@ def _list_runs(ctx: ErkContext) -> None:
                 title = pr_info.title or "-"
                 if len(title) > _MAX_TITLE_LENGTH:
                     title = title[: _MAX_TITLE_LENGTH - 3] + "..."
-                title_cell = title
+                title_cell = escape_markup(title)
                 checks_cell = format_checks_cell(pr_info)
             else:
                 # Have PR number but no details — show number with link
