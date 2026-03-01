@@ -7,6 +7,22 @@ from erk.core.repo_discovery import RepoContext
 from erk_shared.output.output import user_output
 
 
+def _check_trunk_worktree_clean(ctx: ErkContext, repo: RepoContext, *, trunk: str) -> None:
+    """Raise SystemExit(1) if trunk is checked out in a dirty worktree."""
+    trunk_worktree = ctx.git.worktree.find_worktree_for_branch(repo.root, trunk)
+    if trunk_worktree is None:
+        return
+    if not ctx.git.status.has_uncommitted_changes(trunk_worktree):
+        return
+    user_output(
+        click.style("Error: ", fg="red")
+        + f"Worktree at {trunk_worktree} has {trunk} checked out with "
+        f"uncommitted changes.\n\n"
+        f"Please commit or stash changes before running erk pr dispatch."
+    )
+    raise SystemExit(1)
+
+
 def ensure_trunk_synced(ctx: ErkContext, repo: RepoContext) -> None:
     """Ensure local trunk ref is synced with remote, without requiring checkout.
 
@@ -39,18 +55,7 @@ def ensure_trunk_synced(ctx: ErkContext, repo: RepoContext) -> None:
 
     if merge_base == local_sha:
         # Local is behind remote - safe to fast-forward
-        # Check if trunk is checked out in any worktree
-        trunk_worktree = ctx.git.worktree.find_worktree_for_branch(repo.root, trunk)
-        if trunk_worktree is not None:
-            # Trunk is checked out — verify the worktree is clean before updating
-            if ctx.git.status.has_uncommitted_changes(trunk_worktree):
-                user_output(
-                    click.style("Error: ", fg="red")
-                    + f"Worktree at {trunk_worktree} has {trunk} checked out with "
-                    f"uncommitted changes.\n\n"
-                    f"Please commit or stash changes before running erk pr dispatch."
-                )
-                raise SystemExit(1)
+        _check_trunk_worktree_clean(ctx, repo, trunk=trunk)
 
         user_output(f"Syncing {trunk} with origin/{trunk}...")
         ctx.git.branch.update_local_ref(repo.root, trunk, remote_sha)
