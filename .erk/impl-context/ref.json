@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Learn: Fix double activation when direnv triggers during `erk pr checkout --script`"
+}

@@ -1,0 +1,1261 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>source "$(erk pr checkout 8548 --script --sync)"
+Last login: Sun Mar  1 14:13:28 on ttys021
+direnv: loading ~/code/erk/.envrc
+direnv: loading ~/code/erk/.erk/bin/activate.sh
+-&gt; cd /Users/schrockn/code/erk
+-&gt; Activating venv: /Users/schrockn/code/erk/.venv (3.13.1)
+Activated: /Users/schrockn/code/erk
+direnv: export +VIRTUAL_ENV +VIRTUAL_ENV_PROMPT ~PATH
+➜  erk source "$(erk pr checkout 8548 --script --sync)"
+Fetching PR #8548...
+✓ Assigned plnd/create-cli-push-down-skill-03-01-1404 to erk-slot-57
+-&gt; cd /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57
+direnv: loading ~/.erk/repos/erk/worktrees/erk-slot-57/.envrc
+direnv: loading ~/.erk/repos/erk/worktrees/erk-slot-57/.erk/bin/activate.sh
+-&gt; cd /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57
+-&gt; Activating venv: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/.venv (3.13.1)
+Activated: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57
+direnv: export +VIRTUAL_ENV +VIRTUAL_ENV_PROMPT ~PATH
+-&gt; Activating venv: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/.venv (3.13.1)
+Running in non-interactive mode. Inline prompts to fill PR fields will be skipped and new PRs will be created in draft mode.
+
+🥞 Validating that this Graphite stack is ready to submit...
+
+✏️ Preparing to submit PRs for the following branches...
+▸ plnd/create-cli-push-down-skill-03-01-1404 (Sync to Graphite)
+
+🚀 Pushing branches to remote...
+
+📨 Creating/updating PRs...
+plnd/create-cli-push-down-skill-03-01-1404: https://app.graphite.com/github/pr/dagster-io/erk/8548 (updated)
+Checked out PR #8548 at /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57
+(erk) ➜  erk-slot-57 git:(plnd/create-cli-push-down-skill-03-01-1404)
+
+when running cmux sync command in the tui
+
+source "$(erk pr checkout 8548 --script --sync)"
+
+is getting executed twice. let's make it so it only runs once</user>
+  <thinking>The user is reporting a bug where the `cmux sync` command in the TUI is executing `source "$(erk pr checkout 8548 --script --sync)"` twice. I need to explore the codebase to understand how the cmux sync command works in the TUI and find where the duplication is happening.
+
+Let me start by exploring the relevant code.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="11702" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11702}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the TUI cmux sync workflow to understand where the double execution is happening.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="11702" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11702}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01Bzh5vBnvuQRrNXPCpp3hmc">
+    <param name="description">Explore cmux sync in TUI</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 692 chars]...ructed
+
+Focus on finding the duplication - where does the command get sent/executed twice?</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11702" cache_read_input_tokens="19113" output_tokens="434" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11702, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Bzh5vBnvuQRrNXPCpp3hmc">
+Perfect! Now I have all the information I need. Let me create a comprehensive analysis document.
+
+## Summary
+
+I've identified the root cause of the **double execution of `source "$(erk pr checkout --script --sync)"` during cmux sync**. The issue is a **double-nesting of `--sync` flag execution**.
+
+### The Double Execution Root Cause
+
+**Location 1: TUI Command Definition** (`src/erk/tui/commands/registry.py:93`)
+```python
+def _display_copy_pr_checkout(ctx: CommandContext) -&gt; str:
+    """Display name for copy_pr_checkout command."""
+    if ctx.row.pr_number:
+        pr = ctx.row.pr_number
+        return f'source "$(erk pr checkout {pr} --script --sync)"'  # &lt;-- Creates the command with --sync
+```
+
+**Location 2: Cmux Sync Workspace Script** (`src/erk/cli/commands/exec/scripts/cmux_sync_workspace.py:125`)
+```python
+def cmux_sync_workspace(pr: int, branch: str | None) -&gt; None:
+    # ... Auto-detect branch if not provided ...
+    
+    # Build the checkout command that will run inside the new workspace
+    checkout_cmd = f'source "$(erk pr checkout {pr} --script --sync)"'  # &lt;-- Re-adds --sync here!
+```
+
+### The Problem
+
+When a user invokes cmux sync from the TUI (by pressing `w` or through the action menu):
+
+
+... [66 lines omitted] ...
+  </tool_result>
+  <thinking>The agent's analysis is interesting but I need to verify it more carefully. Let me read the actual files to understand the real double execution issue. The user said the command is being "executed twice" - let me look at the actual cmux sync flow more carefully.
+
+Let me look at the key files to understand what's happening.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1744" cache_read_input_tokens="30815" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1744}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the key files to verify the root cause.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1744" cache_read_input_tokens="30815" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1744}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TK3WFFMTf35ZxJwvCUTrdC">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/src/erk/cli/commands/exec/scripts/cmux_sync_workspace.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1744" cache_read_input_tokens="30815" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1744}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TK3WFFMTf35ZxJwvCUTrdC">
+     1→"""Create a cmux workspace with PR checkout and sync.
+     2→
+     3→This script creates a cmux workspace that automatically checks out a PR,
+     4→syncs it with the trunk, and renames the workspace to the PR's head branch.
+     5→
+     6→Usage:
+     7→    erk exec cmux-sync-workspace --pr 8152
+     8→    erk exec cmux-sync-workspace --pr 8152 --branch "my-branch"
+     9→
+    10→Output:
+    11→    JSON with {success, pr_number, branch, workspace_name} on success
+    12→    JSON with {success, error} on failure
+    13→
+    14→Exit Codes:
+    15→    0: Success - workspace created
+    16→    1: Error - cmux/checkout/sync failed or branch lookup failed
+    17→"""
+    18→
+    19→import json
+    20→import subprocess
+    21→from dataclasses import asdict, dataclass
+    22→
+    23→import click
+    24→
+    25→
+    26→@dataclass(frozen=True)
+    27→class CmuxSyncSuccess:
+    28→    """Success response for cmux-sync-workspace command."""
+    29→
+    30→    success: bool
+
+... [142 lines omitted] ...
+
+    37→class CmuxSyncError:
+    38→    """Error response for cmux-sync-workspace command."""
+    41→    error: str
+    64→    except subprocess.CalledProcessError:
+   114→                        CmuxSyncError(
+   116→                            error=f"Failed to detect head branch for PR #{pr}. "
+   159→    except subprocess.CalledProcessError as e:
+   160→        error_output = e.stderr.strip() if e.stderr else e.stdout.strip()
+   164→                    CmuxSyncError(
+   166→                        error=f"Failed to create cmux workspace: {error_output}",
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Vd1UeqFRzm4gVuAMdWMBy1">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/src/erk/tui/operations/workers.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1744" cache_read_input_tokens="30815" output_tokens="271" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1744, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Vd1UeqFRzm4gVuAMdWMBy1">
+     1→"""Background worker methods for TUI operations."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import json
+     6→import subprocess
+     7→from typing import TYPE_CHECKING
+     8→
+     9→from textual import work
+    10→
+    11→from erk.tui.operations.logic import extract_learn_plan_number, last_output_line
+    12→
+    13→if TYPE_CHECKING:
+    14→    from erk.tui.app import ErkDashApp
+    15→
+    16→
+    17→class BackgroundWorkersMixin:
+    18→    """Mixin providing all @work(thread=True) background worker methods.
+    19→
+    20→    Methods access self._provider, self._run_streaming_operation,
+    21→    self._start_operation, self._finish_operation, self._update_operation,
+    22→    self.call_from_thread, self.notify, and self.action_refresh
+    23→    which are provided by ErkDashApp at runtime through inheritance.
+    24→    """
+    25→
+    26→    @work(thread=True)
+    27→    def _close_plan_async(self: ErkDashApp, op_id: str, plan_id: int, plan_url: str) -&gt; None:
+    28→        """Close plan in background thread with toast notifications.
+    29→
+    30→        Args:
+
+... [399 lines omitted] ...
+
+    35→        # Error boundary: catch all exceptions from the close operation to display
+    48→        except Exception as e:
+    49→            # Error toast
+    53→                f"Failed to close plan #{plan_id}: {e}",
+    54→                severity="error",
+    82→            error_msg = last_output_line(result)
+    85→                f"Failed to dispatch address for PR #{pr_number}: {error_msg}",
+    86→                severity="error",
+   116→            error_msg = last_output_line(result)
+   119→                f"Failed to dispatch rebase for PR #{pr_number}: {error_msg}",
+   120→                severity="error",
+   155→            error_msg = last_output_line(result)
+   158→                f"Failed to create cmux workspace for PR #{pr_number}: {error_msg}",
+   159→                severity="error",
+   189→        except json.JSONDecodeError:
+   236→            error_msg = last_output_line(result)
+   239→                f"Failed to dispatch rewrite for PR #{pr_number}: {error_msg}",
+   240→                severity="error",
+   270→            error_msg = last_output_line(result)
+   274→                f"Failed to land PR #{pr_number}: {error_msg}",
+   275→                severity="error",
+   308→                error_msg = last_output_line(obj_result)
+   311→                    f"Failed to update objective #{objective_issue}: {error_msg}",
+   312→                    severity="error",
+   330→            error_msg = last_output_line(result)
+   333→                f"Failed to dispatch plan #{plan_id}: {error_msg}",
+   334→                severity="error",
+   350→            error_msg = last_output_line(result)
+   353→                f"Failed to close objective #{plan_id}: {error_msg}",
+   354→                severity="error",
+   369→            error_msg = last_output_line(result)
+   372→                f"Failed to check objective #{plan_id}: {error_msg}",
+   373→                severity="error",
+   391→            error_msg = last_output_line(result)
+   394→                f"Failed to dispatch one-shot plan for objective #{plan_id}: {error_msg}",
+   395→                severity="error",
+   411→            error_msg = last_output_line(result)
+   414→                f"One-shot dispatch failed: {error_msg}",
+   415→                severity="error",
+  </tool_result>
+  <thinking>Now I need to understand what `cmux new-workspace --command` does. The command on line 132 is:
+
+```python
+shell_cmd = (
+    f"WS=$(cmux new-workspace --command '{checkout_cmd}' | awk '{{print $2}}') &amp;&amp; "
+    f'cmux rename-workspace --workspace "$WS" "{branch}" &amp;&amp; '
+    "echo $WS"
+)
+```
+
+Where `checkout_cmd` is `source "$(erk pr checkout {pr} --script --sync)"`.
+
+So the command passed to cmux is the checkout command. But the user says the checkout is happening twice. Let me think about what `cmux new-workspace --command` does...
+
+
+I'm wondering if `cmux new-workspace --command` both creates the workspace and executes the command within it, and then maybe the shell initialization files are also running it again, or perhaps there's something in how the workspace is set up that causes the command to execute a second time.
+
+Let me dig into the cmux documentation to understand how `new-workspace` actually handles the `--command` flag and what happens during workspace initialization.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="7991" cache_read_input_tokens="32559" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7991}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at how cmux workspaces handle commands, and check for any activation script that might also run the command.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7991" cache_read_input_tokens="32559" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7991}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_011pqNxb2hRR8ru2JhZmhtRR">
+    <param name="pattern">new-workspace</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7991" cache_read_input_tokens="32559" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7991}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011pqNxb2hRR8ru2JhZmhtRR">
+Found 3 files
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/src/erk/cli/commands/exec/scripts/cmux_sync_workspace.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/.claude/skills/cmux/SKILL.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/tests/commands/workspace/AGENTS.md
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01NkKf1JfCFoWVPGFdxco6xe">
+    <param name="pattern">cmux.*new.workspace|new.workspace.*command</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/docs/learned</param>
+    <param name="output_mode">content</param>
+    <param name="glob">*.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7991" cache_read_input_tokens="32559" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7991}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NkKf1JfCFoWVPGFdxco6xe">
+No matches found
+  </tool_result>
+  <tool_use name="Read" id="toolu_01VG8sc8u7LSyDb7QgYBMJjD">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/src/erk/cli/commands/pr/checkout_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7991" cache_read_input_tokens="32559" output_tokens="710" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7991, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VG8sc8u7LSyDb7QgYBMJjD">
+     1→"""Checkout a pull request or plan into a worktree.
+     2→
+     3→This command fetches PR code (or finds plan branches) and creates a worktree
+     4→for local review/testing.
+     5→
+     6→Routing:
+     7→- Plain number (123) or PR URL → PR checkout
+     8→- P-prefixed (P123) or issue URL → plan checkout (find branches/PRs for plan)
+     9→"""
+    10→
+    11→import click
+    12→from rich.console import Console
+    13→from rich.table import Table
+    14→
+    15→from erk.cli.activation import (
+    16→    activation_config_activate_only,
+    17→    ensure_worktree_activate_script,
+    18→    print_activation_instructions,
+    19→)
+    20→from erk.cli.alias import alias
+    21→from erk.cli.commands.checkout_helpers import (
+    22→    ensure_branch_has_worktree,
+    23→    navigate_and_display_checkout,
+    24→)
+    25→from erk.cli.ensure import Ensure
+    26→from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+    27→from erk.core.context import ErkContext
+    28→from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+    29→from erk_shared.gateway.github.parsing import (
+    30→    parse_plan_number_from_url,
+
+... [447 lines omitted] ...
+
+    81→        click.style("Error: ", fg="red")
+   161→        ctx.console.error("Not in a git repository")
+   197→        ctx.console.error(
+   205→        ctx.console.info(f"Warning: PR #{pr_number} is {pr.state}")
+   287→                f"Warning: Rebase had conflicts. Worktree created but needs manual rebase.\n"
+   407→        ctx.console.error(
+  </tool_result>
+  <thinking>Now I understand the flow. Let me look at `navigate_and_display_checkout` to understand how `post_cd_commands` gets emitted in script mode. Also, let me look at the activation script to understand what happens when the worktree already exists vs when it's new.
+
+The key part: when `erk pr checkout 8548 --script --sync` is run:
+1. On line 316-318, `post_cd_commands=["gt submit --no-interactive"]` is passed when `should_track_with_graphite and sync`
+2. The script is sourced via `source "$(erk pr checkout ...)"` 
+
+
+3. But the user's complaint is that the entire `source "$(erk pr checkout 8548 --script --sync)"` command is running twice. Let me trace through how cmux new-workspace executes the checkout command—it's constructing a shell command that sources the erk output and then renames the workspace, so I need to figure out where the duplication is happening.
+
+The TUI calls cmux sync, which invokes `erk exec cmux-sync-workspace --pr 8548 --branch &lt;branch&gt;`, and that in turn runs `cmux new-workspace --command 'source "$(erk pr checkout 8548 --script --sync)"'`. So the question is whether cmux new-workspace is somehow executing the command twice, or if there's something in the erk pr checkout script itself that's causing the duplication.
+
+I'm wondering if cmux new-workspace runs the command both when creating the pane and again during shell initialization, or if direnv or other shell startup scripts are re-triggering the checkout. The most likely culprit seems to be how the shell environment is set up when the new workspace is created.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="7528" cache_read_input_tokens="40550" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7528}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the cmux skill documentation and how `new-workspace --command` behaves.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7528" cache_read_input_tokens="40550" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7528}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0161hBUcwafUahBi4y78J6DL">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/.claude/skills/cmux/SKILL.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7528" cache_read_input_tokens="40550" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7528}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0161hBUcwafUahBi4y78J6DL">
+     1→---
+     2→name: cmux
+     3→description: This skill should be used when working with cmux, the terminal multiplexer application. Use when users mention cmux commands, workspace management, terminal pane operations, or cmux integration with erk. Essential for understanding cmux's workspace model, CLI commands, and scripting patterns.
+     4→---
+     5→
+     6→# cmux - Terminal Multiplexer
+     7→
+     8→## Overview
+     9→
+    10→**cmux** is a native macOS terminal application (Swift/AppKit) that provides terminal multiplexing with workspaces, panes, and splits. It uses Ghostty's rendering engine (libghostty) for GPU-accelerated terminal output. The CLI communicates with the running app via a Unix domain socket at `/tmp/cmux.sock`.
+    11→
+    12→Think of cmux as "tmux reimagined as a native macOS app" -- it has workspaces (like tmux windows), panes (like tmux panes), and surfaces (individual terminal or browser instances within panes), all controllable via a rich CLI.
+    13→
+    14→## When to Use This Skill
+    15→
+    16→Invoke this skill when users:
+    17→
+    18→- Mention cmux commands or workspace management
+    19→- Need to script workspace creation or manipulation
+    20→- Ask about cmux integration with erk (the `cmux_integration` config flag)
+    21→- Want to automate terminal layouts or send commands to terminals
+    22→- Need to understand cmux's object model (windows &gt; workspaces &gt; panes &gt; surfaces)
+    23→- Ask about the `erk exec cmux-sync-workspace` command
+    24→
+    25→## Core Concepts
+    26→
+    27→### Object Hierarchy
+    28→
+    29→```
+    30→Window (top-level OS window)
+
+... [277 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01LiPiuCPA4JzYsRpGQcXf7Z">
+    <param name="pattern">navigate_and_display_checkout|print_activation_script</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/src/erk/cli</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7528" cache_read_input_tokens="40550" output_tokens="1071" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7528, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LiPiuCPA4JzYsRpGQcXf7Z">
+Found 2 files
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/src/erk/cli/commands/checkout_helpers.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/src/erk/cli/commands/pr/checkout_cmd.py
+  </tool_result>
+  <thinking>Now I see it clearly. Looking at the cmux skill doc line 227:
+
+&gt; Creates workspace running: `source "$(erk pr checkout &lt;pr&gt; --script --sync)" &amp;&amp; gt submit --no-interactive`
+
+Wait, that's in the doc but let me look at the actual code again. In `cmux_sync_workspace.py` line 125:
+```python
+checkout_cmd = f'source "$(erk pr checkout {pr} --script --sync)"'
+```
+
+And this gets passed to:
+```python
+shell_cmd = (
+    f"WS=$(cmux new-workspace --command '{checkout_cmd}' | awk '{{print $2}}') &amp;&amp; "
+
+
+```
+
+So when `cmux new-workspace --command 'source "$(erk pr checkout 8548 --script --sync)"'` runs, it creates a new workspace with a terminal, the shell starts up with its rc files, and the command text gets sent to that terminal with an auto-appended newline—meaning it only executes once from the new-workspace call.
+
+But I'm wondering if the activation script that `erk pr checkout 8548 --script --sync` outputs could be causing the double execution. Let me trace through what that script actually does and whether something in there might be triggering the command twice.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5868" cache_read_input_tokens="48078" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5868}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the checkout helpers and activation code to understand the full script output.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5868" cache_read_input_tokens="48078" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5868}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012GHy9rdaSXm1pTTSeuNxvY">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/src/erk/cli/commands/checkout_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5868" cache_read_input_tokens="48078" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5868}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012GHy9rdaSXm1pTTSeuNxvY">
+     1→"""Checkout navigation helpers - shared across checkout commands.
+     2→
+     3→This module is separate from navigation_helpers.py to avoid circular imports.
+     4→navigation_helpers imports from wt.create_cmd, which triggers wt/__init__.py,
+     5→which imports wt.checkout_cmd. By having checkout-specific helpers here,
+     6→we break that cycle.
+     7→"""
+     8→
+     9→import contextlib
+    10→import logging
+    11→import sys
+    12→from collections.abc import Generator, Sequence
+    13→from pathlib import Path
+    14→
+    15→import click
+    16→
+    17→from erk.cli.activation import (
+    18→    ensure_worktree_activate_script,
+    19→    render_activation_script,
+    20→    render_error_script,
+    21→)
+    22→from erk.cli.commands.slot.common import allocate_slot_for_branch
+    23→from erk.cli.core import worktree_path_for
+    24→from erk.core.context import ErkContext
+    25→from erk.core.repo_discovery import RepoContext
+    26→from erk_shared.output.output import user_output
+    27→
+    28→logger = logging.getLogger(__name__)
+    29→
+    30→
+
+... [299 lines omitted] ...
+
+    31→def _write_error_script_and_exit(ctx: ErkContext) -&gt; None:
+    32→    """Write a minimal error script and output its path, then exit 1.
+    34→    Used by ``script_error_handler`` to ensure ``source "$(erk br co --script)"``
+    35→    always receives a valid file path — even on failure — so the shell never
+    39→        render_error_script(),
+    41→        comment="checkout error",
+    48→def script_error_handler(ctx: ErkContext) -&gt; Generator[None]:
+    49→    """Catch errors in --script mode and emit an error script instead of empty stdout.
+    51→    Wraps the checkout body so that any error path produces a valid script
+    54→    ``source: no such file or directory:`` error.
+    56→    Exception handling:
+    58→    - ``SystemExit(non-zero)``: Error already printed via ``user_output()``;
+    59→      write error script and exit 1.
+    60→    - ``click.ClickException``: Format the error ourselves (Click's handler
+    61→      won't run since we catch first), write error script, exit 1.
+    62→    - ``RuntimeError``: Print to stderr, write error script, exit 1.
+    69→        _write_error_script_and_exit(ctx)
+    70→    except click.ClickException as exc:
+    71→        user_output(f"Error: {exc.format_message()}")
+    72→        _write_error_script_and_exit(ctx)
+    73→    except RuntimeError as exc:
+    74→        user_output(f"Error: {exc}")
+    75→        _write_error_script_and_exit(ctx)
+   116→    - Diverged: Warning with instructions
+   129→    # get_ahead_behind raises RuntimeError on subprocess failure (e.g., network issues).
+   132→    except RuntimeError:
+   133→        logger.debug("Failed to get ahead/behind for %s on %s", branch, worktree_path)
+   143→        # Diverged - most important case, needs warning
+   144→        warning = click.style("⚠ Local has diverged from origin:", fg="yellow")
+   146→        user_output(f"  {warning} {styled_sync}")
+  </tool_result>
+  <tool_use name="Read" id="toolu_015sh9gDFxnNDtrtq8d31MfF">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/src/erk/cli/activation.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5868" cache_read_input_tokens="48078" output_tokens="581" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5868, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015sh9gDFxnNDtrtq8d31MfF">
+     1→"""Shell activation script generation for worktree environments.
+     2→
+     3→This module provides utilities for generating shell scripts that activate
+     4→worktree environments by setting up virtual environments and loading .env files.
+     5→"""
+     6→
+     7→import shlex
+     8→from collections.abc import Sequence
+     9→from dataclasses import dataclass
+    10→from pathlib import Path
+    11→
+    12→import click
+    13→
+    14→from erk.core.display_utils import copy_to_clipboard_osc52
+    15→from erk_shared.output.output import user_output
+    16→
+    17→
+    18→@dataclass(frozen=True)
+    19→class ActivationConfig:
+    20→    """Configuration for activation instructions.
+    21→
+    22→    Replaces the combinatorial ActivationMode Literal with composable flags.
+    23→    All fields required - use factory functions for convenience.
+    24→
+    25→    Attributes:
+    26→        implement: If True, append `erk implement` to the source command.
+    27→            False means activate-only mode (just source the script).
+    28→        dangerous: If True, include --dangerous flag (skip permission prompts).
+    29→        docker: If True, include --docker flag (filesystem isolation).
+    30→        codespace: If not None, include --codespace flag for codespace isolation.
+
+... [409 lines omitted] ...
+
+    86→def render_error_script() -&gt; str:
+    94→    return "# erk error\nreturn 1\n"
+   104→    Quiet mode (ERK_QUIET=1): Suppresses transparency output (errors still shown)
+   144→            If the subpath doesn't exist, a warning is shown and the script
+   171→        # Check if subpath exists in target worktree, fall back to root with warning
+   178→  echo "Warning: '{target_subpath}' doesn't exist in target, using worktree root" &gt;&amp;2
+  </tool_result>
+  <thinking>Now let me trace through the full flow to understand the double execution.
+
+When the TUI triggers cmux sync:
+
+1. `_cmux_sync_async` calls `erk exec cmux-sync-workspace --pr 8548 --branch &lt;branch&gt;`
+2. `cmux_sync_workspace` builds:
+   ```python
+   checkout_cmd = f'source "$(erk pr checkout {pr} --script --sync)"'
+   shell_cmd = f"WS=$(cmux new-workspace --command '{checkout_cmd}' | awk '{{print $2}}') &amp;&amp; ..."
+   ```
+3. 
+
+The `cmux new-workspace --command` invocation sends the checkout command to a new shell, which executes `erk pr checkout 8548 --script --sync` to fetch the PR, create a worktree, and track the changes.
+
+The command then calls `navigate_and_display_checkout` with `post_cd_commands=["gt submit --no-interactive"]` since sync is enabled. This generates an activation script that changes to the worktree, sets up the virtual environment, loads environment variables, runs the sync command, and displays a confirmation message. The script path gets sourced in the original shell, so the entire checkout and sync operation completes in one go.
+
+But I'm noticing something in the terminal output—there's a `.envrc` file that direnv is loading automatically when entering the worktree directory. This activation script is being sourced twice: once by the `--script` flag and again by direnv when it detects the directory change. Let me trace through what's actually happening with direnv here. I'm seeing there are two activation messages happening—one from direnv loading the activation script, and another from the script generated by the checkout command itself. The user might be referring to either the double activation or the entire checkout command running twice. Looking at how cmux works, when it creates a new workspace, the shell starts and runs its startup files which can trigger direnv hooks, and then the command gets sent to that shell, so there could be multiple activation points in that sequence. in the temp script from the `--script --sync` mode. But wait, the user said the entire `source "$(erk pr checkout ...)"` command is being executed twice, not just the activation happening twice. Let me think about what could cause the checkout command itself to be sent to the terminal twice—maybe there's something in how cmux handles the `--command` flag that's re-running it.
+
+I'm noticing there's a 0.5s startup delay after workspace creation before commands are sent, which gives the shell time to initialize. But could that be creating a race condition where the command gets queued twice? Or maybe there's something in the `.envrc` or shell initialization that's automatically re-triggering the checkout when a new workspace is created. Let me check what the `.envrc` file actually does to understand if it's somehow causing the command to run again.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="10704" cache_read_input_tokens="53946" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10704}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the `.envrc` file and how direnv interacts with the activation flow.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="10704" cache_read_input_tokens="53946" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10704}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01FqZMi9FJqadqyhfrr8PBYq">
+    <param name="pattern">\.envrc</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="glob">".envrc"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10704" cache_read_input_tokens="53946" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10704}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FqZMi9FJqadqyhfrr8PBYq">
+No files found
+  </tool_result>
+  <tool_use name="Read" id="toolu_0163hYAmJ3dbdJwmxiKLKZ2U">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/.envrc</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10704" cache_read_input_tokens="53946" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10704}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0163hYAmJ3dbdJwmxiKLKZ2U">
+     1→# Source erk activation script if it exists
+     2→# This script:
+     3→#   - Creates .venv with `uv sync` if missing
+     4→#   - Activates the virtual environment
+     5→#   - Loads .env into the environment
+     6→#   - Sets up shell completion for erk
+     7→source_env_if_exists .erk/bin/activate.sh
+     8→
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01QopSU9HkTnxsVRbrY5TURh">
+    <param name="pattern">gt submit|cmux.*command|double|twice|duplicate</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/src/erk/cli/commands/exec/scripts/cmux_sync_workspace.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10704" cache_read_input_tokens="53946" output_tokens="2016" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 10704, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QopSU9HkTnxsVRbrY5TURh">
+28:    """Success response for cmux-sync-workspace command."""
+38:    """Error response for cmux-sync-workspace command."""
+132:        f"WS=$(cmux new-workspace --command '{checkout_cmd}' | awk '{{print $2}}') &amp;&amp; "
+  </tool_result>
+  <thinking>Now I see the `.envrc`:
+```sh
+# Source erk activation script if it exists
+source_env_if_exists .erk/bin/activate.sh
+```
+
+So when direnv detects you've cd'd into a worktree directory, it sources `.erk/bin/activate.sh`. And then the `erk pr checkout --script --sync` activation script ALSO does the same activation steps (cd, venv, etc.).
+
+But that's double-activation, not double-execution of the `source "$(erk pr checkout ...)"` command.
+
+Wait, let me re-think. When `cmux new-workspace --command 'source "$(erk pr checkout 8548 --script --sync)"'` is run:
+
+
+1. cmux spawns a new shell in a fresh workspace
+2. After a brief delay, it sends the command to that shell
+3. The shell evaluates `erk pr checkout 8548 --script --sync`, which outputs a temp file path
+4. The shell sources that temp file, which changes into the worktree directory
+5. direnv detects the directory change and sources `.envrc`, which in turn sources `.erk/bin/activate.sh`
+6. `.erk/bin/activate.sh` also changes into the worktree and activates the venv
+
+So the activation sequence happens twice—once from the temp script and once from direnv—but the `gt submit --no-interactive` command only runs once since it's embedded in the temp script, not in the activation script. The user is saying the `erk pr checkout` command itself is executing twice though, which suggests something else might be triggering it a second time.
+
+Looking at the terminal output, I can see the activation messages appearing, but the output cuts off mid-line. Let me trace through what's actually happening in the user's shell to understand why they're seeing the command run twice. I see the issue now—the temporary script from `erk pr checkout --script --sync` changes into the worktree directory, which triggers direnv to load and activate the venv, but then the script continues and tries to activate the venv again, causing the double activation output. The `gt submit --no-interactive` command runs after all this setup completes.
+
+But the user is saying the entire command itself is running twice, not just the activation steps. Looking at their manual terminal execution, they ran `source "$(erk pr checkout 8548 --script --sync)"` directly from the command line, yet they're asking about the TUI's cmux sync behavior—so I need to figure out whether the command is literally being executed twice by cmux or if they're seeing the double-activation output and misinterpreting it as the whole command running twice. the cmux scenario.
+
+When `cmux new-workspace --command 'source "$(erk pr checkout 8548 --script --sync)"'` runs:
+- cmux creates a workspace
+- Sends `source "$(erk pr checkout 8548 --script --sync)"\n` to the terminal
+
+Could cmux be sending the command twice? That would be a cmux bug. But the user says to fix it on the erk side.
+
+OR, looking at this from a different angle: maybe the `.envrc` already handles the activation, so the `erk pr checkout --script --sync` is redundant when direnv is present.
+
+Actually wait - I need to look at this more carefully. When the cmux workspace is created, the shell starts with direnv hooks in its startup, then cmux sends the checkout command after a delay. The checkout creates the worktree and outputs a temp script that changes into it, which triggers direnv to source `.envrc`. That sources the activation script, which does the venv setup and other initialization. Then the temp script continues and tries to do the same activation again. So the activation steps are running twice, but the checkout command itself only runs once.
+
+The user's complaint is about the observable duplication in terminal output. I think the issue might be in the cmux-sync-workspace script around lines 131-134 where it's handling the shell execution. I'm realizing there are actually two activation paths happening here: the temp script from `erk pr checkout --script` activates the environment directly, and then when direnv loads in the new shell, it sources the `.envrc` file which also activates the environment. So the activation could be triggered twice through different mechanisms.
+
+The cleanest solution would be to have the temp script set an environment variable that signals it's already been activated, so the direnv hook can skip redundant work when it runs. I could also just disable direnv temporarily during the activation script by setting an environment variable before the `cd`, then unsetting it afterward to prevent double-activation. But stepping back, the user's actual issue is that `source "$(erk pr checkout ...)"` runs twice when they trigger the cmux sync command in the TUI, so maybe the problem is that cmux itself is executing the command twice or the shell is re-evaluating it somehow. The duplication is coming from both the erk checkout script and direnv activating the venv. I think the cleanest fix is to have the checkout script set an environment variable that the `.envrc` can check, so it skips its own activation if the script is already handling it.
+
+Setting up the guard variable... script should just set the guard variable before the `cd` and let direnv handle everything else, skipping the redundant activation steps. I'm seeing how `render_activation_script` gets called in two different contexts—once for the temporary checkout script and once for the persistent activation script—so I could modify just the first usage to skip the venv/env activation and rely on direnv instead. But that leaves a gap: if direnv isn't configured, the temporary script would fail to set up the environment properly.
+
+A better approach is to add a guard in `render_activation_script` that checks for an environment variable to prevent double-activation when direnv is already handling it. I'd set this flag before the temporary script runs, then have the persistent activation script skip its activation logic if the flag is already set.
+
+Adding guard logic... I'm realizing the guard approach would work well: the temp script sets the flag before changing directories, which prevents the persistent activate script from running when direnv triggers it, then the temp script continues with its own activation. But I need to verify this doesn't break the normal case where someone manually enters a worktree without the temp script—in that scenario, direnv should still activate normally since the flag wouldn't be set. I need to reconsider how direnv handles environment variables. When direnv evaluates `.envrc` in its subshell, it won't see `_ERK_ACTIVATING` unless it's exported in the parent shell first. If I export it before the `cd` that triggers direnv, the subshell should inherit it and the guard would work as intended.
+
+The key insight is that direnv only applies the environment *diff* to the current shell. So if the activate script returns early due to the guard, it won't add any variables, direnv detects no changes, and nothing gets applied—which is exactly what we want to prevent re-activation.
+
+But there's a timing issue: the temp script modifies the environment directly, so on the next direnv run it might see those changes and try to revert them. Maybe instead of guarding with an env var, I should have the temp script skip the full activation entirely and let direnv handle it naturally on the next prompt, then run the post-cd commands after direnv finishes—though direnv's async behavior in different shells complicates this.
+
+The real problem is that `gt submit` would execute before the venv activates if I rely on direnv's precmd hook. Though in practice `gt submit` is a separate tool that doesn't need Python, so it might work anyway. Let me explore making the `.envrc` smarter by checking if the venv is already active before sourcing the activation script...
+
+Writing conditional logic...
+
+Actually, that won't work because direnv runs in a fresh subshell where environment variables aren't preserved. The core issue is simpler than I'm making it: the user sees the activation output twice in their terminal because the temp script triggers direnv, which activates the venv, and then the activation runs again. The real solution is preventing that duplicate activation from happening in the first place.
+
+I could add conditional logic to the generated shell script that checks whether direnv and `.envrc` exist in the target directory. If they do, the temp script skips its own venv activation and just changes directory, letting direnv handle everything. Otherwise, it activates normally.
+
+Adding conditional logic to the shell script... I'm realizing the core issue: direnv hooks only work in interactive shells, not in scripts. When a script runs `cd`, the direnv hooks don't fire, so the `.envrc` won't be evaluated automatically—the temp script would need to handle activation itself, which defeats the purpose of relying on direnv. I'm realizing the direnv chpwd hook might fire asynchronously in zsh, which could cause timing issues with the activation flow. Let me think through how direnv's hooks actually work to make sure the synchronous execution I'm planning will hold up. env adds:
+```zsh
+_direnv_hook() {
+  trap -- '' SIGINT;
+  eval "$("$(direnv_path)" export zsh)";
+  trap - SIGINT;
+}
+typeset -ag precmd_functions;
+if [[ -z "${precmd_functions[(r)_direnv_hook]+1}" ]]; then
+  precmd_functions=( _direnv_hook ${precmd_functions[@]} )
+fi
+typeset -ag chpwd_functions;
+if [[ -z "${chpwd_functions[(r)_direnv_hook]+1}" ]]; then
+  chpwd_functions=( _direnv_hook ${chpwd_functions[@]} )
+fi
+```
+
+So it adds `_direnv_hook` to both `chpwd_functions` and `precmd_functions`. The `chpwd_functions` run synchronously right after every `cd` command, which means direnv activates the venv immediately when we change directories. Perfect—so when the temp script does `cd`, direnv fires right away and activates the environment before the script continues.
+
+For the implementation, I could check if `.envrc` exists before running activation, since direnv will have already handled it. But checking `$VIRTUAL_ENV` is more robust—it confirms the venv is actually active rather than just assuming direnv worked correctly.
+
+The approach is to cd into the worktree, then check if `$VIRTUAL_ENV` is already set to the correct path. If it is, skip manual activation; otherwise, activate it manually. This way, if direnv is working, we avoid redundant activation, and if it's not, we still get the venv activated.
+
+But wait—I'm second-guessing myself on the timing. The direnv hook runs `eval` on the diff, which includes `export VIRTUAL_ENV=/path/to/.venv`, so by the time the script checks `$VIRTUAL_ENV`, it should already be set in the shell.
+
+Actually, stepping back—maybe I'm overthinking this. The user said the source command is running twice. Could it be that the command itself is literally being sent to the terminal twice, rather than a logic issue? That sounds like it could be a cmux bug or something in how the command is being dispatched.
+
+Looking at the Python code that constructs the command, it builds a single bash invocation that sends the source command to the new workspace once. There's no obvious duplication mechanism there, so either cmux is executing it twice, or something else is triggering it.
+
+The user's manual terminal output shows them running the command directly and it completing successfully, which gives me a different perspective on what's happening. Let me trace through what the output reveals about the actual execution flow. Now I'm submitting the Graphite stack and pushing the branch to remote, then creating and updating the PR which has been successfully updated at the provided link.
+
+Looking at the output sequence, I can see the activation process is running twice—once from direnv when changing directories and again from the temporary script—while `gt submit` only executes once through the post_cd_commands. The core issue is this duplicate activation happening when both direnv and the script trigger the same venv setup, and I need to prevent that redundancy.
+
+My approach is to add a conditional check in the generated shell code: after the `cd` command triggers direnv, the script should detect if `$VIRTUAL_ENV` is already pointing to the correct path and skip the redundant activation steps if it is. The tricky part is that `render_activation_script` generates code used in two different contexts—the temporary script where we want this guard, and the persistent `.erk/bin/activate.sh` where we don't want to skip activation.
+
+Actually, the guard works in both cases because it's checking if the venv is already active for *this specific worktree*. In the temp script scenario, direnv runs first and sets up the environment, so the guard prevents duplication. For the persistent activate.sh sourced directly or via direnv, the venv won't be set yet, so activation proceeds normally. The guard would only prevent re-activation if the same worktree's venv is already active, which is the desired behavior.
+
+Now I'm wondering whether the pip install command needs to run every time the script is sourced, or if it should only run when dependencies actually change. I'm wrapping the entire activation and setup logic in a guard that checks if the venv is already active for this worktree, preventing duplicate execution when direnv sources the activation script multiple times. The guard covers venv creation, package installation, activation, environment loading, and shell completion, while keeping the post-cd commands and final message outside so they always run. Refactoring the activation script structure...
+
+The key change is wrapping the venv creation and activation logic inside a guard condition that checks if direnv has already set up the virtual environment for this worktree, while keeping the environment loading and final message outside so they always execute. I'm checking the activation flow for the persistent script—when someone sources `.erk/bin/activate.sh` directly, the initial `cd` might trigger direnv, which could recursively source the same script again, so I need to verify this doesn't create a loop.
+
+Actually, this shouldn't be a problem in practice because direnv evaluates `.envrc` in a subshell, captures the environment changes, and doesn't trigger additional `cd` operations in the current shell, so the recursion stops there. evaluation
+- Direnv only applies the env diff to the current shell
+
+So there's no infinite recursion because direnv evaluates in a subshell. The `cd` in activate.sh, when run inside direnv's subshell, doesn't trigger the current shell's chpwd hooks.
+
+But when activate.sh is sourced DIRECTLY in the current shell (not via direnv), the `cd` triggers the current shell's direnv chpwd hook. But direnv is smart enough to not re-evaluate if the directory hasn't changed (it caches the current allowed .envrc). Wait, actually it does re-evaluate when cd to a directory with a .envrc. Hmm.
+
+Let me check: does direnv have built-in loop prevention? Yes, direnv has a "watch" mechanism where it only re-evaluates when the .envrc content changes. So even if cd triggers the hook, direnv would see that the .envrc hasn't changed since the last evaluation and skip.
+
+Looking at the user's terminal output, I can see the double-activation is already happening in the current code without causing an infinite loop. My fix with the `$VIRTUAL_ENV` guard would prevent this redundant double activation and avoid running the expensive `uv pip install` twice. But I need to think through whether skipping the temp script's activation means the post_cd_commands would still execute properly.
+
+The shell completion setup is another consideration—it's inside the activation block and uses `eval` to set up completion functions. Since direnv runs in a subshell, the completion setup from direnv wouldn't carry over to the current shell. The completion would only be available if activate.sh is sourced directly in the current shell.
+
+The temp script from `erk pr checkout --script` does run in the current shell and sets up completion, so if I guard that section, completion would break. I need to keep the completion setup outside the guard, or at least make the guard only skip the venv activation and .env loading while letting completion run.
+
+Now I'm checking the venv path and only activating if it hasn't been set up already by direnv, then creating the venv if needed, installing packages, sourcing the activate script, and loading environment variables from .env. The shell completion setup runs after this guard...
+
+Setting up shell completion for bash or zsh depending on what's available, though I'm realizing this might be redundant since users who have erk completion configured in their shell rc files would already have it working when they cd into the directory.
+
+Let me step back and reconsider what the user actually meant by "getting executed twice." They might be seeing the source command appear in the terminal twice, which could happen if cmux is somehow triggering the command both through shell startup hooks and through its own --command flag. That would be a cmux issue rather than an erk problem, but I should verify whether that's what's happening.
+
+Looking at the terminal output the user provided from running the command manually, the double activation is visible there too, so it's not specific to cmux. That confirms the issue is in erk itself.
+
+I'm confident in my approach: adding a VIRTUAL_ENV guard in the render_activation_script function to prevent the activation from running twice. This guard should also be applied to the generated .erk/bin/activate.sh file to make it idempotent. The user will still see the log messages and directory changes, but the virtual environment activation won't duplicate. I'm looking at the direnv output showing the virtual environment activation process for the Python 3.13.1 environment in the erk-slot-57 worktree, with the environment variables being exported and the venv being activated.
+
+The issue is that the `Activated:` message gets printed from both the main activation script and the temporary script, creating redundant output. The temp script's guard should prevent the double "Activating venv" message since it checks if VIRTUAL_ENV is already set, but the final echo statements from each script still produce duplicate lines. The user sees extra noise even though it's not technically running the activation twice—it's just the normal direnv behavior combined with the script's final messages. The temp script's guard would prevent redundant `uv pip install` calls since `$VIRTUAL_ENV` is already set from direnv's activation. Now I'm thinking through how to test this—I'd regenerate the activation script, verify the guard is present, run the checkout command with `--script --sync`, and check that activation only happens once. I should also look for existing unit tests for the activation script rendering function.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2335" cache_read_input_tokens="64650" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2335}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I understand the issue. Let me check for existing tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2335" cache_read_input_tokens="64650" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2335}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01MENtCXqk5z5WgmJrrDGpJp">
+    <param name="pattern">render_activation_script</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2335" cache_read_input_tokens="64650" output_tokens="13384" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2335, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MENtCXqk5z5WgmJrrDGpJp">
+Found 2 files
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/tests/unit/cli/test_shell_utils.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/tests/unit/cli/test_activation.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_012wwH9UpEzBEAZN27uDMnzr">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/tests/unit/cli/test_activation.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="13267" cache_read_input_tokens="66985" output_tokens="90" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 13267, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012wwH9UpEzBEAZN27uDMnzr">
+&lt;persisted-output&gt;
+Output too large (50.2KB). Full output saved to: /Users/schrockn/.claude/projects/-Users-schrockn-code-erk/527793af-0c85-4a01-8270-fdfaeb21d969/tool-results/toolu_012wwH9UpEzBEAZN27uDMnzr.txt
+
+Preview (first 2KB):
+     1→"""Tests for activation script generation."""
+     2→
+     3→import base64
+     4→from pathlib import Path
+     5→
+     6→import pytest
+     7→
+     8→from erk.cli.activation import (
+     9→    ActivationConfig,
+    10→    _render_logging_helper,
+    11→    activation_config_activate_only,
+    12→    activation_config_for_implement,
+    13→    build_activation_command,
+    14→    ensure_land_script,
+    15→    ensure_worktree_activate_script,
+    16→    print_activation_instructions,
+    17→    print_temp_script_instructions,
+    18→    render_activation_script,
+    19→    render_land_script,
+    20→    write_worktree_activate_script,
+    21→)
+    22→
+    23→# ActivationConfig tests
+    24→
+    25→
+    26→def test_activation_config_frozen() -&gt; None:
+
+... [27 lines omitted] ...
+
+    29→    with pytest.raises(AttributeError):
+  </tool_result>
+  <thinking>Now I have a good understanding of the issue and the codebase. Let me write the plan.
+
+The root cause is clear: when `source "$(erk pr checkout X --script --sync)"` runs:
+1. The temp script does `cd /worktree` → triggers direnv → direnv sources `.erk/bin/activate.sh` → full activation (cd, venv, uv pip install, .env, completion)
+2. The temp script continues → does the SAME activation again (venv, uv pip install, .env, completion)
+
+The fix: add a guard in `render_activation_script` that checks if `$VIRTUAL_ENV` already matches the target worktree's `.venv` path, and skip activation if so.
+
+
+Now I'll implement this guard to prevent the duplicate activation.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="909" cache_read_input_tokens="80252" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 909}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I now have a clear understanding of the issue. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="909" cache_read_input_tokens="80252" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 909}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_012n3W3XtEkiF8xUqNmXfPoi">
+    <param name="file_path">/Users/schrockn/.claude/plans/transient-yawning-lantern.md</param>
+    <param name="content"># Fix: Double activation when `erk pr checkout --script --sync` triggers direnv
+
+## Contex...[truncated 3511 chars]...li/test_activation.py`
+4. Update tests to assert the guard is present in rendered scripts
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="909" cache_read_input_tokens="80252" output_tokens="1345" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 909, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012n3W3XtEkiF8xUqNmXfPoi">
+File created successfully at: /Users/schrockn/.claude/plans/transient-yawning-lantern.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01WgmdcrtwuX1LcQvEUxyZDY">
+    <param name="plan"># Fix: Double activation when `erk pr checkout --script --sync` triggers direnv
+
+## Contex...[truncated 3511 chars]...li/test_activation.py`
+4. Update tests to assert the guard is present in rendered scripts
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1479" cache_read_input_tokens="81161" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1479, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WgmdcrtwuX1LcQvEUxyZDY">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/transient-yawning-lantern.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix: Double activation when `erk pr checkout --script --sync` triggers direnv
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 527793af-0c85-4a01-8270-fdfaeb21d969 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <thinking>I need to follow the hook instructions. Let me display the plan and ask the user what they want to do.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="665" cache_read_input_tokens="82640" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 665}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Here's the plan:
+
+---
+
+# Fix: Double activation when `erk pr checkout --script --sync` triggers direnv
+
+## Context
+
+When running `source "$(erk pr checkout X --script --sync)"`, the activation (venv setup, `uv pip install`, .env loading) runs **twice**:
+
+1. The temp script does `cd /worktree` → triggers direnv's `chpwd` hook → direnv sources `.envrc` → `.envrc` calls `source_env_if_exists .erk/bin/activate.sh` → **full activation**
+2. The temp script continues → runs its own activation code (same venv creation, `uv pip install`, .env loading) → **duplicate activation**
+
+Both the temp script and `.erk/bin/activate.sh` are generated by `render_activation_script()`, so they contain identical activation logic. The `cd` in the temp script synchronously triggers direnv (via zsh's `chpwd_functions`), which already does the activation before the temp script's own activation section runs.
+
+## Fix
+
+Add a `$VIRTUAL_ENV` guard in `render_activation_script()` around the activation section. After `cd`, if `$VIRTUAL_ENV` already points to this worktree's `.venv`, skip activation (direnv already did it).
+
+### File: `src/erk/cli/activation.py` — `render_activation_script()`
+
+Wrap the activation block (from `unset VIRTUAL_ENV` through shell completion) in:
+
+```sh
+if [ "$VIRTUAL_ENV" != "{worktree_path}/.venv" ]; then
+  # ... existing activation code ...
+fi
+```
+
+Keep `post_cd_commands` and `final_message` **outside** the guard — they must always run.
+
+### Expected behavior after fix
+
+Before:
+```
+-&gt; cd /path/to/worktree
+direnv: loading .envrc / .erk/bin/activate.sh
+-&gt; cd /path/to/worktree          # from activate.sh (via direnv)
+-&gt; Activating venv: ...          # from activate.sh (via direnv)
+Activated: /path/to/worktree
+direnv: export +VIRTUAL_ENV ...
+-&gt; Activating venv: ...          # DUPLICATE from temp script
+```
+
+After:
+```
+-&gt; cd /path/to/worktree
+direnv: loading .envrc / .erk/bin/activate.sh
+-&gt; cd /path/to/worktree          # from activate.sh (via direnv)
+-&gt; Activating venv: ...          # from activate.sh (via direnv)
+Activated: /path/to/worktree
+direnv: export +VIRTUAL_ENV ...
+                                 # guard skips — VIRTUAL_ENV already set
+gt submit --no-interactive       # post_cd_commands still run
+Checked out PR #8548 at ...
+```
+
+## Verification
+
+1. Run `source "$(erk pr checkout &lt;pr&gt; --script --sync)"` — confirm "Activating venv" appears only once
+2. Run without direnv — confirm activation still works
+3. Run existing tests: `pytest tests/unit/cli/test_activation.py`
+4. Update tests to assert the guard is present in rendered scripts
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="665" cache_read_input_tokens="82640" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 665}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01JNG4P6dnN1TEMDPyb81Xov">
+    <param name="questions">[{'question': 'Fix: Double activation when `erk pr checkout --script --sync` triggers dire...[truncated 459 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="665" cache_read_input_tokens="82640" output_tokens="1032" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 665, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JNG4P6dnN1TEMDPyb81Xov">
+User has answered your questions: "Fix: Double activation when `erk pr checkout --script --sync` triggers direnv
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01JJasQ1VEBKoste4EqHDoZ9">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1117" cache_read_input_tokens="83305" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1117, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JJasQ1VEBKoste4EqHDoZ9">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="527793af-0c85-4a01-8270-fdfaeb21d969" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "527793af-0c85-4a01-8270-fdfaeb21d969" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "527793af-0c85-4a01-8270-fdfaeb21d969" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "527793af-0c85-4a01-8270-fdfaeb21d969" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "527793af-0c85-4a01-8270-fdfaeb21d969" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <tool_use name="Read" id="toolu_018RVtfNDiX7Qtdx6TgG4V9i">
+    <param name="file_path">/Users/schrockn/.claude/plans/transient-yawning-lantern.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2600" cache_read_input_tokens="84422" output_tokens="76" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2600, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018RVtfNDiX7Qtdx6TgG4V9i">
+     1→# Fix: Double activation when `erk pr checkout --script --sync` triggers direnv
+     2→
+     3→## Context
+     4→
+     5→When running `source "$(erk pr checkout X --script --sync)"`, the activation (venv setup, `uv pip install`, .env loading) runs **twice**:
+     6→
+     7→1. The temp script does `cd /worktree` → triggers direnv's `chpwd` hook → direnv sources `.envrc` → `.envrc` calls `source_env_if_exists .erk/bin/activate.sh` → **full activation**
+     8→2. The temp script continues → runs its own activation code (same venv creation, `uv pip install`, .env loading) → **duplicate activation**
+     9→
+    10→Both the temp script and `.erk/bin/activate.sh` are generated by `render_activation_script()`, so they contain identical activation logic. The `cd` in the temp script synchronously triggers direnv (via zsh's `chpwd_functions`), which already does the activation before the temp script's own activation section runs.
+    11→
+    12→This affects both manual `source "$(erk pr checkout ...)"` and the TUI's cmux sync workflow (which passes this command via `cmux new-workspace --command`).
+    13→
+    14→## Fix
+    15→
+    16→Add a `$VIRTUAL_ENV` guard in `render_activation_script()` around the activation section. After `cd`, if `$VIRTUAL_ENV` already points to this worktree's `.venv`, skip activation (direnv already did it).
+    17→
+    18→### File: `src/erk/cli/activation.py` — `render_activation_script()`
+    19→
+    20→Wrap the activation block (from `unset VIRTUAL_ENV` through shell completion) in:
+    21→
+    22→```sh
+    23→if [ "$VIRTUAL_ENV" != "{worktree_path}/.venv" ]; then
+    24→  # ... existing activation code ...
+    25→fi
+    26→```
+    27→
+    28→Keep `post_cd_commands` and `final_message` **outside** the guard — they must always run.
+    29→
+    30→Shell completion (`eval "$(erk completion ...)"`) stays **inside** the guard — direnv's subshell can't set up shell functions, but when the activation runs once (either from direnv or from the script), completion gets set up in the current shell. When the guard skips (because direnv already ran activate.sh), completion was already set up by the activate.sh sourced via direnv, but only as env diffs, not functions. However, `erk completion` output is just function definitions that are idempotent and fast — the cost of double-running is negligible compared to `uv pip install`. The expensive operations (uv pip install, venv creation) are the priority to guard.
+
+... [40 lines omitted] ...
+  </tool_result>
+  <thinking>Now I need to follow the plan-save instructions. Let me:
+
+1. Generate a branch slug from the plan title "Fix: Double activation when `erk pr checkout --script --sync` triggers direnv"
+2. Generate a plan summary
+3. Run the save command
+
+Branch slug: "fix-double-activation-direnv" (4 words, 26 chars)
+
+Plan summary: "Adds a VIRTUAL_ENV guard in render_activation_script() to prevent duplicate venv activation when direnv's chpwd hook already activated the worktree environment during cd. Keeps post_cd_commands and final_message outside the guard so they always execute."</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2560" cache_read_input_tokens="87022" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2560}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me save the plan as a draft PR.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2560" cache_read_input_tokens="87022" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2560}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0138oyoVsdntumPm2RJXped8">
+{"success": true, "plan_number": 8555, "plan_url": "https://github.com/dagster-io/erk/pull/8555", "title": "[erk-plan] Fix: Double activation when `erk pr checkout --script --sync` triggers direnv", "branch_name": "plnd/fix-double-activation-dire-03-01-1430", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/527793af-0c85-4a01-8270-fdfaeb21d969/plan_snapshots/000001-2225bc32"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_015Syfn31yyrhpTTqPeGq4H2">
+    <param name="command">erk exec upload-impl-session --session-id "527793af-0c85-4a01-8270-fdfaeb21d969" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="553" cache_read_input_tokens="89582" output_tokens="132" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 553, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015Syfn31yyrhpTTqPeGq4H2">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <assistant>Plan saved as draft PR #8555.
+
+**Plan "[erk-plan] Fix: Double activation when `erk pr checkout --script --sync` triggers direnv"** saved as draft PR #8555
+URL: https://github.com/dagster-io/erk/pull/8555
+
+**Next steps:**
+
+View PR: https://github.com/dagster-io/erk/pull/8555
+
+In Claude Code:
+  Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: `erk br co --for-plan 8555`
+    Implement: `source "$(erk br co --for-plan 8555 --script)" &amp;&amp; erk implement --dangerous`
+
+  New slot:
+    Local: `erk br co --new-slot --for-plan 8555`
+    Implement: `source "$(erk br co --new-slot --for-plan 8555 --script)" &amp;&amp; erk implement --dangerous`
+
+  Dispatch to Queue: `erk pr dispatch 8555`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="269" cache_read_input_tokens="90135" output_tokens="274" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 269, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Goodbye!&lt;/local-command-stdout&gt;</user>
+</session>
