@@ -89,20 +89,22 @@ def _list_runs(ctx: ErkContext) -> None:
     #    Pre-build plan→run_ids lookup for efficient mapping
     plan_to_run_ids: dict[int, list[str]] = {}
     for run, _wf in tagged_runs:
-        if run.run_id not in run_pr_numbers:
-            run_plan = extract_plan_number(run.display_title)
-            if run_plan is not None:
-                plan_to_run_ids.setdefault(run_plan, []).append(run.run_id)
+        if run.run_id in run_pr_numbers:
+            continue
+        run_plan = extract_plan_number(run.display_title)
+        if run_plan is not None:
+            plan_to_run_ids.setdefault(run_plan, []).append(run.run_id)
 
     pr_info_map: dict[int, PullRequestInfo] = {}  # pr_number → PullRequestInfo
     if plan_numbers and location is not None:
         pr_linkages = ctx.github.get_prs_linked_to_issues(location, plan_numbers)
         for plan_num, prs in pr_linkages.items():
             selected_pr = select_display_pr(prs, exclude_pr_numbers=None)
-            if selected_pr is not None:
-                pr_info_map[selected_pr.number] = selected_pr
-                for run_id in plan_to_run_ids.get(plan_num, []):
-                    run_pr_numbers[run_id] = selected_pr.number
+            if selected_pr is None:
+                continue
+            pr_info_map[selected_pr.number] = selected_pr
+            for run_id in plan_to_run_ids.get(plan_num, []):
+                run_pr_numbers[run_id] = selected_pr.number
 
     # Determine use_graphite for URL selection
     use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
