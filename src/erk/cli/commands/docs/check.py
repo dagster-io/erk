@@ -9,6 +9,7 @@ It's the unified health check for agent docs, combining:
 import click
 
 from erk.agent_docs.operations import (
+    resolve_docs_project_root,
     sync_agent_docs,
     validate_agent_docs,
     validate_tripwires_index,
@@ -27,8 +28,10 @@ def check_command(ctx: ErkContext) -> None:
     Raises:
         SystemExit: With code 0 if no docs found, code 1 if checks fail.
     """
-    # Use repo_root from context
-    project_root = ctx.repo_root
+    project_root = resolve_docs_project_root(
+        repo_root=ctx.repo_root,
+        docs_path=ctx.local_config.docs_path,
+    )
 
     if not ctx.agent_docs.has_docs_dir(project_root):
         click.echo(click.style("No docs/learned/ directory found", fg="cyan"), err=True)

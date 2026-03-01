@@ -5,7 +5,7 @@ This command generates index.md files for docs/learned/ from frontmatter metadat
 
 import click
 
-from erk.agent_docs.operations import sync_agent_docs
+from erk.agent_docs.operations import resolve_docs_project_root, sync_agent_docs
 from erk_shared.context.context import ErkContext
 
 
@@ -37,8 +37,10 @@ def sync_command(ctx: ErkContext, *, dry_run: bool, check: bool) -> None:
     # --check implies dry-run behavior
     effective_dry_run = dry_run or check
 
-    # Use repo_root from context
-    project_root = ctx.repo_root
+    project_root = resolve_docs_project_root(
+        repo_root=ctx.repo_root,
+        docs_path=ctx.local_config.docs_path,
+    )
 
     if not ctx.agent_docs.has_docs_dir(project_root):
         click.echo(click.style("No docs/learned/ directory found", fg="cyan"), err=True)

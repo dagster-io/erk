@@ -86,6 +86,12 @@ def _parse_config_file(cfg_path: Path) -> LoadedConfig:
     if raw_dispatch_ref is not None:
         dispatch_ref = str(raw_dispatch_ref)
 
+    # Parse [docs] section
+    docs = data.get("docs", {})
+    docs_path: str | None = docs.get("path")
+    if docs_path is not None:
+        docs_path = str(docs_path)
+
     return LoadedConfig(
         env=env,
         post_create_commands=commands,
@@ -96,6 +102,7 @@ def _parse_config_file(cfg_path: Path) -> LoadedConfig:
         pool_checkout_shell=pool_checkout_shell,
         prompt_learn_on_land=prompt_learn_on_land,
         dispatch_ref=dispatch_ref,
+        docs_path=docs_path,
     )
 
 
@@ -181,6 +188,7 @@ def load_config(repo_root: Path) -> LoadedConfig:
         pool_checkout_shell=None,
         prompt_learn_on_land=None,
         dispatch_ref=None,
+        docs_path=None,
     )
 
 
@@ -212,6 +220,7 @@ def load_local_config(repo_root: Path) -> LoadedConfig:
         pool_checkout_shell=None,
         prompt_learn_on_land=None,
         dispatch_ref=None,
+        docs_path=None,
     )
 
 
@@ -287,6 +296,7 @@ def merge_configs(repo_config: LoadedConfig, project_config: ProjectConfig) -> L
         # Repo-level only, no project override
         prompt_learn_on_land=repo_config.prompt_learn_on_land,
         dispatch_ref=repo_config.dispatch_ref,
+        docs_path=repo_config.docs_path,
     )
 
 
@@ -347,5 +357,8 @@ def merge_configs_with_local(
             local_config.dispatch_ref
             if local_config.dispatch_ref is not None
             else base_config.dispatch_ref
+        ),
+        docs_path=(
+            local_config.docs_path if local_config.docs_path is not None else base_config.docs_path
         ),
     )
