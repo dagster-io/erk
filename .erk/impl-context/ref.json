@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Fix pr-address commit instructions for plan-only PRs"
+  "plan_id": "8546",
+  "url": "https://github.com/dagster-io/erk/pull/8546",
+  "created_at": "2026-03-01T14:02:42.681005",
+  "synced_at": "2026-03-01T14:02:42.681005",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
