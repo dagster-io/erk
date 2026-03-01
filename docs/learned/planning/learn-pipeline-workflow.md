@@ -111,7 +111,7 @@ Triggers `learn.yml` via `workflow_dispatch` with the `learn_branch` (containing
 
 The GitHub Actions workflow checks out the learn branch (which contains materials under `.erk/impl-context/`), sets up erk, and runs `/erk:learn`. The agent reads materials directly from the filesystem, then orchestrates the multi-agent analysis pipeline described in [Learn Workflow](learn-workflow.md#agent-tier-architecture).
 
-The workflow runs with `claude-haiku-4-5` as the base model, though individual agents within `/erk:learn` may override to higher models for quality-critical synthesis steps.
+The workflow runs with `claude-opus-4-6` as the base model, though individual agents within `/erk:learn` may override to different models for specific steps.
 
 ### Stage 7: PR Review and Merge
 
