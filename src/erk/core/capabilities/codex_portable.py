@@ -15,7 +15,6 @@ def codex_portable_skills() -> frozenset[str]:
     """Skills that work with any AI coding agent (not Claude-specific)."""
     return frozenset(
         {
-            "cmux",
             "dignified-python",
             "fake-driven-testing",
             "erk-diff-analysis",
@@ -37,6 +36,7 @@ def claude_only_skills() -> frozenset[str]:
     """Skills that reference Claude-specific features (hooks, session logs, commands)."""
     return frozenset(
         {
+            "cmux",
             "session-inspector",
             "ci-iteration",
             "command-creator",
