@@ -156,50 +156,34 @@ def _run_static_checks(ctx: ErkContext, *, verbose: bool) -> list[CheckResult]:
     return results
 
 
-@click.command("workflow")
-@click.option("--smoke-test", is_flag=True, help="Run a live smoke test (creates artifacts)")
-@click.option(
-    "--wait", is_flag=True, help="Poll workflow run until completion (only with --smoke-test)"
-)
-@click.option("--cleanup", is_flag=True, help="Clean up old smoke test branches and PRs")
-@click.option("-v", "--verbose", is_flag=True, help="Show details of static checks")
-@click.pass_obj
-def workflow_cmd(
-    ctx: ErkContext, smoke_test: bool, wait: bool, cleanup: bool, verbose: bool
-) -> None:
-    """Check workflow setup and optionally run a live smoke test.
-
-    Runs GitHub-focused static checks to verify workflow prerequisites.
-    With --smoke-test, creates a throwaway branch/PR and dispatches
-    the one-shot workflow to verify the full pipeline.
+@click.group("workflow", invoke_without_command=True)
+@click.pass_context
+def workflow_cmd(ctx: click.Context) -> None:
+    """Workflow diagnostics and smoke testing.
 
     \b
     Examples:
 
     \b
       # Check workflow prerequisites
-      erk doctor workflow
+      erk doctor workflow check
 
       # Run a live smoke test
-      erk doctor workflow --smoke-test
+      erk doctor workflow smoke-test
 
       # Run smoke test and wait for completion
-      erk doctor workflow --smoke-test --wait
+      erk doctor workflow smoke-test --wait
 
       # Clean up old smoke test artifacts
-      erk doctor workflow --cleanup
+      erk doctor workflow cleanup
     """
-    if cleanup:
-        _handle_cleanup(ctx)
-        return
+    if ctx.invoked_subcommand is None:
+        click.echo(ctx.get_help())
 
-    if wait and not smoke_test:
-        click.echo(click.style("Error: --wait requires --smoke-test", fg="red"), err=True)
-        raise SystemExit(1)
 
-    # Run static checks
+def _display_static_checks(results: list[CheckResult], *, verbose: bool) -> tuple[bool, bool]:
+    """Display static check results and return (all_passed, critical_failed)."""
     click.echo(click.style("Workflow Checks", bold=True))
-    results = _run_static_checks(ctx, verbose=verbose)
 
     all_passed = True
     critical_failed = False
@@ -207,7 +191,6 @@ def workflow_cmd(
         _format_check_result(result, verbose=verbose)
         if not result.passed:
             all_passed = False
-            # github-auth is critical for smoke test
             if result.name == "github-auth":
                 critical_failed = True
 
@@ -218,10 +201,31 @@ def workflow_cmd(
     else:
         click.echo(click.style("Some checks have issues (see above)", fg="yellow", bold=True))
 
-    if not smoke_test:
-        return
+    return all_passed, critical_failed
 
-    # Abort smoke test if critical checks failed
+
+@workflow_cmd.command("check")
+@click.option("-v", "--verbose", is_flag=True, help="Show details of static checks")
+@click.pass_obj
+def workflow_check_cmd(ctx: ErkContext, verbose: bool) -> None:
+    """Check workflow setup prerequisites."""
+    results = _run_static_checks(ctx, verbose=verbose)
+    _display_static_checks(results, verbose=verbose)
+
+
+@workflow_cmd.command("smoke-test")
+@click.option("--wait", is_flag=True, help="Poll workflow run until completion")
+@click.option("-v", "--verbose", is_flag=True, help="Show details of static checks")
+@click.pass_obj
+def workflow_smoke_test_cmd(ctx: ErkContext, wait: bool, verbose: bool) -> None:
+    """Run a live smoke test (creates artifacts).
+
+    Runs static checks first, then dispatches a throwaway branch/PR
+    to verify the full CI pipeline end-to-end.
+    """
+    results = _run_static_checks(ctx, verbose=verbose)
+    _all_passed, critical_failed = _display_static_checks(results, verbose=verbose)
+
     if critical_failed:
         click.echo("")
         click.echo(
@@ -232,6 +236,13 @@ def workflow_cmd(
 
     click.echo("")
     _handle_smoke_test(ctx, wait=wait)
+
+
+@workflow_cmd.command("cleanup")
+@click.pass_obj
+def workflow_cleanup_cmd(ctx: ErkContext) -> None:
+    """Clean up old smoke test branches and PRs."""
+    _handle_cleanup(ctx)
 
 
 def _handle_smoke_test(ctx: ErkContext, *, wait: bool) -> None:

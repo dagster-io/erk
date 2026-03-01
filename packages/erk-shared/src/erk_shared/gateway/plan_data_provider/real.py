@@ -823,7 +823,7 @@ class RealPlanDataProvider(PlanDataProvider):
                                 if dep.status not in _TERMINAL_STATUSES and dep.pr is not None:
                                     num = dep.pr.lstrip("#")
                                     repo_id = self._location.repo_id
-                                    url = f"https://github.com/{repo_id.owner}/{repo_id.repo}/issues/{num}"
+                                    url = f"https://github.com/{repo_id.owner}/{repo_id.repo}/pull/{num}"
                                     objective_deps_plans.append((dep.pr, url))
 
                     # Also show the next node's own PR if it has one (active work indicator)

@@ -38,8 +38,32 @@ def _make_test_admin() -> FakeGitHubAdmin:
     )
 
 
-def test_doctor_workflow_subcommand_runs_static_checks() -> None:
-    """Test that 'erk doctor workflow' runs workflow-focused checks."""
+def test_doctor_workflow_check_runs_static_checks() -> None:
+    """Test that 'erk doctor workflow check' runs workflow-focused checks."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+            remote_urls={(env.cwd, "origin"): "https://github.com/owner/repo.git"},
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            shell=_make_test_shell(),
+            github_admin=_make_test_admin(),
+        )
+
+        result = runner.invoke(doctor_cmd, ["workflow", "check"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Workflow Checks" in result.output
+
+
+def test_doctor_workflow_bare_shows_help() -> None:
+    """Test that 'erk doctor workflow' (no subcommand) shows help."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
@@ -59,35 +83,13 @@ def test_doctor_workflow_subcommand_runs_static_checks() -> None:
         result = runner.invoke(doctor_cmd, ["workflow"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Workflow Checks" in result.output
-
-
-def test_doctor_workflow_wait_without_smoke_test_fails() -> None:
-    """Test that --wait without --smoke-test shows error."""
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
-            default_branches={env.cwd: "main"},
-            remote_urls={(env.cwd, "origin"): "https://github.com/owner/repo.git"},
-        )
-
-        ctx = build_workspace_test_context(
-            env,
-            git=git,
-            shell=_make_test_shell(),
-            github_admin=_make_test_admin(),
-        )
-
-        result = runner.invoke(doctor_cmd, ["workflow", "--wait"], obj=ctx)
-
-        assert result.exit_code != 0
-        assert "--wait requires --smoke-test" in result.output
+        assert "check" in result.output
+        assert "smoke-test" in result.output
+        assert "cleanup" in result.output
 
 
 def test_doctor_workflow_cleanup_with_no_artifacts() -> None:
-    """Test that --cleanup with no smoke artifacts shows appropriate message."""
+    """Test that 'erk doctor workflow cleanup' with no smoke artifacts shows appropriate message."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
@@ -105,7 +107,7 @@ def test_doctor_workflow_cleanup_with_no_artifacts() -> None:
             github_admin=_make_test_admin(),
         )
 
-        result = runner.invoke(doctor_cmd, ["workflow", "--cleanup"], obj=ctx)
+        result = runner.invoke(doctor_cmd, ["workflow", "cleanup"], obj=ctx)
 
         assert result.exit_code == 0
         assert "No smoke test artifacts found" in result.output
