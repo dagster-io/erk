@@ -15,6 +15,7 @@ def codex_portable_skills() -> frozenset[str]:
     """Skills that work with any AI coding agent (not Claude-specific)."""
     return frozenset(
         {
+            "cli-push-down",
             "dignified-python",
             "fake-driven-testing",
             "erk-diff-analysis",

@@ -19,6 +19,7 @@ from erk_shared.context.types import AgentBackend
 def bundled_skills() -> dict[str, str]:
     """Return the bundled skills dict. Cached to avoid re-creation."""
     return {
+        "cli-push-down": "Moving mechanical computation from prompts to exec commands",
         "dignified-python": "Python coding standards (LBYL, modern types, ABCs)",
         "fake-driven-testing": "5-layer test architecture with fakes",
         "erk-diff-analysis": "Code diff analysis for commit messages",
