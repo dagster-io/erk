@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: `erk pr submit` silent hang with no output"
+}
