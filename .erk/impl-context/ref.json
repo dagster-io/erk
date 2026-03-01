@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Smoke test through production `dispatch_one_shot` code path"
+}
