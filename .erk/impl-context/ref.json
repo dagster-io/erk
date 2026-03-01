@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Create `erk exec cmux-sync-workspace` and Fix TUI Command Palette"
+}
