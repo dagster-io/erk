@@ -303,9 +303,7 @@ def _report_workflow_result(conclusion: str | None, run_url: str | None) -> None
     if conclusion == "success":
         click.echo(click.style("Workflow completed successfully!", fg="green"))
         return
-    click.echo(
-        click.style(f"Workflow completed with conclusion: {conclusion}", fg="red")
-    )
+    click.echo(click.style(f"Workflow completed with conclusion: {conclusion}", fg="red"))
     if run_url is not None:
         click.echo(f"  Check logs: {run_url}")
     raise SystemExit(1)

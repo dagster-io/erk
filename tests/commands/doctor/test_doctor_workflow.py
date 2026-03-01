@@ -1,7 +1,5 @@
 """Tests for erk workflow CLI command group."""
 
-from pathlib import Path
-
 from click.testing import CliRunner
 
 from erk.cli.commands.doctor import doctor_cmd
