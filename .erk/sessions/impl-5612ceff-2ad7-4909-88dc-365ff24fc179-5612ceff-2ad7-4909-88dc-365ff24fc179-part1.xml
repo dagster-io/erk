@@ -1,0 +1,1153 @@
+<session>
+  <meta branch="plnd/create-cli-push-down-skill-03-01-1404" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8548&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 12. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8548` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**CRITICAL**: Never delete the impl directory - leave for user review (no auto-commit).
+
+### Step 12: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 13: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #8548.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11195" cache_read_input_tokens="16808" cache_creation="{'ephemeral_5m_input_tokens': 11195, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_017kXWhssXMbTfoac8bCnjXb">
+    <param name="command">erk exec setup-impl --issue 8548</param>
+    <param name="description">Set up implementation for plan #8548</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11195" cache_read_input_tokens="16808" cache_creation="{'ephemeral_5m_input_tokens': 11195, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017kXWhssXMbTfoac8bCnjXb">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--create-cli-push-down-skill-03-01-1404", "plan_number": 8548, "plan_url": "https://github.com/dagster-io/erk/pull/8548", "branch": "plnd/create-cli-push-down-skill-03-01-1404", "plan_title": "[erk-plan] Plan: Create `cli-push-down` Skill", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8548, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/create-cli-push-down-skill-03-01-1404', syncing with remote...
+  </tool_result>
+  <assistant>Setup complete. Let me read the plan and load relevant context.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="353" cache_read_input_tokens="28003" cache_creation="{'ephemeral_5m_input_tokens': 353, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01DkG9mD4isMXvaYXde514Jk">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--create-cli-push-down-skill-03-01-1404/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="353" cache_read_input_tokens="28003" cache_creation="{'ephemeral_5m_input_tokens': 353, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DkG9mD4isMXvaYXde514Jk">
+     1→# Plan: Create `cli-push-down` Skill
+     2→
+     3→## Context
+     4→
+     5→The "CLI Push Down" pattern is documented at `docs/developer/agentic-engineering-patterns/cli-push-down.md` as a human-facing pattern catalog entry. It describes moving mechanical computation from LLM prompts into tested CLI commands (`erk exec`). We've identified 7 historical commits that demonstrate the pattern being applied, with measurable results (50-70% prompt reduction, testability gains). This pattern needs a corresponding **skill** — agent-facing procedural guidance with case studies — so agents authoring skills/commands know when and how to apply it.
+     6→
+     7→## Deliverables
+     8→
+     9→### 1. Create `.claude/skills/cli-push-down/SKILL.md` (new file)
+    10→
+    11→Single-file skill (~200-250 lines), modeled after `rename-swarm/SKILL.md` (a methodology skill with inline examples, no references directory).
+    12→
+    13→**Structure:**
+    14→
+    15→```
+    16→SKILL.md
+    17→├── Frontmatter (name, description with trigger contexts)
+    18→├── The Pattern (~20 lines) — decision rule, analogy, table
+    19→├── Why It Matters (~15 lines) — tokens, testability, reliability
+    20→├── Recognizing Opportunities (~20 lines) — smell tests checklist
+    21→├── The Push-Down Checklist (~25 lines) — step-by-step procedure
+    22→├── Case Studies (~80 lines) — 4 real commits, before/after/impact
+    23→├── Anti-Patterns (~20 lines) — over-pushing, under-composing, etc.
+    24→└── Related Resources (~5 lines) — links to developer doc, erk-exec skill
+    25→```
+    26→
+    27→**Key content decisions:**
+    28→- **Self-contained** — does not `@include` the developer doc. Duplicates the 4-line decision rule rather than forcing agents to load two documents.
+    29→- **Case studies inline** — they ARE the core teaching content. Four studies from real commits:
+    30→  1. `4bf1b6dcb` — plan-implement consolidation (360→180 lines, 4 exec commands)
+
+... [45 lines omitted] ...
+  </tool_result>
+  <assistant>Good, I understand the plan. Let me now load the relevant context - the existing pattern doc, the rename-swarm skill as a model, and the README to update.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1403" cache_read_input_tokens="28356" cache_creation="{'ephemeral_5m_input_tokens': 1403, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01S4U3ffGnZ83dtRx4NFycMv">
+    <param name="file_path">/home/runner/work/erk/erk/docs/developer/agentic-engineering-patterns/cli-push-down.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1403" cache_read_input_tokens="28356" cache_creation="{'ephemeral_5m_input_tokens': 1403, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01GdKRY6AZ8RgTRWDSC3R3fx">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/rename-swarm/SKILL.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1403" cache_read_input_tokens="28356" cache_creation="{'ephemeral_5m_input_tokens': 1403, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01AzxV6Cb3QLogNR2SFfTVYX">
+    <param name="file_path">/home/runner/work/erk/erk/docs/developer/agentic-engineering-patterns/README.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1403" cache_read_input_tokens="28356" cache_creation="{'ephemeral_5m_input_tokens': 1403, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01S4U3ffGnZ83dtRx4NFycMv">
+     1→# CLI Push Down Pattern
+     2→
+     3→## The Problem with Embedded Scripts
+     4→
+     5→Claude Code skills and slash commands support embedded bash scripts directly in markdown. This seems convenient—you write a script inline and the agent executes it. But this approach has fundamental limitations:
+     6→
+     7→**No execution environment.** Embedded scripts run in whatever shell context the agent happens to be in. There's no virtual environment, no dependency management, no guaranteed Python version. A script that works on one machine may fail on another.
+     8→
+     9→**No testability.** You cannot unit test a bash snippet embedded in markdown. You cannot mock dependencies, assert on edge cases, or verify error handling. The only way to test is to run the agent and hope it works.
+    10→
+    11→**No type safety.** Bash has no types. A typo in a variable name silently produces wrong results. Complex string manipulation with regex varies between shells and fails in subtle ways.
+    12→
+    13→**No reusability.** The same parsing logic gets copy-pasted across multiple commands and skills. When you find a bug, you fix it in one place and forget the others.
+    14→
+    15→**Token overhead.** Every embedded script consumes prompt tokens. Error handling code, edge case logic, and fallback behavior all bloat the prompt—and the agent still has to read and understand it.
+    16→
+    17→## The Push Down Solution
+    18→
+    19→Instead of embedding mechanical computation in prompts, push it down to `erk exec` commands—proper Python programs installed as packages.
+    20→
+    21→**Analogy**: Like database query optimizers that "push down" predicates closer to the data layer for efficiency, this pattern moves computation from LLM prompts to Python CLI where it belongs.
+    22→
+    23→### What erk exec Commands Provide
+    24→
+    25→**Real Python environment.** The `erk exec` commands are installed Python packages with proper dependency management. They run in a known environment with a specific Python version. Dependencies are declared in `pyproject.toml` and installed via `uv`.
+    26→
+    27→**Full testability.** Commands are regular Python functions. You can write unit tests with pytest, mock external services, test edge cases exhaustively, and measure coverage. A command like `plan-title-to-filename` has comprehensive unit tests covering edge cases and boundary conditions.
+    28→
+    29→**Type safety.** Python type hints catch errors before runtime. Dataclasses enforce structured output. The type checker validates that success and error responses have consistent schemas.
+    30→
+
+... [56 lines omitted] ...
+
+    33→**Structured JSON contracts.** Commands return JSON with explicit success/failure indicators. The agent doesn't parse free-form text—it reads structured data with predictable fields.
+    56→    echo "Error: Invalid input format"
+  </tool_result>
+  <tool_result tool="toolu_01GdKRY6AZ8RgTRWDSC3R3fx">
+     1→---
+     2→name: rename-swarm
+     3→description: Parallel bulk rename across many files using a swarm of haiku agents. Use when mechanically renaming identifiers, parameters, or keys across 5+ files.
+     4→---
+     5→
+     6→You are an expert at orchestrating parallel mechanical renames across large codebases using swarms of lightweight agents. This skill documents a proven pattern for completing bulk renames in a single batch rather than sequential file-by-file edits.
+     7→
+     8→## When to Use
+     9→
+    10→- Renaming an identifier, parameter, key, or variable across **5+ files**
+    11→- The renames are **mechanical** — same find-and-replace logic in each file, no reasoning required
+    12→- Files are **independent** — editing file A doesn't affect what needs to change in file B
+    13→- Examples: renaming `issue_number` to `plan_number`, renaming `old_func` to `new_func`, updating a key name across config consumers
+    14→
+    15→## When NOT to Use
+    16→
+    17→- **Cross-file cascading refactors** where renaming a shared type changes method signatures, requiring each file to adapt differently
+    18→- **Renames requiring judgment** — e.g., "rename this concept" where each call site needs context-aware naming
+    19→- **Fewer than 5 files** — sequential edits are simpler and have less overhead
+    20→- **Complex AST transforms** — use `libcst-refactor` agent instead
+    21→
+    22→## The Pattern
+    23→
+    24→### Step 1: Identify All Files
+    25→
+    26→Use Grep to find every file containing the target identifier:
+    27→
+    28→```
+    29→Grep(pattern="old_name", output_mode="files_with_matches")
+    30→```
+
+... [102 lines omitted] ...
+
+    54→Collect results from all source file agents. Review for errors.
+    64→1. **Grep check**: Confirm old name no longer appears (except intentional exceptions)
+    98→If there are no exceptions, state: `"No exceptions — rename ALL occurrences."`
+   114→- **One agent per file** — keeps prompts focused, avoids cross-file edit conflicts, makes failures isolated and retriable.
+  </tool_result>
+  <tool_result tool="toolu_01AzxV6Cb3QLogNR2SFfTVYX">
+     1→# Agentic Engineering Patterns
+     2→
+     3→This section documents architectural patterns for building AI-powered development tools and workflows. These patterns capture design decisions, rationale, and best practices discovered through building the erk project.
+     4→
+     5→## Purpose
+     6→
+     7→This documentation serves two audiences:
+     8→
+     9→1. **AI Assistants**: Conceptual understanding of WHAT patterns are and WHY they exist
+    10→2. **Human Developers**: Pattern catalog for design decisions and architectural guidance
+    11→
+    12→## Relationship to Other Documentation
+    13→
+    14→This section complements the existing `docs/learned/` folder:
+    15→
+    16→| Section                                          | Purpose               | Focus                                                                   |
+    17→| ------------------------------------------------ | --------------------- | ----------------------------------------------------------------------- |
+    18→| **docs/developer/agentic-engineering-patterns/** | Pattern catalog       | WHAT patterns are (naming, concepts), WHY they exist (design rationale) |
+    19→| **docs/learned/**                                | Implementation guides | HOW to implement (step-by-step, technical details, code examples)       |
+    20→
+    21→Both sections serve complementary roles in the documentation architecture.
+    22→
+    23→## Documented Patterns
+    24→
+    25→### 1. Agent-Delegating Commands
+    26→
+    27→Commands that immediately delegate to specialized agents for workflow orchestration.
+    28→
+    29→**Key Benefits:**
+    30→
+
+... [25 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me look at the referenced commits to get the real details for the case studies.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4364" cache_read_input_tokens="29759" cache_creation="{'ephemeral_5m_input_tokens': 4364, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01Gz4WHBWj7YYJLLi8RUrkci">
+    <param name="todos">[{'content': 'Create `.claude/skills/cli-push-down/SKILL.md`', 'status': 'in_progress', 'a...[truncated 405 chars]...tent': 'Signal GitHub and submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4364" cache_read_input_tokens="29759" cache_creation="{'ephemeral_5m_input_tokens': 4364, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Gz4WHBWj7YYJLLi8RUrkci">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me signal GitHub started and get commit details for the case studies in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="294" cache_read_input_tokens="34123" cache_creation="{'ephemeral_5m_input_tokens': 294, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01HVyFFyypyJW4pjidwebhwa">
+    <param name="command">erk exec impl-signal started --session-id "5612ceff-2ad7-4909-88dc-365ff24fc179" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="294" cache_read_input_tokens="34123" cache_creation="{'ephemeral_5m_input_tokens': 294, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01PKmLFNRBYwfowvuZu9awwm">
+    <param name="command">git log 4bf1b6dcb -1 --format="%s%n%n%b" 2&gt;/dev/null || echo "commit not found"</param>
+    <param name="description">Get commit message for case study 1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="294" cache_read_input_tokens="34123" cache_creation="{'ephemeral_5m_input_tokens': 294, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01YPDyx564VF9ndaRwtkbSm9">
+    <param name="command">git log 28cb8cc2f -1 --format="%s%n%n%b" 2&gt;/dev/null || echo "commit not found"</param>
+    <param name="description">Get commit message for case study 2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="294" cache_read_input_tokens="34123" cache_creation="{'ephemeral_5m_input_tokens': 294, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01FYwdHgwNPs6xEG6brrr5mK">
+    <param name="command">git log 4c5e7ef92 -1 --format="%s%n%n%b" 2&gt;/dev/null || echo "commit not found"</param>
+    <param name="description">Get commit message for case study 3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="294" cache_read_input_tokens="34123" cache_creation="{'ephemeral_5m_input_tokens': 294, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01XG2HBS24xhUioQJVHAeVvs">
+    <param name="command">git log b94b466e9 -1 --format="%s%n%n%b" 2&gt;/dev/null || echo "commit not found"</param>
+    <param name="description">Get commit message for case study 4</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="294" cache_read_input_tokens="34123" cache_creation="{'ephemeral_5m_input_tokens': 294, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01TJCDnx5bmB6Qdkx6wQkHm5">
+    <param name="command">git log e2bd53d05 -1 --format="%s%n%n%b" 2&gt;/dev/null || echo "commit not found"</param>
+    <param name="description">Get commit for anti-pattern case study</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="294" cache_read_input_tokens="34123" cache_creation="{'ephemeral_5m_input_tokens': 294, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HVyFFyypyJW4pjidwebhwa">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8548
+}
+  </tool_result>
+  <tool_result tool="toolu_01XG2HBS24xhUioQJVHAeVvs">
+Simplify learn trigger in `erk land` with direct issue creation (#8323)
+
+This removes the complex async learn pipeline (~363 lines across 7 helper functions) that handled session discovery, gist upload, CI workflow dispatch, and metadata tracking. The new approach is simpler: `erk land` now creates a learn issue directly with a reference to the landed plan, then delegates analysis to the replan flow. No CI workflow, no interactive menu, no blocking. The TUI learn trigger is removed since the execution pipeline now handles it. Learn plans no longer stack on parent branches.
+
+## Files Changed
+
+&lt;details&gt;
+&lt;summary&gt;Files Changed&lt;/summary&gt;
+
+### Modified (4 files)
+- `src/erk/cli/commands/land_cmd.py` - Replace complex async learn code with lightweight `_create_learn_issue_with_sessions` helper
+- `src/erk/cli/commands/land_pipeline.py` - Replace pipeline steps: `check_learn_status` → `resolve_plan_id`, `update_learn_plan` → `create_learn_issue`
+- `src/erk/cli/commands/pr/dispatch_cmd.py` - Remove learn plan parent branch detection and stacking logic
+- `src/erk/tui/app.py` - Remove independent learn trigger from `_land_pr_async`, simplify method signature
+
+### Deleted (3 files)
+- `tests/commands/dispatch/test_learn_plans.py` - Tests for removed stacking logic (125 lines)
+- `tests/unit/cli/commands/land/test_learn_status.py` - Tests for removed async check function (712 lines)
+- `tests/unit/cli/commands/land/test_update_parent_learn_status.py` - Tests for removed parent update (184 lines)
+
+### Updated (1 file)
+- `tests/tui/test_app.py` - Remove learn-related assertions and test parameters from TUI land tests
+
+&lt;/details&gt;
+
+## Key Changes
+
+- Replaced 363 lines of async learn code with two lightweight helpers: `_should_create_learn_issue()` and `_create_learn_issue_with_sessions()`
+- Fire-and-forget issue creation instead of interactive 4-option menu and CI workflow dispatch
+- Learn validation pipeline step replaced with simple plan ID resolution (no prompting)
+
+... [204 lines omitted] ...
+
+def resolve_plan_id(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+def create_learn_issue(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+6. **Fail-open**: wrap entire body in try/except, log warning on any error, never block landing
+- `LearnPreprocessResult` / `LearnPreprocessError` dataclasses (lines 437-449)
+- `_parse_trigger_error()` (lines 564-578)
+  - Test: fail-open on error (logs warning, doesn't raise)
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+  </tool_result>
+  <tool_result tool="toolu_01YPDyx564VF9ndaRwtkbSm9">
+Consolidate objective update workflow into single exec command (#8069)
+
+Introduces `erk exec objective-apply-landed-update` to replace a 7-step manual workflow with 3 simple steps. The new exec script combines fetch-context, update-roadmap-nodes, and post-action-comment into a single atomic call, eliminating 5+ sequential agent commands and moving deterministic work (YAML parsing, node ref extraction) from the agent to Python. The `/erk:objective-update-with-landed-pr` skill instructions shrink from 173 to ~70 lines, with agents now focused only on prose reconciliation. Also fixes a bug in `objective-fetch-context` by adding a `--plan` flag for direct lookups.
+
+## Files Changed
+
+&lt;details&gt;
+&lt;summary&gt;Files Changed&lt;/summary&gt;
+
+### Added (3 files)
+- `packages/erk-shared/src/erk_shared/objective_apply_landed_update_result.py` - TypedDict definitions for the new exec command's JSON schema
+- `src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py` - New exec script combining fetch, node updates, and action comment posting
+- `tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py` - Comprehensive test suite (happy path, errors, no-match scenarios, discovery)
+
+### Modified (6 files)
+- `.claude/commands/erk/objective-update-with-landed-pr.md` - Simplified from 7 steps to 3 (fetch/update, prose reconciliation, closing)
+- `.claude/commands/erk/objective-update-with-closed-plan.md` - Updated to use exec script for action comments
+- `.claude/skills/erk-exec/reference.md` - Added new `objective-apply-landed-update` command reference
+- `src/erk/cli/commands/exec/group.py` - Registered new exec command
+- `src/erk/cli/commands/exec/scripts/objective_fetch_context.py` - Added `--plan` flag for direct plan lookup (fixes sister command bug)
+- `src/erk/cli/commands/exec/scripts/update_objective_node.py` - Added clarifying comment on status inference behavior
+
+### Deleted (2 files)
+- `.erk/impl-context/plan.md` - Implementation plan artifact
+- `.erk/impl-context/ref.json` - Reference metadata file
+
+&lt;/details&gt;
+
+## Key Changes
+
+
+... [175 lines omitted] ...
+
+- **Comprehensive test coverage** — 400-line test suite covering happy path (node updates, action comment posting, rich JSON output), error cases (issue/PR not found, bad branch), no-match scenarios (plan without matched nodes), and auto-discovery from git state.
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+  </tool_result>
+  <tool_result tool="toolu_01PKmLFNRBYwfowvuZu9awwm">
+Simplify plan-implement workflow with consolidated setup-impl command (#7998)
+
+Consolidates Steps 0-2d of plan-implement.md into a single, testable `setup-impl` exec command that handles issue-based setup, file-based setup, and auto-detection from branch/existing .impl/. Extracts three additional exec commands (detect-plan-from-branch, cleanup-impl-context, upload-impl-session) to replace inline bash logic with unit-tested, idempotent implementations. Reduces plan-implement.md from 360 to ~180 lines. Also fixes a bug where upload-impl-session incorrectly passed `--issue-number` instead of `--plan-id` to the plan backend.
+
+## Files Changed
+
+&lt;details&gt;
+&lt;summary&gt;Files Changed&lt;/summary&gt;
+
+### Added (8 files)
+- `src/erk/cli/commands/exec/scripts/cleanup_impl_context.py` - Idempotent cleanup of .erk/impl-context/ (replaces Step 2d bash)
+- `src/erk/cli/commands/exec/scripts/detect_plan_from_branch.py` - Plan detection from branch name (replaces Step 1b bash)
+- `src/erk/cli/commands/exec/scripts/setup_impl.py` - Consolidated setup handling all input paths (replaces Steps 0-2d)
+- `src/erk/cli/commands/exec/scripts/upload_impl_session.py` - Session upload for async learn (replaces Step 10b bash)
+- `tests/unit/cli/commands/exec/scripts/test_cleanup_impl_context.py` - Unit tests for cleanup command
+- `tests/unit/cli/commands/exec/scripts/test_detect_plan_from_branch.py` - Unit tests for branch detection
+- `tests/unit/cli/commands/exec/scripts/test_setup_impl.py` - Unit tests for consolidated setup
+- `tests/unit/cli/commands/exec/scripts/test_upload_impl_session.py` - Unit tests for session upload
+
+### Modified (2 files)
+- `.claude/commands/erk/plan-implement.md` - Simplified from 15 steps to ~10; delegates inline bash to exec commands
+- `src/erk/cli/commands/exec/group.py` - Registered 4 new exec commands (cleanup-impl-context, detect-plan-from-branch, setup-impl, upload-impl-session)
+
+&lt;/details&gt;
+
+## Key Changes
+
+- **Consolidated setup logic**: Single `setup-impl` command unifies all input paths (issue/file/branch auto-detect) with priority ordering and single JSON output
+- **Extracted testable commands**: Three new exec scripts replace 18 lines of inline bash with idempotent, unit-tested implementations 
+- **Bug fix**: `upload-impl-session` corrects `--issue-number` → `--plan-id` parameter for plan backend API
+
+... [235 lines omitted] ...
+
+- **Full test coverage**: All 4 new commands have comprehensive unit tests covering success/failure paths
+Implementation setup now converges to a single, testable entry point with explicit error handling and comprehensive JSON output for agent context.
+- **Comprehensive test coverage**: All 4 new commands have full unit test suites covering success/failure paths
+  </tool_result>
+  <tool_result tool="toolu_01TJCDnx5bmB6Qdkx6wQkHm5">
+Consolidate PR validation into --stage=impl flag, remove scattered exec scripts (#7987)
+
+Migrates PR completion validation from 4 scattered exec scripts (setup-impl, cleanup-impl-context, detect-plan-from-branch, upload-impl-session) into an integrated `--stage=impl` flag on erk pr check. Refactors check_cmd.py with PrCheck NamedTuple for type safety, LBYL pattern for plan-ref validation, and consolidates setup/cleanup logic into plan-implement.md workflow with explicit decision trees.
+
+## Files Changed
+
+&lt;details&gt;
+&lt;summary&gt;Files Changed&lt;/summary&gt;
+
+### Deleted (8 files)
+- `src/erk/cli/commands/exec/scripts/cleanup_impl_context.py` - Moved to pr check --stage=impl
+- `src/erk/cli/commands/exec/scripts/detect_plan_from_branch.py` - Moved to plan-implement.md decision tree
+- `src/erk/cli/commands/exec/scripts/setup_impl.py` - Simplified via plan-implement workflow
+- `src/erk/cli/commands/exec/scripts/upload_impl_session.py` - Moved to plan-implement.md Step 10b
+- `tests/unit/cli/commands/exec/scripts/test_cleanup_impl_context.py` - Validation moved to pr check tests
+- `tests/unit/cli/commands/exec/scripts/test_detect_plan_from_branch.py` - Logic moved to workflow docs
+- `tests/unit/cli/commands/exec/scripts/test_setup_impl.py` - Consolidated with setup-impl-from-issue
+- `tests/unit/cli/commands/exec/scripts/test_upload_impl_session.py` - Logic moved to workflow docs
+
+### Modified (9 files)
+- `src/erk/cli/commands/pr/check_cmd.py` - Added --stage=impl flag, PrCheck NamedTuple, LBYL plan-ref checks
+- `.claude/commands/erk/plan-implement.md` - Expanded Steps 0-2d with decision trees, branch detection, cleanup sequencing
+- `src/erk/cli/commands/exec/group.py` - Removed exec script registrations
+- `.claude/skills/erk-exec/reference.md` - Removed deprecated exec commands
+- `src/erk/cli/commands/exec/scripts/impl_signal.py` - Removed lifecycle_stage metadata
+- `tests/commands/pr/test_check.py` - Added 3 tests for --stage=impl validation
+- `tests/unit/cli/commands/exec/scripts/test_impl_signal.py` - Removed lifecycle_stage test
+
+&lt;/details&gt;
+
+
+... [306 lines omitted] ...
+
+- **Comprehensive test coverage**: 8 tests covering success paths, individual failures, draft-PR edge cases, and missing PR detection
+4. **Failure Behavior**: When validation fails:
+   - Should it block the PR from being submitted (return error code)?
+2. **Returns error code 1 on any failure** (blocks implementation workflow)
+- Must exit 0 on success, 1 on any failure
+  </tool_result>
+  <tool_result tool="toolu_01FYwdHgwNPs6xEG6brrr5mK">
+Replace `erk pr submit --skip-description` with composable `erk exec push-and-create-pr` (#7955)
+
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- erk:metadata-block:plan-header --&gt;
+&lt;details&gt;
+&lt;summary&gt;plan-header&lt;/summary&gt;
+
+```yaml
+
+schema_version: '2'
+created_at: '2026-02-23T05:04:33.616315+00:00'
+created_by: schrockn
+plan_comment_id: null
+last_dispatched_run_id: null
+last_dispatched_node_id: null
+last_dispatched_at: null
+last_local_impl_at: '2026-02-23T14:34:31.234335+00:00'
+last_local_impl_event: ended
+last_local_impl_session: b30ba927-029b-4594-b4bc-7d4294196b94
+last_local_impl_user: schrockn
+last_remote_impl_at: null
+last_remote_impl_run_id: null
+last_remote_impl_session_id: null
+branch_name: plnd/migrate-pr-submit-02-23-0504
+created_from_session: 1b0aba8b-d686-4e1f-833a-c04f5566643f
+lifecycle_stage: implemented
+worktree_name: erk-slot-36
+
+```
+
+
+... [149 lines omitted] ...
+
+- `src/erk/cli/commands/exec/scripts/*.py` - Update error messages referencing `--skip-description` to point to `erk exec push-and-create-pr`
+- **Updated agent workflows** - `/erk:pr-submit` and error messages now reference composable `erk exec` commands instead of monolithic flags
+- **Test coverage** - New tests for push-and-create-pr covering success/error JSON output, flag propagation (--force, --no-graphite), and exit codes
+- On error: output JSON with `success: false`, `error` object; exit code 1
+### 5. Update error message hints in sibling exec scripts
+- Test JSON error output structure
+  </tool_result>
+  <assistant>I now have all the commit details for the case studies. Let me also check the anti-pattern commit (`e2bd53d05`).</assistant>
+  <usage input_tokens="8313" cache_creation_input_tokens="10992" cache_read_input_tokens="34417" cache_creation="{'ephemeral_5m_input_tokens': 10992, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01BCMzHY132EikQ7LLRBNL8a">
+    <param name="command">git log e2bd53d05 -1 --format="%s%n%n%b" 2&gt;/dev/null | head -40</param>
+    <param name="description">Get anti-pattern commit summary</param>
+  </tool_use>
+  <usage input_tokens="8313" cache_creation_input_tokens="10992" cache_read_input_tokens="34417" cache_creation="{'ephemeral_5m_input_tokens': 10992, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BCMzHY132EikQ7LLRBNL8a">
+Consolidate PR validation into --stage=impl flag, remove scattered exec scripts (#7987)
+
+Migrates PR completion validation from 4 scattered exec scripts (setup-impl, cleanup-impl-context, detect-plan-from-branch, upload-impl-session) into an integrated `--stage=impl` flag on erk pr check. Refactors check_cmd.py with PrCheck NamedTuple for type safety, LBYL pattern for plan-ref validation, and consolidates setup/cleanup logic into plan-implement.md workflow with explicit decision trees.
+
+## Files Changed
+
+&lt;details&gt;
+&lt;summary&gt;Files Changed&lt;/summary&gt;
+
+### Deleted (8 files)
+- `src/erk/cli/commands/exec/scripts/cleanup_impl_context.py` - Moved to pr check --stage=impl
+- `src/erk/cli/commands/exec/scripts/detect_plan_from_branch.py` - Moved to plan-implement.md decision tree
+- `src/erk/cli/commands/exec/scripts/setup_impl.py` - Simplified via plan-implement workflow
+- `src/erk/cli/commands/exec/scripts/upload_impl_session.py` - Moved to plan-implement.md Step 10b
+- `tests/unit/cli/commands/exec/scripts/test_cleanup_impl_context.py` - Validation moved to pr check tests
+- `tests/unit/cli/commands/exec/scripts/test_detect_plan_from_branch.py` - Logic moved to workflow docs
+- `tests/unit/cli/commands/exec/scripts/test_setup_impl.py` - Consolidated with setup-impl-from-issue
+- `tests/unit/cli/commands/exec/scripts/test_upload_impl_session.py` - Logic moved to workflow docs
+
+### Modified (9 files)
+- `src/erk/cli/commands/pr/check_cmd.py` - Added --stage=impl flag, PrCheck NamedTuple, LBYL plan-ref checks
+- `.claude/commands/erk/plan-implement.md` - Expanded Steps 0-2d with decision trees, branch detection, cleanup sequencing
+- `src/erk/cli/commands/exec/group.py` - Removed exec script registrations
+- `.claude/skills/erk-exec/reference.md` - Removed deprecated exec commands
+- `src/erk/cli/commands/exec/scripts/impl_signal.py` - Removed lifecycle_stage metadata
+- `tests/commands/pr/test_check.py` - Added 3 tests for --stage=impl validation
+- `tests/unit/cli/commands/exec/scripts/test_impl_signal.py` - Removed lifecycle_stage test
+
+&lt;/details&gt;
+
+
+... [9 lines omitted] ...
+  </tool_result>
+  <assistant>Now I have all the context. Let me create the skill directory and write the SKILL.md file.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="9244" cache_read_input_tokens="45409" cache_creation="{'ephemeral_5m_input_tokens': 9244, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01SKSgMpTjTbV5feq7cdykxv">
+    <param name="command">mkdir -p /home/runner/work/erk/erk/.claude/skills/cli-push-down</param>
+    <param name="description">Create skill directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9244" cache_read_input_tokens="45409" cache_creation="{'ephemeral_5m_input_tokens': 9244, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SKSgMpTjTbV5feq7cdykxv">
+
+  </tool_result>
+  <tool_use name="Write" id="toolu_01LnbZQA3LghSihSKQgGugu6">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/cli-push-down/SKILL.md</param>
+    <param name="content">---
+name: cli-push-down
+description: Moving mechanical computation from LLM prompts into t...[truncated 9654 chars]...istings and conventions
+- **Exec script directory:** `src/erk/cli/commands/exec/scripts/`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="335" cache_read_input_tokens="54653" cache_creation="{'ephemeral_5m_input_tokens': 335, 'ephemeral_1h_input_tokens': 0}" output_tokens="2515" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LnbZQA3LghSihSKQgGugu6">
+File created successfully at: /home/runner/work/erk/erk/.claude/skills/cli-push-down/SKILL.md
+  </tool_result>
+  <assistant>Now let me update the README and mark the first task as complete.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2559" cache_read_input_tokens="54988" cache_creation="{'ephemeral_5m_input_tokens': 2559, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_0195TyAdb3TifVpg8mnXa7tu">
+    <param name="todos">[{'content': 'Create `.claude/skills/cli-push-down/SKILL.md`', 'status': 'completed', 'act...[truncated 407 chars]...tent': 'Signal GitHub and submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2559" cache_read_input_tokens="54988" cache_creation="{'ephemeral_5m_input_tokens': 2559, 'ephemeral_1h_input_tokens': 0}" output_tokens="248" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0195TyAdb3TifVpg8mnXa7tu">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KvQ2hm3yDXZ3aBhDwA7ZHA">
+    <param name="file_path">/home/runner/work/erk/erk/docs/developer/agentic-engineering-patterns/README.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="290" cache_read_input_tokens="57547" cache_creation="{'ephemeral_5m_input_tokens': 290, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KvQ2hm3yDXZ3aBhDwA7ZHA">
+     1→# Agentic Engineering Patterns
+     2→
+     3→This section documents architectural patterns for building AI-powered development tools and workflows. These patterns capture design decisions, rationale, and best practices discovered through building the erk project.
+     4→
+     5→## Purpose
+     6→
+     7→This documentation serves two audiences:
+     8→
+     9→1. **AI Assistants**: Conceptual understanding of WHAT patterns are and WHY they exist
+    10→2. **Human Developers**: Pattern catalog for design decisions and architectural guidance
+    11→
+    12→## Relationship to Other Documentation
+    13→
+    14→This section complements the existing `docs/learned/` folder:
+    15→
+    16→| Section                                          | Purpose               | Focus                                                                   |
+    17→| ------------------------------------------------ | --------------------- | ----------------------------------------------------------------------- |
+    18→| **docs/developer/agentic-engineering-patterns/** | Pattern catalog       | WHAT patterns are (naming, concepts), WHY they exist (design rationale) |
+    19→| **docs/learned/**                                | Implementation guides | HOW to implement (step-by-step, technical details, code examples)       |
+    20→
+    21→Both sections serve complementary roles in the documentation architecture.
+    22→
+    23→## Documented Patterns
+    24→
+    25→### 1. Agent-Delegating Commands
+    26→
+    27→Commands that immediately delegate to specialized agents for workflow orchestration.
+    28→
+    29→**Key Benefits:**
+    30→
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01R6HvEQKGGXrK18J4hN26Eo">
+    <param name="file_path">/home/runner/work/erk/erk/docs/developer/agentic-engineering-patterns/README.md</param>
+    <param name="old_string">**Implementation Guide:** [../../learned/command-agent-delegation.md](../../learned/command-agent-delegation.md)
+
+---</param>
+    <param name="new_string">**Implementation Guide:** [../../learned/command-agent-delegation.md](../../learned/comman...[truncated 336 chars]...n.md)
+
+**Skill:** Load `cli-push-down` skill for procedural guidance and case studies
+
+---</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="776" cache_read_input_tokens="57837" cache_creation="{'ephemeral_5m_input_tokens': 776, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01R6HvEQKGGXrK18J4hN26Eo">
+The file /home/runner/work/erk/erk/docs/developer/agentic-engineering-patterns/README.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01S2yok3QXrAzoXz9sVaWg6W">
+    <param name="todos">[{'content': 'Create `.claude/skills/cli-push-down/SKILL.md`', 'status': 'completed', 'act...[truncated 409 chars]...tent': 'Signal GitHub and submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="329" cache_read_input_tokens="58613" cache_creation="{'ephemeral_5m_input_tokens': 329, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01S2yok3QXrAzoXz9sVaWg6W">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me verify the skill quality: line count, frontmatter, and links.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="275" cache_read_input_tokens="58942" cache_creation="{'ephemeral_5m_input_tokens': 275, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01UoUfvgcwEVCBrQbxDSYRrp">
+    <param name="command">wc -l /home/runner/work/erk/erk/.claude/skills/cli-push-down/SKILL.md</param>
+    <param name="description">Check skill line count</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="275" cache_read_input_tokens="58942" cache_creation="{'ephemeral_5m_input_tokens': 275, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01CSceku3jSg5TpsWmH5HorP">
+    <param name="command">head -4 /home/runner/work/erk/erk/.claude/skills/cli-push-down/SKILL.md</param>
+    <param name="description">Verify YAML frontmatter structure</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="275" cache_read_input_tokens="58942" cache_creation="{'ephemeral_5m_input_tokens': 275, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01197vPpALZ8XgUZJWfHeBfE">
+    <param name="command">ls /home/runner/work/erk/erk/docs/developer/agentic-engineering-patterns/cli-push-down.md 2&gt;/dev/null &amp;&amp; echo "EXISTS" || echo "MISSING"</param>
+    <param name="description">Verify linked pattern doc exists</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="275" cache_read_input_tokens="58942" cache_creation="{'ephemeral_5m_input_tokens': 275, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01197vPpALZ8XgUZJWfHeBfE">
+/home/runner/work/erk/erk/docs/developer/agentic-engineering-patterns/cli-push-down.md
+EXISTS
+  </tool_result>
+  <tool_result tool="toolu_01UoUfvgcwEVCBrQbxDSYRrp">
+150 /home/runner/work/erk/erk/.claude/skills/cli-push-down/SKILL.md
+  </tool_result>
+  <tool_result tool="toolu_01CSceku3jSg5TpsWmH5HorP">
+---
+name: cli-push-down
+description: Moving mechanical computation from LLM prompts into tested CLI commands. Use when writing or reviewing slash commands with embedded bash, when a skill/command exceeds ~100 lines of procedural steps, when adding parsing/validation/transformation logic to markdown prompts, when debugging flaky embedded scripts, or when refactoring commands to reduce token overhead.
+---
+  </tool_result>
+  <assistant>150 lines (well under 500), valid YAML frontmatter with `name` and `description`, linked pattern doc exists. Let me now run fast-ci.</assistant>
+  <usage input_tokens="64" cache_creation_input_tokens="486" cache_read_input_tokens="59217" cache_creation="{'ephemeral_5m_input_tokens': 486, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_019rbbpa1i9EJd3KoBXFBpRK">
+    <param name="todos">[{'content': 'Create `.claude/skills/cli-push-down/SKILL.md`', 'status': 'completed', 'act...[truncated 411 chars]...tent': 'Signal GitHub and submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="64" cache_creation_input_tokens="486" cache_read_input_tokens="59217" cache_creation="{'ephemeral_5m_input_tokens': 486, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019rbbpa1i9EJd3KoBXFBpRK">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Task" id="toolu_01L9oECHqXVgBb3kaqRR81wn">
+    <param name="description">Run fast-ci checks</param>
+    <param name="prompt">Run `make fast-ci` and report results. Do NOT fix anything - just report the output.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="375" cache_read_input_tokens="59703" cache_creation="{'ephemeral_5m_input_tokens': 375, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01L9oECHqXVgBb3kaqRR81wn">
+## Make fast-ci Report
+
+**Status:** FAILED - 1 test failure out of 5810 tests
+
+**Summary:**
+- Lint: All checks passed
+- Format Check: 1621 files already formatted
+- Prettier Check: Code style issues found in 3 files (warn)
+- Markdown Check: OK
+- Exec Reference Check: OK
+- Type Check (ty): All checks passed
+- Unit Tests (erk): 5448 passed, **1 failed**
+- Unit Tests (erk-dev): 136 passed
+- Unit Tests (erk-statusline): 112 passed
+- Unit Tests (erkbot): 114 passed
+
+**Failure Details:**
+
+**File:** `/home/runner/work/erk/erk/tests/unit/artifacts/test_codex_compatibility.py:191`
+
+**Test:** `test_codex_portable_and_claude_only_cover_all_skills`
+
+**Error:**
+```
+Failed: Skills not in codex_portable_skills() or claude_only_skills(): ['cli-push-down']
+Add these to src/erk/core/capabilities/codex_portable.py
+  codex_portable: works with any AI coding agent
+  claude_only: references Claude-specific features
+```
+
+
+... [2 lines omitted] ...
+  </tool_result>
+  <assistant>There's one failing test: the new `cli-push-down` skill needs to be registered in the portability registry. Let me fix that.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="517" cache_read_input_tokens="60078" cache_creation="{'ephemeral_5m_input_tokens': 517, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01S9SbRQEmc94zfYY1P9NoZT">
+    <param name="pattern">codex_portable_skills|claude_only_skills</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/core/capabilities/codex_portable.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="517" cache_read_input_tokens="60078" cache_creation="{'ephemeral_5m_input_tokens': 517, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01S9SbRQEmc94zfYY1P9NoZT">
+3:Codex is a generic AI coding agent framework. Skills in codex_portable_skills()
+6:Skills in claude_only_skills() reference Claude-specific features like hooks,
+14:def codex_portable_skills() -&gt; frozenset[str]:
+35:def claude_only_skills() -&gt; frozenset[str]:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01JGU7G3dv1dmbZb4SffS9ma">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/capabilities/codex_portable.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="264" cache_read_input_tokens="60595" cache_creation="{'ephemeral_5m_input_tokens': 264, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JGU7G3dv1dmbZb4SffS9ma">
+     1→"""Registry of skills portable to Codex CLI.
+     2→
+     3→Codex is a generic AI coding agent framework. Skills in codex_portable_skills()
+     4→work with any AI coding agent (not Claude-specific).
+     5→
+     6→Skills in claude_only_skills() reference Claude-specific features like hooks,
+     7→session logs, or Claude Code commands and cannot be ported to Codex.
+     8→"""
+     9→
+    10→from functools import cache
+    11→
+    12→
+    13→@cache
+    14→def codex_portable_skills() -&gt; frozenset[str]:
+    15→    """Skills that work with any AI coding agent (not Claude-specific)."""
+    16→    return frozenset(
+    17→        {
+    18→            "dignified-python",
+    19→            "fake-driven-testing",
+    20→            "erk-diff-analysis",
+    21→            "erk-exec",
+    22→            "erk-planning",
+    23→            "objective",
+    24→            "gh",
+    25→            "gt",
+    26→            "learned-docs",
+    27→            "dignified-code-simplifier",
+    28→            "pr-operations",
+    29→            "pr-feedback-classifier",
+    30→        }
+
+... [22 lines omitted] ...
+  </tool_result>
+  <assistant>The `cli-push-down` skill is a methodology skill that describes a pattern applicable to any AI coding agent (it's about pushing computation from prompts to CLI commands - not Claude-specific). It belongs in `codex_portable_skills`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="651" cache_read_input_tokens="60859" cache_creation="{'ephemeral_5m_input_tokens': 651, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01VjbRpU94rm6uY5es683czC">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/capabilities/codex_portable.py</param>
+    <param name="old_string">            "dignified-python",
+            "fake-driven-testing",
+            "erk-diff-analysis",</param>
+    <param name="new_string">            "cli-push-down",
+            "dignified-python",
+            "fake-driven-testing",
+            "erk-diff-analysis",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="651" cache_read_input_tokens="60859" cache_creation="{'ephemeral_5m_input_tokens': 651, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VjbRpU94rm6uY5es683czC">
+The file /home/runner/work/erk/erk/src/erk/core/capabilities/codex_portable.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me re-run the failing test to confirm the fix.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="484" cache_read_input_tokens="61510" cache_creation="{'ephemeral_5m_input_tokens': 484, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01FDzYTvAMwV6qf8ZCG2RiKK">
+    <param name="description">Re-run failing test</param>
+    <param name="prompt">Run `uv run pytest tests/unit/artifacts/test_codex_compatibility.py::test_codex_portable_and_claude_only_cover_all_skills -x` and report results.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="484" cache_read_input_tokens="61510" cache_creation="{'ephemeral_5m_input_tokens': 484, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FDzYTvAMwV6qf8ZCG2RiKK">
+pytest passed: 1 test passed in 0.69s
+
+The test `test_codex_portable_and_claude_only_cover_all_skills` executed successfully, verifying that the codex-portable and claude-only skill classifications cover all skills in the project.
+agentId: aa7223a (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Test passes now. Let me also check the prettier warnings since fast-ci mentioned them.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="246" cache_read_input_tokens="61994" cache_creation="{'ephemeral_5m_input_tokens': 246, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01BDpjfNxwy9WxCn6ZXh8rzk">
+    <param name="description">Run prettier check on changed files</param>
+    <param name="prompt">Run `npx prettier --check .claude/skills/cli-push-down/SKILL.md docs/developer/agentic-engineering-patterns/README.md` and report results.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="246" cache_read_input_tokens="61994" cache_creation="{'ephemeral_5m_input_tokens': 246, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BDpjfNxwy9WxCn6ZXh8rzk">
+prettier failed: 1 file needs formatting
+
+**File with formatting issues:**
+- .claude/skills/cli-push-down/SKILL.md
+
+The file `docs/developer/agentic-engineering-patterns/README.md` passed the check, but `.claude/skills/cli-push-down/SKILL.md` needs to be reformatted using `prettier --write`.
+agentId: a6a85c7 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Let me fix the prettier formatting issue.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="485" cache_read_input_tokens="62240" cache_creation="{'ephemeral_5m_input_tokens': 485, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01NKJMSuQx5NSBBfam39ZEof">
+    <param name="command">npx prettier --write .claude/skills/cli-push-down/SKILL.md</param>
+    <param name="description">Fix prettier formatting on SKILL.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="485" cache_read_input_tokens="62240" cache_creation="{'ephemeral_5m_input_tokens': 485, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NKJMSuQx5NSBBfam39ZEof">
+.claude/skills/cli-push-down/SKILL.md 114ms
+  </tool_result>
+  <tool_use name="Task" id="toolu_01NrGasVkegLnyM3JP4DJAee">
+    <param name="description">Re-run fast-ci after fix</param>
+    <param name="prompt">Run `make fast-ci` and report results. Do NOT fix anything - just report the output.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="135" cache_read_input_tokens="62725" cache_creation="{'ephemeral_5m_input_tokens': 135, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NrGasVkegLnyM3JP4DJAee">
+## Results Summary
+
+**make fast-ci failed** with 2 test failures out of 5,811 total tests (5,447 passed).
+
+### Failures Found:
+
+**1. Prettier formatting issues:**
+- `/home/runner/work/erk/erk/docs/learned/integrations/github-review-decision.md`
+- `/home/runner/work/erk/erk/docs/learned/tui/status-indicators.md`
+
+These 2 files need formatting corrections.
+
+**2. Test failures in unit tests:**
+
+**File:** `/home/runner/work/erk/erk/tests/unit/artifacts/test_codex_compatibility.py:260`
+- **Test:** `test_codex_portable_skills_match_force_include`
+- **Issue:** Skill `'cli-push-down'` is in `codex_portable_skills()` but missing from pyproject.toml `[tool.hatch.build.targets.wheel.force-include]`
+- **Error:** Missing force-include entries for this skill in pyproject.toml
+
+**File:** `/home/runner/work/erk/erk/tests/unit/core/test_capabilities.py:448`
+- **Test:** `test_all_codex_portable_skills_have_capability`
+- **Issue:** Skill `'cli-push-down'` is in `codex_portable_skills()` but has no registered capability
+- **Error:** Must add it to `bundled_skills()` in bundled.py or create a dedicated capability class
+
+### Summary:
+- Prettier: 2 files need formatting
+- Unit tests: 2 failures related to the `cli-push-down` skill missing required configuration in pyproject.toml and capability registration
+- All other tests passed: 5,447 passed, 136 passed (erk-dev), 112 passed (erk-statusline), 114 passed (erkbot)
+agentId: ace62f4 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Two more registration issues to fix. Let me find the relevant files.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="813" cache_read_input_tokens="62860" cache_creation="{'ephemeral_5m_input_tokens': 813, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_0195ZP2PwiQx5aKHAJ3nYXrt">
+    <param name="pattern">force-include.*skills</param>
+    <param name="path">/home/runner/work/erk/erk/pyproject.toml</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="813" cache_read_input_tokens="62860" cache_creation="{'ephemeral_5m_input_tokens': 813, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01WtFkaixg4wB3FN5z3RpC6o">
+    <param name="pattern">bundled_skills|cli-skill-creator|rename-swarm</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/core/capabilities</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="813" cache_read_input_tokens="62860" cache_creation="{'ephemeral_5m_input_tokens': 813, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WtFkaixg4wB3FN5z3RpC6o">
+src/erk/core/capabilities/codex_portable.py:44:            "cli-skill-creator",
+src/erk/core/capabilities/codex_portable.py:45:            "rename-swarm",
+  </tool_result>
+  <tool_result tool="toolu_0195ZP2PwiQx5aKHAJ3nYXrt">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0194qvKHDDJtubtLyCPKAsXd">
+    <param name="pattern">force-include</param>
+    <param name="path">/home/runner/work/erk/erk/pyproject.toml</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="83" cache_creation_input_tokens="526" cache_read_input_tokens="63673" cache_creation="{'ephemeral_5m_input_tokens': 526, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01SYitx8GrAELcEgjqkREZGC">
+    <param name="pattern">bundled_skills</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/core/capabilities</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="83" cache_creation_input_tokens="526" cache_read_input_tokens="63673" cache_creation="{'ephemeral_5m_input_tokens': 526, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SYitx8GrAELcEgjqkREZGC">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_0194qvKHDDJtubtLyCPKAsXd">
+58-packages = ["src/erk"]
+59-
+60:[tool.hatch.build.targets.wheel.force-include]
+61-"CHANGELOG.md" = "erk/data/CHANGELOG.md"
+62-# Whitelist specific artifacts from .claude/ for distribution to external users
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WCYvS3ifbERPo4Fy3zgyPq">
+    <param name="file_path">/home/runner/work/erk/erk/pyproject.toml</param>
+    <param name="offset">60</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="424" cache_read_input_tokens="64199" cache_creation="{'ephemeral_5m_input_tokens': 424, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_013kcHeDhFjP2CXpNGKraH6r">
+    <param name="pattern">bundled_skills|def bundled</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="424" cache_read_input_tokens="64199" cache_creation="{'ephemeral_5m_input_tokens': 424, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WCYvS3ifbERPo4Fy3zgyPq">
+    60→[tool.hatch.build.targets.wheel.force-include]
+    61→"CHANGELOG.md" = "erk/data/CHANGELOG.md"
+    62→# Whitelist specific artifacts from .claude/ for distribution to external users
+    63→# Commands: erk namespace only (not local)
+    64→".claude/commands/erk" = "erk/data/claude/commands/erk"
+    65→# Codex-portable skills (Codex-compatible frontmatter, generic AI agent support)
+    66→".claude/skills/dignified-python" = "erk/data/codex/skills/dignified-python"
+    67→".claude/skills/fake-driven-testing" = "erk/data/codex/skills/fake-driven-testing"
+    68→".claude/skills/erk-diff-analysis" = "erk/data/codex/skills/erk-diff-analysis"
+    69→".claude/skills/erk-exec" = "erk/data/codex/skills/erk-exec"
+    70→".claude/skills/erk-planning" = "erk/data/codex/skills/erk-planning"
+    71→".claude/skills/objective" = "erk/data/codex/skills/objective"
+    72→".claude/skills/gh" = "erk/data/codex/skills/gh"
+    73→".claude/skills/gt" = "erk/data/codex/skills/gt"
+    74→".claude/skills/learned-docs" = "erk/data/codex/skills/learned-docs"
+    75→".claude/skills/dignified-code-simplifier" = "erk/data/codex/skills/dignified-code-simplifier"
+    76→".claude/skills/pr-operations" = "erk/data/codex/skills/pr-operations"
+    77→".claude/skills/pr-feedback-classifier" = "erk/data/codex/skills/pr-feedback-classifier"
+    78→# Agents: devrun and learn
+    79→".claude/agents/devrun.md" = "erk/data/claude/agents/devrun.md"
+    80→".claude/agents/learn" = "erk/data/claude/agents/learn"
+    81→# Workflows: erk-managed GitHub workflows
+    82→".github/workflows/learn.yml" = "erk/data/github/workflows/learn.yml"
+    83→".github/workflows/one-shot.yml" = "erk/data/github/workflows/one-shot.yml"
+    84→".github/workflows/plan-implement.yml" = "erk/data/github/workflows/plan-implement.yml"
+    85→".github/workflows/pr-address.yml" = "erk/data/github/workflows/pr-address.yml"
+    86→".github/workflows/pr-rebase.yml" = "erk/data/github/workflows/pr-rebase.yml"
+    87→# Actions: composite GitHub actions (needed by workflows)
+    88→".github/actions/setup-claude-erk" = "erk/data/github/actions/setup-claude-erk"
+    89→".github/actions/setup-claude-code" = "erk/data/github/actions/setup-claude-code"
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_013kcHeDhFjP2CXpNGKraH6r">
+Found 1 file
+src/erk/capabilities/skills/bundled.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_014SSHKZMoaEqbqwyWTkbBkx">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/skills/bundled.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1605" cache_read_input_tokens="64623" cache_creation="{'ephemeral_5m_input_tokens': 1605, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014SSHKZMoaEqbqwyWTkbBkx">
+     1→"""Bundled skill capabilities — cached factory.
+     2→
+     3→All simple skill capabilities (those that only need a name and description)
+     4→are registered here. The dict is created lazily via a cached function to
+     5→avoid module-import-time allocation.
+     6→
+     7→Skills with custom install/uninstall logic (like learned-docs) are NOT here;
+     8→they have their own capability classes.
+     9→"""
+    10→
+    11→from functools import cache
+    12→
+    13→from erk.core.capabilities.codex_portable import codex_portable_skills
+    14→from erk.core.capabilities.skill_capability import SkillCapability
+    15→from erk_shared.context.types import AgentBackend
+    16→
+    17→
+    18→@cache
+    19→def bundled_skills() -&gt; dict[str, str]:
+    20→    """Return the bundled skills dict. Cached to avoid re-creation."""
+    21→    return {
+    22→        "dignified-python": "Python coding standards (LBYL, modern types, ABCs)",
+    23→        "fake-driven-testing": "5-layer test architecture with fakes",
+    24→        "erk-diff-analysis": "Code diff analysis for commit messages",
+    25→        "erk-exec": "Erk exec subcommand reference",
+    26→        "erk-planning": "Plan management",
+    27→        "objective": "Objective tracking and management",
+    28→        "gh": "GitHub CLI integration",
+    29→        "gt": "Graphite stacked PR management",
+    30→        "dignified-code-simplifier": "Code simplification review",
+
+... [39 lines omitted] ...
+  </tool_result>
+  <assistant>I need to add `cli-push-down` to both the `pyproject.toml` force-include list and the `bundled_skills()` dict.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="988" cache_read_input_tokens="66228" cache_creation="{'ephemeral_5m_input_tokens': 988, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>
