@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Break Up `src/erk/tui/app.py` Into Organized Subpackage"
+}
