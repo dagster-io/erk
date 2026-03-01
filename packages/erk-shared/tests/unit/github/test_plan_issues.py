@@ -33,6 +33,7 @@ def _create_plan(
     fake_issues: FakeGitHubIssues | None = None,
     fake_git: FakeGit | None = None,
     fake_time: FakeTime | None = None,
+    branch_name: str = "plnd/test-branch-01-15-1430",
 ) -> CreatePlanDraftPRResult:
     """Helper to create a plan draft PR with sensible defaults."""
     if fake_issues is None:
@@ -55,6 +56,7 @@ def _create_plan(
         repo_root=tmp_path,
         cwd=tmp_path,
         plan_content=plan_content,
+        branch_name=branch_name,
         title=title,
         labels=labels,
         source_repo=source_repo,
@@ -119,13 +121,12 @@ class TestCreatePlanDraftPRSuccess:
         assert result.success is True
         assert result.title == "Correct Title"
 
-    def test_branch_name_contains_title_slug(self, tmp_path: Path) -> None:
-        """Branch name should be derived from title."""
-        result = _create_plan(tmp_path=tmp_path)
+    def test_branch_name_uses_provided_value(self, tmp_path: Path) -> None:
+        """Branch name should be the value passed by the caller."""
+        result = _create_plan(tmp_path=tmp_path, branch_name="plnd/my-custom-branch-01-15-1430")
 
         assert result.success is True
-        assert result.branch_name is not None
-        assert result.branch_name.startswith("plnd/")
+        assert result.branch_name == "plnd/my-custom-branch-01-15-1430"
 
 
 class TestCreatePlanDraftPRTitleExtraction:
@@ -488,6 +489,7 @@ class TestCreatePlanDraftPRBranchAlreadyExists:
             repo_root=tmp_path,
             cwd=tmp_path,
             plan_content="# My Feature\n\nSteps...",
+            branch_name="plnd/my-feature-01-15-1430",
             title=None,
             labels=["erk-pr", "erk-plan"],
             source_repo=None,
@@ -592,6 +594,7 @@ class TestCreatePlanDraftPRMetadata:
             repo_root=tmp_path,
             cwd=tmp_path,
             plan_content="# Full Metadata Plan\n\nSteps...",
+            branch_name="plnd/full-metadata-plan-01-15-1430",
             title=None,
             labels=["erk-pr", "erk-plan"],
             source_repo="owner/impl-repo",
@@ -638,6 +641,7 @@ class TestCreatePlanDraftPRNonNumericPlanId:
                 repo_root=tmp_path,
                 cwd=tmp_path,
                 plan_content="# Test Plan\n\nSteps...",
+                branch_name="plnd/test-plan-01-15-1430",
                 title=None,
                 labels=["erk-pr", "erk-plan"],
                 source_repo=None,
@@ -679,6 +683,7 @@ class TestCreatePlanDraftPRExtraFiles:
             repo_root=tmp_path,
             cwd=tmp_path,
             plan_content="# Extra Files Plan\n\nSteps...",
+            branch_name="plnd/extra-files-plan-01-15-1430",
             title=None,
             labels=["erk-pr", "erk-learn"],
             source_repo=None,
@@ -713,6 +718,7 @@ class TestCreatePlanDraftPRExtraFiles:
             repo_root=tmp_path,
             cwd=tmp_path,
             plan_content="# Plan\n\nSteps...",
+            branch_name="plnd/plan-01-15-1430",
             title=None,
             labels=["erk-pr", "erk-plan"],
             source_repo=None,

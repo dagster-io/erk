@@ -21,6 +21,7 @@ import json
 
 import click
 
+from erk.core.branch_slug_generator import generate_slug_or_fallback
 from erk_shared.context.helpers import (
     require_branch_manager,
     require_claude_installation,
@@ -28,10 +29,13 @@ from erk_shared.context.helpers import (
     require_git,
     require_github,
     require_issues,
+    require_prompt_executor,
     require_repo_root,
     require_time,
 )
+from erk_shared.naming import generate_planned_pr_branch_name
 from erk_shared.plan_store.create_plan_draft_pr import create_plan_draft_pr
+from erk_shared.plan_utils import extract_title_from_plan
 
 
 @click.command(name="create-pr-from-session")
@@ -58,6 +62,7 @@ def create_pr_from_session(ctx: click.Context, session_id: str | None, summary: 
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
     claude_installation = require_claude_installation(ctx)
+    prompt_executor = require_prompt_executor(ctx)
 
     # Extract latest plan from session
     plan_text = claude_installation.get_latest_plan(cwd, session_id=session_id)
@@ -66,6 +71,11 @@ def create_pr_from_session(ctx: click.Context, session_id: str | None, summary: 
         result = {"success": False, "error": "No plan found in Claude session files"}
         click.echo(json.dumps(result))
         raise SystemExit(1)
+
+    # Generate branch name with LLM slug
+    title = extract_title_from_plan(plan_text)
+    slug = generate_slug_or_fallback(prompt_executor, title)
+    branch_name = generate_planned_pr_branch_name(slug, time.now(), objective_id=None)
 
     # Create plan as a draft PR
     result = create_plan_draft_pr(
@@ -77,6 +87,7 @@ def create_pr_from_session(ctx: click.Context, session_id: str | None, summary: 
         repo_root=repo_root,
         cwd=cwd,
         plan_content=plan_text,
+        branch_name=branch_name,
         title=None,
         labels=["erk-pr", "erk-plan"],
         source_repo=None,

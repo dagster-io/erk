@@ -21,7 +21,6 @@ from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.time.abc import Time
-from erk_shared.naming import generate_planned_pr_branch_name
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 from erk_shared.plan_utils import extract_title_from_plan, get_title_tag_from_labels
@@ -58,6 +57,7 @@ def create_plan_draft_pr(
     repo_root: Path,
     cwd: Path,
     plan_content: str,
+    branch_name: str,
     title: str | None,
     labels: list[str],
     source_repo: str | None,
@@ -72,15 +72,14 @@ def create_plan_draft_pr(
 
     Handles the complete workflow:
     1. Extract/validate title from plan H1
-    2. Generate branch name with timestamp
-    3. Detect trunk, fetch origin/trunk, create branch
-    4. Build ref.json with provider and optional metadata
-    5. Commit plan.md + ref.json to branch via git plumbing
-    6. Push branch to remote
-    7. Build metadata dict with branch_name and optional fields
-    8. Prefix title with label tag ([erk-plan] or [erk-learn])
-    9. Create draft PR via PlannedPRBackend.create_plan()
-    10. Return CreatePlanDraftPRResult
+    2. Detect trunk, fetch origin/trunk, create branch
+    3. Build ref.json with provider and optional metadata
+    4. Commit plan.md + ref.json to branch via git plumbing
+    5. Push branch to remote
+    6. Build metadata dict with branch_name and optional fields
+    7. Prefix title with label tag ([erk-plan] or [erk-learn])
+    8. Create draft PR via PlannedPRBackend.create_plan()
+    9. Return CreatePlanDraftPRResult
 
     Args:
         git: Git gateway implementation
@@ -91,6 +90,7 @@ def create_plan_draft_pr(
         repo_root: Repository root directory
         cwd: Current working directory
         plan_content: The full plan markdown content
+        branch_name: Pre-generated branch name (callers use generate_planned_pr_branch_name)
         title: Optional title (extracted from H1 if None)
         labels: Labels to apply (e.g. ["erk-pr", "erk-plan"])
         source_repo: For cross-repo plans, the implementation repo
@@ -109,15 +109,7 @@ def create_plan_draft_pr(
     if title is None:
         title = extract_title_from_plan(plan_content)
 
-    # Step 2: Generate branch name
-    now = time.now()
-    branch_name = generate_planned_pr_branch_name(
-        title,
-        now,
-        objective_id=objective_id,
-    )
-
-    # Step 3: Detect trunk, fetch, create branch from origin/trunk
+    # Step 2: Detect trunk, fetch, create branch from origin/trunk
     trunk = git.branch.detect_trunk_branch(repo_root)
     git.remote.fetch_branch(repo_root, "origin", trunk)
     create_result = branch_manager.create_branch(repo_root, branch_name, f"origin/{trunk}")
@@ -131,7 +123,7 @@ def create_plan_draft_pr(
             error=create_result.message,
         )
 
-    # Step 4: Build ref.json
+    # Step 3: Build ref.json
     ref_data: dict[str, str | int | None] = {
         "provider": "github-draft-pr",
         "title": title,
@@ -139,7 +131,7 @@ def create_plan_draft_pr(
     if objective_id is not None:
         ref_data["objective_id"] = objective_id
 
-    # Step 5: Commit plan files to branch via git plumbing (no checkout)
+    # Step 4: Commit plan files to branch via git plumbing (no checkout)
     files: dict[str, str] = {
         f"{IMPL_CONTEXT_DIR}/plan.md": plan_content,
         f"{IMPL_CONTEXT_DIR}/ref.json": json.dumps(ref_data, indent=2),
@@ -153,10 +145,10 @@ def create_plan_draft_pr(
         message=f"Add plan: {title}",
     )
 
-    # Step 6: Push branch
+    # Step 5: Push branch
     git.remote.push_to_remote(cwd, "origin", branch_name, set_upstream=True, force=False)
 
-    # Step 7: Build metadata
+    # Step 6: Build metadata
     metadata: dict[str, object] = {"branch_name": branch_name, "base_ref_name": trunk}
 
     if source_repo is not None:
@@ -174,11 +166,11 @@ def create_plan_draft_pr(
     if created_from_workflow_run_url is not None:
         metadata["created_from_workflow_run_url"] = created_from_workflow_run_url
 
-    # Step 8: Prefix title with label tag
+    # Step 7: Prefix title with label tag
     title_tag = get_title_tag_from_labels(labels)
     prefixed_title = f"{title_tag} {title}"
 
-    # Step 9: Create draft PR via backend
+    # Step 8: Create draft PR via backend
     backend = PlannedPRBackend(github, github_issues, time=time)
     result = backend.create_plan(
         repo_root=repo_root,
@@ -201,7 +193,7 @@ def create_plan_draft_pr(
 
     plan_number = int(result.plan_id)
 
-    # Step 10: Return result
+    # Step 9: Return result
     return CreatePlanDraftPRResult(
         success=True,
         plan_number=plan_number,
