@@ -100,6 +100,27 @@ Show the user the batched execution plan from the classifier output:
 
 For each batch, execute this workflow using the thread IDs from the classifier JSON:
 
+#### Pre-Existing Batch (Special Handling)
+
+If the batch has `complexity: "pre_existing"`, handle it differently — no code changes, no CI, no commit:
+
+1. Resolve all threads in the batch via `erk exec resolve-review-threads` with a standard comment:
+
+```bash
+echo '[{"thread_id": "PRRT_abc", "comment": "Pre-existing issue — this code was moved/restructured, not newly introduced."}, ...]' | erk exec resolve-review-threads
+```
+
+2. Report progress:
+
+```
+## Batch 0: Pre-Existing (Auto-Resolve)
+
+Auto-resolved N pre-existing threads (bot comments on moved/restructured code).
+No code changes needed.
+```
+
+3. Continue to the next batch. Skip Steps 1-5 below for this batch.
+
 #### Step 1: Address All Comments in the Batch
 
 For each comment in the batch:
@@ -243,8 +264,10 @@ If `actionable_threads` or `discussion_actions` are non-empty, warn about remain
 ## All PR Comments Addressed
 
 Total comments: 8
+Pre-existing (auto-resolved): 3
+Actionable (code changes): 5
 Batches: 4
-Commits: 4
+Commits: 3
 
 All review threads resolved.
 All discussion comments marked with reaction.

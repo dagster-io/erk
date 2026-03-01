@@ -44,6 +44,13 @@ Parse the JSON response.
 ```
 ## PR #5944: "Feature: Add new API endpoint"
 
+### Pre-Existing Items (Auto-Resolve) (N total)
+
+| # | Type | Location | Summary |
+|---|------|----------|---------|
+| 1 | review | old_module.py:30 | Bot: use LBYL pattern (pre-existing in moved code) |
+| 2 | review | old_module.py:55 | Bot: add type annotation (pre-existing in moved code) |
+
 ### Actionable Items (N total)
 
 | # | Type | Location | Classification | Summary | Complexity |
@@ -60,26 +67,31 @@ Parse the JSON response.
 
 ### Execution Plan Preview
 
+**Batch 0: Pre-Existing (Auto-Resolve)** (auto-proceed, no code changes)
+- Item #1: old_module.py:30 - Bot: use LBYL pattern (pre-existing)
+- Item #2: old_module.py:55 - Bot: add type annotation (pre-existing)
+
 **Batch 1: Local Fixes** (auto-proceed)
-- Item #1: foo.py:42 - Use LBYL pattern
-- Item #2: bar.py:15 - Add type annotation
+- Item #3: foo.py:42 - Use LBYL pattern
+- Item #4: bar.py:15 - Add type annotation
 
 **Batch 2: Cross-Cutting** (user confirmation)
-- Item #3: Update documentation
+- Item #5: Update documentation
 
 **Batch 3: Informational** (user decides: act or dismiss)
-- Item #4: utils.py:10 - Bot suggestion: extract helper (optional)
+- Item #6: utils.py:10 - Bot suggestion: extract helper (optional)
 
 ### Statistics
+- Pre-existing items (auto-resolve): 2
 - Actionable items: 3
 - Informational items: 1
 - Informational discussion comments: 12
-- Estimated batches: 3
-- Auto-proceed batches: 1
+- Estimated batches: 4
+- Auto-proceed batches: 2
 - User confirmation batches: 2
 ```
 
-**Note:** Items in `actionable_threads` are split into two sections based on their `classification` field: `"actionable"` items appear under "Actionable Items", `"informational"` items appear under "Informational Items". Both sections use the same item numbering (continuous across sections).
+**Note:** Items in `actionable_threads` are split into three sections based on their `pre_existing` and `classification` fields: `pre_existing: true` items appear under "Pre-Existing Items (Auto-Resolve)", `"actionable"` items appear under "Actionable Items", `"informational"` items appear under "Informational Items". All sections use continuous item numbering.
 
 Add footer:
 
