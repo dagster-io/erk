@@ -90,11 +90,11 @@ def pr_create(
     if plans_repo is not None and repo.github is not None:
         source_repo = f"{repo.github.owner}/{repo.github.repo}"
 
-    # Extract title for branch name generation
-    resolved_title = title if title is not None else extract_title_from_plan(content)
-
     # Generate branch name with LLM slug
-    slug = generate_slug_or_fallback(ctx.prompt_executor, resolved_title)
+    slug = generate_slug_or_fallback(
+        ctx.prompt_executor,
+        title if title is not None else extract_title_from_plan(content),
+    )
     branch_name = generate_planned_pr_branch_name(slug, ctx.time.now(), objective_id=None)
 
     # Create plan as a draft PR

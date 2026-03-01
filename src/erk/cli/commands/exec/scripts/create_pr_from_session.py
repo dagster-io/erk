@@ -73,8 +73,7 @@ def create_pr_from_session(ctx: click.Context, session_id: str | None, summary: 
         raise SystemExit(1)
 
     # Generate branch name with LLM slug
-    title = extract_title_from_plan(plan_text)
-    slug = generate_slug_or_fallback(prompt_executor, title)
+    slug = generate_slug_or_fallback(prompt_executor, extract_title_from_plan(plan_text))
     branch_name = generate_planned_pr_branch_name(slug, time.now(), objective_id=None)
 
     # Create plan as a draft PR
