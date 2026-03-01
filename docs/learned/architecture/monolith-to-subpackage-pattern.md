@@ -55,30 +55,9 @@ The `CheckResult` frozen dataclass holds eight fields: `name`, `passed`, `messag
 
 The `__init__.py` imports all submodule functions explicitly and coordinates execution:
 
-```python
-"""Health checks orchestrator.
+<!-- Source: src/erk/core/health_checks/__init__.py -->
 
-Submodules:
-- anthropic_api_secret: check_anthropic_api_secret()
-- claude_cli: check_claude_cli()
-- erk_version: check_erk_version()
-...
-"""
-
-from erk.core.health_checks.anthropic_api_secret import check_anthropic_api_secret
-from erk.core.health_checks.claude_cli import check_claude_cli
-from erk.core.health_checks.erk_version import check_erk_version
-# ... all 26 imports
-
-def run_all_checks(ctx: ErkContext, *, check_hooks: bool) -> list[CheckResult]:
-    results = []
-    results.append(check_erk_version())
-    results.append(check_github_cli(ctx.shell))
-    # ... conditional execution based on context
-    return results
-```
-
-The import list serves dual purpose: dependency declaration and module index.
+The orchestrator's module docstring lists every submodule and its check function, serving as a human-readable index. Below the docstring, explicit imports pull in all 26 check functions — this import list doubles as a dependency declaration and module index. The `run_all_checks(ctx, *, check_hooks)` function appends each check result to a list, with conditional execution based on context flags.
 
 ### 4. Lazy Imports for Heavy Dependencies
 
