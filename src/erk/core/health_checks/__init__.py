@@ -130,10 +130,10 @@ def run_all_checks(ctx: ErkContext, *, check_hooks: bool) -> list[CheckResult]:
         )
 
         # Check plans_repo labels if configured
-        from erk.cli.config import load_config as load_repo_config
+        from erk.cli.config import load_config
         from erk_shared.gateway.github.issues.real import RealGitHubIssues
 
-        repo_config = load_repo_config(repo_root)
+        repo_config = load_config(repo_root)
         if repo_config.plans_repo is not None:
             from erk_shared.gateway.time.real import RealTime
 
