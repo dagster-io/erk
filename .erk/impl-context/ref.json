@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Unassign blocking slots and teach audit-branches to auto-unassign"
+}
