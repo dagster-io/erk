@@ -1,0 +1,860 @@
+<session>
+  <meta source="agent-a8434f0" />
+  <meta branch="plnd/fix-dispatch-worktree-conf-03-01-1410" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Find the following in the codebase and report back their signatures/implementations:
+
+1. `find_worktree_for_branch` method - look in the worktree ABC, real, and fake implementations. I need to know:
+   - The method signature (parameters and return type)
+   - The fake implementation (how to set up test data)
+
+2. `WorktreeInfo` dataclass - its fields
+
+3. The `FakeGit` constructor - specifically how `worktrees` parameter works
+
+4. `build_workspace_test_context` function signature
+
+FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+Report exact file paths and line numbers.</user>
+  <assistant>I'll help you find these items in the codebase. Let me start by checking the documentation as instructed.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6855" cache_read_input_tokens="11615" cache_creation="{'ephemeral_5m_input_tokens': 6855, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01B21yJiejBNPoBSBs891FPz">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6855" cache_read_input_tokens="11615" cache_creation="{'ephemeral_5m_input_tokens': 6855, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01GvgmLbRfHXpxrrL9U3oVLr">
+    <param name="pattern">worktree|WorktreeInfo|FakeGit|build_workspace_test_context</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="glob">*.md</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6855" cache_read_input_tokens="11615" cache_creation="{'ephemeral_5m_input_tokens': 6855, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01B21yJiejBNPoBSBs891FPz">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01GvgmLbRfHXpxrrL9U3oVLr">
+Found 135 files
+docs/learned/tui/plan-row-data.md
+docs/learned/tui/view-switching.md
+docs/learned/uncategorized/tripwires.md
+docs/learned/tui/architecture.md
+docs/learned/tui/data-contract.md
+docs/learned/tui/derived-display-columns.md
+docs/learned/testing/testing.md
+docs/learned/testing/tripwires.md
+docs/learned/tui/action-inventory.md
+docs/learned/testing/hook-testing.md
+docs/learned/testing/index.md
+docs/learned/testing/mock-elimination.md
+docs/learned/testing/monkeypatch-elimination-checklist.md
+docs/learned/testing/monkeypatch-vs-fakes-decision.md
+docs/learned/testing/rebase-conflicts.md
+docs/learned/testing/cli-testing.md
+docs/learned/testing/command-group-testing.md
+docs/learned/testing/dual-backend-testing.md
+docs/learned/testing/env-overrides-pattern.md
+docs/learned/testing/environment-variable-isolation.md
+docs/learned/testing/exec-script-batch-testing.md
+docs/learned/testing/exec-script-testing.md
+docs/learned/testing/fake-git-divergence.md
+docs/learned/testing/fake-github-api-reference.md
+docs/learned/testing/fake-github-mutation-tracking.md
+docs/learned/testing/fake-github-testing.md
+docs/learned/testing/frozen-dataclass-test-doubles.md
+docs/learned/testing/gateway-fake-testing-exemplar.md
+docs/learned/sessions/layout.md
+
+... [106 lines omitted] ...
+
+docs/learned/architecture/gateway-error-boundaries.md
+docs/learned/architecture/discriminated-union-error-handling.md
+docs/learned/architecture/claude-cli-error-reporting.md
+  </tool_result>
+  <assistant>Good, I found many relevant docs. Let me check the key ones for worktree and testing patterns:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="3226" cache_read_input_tokens="18470" cache_creation="{'ephemeral_5m_input_tokens': 3226, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XyUTVfDdBptFevokyc4e9o">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/worktree-metadata.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3226" cache_read_input_tokens="18470" cache_creation="{'ephemeral_5m_input_tokens': 3226, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018ouzkkFe3UeS6kYHencBFp">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/testing.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3226" cache_read_input_tokens="18470" cache_creation="{'ephemeral_5m_input_tokens': 3226, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017BcB5ku1LoS5AAaY39vn3u">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/test-context-composition.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3226" cache_read_input_tokens="18470" cache_creation="{'ephemeral_5m_input_tokens': 3226, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XyUTVfDdBptFevokyc4e9o">
+     1→---
+     2→title: Worktree Metadata Storage
+     3→read_when:
+     4→  - "storing per-worktree data"
+     5→  - "working with worktrees.toml"
+     6→  - "associating metadata with worktrees"
+     7→  - "implementing subdirectory navigation"
+     8→  - "preserving relative path on worktree switch"
+     9→---
+    10→
+    11→# Worktree Metadata Storage
+    12→
+    13→## Overview
+    14→
+    15→Per-worktree metadata is stored in `~/.erk/repos/{repo}/worktrees.toml`. This file associates worktree names with metadata.
+    16→
+    17→## File Location
+    18→
+    19→```
+    20→~/.erk/repos/
+    21→└── {repo-name}/
+    22→    ├── config.toml      ← Repo-level configuration
+    23→    └── worktrees.toml   ← Per-worktree metadata
+    24→```
+    25→
+    26→## API
+    27→
+    28→**Utilities**: `src/erk/core/worktree_utils.py` — contains worktree lookup and navigation helpers (`find_current_worktree`, `compute_relative_path_in_worktree`, etc.).
+    29→
+    30→## Subdirectory Navigation Patterns
+
+... [30 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_018ouzkkFe3UeS6kYHencBFp">
+     1→---
+     2→title: Erk Test Reference
+     3→last_audited: "2026-02-13 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "writing tests for erk"
+     7→  - "using erk fakes"
+     8→  - "running erk test commands"
+     9→tripwires:
+    10→  - action: "modifying business logic in src/ without adding a test"
+    11→    warning: "Bug fixes require regression tests (fails before, passes after). Features require behavior tests."
+    12→  - action: "implementing interactive prompts with ctx.console.confirm()"
+    13→    warning: "Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. Array length must match prompt count exactly — too few causes IndexError, too many indicates a removed prompt. See tests/commands/submit/test_existing_branch_detection.py for examples."
+    14→  - action: "accessing FakeGit properties in tests"
+    15→    warning: "FakeGit has top-level properties (e.g., `git.staged_files`, `git.deleted_branches`, `git.added_worktrees`). Worktree operations delegate to an internal FakeWorktree sub-gateway."
+    16→  - action: "asserting on fake-specific properties in tests using `build_workspace_test_context` with `use_graphite=True`"
+    17→    warning: "Production wrappers (e.g., `GraphiteBranchManager`) do not expose fake tracking properties like `submitted_branches`. Assert on observable behavior (CLI output, return values) instead of accessing fake internals through the wrapper."
+    18→  - action: "asserting on YAML metadata field values with exact string matching"
+    19→    warning: 'Assert on key-only format (''field_name:''), not ''field_name: "value"''. YAML serialization differs from Python repr.'
+    20→  - action: "changing cleanup or deletion behavior without updating test assertions"
+    21→    warning: "When behavior changes from 'delete X' to 'preserve X', update test assertions to verify the new behavior (e.g., assert file persists instead of asserting it was deleted). Stale assertions silently validate the old behavior."
+    22→    score: 4
+    23→  - action: "asserting user_output() content against capsys stdout"
+    24→    warning: "user_output() routes to stderr. When testing code that calls user_output(), assert against capsys.readouterr().err, not .out."
+    25→  - action: "using context_for_test() with wrong parameter name for issues"
+    26→    warning: "erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError."
+    27→---
+    28→
+    29→# Erk Test Reference
+    30→
+
+... [534 lines omitted] ...
+
+   154→**If you see path mismatch errors:** Ensure FakeGit's path resolution methods are being used (they handle symlinks), not direct dict lookups.
+   156→#### FakeWorktree Error Injection
+   158→FakeWorktree (in `packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py`) uses string-based error injection via constructor parameters. Errors raise `RuntimeError`:
+   163→# Inject error for add_worktree
+   165→    add_worktree_error="Worktree already exists",
+   166→    remove_worktree_error="Worktree is locked",
+   170→When `add_worktree_error` or `remove_worktree_error` is set, the corresponding method raises `RuntimeError` with that message. Error injection is checked FIRST in the method body, before any success logic executes.
+   172→You can also inject these errors via the top-level `FakeGit` constructor:
+   176→    add_worktree_error="Worktree already exists",
+   177→    remove_worktree_error="Worktree is locked",
+   199→This fake supports error injection via the `create_branch_error` constructor parameter, which accepts a `BranchAlreadyExists` instance:
+   209→# With error injection
+   210→fake_with_error = FakeGitBranchOps(
+   226→### Common Mistake: Sentinel Path Errors
+   446→fake_console.assert_not_contains("Error")
+   449→### Error Behavior
+   451→If `confirm()` is called but no responses remain, FakeConsole raises `AssertionError` with the prompt text. This catches missing test setup.
+   506→When refactoring gateway methods from exception-based to discriminated unions, update test names to reflect the new pattern.
+   508→### Pattern: Exception -&gt; Union
+   510→| Old Test Name (Exception-Based)       | New Test Name (Discriminated Union)      |
+   512→| `test_merge_pr_failure_returns_false` | `test_merge_pr_returns_merge_error`      |
+   515→| `test_get_issue_raises_api_error`     | `test_get_issue_returns_api_error`       |
+   524→**Error Case:**
+   526→- Old: `test_&lt;method&gt;_raises_&lt;error&gt;` or `test_&lt;method&gt;_returns_false`
+   527→- New: `test_&lt;method&gt;_returns_&lt;error_type&gt;`
+   535→3. [ ] Update docstring to describe return type (not exception)
+   536→4. [ ] Verify fake setup returns type (not raises exception)
+   541→When function signatures change (e.g., adding a column to a table, adding a new parameter), **all test fixtures must be updated comprehensively**. Partial updates cause hard-to-debug failures.
+  </tool_result>
+  <tool_result tool="toolu_017BcB5ku1LoS5AAaY39vn3u">
+     1→---
+     2→title: Test Context Composition
+     3→read_when:
+     4→  - "using build_workspace_test_context with custom fakes"
+     5→  - "debugging invisible metadata writes in tests"
+     6→  - "understanding issues_explicitly_passed flag"
+     7→tripwires:
+     8→  - action: "creating custom FakeGitHubIssues without passing to test context builder"
+     9→    warning: "Always pass issues=issues to build_workspace_test_context when using custom FakeGitHubIssues. Without it, plan_backend operates on a different instance and metadata writes are invisible."
+    10→---
+    11→
+    12→# Test Context Composition
+    13→
+    14→When building test contexts with custom fakes, the composition matters — particularly for `FakeGitHubIssues` instances that are shared across multiple consumers.
+    15→
+    16→## The Shared Instance Problem
+    17→
+    18→`build_workspace_test_context()` creates a default `FakeGitHubIssues` if none is passed. If you create your own `FakeGitHubIssues` but don't pass it to the context builder, two separate instances exist:
+    19→
+    20→1. Your instance (which you assert against)
+    21→2. The context builder's internal instance (which `plan_backend` uses)
+    22→
+    23→Metadata writes through `plan_backend` go to instance #2, invisible to your assertions on instance #1.
+    24→
+    25→## Correct Pattern
+    26→
+    27→```python
+    28→def test_metadata_is_written(env: ErkInMemEnv) -&gt; None:
+    29→    issues = FakeGitHubIssues(issues={42: IssueInfo(
+    30→        number=42, title="Plan", body="# Plan\n\nContent", ...
+
+... [28 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now I have good reference documentation. Let me search for the actual implementation files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="9781" cache_read_input_tokens="21696" cache_creation="{'ephemeral_5m_input_tokens': 9781, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01VSNEc9bUxBjZpMH1ARuiuv">
+    <param name="pattern">**/gateway/**/worktree/abc.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="9781" cache_read_input_tokens="21696" cache_creation="{'ephemeral_5m_input_tokens': 9781, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_012HMv76kn6hxdAdJZwMeEGo">
+    <param name="pattern">**/gateway/**/worktree/fake.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="9781" cache_read_input_tokens="21696" cache_creation="{'ephemeral_5m_input_tokens': 9781, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01GDgC2GRicAQv24VGYQiDEs">
+    <param name="pattern">**/gateway/**/worktree/real.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="9781" cache_read_input_tokens="21696" cache_creation="{'ephemeral_5m_input_tokens': 9781, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_012BfDR8kErCaMN4VSachg1H">
+    <param name="pattern">**/gateway/git/fake.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="9781" cache_read_input_tokens="21696" cache_creation="{'ephemeral_5m_input_tokens': 9781, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GDgC2GRicAQv24VGYQiDEs">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py
+  </tool_result>
+  <tool_result tool="toolu_012HMv76kn6hxdAdJZwMeEGo">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py
+  </tool_result>
+  <tool_result tool="toolu_01VSNEc9bUxBjZpMH1ARuiuv">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py
+  </tool_result>
+  <tool_result tool="toolu_012BfDR8kErCaMN4VSachg1H">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py
+  </tool_result>
+  <assistant>Now let me also search for the WorktreeInfo and test context function:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="609" cache_read_input_tokens="31477" cache_creation="{'ephemeral_5m_input_tokens': 609, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MzkHPpw7SZyYVUxRHhnybh">
+    <param name="command">find /home/runner/work/erk/erk -name "*.py" -type f | xargs grep -l "class WorktreeInfo" 2&gt;/dev/null | head -5</param>
+    <param name="description">Find WorktreeInfo class definition</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="609" cache_read_input_tokens="31477" cache_creation="{'ephemeral_5m_input_tokens': 609, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CmCRp7FHQm9kSAW47xYHTm">
+    <param name="command">find /home/runner/work/erk/erk -name "*.py" -type f | xargs grep -l "def build_workspace_test_context" 2&gt;/dev/null | head -5</param>
+    <param name="description">Find build_workspace_test_context function</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="609" cache_read_input_tokens="31477" cache_creation="{'ephemeral_5m_input_tokens': 609, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CmCRp7FHQm9kSAW47xYHTm">
+/home/runner/work/erk/erk/tests/test_utils/context_builders.py
+  </tool_result>
+  <tool_result tool="toolu_01MzkHPpw7SZyYVUxRHhnybh">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/abc.py
+  </tool_result>
+  <assistant>Great! Now let me read all these files:</assistant>
+  <usage input_tokens="54" cache_creation_input_tokens="452" cache_read_input_tokens="32086" cache_creation="{'ephemeral_5m_input_tokens': 452, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WZQ72TaCq2ZWcUMvvAqv16">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py</param>
+  </tool_use>
+  <usage input_tokens="54" cache_creation_input_tokens="452" cache_read_input_tokens="32086" cache_creation="{'ephemeral_5m_input_tokens': 452, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011woqd1YbPiSM4CXsREo33W">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py</param>
+  </tool_use>
+  <usage input_tokens="54" cache_creation_input_tokens="452" cache_read_input_tokens="32086" cache_creation="{'ephemeral_5m_input_tokens': 452, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011GdFwYcfKDbAx2ZZgryrQ8">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py</param>
+  </tool_use>
+  <usage input_tokens="54" cache_creation_input_tokens="452" cache_read_input_tokens="32086" cache_creation="{'ephemeral_5m_input_tokens': 452, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PYDhT1goKzD5UaUv6iCDkL">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/abc.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="54" cache_creation_input_tokens="452" cache_read_input_tokens="32086" cache_creation="{'ephemeral_5m_input_tokens': 452, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WZQ72TaCq2ZWcUMvvAqv16">
+     1→"""Abstract interface for git worktree operations.
+     2→
+     3→This module provides a clean abstraction over git worktree subprocess calls,
+     4→making the codebase more testable and maintainable.
+     5→
+     6→Architecture:
+     7→- Worktree: Abstract base class defining the interface
+     8→- RealWorktree: Production implementation using subprocess
+     9→- FakeWorktree: In-memory implementation for testing
+    10→"""
+    11→
+    12→from abc import ABC, abstractmethod
+    13→from pathlib import Path
+    14→
+    15→# Re-export WorktreeInfo from the main git.abc module for backwards compatibility
+    16→from erk_shared.gateway.git.abc import WorktreeInfo
+    17→
+    18→
+    19→class Worktree(ABC):
+    20→    """Abstract interface for git worktree operations.
+    21→
+    22→    All implementations (real and fake) must implement this interface.
+    23→    """
+    24→
+    25→    @abstractmethod
+    26→    def list_worktrees(self, repo_root: Path) -&gt; list[WorktreeInfo]:
+    27→        """List all worktrees in the repository."""
+    28→        ...
+    29→
+    30→    @abstractmethod
+
+... [141 lines omitted] ...
+
+    50→            RuntimeError: If the worktree add operation fails.
+    69→            RuntimeError: If the worktree remove operation fails.
+  </tool_result>
+  <tool_result tool="toolu_011woqd1YbPiSM4CXsREo33W">
+     1→"""Fake worktree operations for testing.
+     2→
+     3→FakeWorktree is an in-memory implementation that accepts pre-configured state
+     4→in its constructor. Construct instances directly with keyword arguments.
+     5→"""
+     6→
+     7→import os
+     8→from pathlib import Path
+     9→
+    10→from erk_shared.gateway.git.abc import WorktreeInfo
+    11→from erk_shared.gateway.git.worktree.abc import Worktree
+    12→
+    13→
+    14→class FakeWorktree(Worktree):
+    15→    """In-memory fake implementation of git worktree operations.
+    16→
+    17→    State Management:
+    18→    -----------------
+    19→    This fake maintains mutable state to simulate git's stateful behavior.
+    20→    Operations like add_worktree, move_worktree modify internal state.
+    21→    State changes are visible to subsequent method calls within the same test.
+    22→
+    23→    Constructor Injection:
+    24→    ---------------------
+    25→    All INITIAL state is provided via constructor (immutable after construction).
+    26→    Runtime mutations occur through operation methods.
+    27→    Tests should construct fakes with complete initial state.
+    28→
+    29→    Mutation Tracking:
+    30→    -----------------
+
+... [272 lines omitted] ...
+
+    43→        add_worktree_error: str | None = None,
+    44→        remove_worktree_error: str | None = None,
+    52→            add_worktree_error: If set, add_worktree raises RuntimeError with this message
+    53→            remove_worktree_error: Error message to raise from remove_worktree() for error injection
+    60→        self._add_worktree_error = add_worktree_error
+    61→        self._remove_worktree_error = remove_worktree_error
+   102→        Raises RuntimeError if add_worktree_error is configured.
+   104→        if self._add_worktree_error is not None:
+   105→            raise RuntimeError(self._add_worktree_error)
+   133→        # Check for error injection first
+   134→        if self._remove_worktree_error is not None:
+   135→            raise RuntimeError(self._remove_worktree_error)
+   188→        except ImportError:
+   217→            except (ValueError, OSError, RuntimeError):
+   218→                # Not relative to this existing_path or error checking, continue
+   228→            except (OSError, RuntimeError):
+  </tool_result>
+  <tool_result tool="toolu_011GdFwYcfKDbAx2ZZgryrQ8">
+     1→"""Production worktree implementation using subprocess.
+     2→
+     3→This module provides the real worktree implementation that executes actual git
+     4→worktree commands via subprocess.
+     5→"""
+     6→
+     7→import os
+     8→import subprocess
+     9→from pathlib import Path
+    10→
+    11→from erk_shared.gateway.git.abc import WorktreeInfo
+    12→from erk_shared.gateway.git.worktree.abc import Worktree
+    13→from erk_shared.subprocess_utils import run_subprocess_with_context
+    14→
+    15→
+    16→class RealWorktree(Worktree):
+    17→    """Production implementation using subprocess.
+    18→
+    19→    All worktree operations execute actual git commands via subprocess.
+    20→    """
+    21→
+    22→    def list_worktrees(self, repo_root: Path) -&gt; list[WorktreeInfo]:
+    23→        """List all worktrees in the repository."""
+    24→        result = run_subprocess_with_context(
+    25→            cmd=["git", "worktree", "list", "--porcelain"],
+    26→            operation_context="list worktrees",
+    27→            cwd=repo_root,
+    28→        )
+    29→
+    30→        worktrees: list[WorktreeInfo] = []
+
+... [181 lines omitted] ...
+
+   174→        # Exit code 0 means no changes, non-zero means changes exist or error
+  </tool_result>
+  <tool_result tool="toolu_01PYDhT1goKzD5UaUv6iCDkL">
+     1→"""High-level git operations interface.
+     2→
+     3→This module provides a clean abstraction over git subprocess calls, making the
+     4→codebase more testable and maintainable.
+     5→
+     6→Architecture:
+     7→- Git: Abstract base class defining the interface
+     8→- RealGit: Production implementation using subprocess
+     9→- Standalone functions: Convenience wrappers delegating to module singleton
+    10→"""
+    11→
+    12→from __future__ import annotations
+    13→
+    14→from abc import ABC, abstractmethod
+    15→from dataclasses import dataclass
+    16→from pathlib import Path
+    17→from typing import TYPE_CHECKING, NamedTuple
+    18→
+    19→if TYPE_CHECKING:
+    20→    from erk_shared.gateway.git.analysis_ops.abc import GitAnalysisOps
+    21→    from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+    22→    from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
+    23→    from erk_shared.gateway.git.config_ops.abc import GitConfigOps
+    24→    from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
+    25→    from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
+    26→    from erk_shared.gateway.git.repo_ops.abc import GitRepoOps
+    27→    from erk_shared.gateway.git.status_ops.abc import GitStatusOps
+    28→    from erk_shared.gateway.git.tag_ops.abc import GitTagOps
+    29→    from erk_shared.gateway.git.worktree.abc import Worktree
+    30→
+
+... [125 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me read the FakeGit file and the test context builder:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="11309" cache_read_input_tokens="32538" cache_creation="{'ephemeral_5m_input_tokens': 11309, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011ch64Kw5qauyjiiW1hWV8R">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="11309" cache_read_input_tokens="32538" cache_creation="{'ephemeral_5m_input_tokens': 11309, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UsmzuuV2Amvb8iZeZEcRJp">
+    <param name="file_path">/home/runner/work/erk/erk/tests/test_utils/context_builders.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="11309" cache_read_input_tokens="32538" cache_creation="{'ephemeral_5m_input_tokens': 11309, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011ch64Kw5qauyjiiW1hWV8R">
+     1→"""Fake git operations for testing.
+     2→
+     3→FakeGit is an in-memory implementation that accepts pre-configured state
+     4→in its constructor. Construct instances directly with keyword arguments.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from collections.abc import Callable
+    10→from pathlib import Path
+    11→from typing import NamedTuple
+    12→
+    13→from erk_shared.gateway.git.abc import (
+    14→    BranchDivergence,
+    15→    BranchSyncInfo,
+    16→    Git,
+    17→    RebaseResult,
+    18→    WorktreeInfo,
+    19→)
+    20→from erk_shared.gateway.git.analysis_ops.abc import GitAnalysisOps
+    21→from erk_shared.gateway.git.analysis_ops.fake import FakeGitAnalysisOps
+    22→from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+    23→from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
+    24→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+    25→from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
+    26→from erk_shared.gateway.git.commit_ops.fake import (
+    27→    BranchCommitRecord,
+    28→    CommitRecord,
+    29→    FakeGitCommitOps,
+    30→)
+
+... [175 lines omitted] ...
+
+    37→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+   135→        delete_branch_raises: dict[str, Exception] | None = None,
+   138→        tracking_branch_failures: dict[str, str] | None = None,
+   148→        add_all_raises: Exception | None = None,
+   149→        fetch_branch_raises: Exception | None = None,
+   150→        pull_branch_raises: Exception | None = None,
+   153→        rebase_continue_raises: Exception | None = None,
+   160→        push_to_remote_error: PushError | None = None,
+   164→        rebase_abort_raises: Exception | None = None,
+   165→        pull_rebase_error: PullRebaseError | None = None,
+   167→        create_branch_error: BranchAlreadyExists | None = None,
+   168→        add_worktree_error: str | None = None,
+   169→        remove_worktree_error: str | None = None,
+   170→        ahead_behind_raises: RuntimeError | None = None,
+   194→            delete_branch_raises: Mapping of branch name -&gt; exception to raise on delete
+   198→            tracking_branch_failures: Mapping of branch name -&gt; error message to raise
+  </tool_result>
+  <tool_result tool="toolu_01UsmzuuV2Amvb8iZeZEcRJp">
+     1→"""Shared context builders for test scenarios.
+     2→
+     3→This module provides reusable context builder functions to eliminate duplication
+     4→across test files. These builders encapsulate common patterns for setting up
+     5→ErkContext with appropriate fake implementations.
+     6→"""
+     7→
+     8→from erk.core.context import ErkContext
+     9→from erk_shared.core.fakes import FakePlanListService
+    10→from erk_shared.core.plan_list_service import PlanListData
+    11→from erk_shared.gateway.git.dry_run import DryRunGit
+    12→from erk_shared.gateway.git.fake import FakeGit
+    13→from erk_shared.gateway.github.fake import FakeGitHub
+    14→from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
+    15→from erk_shared.plan_store.types import Plan
+    16→from tests.fakes.shell import FakeShell
+    17→from tests.test_utils.env_helpers import ErkInMemEnv, ErkIsolatedFsEnv
+    18→
+    19→
+    20→def build_workspace_test_context(
+    21→    env: ErkInMemEnv | ErkIsolatedFsEnv,
+    22→    *,
+    23→    dry_run: bool = False,
+    24→    use_graphite: bool = False,
+    25→    current_branch: str | None = None,
+    26→    **kwargs,
+    27→) -&gt; ErkContext:
+    28→    """Build ErkContext for workspace command tests (create, split, consolidate, delete).
+    29→
+    30→    This builder provides a standard context configuration for workspace manipulation
+
+... [123 lines omitted] ...
+
+   137→    warnings: tuple[str, ...] = (),
+   145→            warnings=warnings,
+  </tool_result>
+  <assistant>Perfect! Now I need to get the rest of FakeGit constructor to see all the parameters:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="8857" cache_read_input_tokens="43847" cache_creation="{'ephemeral_5m_input_tokens': 8857, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DZyhPLL7chPq6TBqucWNZ2">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="offset">200</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="8857" cache_read_input_tokens="43847" cache_creation="{'ephemeral_5m_input_tokens': 8857, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DZyhPLL7chPq6TBqucWNZ2">
+   200→            dirty_worktrees: Set of worktree paths that have uncommitted/staged/untracked changes
+   201→            branch_last_commit_times: Mapping of (repo_root, branch, trunk) -&gt; ISO 8601 timestamp
+   202→            repository_roots: Mapping of cwd -&gt; repository root path
+   203→            diff_to_branch: Mapping of (cwd, branch) -&gt; diff output
+   204→            merge_conflicts: Mapping of (base_branch, head_branch) -&gt; has conflicts bool
+   205→            commits_ahead: Mapping of (cwd, base_branch) -&gt; commit count
+   206→            commits_behind: Mapping of (cwd, target_branch) -&gt; commit count
+   207→            remote_urls: Mapping of (repo_root, remote_name) -&gt; remote URL
+   208→            ref_file_contents: Mapping of (ref, file_path) -&gt; bytes for read_file_from_ref
+   209→            add_all_raises: Exception to raise when add_all() is called
+   210→            fetch_branch_raises: Exception to raise when fetch_branch() is called
+   211→            pull_branch_raises: Exception to raise when pull_branch() is called
+   212→            conflicted_files: List of file paths with merge conflicts
+   213→            rebase_in_progress: Whether a rebase is currently in progress.
+   214→                Can be a bool or a callable(cwd) -&gt; bool for dynamic behavior.
+   215→            rebase_continue_raises: Exception to raise when rebase_continue() is called
+   216→            rebase_continue_clears_rebase: If True, rebase_continue() clears the rebase state
+   217→            commit_messages_since: Mapping of (cwd, base_branch) -&gt; list of commit messages
+   218→            head_commit_messages_full: Mapping of cwd -&gt; full commit message for HEAD
+   219→            git_user_name: Configured git user.name to return from get_git_user_name()
+   220→            branch_commits_with_authors: Mapping of (repo_root, branch, trunk, limit)
+   221→                -&gt; commit dicts with keys: sha, author, timestamp
+   222→            push_to_remote_error: PushError to return when push_to_remote() is called
+   223→            existing_tags: Set of tag names that exist in the repository
+   224→            branch_divergence: Mapping of (cwd, branch, remote) -&gt; BranchDivergence
+   225→                for is_branch_diverged_from_remote()
+   226→            rebase_onto_result: Result to return from rebase_onto(). Defaults to success.
+   227→            rebase_abort_raises: Exception to raise when rebase_abort() is called
+   228→            pull_rebase_error: PullRebaseError to return when pull_rebase() is called
+   229→            merge_bases: Mapping of (ref1, ref2) -&gt; merge base commit SHA for
+
+... [125 lines omitted] ...
+
+   232→            create_branch_error: BranchAlreadyExists to return from create_branch()
+   233→            add_worktree_error: Error message to raise as RuntimeError from add_worktree()
+   234→            remove_worktree_error: Error message to raise as RuntimeError from remove_worktree()
+   235→            ahead_behind_raises: If set, get_ahead_behind() raises this error
+   257→        self._tracking_branch_failures = tracking_branch_failures or {}
+   277→        self._push_to_remote_error = push_to_remote_error
+   282→        self._pull_rebase_error = pull_rebase_error
+   284→        self._remove_worktree_error = remove_worktree_error
+   343→            add_worktree_error=add_worktree_error,
+   344→            remove_worktree_error=self._remove_worktree_error,
+  </tool_result>
+  <assistant>Perfect! I have all the information needed. Let me compile my findings:
+
+## Summary
+
+I've found all the requested items in the codebase. Here are the exact signatures, implementations, and file locations:
+
+---
+
+### 1. `find_worktree_for_branch` Method
+
+**ABC Signature** (abstract interface):
+- **File**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py`
+- **Lines**: 79-89
+```python
+@abstractmethod
+def find_worktree_for_branch(self, repo_root: Path, branch: str) -&gt; Path | None:
+    """Find worktree path for given branch name.
+
+    Args:
+        repo_root: Repository root path
+        branch: Branch name to search for
+
+    Returns:
+        Path to worktree if branch is checked out, None otherwise
+    """
+    ...
+```
+
+**Real Implementation** (`RealWorktree`):
+- **File**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py`
+- **Lines**: 149-155
+```python
+def find_worktree_for_branch(self, repo_root: Path, branch: str) -&gt; Path | None:
+    """Find worktree path for given branch name."""
+    worktrees = self.list_worktrees(repo_root)
+    for wt in worktrees:
+        if wt.branch == branch:
+            return wt.path
+    return None
+```
+
+**Fake Implementation** (`FakeWorktree`):
+- **File**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py`
+- **Lines**: 150-156
+```python
+def find_worktree_for_branch(self, repo_root: Path, branch: str) -&gt; Path | None:
+    """Find worktree path for given branch name in fake data."""
+    worktrees = self.list_worktrees(repo_root)
+    for wt in worktrees:
+        if wt.branch == branch:
+            return wt.path
+    return None
+```
+
+**How to Set Up Test Data (FakeWorktree)**:
+```python
+from pathlib import Path
+from erk_shared.gateway.git.abc import WorktreeInfo
+from erk_shared.gateway.git.worktree.fake import FakeWorktree
+
+# Create FakeWorktree with initial worktrees
+repo_root = Path("/repo")
+wt_feature = Path("/repo/wt-feature")
+
+fake_worktree = FakeWorktree(
+    worktrees={
+        repo_root: [
+            WorktreeInfo(path=repo_root, branch="main", is_root=True),
+            WorktreeInfo(path=wt_feature, branch="feature", is_root=False),
+        ]
+    }
+)
+
+# Now you can test
+assert fake_worktree.find_worktree_for_branch(repo_root, "feature") == wt_feature
+assert fake_worktree.find_worktree_for_branch(repo_root, "main") == repo_root
+```
+
+---
+
+### 2. `WorktreeInfo` Dataclass
+
+**File**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/abc.py`
+**Lines**: 47-53
+
+```python
+@dataclass(frozen=True)
+class WorktreeInfo:
+    """Information about a single git worktree."""
+
+    path: Path
+    branch: str | None
+    is_root: bool = False
+```
+
+**Fields**:
+- `path: Path` - The filesystem path to the worktree
+- `branch: str | None` - The branch name checked out in the worktree (None if detached HEAD)
+- `is_root: bool = False` - Whether this is the root worktree (default is False, only the first worktree in git's list is marked as root)
+
+---
+
+### 3. `FakeGit` Constructor - `worktrees` Parameter
+
+**File**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py`
+**Lines**: 116-172 (constructor signature), 176-180 (docstring for worktrees parameter), 238 (initialization)
+
+**Parameter Signature**:
+```python
+def __init__(
+    self,
+    *,
+    worktrees: dict[Path, list[WorktreeInfo]] | None = None,
+    # ... many other parameters
+) -&gt; None:
+```
+
+**Docstring (from lines 176-180)**:
+```python
+worktrees: Mapping of repo_root -&gt; list of worktrees
+```
+
+**How It Works**:
+```python
+from pathlib import Path
+from erk_shared.gateway.git.abc import WorktreeInfo
+from erk_shared.gateway.git.fake import FakeGit
+
+repo_root = Path("/repo")
+wt1 = Path("/repo/wt1")
+wt2 = Path("/repo/wt2")
+
+git_ops = FakeGit(
+    worktrees={
+        repo_root: [
+            WorktreeInfo(path=repo_root, branch="main", is_root=True),
+            WorktreeInfo(path=wt1, branch="feature-1", is_root=False),
+            WorktreeInfo(path=wt2, branch="feature-2", is_root=False),
+        ]
+    }
+)
+
+# Access via the worktree sub-gateway
+assert len(git_ops.worktree.list_worktrees(repo_root)) == 3
+```
+
+The `worktrees` parameter is passed directly to the internal `FakeWorktree` sub-gateway (lines 339-345):
+```python
+self._worktree_gateway = FakeWorktree(
+    worktrees=self._worktrees,
+    existing_paths=self._existing_paths,
+    dirty_worktrees=self._dirty_worktrees,
+    add_worktree_error=add_worktree_error,
+    remove_worktree_error=self._remove_worktree_error,
+)
+```
+
+---
+
+### 4. `build_workspace_test_context` Function Signature
+
+**File**: `/home/runner/work/erk/erk/tests/test_utils/context_builders.py`
+**Lines**: 20-81
+
+```python
+def build_workspace_test_context(
+    env: ErkInMemEnv | ErkIsolatedFsEnv,
+    *,
+    dry_run: bool = False,
+    use_graphite: bool = False,
+    current_branch: str | None = None,
+    **kwargs,
+) -&gt; ErkContext:
+    """Build ErkContext for workspace command tests (create, split, consolidate, delete).
+
+    This builder provides a standard context configuration for workspace manipulation
+    commands with sensible defaults and support for common testing scenarios.
+
+    Args:
+        env: Pure or isolated erk environment fixture
+        dry_run: Whether to wrap git operations with DryRunGit (default: False)
+        use_graphite: Whether to enable Graphite integration (default: False)
+        current_branch: Current branch name for FakeGit configuration (default: None)
+        **kwargs: Additional arguments passed to env.build_context()
+                  (can include custom git, github, graphite, shell instances)
+
+    Returns:
+        ErkContext configured for workspace command testing
+
+    Example:
+        &gt;&gt;&gt; with erk_inmem_env(runner) as env:
+        ...     ctx = build_workspace_test_context(env, dry_run=True)
+        ...     result = runner.invoke(cli, ["delete", "branch"], obj=ctx)
+    """
+```
+
+**Return Type**: `ErkContext`
+
+**Parameters**:
+- `env: ErkInMemEnv | ErkIsolatedFsEnv` - Environment fixture (pure in-memory or isolated filesystem)
+- `dry_run: bool = False` - Wrap git with DryRunGit for safety testing
+- `use_graphite: bool = False` - Enable Graphite integration
+- `current_branch: str | None = None` - Current branch for FakeGit setup
+- `**kwargs` - Additional arguments (custom git, github, graphite, shell instances)
+
+**Example Usage**:
+```python
+from tests.test_utils.env_helpers import erk_inmem_env
+from tests.test_utils.context_builders import build_workspace_test_context
+from click.testing import CliRunner
+
+def test_command() -&gt; None:
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        ctx = build_workspace_test_context(
+            env,
+            dry_run=True,
+            current_branch="feature-branch"
+        )
+        
+        result = runner.invoke(cli, ["delete", "branch"], obj=ctx)
+        assert result.exit_code == 0
+```
+
+---
+
+### Related Documentation
+
+The testing patterns doc you should read first is:
+- `/home/runner/work/erk/erk/docs/learned/testing/testing.md` - Comprehensive reference on FakeGit setup, mutation tracking, and test patterns
+- `/home/runner/work/erk/erk/docs/learned/architecture/test-context-composition.md` - Pattern for shared FakeGitHubIssues instances in contexts</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="3136" cache_read_input_tokens="52704" cache_creation="{'ephemeral_5m_input_tokens': 3136, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
