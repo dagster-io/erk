@@ -7,10 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of: c261c6d98 -->
+<!-- As of: 127b8c20b -->
 
 ### Added
 
+- Add `erk doctor workflow` subcommand with smoke testing for verifying GitHub workflow health (3545fe9fb)
 - Support external learned docs repository via `[docs] path` config in `.erk/config.local.toml` (c261c6d98)
 - Add cmux workspace integration to dashboard and CLI, enabled via `cmux_integration = true` config (b74658edc)
 - Add auto-resolution of pre-existing bot threads in code-move PRs via `pr-address` and `pr-preview-address` commands (56dd99df3)
@@ -40,6 +41,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix `erk pr dispatch` failure when plan branch is already checked out in a worktree slot (cbd936bc5)
+- Fix double activation when direnv triggers during `erk pr checkout --script` (49ecb3a21)
 - Fix `erk pr submit` silent hang with no output in piped environments (628ef45e2)
 - Fix duplicate `gt submit` execution in cmux sync workflow (ca6e79f3a)
 - Fix misleading data when GraphQL enrichment fails in `erk pr list` -- unenriched PRs now excluded from linkages with explicit degradation warnings (04dc3d38a)
