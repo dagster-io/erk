@@ -1,0 +1,874 @@
+<session>
+  <meta branch="plnd/show-workflow-source-03-01-1414" />
+  <meta model="claude-sonnet-4-6" />
+  <user>hecked out PR #8551 at /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37
+➜  erk-slot-37 git:(plnd/show-workflow-source-03-01-1414) gt squash
+[plnd/show-workflow-source-03-01-1414 1276b7701] One-shot: ➜  erk-slot-56 git:(plnd/move-run-under-workflow-03-01-1409)
+ Date: Sun Mar 1 14:14:57 2026 -0500
+ 2 files changed, 108 insertions(+), 14 deletions(-)
+➜  erk-slot-37 git:(plnd/show-workflow-source-03-01-1414) gt restack
+Restacked plnd/show-workflow-source-03-01-1414 on master.
+➜  erk-slot-37 git:(plnd/show-workflow-source-03-01-1414) erk workflow run l ist
+Usage: erk workflow run [OPTIONS] COMMAND [ARGS]...
+Try 'erk workflow run -h' for help.
+
+Error: No such command 'l'.
+➜  erk-slot-37 git:(plnd/show-workflow-source-03-01-1414) erk workflow run list
+┏━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━┳━━━━━━┓
+┃ run-id      ┃ status         ┃ submitted   ┃ workflow       ┃ plan  ┃ title                                              ┃ pr ┃ chks ┃
+┡━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━╇━━━━━━┩
+│ 22551832760 │ ✅ Success     │ 03-01 15:22 │ plan-implement │ #8559 │ Unify Launch Modal and Command Palette via Sing... │ -  │ -    │
+│ 22551814484 │ ✅ Success     │ 03-01 15:21 │ plan-implement │ #8560 │ Fix rebase shortcut key in TUI launch screen fr... │ -  │ -    │
+│ 22542588533 │ ✅ Success     │ 03-01 06:36 │ plan-implement │ #8529 │ Consolidate documentation from Mar 1 learn sess... │ -  │ -    │
+│ 22532232001 │ ✅ Success     │ 02-28 19:24 │ plan-implement │ #8513 │ Consolidate documentation from Feb 28 learn ses... │ -  │ -    │
+└─────────────┴────────────────┴─────────────┴────────────────┴───────┴────────────────────────────────────────────────────┴────┴──────┘
+
+➜  erk-slot-37 git:(plnd/show-workflow-source-03-01-1414) erk workflow run list
+┏━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━┳━━━━━━┓
+┃ run-id      ┃ status         ┃ submitted   ┃ workflow       ┃ plan  ┃ title                                              ┃ pr ┃ chks ┃
+┡━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━╇━━━━━━┩
+│ 22551832760 │ ✅ Success     │ 03-01 15:22 │ plan-implement │ #8559 │ Unify Launch Modal and Command Palette via Sing... │ -  │ -    │
+│ 22551814484 │ ✅ Success     │ 03-01 15:21 │ plan-implement │ #8560 │ Fix rebase shortcut key in TUI launch screen fr... │ -  │ -    │
+│ 22542588533 │ ✅ Success     │ 03-01 06:36 │ plan-implement │ #8529 │ Consolidate documentation from Mar 1 learn sess... │ -  │ -    │
+│ 22532232001 │ ✅ Success     │ 02-28 19:24 │ plan-implement │ #8513 │ Consolidate documentation from Feb 28 learn ses... │ -  │ -    │
+└─────────────┴────────────────┴─────────────┴────────────────┴───────┴────────────────────────────────────────────────────┴────┴──────┘
+
+➜  erk-slot-37 git:(plnd/show-workflow-source-03-01-1414) erk workflow run list -h
+Usage: erk workflow run list [OPTIONS]
+
+  List GitHub Actions workflow runs for plan implementations.
+
+Options:
+  --show-legacy  Show all runs including legacy runs.
+  -h, --help     Show this message and exit.
+➜  erk-slot-37 git:(plnd/show-workflow-source-03-01-1414) erk workflow run list --show-legacy
+┏━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━┳━━━━━━┓
+┃ run-id      ┃ status         ┃ submitted   ┃ workflow       ┃ plan  ┃ title                                              ┃ pr ┃ chks ┃
+┡━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━╇━━━━━━┩
+│ 22551994152 │ ⟳ Running      │ 03-01 15:30 │ pr-address     │ X     │ X                                                  │ X  │ X    │
+│ 22551935427 │ ✅ Success     │ 03-01 15:27 │ pr-address     │ X     │ X                                                  │ X  │ X    │
+│ 22551934714 │ ✅ Success     │ 03-01 15:27 │ pr-address     │ X     │ X                                                  │ X  │ X    │
+│ 22551832760 │ ✅ Success     │ 03-01 15:22 │ plan-implement │ #8559 │ Unify Launch Modal and Command Palette via Sing... │ -  │ -    │
+│ 22551814484 │ ✅ Success     │ 03-01 15:21 │ plan-implement │ #8560 │ Fix rebase shortcut key in TUI launch screen fr... │ -  │ -    │
+│ 22551764053 │ ✅ Success     │ 03-01 15:18 │ pr-rebase      │ X     │ X                                                  │ X  │ X    │
+│ 22551763646 │ ✅ Success     │ 03-01 15:18 │ pr-rebase      │ X     │ X                                                  │ X  │ X    │
+│ 22551761698 │ ✅ Success     │ 03-01 15:18 │ pr-address     │ X     │ X                                                  │ X  │ X    │
+│ 22551661651 │ ✅ Success     │ 03-01 15:13 │ pr-address     │ X     │ X                                                  │ X  │ X    │
+│ 22550749324 │ ✅ Success     │ 03-01 14:23 │ pr-address     │ X     │ X                                                  │ X  │ X    │
+│ 22550587519 │ ✅ Success     │ 03-01 14:15 │ one-shot       │ X     │ X                                                  │ X  │ X    │
+│ 22550547008 │ ✅ Success     │ 03-01 14:12 │ pr-address     │ X     │ X                                                  │ X  │ X    │
+│ 22550546790 │ ✅ Success     │ 03-01 14:12 │ pr-address     │ X     │ X                                                  │ X  │ X    │
+│ 22550546584 │ ✅ Success     │ 03-01 14:12 │ pr-address     │ X     │ X                                                  │ X  │ X    │
+│ 22550522933 │ ✅ Success     │ 03-01 14:11 │ plan-implement │ #8550 │ -                                                  │ -  │ -    │
+│ 22550441479 │ ✅ Success     │ 03-01 14:07 │ plan-implement │ #8548 │ -                                                  │ -  │ -    │
+│ 22550362174 │ ✅ Success     │ 03-01 14:03 │ plan-implement │ #8547 │ -                                                  │ -  │ -    │
+│ 22550356578 │ ✅ Success     │ 03-01 14:02 │ plan-implement │ #8546 │ -                                                  │ -  │ -    │
+│ 22549990850 │ ✅ Success     │ 03-01 13:42 │ pr-address     │ X     │ X                                                  │ X  │ X    │
+│ 22549956479 │ ✅ Success     │ 03-01 13:41 │ plan-implement │ #8545 │ -                                                  │ -  │ -    │
+│ 22547823213 │ ✅ Success     │ 03-01 11:43 │ one-shot       │ X     │ X                                                  │ X  │ X    │
+│ 22547520921 │ ❌ Failure     │ 03-01 11:26 │ one-shot       │ X     │ X                                                  │ X  │ X    │
+│ 22545819464 │ ✅ Success     │ 03-01 09:52 │ pr-address     │ X     │ X                                                  │ X  │ X    │
+│ 22544157680 │ ✅ Success     │ 03-01 08:13 │ pr-address     │ X     │ X                                                  │ X  │ X    │
+│ 22544098962 │ ✅ Success     │ 03-01 08:10 │ pr-address     │ X     │ X                                                  │ X  │ X    │
+│ 22542588533 │ ✅ Success     │ 03-01 06:36 │ plan-implement │ #8529 │ Consolidate documentation from Mar 1 learn sess... │ -  │ -    │
+│ 22542375387 │ ✅ Success     │ 03-01 06:22 │ plan-implement │ #8528 │ -                                                  │ -  │ -    │
+│ 22542237741 │ ✅ Success     │ 03-01 06:14 │ plan-implement │ #8525 │ -                                                  │ -  │ -    │
+│ 22541225482 │ ✅ Success     │ 03-01 05:12 │ one-shot       │ X     │ X                                                  │ X  │ X    │
+│ 22541073632 │ ✅ Success     │ 03-01 05:03 │ pr-address     │ X     │ X                                                  │ X  │ X    │
+│ 22541054866 │ ✅ Success     │ 03-01 05:02 │ pr-address     │ X     │ X                                                  │ X  │ X    │
+│ 22534994657 │ ✅ Success     │ 02-28 22:25 │ plan-implement │ #8516 │ -                                                  │ -  │ -    │
+│ 22532441218 │ ✅ Success     │ 02-28 19:37 │ plan-implement │ #8514 │ -                                                  │ -  │ -    │
+│ 22532232001 │ ✅ Success     │ 02-28 19:24 │ plan-implement │ #8513 │ Consolidate documentation from Feb 28 learn ses... │ -  │ -    │
+│ 22532045464 │ ✅ Success     │ 02-28 19:13 │ plan-implement │ #8511 │ -                                                  │ -  │ -    │
+│ 22532041226 │ ✅ Success     │ 02-28 19:12 │ one-shot       │ X     │ X                                                  │ X  │ X    │
+│ 22531644513 │ ✅ Success     │ 02-28 18:47 │ pr-address     │ X     │ X                                                  │ X  │ X    │
+│ 22531333312 │ ✅ Success     │ 02-28 18:27 │ plan-implement │ #8504 │ -                                                  │ -  │ -    │
+│ 22530367361 │ ✅ Success     │ 02-28 17:27 │ plan-implement │ #8502 │ -                                                  │ -  │ -    │
+│ 22530140741 │ ✅ Success     │ 02-28 17:13 │ one-shot       │ X     │ X                                                  │ X  │ X    │
+│ 22529949760 │ ✅ Success     │ 02-28 17:02 │ plan-implement │ #8498 │ -                                                  │ -  │ -    │
+│ 22529834311 │ ✅ Success     │ 02-28 16:54 │ plan-implement │ #8495 │ -                                                  │ -  │ -    │
+│ 22529800950 │ ✅ Success     │ 02-28 16:52 │ plan-implement │ #8494 │ -                                                  │ -  │ -    │
+│ 22529694390 │ ✅ Success     │ 02-28 16:46 │ pr-address     │ X     │ X                                                  │ X  │ X    │
+│ 22529661686 │ ✅ Success     │ 02-28 16:44 │ plan-implement │ #8492 │ -                                                  │ -  │ -    │
+│ 22529603453 │ ❌ Failure     │ 02-28 16:40 │ one-shot       │ X     │ X                                                  │ X  │ X    │
+│ 22527286035 │ ✅ Success     │ 02-28 14:18 │ pr-address     │ X     │ X                                                  │ X  │ X    │
+│ 22526666133 │ ✅ Success     │ 02-28 13:41 │ pr-address     │ X     │ X                                                  │ X  │ X    │
+│ 22526664282 │ ✅ Success     │ 02-28 13:40 │ pr-address     │ X     │ X                                                  │ X  │ X    │
+│ 22523881221 │ ✅ Success     │ 02-28 10:50 │ one-shot       │ X     │ X                                                  │ X  │ X    │
+└─────────────┴────────────────┴─────────────┴────────────────┴───────┴────────────────────────────────────────────────────┴────┴──────┘
+
+➜  erk-slot-37 git:(plnd/show-workflow-source-03-01-1414)
+
+what is going on here. --show-legacy looks like it makes more sense but it is missing invformaiton?</user>
+  <thinking>The user is observing that `erk workflow run list` (without `--show-legacy`) shows plan title and PR/checks info, but `--show-legacy` shows "X" for those fields on legacy runs and "-" on plan-implement runs.
+
+Looking at the output:
+- Without `--show-legacy`: Shows only `plan-implement` workflow runs with proper plan #, title, pr, chks info
+- With `--show-legacy`: Shows all runs including `pr-address`, `pr-rebase`, `one-shot` etc., but those legacy runs show "X" for plan, title, pr, chks columns
+
+
+I need to dig into the codebase to understand why legacy runs are displaying "X" for those fields instead of actual data, and why the default view properly shows plan titles and numbers. Let me explore the implementation of the workflow run list command to see how it's handling data for different run types.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="17292" cache_read_input_tokens="19034" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17292}" output_tokens="0" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="EnterPlanMode" id="toolu_01MRRi6hv9joBSLYJFUQ2AoU">
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17292" cache_read_input_tokens="19034" output_tokens="340" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 17292, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MRRi6hv9joBSLYJFUQ2AoU">
+Entered plan mode. You should now focus on exploring the codebase and designing an implementation approach.
+
+In plan mode, you should:
+1. Thoroughly explore the codebase to understand existing patterns
+2. Identify similar features and architectural approaches
+3. Consider multiple approaches and their trade-offs
+4. Use AskUserQuestion if you need to clarify the approach
+5. Design a concrete implementation strategy
+6. When ready, use ExitPlanMode to present your plan for approval
+
+Remember: DO NOT write or edit any files yet. This is a read-only exploration and planning phase.
+  </tool_result>
+  <assistant>Let me explore the workflow run list implementation to understand what's happening.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="481" cache_read_input_tokens="36326" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 481}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01C4T8t2FHxdC6SD9v3PFLWb">
+    <param name="description">Explore workflow run list implementation</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+
+Explore the `...[truncated 652 chars]... data is fetched.
+
+Working directory: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="481" cache_read_input_tokens="36326" output_tokens="341" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 481, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01C4T8t2FHxdC6SD9v3PFLWb">
+I now have the complete picture. Here is a thorough explanation of everything you asked about.
+
+---
+
+## `erk workflow run list` - Full Implementation Analysis
+
+### 1. Where is it implemented?
+
+The command lives at:
+
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk/cli/commands/run/list_cmd.py` - the main implementation
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk/cli/commands/run/__init__.py` - registers it in a `run_group` Click group
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk/cli/commands/run/shared.py` - `extract_plan_number()` utility
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk/cli/commands/doctor_workflow.py` (line 253) - mounts `run_group` under `workflow_group`, giving you `erk workflow run list`
+
+The Click hierarchy:
+```
+erk workflow          (workflow_group in doctor_workflow.py)
+  └── run             (run_group from run/__init__.py)
+        └── list      (list_runs from run/list_cmd.py)
+```
+
+---
+
+### 2. What does `--show-legacy` do differently?
+
+The Click command signature is:
+
+```python
+@click.command("list")
+
+... [123 lines omitted] ...
+  </tool_result>
+  <thinking>Now I understand the situation. The user is confused about why:
+
+1. Default `erk workflow run list` shows proper data for plan/title/pr/chks columns
+2. `--show-legacy` shows "X" for those columns on legacy runs
+
+The "X" means "can't parse" - legacy runs use the old `display_title` format that doesn't encode the plan number, so the system can't link them to GitHub issues.
+
+The user is asking "what is going on here?" - they want to understand the behavior.
+
+Wait, let me re-read the user's question. They say "--show-legacy looks like it makes more sense but it is missing information?" 
+
+
+I think they're noticing that `--show-legacy` displays more rows overall (including all workflow types, not just plan-implement), which seems more complete, but those additional rows show "X" instead of actual data. They're working on a branch that adds this `--show-legacy` feature and wondering whether this is the intended behavior or if there's a way to populate those missing values. Looking at the behavior difference: without the flag, only plan-implement runs with resolved titles show up cleanly, but with `--show-legacy` enabled, all workflow runs appear but most display as "X" because the old format can't be parsed properly. The branch name suggests this PR is meant to show the workflow source for legacy runs too, so they'd be more useful instead of just showing placeholder values.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2333" cache_read_input_tokens="36807" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2333}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at the plan for this branch to understand what was intended.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2333" cache_read_input_tokens="36807" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2333}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012TiVnjQdPJwubj1o5V6cda">
+    <param name="command">ls /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.erk/impl-context/ 2&gt;/dev/null &amp;&amp; ...[truncated 16 chars]...orktrees/erk-slot-37/.erk/impl-context/plan.md 2&gt;/dev/null || echo "No impl-context found"</param>
+    <param name="description">Check impl-context plan for this branch</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2333" cache_read_input_tokens="36807" output_tokens="937" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2333, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012TiVnjQdPJwubj1o5V6cda">
+No impl-context found
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01X8jXngM5ASTX97FDpDJaKM">
+    <param name="command">gh pr view 8551 --json title,body,state 2&gt;/dev/null | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['title']); print('---'); print(d['body'][:2000])"</param>
+    <param name="description">View PR 8551 title and body</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1039" cache_read_input_tokens="39140" output_tokens="169" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1039, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01X8jXngM5ASTX97FDpDJaKM">
+Show workflow source in `erk run list`
+---
+## Summary
+
+Adds a workflow column to the run list command that displays which workflow triggered each run. This enables users to distinguish between different workflow types (plan-implement, plan-dispatch, etc.) in the tabular output. The implementation fetches runs from all registered workflows, deduplicates by run_id, sorts by creation time, and displays the source workflow name alongside existing run information.
+
+## Files Changed
+
+&lt;details&gt;
+&lt;summary&gt;Files Changed&lt;/summary&gt;
+
+### Modified (2 files)
+- `src/erk/cli/commands/run/list_cmd.py` - Refactored run fetching to support multi-workflow display with deduplication and sorting
+- `tests/commands/run/test_list.py` - Added test coverage for workflow column display
+
+&lt;/details&gt;
+
+## Key Changes
+
+- Multi-workflow run aggregation: Changed from fetching runs from a single dispatch workflow to fetching from all registered workflows via `WORKFLOW_COMMAND_MAP`
+- Deduplication logic: Added set-based deduplication by `run_id` to handle runs that appear across workflow queries
+- Timestamp-based sorting: Implemented sorting by `created_at` (newest first) with fallback handling for missing timestamps
+- Workflow column display: Added new "workflow" column to the output table showing the source workflow name
+- Run limiting: Implemented per-workflow and display-wide limits to manage large result sets
+
+## User Experience
+
+**Before:**
+```
+erk run list
+
+... [24 lines omitted] ...
+  </tool_result>
+  <thinking>Now I understand the full picture. The PR #8551 is about showing the workflow source (what type of workflow ran) in the `erk workflow run list` output. The current implementation on this branch:
+
+1. Without `--show-legacy`: Shows only `plan-implement` runs that have a parseable plan number AND a matching GitHub issue with a title
+2. With `--show-legacy`: Shows all workflow types (pr-address, pr-rebase, one-shot, etc.) but those non-plan-implement runs show "X" for plan/title/pr/chks columns
+
+The user's question "what is going on here" seems to be:
+
+
+- They expect `--show-legacy` to reveal more information, but instead it's filling those columns with "X" for non-plan-implement runs, making the output less useful
+- The flag name itself is misleading—it sounds like it's showing old format data, when really it's just exposing all workflow types that were previously hidden
+
+The core issue is that the "X" placeholders for legacy runs don't actually help the user understand what's happening; they just clutter the output. Looking at the two outputs side by side, the default view shows 4 rows (all plan-implement), while `--show-legacy` shows many more rows but with less meaningful data in those additional rows.
+
+What the user probably wants is to see actual information for those other workflow types—like extracting the PR number for `pr-address` runs or showing the trigger details for `one-shot` runs—rather than just marking them with "X". The branch name suggests the original intent was just to add a workflow column, but the current implementation seems to have gone further without fully populating the data for these other run types. or fill in those "X" cells with actual data where possible. Let me think about what information is actually available for these legacy run types — for `pr-address` runs especially, the display_title contains the PR info in the old format, so maybe I can extract that and show something more useful than just "X" for missing fields.
+
+I need to clarify what the user is actually trying to accomplish here. Looking at the branch name, they've just checked out a PR related to workflow source display, so they might be reviewing the implementation and spotted this as a potential improvement. Let me examine how the current list_cmd.py handles this to understand what's feasible.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="656" cache_read_input_tokens="40179" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 656}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the actual implementation to fully understand the current behavior.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="656" cache_read_input_tokens="40179" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 656}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VndiSNWRJLtf1K3N65gJEo">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk/cli/commands/run/list_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="656" cache_read_input_tokens="40179" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 656}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VndiSNWRJLtf1K3N65gJEo">
+     1→"""List workflow runs command."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→import click
+     6→from rich.console import Console
+     7→from rich.table import Table
+     8→
+     9→from erk.cli.commands.pr.list_cmd import format_pr_cell
+    10→from erk.cli.commands.run.shared import extract_plan_number
+    11→from erk.cli.constants import WORKFLOW_COMMAND_MAP
+    12→from erk.cli.core import discover_repo_context
+    13→from erk.cli.ensure import Ensure
+    14→from erk.core.context import ErkContext
+    15→from erk.core.display_utils import (
+    16→    format_submission_time,
+    17→    format_workflow_outcome,
+    18→    format_workflow_run_id,
+    19→)
+    20→from erk.core.pr_utils import select_display_pr
+    21→from erk_shared.gateway.github.emoji import format_checks_cell
+    22→from erk_shared.gateway.github.parsing import github_repo_location_from_url
+    23→from erk_shared.gateway.github.types import GitHubRepoId, WorkflowRun
+    24→from erk_shared.output.output import user_output
+    25→
+    26→_MAX_DISPLAY_RUNS = 50
+    27→_PER_WORKFLOW_LIMIT = 20
+    28→
+    29→
+    30→def _list_runs(ctx: ErkContext, show_all: bool = False) -&gt; None:
+
+... [199 lines omitted] ...
+  </tool_result>
+  <thinking>Now I fully understand the situation. Let me analyze the user's concern:
+
+1. **Default view** (`erk workflow run list`): Shows only `plan-implement` runs that have a parseable plan number AND a matching GitHub issue with a title. Shows full data (plan #, title, pr, chks).
+
+2. **`--show-legacy` view** (`erk workflow run list --show-legacy`): Shows ALL runs from ALL workflows, but:
+   - `plan-implement` runs with parseable plan numbers: show proper data
+   - All other runs (`pr-address`, `pr-rebase`, `one-shot`, etc.): show "X" for plan/title/pr/chks
+   
+The user is pointing out that while `--show-legacy` reveals more workflow types, those additional runs are displaying "X" placeholders for columns that likely contain actual data—like PR information for `pr-address` runs or context for `one-shot` runs. The branch name suggests this feature was meant to show workflow source information, so the user probably wants those other workflow types to display their relevant data instead of just "X". I'm realizing the user might just be asking for an explanation of what's happening, or questioning whether the design is right. The core issue is that "legacy" is a misleading label—`pr-address` and `one-shot` runs aren't old or deprecated, they're just different workflow types that don't fit the plan-implement structure. The "X" cells they're seeing are where those workflow types don't have applicable data like PR numbers or plan IDs.
+
+The real question is what those columns should actually display for non-plan-implement runs—whether we should use a clearer "not applicable" indicator, conditionally hide those columns entirely, try extracting info from the old display format, or just standardize on a dash symbol.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4365" cache_read_input_tokens="40835" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4365}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a clear picture. Let me explain what's happening and ask what you want to do about it.
+
+**Current behavior summary:**
+
+- **Default** (`erk workflow run list`): Shows only `plan-implement` runs that have a parseable plan number AND a matching GitHub issue title. Clean data, but hides all other workflow types.
+
+- **`--show-legacy`**: Shows ALL 6 workflow types (`plan-implement`, `pr-address`, `pr-rebase`, `one-shot`, `pr-rewrite`, `learn`), but non-`plan-implement` runs use the old `display_title` format that can't encode a plan number, so plan/title/pr/chks get "X" (meaning "can't parse").
+
+The core issue: `pr-address`, `pr-rebase`, `one-shot` aren't really "legacy" — they're current runs from other workflows. The flag name and "X" treatment both communicate the wrong thing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4365" cache_read_input_tokens="40835" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4365}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_011xRi6NsCtUZVCETXwRjnhh">
+    <param name="questions">[{'question': 'What do you want to change about this behavior?', 'header': 'Goal', 'multiS...[truncated 698 chars]...es needed', 'description': 'This is working as intended, just wanted to understand it'}]}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4365" cache_read_input_tokens="40835" output_tokens="1507" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4365, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011xRi6NsCtUZVCETXwRjnhh">
+User has answered your questions: "What do you want to change about this behavior?"="drop the flag. re: the info in table, it should be PR not Plan in the column list and nearly all the workflows we have target prs explicilty. we should be able to fill that column a lot more" user notes: drop the flag. re: the info in table, it should be PR not Plan in the column list and nearly all the workflows we have target prs explicilty. we should be able to fill that column a lot more. You can now continue with the user's answers in mind.
+  </tool_result>
+  <thinking>The user wants:1. **Drop the `--show-legacy` flag** - always show all workflow types
+2. **Rename "plan" column to "pr"** (or something more descriptive)
+3. **Fill in PR data for all workflow types** - since pr-address, one-shot, pr-rebase all target PRs explicitly, we should be able to find and display the associated PR number
+
+This makes a lot of sense. Let me understand the structure:
+
+For `plan-implement` runs:- `display_title` format: `"123:abc456"` where 123 is the plan (GitHub issue) number- The plan links to a GitHub issue, and the PR is linked from that issue
+
+
+For the other workflow types like `pr-address`, `pr-rebase`, and `one-shot`, I need to figure out where the PR number is stored since they all operate directly on PRs. The `display_title` format for these legacy runs should contain the PR information somewhere, but I need to understand what that format actually looks like. I see the column structure needs to change - renaming "plan" to "pr" and populating it across all workflow types, not just plan-implement. For each workflow type, the PR column would reference different things: the implementation PR for plan-implement, the target PR for pr-address and pr-rebase, and potentially the resulting PR for one-shot runs. I need to examine the workflow definitions and WorkflowRun type to figure out what data's actually available for each case.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1842" cache_read_input_tokens="45200" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1842}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good direction. Now I need to understand what data is available in `WorkflowRun` for pr-address/one-shot/pr-rebase runs to know how to fill in the PR column.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1842" cache_read_input_tokens="45200" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1842}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01SmjWo5HYx4NPg4C6J2Bii7">
+    <param name="description">Explore workflow run data and PR extraction</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+
+I need to und...[truncated 1109 chars]... identify the PR.
+
+Working directory: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1842" cache_read_input_tokens="45200" output_tokens="1153" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1842, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SmjWo5HYx4NPg4C6J2Bii7">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/model&lt;/command-name&gt;
+            &lt;command-message&gt;model&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Set model to [1mDefault (Opus 4.6 · Most capable for complex work)[22m&lt;/local-command-stdout&gt;</user>
+  <user>continue</user>
+  <thinking>The user switched to Opus 4.6 model and wants me to continue. Let me explore the workflow data directly myself instead of using a subagent.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="29523" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 29523}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the relevant files directly to understand what data is available for PR extraction.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="29523" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 29523}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019wSahXk1AhxQN2eePW4H1h">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk/cli/commands/run/shared.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="29523" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 29523}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019wSahXk1AhxQN2eePW4H1h">
+     1→"""Shared utilities for run commands."""
+     2→
+     3→
+     4→def extract_plan_number(display_title: str | None) -&gt; int | None:
+     5→    """Extract plan number from display_title format '123:abc456'.
+     6→
+     7→    Handles:
+     8→    - New format: "123:abc456" → 123
+     9→    - Old format: "Issue title [abc123]" → None (no colon at start)
+    10→    - None or empty → None
+    11→    """
+    12→    if not display_title or ":" not in display_title:
+    13→        return None
+    14→    parts = display_title.split(":", 1)
+    15→    # Validate that the first part is a number
+    16→    first_part = parts[0].strip()
+    17→    if not first_part.isdigit():
+    18→        return None
+    19→    return int(first_part)
+    20→
+  </tool_result>
+  <tool_use name="Read" id="toolu_015Qo6hdWXrAJjMT6BniZPi6">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk/cli/constants.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="29523" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 29523}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015Qo6hdWXrAJjMT6BniZPi6">
+     1→"""Shared constants for erk CLI commands."""
+     2→
+     3→# GitHub issue label for erk plans
+     4→ERK_PLAN_LABEL = "erk-plan"
+     5→
+     6→# Title prefix for erk-plan issues (with trailing space for easy stripping)
+     7→ERK_PLAN_TITLE_PREFIX = "[erk-plan] "
+     8→
+     9→# Plan markdown heading prefix (with trailing space for easy stripping)
+    10→PLAN_HEADING_PREFIX = "Plan: "
+    11→
+    12→# PR title prefix for plan-originated PRs
+    13→PLANNED_PR_TITLE_PREFIX = "plnd/"
+    14→
+    15→# GitHub Actions workflow for remote implementation dispatch
+    16→DISPATCH_WORKFLOW_NAME = "plan-implement.yml"
+    17→DISPATCH_WORKFLOW_METADATA_NAME = "plan-implement"
+    18→
+    19→# GitHub Actions workflow for remote rebase with conflict resolution
+    20→REBASE_WORKFLOW_NAME = "pr-rebase.yml"
+    21→
+    22→# GitHub Actions workflow for remote PR comment addressing
+    23→PR_ADDRESS_WORKFLOW_NAME = "pr-address.yml"
+    24→
+    25→# GitHub Actions workflow for remote PR rewrite (rebase + AI PR summary)
+    26→PR_REWRITE_WORKFLOW_NAME = "pr-rewrite.yml"
+    27→
+    28→# GitHub Actions workflow for one-shot autonomous execution
+    29→ONE_SHOT_WORKFLOW_NAME = "one-shot.yml"
+    30→
+
+... [31 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Kg4ihaprbDHj3ZsPM7ErJN">
+    <param name="pattern">class WorkflowRun</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="29523" cache_read_input_tokens="19113" output_tokens="315" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 29523, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Kg4ihaprbDHj3ZsPM7ErJN">
+Found 1 file
+packages/erk-shared/src/erk_shared/gateway/github/types.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01N8sp2JTPCMUuyKvDA8mXhe">
+    <param name="pattern">class WorkflowRun</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1622" cache_read_input_tokens="48636" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1622}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N8sp2JTPCMUuyKvDA8mXhe">
+271:class WorkflowRun:
+272-    """Information about a GitHub Actions workflow run.
+273-
+274-    Immutable class representing workflow run data. Some fields may not be
+275-    available depending on the API query used to fetch the data:
+276-
+277-    - branch: Not available from GraphQL nodes() query
+278-    - display_title: Not available from GraphQL nodes() query
+279-
+280-    Accessing unavailable fields raises AttributeError.
+281-    """
+282-
+283-    __slots__ = (
+284-        "_run_id",
+285-        "_node_id",
+286-        "_status",
+287-        "_conclusion",
+288-        "_branch",
+289-        "_head_sha",
+290-        "_display_title",
+291-        "_created_at",
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01ExoY8kLaLSFGuKmpGnHSr6">
+    <param name="pattern">.github/workflows/pr-address.yml</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1622" cache_read_input_tokens="48636" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1622}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ExoY8kLaLSFGuKmpGnHSr6">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.github/workflows/pr-address.yml
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01Qjsn99ejFkkR8ZN1VzXqjF">
+    <param name="pattern">.github/workflows/one-shot.yml</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1622" cache_read_input_tokens="48636" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1622}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Qjsn99ejFkkR8ZN1VzXqjF">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.github/workflows/one-shot.yml
+  </tool_result>
+  <tool_use name="Read" id="toolu_01E8P2u1AP1bdARpk4RYwQpF">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+    <param name="offset">271</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="679" cache_read_input_tokens="50258" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 679}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01E8P2u1AP1bdARpk4RYwQpF">
+   271→class WorkflowRun:
+   272→    """Information about a GitHub Actions workflow run.
+   273→
+   274→    Immutable class representing workflow run data. Some fields may not be
+   275→    available depending on the API query used to fetch the data:
+   276→
+   277→    - branch: Not available from GraphQL nodes() query
+   278→    - display_title: Not available from GraphQL nodes() query
+   279→
+   280→    Accessing unavailable fields raises AttributeError.
+   281→    """
+   282→
+   283→    __slots__ = (
+   284→        "_run_id",
+   285→        "_node_id",
+   286→        "_status",
+   287→        "_conclusion",
+   288→        "_branch",
+   289→        "_head_sha",
+   290→        "_display_title",
+   291→        "_created_at",
+   292→    )
+   293→
+   294→    _run_id: str
+   295→    _node_id: str | None
+   296→    _status: WorkflowRunStatus
+   297→    _conclusion: WorkflowRunConclusion | None
+   298→    _branch: str | _NotAvailable
+   299→    _head_sha: str
+   300→    _display_title: str | None | _NotAvailable
+
+... [50 lines omitted] ...
+
+   326→        raise AttributeError(msg)
+   330→        raise AttributeError(msg)
+  </tool_result>
+  <tool_use name="Read" id="toolu_0182TXoJFRf4AQqNhGma6uPD">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.github/workflows/pr-address.yml</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="679" cache_read_input_tokens="50258" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 679}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0182TXoJFRf4AQqNhGma6uPD">
+     1→name: pr-address
+     2→run-name: "pr-address:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"
+     3→
+     4→on:
+     5→  workflow_dispatch:
+     6→    inputs:
+     7→      pr_number:
+     8→        description: "PR number to address review comments"
+     9→        required: true
+    10→        type: string
+    11→      distinct_id:
+    12→        description: "Unique identifier for run discovery (base36)"
+    13→        required: true
+    14→        type: string
+    15→      model_name:
+    16→        description: "Claude model to use"
+    17→        required: false
+    18→        type: string
+    19→        default: "claude-opus-4-6"
+    20→      plan_number:
+    21→        description: "Plan issue/PR number for dispatch metadata (empty to skip)"
+    22→        required: false
+    23→        type: string
+    24→        default: ""
+    25→
+    26→concurrency:
+    27→  group: pr-address-${{ github.event.inputs.pr_number }}
+    28→  cancel-in-progress: true
+    29→
+    30→jobs:
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01EPsMvHe1EXJhJ1zRyuQgWi">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.github/workflows/one-shot.yml</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="679" cache_read_input_tokens="50258" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 679}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EPsMvHe1EXJhJ1zRyuQgWi">
+     1→name: one-shot
+     2→run-name: "one-shot:${{ inputs.distinct_id }}"
+     3→
+     4→on:
+     5→  workflow_dispatch:
+     6→    inputs:
+     7→      prompt:
+     8→        description: "Task description for autonomous execution"
+     9→        required: true
+    10→        type: string
+    11→      branch_name:
+    12→        description: "Branch to work on (created by CLI command)"
+    13→        required: true
+    14→        type: string
+    15→      pr_number:
+    16→        description: "Draft PR number (created by CLI command)"
+    17→        required: true
+    18→        type: string
+    19→      submitted_by:
+    20→        description: "GitHub username of the person who submitted"
+    21→        required: true
+    22→        type: string
+    23→      distinct_id:
+    24→        description: "Unique identifier for run discovery (base36)"
+    25→        required: true
+    26→        type: string
+    27→      model_name:
+    28→        description: "Claude model to use for execution"
+    29→        required: false
+    30→        type: string
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01FwTaaTnGN47G5qeJ5rHAZ6">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.github/workflows/pr-rebase.yml</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="679" cache_read_input_tokens="50258" output_tokens="399" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 679, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FwTaaTnGN47G5qeJ5rHAZ6">
+     1→name: pr-rebase
+     2→run-name: "rebase:${{ inputs.branch_name }}:${{ inputs.distinct_id }}"
+     3→
+     4→on:
+     5→  workflow_dispatch:
+     6→    inputs:
+     7→      branch_name:
+     8→        description: "Branch to rebase"
+     9→        required: true
+    10→        type: string
+    11→      base_branch:
+    12→        description: "Base branch to rebase onto"
+    13→        required: true
+    14→        type: string
+    15→      pr_number:
+    16→        description: "PR number for status updates"
+    17→        required: true
+    18→        type: string
+    19→      distinct_id:
+    20→        description: "Unique identifier for run discovery (base36)"
+    21→        required: true
+    22→        type: string
+    23→      squash:
+    24→        description: "Whether to squash commits before rebase"
+    25→        required: false
+    26→        type: boolean
+    27→        default: true
+    28→      model_name:
+    29→        description: "Claude model to use for conflict resolution"
+    30→        required: false
+
+... [20 lines omitted] ...
+  </tool_result>
+  <thinking>Now I can see the `run-name` formats for each workflow:
+
+1. **plan-implement**: Not shown yet, let me check. But from the existing code, format is `"123:abc456"` where 123 is the plan issue number.
+2. **pr-address**: `"pr-address:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"` → e.g., `"pr-address:#456:abc123"`
+3. **one-shot**: `"one-shot:${{ inputs.distinct_id }}"` → e.g., `"one-shot:abc123"` - has `pr_number` as input but NOT in the run-name
+
+
+4. **pr-rebase**: `"rebase:${{ inputs.branch_name }}:${{ inputs.distinct_id }}"` → e.g., `"rebase:plnd/some-branch:abc123"` - also has `pr_number` input but doesn't include it in the display title
+
+So the pattern is clear: `pr-address` embeds the PR number directly in its run-name, while `pr-rebase` uses the branch name instead, even though both workflows accept a PR number as input.
+
+For `one-shot`, it's similar—the `pr_number` input exists but isn't reflected in the display title, leaving just the distinct ID. I should check how `plan-implement` structures its run-name too. The `WorkflowRun` object also has a `branch` field that could help identify the PR, especially for workflows like `pr-rebase` where I could potentially look up the PR from the branch name, but the most direct approach would be to extract the PR number where it's explicitly available in the display title.
+
+Actually, I'm realizing all these workflows accept a `pr_number` input—the real question is whether it's surfaced in the display title. `pr-address` includes it directly, but `pr-rebase` and `one-shot` don't. The cleanest solution might be to update the run-name formats across the board to consistently include the PR number, which would make extraction straightforward for all workflows.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3277" cache_read_input_tokens="50937" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3277}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0113CZmToEnuwPw49iM6K3EJ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.github/workflows/plan-implement.yml</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3277" cache_read_input_tokens="50937" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3277}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0113CZmToEnuwPw49iM6K3EJ">
+     1→name: plan-implement
+     2→run-name: "${{ inputs.plan_id }}:${{ inputs.distinct_id }}"
+     3→
+     4→on:
+     5→  workflow_dispatch:
+     6→    inputs:
+     7→      plan_id:
+     8→        description: "Plan identifier to implement"
+     9→        required: true
+    10→        type: string
+    11→      submitted_by:
+    12→        description: "GitHub username of the person who submitted the issue"
+    13→        required: true
+    14→        type: string
+    15→      distinct_id:
+    16→        description: "Unique identifier for run discovery (base36)"
+    17→        required: true
+    18→        type: string
+    19→      plan_title:
+    20→        description: "Plan title for workflow run display"
+    21→        required: true
+    22→        type: string
+    23→      branch_name:
+    24→        description: "Branch name for implementation (created by submit command)"
+    25→        required: true
+    26→        type: string
+    27→      pr_number:
+    28→        description: "PR number for implementation (created by submit command)"
+    29→        required: true
+    30→        type: string
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01F7KjbwWxwGfenn2CFwZ3Lo">
+    <param name="pattern">.github/workflows/pr-rewrite.yml</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3277" cache_read_input_tokens="50937" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3277}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01F7KjbwWxwGfenn2CFwZ3Lo">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.github/workflows/pr-rewrite.yml
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01AGr9AmqS78Z8ogxnn9XB44">
+    <param name="pattern">.github/workflows/learn.yml</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3277" cache_read_input_tokens="50937" output_tokens="977" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3277, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AGr9AmqS78Z8ogxnn9XB44">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.github/workflows/learn.yml
+  </tool_result>
+  <tool_use name="Read" id="toolu_014yDi162PF41XSeDVLTKTJJ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.github/workflows/pr-rewrite.yml</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1642" cache_read_input_tokens="54214" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1642}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014yDi162PF41XSeDVLTKTJJ">
+     1→name: pr-rewrite
+     2→run-name: "rewrite:${{ inputs.branch_name }}:${{ inputs.distinct_id }}"
+     3→
+     4→on:
+     5→  workflow_dispatch:
+     6→    inputs:
+     7→      branch_name:
+     8→        description: "Branch to rewrite"
+     9→        required: true
+    10→        type: string
+    11→      base_branch:
+    12→        description: "Base branch to rebase onto"
+    13→        required: true
+    14→        type: string
+    15→      pr_number:
+    16→        description: "PR number for status updates"
+    17→        required: true
+    18→        type: string
+    19→      distinct_id:
+    20→        description: "Unique identifier for run discovery (base36)"
+    21→        required: true
+    22→        type: string
+    23→      model_name:
+    24→        description: "Claude model to use for conflict resolution"
+    25→        required: false
+    26→        type: string
+    27→        default: "claude-opus-4-6"
+    28→      plan_number:
+    29→        description: "Plan issue/PR number for dispatch metadata (empty to skip)"
+    30→        required: false
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Xi91WWP7gHAuthoZMiTBAA">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.github/workflows/learn.yml</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1642" cache_read_input_tokens="54214" output_tokens="192" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1642, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Xi91WWP7gHAuthoZMiTBAA">
+     1→# Learn Dispatch Workflow
+     2→#
+     3→# Runs /erk:learn on a completed plan to extract insights and patterns
+     4→# from the implementation session. This workflow is triggered asynchronously
+     5→# after a PR lands via the upload-impl-session pipeline.
+     6→#
+     7→# Output: Creates a new learn plan issue containing extracted lessons learned,
+     8→# architectural decisions, and reusable patterns from the implementation.
+     9→
+    10→name: learn
+    11→run-name: "${{ inputs.plan_id }}:${{ inputs.distinct_id }}"
+    12→
+    13→on:
+    14→  workflow_dispatch:
+    15→    inputs:
+    16→      plan_id:
+    17→        description: "Plan identifier to learn from"
+    18→        required: true
+    19→        type: string
+    20→      distinct_id:
+    21→        description: "Unique identifier for run discovery (base36)"
+    22→        required: true
+    23→        type: string
+    24→      learn_branch:
+    25→        description: "Branch containing learn materials in .erk/impl-context/"
+    26→        required: true
+    27→        type: string
+    28→      plan_backend:
+    29→        description: "Plan backend type (github or planned_pr)"
+    30→        required: false
+  </tool_result>
+  <thinking>Now I have the full picture. Here are the `run-name` (which becomes `display_title`) formats for each workflow:
+
+| Workflow | run-name format | PR available in display_title? |
+|---|---|---|
+| `plan-implement` | `"${{ inputs.plan_id }}:${{ inputs.distinct_id }}"` → `"8559:abc123"` | No (plan number, not PR) |
+| `pr-address` | `"pr-address:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"` → `"pr-address:#456:abc123"` | **Yes** (PR # after `#`) |
+
+
+| `pr-rebase` | `"rebase:${{ inputs.branch_name }}:${{ inputs.distinct_id }}"` → `"rebase:plnd/some-branch:abc123"` | No (has branch, not PR) |
+| `pr-rewrite` | `"rewrite:${{ inputs.branch_name }}:${{ inputs.distinct_id }}"` → `"rewrite:plnd/some-branch:abc123"` | No (has branch, not PR) |
+| `one-shot` | `"one-shot:${{ inputs.distinct_id }}"` → `"one-shot:abc123"` | No (only distinct ID) |
+
+So only the `pr-address` workflow actually includes the PR number in its display title, making it the only one where I can reliably extract that information. I need to handle both old and new run-name formats since changing the YAML only affects future runs. The key insight is that most workflows target PRs explicitly, so I can parse the display_title to extract PR numbers where they exist—like pulling the PR directly from `pr-address` runs, or looking up linked PRs from plan numbers in `plan-implement` runs. For the formats I can't parse from the display_title, I'll need to rely on the `pr_number` input field when it's available. I see that most workflows already have the `pr_number` input available, so I can update their run-name formats to include it for future runs. For existing data, I'll need a hybrid approach: parse the PR number directly from the display title where it's already embedded (like after the `#` in pr-address), and fall back to fetching linked PRs from the plan number for plan-implement runs that don't have it.
+
+The real solution is to standardize all workflow run-names to consistently include the PR number going forward, so I don't have to rely on different parsing logic for each workflow type. I'm thinking through how to standardize the PR number extraction across different workflow formats. The cleanest approach would be to adopt a unified naming convention that includes `#&lt;pr_number&gt;` in the display title, then write a parser that looks for that pattern. For older `plan-implement` runs that only have a plan number, I'd fall back to the existing lookup mechanism to find associated PRs, and I can drop the `--show-legacy` flag since it won't be needed anymore.
+
+Actually, the real insight here is that the primary column should represent the PR the workflow operates on, not the plan. So I need to refactor the data model: extract the PR number directly from the display title when available, keep the plan-to-PR linkage for backward compatibility with older runs, and let the newer formats like `pr-address`, `rebase`, `rewrite`, and `one-shot` show their PR directly. For each workflow type, I need to figure out where the PR number lives and how to surface it. In `pr-address`, it's embedded in the display title so I can extract it directly. For `pr-rebase` and `pr-rewrite`, the PR is in the inputs but not the display title, so I'd need to either add it to the run name or derive it from the branch. `one-shot` has the PR in inputs as a draft, `plan-implement` has both a plan and a PR that I could link, and `learn` doesn't have a PR at all—so the table structure needs to handle these variations gracefully.
+
+I'm weighing two approaches: updating the run-name format across all workflows for consistency, which is cleaner but requires backward compatibility for existing runs, versus keeping the current display title parsing and using the branch field to look up missing PRs. The branch field might be available from the REST API, which could make the second approach simpler without needing to change existing workflows.
+
+For the actual implementation, I think standardizing on always including a `#&lt;pr_number&gt;` token in run names makes sense, then I can write a generic extraction function that finds that pattern. For backward compatibility with the old `plan-implement` format, I'd keep that linkage working, remove the legacy flag, and rename the columns to reflect that we're now showing PR data across the board. Looking at how to extract the PR number from the display_title using a regex pattern to find `#(\d+)`, and for older plan-implement runs that don't have the `#` separator, I can fall back to the existing plan-to-PR mapping. For the table display, I'm planning to add columns for the extracted PR number and the PR title fetched from GitHub, alongside the existing run-id, status, submitted, and workflow columns.
+
+Now I need to figure out the data fetching strategy—instead of just pulling plan titles from issues, I should fetch the PR details directly using the extracted PR numbers, which means I'll need to use the available GitHub API methods to batch-fetch PR information like titles and check statuses.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2100" cache_read_input_tokens="55856" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2100}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a clear picture. Let me check what PR-fetching capabilities exist in the GitHub gateway.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2100" cache_read_input_tokens="55856" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2100}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01DY9Fz5DLVB1TSgUJqdYipt">
+    <param name="pattern">def (get_pr|list_prs|fetch_pr|get_pull)</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/gateway/github</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2100" cache_read_input_tokens="55856" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2100}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DY9Fz5DLVB1TSgUJqdYipt">
+packages/erk-shared/src/erk_shared/gateway/github/printing.py:73:    def get_prs_linked_to_issues(
+packages/erk-shared/src/erk_shared/gateway/github/printing.py:205:    def get_pr(self, repo_root: Path, pr_number: int) -&gt; PRDetails | PRNotFound:
+packages/erk-shared/src/erk_shared/gateway/github/printing.py:209:    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PRDetails | PRNotFound:
+packages/erk-shared/src/erk_shared/gateway/github/printing.py:213:    def list_prs(
+packages/erk-shared/src/erk_shared/gateway/github/printing.py:270:    def get_pr_diff(self, repo_root: Path, pr_number: int) -&gt; str:
+packages/erk-shared/src/erk_shared/gateway/github/printing.py:274:    def get_pr_changed_files(self, repo_root: Path, pr_number: int) -&gt; list[str]:
+packages/erk-shared/src/erk_shared/gateway/github/printing.py:301:    def get_pr_review_threads(
+packages/erk-shared/src/erk_shared/gateway/github/printing.py:313:    def get_pr_check_runs(
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:212:    def get_prs_linked_to_issues(
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:373:    def get_pr(self, repo_root: Path, pr_number: int) -&gt; PRDetails | PRNotFound:
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:390:    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PRDetails | PRNotFound:
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:403:    def list_prs(
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:497:    def get_pr_diff(self, repo_root: Path, pr_number: int) -&gt; str:
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:513:    def get_pr_changed_files(self, repo_root: Path, pr_number: int) -&gt; list[str]:
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:560:    def get_pr_review_threads(
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:583:    def get_pr_check_runs(
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:125:    def get_prs_linked_to_issues(
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:187:    def get_pr(self, repo_root: Path, pr_number: int) -&gt; PRDetails | PRNotFound:
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:191:    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PRDetails | PRNotFound:
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:195:    def list_prs(
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:239:    def get_pr_diff(self, repo_root: Path, pr_number: int) -&gt; str:
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:243:    def get_pr_changed_files(self, repo_root: Path, pr_number: int) -&gt; list[str]:
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:255:    def get_pr_review_threads(
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:267:    def get_pr_check_runs(
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:426:    def get_prs_linked_to_issues(
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:659:    def get_pr(self, repo_root: Path, pr_number: int) -&gt; PRDetails | PRNotFound:
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:669:    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PRDetails | PRNotFound:
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:691:    def list_prs(
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:804:    def get_pr_diff(self, repo_root: Path, pr_number: int) -&gt; str:
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:826:    def get_pr_changed_files(self, repo_root: Path, pr_number: int) -&gt; list[str]:
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0112uCGU52HAm9dgh9xsZHBX">
+    <param name="pattern">def (get_pr|list_prs|fetch_pr|get_pull)</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2100" cache_read_input_tokens="55856" output_tokens="3830" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2100, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0112uCGU52HAm9dgh9xsZHBX">
+src/erk/tui/views/types.py:94:def get_previous_view_mode(current: ViewMode) -&gt; ViewMode:
+src/erk/core/display_utils.py:50:def get_pr_status_emoji(pr: PullRequestInfo) -&gt; str:
+src/erk/cli/commands/exec/scripts/get_pr_review_comments.py:117:def get_pr_review_comments(ctx: click.Context, pr: int | None, include_resolved: bool) -&gt; None:
+src/erk/cli/commands/exec/scripts/get_pr_view.py:30:def get_pr_view(ctx: click.Context, *, pr_number: int | None, branch: str | None) -&gt; None:
+src/erk/cli/commands/exec/scripts/get_pr_discussion_comments.py:88:def get_pr_discussion_comments(ctx: click.Context, pr: int | None) -&gt; None:
+src/erk/cli/commands/exec/scripts/get_pr_context.py:33:def get_pr_context(ctx: click.Context, *, debug: bool) -&gt; None:
+src/erk/cli/commands/exec/scripts/get_pr_commits.py:25:def get_pr_commits(ctx: click.Context, pr_number: int) -&gt; None:
+src/erk/cli/commands/exec/scripts/get_pr_body_footer.py:36:def get_pr_body_footer(pr_number: int) -&gt; None:
+src/erk/cli/commands/exec/scripts/get_pr_for_plan.py:52:def get_pr_for_plan(
+src/erk/cli/commands/exec/scripts/get_pr_feedback.py:104:def get_pr_feedback(ctx: click.Context, pr: int | None, include_resolved: bool) -&gt; None:
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01BpFPu17anA1AQA3A2s8MMn">
+    <param name="pattern">def list_prs</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6256" cache_read_input_tokens="57956" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6256}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+</session>

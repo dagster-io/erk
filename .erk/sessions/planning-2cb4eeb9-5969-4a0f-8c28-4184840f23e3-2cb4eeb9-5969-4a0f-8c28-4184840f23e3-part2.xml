@@ -1,0 +1,853 @@
+<session>
+  <meta branch="plnd/show-workflow-source-03-01-1414" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01BpFPu17anA1AQA3A2s8MMn">
+403:    def list_prs(
+404-        self,
+405-        repo_root: Path,
+406-        *,
+407-        state: PRListState,
+408-        labels: list[str] | None = None,
+409-        author: str | None = None,
+410-        draft: bool | None = None,
+411-    ) -&gt; dict[str, PullRequestInfo]:
+412-        """List PRs for the repository, keyed by head branch name.
+413-
+414-        Fetches PRs from GitHub API in a single REST API call.
+415-        This is used as a fallback when Graphite cache is unavailable.
+416-
+417-        Args:
+418-            repo_root: Repository root directory
+419-            state: Filter by state - "open", "closed", or "all"
+420-            labels: Filter to PRs with ALL specified labels. None means no label filter.
+421-            author: Filter to PRs by this author username. None means no author filter.
+422-            draft: Filter by draft status. True=only drafts, False=only non-drafts,
+423-                None=no draft filter.
+424-
+425-        Returns:
+426-            Dict mapping head branch name to PullRequestInfo.
+427-            Empty dict if no PRs match or on API failure.
+428-        """
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01EhAgSjCnfNg2KNXQwZV6yS">
+    <param name="pattern">def get_prs_linked_to_issues</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6256" cache_read_input_tokens="57956" output_tokens="303" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6256, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EhAgSjCnfNg2KNXQwZV6yS">
+212:    def get_prs_linked_to_issues(
+213-        self,
+214-        location: GitHubRepoLocation,
+215-        plan_numbers: list[int],
+216-    ) -&gt; dict[int, list[PullRequestInfo]]:
+217-        """Get PRs linked to issues via GitHub's development references.
+218-
+219-        Queries GitHub for PRs that reference issues in their description
+220-        or via GitHub's "Closes #N" linking. Returns a mapping of plan
+221-        numbers to PRs.
+222-
+223-        Args:
+224-            location: GitHub repository location (local path + owner/repo identity)
+225-            plan_numbers: List of plan numbers to query
+226-
+227-        Returns:
+228-            Mapping of plan_number -&gt; list of PRs linked to that plan.
+229-            Returns empty dict if no PRs link to any of the plans.
+230-        """
+231-        ...
+232-
+233-    @abstractmethod
+234-    def get_workflow_runs_by_branches(
+235-        self, repo_root: Path, workflow: str, branches: list[str]
+236-    ) -&gt; dict[str, WorkflowRun | None]:
+237-        """Get the most relevant workflow run for each branch.
+238-
+239-        Queries GitHub Actions for workflow runs and returns the most relevant
+240-        run for each requested branch. Priority order:
+241-        1. In-progress or queued runs (active runs take precedence)
+
+... [1 lines omitted] ...
+
+242-        2. Failed completed runs (failures are more actionable than successes)
+  </tool_result>
+  <thinking>Now let me look at the `get_pr` method to see what it returns (for single PR fetch), and the existing `list_prs` to see if we can batch-fetch PRs by number. There's no batch fetch by PR number directly, but `list_prs` returns all open PRs keyed by branch name. There's also `get_pr` which fetches a single PR by number.
+
+For the new approach:
+- We'll extract PR numbers from display_title for each run
+- We need to batch-fetch PR details (title, checks) for those PR numbers
+
+Options:
+1. Use `get_pr` per PR number (N API calls)
+
+
+2. Use `list_prs` with label filter to get all open erk-pr PRs (1 API call), then match by number
+3. Use `get_prs_linked_to_issues` for plan-based linkage (keeps existing batch approach)
+
+Looking at the current implementation, it's already leveraging `list_issues` with the erk-pr and erk-plan labels, then using `get_prs_linked_to_issues` to batch-fetch related PRs. For the new approach, I need to figure out if I can reuse this pattern or if I need a different strategy altogether.
+
+Since we already have PR numbers directly in the new model, I really just need to fetch PR details like titles and check statuses. The challenge is deciding between calling `list_prs` with the erk-pr label filter to build a mapping, or making individual `get_pr` calls per number—the first is more efficient if there are many PRs, but I need to verify what `list_prs` actually returns and whether it's keyed by PR number or branch name.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1269" cache_read_input_tokens="64212" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1269}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01CuqNFALC9cVfnNHnWhgmQG">
+    <param name="pattern">class PullRequestInfo</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1269" cache_read_input_tokens="64212" output_tokens="641" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1269, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CuqNFALC9cVfnNHnWhgmQG">
+210:class PullRequestInfo:
+211-    """Information about a GitHub pull request."""
+212-
+213-    number: int
+214-    state: str  # "OPEN", "MERGED", "CLOSED"
+215-    url: str
+216-    is_draft: bool
+217-    title: str | None
+218-    checks_passing: bool | None  # None if no checks, True if all pass, False if any fail
+219-    owner: str  # GitHub repo owner (e.g., "schrockn")
+220-    repo: str  # GitHub repo name (e.g., "erk")
+221-    # True if CONFLICTING, False if MERGEABLE, None if UNKNOWN or not fetched
+222-    has_conflicts: bool | None = None
+223-    checks_counts: tuple[int, int] | None = None  # (passing, total) or None if no checks
+224-    # True if PR will close the linked issue when merged (via "Closes #N" keywords)
+225-    will_close_target: bool = False
+226-    # Head branch name (the source branch) - optional, populated by some API calls
+227-    head_branch: str | None = None
+228-    # Review thread counts: (resolved_count, total_count) or None if not fetched
+229-    review_thread_counts: tuple[int, int] | None = None
+230-    # Review decision: "APPROVED", "CHANGES_REQUESTED", "REVIEW_REQUIRED", or None
+231-    review_decision: str | None = None
+232-    # Base branch name (the target branch) - optional, populated by some API calls
+233-    base_ref_name: str | None = None
+234-
+235-
+236-class _NotAvailable:
+237-    """Sentinel for fields not available from certain API queries.
+238-
+239-    Raises AttributeError when accessed as a string, preventing silent bugs
+
+... [1 lines omitted] ...
+  </tool_result>
+  <thinking>Good. `PullRequestInfo` has `number`, `title`, `checks_passing`, `checks_counts`, etc. Now the question is how to efficiently fetch PR info for a batch of PR numbers.
+
+Looking at the gateway ABC, there's:- `get_pr(repo_root, pr_number)` → returns `PRDetails | PRNotFound` (single PR)- `list_prs(repo_root, state, labels, author, draft)` → returns `dict[str, PullRequestInfo]` keyed by branch name
+
+The `list_prs` returns PRs keyed by branch name. We could use it and build a number→PR map:
+
+
+Building a map from PR numbers by calling `list_prs` with the `erk-pr` label filter. But this approach has issues—pagination limits mean we might not get all PRs, and filtering by label would exclude PRs from other workflows that don't have that label. For pr-address/pr-rebase/pr-rewrite, the target PRs should have the `erk-pr` label, but I need to verify this assumption.
+
+Actually, maybe I'm overcomplicating this. The user just wants the PR column filled in with PR numbers—I don't necessarily need to fetch titles and checks for every PR. I could extract the PR number from the display title without extra API calls, optionally batch-fetch titles if available, and include checks only when the data's already there. Or even simpler: just show the PR number as a clickable link and skip the title for non-plan-implement runs to avoid the API complexity.
+
+The user's point is clear though—they want that PR column populated since nearly all workflows target PRs explicitly. Right now it's mostly empty, so I need to figure out why and fix it. shows "X" for non-plan-implement runs. They want it to show the actual PR number. They also say the column should be called "pr" not "plan".
+
+I think the simplest approach is to extract the PR number from the display_title for each workflow format, update the run-name formats to include the PR number where it's missing, rename the column to "pr", and use list_prs to batch-fetch PR info for the title. I could also use list_prs with a label filter to get PRs that erk created, then fall back to just showing the number for PRs outside that set.
+
+Let me check what PRDetails contains to see if I need the full PR object or can work with a simpler interface.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1120" cache_read_input_tokens="65481" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1120}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Pvz8Q3A1saBqAnndS7yVZx">
+    <param name="pattern">class PRDetails</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1120" cache_read_input_tokens="65481" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1120}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012nvXBQUTmb1Q6tSn3FfVos">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk/cli/commands/pr/list_cmd.py</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1120" cache_read_input_tokens="65481" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1120}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012nvXBQUTmb1Q6tSn3FfVos">
+     1→"""Command to list plans with filtering."""
+     2→
+     3→from collections.abc import Callable
+     4→from typing import ParamSpec, TypeVar
+     5→
+     6→import click
+     7→from rich.console import Console
+     8→from rich.table import Table
+     9→from rich.text import Text
+    10→
+    11→from erk.cli.core import discover_repo_context
+    12→from erk.core.context import ErkContext
+    13→from erk.core.display_utils import strip_rich_markup
+    14→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    15→from erk.tui.app import ErkDashApp
+    16→from erk.tui.data.types import PlanFilters, PlanRowData
+    17→from erk.tui.sorting.logic import sort_plans
+    18→from erk.tui.sorting.types import SortKey, SortState
+    19→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+    20→from erk_shared.gateway.browser.real import RealBrowserLauncher
+    21→from erk_shared.gateway.clipboard.fake import FakeClipboard
+    22→from erk_shared.gateway.clipboard.real import RealClipboard
+    23→from erk_shared.gateway.github.emoji import get_pr_status_emoji
+    24→from erk_shared.gateway.github.types import (
+    25→    GitHubRepoId,
+    26→    GitHubRepoLocation,
+    27→    IssueFilterState,
+    28→    PullRequestInfo,
+    29→)
+    30→from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+  </tool_result>
+  <tool_result tool="toolu_01Pvz8Q3A1saBqAnndS7yVZx">
+134:class PRDetails(EnsurableResult):
+135-    """Comprehensive PR information from a single GitHub API call.
+136-
+137-    This dataclass contains all commonly-needed PR fields, allowing call sites
+138-    to fetch everything they need in one API call instead of multiple separate
+139-    calls for title, body, base branch, etc.
+140-    """
+141-
+142-    # Identity
+143-    number: int
+144-    url: str
+145-
+146-    # Content
+147-    title: str
+148-    body: str
+149-
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01869DfnjYF7YQxaRwp4Y6pw">
+    <param name="pattern">def format_pr_cell</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/src/erk/cli/commands/pr/list_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">25</param>
+  </tool_use>
+  <usage input_tokens="472" cache_creation_input_tokens="1150" cache_read_input_tokens="66601" output_tokens="153" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1150, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01869DfnjYF7YQxaRwp4Y6pw">
+37:def format_pr_cell(pr: PullRequestInfo, *, use_graphite: bool, graphite_url: str | None) -&gt; str:
+38-    """Format PR cell with clickable link and emoji: #123 👀 or #123 👀🔗
+39-
+40-    The 🔗 emoji is appended for PRs that will auto-close the linked issue when merged.
+41-
+42-    Args:
+43-        pr: PR information
+44-        use_graphite: If True, use Graphite URL; if False, use GitHub URL
+45-        graphite_url: Graphite URL for the PR (None if unavailable)
+46-
+47-    Returns:
+48-        Formatted string for table cell with OSC 8 hyperlink
+49-    """
+50-    emoji = get_pr_status_emoji(pr)
+51-    pr_text = f"#{pr.number}"
+52-
+53-    # Append 🔗 for PRs that will close the issue when merged
+54-    if pr.will_close_target:
+55-        emoji += "🔗"
+56-
+57-    # Determine which URL to use
+58-    url = graphite_url if use_graphite else pr.url
+59-
+60-    # Make PR number clickable if URL is available
+61-    # Rich supports OSC 8 via [link=...] markup
+62-    if url:
+  </tool_result>
+  <thinking>Now I have enough information. Let me also check the test file to understand the test patterns.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="984" cache_read_input_tokens="67751" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 984}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me also check the existing tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="984" cache_read_input_tokens="67751" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 984}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AHJLfVy9yfBoPidGJ2bnx8">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/tests/commands/run/test_list.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="984" cache_read_input_tokens="67751" output_tokens="133" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 984, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AHJLfVy9yfBoPidGJ2bnx8">
+     1→"""CLI tests for erk run list command.
+     2→
+     3→This file focuses on CLI-specific concerns for the list runs command:
+     4→- Command execution and exit codes
+     5→- Output formatting and display (status indicators, Rich table)
+     6→- Run-centric view with plan/PR linkage
+     7→
+     8→The integration layer (list_workflow_runs) is tested in:
+     9→- tests/unit/fakes/test_fake_github.py - Fake infrastructure tests
+    10→- tests/integration/test_real_github.py - Real implementation tests
+    11→
+    12→This file trusts that unit layer and only tests CLI integration.
+    13→"""
+    14→
+    15→from datetime import UTC, datetime
+    16→from pathlib import Path
+    17→
+    18→from click.testing import CliRunner
+    19→
+    20→from erk.cli.commands.run.list_cmd import list_runs
+    21→from erk_shared.gateway.git.abc import WorktreeInfo
+    22→from erk_shared.gateway.git.fake import FakeGit
+    23→from erk_shared.gateway.github.fake import FakeGitHub
+    24→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    25→from erk_shared.gateway.github.issues.types import IssueInfo
+    26→from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
+    27→from tests.fakes.context import create_test_context
+    28→
+    29→
+    30→def test_list_runs_empty_state(tmp_path: Path) -&gt; None:
+
+... [882 lines omitted] ...
+
+    47→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   101→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   143→            conclusion="failure",
+   205→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   254→    result = runner.invoke(list_runs, ["--show-legacy"], obj=ctx, catch_exceptions=False)
+   321→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   389→    result = runner.invoke(list_runs, ["--show-legacy"], obj=ctx, catch_exceptions=False)
+   465→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   521→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   575→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   634→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   726→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   789→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   847→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   851→    # Should display without error - the "-" placeholder is dimmed
+   901→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+  </tool_result>
+  <thinking>Now I have a complete understanding of the situation. Let me summarize what I know:
+
+## Current run-name formats:
+| Workflow | run-name format | PR number available? |
+|---|---|---|
+| `plan-implement` | `"${{ inputs.plan_id }}:${{ inputs.distinct_id }}"` → `"8559:abc123"` | Has `pr_number` input but NOT in run-name |
+| `pr-address` | `"pr-address:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"` → `"pr-address:#456:abc123"` | **YES** in run-name |
+
+
+| `pr-rebase` | `"rebase:${{ inputs.branch_name }}:${{ inputs.distinct_id }}"` → `"rebase:plnd/branch:abc123"` | Has `pr_number` input but NOT in run-name |
+| `pr-rewrite` | `"rewrite:${{ inputs.branch_name }}:${{ inputs.distinct_id }}"` → `"rewrite:plnd/branch:abc123"` | Has `pr_number` input but NOT in run-name |
+| `one-shot` | `"one-shot:${{ inputs.distinct_id }}"` → `"one-shot:abc123"` | No `pr_number` input available |
+
+I'm seeing a pattern here—most workflows have access to the PR number but aren't including it in their run-name format, except for `pr-address` which already does. The `one-shot` workflow is the only one without access to a PR number at all.
+
+My plan is to update the run-name formats for the workflows that have `pr_number` as input. I'll add the PR number to each one: `plan-implement` should use `"${{ inputs.plan_id }}:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"`, `pr-rebase` should use `"rebase:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"`, and `pr-rewrite` should follow the same pattern with its prefix.
+
+I also need to handle `one-shot` and `pr-address` similarly, while `learn` stays as-is since it doesn't have a PR number input. Then I'll write a function to extract the PR number from the display title by parsing the `#\d+` pattern.
+
+Next, I'm updating `list_cmd.py` to remove the legacy flag and filtering logic, rename the "plan" column to "pr", and use the extraction function to populate PR numbers. For older runs without a PR number, I'll fall back to the existing plan-to-PR mapping, and I'll fetch PR details using the GitHub API to display titles and check statuses. Runs where I can't determine a PR will just show a dash.
+
+Handling the data fetch...
+
+For the PR-centric display, I need to extract PR numbers from the display titles, keep the plan-to-PR linkage for backward compatibility with old plan-implement runs, and then batch fetch the PR details. I'm weighing whether to use a single `list_prs` call for all open erk-pr PRs, individual `get_pr` calls per number, or stick with `get_prs_linked_to_issues` for plan-based runs. The hybrid approach makes sense—keep the plan-based lookup for backward compatibility while handling direct PR numbers separately, though I do want to show PR titles and check statuses when available.
+
+Looking at the practical constraints, I need to gather all PR numbers from both direct extraction and plan linkage, then fetch their info. Since there's no batch `get_prs` method available, I'm considering whether `list_prs` (which returns all PRs keyed by branch name) or individual `get_pr` calls per number would be more efficient.
+
+The `list_prs` method accepts a `state` parameter that likely supports "open", "closed", or "all", and I can filter by the "erk-pr" label to avoid fetching hundreds of unrelated PRs. My approach would be to collect unique PR numbers from the runs, call `list_prs(state="all", labels=["erk-pr"])` to build a number-to-PR mapping, then use that for lookups.
+
+But I'm overcomplicating this. I should handle three cases: runs with a direct PR number in the display title get looked up in a batch-fetched map, runs with a plan number use the existing plan-to-PR linkage, and truly legacy runs without parseable data just show a dash.
+
+For the batch fetch, I'll pull all erk-pr labeled PRs once, build a lookup map by PR number, and use that for both direct and plan-linked PR lookups. This replaces the separate issue and PR linking calls with one simpler approach. Since the user wants PR titles shown instead of plan titles, I can skip fetching issue data entirely and just display the PR information.
+
+For plan-implement runs without explicit PR numbers, I'll fall back to extracting the plan number and finding linked PRs through the existing logic—this handles the older format gracefully. The only edge case is when a PR doesn't exist yet during workflow execution, which I'll represent as a dash.
+
+Now I'm reconsidering the data fetching approach. Instead of fetching all plan issues first, I should fetch all PRs directly and build a lookup map, then use the linked PR logic as a fallback for older runs that only have plan numbers.
+
+The key insight is separating two concerns: extracting PR numbers from run titles (either directly via `#NNN` format or indirectly through plan linkage), then batch-fetching the PR details once I have all the numbers. Since `get_prs_linked_to_issues()` already returns full PR info, I only need to fetch separately for directly-extracted PR numbers.
+
+Building a data structure to collect PR numbers from both sources... I'm realizing this approach is getting too complicated. Let me step back and think about what the table actually needs: for each run, I extract the PR number directly from the display title if possible, otherwise I look up any linked PRs through the plan number, and if neither works I just show a dash. The data fetching is straightforward—batch load all the PRs upfront, then use those lookups as needed. PRs: We already have the PR number. We need title + checks.
+  - Option A: Fetch individually with `get_pr(pr_number)` for each
+  - Option B: Use `list_prs(state="all", labels=["erk-pr"])` to batch-fetch
+  - Option C: Don't show title/checks for directly-known PRs (just show the number)
+  
+- For step 2 PRs: Use existing `get_prs_linked_to_issues()` flow
+
+Option B seems best: single API call to get all erk PRs, then use the number map for both direct and plan-linked lookups.
+
+But `list_prs(state="all")` might return a LOT of PRs. Let me check what the REST API limits are... typically 100 per page, and we'd get the first page.
+
+The current code already makes several API calls—fetching all open erk-plan issues and doing a GraphQL batch query for linked PRs. Adding one more REST call to get open PRs with the erk-pr label seems reasonable. Most visible runs reference recent PRs anyway, so filtering to open PRs would cover most cases. For older or closed PRs not in that list, showing just the number without title and checks is probably acceptable, though I'm wondering if users would want titles for merged PRs too.
+
+Let me think practically about what works here. The simplest approach is to keep the existing `get_prs_linked_to_issues()` for plan-based runs, then for direct PR-number runs, try to find the PR in those results first, and fall back to showing just the number if it's not there.
+
+Actually, I'm reconsidering this. What if I use `list_prs()` with the "erk-pr" label as the single source of truth for all PR data, then build a lookup map by PR number? That way I can handle both direct PR numbers and plan-linked ones uniformly by just looking up the PR number in that map.
+
+Building a lookup map from PR numbers... Building the unified PR mapping...
+
+Now I'm iterating through the plan linkages to select the best PR representation for each plan, then mapping any runs that reference that plan to their corresponding PR number. For runs with direct PR numbers that aren't already in my map, I'll just display the number as-is, and in the table output I'm checking whether each run has an associated PR number to populate that column.
+
+I'm realizing there's a simpler approach here—instead of building these linkages piecemeal, I could just make a single API call to fetch all PRs with the "erk-pr" label upfront...
+
+Actually, that won't quite work because the plan-to-PR mapping isn't directly available from the list. Let me think through the cleanest path forward: update the workflow YAMLs to embed the PR number in the run name, write a parser to extract it, then use that to look up PR details directly without needing the indirect plan linkage.
+
+For runs where I can extract a PR number directly, I'll show the PR title and checks. When that's not available, I'll fall back to the plan number and use the existing `get_prs_linked_to_issues()` to find the associated PR. The title column should display the PR title since both lookup paths give me `PullRequestInfo` with that field.
+
+Generating markdown table... Looking at the performance metrics across different workflow types and their associated pull requests. The learn workflow appropriately shows a dash since it doesn't generate PRs, while plan-implement runs need to extract the PR number from the display title format to properly link back to the original issue.
+
+For backward compatibility with older plan-implement runs that lack direct PR numbers, I can fall back to the plan-to-PR linkage through `get_prs_linked_to_issues()`, which already returns the PR information I need. This means I don't necessarily need the `list_issues()` call if all runs have direct PR references, but keeping it maintains support for the legacy format. from this response. We don't need `list_issues()` for titles anymore!
+
+So the data flow becomes:
+1. **Extract from display_title**: PR numbers (direct) and plan numbers (fallback)
+2. **For plan numbers**: Call `get_prs_linked_to_issues()` → get PRI with title/checks
+3. **For direct PR numbers**: We have the number but need details. If the PR is also linked to a plan (which is likely for plan-implement runs), it'll be in the plan→PR linkage data.
+4. **For PR numbers not in any fetched data**: Show just the number
+
+For pr-address, pr-rebase, pr-rewrite, one-shot runs with direct PR numbers: these PRs may or may not be linked to plans. If they are, great. If not, we'd need a separate fetch.
+
+Most direct PR numbers will actually have plan linkage since pr-address, pr-rebase, and pr-rewrite target erk PRs created by plan-implement, while one-shot PRs might not be linked. So my approach is to gather all PR and plan numbers, fetch the linked data via `get_prs_linked_to_issues()`, build a map from PR numbers to their details, and fall back to showing just the number for any PRs not in that map. I'm realizing the core issue: `get_prs_linked_to_issues()` requires a `GitHubRepoLocation`, which I've been deriving from an issue URL, but if I skip fetching issues, I lose that URL. I need to find another way to construct the location from the repo object itself, possibly by parsing the git remote URL instead. I'm settling on the least invasive approach: keep the `list_issues()` call but only use it to derive the `location` and fetch linked PRs, not for populating the title column. Now I need to finalize which files to modify—the workflow files need `#pr_number` added to their run-names, I'll extract PR number logic into a shared utility function, and rewrite the list command to be PR-centric while removing the legacy flag and updating its tests accordingly.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="16564" cache_read_input_tokens="68735" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16564}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a complete picture. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="16564" cache_read_input_tokens="68735" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16564}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01E5T7mc52cc8U5awi7gpyC9">
+    <param name="file_path">/Users/schrockn/.claude/plans/immutable-stargazing-flask.md</param>
+    <param name="content"># Plan: Make `erk workflow run list` PR-centric
+
+## Context
+
+The current `erk workflow run...[truncated 3475 chars]...rkflow run list` should show all workflow types with PR numbers filled in where available
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="16564" cache_read_input_tokens="68735" output_tokens="8292" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 16564, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01E5T7mc52cc8U5awi7gpyC9">
+File created successfully at: /Users/schrockn/.claude/plans/immutable-stargazing-flask.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01XxrSBeyHWKbyhrY3t6hwWf">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests via devrun agent'}]</param>
+    <param name="plan"># Plan: Make `erk workflow run list` PR-centric
+
+## Context
+
+The current `erk workflow run...[truncated 3475 chars]...rkflow run list` should show all workflow types with PR numbers filled in where available
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8221" cache_read_input_tokens="85299" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8221, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XxrSBeyHWKbyhrY3t6hwWf">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/immutable-stargazing-flask.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Make `erk workflow run list` PR-centric
+Current context: (wt:erk-slot-37) (br:plnd/show-workflow-source-03-01-1414) (pr:#8551)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/show"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 2cb4eeb9-5969-4a0f-8c28-4184840f23e3 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+     (no PR tracking - this is for small PR iterations)
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+# Plan: Make `erk workflow run list` PR-centric
+
+## Context
+
+The current `erk workflow run list` is plan-centric: it extracts plan issue numbers from `display_title`, fetches issue titles, and derives linked PRs. This means non-plan-implement workflows (`pr-address`, `pr-rebase`, `one-shot`, etc.) can't show meaningful data — they display "X" and are hidden by default behind a `--show-legacy` flag. But these aren't "legacy" — they're current workflows that target PRs directly.
+
+The fix: make the table PR-centric. Most workflows already accept `pr_number` as an input, so we encode it in `run-name` and parse it from `display_title`.
+
+## Changes
+
+### 1. Update workflow `run-name` formats to include `#pr_number`
+
+| File | Current run-name | New run-name |
+|---|---|---|
+| `plan-implement.yml` | `"${{ inputs.plan_id }}:${{ inputs.distinct_id }}"` | `"${{ inputs.plan_id }}:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"` |
+| `pr-rebase.yml` | `"rebase:${{ inputs.branch_name }}:${{ inputs.distinct_id }}"` | `"rebase:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"` |
+| `pr-rewrite.yml` | `"rewrite:${{ inputs.branch_name }}:${{ inputs.distinct_id }}"` | `"rewrite:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"` |
+| `one-shot.yml` | `"one-shot:${{ inputs.distinct_id }}"` | `"one-shot:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"` |
+| `pr-address.yml` | Already has `#pr_number` | No change |
+| `learn.yml` | No `pr_number` input | No change |
+
+### 2. Add `extract_pr_number()` to `shared.py`
+
+Finds `#\d+` in `display_title` (e.g., `"pr-address:#456:abc123"` → 456)
+
+### 3. Rewrite `list_cmd.py`
+
+- Remove `--show-legacy` flag — always show all runs
+- Rename "plan" column to "pr"
+- Two-pass PR extraction: try direct `#NNN`, fall back to plan→PR linkage
+- Show `-` (not "X") for runs where no PR can be determined
+
+### 4. Update tests
+
+- Remove `--show-legacy` tests, add PR-format tests</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="690" cache_read_input_tokens="93520" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 690}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01JEehM1NttokdBuBR2kz47r">
+    <param name="questions">[{'question': 'What would you like to do with this plan?\n\nCurrent context: (wt:erk-slot-...[truncated 432 chars]...t the plan', 'description': 'Open plan in editor to review or modify before deciding.'}]}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="690" cache_read_input_tokens="93520" output_tokens="895" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 690, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JEehM1NttokdBuBR2kz47r">
+User has answered your questions: "What would you like to do with this plan?
+
+Current context: (wt:erk-slot-37) (br:plnd/show-workflow-source-03-01-1414) (pr:#8551)"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_013vPLJcUxN3dAkQSJcnSZrB">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1194" cache_read_input_tokens="94210" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1194, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013vPLJcUxN3dAkQSJcnSZrB">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="2cb4eeb9-5969-4a0f-8c28-4184840f23e3" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "2cb4eeb9-5969-4a0f-8c28-4184840f23e3" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "2cb4eeb9-5969-4a0f-8c28-4184840f23e3" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "2cb4eeb9-5969-4a0f-8c28-4184840f23e3" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "2cb4eeb9-5969-4a0f-8c28-4184840f23e3" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Let me execute the plan-save workflow.
+
+First, let me read the plan file to get the title.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2620" cache_read_input_tokens="95404" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2620}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011gcVQhbJ8Jm9hKLjETiDEp">
+    <param name="file_path">/Users/schrockn/.claude/plans/immutable-stargazing-flask.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2620" cache_read_input_tokens="95404" output_tokens="99" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2620, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011gcVQhbJ8Jm9hKLjETiDEp">
+     1→# Plan: Make `erk workflow run list` PR-centric
+     2→
+     3→## Context
+     4→
+     5→The current `erk workflow run list` is plan-centric: it extracts plan issue numbers from `display_title`, fetches issue titles, and derives linked PRs. This means non-plan-implement workflows (`pr-address`, `pr-rebase`, `one-shot`, etc.) can't show meaningful data — they display "X" and are hidden by default behind a `--show-legacy` flag. But these aren't "legacy" — they're current workflows that target PRs directly.
+     6→
+     7→The fix: make the table PR-centric. Most workflows already accept `pr_number` as an input, so we encode it in `run-name` and parse it from `display_title`.
+     8→
+     9→## Changes
+    10→
+    11→### 1. Update workflow `run-name` formats to include `#pr_number`
+    12→
+    13→Add `#${{ inputs.pr_number }}` to the `run-name` of workflows that have a `pr_number` input:
+    14→
+    15→| File | Current run-name | New run-name |
+    16→|---|---|---|
+    17→| `.github/workflows/plan-implement.yml` | `"${{ inputs.plan_id }}:${{ inputs.distinct_id }}"` | `"${{ inputs.plan_id }}:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"` |
+    18→| `.github/workflows/pr-rebase.yml` | `"rebase:${{ inputs.branch_name }}:${{ inputs.distinct_id }}"` | `"rebase:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"` |
+    19→| `.github/workflows/pr-rewrite.yml` | `"rewrite:${{ inputs.branch_name }}:${{ inputs.distinct_id }}"` | `"rewrite:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"` |
+    20→| `.github/workflows/one-shot.yml` | `"one-shot:${{ inputs.distinct_id }}"` | `"one-shot:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"` |
+    21→| `.github/workflows/pr-address.yml` | Already has `#pr_number` | No change |
+    22→| `.github/workflows/learn.yml` | No `pr_number` input | No change |
+    23→
+    24→### 2. Add `extract_pr_number()` to `src/erk/cli/commands/run/shared.py`
+    25→
+    26→New function that finds `#\d+` in `display_title`:
+    27→- `"pr-address:#456:abc123"` → 456
+    28→- `"8559:#460:abc123"` → 460
+    29→- `"one-shot:#458:abc123"` → 458
+    30→- `"8559:abc123"` (old format) → None
+
+... [30 lines omitted] ...
+  </tool_result>
+  <assistant>**Title:** "Make `erk workflow run list` PR-centric"
+**Branch slug:** `pr-centric-run-list`
+**Summary:** Shifts the workflow run list from plan-centric to PR-centric display by encoding PR numbers in workflow run-names, parsing them from display_title, and removing the --show-legacy flag. All workflow types are now shown by default with PR data filled in where available.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1508" cache_read_input_tokens="98024" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1508}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016BbBUU5w6v7V8xEVWMkDve">
+    <param name="command">erk exec plan-save --format json --session-id="2cb4eeb9-5969-4a0f-8c28-4184840f23e3" --bra...[truncated 201 chars]...flag. All workflow types are now shown by default with PR data filled in where available."</param>
+    <param name="description">Save plan as draft PR via erk exec</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1508" cache_read_input_tokens="98024" output_tokens="307" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1508, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016BbBUU5w6v7V8xEVWMkDve">
+{"success": true, "plan_number": 8571, "plan_url": "https://github.com/dagster-io/erk/pull/8571", "title": "[erk-plan] Plan: Make `erk workflow run list` PR-centric", "branch_name": "plnd/pr-centric-run-list-03-01-1550", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-37/.erk/scratch/sessions/2cb4eeb9-5969-4a0f-8c28-4184840f23e3/plan_snapshots/000001-e7e07e92"}
+  </tool_result>
+  <thinking>The plan was saved successfully. No objective link to verify (objective_issue is null). Let me now push the planning session and display the results.
+
+Let me check if we're on trunk to determine the slot options display.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="602" cache_read_input_tokens="99532" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 602}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me push the planning session and check if we're on trunk.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="602" cache_read_input_tokens="99532" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 602}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01EqETuqsFXHL6rJbYrsG7mT">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null | head -5</param>
+    <param name="description">Get session file path</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="602" cache_read_input_tokens="99532" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 602}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PmXPjdCpD9WoTkj3i7wLDV">
+    <param name="command">git rev-parse --abbrev-ref HEAD</param>
+    <param name="description">Check current branch</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="602" cache_read_input_tokens="99532" output_tokens="229" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 602, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EqETuqsFXHL6rJbYrsG7mT">
+SESSION_ID=2cb4eeb9-5969-4a0f-8c28-4184840f23e3
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-37/2cb4eeb9-5969-4a0f-8c28-4184840f23e3.jsonl
+  </tool_result>
+  <tool_result tool="toolu_01PmXPjdCpD9WoTkj3i7wLDV">
+plnd/show-workflow-source-03-01-1414
+  </tool_result>
+  <tool_use name="Bash" id="toolu_012Yq1haua4Xs8n2LYJZ7iae">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn--er...[truncated 86 chars]...4a0f-8c28-4184840f23e3" --stage planning --source local --plan-id 8571 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="405" cache_read_input_tokens="100134" output_tokens="219" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 405, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
