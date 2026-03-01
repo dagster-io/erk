@@ -1,0 +1,1024 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>why did this error happen? can it be avoided? can we have a better error message with remediation instructions if it can't be avoided?</user>
+  <user>[Image: source: /Users/schrockn/Dropbox/Screenshots/Screenshot 2026-02-25 at 1.18.38 PM.png]</user>
+  <thinking>The user is asking about an error that occurred when dispatching a plan:
+
+```
+Failed to dispatch plan #8544: stderr: fatal: 'plnd/doc-mid-rebase-behavior-03-01-1326' is already used by worktree at '/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-54'
+```
+
+This is a git worktree error - the branch name is already checked out in another worktree. Let me explore the codebase to understand:
+
+1. How dispatch works and where this error originates
+2. How branch names are generated for dispatched plans
+
+
+3. Whether there's a way to detect this conflict before it happens or handle it gracefully
+
+I need to search through the relevant code to see how the dispatch mechanism handles branch allocation and whether there's existing conflict detection I can leverage.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="14116" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14116}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me investigate the dispatch workflow and how branch names are generated to understand this error.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="14116" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14116}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_013d8VjwKNz7fWVxE7b57U9D">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore dispatch workflow code</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 692 chars]... failures
+
+Be thorough - check both the CLI layer and any gateway/service layers involved.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="14116" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14116}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_013czXiZFxMPrNkjN8HkpKtE">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore worktree slot management</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 706 chars]...cs/learned/ for any existing documentation about worktree management or dispatch failures.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="14116" cache_read_input_tokens="19113" output_tokens="828" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 14116, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013d8VjwKNz7fWVxE7b57U9D">
+Perfect! Now I have a comprehensive understanding of the dispatch workflow. Let me compile my findings into a coherent response.
+
+## Summary of Dispatch Workflow Findings
+
+Based on my thorough exploration of the erk codebase, here's the complete trace of the dispatch workflow:
+
+### 1. **`erk pr dispatch` CLI Command** 
+**Location:** `/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_cmd.py`
+
+The dispatch command follows this sequence:
+
+- **Authentication Check** (line 443): Validates GitHub authentication via `Ensure.gh_authenticated(ctx)`
+- **Trunk Sync** (line 453): Ensures root worktree is on trunk and synced with remote via `ensure_trunk_synced()` 
+- **Plan Validation** (line 503-515): Validates all planned-PR plans exist, have `erk-plan` label, and are OPEN
+- **Dispatch Loop** (line 523-540): For each validated plan, calls `_dispatch_planned_pr_plan()`
+
+### 2. **Plan Dispatch Execution**
+**Key Function:** `_dispatch_planned_pr_plan()` (lines 187-383)
+
+This function:
+
+1. **Fetches Plan Content** (line 220): Retrieves plan body from GitHub via `ctx.plan_store.get_plan()`
+
+2. **Checks Out Existing Branch** (lines 227-235):
+   - Fetches branch from origin: `ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)`
+   - Creates local tracking branch if needed
+   - Checks out the branch: `ctx.branch_manager.checkout_branch(repo.root, branch_name)`
+
+3. **Syncs with Remote** (line 238): Performs rebase pull to get latest: `ctx.git.remote.pull_rebase(repo.root, "origin", branch_name)`
+
+
+... [112 lines omitted] ...
+
+### 5. **Error Handling: "already used by worktree"**
+When `git worktree add` fails with the error `fatal: 'plnd/...' is already used by worktree`:
+2. **Error Capture:** `subprocess.CalledProcessError` is caught at line 144
+3. **Error Message Construction:** (lines 146-160)
+   - Builds error message with operation context
+   - Includes stderr output (which contains the git error)
+   - Re-raises as `RuntimeError` with enriched context
+4. **Propagation:** Error bubbles up to CLI with format: `"Failed to {operation_context}\nCommand: ...\nstderr: {git_error}"`
+fatal: 'plnd/...' is already used by worktree
+- The error propagates through the subprocess wrapper and becomes visible to the user
+4. **Error Handling:** `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py` (200+ lines)
+  </tool_result>
+  <tool_result tool="toolu_013czXiZFxMPrNkjN8HkpKtE">
+Perfect! Now I have a comprehensive understanding. Let me compile the final comprehensive report:
+
+## Summary: Worktree Slot System in Erk
+
+Based on my analysis of the codebase and documentation, here's a comprehensive understanding of the worktree slot system:
+
+---
+
+### 1. **Worktree Slot Pool Architecture**
+
+The slot pool is a **fixed-size, reusable pool of pre-allocated git worktrees** (default 4, configurable via `.erk/config.toml`):
+
+**Core Components:**
+- **Pool size**: Configured in `[pool] max_slots` (default: 4 slots)
+- **Slot naming**: `erk-slot-01`, `erk-slot-02`, etc.
+- **Placeholder branches**: `__erk-slot-NN-br-stub__` for unassigned slots
+- **Pool persistence**: `~/.erk/repos/{repo_name}/pool.json`
+
+**Data Structures** (`src/erk/core/worktree_pool.py`):
+- `SlotAssignment`: Maps a branch to a slot with `slot_name`, `branch_name`, `assigned_at` timestamp, and `worktree_path`
+- `PoolState`: Contains `version`, `pool_size`, `slots`, and `assignments` (all immutable)
+
+---
+
+### 2. **Slot Allocation Algorithm**
+
+The `allocate_slot_for_branch()` function in `src/erk/cli/commands/slot/common.py:564-728` implements a 4-step allocation strategy:
+
+**Step 1: Pool Sync** (Line 610)
+```
+
+... [157 lines omitted] ...
+
+- Error: `fatal: 'branch-name' is already checked out at '&lt;other-worktree-path&gt;'`
+This system ensures that slot allocation is **idempotent**, **recoverable from stale state**, and **transparent to manual git operations**, while preventing git's "branch already checked out" errors through proactive validation and sync-before-allocate discipline.
+  </tool_result>
+  <thinking>Now I have a good understanding of the dispatch workflow. Let me look at the specific error more carefully. The error is:
+
+```
+Failed to dispatch plan #8544: stderr: fatal: 'plnd/doc-mid-rebase-behavior-03-01-1326' is already used by worktree at '/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-54'
+```
+
+So the dispatch is trying to check out branch `plnd/doc-mid-rebase-behavior-03-01-1326` in the root worktree, but that branch is already checked out in `erk-slot-54`.
+
+
+The dispatch workflow checks out the branch in the root worktree, creates the impl-context directory, commits and pushes, then triggers the workflow. The issue is that this branch is already checked out in a slot worktree, so git won't allow it to be checked out again in the root. This typically happens when a previous dispatch or implementation run left the branch checked out in a slot without cleaning it up, or when someone's trying to re-dispatch a plan that was already dispatched before. Let me dig into the dispatch code to see exactly what's happening.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5587" cache_read_input_tokens="33229" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5587}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good findings. Let me now read the specific dispatch code and the checkout/branch management code to understand exactly where this fails and how to fix it.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5587" cache_read_input_tokens="33229" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5587}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0147nv4LcFu4VgfgYC6ZK7Bu">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="offset">180</param>
+    <param name="limit">210</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5587" cache_read_input_tokens="33229" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5587}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0147nv4LcFu4VgfgYC6ZK7Bu">
+   180→        number=plan_number,
+   181→        title=pr_result.title,
+   182→        url=pr_result.url,
+   183→        branch_name=pr_result.head_ref_name,
+   184→    )
+   185→
+   186→
+   187→def _dispatch_planned_pr_plan(
+   188→    ctx: ErkContext,
+   189→    *,
+   190→    repo: RepoContext,
+   191→    validated: ValidatedPlannedPR,
+   192→    submitted_by: str,
+   193→    original_branch: str,
+   194→    base_branch: str,
+   195→) -&gt; DispatchResult:
+   196→    """Dispatch a validated planned-PR plan for implementation.
+   197→
+   198→    For planned-PR plans, the branch and PR already exist. This function:
+   199→    - Fetches and checks out the existing plan branch
+   200→    - Creates .erk/impl-context/ with provider="github-draft-pr"
+   201→    - Commits and pushes .erk/impl-context/ to existing branch
+   202→    - Triggers the workflow with plan_backend="planned_pr"
+   203→
+   204→    Args:
+   205→        ctx: ErkContext with git operations
+   206→        repo: Repository context
+   207→        validated: Validated planned PR information
+   208→        submitted_by: GitHub username of submitter
+   209→        original_branch: Original branch name (to restore after)
+
+... [180 lines omitted] ...
+
+   222→        user_output(click.style("Error: ", fg="red") + f"PR #{plan_number}: plan content not found")
+   239→    if isinstance(pull_result, PullRebaseError):
+   240→        raise UserFacingCliError(
+   241→            f"Failed to sync branch '{branch_name}' with remote: {pull_result.message}"
+   244→    # Clean up previous .erk/impl-context/ if it exists (e.g., from a prior failed dispatch)
+   268→    if isinstance(push_result, PushError):
+   269→        raise UserFacingCliError(push_result.message)
+   322→    except Exception as e:
+   324→            click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
+   334→    except Exception as e:
+   335→        logger.warning("Failed to update PR body with workflow run link: %s", e)
+   366→    except Exception as e:
+   368→            click.style("Warning: ", fg="yellow")
+   369→            + f"Failed to post queued comment: {e}\n"
+  </tool_result>
+  <tool_use name="Read" id="toolu_01FCHb4PfGdrZqxUVfa3X4HS">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/checkout_helpers.py</param>
+    <param name="offset">230</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5587" cache_read_input_tokens="33229" output_tokens="574" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5587, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FCHb4PfGdrZqxUVfa3X4HS">
+   230→    If not, creates a worktree using either slot allocation or direct path.
+   231→
+   232→    Args:
+   233→        ctx: Erk context with git operations
+   234→        repo: Repository context with worktrees directory
+   235→        branch_name: Name of the branch to checkout
+   236→        no_slot: If True, create worktree without slot assignment
+   237→        force: Auto-unassign oldest branch if pool is full
+   238→
+   239→    Returns:
+   240→        Tuple of (worktree_path, already_existed) where already_existed
+   241→        is True if the branch was already in a worktree.
+   242→    """
+   243→    # Check if branch already exists in a worktree
+   244→    existing = ctx.git.worktree.find_worktree_for_branch(repo.root, branch_name)
+   245→    if existing is not None:
+   246→        return existing, True
+   247→
+   248→    # Create worktree (with or without slot)
+   249→    if no_slot:
+   250→        worktree_path = worktree_path_for(repo.worktrees_dir, branch_name)
+   251→        ctx.git.worktree.add_worktree(
+   252→            repo.root,
+   253→            worktree_path,
+   254→            branch=branch_name,
+   255→            ref=None,
+   256→            create_branch=False,
+   257→        )
+   258→    else:
+   259→        result = allocate_slot_for_branch(
+
+... [20 lines omitted] ...
+  </tool_result>
+  <thinking>Now I understand the issue clearly. Let me trace the exact error:
+
+1. `erk pr dispatch` calls `_dispatch_planned_pr_plan()` which at line 235 does:
+   ```python
+   ctx.branch_manager.checkout_branch(repo.root, branch_name)
+   ```
+
+2. This tries to checkout `plnd/doc-mid-rebase-behavior-03-01-1326` in the **root worktree**
+
+3. But this branch is already checked out in `erk-slot-54` (a pool worktree)
+
+4. Git prevents the same branch from being checked out in two worktrees simultaneously
+   
+The solution is to detect when a branch is already checked out elsewhere and either reuse that worktree, detach the other one, or provide clear guidance on freeing it up.
+
+I should examine how `checkout_branch` and `find_worktree_for_branch` work to implement this detection, and understand why branches end up stuck in slots in the first place—likely from interrupted dispatch operations that left the branch checked out. a slot
+- But wait, the slots are local - CI runs on GitHub Actions, not locally
+- So the branch must have been checked out locally by `erk implement` or similar
+
+Actually, thinking about this... when you run `erk implement`, it checks out the branch in a local slot. If you then re-dispatch the same plan (e.g., because the implementation failed), the branch is still in the slot from the previous implementation, and the dispatch command can't check it out in the root worktree.
+
+The solution approaches:
+1. **Pre-check and provide a good error message** with remediation steps (simplest)
+2. **Automatically handle it** by detaching HEAD in the occupied slot
+3. **Avoid root worktree checkout entirely** - use the existing worktree if the branch is in a slot, or create a temporary worktree
+
+Let me look at the branch_manager and checkout_branch to understand what's happening and how we could detect this conflict.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4286" cache_read_input_tokens="38816" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4286}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the branch manager checkout implementation and the error handling in the dispatch loop.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4286" cache_read_input_tokens="38816" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4286}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01JaSjRv8VbHThLwtUA2PYoy">
+    <param name="pattern">def checkout_branch</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4286" cache_read_input_tokens="38816" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4286}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01G8ZXTDXzqsQ71BbGXmZvfh">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="offset">500</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4286" cache_read_input_tokens="38816" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4286}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01G8ZXTDXzqsQ71BbGXmZvfh">
+   500→    submitted_by = username or "unknown"
+   501→
+   502→    # Validate all planned-PR plans upfront
+   503→    user_output(f"Validating {len(plan_numbers)} planned-PR plan(s)...")
+   504→    user_output("")
+   505→
+   506→    validated_planned_prs: list[ValidatedPlannedPR] = []
+   507→    for plan_number in plan_numbers:
+   508→        user_output(f"Validating PR #{plan_number}...")
+   509→        validated_pr = _validate_planned_pr_for_dispatch(ctx, repo, plan_number)
+   510→        validated_planned_prs.append(validated_pr)
+   511→
+   512→    user_output("")
+   513→    user_output(
+   514→        click.style("✓", fg="green") + f" All {len(validated_planned_prs)} plan(s) validated"
+   515→    )
+   516→    user_output("")
+   517→
+   518→    for v in validated_planned_prs:
+   519→        user_output(f"  #{v.number}: {click.style(v.title, fg='yellow')}")
+   520→    user_output("")
+   521→
+   522→    # Dispatch all validated plans
+   523→    results: list[DispatchResult] = []
+   524→    for i, v in enumerate(validated_planned_prs):
+   525→        if len(validated_planned_prs) &gt; 1:
+   526→            count = len(validated_planned_prs)
+   527→            user_output(f"--- Dispatching PR {i + 1}/{count}: #{v.number} ---")
+   528→        else:
+   529→            user_output(f"Dispatching PR #{v.number}...")
+
+... [24 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01JaSjRv8VbHThLwtUA2PYoy">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_014B2iXzygm8cqnMjoKDzZBM">
+    <param name="pattern">find_worktree_for_branch</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4286" cache_read_input_tokens="38816" output_tokens="1079" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4286, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014B2iXzygm8cqnMjoKDzZBM">
+Found 7 files
+packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py
+packages/erk-shared/src/erk_shared/gateway/git/worktree/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/worktree/printing.py
+packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py
+packages/erk-shared/src/erk_shared/gateway/git/abc.py
+packages/erk-shared/src/erk_shared/gateway/git/__init__.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01GTeWoVZahVJdFDxA4Uvhx7">
+    <param name="pattern">def checkout_branch</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2216" cache_read_input_tokens="43102" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2216}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GTeWoVZahVJdFDxA4Uvhx7">
+packages/erk-shared/src/erk_shared/output/next_steps.py:61:    def checkout_branch_and_implement(self) -&gt; str:
+packages/erk-shared/src/erk_shared/gateway/branch_manager/abc.py:190:    def checkout_branch(self, repo_root: Path, branch: str) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py:265:    def checkout_branch(self, repo_root: Path, branch: str) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/branch_manager/fake.py:193:    def checkout_branch(self, repo_root: Path, branch: str) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/branch_manager/git.py:168:    def checkout_branch(self, repo_root: Path, branch: str) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py:46:    def checkout_branch(self, cwd: Path, branch: str) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py:40:    def checkout_branch(self, cwd: Path, branch: str) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py:139:    def checkout_branch(self, cwd: Path, branch: str) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py:82:    def checkout_branch(self, cwd: Path, branch: str) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py:55:    def checkout_branch(self, cwd: Path, branch: str) -&gt; None:
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01BQZjzugMpbwJZLzdEyz8uh">
+    <param name="pattern">def find_worktree_for_branch</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2216" cache_read_input_tokens="43102" output_tokens="244" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2216, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BQZjzugMpbwJZLzdEyz8uh">
+149:    def find_worktree_for_branch(self, repo_root: Path, branch: str) -&gt; Path | None:
+150-        """Find worktree path for given branch name."""
+151-        worktrees = self.list_worktrees(repo_root)
+152-        for wt in worktrees:
+153-            if wt.branch == branch:
+154-                return wt.path
+155-        return None
+156-
+157-    def is_branch_checked_out(self, repo_root: Path, branch: str) -&gt; Path | None:
+158-        """Check if a branch is already checked out in any worktree."""
+159-        return self.find_worktree_for_branch(repo_root, branch)
+160-
+161-    def is_worktree_clean(self, worktree_path: Path) -&gt; bool:
+162-        """Check if worktree has no uncommitted changes, staged changes, or untracked files."""
+163-        # LBYL: Check path exists before attempting git operations
+164-        if not worktree_path.exists():
+165-            return False
+166-
+167-        # Check for uncommitted changes using diff-index (respects git config)
+168-        result = subprocess.run(
+169-            ["git", "-C", str(worktree_path), "diff-index", "--quiet", "HEAD"],
+  </tool_result>
+  <thinking>Now let me also look at where the error is caught in the dispatch. Let me check if there's error handling around the dispatch loop.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1212" cache_read_input_tokens="45318" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1212}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the error handling around the dispatch call and see how the error message from the screenshot gets generated.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1212" cache_read_input_tokens="45318" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1212}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Ny9huyGKJmwhMhaLuiQXTT">
+    <param name="pattern">Failed to dispatch plan</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-C">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1212" cache_read_input_tokens="45318" output_tokens="191" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1212, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ny9huyGKJmwhMhaLuiQXTT">
+/Users/schrockn/code/erk/src/erk/tui/operations/workers.py-323-            command=["erk", "pr", "dispatch", str(plan_id)],
+/Users/schrockn/code/erk/src/erk/tui/operations/workers.py-324-        )
+/Users/schrockn/code/erk/src/erk/tui/operations/workers.py-325-        self.call_from_thread(self._finish_operation, op_id=op_id)
+src/erk/tui/operations/workers.py-326-        if result.success:
+/Users/schrockn/code/erk/src/erk/tui/operations/workers.py-327-            self.call_from_thread(self.notify, f"Dispatched plan #{plan_id} to queue", timeout=3)
+/Users/schrockn/code/erk/src/erk/tui/operations/workers.py-328-            self.call_from_thread(self.action_refresh)
+src/erk/tui/operations/workers.py-329-        else:
+/Users/schrockn/code/erk/src/erk/tui/operations/workers.py-330-            error_msg = last_output_line(result)
+/Users/schrockn/code/erk/src/erk/tui/operations/workers.py-331-            self.call_from_thread(
+/Users/schrockn/code/erk/src/erk/tui/operations/workers.py-332-                self.notify,
+src/erk/tui/operations/workers.py:333:                f"Failed to dispatch plan #{plan_id}: {error_msg}",
+/Users/schrockn/code/erk/src/erk/tui/operations/workers.py-334-                severity="error",
+/Users/schrockn/code/erk/src/erk/tui/operations/workers.py-335-                timeout=5,
+/Users/schrockn/code/erk/src/erk/tui/operations/workers.py-336-            )
+/Users/schrockn/code/erk/src/erk/tui/operations/workers.py-337-
+/Users/schrockn/code/erk/src/erk/tui/operations/workers.py-338-    @work(thread=True)
+src/erk/tui/operations/workers.py-339-    def _close_objective_async(self: ErkDashApp, op_id: str, plan_id: int) -&gt; None:
+/Users/schrockn/code/erk/src/erk/tui/operations/workers.py-340-        """Close objective in background thread with toast."""
+/Users/schrockn/code/erk/src/erk/tui/operations/workers.py-341-        result = self._run_streaming_operation(
+/Users/schrockn/code/erk/src/erk/tui/operations/workers.py-342-            op_id=op_id,
+/Users/schrockn/code/erk/src/erk/tui/operations/workers.py-343-            command=["erk", "objective", "close", str(plan_id), "--force"],
+  </tool_result>
+  <tool_use name="Read" id="toolu_01LzK9bV4QyP2dBipkHd8sP8">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/operations/workers.py</param>
+    <param name="offset">310</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1028" cache_read_input_tokens="46530" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1028}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LzK9bV4QyP2dBipkHd8sP8">
+   310→                    self.notify,
+   311→                    f"Failed to update objective #{objective_issue}: {error_msg}",
+   312→                    severity="error",
+   313→                    timeout=5,
+   314→                )
+   315→
+   316→        self.call_from_thread(self._finish_operation, op_id=op_id)
+   317→
+   318→    @work(thread=True)
+   319→    def _dispatch_to_queue_async(self: ErkDashApp, op_id: str, plan_id: int) -&gt; None:
+   320→        """Dispatch plan to queue in background thread with toast."""
+   321→        result = self._run_streaming_operation(
+   322→            op_id=op_id,
+   323→            command=["erk", "pr", "dispatch", str(plan_id)],
+   324→        )
+   325→        self.call_from_thread(self._finish_operation, op_id=op_id)
+   326→        if result.success:
+   327→            self.call_from_thread(self.notify, f"Dispatched plan #{plan_id} to queue", timeout=3)
+   328→            self.call_from_thread(self.action_refresh)
+   329→        else:
+   330→            error_msg = last_output_line(result)
+   331→            self.call_from_thread(
+   332→                self.notify,
+   333→                f"Failed to dispatch plan #{plan_id}: {error_msg}",
+   334→                severity="error",
+   335→                timeout=5,
+   336→            )
+   337→
+   338→    @work(thread=True)
+   339→    def _close_objective_async(self: ErkDashApp, op_id: str, plan_id: int) -&gt; None:
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01HHaziyPWGUr6iX8JFdHU9Y">
+    <param name="pattern">def last_output_line</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1028" cache_read_input_tokens="46530" output_tokens="222" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1028, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HHaziyPWGUr6iX8JFdHU9Y">
+src/erk/tui/operations/logic.py:12:def last_output_line(result: OperationResult) -&gt; str:
+/Users/schrockn/code/erk/src/erk/tui/operations/logic.py-13-    """Return the last non-empty output line, or 'Unknown error'."""
+/Users/schrockn/code/erk/src/erk/tui/operations/logic.py-14-    return next((ln for ln in reversed(result.output_lines) if ln), "Unknown error")
+/Users/schrockn/code/erk/src/erk/tui/operations/logic.py-15-
+/Users/schrockn/code/erk/src/erk/tui/operations/logic.py-16-
+src/erk/tui/operations/logic.py-17-def extract_learn_plan_number(result: OperationResult) -&gt; int | None:
+/Users/schrockn/code/erk/src/erk/tui/operations/logic.py-18-    """Extract learn plan number from land-execute output, if present."""
+src/erk/tui/operations/logic.py-19-    for line in result.output_lines:
+/Users/schrockn/code/erk/src/erk/tui/operations/logic.py-20-        match = _LEARN_PLAN_RE.search(line)
+src/erk/tui/operations/logic.py-21-        if match:
+/Users/schrockn/code/erk/src/erk/tui/operations/logic.py-22-            return int(match.group(1))
+/Users/schrockn/code/erk/src/erk/tui/operations/logic.py-23-    return None
+/Users/schrockn/code/erk/src/erk/tui/operations/logic.py-24-
+/Users/schrockn/code/erk/src/erk/tui/operations/logic.py-25-
+src/erk/tui/operations/logic.py-26-def build_github_url(plan_url: str, resource_type: str, number: int) -&gt; str:
+/Users/schrockn/code/erk/src/erk/tui/operations/logic.py-27-    """Build a GitHub URL for a PR or issue from an existing plan URL.
+  </tool_result>
+  <thinking>Now I have a clear picture of the error. Let me now look at the checkout_branch implementation in the branch_manager to understand what happens when checkout fails.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3204" cache_read_input_tokens="47558" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3204}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me look at the branch manager's checkout implementation to understand the error propagation.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3204" cache_read_input_tokens="47558" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3204}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011ymv1u1irBLYG2TmiZ2Q5L">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py</param>
+    <param name="offset">260</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3204" cache_read_input_tokens="47558" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3204}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011ymv1u1irBLYG2TmiZ2Q5L">
+   260→        Returns:
+   261→            List of child branch names, or empty list if none.
+   262→        """
+   263→        return self.graphite.get_child_branches(self.git, repo_root, branch)
+   264→
+   265→    def checkout_branch(self, repo_root: Path, branch: str) -&gt; None:
+   266→        """Checkout a branch.
+   267→
+   268→        Args:
+   269→            repo_root: Repository root directory
+   270→            branch: Branch name to checkout
+   271→        """
+   272→        self.git.branch.checkout_branch(repo_root, branch)
+   273→
+   274→    def checkout_detached(self, repo_root: Path, ref: str) -&gt; None:
+   275→        """Checkout a detached HEAD at the given ref.
+   276→
+   277→        Args:
+   278→            repo_root: Repository root directory
+   279→            ref: Git ref to checkout
+   280→        """
+   281→        self.git.branch.checkout_detached(repo_root, ref)
+   282→
+   283→    def create_tracking_branch(self, repo_root: Path, branch: str, remote_ref: str) -&gt; None:
+   284→        """Create a local tracking branch from a remote branch.
+   285→
+   286→        Args:
+   287→            repo_root: Repository root directory
+   288→            branch: Name for the local branch
+   289→            remote_ref: Remote reference to track
+  </tool_result>
+  <tool_use name="Read" id="toolu_018357P1Z52JaV9Dp9Nm2xTL">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py</param>
+    <param name="offset">78</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3204" cache_read_input_tokens="47558" output_tokens="297" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3204, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018357P1Z52JaV9Dp9Nm2xTL">
+    78→            operation_context=f"delete branch '{branch_name}'",
+    79→            cwd=cwd,
+    80→        )
+    81→
+    82→    def checkout_branch(self, cwd: Path, branch: str) -&gt; None:
+    83→        """Checkout a branch in the given directory."""
+    84→        # Wait for index lock if another git operation is in progress
+    85→        wait_for_index_lock(cwd, self._time)
+    86→
+    87→        run_subprocess_with_context(
+    88→            cmd=["git", "checkout", branch],
+    89→            operation_context=f"checkout branch '{branch}'",
+    90→            cwd=cwd,
+    91→        )
+    92→
+    93→    def checkout_detached(self, cwd: Path, ref: str) -&gt; None:
+    94→        """Checkout a detached HEAD at the given ref."""
+    95→        run_subprocess_with_context(
+    96→            cmd=["git", "checkout", "--detach", ref],
+    97→            operation_context=f"checkout detached HEAD at '{ref}'",
+  </tool_result>
+  <thinking>Now I understand the full picture. Let me put together the plan.
+
+The error occurs at `dispatch_cmd.py:235` where `ctx.branch_manager.checkout_branch(repo.root, branch_name)` is called. This runs `git checkout plnd/doc-mid-rebase-behavior-03-01-1326` in the root worktree. But git refuses because that branch is already checked out in `erk-slot-54`.
+
+The error from git: `fatal: 'plnd/doc-mid-rebase-behavior-03-01-1326' is already used by worktree at '/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-54'`
+
+
+This error gets wrapped by the subprocess handler and bubbles up through the TUI as a dispatch failure message. The root cause is that the dispatch command tries to check out the plan branch in the root worktree to commit context changes, but if that branch is already checked out in a slot from a previous implement run, git blocks it.
+
+The cleanest solution is to check whether the branch exists in another worktree before attempting checkout, and if it does, either do the work in that worktree instead, detach HEAD there first, or surface a clear error with instructions on how to resolve it. The dispatch workflow fundamentally needs to checkout the branch in the root worktree and commit the context changes, so I need to handle the case where the branch is already in use elsewhere. /update `.erk/impl-context/`
+3. Commit and push
+4. Switch back to original branch
+
+If the branch is in a slot, we could:
+- Option A: Do the work in the slot worktree instead
+- Option B: Detach HEAD in the slot, do work in root, then re-checkout in slot
+- Option C: Error with clear instructions
+
+Option A seems cleanest. Instead of always checking out in root, check if the branch is in a worktree already. If it is, use that worktree as the working directory for the impl-context creation and commit/push operations.
+
+Actually, looking at the code more carefully, the dispatch function uses `repo.root` as the working directory for git operations. If we could just use the existing worktree path instead, that would work. But we'd still need to switch back.
+
+The real question is why the branch is in a slot in the first place. Most likely the user ran `erk implement` previously, which created a slot for the branch, and now they're trying to re-dispatch the same plan—probably to retry a failed implementation. That's a legitimate workflow.
+
+For the best approach, Option A of working directly in the existing slot is cleanest and handles automatic recovery, though it does complicate the code path by changing the git context between root and slot worktrees. Option B would detach HEAD in the occupied slot first, then checkout in root, keeping the root worktree as the primary context, but adds complexity with the detach step.
+
+I think the simplest fix that doesn't change the architecture is to check if the branch already exists in another worktree before attempting checkout, and if so, detach HEAD in that worktree first. This way dispatch can proceed normally in the root worktree without unexpected state conflicts.
+
+The real issue is that slots created by `erk implement` aren't being cleaned up after the implementation completes, but that's a separate concern—dispatch should be resilient to this situation regardless. I should warn the user about what's happening and then write out the implementation plan.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1097" cache_read_input_tokens="50762" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1097}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a clear understanding of the issue. Let me launch a Plan agent to design the fix.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1097" cache_read_input_tokens="50762" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1097}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01W6zyD7r8x2EnhF7DxxWAq6">
+    <param name="subagent_type">Plan</param>
+    <param name="description">Design dispatch branch conflict fix</param>
+    <param name="prompt">## Context
+
+When `erk pr dispatch` is triggered from the TUI (`erk dash`), it fails with:
+...[truncated 2414 chars]...entation details. The fix should be in `_dispatch_planned_pr_plan()` in `dispatch_cmd.py`.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1097" cache_read_input_tokens="50762" output_tokens="2159" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1097, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01W6zyD7r8x2EnhF7DxxWAq6">
+Now I have a complete understanding. Here is my analysis and implementation plan.
+
+---
+
+## Analysis and Recommendation
+
+### Root Cause (confirmed)
+
+The function `_dispatch_planned_pr_plan()` at line 235 of `dispatch_cmd.py` calls `ctx.branch_manager.checkout_branch(repo.root, branch_name)`, which runs `git checkout` in the root worktree. Git refuses because the branch is already checked out in a slot worktree (e.g., `erk-slot-54`). This is git's safety mechanism preventing the same branch from being checked out in two worktrees simultaneously.
+
+### Evaluation of Options
+
+**Option A: Use the existing worktree** -- This is the best approach. All the git APIs (`stage_files`, `commit`, `push_to_remote`, `pull_rebase`) take a `cwd: Path` parameter and operate relative to that working directory. The `create_impl_context` and related functions take a `repo_root: Path` parameter. If the branch is already in a worktree at `/path/to/slot`, we can simply pass that worktree path instead of `repo.root` for all operations. No need to checkout in the root worktree at all. This avoids mutating the root worktree's HEAD, which is cleaner and less disruptive.
+
+**Option B: Detach HEAD in the occupied slot** -- This would work but is more invasive. It changes the state of the slot worktree (detaching HEAD), which could confuse the user if they have that slot open in a terminal. It also requires restoring the branch afterward. More moving parts, more potential for things to go wrong.
+
+**Option C: Better error message only** -- This is the minimal fix but leaves a gap in functionality. The user would have to manually free the branch before dispatching, which is unnecessary friction. The dispatch operation does not actually need the root worktree to have the branch checked out -- it just needs a place to commit the `.erk/impl-context/` folder.
+
+### Recommendation: Option A (Use the existing worktree)
+
+Option A is clearly superior because:
+1. It avoids mutating the root worktree's HEAD entirely
+2. All required APIs already support operating on arbitrary paths
+3. It naturally handles the case where a branch is in a slot
+4. It is the same pattern used by `_checkout_pr` in `checkout_cmd.py` (lines 216-244), which checks `find_worktree_for_branch` first
+
+## Implementation Plan
+
+### Step 1: Add worktree detection before checkout (dispatch_cmd.py, lines 226-235)
+
+
+... [114 lines omitted] ...
+  </tool_result>
+  <assistant>
+
+Good analysis. Let me verify a couple of things the plan agent identified before writing the final plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="4757" cache_read_input_tokens="51859" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4757}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BV4AymBMTxKHsXaR2txprf">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/impl_context.py</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4757" cache_read_input_tokens="51859" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4757}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BV4AymBMTxKHsXaR2txprf">
+     1→"""Implementation context staging directory utilities.
+     2→
+     3→This module provides utilities for managing .erk/impl-context/ folder structures used
+     4→during plan submission workflows. The .erk/impl-context/ folder is committed to the
+     5→branch and contains the implementation plan, making it visible in the PR immediately.
+     6→
+     7→Unlike .impl/ folders (ephemeral, local, never committed), .erk/impl-context/ folders are:
+     8→- Committed to the branch
+     9→- Visible in draft PR immediately
+    10→- Removed before implementation begins (Step 2d of plan-implement)
+    11→
+    12→Folder structure:
+    13→.erk/impl-context/
+    14→├── plan.md          # Full plan content from GitHub issue
+    15→└── ref.json         # Plan reference metadata (provider, plan_id, url, etc.)
+    16→"""
+    17→
+    18→from __future__ import annotations
+    19→
+    20→import json
+    21→import shutil
+    22→from pathlib import Path
+    23→
+    24→from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+    25→
+    26→
+    27→def create_impl_context(
+    28→    plan_content: str,
+    29→    plan_id: str,
+    30→    url: str,
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_018eQyz9ZAWn7eNtm44H8nvx">
+    <param name="pattern">def create_impl_context</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/impl_context.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4757" cache_read_input_tokens="51859" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4757}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018eQyz9ZAWn7eNtm44H8nvx">
+27:def create_impl_context(
+28-    plan_content: str,
+29-    plan_id: str,
+30-    url: str,
+31-    repo_root: Path,
+32-    *,
+33-    provider: str,
+34-    objective_id: int | None,
+35-    now_iso: str,
+36-    node_ids: tuple[str, ...] | None,
+37-) -&gt; Path:
+38-    """Create .erk/impl-context/ folder with plan and metadata.
+39-
+40-    Args:
+41-        plan_content: Full plan markdown content from GitHub issue
+42-        plan_id: Provider-specific plan ID as string (e.g., "42")
+  </tool_result>
+  <tool_use name="Grep" id="toolu_012BudWicLrimwCnAkhgfZPg">
+    <param name="pattern">def impl_context_exists|def remove_impl_context</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/impl_context.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">5</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4757" cache_read_input_tokens="51859" output_tokens="380" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4757, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012BudWicLrimwCnAkhgfZPg">
+91:def remove_impl_context(repo_root: Path) -&gt; None:
+92-    """Remove .erk/impl-context/ folder and all contents.
+93-
+94-    Args:
+95-        repo_root: Repository root directory path
+96-
+--
+115:def impl_context_exists(repo_root: Path) -&gt; bool:
+116-    """Check if .erk/impl-context/ folder exists in repo root.
+117-
+118-    Args:
+119-        repo_root: Repository root directory path
+120-
+  </tool_result>
+  <assistant>Good — all the `impl_context` functions take `repo_root: Path` and will work fine with a worktree path instead. Let me also quickly check the existing test file for dispatch to understand patterns.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1472" cache_read_input_tokens="56616" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1472}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01BqhEZa1wowJmiTi4GT98r7">
+    <param name="pattern">tests/**/test_dispatch*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1472" cache_read_input_tokens="56616" output_tokens="105" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1472, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BqhEZa1wowJmiTi4GT98r7">
+/Users/schrockn/code/erk/tests/commands/pr/test_dispatch.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MKbJpSTV6F3HfUC5jfdSDv">
+    <param name="file_path">/Users/schrockn/code/erk/tests/commands/pr/test_dispatch.py</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="140" cache_read_input_tokens="58088" output_tokens="93" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 140, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MKbJpSTV6F3HfUC5jfdSDv">
+     1→"""Tests for erk pr dispatch command."""
+     2→
+     3→import json
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk_shared.gateway.git.fake import FakeGit
+     9→from erk_shared.gateway.github.fake import FakeGitHub
+    10→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    11→from erk_shared.gateway.github.metadata.core import MetadataBlock, render_metadata_block
+    12→from erk_shared.gateway.github.types import PRDetails
+    13→from erk_shared.gateway.graphite.fake import FakeGraphite
+    14→from erk_shared.gateway.graphite.types import BranchMetadata
+    15→from erk_shared.gateway.time.fake import FakeTime
+    16→from erk_shared.impl_folder import build_plan_ref_json
+    17→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    18→from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+    19→from tests.test_utils.context_builders import build_workspace_test_context
+    20→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    21→
+    22→
+    23→def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() -&gt; None:
+    24→    """Test that dispatching a planned-PR plan triggers workflow with plan_backend=planned_pr.
+    25→
+    26→    Planned-PR plans already have a branch and PR. Dispatch should:
+    27→    - Validate the PR has the erk-plan label and is OPEN
+    28→    - Fetch and checkout the existing branch
+    29→    - Create .erk/impl-context/ with provider="github-draft-pr"
+    30→    - Trigger workflow with plan_backend="planned_pr" in inputs
+
+... [50 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SEsdWsGbYhiZZptusng7eC">
+    <param name="file_path">/Users/schrockn/code/erk/tests/commands/pr/test_dispatch.py</param>
+    <param name="offset">80</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6097" cache_read_input_tokens="58228" output_tokens="110" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6097, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SEsdWsGbYhiZZptusng7eC">
+    80→
+    81→        # PlannedPRBackend makes get_provider_name() return "github-draft-pr"
+    82→        planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=fake_time)
+    83→
+    84→        git = FakeGit(
+    85→            git_common_dirs={env.cwd: env.git_dir},
+    86→            current_branches={env.cwd: "main"},
+    87→            local_branches={env.cwd: ["main"]},
+    88→            default_branches={env.cwd: "main"},
+    89→            remote_urls={(env.cwd, "origin"): "https://github.com/test-owner/test-repo.git"},
+    90→            remote_branches={env.cwd: ["origin/main", f"origin/{plan_branch}"]},
+    91→            repository_roots={env.cwd: env.cwd},
+    92→        )
+    93→
+    94→        graphite = FakeGraphite(
+    95→            authenticated=True,
+    96→            branches={
+    97→                "main": BranchMetadata(
+    98→                    name="main",
+    99→                    parent=None,
+   100→                    children=[],
+   101→                    is_trunk=True,
+   102→                    commit_sha=None,
+   103→                ),
+   104→            },
+   105→        )
+   106→
+   107→        ctx = build_workspace_test_context(
+   108→            env,
+   109→            git=git,
+
+... [50 lines omitted] ...
+
+   142→        # Verify: no warnings, dispatch metadata written successfully
+   143→        assert "Warning:" not in result.output
+   152→    When a previous dispatch failed and left behind a .erk/impl-context/ folder,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SYEChoCHP8y1wGsJcg6rSo">
+    <param name="file_path">/Users/schrockn/code/erk/tests/commands/pr/test_dispatch.py</param>
+    <param name="offset">160</param>
+    <param name="limit">130</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1243" cache_read_input_tokens="64325" output_tokens="110" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1243, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SYEChoCHP8y1wGsJcg6rSo">
+   160→        plan_header = render_metadata_block(
+   161→            MetadataBlock(
+   162→                key="plan-header",
+   163→                data={
+   164→                    "schema_version": "2",
+   165→                    "created_at": "2024-01-01T00:00:00+00:00",
+   166→                    "created_by": "testuser",
+   167→                    "branch_name": plan_branch,
+   168→                },
+   169→            )
+   170→        )
+   171→        pr_body = build_plan_stage_body(
+   172→            plan_header,
+   173→            "# Plan: Test Draft PR Cleanup\n\n- Step 1: Do something\n- Step 2: Do something else",
+   174→            summary=None,
+   175→        )
+   176→
+   177→        pr_42 = PRDetails(
+   178→            number=42,
+   179→            url="https://github.com/test-owner/test-repo/pull/42",
+   180→            title="[erk-plan] Test Draft PR Cleanup",
+   181→            body=pr_body,
+   182→            state="OPEN",
+   183→            is_draft=True,
+   184→            base_ref_name="main",
+   185→            head_ref_name=plan_branch,
+   186→            is_cross_repository=False,
+   187→            mergeable="UNKNOWN",
+   188→            merge_state_status="UNKNOWN",
+   189→            owner="test-owner",
+
+... [100 lines omitted] ...
+
+   228→        # Pre-create a stale .erk/impl-context/ folder (simulating a prior failed dispatch)
+   261→        # Verify: no warnings, dispatch metadata written successfully
+   262→        assert "Warning:" not in result.output
+  </tool_result>
+  <assistant>Now I have the full picture. Let me also check the FakeGit worktree API to understand how to set up the test.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3050" cache_read_input_tokens="65568" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3050}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_019xQWH7AVKYqcKXjgyWFjWx">
+    <param name="pattern">find_worktree_for_branch|worktrees</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3050" cache_read_input_tokens="65568" output_tokens="185" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3050, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019xQWH7AVKYqcKXjgyWFjWx">
+27-    Tests should construct fakes with complete initial state.
+28-
+29-    Mutation Tracking:
+30-    -----------------
+31-    This fake tracks mutations for test assertions via read-only properties:
+32:    - added_worktrees: Worktrees added via add_worktree()
+33:    - removed_worktrees: Worktrees removed via remove_worktree()
+34-    - chdir_history: Directories changed to via safe_chdir()
+35-    """
+36-
+37-    def __init__(
+38-        self,
+39-        *,
+40:        worktrees: dict[Path, list[WorktreeInfo]] | None = None,
+41-        existing_paths: set[Path] | None = None,
+42:        dirty_worktrees: set[Path] | None = None,
+43-        add_worktree_error: str | None = None,
+44-        remove_worktree_error: str | None = None,
+45-    ) -&gt; None:
+46-        """Create FakeWorktree with pre-configured state.
+47-
+48-        Args:
+49:            worktrees: Mapping of repo_root -&gt; list of worktrees
+50-            existing_paths: Set of paths that should be treated as existing (for pure mode)
+51:            dirty_worktrees: Set of worktree paths that have uncommitted/staged/untracked changes
+52-            add_worktree_error: If set, add_worktree raises RuntimeError with this message
+53-            remove_worktree_error: Error message to raise from remove_worktree() for error injection
+54-        """
+55-        # Use `is None` checks instead of `or` to preserve empty collections
+56-        # Empty set is falsy, so `set() or set()` creates a new set!
+
+... [162 lines omitted] ...
+
+60-        self._add_worktree_error = add_worktree_error
+61-        self._remove_worktree_error = remove_worktree_error
+102-        Raises RuntimeError if add_worktree_error is configured.
+104-        if self._add_worktree_error is not None:
+105-            raise RuntimeError(self._add_worktree_error)
+133-        # Check for error injection first
+134-        if self._remove_worktree_error is not None:
+135-            raise RuntimeError(self._remove_worktree_error)
+  </tool_result>
+  <assistant>I have everything I need. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2886" cache_read_input_tokens="68618" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2886}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_011NCGcvMab99jEMk3aguUyL">
+    <param name="file_path">/Users/schrockn/.claude/plans/eventual-moseying-grove.md</param>
+    <param name="content"># Fix: Dispatch fails when plan branch is already in a worktree slot
+
+## Context
+
+When dis...[truncated 4203 chars].... Run new test to verify worktree conflict is handled
+3. Run ty/ruff for type/lint checks
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2886" cache_read_input_tokens="68618" output_tokens="1539" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2886, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011NCGcvMab99jEMk3aguUyL">
+File created successfully at: /Users/schrockn/.claude/plans/eventual-moseying-grove.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_012Hms7oFhkrzVJPCVNEuPhd">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests via devrun agent'}, {'tool': 'Bash', 'prompt': 'run type checker via devrun agent'}, {'tool': 'Bash', 'prompt': 'run linter via devrun agent'}]</param>
+    <param name="plan"># Fix: Dispatch fails when plan branch is already in a worktree slot
+
+## Context
+
+When dis...[truncated 4203 chars].... Run new test to verify worktree conflict is handled
+3. Run ty/ruff for type/lint checks
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1576" cache_read_input_tokens="71504" output_tokens="117" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1576, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012Hms7oFhkrzVJPCVNEuPhd">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/eventual-moseying-grove.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix: Dispatch fails when plan branch is already in a worktree slot
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 107aee2a-d249-4228-9662-b9e101c074a0 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>Let me display the plan and ask about next steps.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="834" cache_read_input_tokens="73080" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 834}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Jw3GwZtJMfeTMzKUWH8uSF">
+    <param name="file_path">/Users/schrockn/.claude/plans/eventual-moseying-grove.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="834" cache_read_input_tokens="73080" output_tokens="85" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 834, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Jw3GwZtJMfeTMzKUWH8uSF">
+     1→# Fix: Dispatch fails when plan branch is already in a worktree slot
+     2→
+     3→## Context
+     4→
+     5→When dispatching a plan via `erk pr dispatch` (from TUI or CLI), the command fails with:
+     6→```
+     7→Failed to dispatch plan #8544: stderr: fatal: 'plnd/doc-mid-rebase-behavior-03-01-1326'
+     8→is already used by worktree at '/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-54'
+     9→```
+    10→
+    11→This happens because `_dispatch_planned_pr_plan()` checks out the plan branch in the **root worktree** to commit `.erk/impl-context/` and push. But if the branch is already checked out in a slot (from a previous `erk implement` run), git refuses the checkout. This is git's safety mechanism preventing the same branch in two worktrees.
+    12→
+    13→The fix: detect the existing worktree and use it directly instead of checking out in root.
+    14→
+    15→## Changes
+    16→
+    17→### 1. Add worktree detection in `_dispatch_planned_pr_plan()`
+    18→
+    19→**File:** `src/erk/cli/commands/pr/dispatch_cmd.py` (lines 226-277)
+    20→
+    21→Replace the checkout-in-root logic with a LBYL check using `find_worktree_for_branch()`:
+    22→
+    23→```python
+    24→# Fetch the branch from remote (always needed)
+    25→ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
+    26→
+    27→# LBYL: Check if branch is already in a worktree (e.g., from prior erk implement)
+    28→existing_worktree = ctx.git.worktree.find_worktree_for_branch(repo.root, branch_name)
+    29→if existing_worktree is not None:
+    30→    user_output(
+
+... [75 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+## Fix: Dispatch fails when plan branch is already in a worktree slot
+
+**Why it happens:** `_dispatch_planned_pr_plan()` runs `git checkout &lt;branch&gt;` in the root worktree to commit `.erk/impl-context/` and push. If that branch is already checked out in a slot (e.g., from a prior `erk implement`), git refuses — it won't allow the same branch in two worktrees.
+
+**Can it be avoided?** Yes — instead of erroring, we can detect the existing worktree and use it directly for the commit/push operations.
+
+**The fix:** Add a LBYL check with `find_worktree_for_branch()` before attempting checkout. If the branch is already in a worktree, use that worktree as the working directory for all dispatch operations (pull, create impl-context, commit, push). No checkout in root needed. This reuses the same pattern from `checkout_helpers.py:243-246`.
+
+Two files change: the dispatch command gets the detection logic, and a new test covers the worktree-conflict scenario.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1872" cache_read_input_tokens="73914" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1872}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01DxNu9EQMFxukb5WnV43kRK">
+    <param name="questions">[{'question': '📋 Fix: Dispatch fails when plan branch is already in a worktree slot\nCurre...[truncated 450 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1872" cache_read_input_tokens="73914" output_tokens="490" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1872, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DxNu9EQMFxukb5WnV43kRK">
+User has answered your questions: "📋 Fix: Dispatch fails when plan branch is already in a worktree slot
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01C4PLD4YP8CwssPX38daXxt">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="576" cache_read_input_tokens="75786" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 576, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01C4PLD4YP8CwssPX38daXxt">
+Launching skill: erk:plan-save
+  </tool_result>
+</session>
