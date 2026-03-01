@@ -6,7 +6,7 @@ all users have removed their kit.yaml files.
 
 from pathlib import Path
 
-from erk.core.health_checks import CheckResult
+from erk.core.health_checks.models import CheckResult
 
 
 def find_legacy_kit_yaml_files(repo_root: Path) -> list[Path]:

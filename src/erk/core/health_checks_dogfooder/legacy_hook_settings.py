@@ -7,7 +7,7 @@ all users have migrated their hooks to the unified hook script.
 import json
 from pathlib import Path
 
-from erk.core.health_checks import CheckResult
+from erk.core.health_checks.models import CheckResult
 
 
 def detect_legacy_hook_commands(repo_root: Path) -> list[str]:

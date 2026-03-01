@@ -6,7 +6,7 @@ all users have removed their kits folder.
 
 from pathlib import Path
 
-from erk.core.health_checks import CheckResult
+from erk.core.health_checks.models import CheckResult
 
 
 def check_legacy_erk_kits_folder(repo_root: Path) -> CheckResult:

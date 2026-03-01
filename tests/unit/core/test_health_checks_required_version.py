@@ -7,7 +7,7 @@ Uses tmp_path to test with real filesystem I/O since the check reads version fil
 from pathlib import Path
 from unittest.mock import patch
 
-from erk.core.health_checks import check_required_tool_version
+from erk.core.health_checks.required_tool_version import check_required_tool_version
 
 
 def test_check_fails_when_file_missing(tmp_path: Path) -> None:
@@ -29,7 +29,7 @@ def test_check_fails_on_mismatch(tmp_path: Path) -> None:
 
     # Mock the installed version to be different
     with patch(
-        "erk.core.health_checks._get_installed_erk_version",
+        "erk.core.health_checks.required_tool_version._get_installed_erk_version",
         return_value="0.2.8",
     ):
         result = check_required_tool_version(tmp_path)
@@ -51,7 +51,7 @@ def test_check_passes_when_match(tmp_path: Path) -> None:
 
     # Mock the installed version to match
     with patch(
-        "erk.core.health_checks._get_installed_erk_version",
+        "erk.core.health_checks.required_tool_version._get_installed_erk_version",
         return_value="0.2.8",
     ):
         result = check_required_tool_version(tmp_path)
@@ -71,7 +71,7 @@ def test_check_fails_when_installed_version_unknown(tmp_path: Path) -> None:
 
     # Mock the installed version to be None (not installed)
     with patch(
-        "erk.core.health_checks._get_installed_erk_version",
+        "erk.core.health_checks.required_tool_version._get_installed_erk_version",
         return_value=None,
     ):
         result = check_required_tool_version(tmp_path)

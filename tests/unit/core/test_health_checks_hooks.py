@@ -7,7 +7,7 @@ from logs written by the @logged_hook decorator.
 import json
 from pathlib import Path
 
-from erk.core.health_checks import check_hook_health
+from erk.core.health_checks.hook_health import check_hook_health
 
 
 def _write_hook_log(

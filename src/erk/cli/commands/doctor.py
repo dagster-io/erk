@@ -7,7 +7,8 @@ CLI availability, repository configuration, and Claude settings.
 import click
 
 from erk.core.context import ErkContext
-from erk.core.health_checks import CheckResult, run_all_checks
+from erk.core.health_checks import run_all_checks
+from erk.core.health_checks.models import CheckResult
 from erk.core.health_checks_dogfooder import EARLY_DOGFOODER_CHECK_NAMES
 from erk_shared.hooks.logging import clear_hook_logs
 

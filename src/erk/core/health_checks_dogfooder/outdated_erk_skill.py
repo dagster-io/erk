@@ -6,7 +6,7 @@ all users have removed the outdated .claude/skills/erk/ directory.
 
 from pathlib import Path
 
-from erk.core.health_checks import CheckResult
+from erk.core.health_checks.models import CheckResult
 
 
 def check_outdated_erk_skill(repo_root: Path) -> CheckResult:

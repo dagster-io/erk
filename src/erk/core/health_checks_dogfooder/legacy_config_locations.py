@@ -7,7 +7,7 @@ all users have migrated their config to .erk/config.toml.
 from dataclasses import dataclass
 from pathlib import Path
 
-from erk.core.health_checks import CheckResult
+from erk.core.health_checks.models import CheckResult
 
 
 @dataclass(frozen=True)

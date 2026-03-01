@@ -16,7 +16,7 @@ To delete all dogfooder checks:
 
 from pathlib import Path
 
-from erk.core.health_checks import CheckResult
+from erk.core.health_checks.models import CheckResult
 from erk.core.health_checks_dogfooder.deprecated_dot_agent_config import (
     check_deprecated_dot_agent_config,
 )

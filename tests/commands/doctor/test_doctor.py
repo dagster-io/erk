@@ -8,7 +8,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands import doctor as doctor_module
 from erk.cli.commands.doctor import doctor_cmd
-from erk.core.health_checks import CheckResult
+from erk.core.health_checks.models import CheckResult
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github_admin.abc import AuthStatus
 from tests.fakes.github_admin import FakeGitHubAdmin

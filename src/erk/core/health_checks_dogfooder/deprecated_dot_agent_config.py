@@ -8,7 +8,7 @@ from pathlib import Path
 
 import tomli
 
-from erk.core.health_checks import CheckResult
+from erk.core.health_checks.models import CheckResult
 
 
 def check_deprecated_dot_agent_config(repo_root: Path) -> CheckResult:
