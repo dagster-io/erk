@@ -5,6 +5,7 @@ import json
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
+from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
@@ -494,4 +495,128 @@ def test_dispatch_no_args_no_context_fails() -> None:
         assert result.exit_code != 0
         assert "No plan numbers provided and could not auto-detect" in result.output
         assert "erk pr dispatch <number>" in result.output
+        assert "Traceback" not in result.output
+
+
+def test_dispatch_planned_pr_plan_uses_existing_worktree_when_branch_occupied() -> None:
+    """Test that dispatch uses existing worktree when plan branch is already checked out there.
+
+    When a plan branch is already in a worktree slot (from a prior erk implement),
+    git refuses to checkout the same branch in root. Dispatch should detect this
+    and use the existing worktree directly instead.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        plan_branch = "plnd/doc-mid-rebase-behavior"
+
+        # PR body with plan content in production metadata format
+        plan_header = render_metadata_block(
+            MetadataBlock(
+                key="plan-header",
+                data={
+                    "schema_version": "2",
+                    "created_at": "2024-01-01T00:00:00+00:00",
+                    "created_by": "testuser",
+                    "branch_name": plan_branch,
+                },
+            )
+        )
+        pr_body = build_plan_stage_body(
+            plan_header,
+            "# Plan: Test Worktree Dispatch\n\n- Step 1: Do something",
+            summary=None,
+        )
+
+        pr_42 = PRDetails(
+            number=42,
+            url="https://github.com/test-owner/test-repo/pull/42",
+            title="[erk-plan] Test Worktree Dispatch",
+            body=pr_body,
+            state="OPEN",
+            is_draft=True,
+            base_ref_name="main",
+            head_ref_name=plan_branch,
+            is_cross_repository=False,
+            mergeable="UNKNOWN",
+            merge_state_status="UNKNOWN",
+            owner="test-owner",
+            repo="test-repo",
+            labels=("erk-plan",),
+        )
+
+        fake_gh = FakeGitHub(
+            authenticated=True,
+            polled_run_id="12345",
+            pr_details={42: pr_42},
+            prs_by_branch={plan_branch: pr_42},
+        )
+        fake_issues = FakeGitHubIssues()
+        fake_time = FakeTime()
+        planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=fake_time)
+
+        # Create a worktree slot directory where the branch is already checked out
+        slot_path = env.cwd.parent / "erk-slot-54"
+        slot_path.mkdir(parents=True)
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", plan_branch]},
+            default_branches={env.cwd: "main"},
+            remote_urls={(env.cwd, "origin"): "https://github.com/test-owner/test-repo.git"},
+            remote_branches={env.cwd: ["origin/main", f"origin/{plan_branch}"]},
+            repository_roots={env.cwd: env.cwd},
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=slot_path, branch=plan_branch, is_root=False),
+                ],
+            },
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=[],
+                    is_trunk=True,
+                    commit_sha=None,
+                ),
+            },
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            graphite=graphite,
+            github=fake_gh,
+            issues=fake_issues,
+            use_graphite=True,
+            plan_store=planned_pr_backend,
+        )
+
+        result = runner.invoke(cli, ["pr", "dispatch", "42", "--base", "main"], obj=ctx)
+
+        # Verify: detected existing worktree
+        assert "already in worktree" in result.output
+
+        # Verify: workflow was triggered successfully
+        assert len(fake_gh.triggered_workflows) >= 1, (
+            f"Expected workflow trigger, got: {fake_gh.triggered_workflows}\n"
+            f"Output: {result.output}"
+        )
+        _workflow_name, inputs = fake_gh.triggered_workflows[0]
+        assert inputs["plan_backend"] == "planned_pr"
+        assert inputs["plan_id"] == "42"
+        assert inputs["branch_name"] == plan_branch
+
+        # Verify: .erk/impl-context/ was created in the worktree path (not root)
+        assert (slot_path / ".erk" / "impl-context" / "plan.md").exists()
+
+        # Verify: no new PR was created
+        assert len(fake_gh.created_prs) == 0
+
+        # Verify: no Traceback in output
         assert "Traceback" not in result.output
