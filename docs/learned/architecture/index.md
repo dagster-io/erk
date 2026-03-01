@@ -107,7 +107,7 @@
 - **[prompt-executor-patterns.md](prompt-executor-patterns.md)** — launching Claude from CLI commands, deciding which PromptExecutor method to use, testing code that executes Claude CLI
 - **[protocol-vs-abc.md](protocol-vs-abc.md)** — choosing between Protocol and ABC for interface design, designing interfaces with structural vs nominal typing, working with frozen dataclasses and Protocol @property patterns
 - **[re-export-pattern.md](re-export-pattern.md)** — Creating public API surface from internal gateway modules, Simplifying import paths for commonly used types, Working with ruff import linting
-- **[rebase-conflict-patterns.md](rebase-conflict-patterns.md)** — resolving merge conflicts after rebase, debugging test failures after rebase, handling auto-generated file conflicts
+- **[rebase-conflict-patterns.md](rebase-conflict-patterns.md)** — resolving merge conflicts after rebase, debugging test failures after rebase, handling auto-generated file conflicts, resuming a rebase with conflicts
 - **[ref-json-migration.md](ref-json-migration.md)** — working with plan-ref.json or ref.json, understanding plan reference file formats, debugging plan reference loading failures
 - **[roadmap-mutation-semantics.md](roadmap-mutation-semantics.md)** — modifying objective roadmap update logic, understanding status inference when updating roadmap steps, working with update-objective-node command
 - **[selection-preservation-by-value.md](selection-preservation-by-value.md)** — working with auto-refreshing lists or tables in UI components, implementing selection state that should persist across data updates, building real-time dashboard views with user-selected items, debugging cursor position resets in DataTable or list components

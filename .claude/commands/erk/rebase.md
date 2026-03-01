@@ -6,6 +6,8 @@ description: Rebase the current branch, resolve any merge conflicts, and continu
 
 Rebase the current branch and resolve any merge conflicts.
 
+This command works both to **start a fresh rebase** and to **resume a rebase already in progress**. If a `git rebase` is underway with unresolved conflicts, skip straight to step 1 to assess the current state and resolve them.
+
 ## Steps
 
 1. **Check status** - Run `git status` to understand the state of the rebase and identify conflicted files
