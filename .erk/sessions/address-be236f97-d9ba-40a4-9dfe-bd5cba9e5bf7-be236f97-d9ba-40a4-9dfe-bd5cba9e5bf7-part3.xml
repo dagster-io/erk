@@ -1,0 +1,328 @@
+<session>
+  <meta source="agent-ab67ea0" />
+  <meta branch="plnd/consolidate-learn-docs-feb-03-01-0021" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+Arguments: --pr 8513
+Return the complete JSON output as your final message.</user>
+  <assistant>I'll load the skill and execute it with the provided arguments.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="19297" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19297, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XNUW2C6Gz2St5MQZ9GMz5d">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/pr-feedback-classifier/SKILL.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19297" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19297, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XNUW2C6Gz2St5MQZ9GMz5d">
+     1→---
+     2→name: pr-feedback-classifier
+     3→description: &gt;
+     4→  Fetches and classifies PR review feedback with context isolation.
+     5→  Returns structured JSON with thread IDs for deterministic resolution.
+     6→  Use when analyzing PR comments before addressing them.
+     7→argument-hint: "[--pr &lt;number&gt;] [--include-resolved]"
+     8→context: fork
+     9→agent: general-purpose
+    10→model: sonnet
+    11→---
+    12→
+    13→# PR Feedback Classifier
+    14→
+    15→Fetch and classify all PR review feedback for the current branch's PR.
+    16→
+    17→## Arguments
+    18→
+    19→- `--pr &lt;number&gt;`: Target a specific PR by number (default: current branch's PR)
+    20→- `--include-resolved`: Include resolved threads (for reference)
+    21→
+    22→Check `$ARGUMENTS` for flags.
+    23→
+    24→## Critical Constraints
+    25→
+    26→**DO NOT write Python scripts or any code files.** Classify the data using direct AI reasoning only. Writing code to process JSON is unnecessary and pollutes the filesystem.
+    27→
+    28→## Steps
+    29→
+    30→1. **Fetch PR info and all comments in a single call:**
+
+... [194 lines omitted] ...
+
+   130→      "action_summary": "Bot suggestion: add unit tests for error handling paths",
+   132→      "original_comment": "Consider adding unit tests for the error handling paths in this endpoint"
+   170→  "error": null
+   184→## Error Case
+   198→  "error": "No PR found for branch feature-xyz"
+   216→  "error": null
+  </tool_result>
+  <assistant>Now I'll fetch the PR feedback using the `erk exec get-pr-feedback` command with the PR number 8513, and also get the file-level restructuring context:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="2950" cache_read_input_tokens="19297" cache_creation="{'ephemeral_5m_input_tokens': 2950, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GPy6oMAC674W2PqZRdE9Yx">
+    <param name="command">erk exec get-pr-feedback --pr 8513</param>
+    <param name="description">Fetch PR feedback for PR 8513</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="2950" cache_read_input_tokens="19297" cache_creation="{'ephemeral_5m_input_tokens': 2950, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0186ME9hsAUfiS7GE4YAMS8J">
+    <param name="command">git diff --stat -M -C main...HEAD</param>
+    <param name="description">Show file-level restructuring context</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="2950" cache_read_input_tokens="19297" cache_creation="{'ephemeral_5m_input_tokens': 2950, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GPy6oMAC674W2PqZRdE9Yx">
+{
+  "success": true,
+  "pr_number": 8513,
+  "pr_url": "https://github.com/dagster-io/erk/pull/8513",
+  "pr_title": "Consolidate documentation from Feb 28 learn sessions (batch 2)",
+  "review_threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5xbWjQ",
+      "path": "docs/learned/architecture/inference-hoisting.md",
+      "line": 130,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Drift risk \u2014 documents specific line numbers.\n\nSource: `src/erk/cli/commands/exec/scripts/plan_save.py:501-505`\n\nRisk: Line numbers shift with any edit to the file. The `--summary` flag name is stable, but `at line 501-505` will go stale.\n\nSuggested fix: Remove the line number from prose. Replace:\n&gt; `plan_save.py` \u2014 `--summary` at line 501-505\nwith:\n&gt; `plan_save.py` \u2014 `--summary` Click option",
+          "created_at": "2026-03-01T20:23:54Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5xbWlY",
+      "path": "docs/learned/architecture/inference-hoisting.md",
+      "line": 130,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Drift risk \u2014 documents specific line numbers that will change.\n\nSource: `src/erk/cli/commands/exec/scripts/plan_save.py:501-505`\n\nRisk: Line numbers shift with any edit to `plan_save.py`. Consider removing the line reference and relying on the surrounding prose, or use a name-based source pointer instead:\n```\n&lt;!-- Source: src/erk/cli/commands/exec/scripts/plan_save.py, plan_save.--summary --&gt;\n```",
+          "created_at": "2026-03-01T20:24:07Z"
+        }
+
+... [101 lines omitted] ...
+
+      "body": "Plan Queued for Implementation\n\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:submission-queued --&gt;\n&lt;details&gt;\n&lt;summary&gt;submission-queued&lt;/summary&gt;\n\n```yaml\n\nstatus: queued\nqueued_at: '2026-03-01T00:24:45.074471+00:00'\nsubmitted_by: schrockn\nplan_number: 8513\nvalidation_results:\n  pr_is_open: true\n  has_erk_plan_label: true\nexpected_workflow: plan-implement\ntrigger_mechanism: label-based-webhook\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:submission-queued --&gt;\n\n---\n\nPlan submitted by **schrockn** at 2026-03-01T00:24:45.074471+00:00.\n\nThe `plan-implement` workflow has been triggered via direct dispatch.\n\n**Workflow run:** https://github.com/dagster-io/erk/actions/runs/22532232001",
+      "body": "\u2699\ufe0f GitHub Action Started\n\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:workflow-started --&gt;\n&lt;details&gt;\n&lt;summary&gt;workflow-started&lt;/summary&gt;\n\n```yaml\n\nstatus: started\nstarted_at: '2026-03-01T00:25:18Z'\nworkflow_run_id: '22532232001'\nworkflow_run_url: https://github.com/dagster-io/erk/actions/runs/22532232001\nplan_number: 8513\nbranch_name: plnd/consolidate-learn-docs-feb-03-01-0021\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:workflow-started --&gt;\n\n---\n\nSetup completed successfully.\n\n**Branch:** `plnd/consolidate-learn-docs-feb-03-01-0021`\n**PR:** [#8513](https://github.com/dagster-io/erk/pull/8513)\n**Status:** Ready for implementation\n\n[View workflow run](https://github.com/dagster-io/erk/actions/runs/22532232001)",
+  </tool_result>
+  <tool_result tool="toolu_0186ME9hsAUfiS7GE4YAMS8J">
+Exit code 128
+fatal: ambiguous argument 'main...HEAD': unknown revision or path not in the working tree.
+Use '--' to separate paths from revisions, like this:
+'git &lt;command&gt; [&lt;revision&gt;...] -- [&lt;file&gt;...]'
+  </tool_result>
+  <assistant>Let me try a different approach to get the file restructuring context:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="5057" cache_read_input_tokens="22247" cache_creation="{'ephemeral_5m_input_tokens': 5057, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01QvoGA2APYnKZLW16RdyTi4">
+    <param name="command">git diff --stat -M -C master...HEAD 2&gt;/dev/null || git diff --stat -M -C origin/master...HEAD 2&gt;/dev/null || echo "Could not determine base branch"</param>
+    <param name="description">Show file-level restructuring context with available branches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5057" cache_read_input_tokens="22247" cache_creation="{'ephemeral_5m_input_tokens': 5057, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QvoGA2APYnKZLW16RdyTi4">
+ docs/learned/architecture/index.md               |  2 +-
+ docs/learned/architecture/inference-hoisting.md  | 36 +++++++++++++
+ docs/learned/cli/land-learn-integration.md       | 56 +++++++++++++--------
+ docs/learned/planning/index.md                   |  1 +
+ docs/learned/planning/learn-session-embedding.md | 64 ++++++++++++++++++++++++
+ docs/learned/tui/index.md                        |  1 +
+ docs/learned/tui/one-shot-prompt-modal.md        | 63 +++++++++++++++++++++++
+ docs/learned/tui/stacked-pr-indicator.md         | 22 +++++---
+ 8 files changed, 217 insertions(+), 28 deletions(-)
+  </tool_result>
+  <assistant>Perfect! Now I have all the information needed. Let me classify the PR feedback according to the skill instructions.
+
+Based on the PR feedback data, I'll classify each review thread:
+
+**Analysis:**
+
+1. **Thread PRRT_kwDOPxC3hc5xbWjQ** (docs/learned/architecture/inference-hoisting.md:130)
+   - Author: github-actions (bot)
+   - Type: Review thread
+   - Classification: Actionable
+   - Pre-existing: false (not a file restructuring issue, new content in new doc)
+   - Complexity: local
+   - Action: Remove line number reference, use conceptual description instead
+
+2. **Thread PRRT_kwDOPxC3hc5xbWlY** (docs/learned/architecture/inference-hoisting.md:130)
+   - Author: github-actions (bot)
+   - Type: Review thread (similar to above)
+   - Classification: Actionable
+   - Pre-existing: false
+   - Complexity: local
+   - Action: Replace line reference with name-based source pointer
+
+3. **Thread PRRT_kwDOPxC3hc5xbWfL** (docs/learned/cli/land-learn-integration.md:79)
+   - Author: github-actions (bot)
+   - Type: Review thread
+   - Classification: Actionable
+   - Pre-existing: false
+   - Complexity: single_file
+   - Action: Fix inaccurate source location (_extract_learn_plan_number)
+
+4. **Thread PRRT_kwDOPxC3hc5xbWg5** (docs/learned/cli/land-learn-integration.md:79)
+   - Author: github-actions (bot)
+   - Type: Review thread (similar to above)
+   - Classification: Actionable
+   - Pre-existing: false
+   - Complexity: single_file
+   - Action: Update prose to reference correct file location
+
+5. **Thread PRRT_kwDOPxC3hc5xbWi1** (docs/learned/cli/land-learn-integration.md:83)
+   - Author: github-actions (bot)
+   - Type: Review thread
+   - Classification: Actionable
+   - Pre-existing: false
+   - Complexity: single_file
+   - Action: Fix inaccurate source comment with correct file paths
+
+6. **Thread PRRT_kwDOPxC3hc5xbWhY** (docs/learned/tui/one-shot-prompt-modal.md:34)
+   - Author: github-actions (bot)
+   - Type: Review thread
+   - Classification: Actionable
+   - Pre-existing: false
+   - Complexity: single_file
+   - Action: Replace source pointer to correct palette.py
+
+7. **Thread PRRT_kwDOPxC3hc5xbWj8** (docs/learned/tui/one-shot-prompt-modal.md:34)
+   - Author: github-actions (bot)
+   - Type: Review thread (similar to above)
+   - Classification: Actionable
+   - Pre-existing: false
+   - Complexity: single_file
+   - Action: Fix source pointer to palette.py
+
+**Discussion Comments:** All discussion comments are informational (status updates, metadata blocks, workflow notifications).
+
+```json
+{
+  "success": true,
+  "pr_number": 8513,
+  "pr_title": "Consolidate documentation from Feb 28 learn sessions (batch 2)",
+  "pr_url": "https://github.com/dagster-io/erk/pull/8513",
+  "actionable_threads": [
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5xbWjQ",
+      "type": "review",
+      "path": "docs/learned/architecture/inference-hoisting.md",
+      "line": 130,
+      "is_outdated": false,
+      "classification": "actionable",
+      "pre_existing": false,
+      "action_summary": "Remove line number reference from prose (drift risk)",
+      "complexity": "local",
+      "original_comment": "**Audit PR Docs**: Drift risk — documents specific line numbers.\n\nSource: `src/erk/cli/commands/exec/scripts/plan_save.py:501-505`\n\nRisk: Line numbers shift with any edit to the file. The `--summary` flag name is stable, but `at line 501-505` will go stale.\n\nSuggested fix: Remove the line number from prose. Replace:\n&gt; `plan_save.py` — `--summary` at line 501-505\nwith:\n&gt; `plan_save.py` — `--summary` Click option"
+    },
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5xbWlY",
+      "type": "review",
+      "path": "docs/learned/architecture/inference-hoisting.md",
+      "line": 130,
+      "is_outdated": false,
+      "classification": "actionable",
+      "pre_existing": false,
+      "action_summary": "Replace line reference with name-based source pointer",
+      "complexity": "local",
+      "original_comment": "**Audit PR Docs**: Drift risk — documents specific line numbers that will change.\n\nSource: `src/erk/cli/commands/exec/scripts/plan_save.py:501-505`\n\nRisk: Line numbers shift with any edit to `plan_save.py`. Consider removing the line reference and relying on the surrounding prose, or use a name-based source pointer instead:\n```\n&lt;!-- Source: src/erk/cli/commands/exec/scripts/plan_save.py, plan_save.--summary --&gt;\n```"
+    },
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5xbWfL",
+      "type": "review",
+      "path": "docs/learned/cli/land-learn-integration.md",
+      "line": 79,
+      "is_outdated": false,
+      "classification": "actionable",
+      "pre_existing": false,
+      "action_summary": "Fix inaccurate source location for _extract_learn_plan_number function",
+      "complexity": "single_file",
+      "original_comment": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: \"`_extract_learn_plan_number()` at `src/erk/tui/app.py:64-73` scans operation output lines\"\nReality: The function `extract_learn_plan_number()` lives in `src/erk/tui/operations/logic.py:17`, not `app.py`. Lines 64-73 in `app.py` are the BINDINGS list. The source comment on line 83 (`src/erk/tui/app.py:64-73, 882-920`) is also incorrect.\n\nSource: `src/erk/tui/operations/logic.py:17`\n\nSuggested fix: Replace source pointer with:\n```\n&lt;!-- Source: src/erk/tui/operations/logic.py, extract_learn_plan_number --&gt;\nSee `extract_learn_plan_number()` in `src/erk/tui/operations/logic.py`.\n```\nAnd remove the private method name `_extract_learn_plan_number()` from prose — use a conceptual description instead."
+    },
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5xbWg5",
+      "type": "review",
+      "path": "docs/learned/cli/land-learn-integration.md",
+      "line": 79,
+      "is_outdated": false,
+      "classification": "actionable",
+      "pre_existing": false,
+      "action_summary": "Update prose to reference correct file location for extract_learn_plan_number",
+      "complexity": "single_file",
+      "original_comment": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: \"`_extract_learn_plan_number()` at `src/erk/tui/app.py:64-73`\"\nReality: This function does not exist in `app.py`. It lives in `src/erk/tui/operations/logic.py` (function `extract_learn_plan_number`, line 17).\n\nSource: `src/erk/tui/operations/logic.py:17`\n\nSuggested fix: Update the prose to reference the correct file: `extract_learn_plan_number()` in `src/erk/tui/operations/logic.py`."
+    },
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5xbWi1",
+      "type": "review",
+      "path": "docs/learned/cli/land-learn-integration.md",
+      "line": 83,
+      "is_outdated": false,
+      "classification": "actionable",
+      "pre_existing": false,
+      "action_summary": "Fix inaccurate source comment with correct file paths and line ranges",
+      "complexity": "single_file",
+      "original_comment": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: `&lt;!-- Source: src/erk/tui/app.py:64-73, 882-920 --&gt;`\nReality: (1) `extract_learn_plan_number` is in `src/erk/tui/operations/logic.py`, not `app.py`. (2) `app.py` only has 532 lines — lines 882-920 do not exist. The learn/land integration code is in `src/erk/tui/operations/workers.py`.\n\nSource: `src/erk/tui/operations/logic.py:17`, `src/erk/tui/operations/workers.py:281-283`\n\nSuggested fix: Replace with correct source pointers:\n```\n&lt;!-- Source: src/erk/tui/operations/logic.py, extract_learn_plan_number --&gt;\n&lt;!-- Source: src/erk/tui/operations/workers.py, _land_pr_async --&gt;\n```"
+    },
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5xbWhY",
+      "type": "review",
+      "path": "docs/learned/tui/one-shot-prompt-modal.md",
+      "line": 34,
+      "is_outdated": false,
+      "classification": "actionable",
+      "pre_existing": false,
+      "action_summary": "Replace source pointer with correct palette.py location",
+      "complexity": "single_file",
+      "original_comment": "**Audit PR Docs**: Inaccurate source pointer.\n\nClaim: Source comment points to `src/erk/tui/app.py:476-510` for App Integration\nReality: The one-shot integration functions (`action_one_shot_prompt`, result handler, dispatch worker) live in `src/erk/tui/actions/palette.py:250-264` and `src/erk/tui/operations/workers.py:399-417`. Lines 476-510 in `app.py` are click handlers for PR/run/worktree navigation — unrelated.\n\nSource: `src/erk/tui/actions/palette.py:250-264`, `src/erk/tui/operations/workers.py:399-417`\n\nSuggested fix: Replace source pointer:\n```\n&lt;!-- Source: src/erk/tui/actions/palette.py, src/erk/tui/operations/workers.py --&gt;\nSee the one-shot action and dispatch worker in `palette.py` and `workers.py`.\n```"
+    },
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5xbWj8",
+      "type": "review",
+      "path": "docs/learned/tui/one-shot-prompt-modal.md",
+      "line": 34,
+      "is_outdated": false,
+      "classification": "actionable",
+      "pre_existing": false,
+      "action_summary": "Fix source pointer to reference palette.py instead of app.py",
+      "complexity": "single_file",
+      "original_comment": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: `&lt;!-- Source: src/erk/tui/app.py:476-510 --&gt;`\nReality: The `action_one_shot_prompt` method is in `src/erk/tui/actions/palette.py` (lines 250-264), not `app.py`. The `app.py` file only contains the keybinding declaration; the implementation is in `palette.py`.\n\nSource: `src/erk/tui/actions/palette.py:250-264`\n\nSuggested fix: Replace with the correct source pointer:\n```\n&lt;!-- Source: src/erk/tui/actions/palette.py, action_one_shot_prompt --&gt;\n```"
+    }
+  ],
+  "discussion_actions": [],
+  "informational_count": 5,
+  "batches": [
+    {
+      "name": "Pre-Existing (Auto-Resolve)",
+      "complexity": "pre_existing",
+      "auto_proceed": true,
+      "item_indices": []
+    },
+    {
+      "name": "Local Fixes",
+      "complexity": "local",
+      "auto_proceed": true,
+      "item_indices": [0, 1]
+    },
+    {
+      "name": "Single-File",
+      "complexity": "single_file",
+      "auto_proceed": true,
+      "item_indices": [2, 3, 4, 5, 6]
+    },
+    {
+      "name": "Cross-Cutting",
+      "complexity": "cross_cutting",
+      "auto_proceed": false,
+      "item_indices": []
+    },
+    {
+      "name": "Complex",
+      "complexity": "complex",
+      "auto_proceed": false,
+      "item_indices": []
+    },
+    {
+      "name": "Informational",
+      "complexity": "informational",
+      "auto_proceed": false,
+      "item_indices": []
+    }
+  ],
+  "error": null
+}
+```</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="464" cache_read_input_tokens="27304" cache_creation="{'ephemeral_5m_input_tokens': 464, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
