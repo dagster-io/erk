@@ -80,6 +80,8 @@ Rules triggered by matching actions in code.
 
 **assuming cursor position will persist across DataTable.clear() calls** → Read [Selection Preservation by Value](selection-preservation-by-value.md) first. Save cursor position by row key before clear(), restore after repopulating. See textual/quirks.md for pattern.
 
+**assuming plan branch is always in root worktree** → Read [Worktree Detection in Dispatch](worktree-dispatch-detection.md) first. Branch may already be checked out in a slot worktree. Use find_worktree_for_branch() to detect.
+
 **auto-enabling a flag without informing the user** → Read [Derived Flags Pattern](derived-flags.md) first. When deriving a flag from auto-detection, always print a dim-styled informational message explaining why the behavior was activated. Users should never be surprised by automatic actions.
 
 **bypassing PlanListService for direct GitHub API plan queries** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. PlanListService handles the CLI-vs-HTTP path selection. Direct API calls bypass caching and error handling.

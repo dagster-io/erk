@@ -46,6 +46,16 @@ Same pattern as Phase 2, run as a safety net after implementation completes. Ide
 
 When rewriting PR bodies in CI, the plan-header metadata block must be preserved. The error handling in `ci_update_pr_body.py` (around lines 266-277) validates that the plan-header metadata block exists, using a `UpdateError` discriminated union with a specific `plan-header-not-found` variant to signal metadata loss in previous CI steps.
 
+## Agent Instruction Cross-References
+
+The `pr-address` command is the only slash command that directly edits and commits `.erk/impl-context/` files. Line 209 of `.claude/commands/erk/pr-address.md` contains the `git add -f` note for plan-only PRs:
+
+> **Note:** If any changed files are in `.erk/impl-context/` (plan-only PRs), use `git add -f` instead — the directory is gitignored.
+
+Pattern: When a slash command touches gitignored paths, document the `git add -f` requirement directly in that command's instructions. Without this, agents waste turns discovering that regular `git add` silently skips the files.
+
+**Real-world trigger:** PR #8544 (plan-only PR) caused the agent to waste 2 turns discovering `git add -f` was required.
+
 ## Related Documentation
 
 - [Impl-Context Staging Directory](../planning/impl-context.md) — Full lifecycle of the staging directory
