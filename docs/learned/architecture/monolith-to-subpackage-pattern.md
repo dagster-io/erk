@@ -47,15 +47,9 @@ Each module contains a single check function with a clear name matching the file
 
 Common types live in a dedicated `models.py` to avoid circular imports:
 
-```python
-@dataclass(frozen=True)
-class CheckResult:
-    name: str
-    passed: bool
-    message: str
-    details: str | None = None
-    remediation: str | None = None
-```
+<!-- Source: src/erk/core/health_checks/models.py:6-28 -->
+
+The `CheckResult` frozen dataclass holds eight fields: `name`, `passed`, `message`, plus optional `details`, `verbose_details`, `warning`, `info`, and `remediation`. All check functions return this type.
 
 ### 3. Orchestrator **init**.py
 
@@ -90,16 +84,9 @@ The import list serves dual purpose: dependency declaration and module index.
 
 Gateway implementations and config loading are imported inside the orchestrator function, not at module level:
 
-```python
-def run_all_checks(ctx, *, check_hooks):
-    # ... basic checks first ...
-    if repo_ctx:
-        from erk.cli.config import load_config
-        from erk_shared.gateway.github.issues.real import RealGitHubIssues
-        # ... use heavy dependencies only when needed
-```
+<!-- Source: src/erk/core/health_checks/__init__.py, run_all_checks() -->
 
-This prevents circular dependencies and speeds up import time for callers that only need individual checks.
+Inside `run_all_checks()`, heavy dependencies like gateway implementations and config loading are imported lazily (via `from ... import ...` inside the function body) only when the relevant checks need them. This prevents circular dependencies and speeds up import time for callers that only need individual checks.
 
 ### 5. No Re-Exports
 
@@ -117,11 +104,9 @@ from erk.core.health_checks import check_managed_artifacts  # Don't do this
 
 Checks receive what they need as parameters rather than importing globals:
 
-```python
-def check_github_cli(shell: Shell) -> CheckResult:
-    gh_path = shell.get_installed_tool_path("gh")
-    ...
-```
+<!-- Source: src/erk/core/health_checks/github_cli.py:7-13 -->
+
+For example, `check_github_cli(shell: Shell) -> CheckResult` takes a `Shell` instance as a parameter to locate the `gh` binary, rather than importing a global shell reference.
 
 ## When to Apply This Pattern
 
