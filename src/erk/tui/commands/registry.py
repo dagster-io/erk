@@ -90,7 +90,7 @@ def _display_copy_pr_checkout(ctx: CommandContext) -> str:
     """Display name for copy_pr_checkout command."""
     if ctx.row.pr_number:
         pr = ctx.row.pr_number
-        return f'source "$(erk pr checkout {pr} --script --sync)" && gt submit --no-interactive'
+        return f'source "$(erk pr checkout {pr} --script --sync)"'
     return "checkout"
 
 

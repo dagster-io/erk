@@ -314,7 +314,7 @@ def test_display_name_copy_pr_checkout_shows_pr() -> None:
     row = make_plan_row(5831, "Test Plan", pr_number=456)
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     cmd = next(c for c in get_all_commands() if c.id == "copy_pr_checkout")
-    expected = 'source "$(erk pr checkout 456 --script --sync)" && gt submit --no-interactive'
+    expected = 'source "$(erk pr checkout 456 --script --sync)"'
     assert get_display_name(cmd, ctx) == expected
 
 
@@ -829,7 +829,7 @@ def test_get_copy_text_returns_display_name_for_valid_command() -> None:
     row = make_plan_row(123, "Test", pr_number=456)
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     result = get_copy_text("copy_pr_checkout", ctx)
-    expected = 'source "$(erk pr checkout 456 --script --sync)" && gt submit --no-interactive'
+    expected = 'source "$(erk pr checkout 456 --script --sync)"'
     assert result == expected
 
 

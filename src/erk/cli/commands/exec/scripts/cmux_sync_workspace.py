@@ -122,7 +122,7 @@ def cmux_sync_workspace(pr: int, branch: str | None) -> None:
             raise SystemExit(1)
 
     # Build the checkout command that will run inside the new workspace
-    checkout_cmd = f'source "$(erk pr checkout {pr} --script --sync)" && gt submit --no-interactive'
+    checkout_cmd = f'source "$(erk pr checkout {pr} --script --sync)"'
 
     # Build the shell pipeline:
     # 1. Create workspace with checkout command
